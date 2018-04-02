@@ -44,29 +44,27 @@ SynthEditor::SynthEditor ()
     Module* m1 = new Module();
 	m1->setIndex(0);
     m1->setTopLeftPosition(100,100);
-    m1->addInput();
-    m1->addInput();
-    m1->addInput();
-
-    m1->addOutput();
+	m1->addPin(Pin::Direction::IN);
+	m1->addPin(Pin::Direction::IN);
+	m1->addPin(Pin::Direction::IN);
+	m1->addPin(Pin::Direction::OUT);
 
     addAndMakeVisible(m1);
 
     Module* m2 = new Module();
     m2->setTopLeftPosition(300,100);
 	m2->setIndex(1);
-    m2->addInput();
-    m2->addInput();
-
-    m2->addOutput();
+	m2->addPin(Pin::Direction::IN);
+	m2->addPin(Pin::Direction::IN);
+	m2->addPin(Pin::Direction::OUT);
 
     addAndMakeVisible(m2);
 
 	Module* m3 = new Module();
 	m3->setTopLeftPosition(500, 100);
 	m3->setIndex(2);
-	m3->addInput();
-	m3->addOutput();
+	m3->addPin(Pin::Direction::IN);
+	m3->addPin(Pin::Direction::OUT);
 
 	addAndMakeVisible(m3);
 
@@ -121,7 +119,7 @@ void SynthEditor::paint (Graphics& g)
 	for (int i = 0; i < connections.size(); i++) {
 		Connection* c = connections.at(i);
 
-		g.drawLine(c->source->getX() + c->output->x - 5, c->source->getY() + c->output->y + 5, c->target->getX() + c->input->x + 5 , c->target->getY() + c->input->y + 5);
+		g.drawLine(c->source->getX() + c->a->x , c->source->getY() + c->a->y + 5, c->target->getX() + c->b->x , c->target->getY() + c->b->y + 5);
 			
 	}
 
@@ -300,20 +298,20 @@ void SynthEditor::modifierKeysChanged (const ModifierKeys& modifiers)
 
 void SynthEditor::checkForPinSelection(const MouseEvent& e, Module* m) {
 
-	for (int j = 0; j < m->inputs.size(); j++) {
+	for (int j = 0; j < m->pins.size(); j++) {
 
-		if (m->isMouseOverInput(j, e.getPosition())) {
-			m->inputs.at(j).selected = true;
+		if (m->isMouseOverPin(j, e.getPosition())) {
+			m->pins.at(j).selected = true;
 		}
 		else {
-			m->inputs.at(j).selected = false;
+			m->pins.at(j).selected = false;
 		}
 
 	}
 
 	for (int j = 0; j < m->outputs.size(); j++) {
 
-		if (m->isMouseOverOutput(j, e.getPosition())) {
+		if (m->isMouseOverPin(j, e.getPosition())) {
 			m->outputs.at(j).selected = true;
 		}
 		else {
@@ -329,30 +327,18 @@ void SynthEditor::checkForPinSelection(const MouseEvent& e, Module* m) {
 
 void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
 
-	Pin* input = nullptr;
-	Pin* output = nullptr;
+	Pin* a = nullptr;
+	Pin* b = nullptr;
 	Module* target = nullptr;
 
 	// find the selected input of the source module
-	for (int j = 0; j < source->inputs.size(); j++) {
+	for (int j = 0; j < source->pins.size(); j++) {
 
-		if (source->inputs.at(j).selected) {
-			input = &source->inputs.at(j);
+		if (source->pins.at(j).selected) {
+			a = &source->pins.at(j);
 			break;
 		}
 
-	}
-
-	// no input found, thus it must be an output
-
-	if (input == nullptr) {
-		for (int j = 0; j < source->outputs.size(); j++) {
-			if (source->outputs.at(j).selected) {
-				output = &source->outputs.at(j);
-				break;
-			}
-
-		}
 	}
 
 	// now find the target module
@@ -365,32 +351,20 @@ void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
 		}
 
 		// find the selected input of the target  module
-		for (int j = 0; j < m->inputs.size(); j++) {
+		for (int j = 0; j < m->pins.size(); j++) {
 
-			if (m->inputs.at(j).selected) {
-				input = &m->inputs.at(j);
+			if (m->pins.at(j).selected) {
+				b = &m->pins.at(j);
 				target = m;
 				break;
 			}
 
 		}
-
-		// no input found, thus it must be an output
-		if (input == nullptr) {
-			for (int j = 0; j < m->outputs.size(); j++) {
-				if (m->outputs.at(j).selected) {
-					output = &m->outputs.at(j);
-					target = m;
-					break;
-				}
-
-			}
-		}
 	
 	}
 
-	if (source != nullptr && target != nullptr && input != nullptr && output != nullptr) {
-		Connection* c = new Connection(source, output, target, input);
+	if (source != nullptr && target != nullptr && a != nullptr && b != nullptr) {
+		Connection* c = new Connection(source, a, target, b);
 		connections.push_back(c);
 		repaint();
 	}
@@ -433,3 +407,4 @@ END_JUCER_METADATA
 
 //[EndFile] You can add extra defines here...
 //[/EndFile]
+

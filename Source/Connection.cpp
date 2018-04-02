@@ -14,11 +14,11 @@ Connection::Connection()
 {
 }
 
-Connection::Connection(Module* source, Pin* output, Module* target, Pin* input) {
+Connection::Connection(Module* source, Pin* a, Module* target, Pin* b) {
 	this->source = source;
 	this->target = target;
-	this->input = input;
-	this->output = output;
+	this->a = a;
+	this->b = b;
 }
 
 Connection::~Connection()

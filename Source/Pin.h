@@ -11,10 +11,19 @@
 #pragma once
 
 class Pin {
-    
+
+
 public:
+
+	static enum Direction{
+		IN,
+		OUT
+	};
+
     int x;
     int y;
     bool selected;
+	Direction direction;
+
     
 };

@@ -45,19 +45,17 @@ public:
 
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
-    void addInput();
-    void addOutput();
+    void addPin(Pin::Direction direction);
 
     Pin* getSelectedPin();
 
-    std::vector<Pin> inputs;
+    std::vector<Pin> pins;
     std::vector<Pin> outputs;
 
-	bool isMouseOverInput(int pin, Point<int> pos);
-	bool isMouseOverOutput(int pin, Point<int> pos);
+	bool isMouseOverPin(int pin, Point<int> pos);
     
-	Point<int> getInputPinPosition(int i);
-	Point<int> getOutputPinPosition(int i);
+	Point<int> getPinPosition(int i);
+
     void setSelected(bool selected);
     bool isSelected();
 

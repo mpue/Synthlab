@@ -74,29 +74,18 @@ void Module::paint (Graphics& g)
     
     g.fillRect(5,0,getWidth()-10, getHeight());
 
-    for (int i = 0; i < inputs.size();i++) {
+    for (int i = 0; i < pins.size();i++) {
 
-        if (inputs.at(i).selected) {
+        if (pins.at(i).selected) {
             g.setColour(juce::Colours::red);
         }
         else {
             g.setColour(juce::Colours::blue);
         }
 
-        g.fillEllipse(0,inputs.at(i).y, 10, 10);
+        g.fillEllipse(pins.at(i).x,pins.at(i).y, 10, 10);
     }
 
-    for (int i = 0; i < outputs.size();i++) {
-
-        if (outputs.at(i).selected) {
-            g.setColour(juce::Colours::red);
-        }
-        else {
-            g.setColour(juce::Colours::blue);
-        }
-
-        g.fillEllipse(getWidth() - 10 ,outputs.at(i).y, 10, 10);
-    }
 
 
     //[/UserPaint]
@@ -114,40 +103,31 @@ void Module::resized()
 
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
-void Module::addInput() {
+void Module::addPin(Pin::Direction direction) {
 
     Pin p;
 
-    p.x = 0;
-    p.y = 10 + inputs.size() * 20;
+	if (direction == Pin::Direction::IN) {
+		p.x = 0;
+	}
+	else {
+		p.x = getWidth() - 10;
+	}
 
-    inputs.push_back(p);
+    p.y = 10 + pins.size() * 20;
+	p.direction = direction;
+
+    pins.push_back(p);
 }
 
-void Module::addOutput() {
-
-    Pin p;
-
-    p.x = getWidth() - 10;
-    p.y = 10 + outputs.size() * 20;
-
-    outputs.push_back(p);
-}
 
 Pin* Module::getSelectedPin() {
 
-	for (int i = 0; i < inputs.size(); i++) {
-		if (inputs.at(i).selected) {
-			return &inputs.at(i);
+	for (int i = 0; i < pins.size(); i++) {
+		if (pins.at(i).selected) {
+			return &pins.at(i);
 		}
 	}
-
-	for (int i = 0; i < outputs.size(); i++) {
-		if (outputs.at(i).selected) {
-			return &outputs.at(i);
-		}
-	}
-
 
     return nullptr;
 }
@@ -160,33 +140,23 @@ bool Module::isSelected() {
     return selected;
 }
 
-bool Module::isMouseOverInput(int pin, Point<int> pos) {
+bool Module::isMouseOverPin(int pin, Point<int> pos) {
 
-	if (pos.x >= inputs.at(pin).x + getX() && pos.x <= inputs.at(pin).x + getX() + 10 && 
-		pos.y >= inputs.at(pin).y+ getY() &&  pos.y <= inputs.at(pin).y + getY() + 10) {
+	if (pos.x >= pins.at(pin).x + getX() && pos.x <= pins.at(pin).x + getX() + 10 &&
+		pos.y >= pins.at(pin).y+ getY() &&  pos.y <= pins.at(pin).y + getY() + 10) {
 		return true;
 	}
 
 	return false;
 }
 
-bool Module::isMouseOverOutput(int pin, Point<int> pos) {
 
-	if (pos.x >= outputs.at(pin).x + getX() && pos.x <= outputs.at(pin).x + getX() + 10 &&
-		pos.y >= outputs.at(pin).y + getY() && pos.y <= outputs.at(pin).y + getY() + 10) {
-		return true;
-	}
 
-	return false;
+Point<int> Module::getPinPosition(int i) {
+	return Point<int>(pins.at(i).x + getX(), pins.at(i).x + getX());
 }
 
-Point<int> Module::getInputPinPosition(int i) {
-	return Point<int>(inputs.at(i).x + getX(), inputs.at(i).x + getX());
-}
 
-Point<int> Module::getOutputPinPosition(int i) {
-	return Point<int>(outputs.at(i).x + getX(), outputs.at(i).x + getX());
-}
 
 int Module::getIndex() {
 	return index;

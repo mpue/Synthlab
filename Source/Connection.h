@@ -19,9 +19,9 @@ public:
 	Connection(Module* source, Pin* output,	Module* target, Pin* input);
 	~Connection();
 	Module* source;
-	Pin* output;
+	Pin* a;
 	Module* target;
-	Pin* input;
+	Pin* b;
 
 };
 
