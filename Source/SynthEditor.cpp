@@ -76,11 +76,13 @@ SynthEditor::SynthEditor ()
 
 	setRepaintsOnMouseActivity(true);
 
+	/*
 	Connection* c1 = new Connection(m1, &m1->outputs.at(0), m2,& m2->inputs.at(0));
 	Connection* c2 = new Connection(m2, &m2->outputs.at(0), m3, &m2->inputs.at(0));
 	
 	connections.push_back(c1);
 	connections.push_back(c2);
+	*/
 
     //[/Constructor]
 }
@@ -354,7 +356,6 @@ void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
 	}
 
 	// now find the target module
-
 	for (int i = 0; i < modules.size(); i++) {
 
 		Module* m = modules.at(i);
@@ -375,7 +376,6 @@ void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
 		}
 
 		// no input found, thus it must be an output
-
 		if (input == nullptr) {
 			for (int j = 0; j < m->outputs.size(); j++) {
 				if (m->outputs.at(j).selected) {
@@ -386,12 +386,10 @@ void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
 
 			}
 		}
-
-	
 	
 	}
 
-	if (source != nullptr && target != nullptr && input != nullptr && target != nullptr) {
+	if (source != nullptr && target != nullptr && input != nullptr && output != nullptr) {
 		Connection* c = new Connection(source, output, target, input);
 		connections.push_back(c);
 		repaint();
