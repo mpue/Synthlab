@@ -23,6 +23,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "MultiComponentDragger.h"
 #include "Module.h"
+#include "Connection.h"
 #include <vector>
 //[/Headers]
 
@@ -78,6 +79,7 @@ private:
 	int minrepaintx = 0;
 	int minrepainty = 0;
 
+	std::vector<Connection*> connections;
 
     //[/UserVariables]
 

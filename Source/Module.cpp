@@ -180,6 +180,15 @@ bool Module::isMouseOverOutput(int pin, Point<int> pos) {
 	return false;
 }
 
+Point<int> Module::getInputPinPosition(int i) {
+	return Point<int>(inputs.at(i).x + getX(), inputs.at(i).x + getX());
+}
+
+Point<int> Module::getOutputPinPosition(int i) {
+	return Point<int>(outputs.at(i).x + getX(), outputs.at(i).x + getX());
+}
+
+
 //[/MiscUserCode]
 
 

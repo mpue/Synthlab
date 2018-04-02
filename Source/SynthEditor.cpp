@@ -61,11 +61,26 @@ SynthEditor::SynthEditor ()
 
     addAndMakeVisible(m2);
 
+	Module* m3 = new Module();
+	m3->setTopLeftPosition(500, 100);
+
+	m3->addInput();
+
+	m3->addOutput();
+
+	addAndMakeVisible(m3);
+
     modules.push_back(m1);
     modules.push_back(m2);
+	modules.push_back(m3);
 
 	setRepaintsOnMouseActivity(true);
 
+	Connection* c1 = new Connection(m1, &m1->outputs.at(0), m2,& m2->inputs.at(0));
+	Connection* c2 = new Connection(m2, &m2->outputs.at(0), m3, &m2->inputs.at(0));
+	
+	connections.push_back(c1);
+	connections.push_back(c2);
 
     //[/Constructor]
 }
@@ -100,6 +115,14 @@ void SynthEditor::paint (Graphics& g)
 		}
 
 	}
+
+	for (int i = 0; i < connections.size(); i++) {
+		Connection* c = connections.at(i);
+
+		g.drawLine(c->source->getX() + c->output->x - 5, c->source->getY() + c->output->y + 5, c->target->getX() + c->input->x + 5 , c->target->getY() + c->input->y + 5);
+			
+	}
+
 
     //[/UserPaint]
 }
@@ -204,12 +227,14 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
 			m->setTopLeftPosition(e.getDistanceFromDragStartX() + dragStartX, e.getDistanceFromDragStartY() + dragStartY);
 			lineStopX = 0;
 			lineStopY = 0;
+			repaint();
 		}
 		
 		
 
 	}
 
+	/*
 	int x, y, w, h;
 
 	if (e.getPosition().x >= e.getMouseDownPosition().x) {
@@ -246,8 +271,11 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
 		maxrepainth = h;
 	}
 
-
 	repaint(minrepaintx,minrepainty,maxrepaintw,maxrepainth);
+
+	*/
+
+	repaint();
 
     //[/UserCode_mouseDrag]
 }

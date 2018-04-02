@@ -56,6 +56,9 @@ public:
 	bool isMouseOverInput(int pin, Point<int> pos);
 	bool isMouseOverOutput(int pin, Point<int> pos);
     
+	Point<int> getInputPinPosition(int i);
+	Point<int> getOutputPinPosition(int i);
+
     //[/UserMethods]
 
     void paint (Graphics& g) override;

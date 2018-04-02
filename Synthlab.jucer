@@ -3,6 +3,8 @@
 <JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.3.0">
   <MAINGROUP id="CKGTaZ" name="Synthlab">
     <GROUP id="{CA20D122-1EA5-3A93-F1F8-F6EE53DA457E}" name="Source">
+      <FILE id="oEHdkD" name="Connection.cpp" compile="1" resource="0" file="Source/Connection.cpp"/>
+      <FILE id="PoD2gS" name="Connection.h" compile="0" resource="0" file="Source/Connection.h"/>
       <FILE id="forMne" name="Pin.cpp" compile="1" resource="0" file="Source/Pin.cpp"/>
       <FILE id="NJudCk" name="Pin.h" compile="0" resource="0" file="Source/Pin.h"/>
       <FILE id="j8BgnE" name="Module.cpp" compile="1" resource="0" file="Source/Module.cpp"/>
