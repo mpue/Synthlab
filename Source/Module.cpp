@@ -76,26 +76,26 @@ void Module::paint (Graphics& g)
 
     for (int i = 0; i < inputs.size();i++) {
 
-        if (currentSelectedInput == i) {
+        if (inputs.at(i).selected) {
             g.setColour(juce::Colours::red);
         }
         else {
             g.setColour(juce::Colours::blue);
         }
 
-        g.fillEllipse(0,10+inputs.at(i).y, 10, 10);
+        g.fillEllipse(0,inputs.at(i).y, 10, 10);
     }
 
     for (int i = 0; i < outputs.size();i++) {
 
-        if (currentSelectedOutput == i) {
+        if (outputs.at(i).selected) {
             g.setColour(juce::Colours::red);
         }
         else {
             g.setColour(juce::Colours::blue);
         }
 
-        g.fillEllipse(getWidth() - 10 ,10+outputs.at(i).y, 10, 10);
+        g.fillEllipse(getWidth() - 10 ,outputs.at(i).y, 10, 10);
     }
 
 
@@ -119,7 +119,7 @@ void Module::addInput() {
     Pin p;
 
     p.x = 0;
-    p.y = inputs.size() * 20;
+    p.y = 10 + inputs.size() * 20;
 
     inputs.push_back(p);
 }
@@ -129,18 +129,25 @@ void Module::addOutput() {
     Pin p;
 
     p.x = getWidth() - 10;
-    p.y = outputs.size() * 20;
+    p.y = 10 + outputs.size() * 20;
 
     outputs.push_back(p);
 }
 
 Pin* Module::getSelectedPin() {
-    if (currentSelectedInput >= 0) {
-        return &inputs.at(currentSelectedInput);
-    }
-    else if (currentSelectedOutput >= 0) {
-        return &outputs.at(currentSelectedOutput);
-    }
+
+	for (int i = 0; i < inputs.size(); i++) {
+		if (inputs.at(i).selected) {
+			return &inputs.at(i);
+		}
+	}
+
+	for (int i = 0; i < outputs.size(); i++) {
+		if (outputs.at(i).selected) {
+			return &outputs.at(i);
+		}
+	}
+
 
     return nullptr;
 }
@@ -151,6 +158,26 @@ void Module::setSelected(bool selected) {
 
 bool Module::isSelected() {
     return selected;
+}
+
+bool Module::isMouseOverInput(int pin, Point<int> pos) {
+
+	if (pos.x >= inputs.at(pin).x + getX() && pos.x <= inputs.at(pin).x + getX() + 10 && 
+		pos.y >= inputs.at(pin).y+ getY() &&  pos.y <= inputs.at(pin).y + getY() + 10) {
+		return true;
+	}
+
+	return false;
+}
+
+bool Module::isMouseOverOutput(int pin, Point<int> pos) {
+
+	if (pos.x >= outputs.at(pin).x + getX() && pos.x <= outputs.at(pin).x + getX() + 10 &&
+		pos.y >= outputs.at(pin).y + getY() && pos.y <= outputs.at(pin).y + getY() + 10) {
+		return true;
+	}
+
+	return false;
 }
 
 //[/MiscUserCode]

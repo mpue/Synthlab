@@ -70,6 +70,15 @@ private:
     int lineStopX = 0;
     int lineStopY = 0;
 
+	int dragStartX = 0;
+	int dragStartY = 0;
+
+	int maxrepaintw = 0;
+	int maxrepainth = 0;
+	int minrepaintx = 0;
+	int minrepainty = 0;
+
+
     //[/UserVariables]
 
     //==============================================================================

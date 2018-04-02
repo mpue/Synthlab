@@ -51,11 +51,10 @@ public:
     Pin* getSelectedPin();
 
     std::vector<Pin> inputs;
-    int currentSelectedInput = -1;
-
     std::vector<Pin> outputs;
-    int currentSelectedOutput = -1;
 
+	bool isMouseOverInput(int pin, Point<int> pos);
+	bool isMouseOverOutput(int pin, Point<int> pos);
     
     //[/UserMethods]
 

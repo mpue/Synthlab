@@ -64,6 +64,7 @@ SynthEditor::SynthEditor ()
     modules.push_back(m1);
     modules.push_back(m2);
 
+	setRepaintsOnMouseActivity(true);
 
 
     //[/Constructor]
@@ -92,6 +93,13 @@ void SynthEditor::paint (Graphics& g)
 
     g.setColour(juce::Colours::white);
 
+	if (isLeftMouseDown) {
+
+		if (lineStopX > 0 && lineStopY > 0) {
+			g.drawLine(lineStartX, lineStartY, lineStopX, lineStopY);		
+		}
+
+	}
 
     //[/UserPaint]
 }
@@ -109,16 +117,40 @@ void SynthEditor::mouseMove (const MouseEvent& e)
 {
     //[UserCode_mouseMove] -- Add your code here...
     
-    
+	Logger::writeToLog("MOve");
     
     for (int i = 0; i < modules.size(); i++) {
         
-        for (int j = 0; j < modules.at(i)->inputs.size();j++) {
+		Module* m = modules.at(i);
 
-            
+        for (int j = 0; j < m->inputs.size();j++) {
+
+			if (m->isMouseOverInput(j,e.getPosition())) {
+				m->inputs.at(j).selected = true;
+			}
+			else {
+				m->inputs.at(j).selected = false;			
+			}
+
         }
+
+		for (int j = 0; j < m->outputs.size(); j++) {
+
+			if (m->isMouseOverOutput(j, e.getPosition())) {
+				m->outputs.at(j).selected = true;
+						}
+			else {
+				m->outputs.at(j).selected = false;
+			
+			}
+
+		}
+
+		m->repaint();
+
     }
-    
+    	
+
 
     //[/UserCode_mouseMove]
 }
@@ -127,12 +159,20 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 {
     //[UserCode_mouseDown] -- Add your code here...
 
-    isLeftMouseDown = true;
+	if (e.mods.isLeftButtonDown()) {
+		isLeftMouseDown = true;
+		minrepaintx = e.getPosition().x;
+		minrepainty = e.getPosition().y;
+	}
+
     
     for (int i = 0; i < modules.size(); i++) {
         
         if (modules.at(i)->getBounds().contains(e.x,e.y)) {
             modules.at(i)->setSelected(true);
+			dragStartX = modules.at(i)->getX();
+			dragStartY = modules.at(i)->getY();
+
         }
         else {
             modules.at(i)->setSelected(false);
@@ -141,7 +181,7 @@ void SynthEditor::mouseDown (const MouseEvent& e)
         
     }
 
-    repaint();
+
 
     //[/UserCode_mouseDown]
 }
@@ -150,6 +190,64 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
 {
     //[UserCode_mouseDrag] -- Add your code here...
 
+	lineStartX = e.getMouseDownPosition().x;
+	lineStartY = e.getMouseDownPosition().y;
+
+	lineStopX = lineStartX + e.getDistanceFromDragStartX();
+	lineStopY = lineStartY + e.getDistanceFromDragStartY();
+
+	for (int i = 0; i < modules.size(); i++) {
+
+		Module* m = modules.at(i);
+
+		if (m->isSelected() && m->getSelectedPin() == nullptr) {
+			m->setTopLeftPosition(e.getDistanceFromDragStartX() + dragStartX, e.getDistanceFromDragStartY() + dragStartY);
+			lineStopX = 0;
+			lineStopY = 0;
+		}
+		
+		
+
+	}
+
+	int x, y, w, h;
+
+	if (e.getPosition().x >= e.getMouseDownPosition().x) {
+		x = e.getMouseDownPosition().x;
+	}
+	else {
+		x = e.getPosition().x;
+	}
+
+	if (e.getPosition().y >= e.getMouseDownPosition().y) {
+		y = e.getMouseDownPosition().y;
+	}
+	else {
+		y = e.getPosition().y;
+	}
+
+	w = abs(e.getMouseDownPosition().x - e.getPosition().x);
+	h = abs(e.getMouseDownPosition().y - e.getPosition().y);
+
+	if (x <= minrepaintx) {
+		minrepaintx = x;
+	}
+
+	if (y <= minrepainty) {
+		minrepainty = y;
+	}
+
+
+	if (w >= maxrepaintw) {
+		maxrepaintw = w;
+	}
+
+	if (h >= maxrepainth) {
+		maxrepainth = h;
+	}
+
+
+	repaint(minrepaintx,minrepainty,maxrepaintw,maxrepainth);
 
     //[/UserCode_mouseDrag]
 }
@@ -157,9 +255,12 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
 void SynthEditor::mouseUp (const MouseEvent& e)
 {
     //[UserCode_mouseUp] -- Add your code here...
+	if (e.mods.isLeftButtonDown()) {
+		isLeftMouseDown = false;
+	}
 
-    isLeftMouseDown = false;
-
+	lineStopX = 0;
+	lineStopY = 0;
 
 
     //[/UserCode_mouseUp]
