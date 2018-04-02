@@ -42,6 +42,7 @@ SynthEditor::SynthEditor ()
     //[Constructor] You can add your own custom stuff here..
 
     Module* m1 = new Module();
+	m1->setName("ADSR");
 	m1->setIndex(0);
     m1->setTopLeftPosition(100,100);
 	m1->addPin(Pin::Direction::IN);
@@ -52,6 +53,7 @@ SynthEditor::SynthEditor ()
     addAndMakeVisible(m1);
 
     Module* m2 = new Module();
+	m2->setName("OSC 1");
     m2->setTopLeftPosition(300,100);
 	m2->setIndex(1);
 	m2->addPin(Pin::Direction::IN);
@@ -61,6 +63,7 @@ SynthEditor::SynthEditor ()
     addAndMakeVisible(m2);
 
 	Module* m3 = new Module();
+	m3->setName("Macro");
 	m3->setTopLeftPosition(500, 100);
 	m3->setIndex(2);
 	m3->addPin(Pin::Direction::IN);
@@ -73,14 +76,6 @@ SynthEditor::SynthEditor ()
 	modules.push_back(m3);
 
 	setRepaintsOnMouseActivity(true);
-
-	/*
-	Connection* c1 = new Connection(m1, &m1->outputs.at(0), m2,& m2->inputs.at(0));
-	Connection* c2 = new Connection(m2, &m2->outputs.at(0), m3, &m2->inputs.at(0));
-	
-	connections.push_back(c1);
-	connections.push_back(c2);
-	*/
 
     //[/Constructor]
 }
@@ -120,7 +115,7 @@ void SynthEditor::paint (Graphics& g)
 		Connection* c = connections.at(i);
 
 		g.drawLine(c->source->getX() + c->a->x , c->source->getY() + c->a->y + 5, c->target->getX() + c->b->x , c->target->getY() + c->b->y + 5);
-			
+
 	}
 
 

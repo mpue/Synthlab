@@ -66,13 +66,17 @@ void Module::paint (Graphics& g)
     //[UserPaint] Add your own custom painting code here..
 
     if (selected) {
-        g.setColour(juce::Colours::lightblue);
+        g.setColour(juce::Colours::lightgrey);
     }
     else {
         g.setColour(juce::Colours::grey);
     }
     
-    g.fillRect(5,0,getWidth()-10, getHeight());
+    g.fillRect(0,0,getWidth(), getHeight());
+
+	g.setColour(juce::Colours::black);
+	g.drawRect(0, 0, getWidth(), getHeight());
+
 
     for (int i = 0; i < pins.size();i++) {
 
@@ -80,12 +84,18 @@ void Module::paint (Graphics& g)
             g.setColour(juce::Colours::red);
         }
         else {
-            g.setColour(juce::Colours::blue);
+            g.setColour(juce::Colours::black);
         }
 
-        g.fillEllipse(pins.at(i).x,pins.at(i).y, 10, 10);
+		if (pins.at(i).direction == Pin::Direction::IN) {
+			g.fillRect(pins.at(i).x,pins.at(i).y, 5, 10);
+		}
+		else {
+			g.fillRect(pins.at(i).x + 5, pins.at(i).y, 5, 10);
+		}
     }
 
+	g.drawFittedText(getName(), 40, 10, getWidth(), 20, juce::Justification::top, 2);
 
 
     //[/UserPaint]
