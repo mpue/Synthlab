@@ -42,6 +42,7 @@ SynthEditor::SynthEditor ()
     //[Constructor] You can add your own custom stuff here..
 
     Module* m1 = new Module();
+	m1->setIndex(0);
     m1->setTopLeftPosition(100,100);
     m1->addInput();
     m1->addInput();
@@ -53,7 +54,7 @@ SynthEditor::SynthEditor ()
 
     Module* m2 = new Module();
     m2->setTopLeftPosition(300,100);
-
+	m2->setIndex(1);
     m2->addInput();
     m2->addInput();
 
@@ -63,9 +64,8 @@ SynthEditor::SynthEditor ()
 
 	Module* m3 = new Module();
 	m3->setTopLeftPosition(500, 100);
-
+	m3->setIndex(2);
 	m3->addInput();
-
 	m3->addOutput();
 
 	addAndMakeVisible(m3);
@@ -139,41 +139,13 @@ void SynthEditor::resized()
 void SynthEditor::mouseMove (const MouseEvent& e)
 {
     //[UserCode_mouseMove] -- Add your code here...
-    
-	Logger::writeToLog("MOve");
-    
-    for (int i = 0; i < modules.size(); i++) {
-        
+
+	for (int i = 0; i < modules.size(); i++) {
+
 		Module* m = modules.at(i);
+		checkForPinSelection(e, m);
 
-        for (int j = 0; j < m->inputs.size();j++) {
-
-			if (m->isMouseOverInput(j,e.getPosition())) {
-				m->inputs.at(j).selected = true;
-			}
-			else {
-				m->inputs.at(j).selected = false;			
-			}
-
-        }
-
-		for (int j = 0; j < m->outputs.size(); j++) {
-
-			if (m->isMouseOverOutput(j, e.getPosition())) {
-				m->outputs.at(j).selected = true;
-						}
-			else {
-				m->outputs.at(j).selected = false;
-			
-			}
-
-		}
-
-		m->repaint();
-
-    }
-    	
-
+	}
 
     //[/UserCode_mouseMove]
 }
@@ -213,6 +185,8 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
 {
     //[UserCode_mouseDrag] -- Add your code here...
 
+	
+
 	lineStartX = e.getMouseDownPosition().x;
 	lineStartY = e.getMouseDownPosition().y;
 
@@ -223,16 +197,22 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
 
 		Module* m = modules.at(i);
 
-		if (m->isSelected() && m->getSelectedPin() == nullptr) {
-			m->setTopLeftPosition(e.getDistanceFromDragStartX() + dragStartX, e.getDistanceFromDragStartY() + dragStartY);
-			lineStopX = 0;
-			lineStopY = 0;
-			repaint();
-		}
-		
-		
+		if (m->isSelected()) {
 
+			if (m->getSelectedPin() == nullptr) {
+				m->setTopLeftPosition(e.getDistanceFromDragStartX() + dragStartX, e.getDistanceFromDragStartY() + dragStartY);
+				lineStopX = 0;
+				lineStopY = 0;
+				repaint();
+			}
+
+		}
+		else {
+			checkForPinSelection(e, m);
+		}
 	}
+
+
 
 	/*
 	int x, y, w, h;
@@ -287,9 +267,17 @@ void SynthEditor::mouseUp (const MouseEvent& e)
 		isLeftMouseDown = false;
 	}
 
+	for (int i = 0; i < modules.size(); i++) {
+
+		Module* m = modules.at(i);
+
+		if (m->isSelected()) {
+			addConnection(e, m);
+		}
+	}
+
 	lineStopX = 0;
 	lineStopY = 0;
-
 
     //[/UserCode_mouseUp]
 }
@@ -308,6 +296,108 @@ void SynthEditor::modifierKeysChanged (const ModifierKeys& modifiers)
     //[/UserCode_modifierKeysChanged]
 }
 
+void SynthEditor::checkForPinSelection(const MouseEvent& e, Module* m) {
+
+	for (int j = 0; j < m->inputs.size(); j++) {
+
+		if (m->isMouseOverInput(j, e.getPosition())) {
+			m->inputs.at(j).selected = true;
+		}
+		else {
+			m->inputs.at(j).selected = false;
+		}
+
+	}
+
+	for (int j = 0; j < m->outputs.size(); j++) {
+
+		if (m->isMouseOverOutput(j, e.getPosition())) {
+			m->outputs.at(j).selected = true;
+		}
+		else {
+			m->outputs.at(j).selected = false;
+
+		}
+
+	}
+
+	m->repaint();
+
+}
+
+void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
+
+	Pin* input = nullptr;
+	Pin* output = nullptr;
+	Module* target = nullptr;
+
+	// find the selected input of the source module
+	for (int j = 0; j < source->inputs.size(); j++) {
+
+		if (source->inputs.at(j).selected) {
+			input = &source->inputs.at(j);
+			break;
+		}
+
+	}
+
+	// no input found, thus it must be an output
+
+	if (input == nullptr) {
+		for (int j = 0; j < source->outputs.size(); j++) {
+			if (source->outputs.at(j).selected) {
+				output = &source->outputs.at(j);
+				break;
+			}
+
+		}
+	}
+
+	// now find the target module
+
+	for (int i = 0; i < modules.size(); i++) {
+
+		Module* m = modules.at(i);
+
+		if (m->getIndex() == source->getIndex()) {
+			continue;
+		}
+
+		// find the selected input of the target  module
+		for (int j = 0; j < m->inputs.size(); j++) {
+
+			if (m->inputs.at(j).selected) {
+				input = &m->inputs.at(j);
+				target = m;
+				break;
+			}
+
+		}
+
+		// no input found, thus it must be an output
+
+		if (input == nullptr) {
+			for (int j = 0; j < m->outputs.size(); j++) {
+				if (m->outputs.at(j).selected) {
+					output = &m->outputs.at(j);
+					target = m;
+					break;
+				}
+
+			}
+		}
+
+	
+	
+	}
+
+	if (source != nullptr && target != nullptr && input != nullptr && target != nullptr) {
+		Connection* c = new Connection(source, output, target, input);
+		connections.push_back(c);
+		repaint();
+	}
+
+}
 
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...

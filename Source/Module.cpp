@@ -188,6 +188,14 @@ Point<int> Module::getOutputPinPosition(int i) {
 	return Point<int>(outputs.at(i).x + getX(), outputs.at(i).x + getX());
 }
 
+int Module::getIndex() {
+	return index;
+}
+
+
+void Module::setIndex(int index) {
+	this->index = index;
+}
 
 //[/MiscUserCode]
 

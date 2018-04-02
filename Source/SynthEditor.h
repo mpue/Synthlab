@@ -46,6 +46,10 @@ public:
 
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
+
+	void checkForPinSelection(const MouseEvent& e, Module* m);
+	void addConnection(const MouseEvent& e, Module* m);
+
     //[/UserMethods]
 
     void paint (Graphics& g) override;
@@ -64,6 +68,7 @@ private:
 
     bool isAltDown = false;
     bool isLeftMouseDown = false;
+	bool isMovingModule = true;
 
     std::vector<Module*> modules;
     int lineStartX = 0;

@@ -58,20 +58,24 @@ public:
     
 	Point<int> getInputPinPosition(int i);
 	Point<int> getOutputPinPosition(int i);
+    void setSelected(bool selected);
+    bool isSelected();
+
+	int getIndex();
+	void setIndex(int index);
 
     //[/UserMethods]
 
     void paint (Graphics& g) override;
     void resized() override;
 
-    void setSelected(bool selected);
-    bool isSelected();
 
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
     MultiComponentDragger* dragger;
 
     bool selected = false;
+	int index;
 
     //[/UserVariables]
 
