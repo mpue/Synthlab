@@ -248,8 +248,8 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 			else if (result == 1)
 			{
 		
-				Module* m3 = new Module();
-				m3->setName("Macro");
+				Module* m3 = new Module("Macro");
+				
 				m3->setTopLeftPosition(500, 100);
 				m3->setIndex(Time::currentTimeMillis());
 

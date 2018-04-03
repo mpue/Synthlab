@@ -47,6 +47,8 @@ public:
     //[UserMethods]     -- You can add your own custom methods in this section.
     void addPin(Pin::Direction direction);
 
+	Module(String name);
+
     Pin* getSelectedPin();
 
     std::vector<Pin*> pins;

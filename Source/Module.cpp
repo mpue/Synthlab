@@ -41,6 +41,7 @@ Module::Module ()
 
     //[Constructor] You can add your own custom stuff here..
     setInterceptsMouseClicks(false, false);
+
     //[/Constructor]
 }
 
@@ -54,6 +55,8 @@ Module::~Module()
     for (std::vector<Pin*>::iterator it = pins.begin(); it != pins.end(); ++it) {
         delete *it;
     }
+
+
     
     //[/Destructor]
     
@@ -100,8 +103,9 @@ void Module::paint (Graphics& g)
 		}
     }
 
-	g.drawFittedText(getName(), 40, 10, getWidth(), 20, juce::Justification::top, 2);
+	// g.drawFittedText(getName(), 40, 10, getWidth(), 20, juce::Justification::top, 2);
 
+	Component::paint(g);
 
     //[/UserPaint]
 }
@@ -118,6 +122,14 @@ void Module::resized()
 
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
+
+Module::Module(String name) : Module() {
+	setName(name);
+
+	repaint();
+}
+
+
 void Module::addPin(Pin::Direction direction) {
 
     Pin* p = new Pin();
