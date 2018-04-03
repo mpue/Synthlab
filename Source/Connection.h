@@ -10,8 +10,9 @@
 
 #pragma once
 
-#include "Module.h"
-
+// #include "Module.h"
+#include "Pin.h"
+class Module;
 class Connection
 {
 public:

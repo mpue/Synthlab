@@ -24,8 +24,10 @@
 #include "MultiComponentDragger.h"
 #include <vector>
 #include "Pin.h"
+// #include "Connection.h"
 //[/Headers]
 
+class Connection;
 
 
 //==============================================================================
@@ -63,9 +65,14 @@ public:
 
 	long getIndex();
 	void setIndex(long index);
-
 	void setEditing(bool editing);
+    
+    std::vector<Connection*> getConnections();
+    std::vector<Module*> getModules();
 
+    void setConnections(std::vector<Connection*> connections);
+    void setModules(std::vector<Module*> modules);
+    
     //[/UserMethods]
 
     void paint (Graphics& g) override;
@@ -85,6 +92,9 @@ private:
     bool selected = false;
 	long index;
 
+    std::vector<Module*> modules;
+    std::vector<Connection*> connections;
+    
     //[/UserVariables]
 
     //==============================================================================

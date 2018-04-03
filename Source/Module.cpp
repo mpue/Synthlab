@@ -258,6 +258,24 @@ void Module::textEditorReturnKeyPressed(juce::TextEditor &) {
     setEditing(false);
 }
 
+void Module::setConnections(std::vector<Connection *> connections) {
+    this->connections = connections;
+}
+
+void Module::setModules(std::vector<Module *> modules) {
+    this->modules = modules;
+}
+
+std::vector<Connection*> Module::getConnections() {
+    return connections;
+}
+
+std::vector<Module*> Module::getModules() {
+    return modules;
+}
+
+
+
 //[/MiscUserCode]
 
 

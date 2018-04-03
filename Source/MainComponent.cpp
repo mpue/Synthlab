@@ -17,10 +17,17 @@ MainComponent::MainComponent()
 
     // specify the number of input and output channels that we want to open
     setAudioChannels (2, 2);
-    
-	editor = new SynthEditor();
 
-    addAndMakeVisible(editor);
+    editor = new SynthEditor();
+    
+    tab = new TabbedComponent(TabbedButtonBar::Orientation::TabsAtTop);    
+    tab->setBounds(0,0,getWidth(),getHeight());
+    tab->addTab("Main", juce::Colours::grey, editor, true);
+    
+    editor->setTab(tab);
+    
+    
+    addAndMakeVisible(tab);
     
     
 }
@@ -30,6 +37,7 @@ MainComponent::~MainComponent()
     // This shuts down the audio device and clears the audio source.
     shutdownAudio();
 	delete editor;
+    delete tab;
 }
 
 //==============================================================================

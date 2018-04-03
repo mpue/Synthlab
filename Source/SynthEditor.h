@@ -50,9 +50,15 @@ public:
 	void checkForPinSelection(const MouseEvent& e, Module* m);
 	void addConnection(const MouseEvent& e, Module* m);
     void deleteSelected();
-    
     bool PointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<int> pt, double epsilon);
-
+    void setTab(TabbedComponent* t);
+    
+    std::vector<Module*> getModules();
+    void setModules(std::vector<Module*> modules);
+    
+    std::vector<Connection*> getConnections();
+    void setConnections(std::vector<Connection*> connections);
+    
     //[/UserMethods]
 
     void paint (Graphics& g) override;
@@ -95,6 +101,7 @@ private:
 	int minrepaintx = 0;
 	int minrepainty = 0;
 
+    TabbedComponent* tab;
 
     //[/UserVariables]
 

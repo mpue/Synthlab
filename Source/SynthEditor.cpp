@@ -377,16 +377,34 @@ void SynthEditor::mouseUp (const MouseEvent& e)
 void SynthEditor::mouseDoubleClick (const MouseEvent& e)
 {
     //[UserCode_mouseDoubleClick] -- Add your code here...
-	for (int i = 0; i < modules.size(); i++) {
 
-		Module* m = modules.at(i);
+    if (isAltDown) {
+        for (int i = 0; i < modules.size(); i++) {
+            
+            Module* m = modules.at(i);
+            
+            if (m->isSelected()) {
+                m->setEditing(true);
+                break;
+            }
+        }
+    }
+    else {
+        for (int i = 0; i < modules.size(); i++) {
+            
+            Module* m = modules.at(i);
+            
+            if (m->isSelected()) {
+                SynthEditor* editor = new SynthEditor();
+                editor->setModules(m->getModules());
+                editor->setConnections(m->getConnections());
+                tab->addTab(m->getName(), juce::Colours::grey,editor, true);
+            }
+        }
+                
+    }
+    
 
-		if (m->isSelected()) {
-			m->setEditing(true);
-			break;
-		}
-
-	}
     //[/UserCode_mouseDoubleClick]
 }
 
@@ -420,6 +438,10 @@ void SynthEditor::modifierKeysChanged (const ModifierKeys& modifiers)
 
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
+
+void SynthEditor::setTab(juce::TabbedComponent *t) {
+    this->tab = t;
+}
 
 void SynthEditor::deleteSelected() {
     for (int i = 0; i < connections.size(); i++) {
@@ -534,6 +556,24 @@ bool SynthEditor::PointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<int> 
 
 	return abs(pt.x - x) < epsilon ||abs(pt.y - y) < epsilon;
 }
+
+void SynthEditor::setConnections(std::vector<Connection *> connections) {
+    this->connections = connections;
+}
+
+void SynthEditor::setModules(std::vector<Module *> modules) {
+    this->modules = modules;
+}
+
+std::vector<Connection*> SynthEditor::getConnections() {
+    return connections;
+}
+
+std::vector<Module*> SynthEditor::getModules() {
+    return modules;
+}
+
+
 //[/MiscUserCode]
 
 
