@@ -125,6 +125,8 @@ void SynthEditor::paint (Graphics& g)
 			g.setColour(juce::Colours::white);
 		}
 
+		Logger::writeToLog("Connection : " + String(x1) + "," + String(y1) + "," + String(x2) + "," + String(y2));
+
 		g.drawLine(x1,y1,x2,y2);
 
 	}
@@ -477,6 +479,8 @@ void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
 	}
 
 	if (source != nullptr && target != nullptr && a != nullptr && b != nullptr) {
+		Logger::writeToLog("Adding new connection");
+
 		Connection* c = new Connection(source, a, target, b);
 		connections.push_back(c);
 		repaint();

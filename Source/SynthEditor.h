@@ -71,6 +71,7 @@ private:
     bool isAltDown = false;
     bool isLeftMouseDown = false;
 	bool isMovingModule = true;
+	bool isDraggingConnection = false;
 
     std::vector<Module*> modules;
 	std::vector<Connection*> connections;
