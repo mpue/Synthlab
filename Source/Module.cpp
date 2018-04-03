@@ -203,7 +203,8 @@ void Module::addPin(Pin::Direction direction) {
 	}
 
 	p->direction = direction;
-
+    p->index = (long)Time::currentTimeMillis();
+    
     pins.push_back(p);
 }
 
