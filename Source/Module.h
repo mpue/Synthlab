@@ -59,8 +59,8 @@ public:
     void setSelected(bool selected);
     bool isSelected();
 
-	int getIndex();
-	void setIndex(int index);
+	long getIndex();
+	void setIndex(long index);
 
     //[/UserMethods]
 
@@ -73,7 +73,7 @@ private:
     MultiComponentDragger* dragger;
 
     bool selected = false;
-	int index;
+	long index;
 
     //[/UserVariables]
 

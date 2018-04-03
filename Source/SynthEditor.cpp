@@ -41,39 +41,6 @@ SynthEditor::SynthEditor ()
 
     //[Constructor] You can add your own custom stuff here..
 
-    Module* m1 = new Module();
-	m1->setName("ADSR");
-	m1->setIndex(0);
-    m1->setTopLeftPosition(100,100);
-	m1->addPin(Pin::Direction::IN);
-	m1->addPin(Pin::Direction::IN);
-	m1->addPin(Pin::Direction::IN);
-	m1->addPin(Pin::Direction::OUT);
-
-    addAndMakeVisible(m1);
-
-    Module* m2 = new Module();
-	m2->setName("OSC 1");
-    m2->setTopLeftPosition(300,100);
-	m2->setIndex(1);
-	m2->addPin(Pin::Direction::IN);
-	m2->addPin(Pin::Direction::IN);
-	m2->addPin(Pin::Direction::OUT);
-
-    addAndMakeVisible(m2);
-
-	Module* m3 = new Module();
-	m3->setName("Macro");
-	m3->setTopLeftPosition(500, 100);
-	m3->setIndex(2);
-	m3->addPin(Pin::Direction::IN);
-	m3->addPin(Pin::Direction::OUT);
-
-	addAndMakeVisible(m3);
-
-    modules.push_back(m1);
-    modules.push_back(m2);
-	modules.push_back(m3);
 
 	setRepaintsOnMouseActivity(true);
 	setMouseClickGrabsKeyboardFocus(true);
@@ -86,6 +53,12 @@ SynthEditor::~SynthEditor()
     //[Destructor_pre]. You can add your own custom destruction code here..
     //[/Destructor_pre]
 
+	for (std::vector<Module*>::iterator it = modules.begin(); it != modules.end(); ++it) {
+		delete *it;
+	}
+	for (std::vector<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it) {
+		delete *it;
+	}
 
 
     //[Destructor]. You can add your own custom destruction code here..
@@ -190,43 +163,108 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 {
     //[UserCode_mouseDown] -- Add your code here...
 
+
 	if (e.mods.isLeftButtonDown()) {
+		
 		isLeftMouseDown = true;
+		
 		minrepaintx = e.getPosition().x;
 		minrepainty = e.getPosition().y;
+
+		for (int i = 0; i < modules.size(); i++) {
+
+			if (modules.at(i)->getBounds().contains(e.x,e.y)) {
+				modules.at(i)->setSelected(true);
+				dragStartX = modules.at(i)->getX();
+				dragStartY = modules.at(i)->getY();
+
+			}
+			else {
+				modules.at(i)->setSelected(false);
+			}
+
+
+		}
+
+		for (int i = 0; i < connections.size(); i++) {
+			Connection* c = connections.at(i);
+
+			int x1 = c->source->getX() + c->a->x;
+			int y1 = c->source->getY() + c->a->y + 5;
+			int x2 = c->target->getX() + c->b->x;
+			int y2 = c->target->getY() + c->b->y + 5;
+
+			if (PointOnLineSegment(Point<int>(x1, y1), Point<int>(x2, y2), Point<int>(mouseX, mouseY), 1)) {
+				c->selected = true;
+			}
+			else {
+				c->selected = false;
+			}
+		}
 	}
+	else if (e.mods.isRightButtonDown()) {
+	
+		PopupMenu m;
 
+		Module* module = nullptr;
 
-    for (int i = 0; i < modules.size(); i++) {
+		for (int i = 0; i < modules.size(); i++) {
+			if (modules.at(i)->isSelected()) {
+				module = modules.at(i);
+			}
+		}
+		
+		if (module != nullptr) {
+			m.addItem(1, "Add input");
+			m.addItem(2, "Add output");
 
-        if (modules.at(i)->getBounds().contains(e.x,e.y)) {
-            modules.at(i)->setSelected(true);
-			dragStartX = modules.at(i)->getX();
-			dragStartY = modules.at(i)->getY();
+			const int result = m.show();
 
-        }
-        else {
-            modules.at(i)->setSelected(false);
-        }
+			if (result == 0)
+			{
+				// user dismissed the menu without picking anything
+			}
+			else if (result == 1) {
+				module->addPin(Pin::Direction::IN);
 
+			}
+			else if (result == 2) {
+				module->addPin(Pin::Direction::OUT);
+			}
 
-    }
-
-	for (int i = 0; i < connections.size(); i++) {
-		Connection* c = connections.at(i);
-
-		int x1 = c->source->getX() + c->a->x;
-		int y1 = c->source->getY() + c->a->y + 5;
-		int x2 = c->target->getX() + c->b->x;
-		int y2 = c->target->getY() + c->b->y + 5;
-
-		if (PointOnLineSegment(Point<int>(x1, y1), Point<int>(x2, y2), Point<int>(mouseX, mouseY), 1)) {
-			c->selected = true;
 		}
 		else {
-			c->selected = false;
+			m.addItem(1, "Add module");
+			m.addItem(2, "Remove");
+
+			const int result = m.show();
+
+			if (result == 0)
+			{
+				// user dismissed the menu without picking anything
+			}
+			else if (result == 1)
+			{
+		
+				Module* m3 = new Module();
+				m3->setName("Macro");
+				m3->setTopLeftPosition(500, 100);
+				m3->setIndex(Time::currentTimeMillis());
+
+				addAndMakeVisible(m3);
+				modules.push_back(m3);
+
+			}
+			else if (result == 2)
+			{
+		
+			}
 		}
+
+	
 	}
+
+
 
 	repaint();
 

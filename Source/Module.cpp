@@ -50,7 +50,6 @@ Module::~Module()
     //[/Destructor_pre]
 
 
-
     //[Destructor]. You can add your own custom destruction code here..
     //[/Destructor]
 }
@@ -117,14 +116,27 @@ void Module::addPin(Pin::Direction direction) {
 
     Pin p;
 
+	int numInputs = 0;
+	int numOutputs = 0;
+
+	for (int i = 0; i < pins.size(); i++) {
+		if (pins.at(i).direction == Pin::Direction::IN) {
+			numInputs++;
+		}
+		else {
+			numOutputs++;
+		}
+	}
+
 	if (direction == Pin::Direction::IN) {
 		p.x = 0;
+	    p.y = 10 + numInputs * 20;
 	}
 	else {
 		p.x = getWidth() - 10;
+		p.y = 10 + numOutputs * 20;
 	}
 
-    p.y = 10 + pins.size() * 20;
 	p.direction = direction;
 
     pins.push_back(p);
@@ -168,12 +180,12 @@ Point<int> Module::getPinPosition(int i) {
 
 
 
-int Module::getIndex() {
+long Module::getIndex() {
 	return index;
 }
 
 
-void Module::setIndex(int index) {
+void Module::setIndex(long index) {
 	this->index = index;
 }
 

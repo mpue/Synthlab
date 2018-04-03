@@ -73,6 +73,7 @@ private:
 	bool isMovingModule = true;
 
     std::vector<Module*> modules;
+	std::vector<Connection*> connections;
 
 	int mouseX = 0;
 	int mouseY = 0;
@@ -90,7 +91,6 @@ private:
 	int minrepaintx = 0;
 	int minrepainty = 0;
 
-	std::vector<Connection*> connections;
 
     //[/UserVariables]
 
