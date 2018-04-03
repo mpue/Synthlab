@@ -21,7 +21,7 @@
 //[/Headers]
 
 #include "SynthEditor.h"
-
+#include <algorithm>
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 //[/MiscUserDefs]
@@ -77,6 +77,7 @@ SynthEditor::SynthEditor ()
 
 	setRepaintsOnMouseActivity(true);
 
+
     //[/Constructor]
 }
 
@@ -116,14 +117,15 @@ void SynthEditor::paint (Graphics& g)
 	for (int i = 0; i < connections.size(); i++) {
 		Connection* c = connections.at(i);
 
-		Path p = Path();
-
-		// p.addLineSegment(Line<float>(c->source->getX() + c->a->x, c->source->getY() + c->a->y + 5, c->target->getX() + c->b->x, c->target->getY() + c->b->y + 5),1.0f);
-		
 		int x1 = c->source->getX() + c->a->x;
 		int y1 = c->source->getY() + c->a->y + 5;
 		int x2 = c->target->getX() + c->b->x;
 		int y2 = c->target->getY() + c->b->y + 5;
+		/*
+		Path p = Path();
+
+		// p.addLineSegment(Line<float>(c->source->getX() + c->a->x, c->source->getY() + c->a->y + 5, c->target->getX() + c->b->x, c->target->getY() + c->b->y + 5),1.0f);
+		
 		
 		p.addLineSegment(Line<float>(x1, y1, x2, y2), 1.0f);
 		
@@ -132,17 +134,25 @@ void SynthEditor::paint (Graphics& g)
 
 		p.cubicTo(Point<float>(x1,y1), Point<float>(xm,ym),Point<float>(x2,y2));
 		
-		/*
+		
 		PathStrokeType(50.0, juce::PathStrokeType::JointStyle::curved,
 			juce::PathStrokeType::EndCapStyle::rounded)
 			.createStrokedPath(p, p);
-	*/
+
 
 		g.strokePath(p,PathStrokeType(1));
 	
-		
+		*/	
 
-		//g.drawLine(c->source->getX() + c->a->x , c->source->getY() + c->a->y + 5, c->target->getX() + c->b->x , c->target->getY() + c->b->y + 5);
+
+		if (c->selected) {
+			g.setColour(juce::Colours::cyan);
+		}
+		else {
+			g.setColour(juce::Colours::white);
+		}
+
+		g.drawLine(x1,y1,x2,y2);
 
 	}
 
@@ -169,7 +179,10 @@ void SynthEditor::mouseMove (const MouseEvent& e)
 		checkForPinSelection(e, m);
 
 	}
-
+	
+	mouseX = e.getPosition().getX();
+	mouseY = e.getPosition().getY();
+	
     //[/UserCode_mouseMove]
 }
 
@@ -199,7 +212,23 @@ void SynthEditor::mouseDown (const MouseEvent& e)
         
     }
 
+	for (int i = 0; i < connections.size(); i++) {
+		Connection* c = connections.at(i);
 
+		int x1 = c->source->getX() + c->a->x;
+		int y1 = c->source->getY() + c->a->y + 5;
+		int x2 = c->target->getX() + c->b->x;
+		int y2 = c->target->getY() + c->b->y + 5;
+
+		if (PointOnLineSegment(Point<int>(x1, y1), Point<int>(x2, y2), Point<int>(mouseX, mouseY), 0.001)) {
+			c->selected = true;
+		}
+		else {
+			c->selected = false;
+		}
+	}
+
+	repaint();
 
     //[/UserCode_mouseDown]
 }
@@ -307,6 +336,18 @@ void SynthEditor::mouseUp (const MouseEvent& e)
 
 bool SynthEditor::keyPressed (const KeyPress& key)
 {
+	if (key == KeyPress::deleteKey) {
+		for (int i = 0; i < connections.size(); i++) {
+			Connection* c = connections.at(i);
+			if (c->selected) {
+				delete c;
+				connections.erase(connections.begin() + i);
+			}
+		}
+		repaint();
+		return true;
+	}
+
     //[UserCode_keyPressed] -- Add your code here...
     return false;  // Return true if your handler uses this key event, or false to allow it to be passed-on.
     //[/UserCode_keyPressed]
@@ -318,6 +359,10 @@ void SynthEditor::modifierKeysChanged (const ModifierKeys& modifiers)
     isAltDown = modifiers.isAltDown();
     //[/UserCode_modifierKeysChanged]
 }
+
+
+
+//[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 
 void SynthEditor::checkForPinSelection(const MouseEvent& e, Module* m) {
 
@@ -383,7 +428,7 @@ void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
 			}
 
 		}
-	
+
 	}
 
 	if (source != nullptr && target != nullptr && a != nullptr && b != nullptr) {
@@ -394,8 +439,24 @@ void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
 
 }
 
+bool SynthEditor::PointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<int> pt, double epsilon = 0.001)
+{
+	if (pt.x - std::max(pt1.x, pt2.x) > epsilon ||
+		std::min(pt1.x, pt2.x) - pt.x > epsilon ||
+		pt.y - std::max(pt1.y, pt2.y) > epsilon ||
+		std::min(pt1.y, pt2.y) - pt.y > epsilon)
+		return false;
 
-//[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
+	if (abs(pt2.x - pt1.x) < epsilon)
+		return abs(pt1.x - pt.x) < epsilon ||abs(pt2.x - pt.x) < epsilon;
+	if (abs(pt2.y - pt1.y) < epsilon)
+		return abs(pt1.y - pt.y) < epsilon || abs(pt2.y - pt.y) < epsilon;
+
+	double x = pt1.x + (pt.y - pt1.y) * (pt2.x - pt1.x) / (pt2.y - pt1.y);
+	double y = pt1.y + (pt.x - pt1.x) * (pt2.y - pt1.y) / (pt2.x - pt1.x);
+
+	return abs(pt.x - x) < epsilon ||abs(pt.y - y) < epsilon;
+}
 //[/MiscUserCode]
 
 

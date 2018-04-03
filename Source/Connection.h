@@ -22,6 +22,7 @@ public:
 	Pin* a;
 	Module* target;
 	Pin* b;
+	bool selected = false;
 
 };
 

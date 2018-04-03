@@ -49,6 +49,7 @@ public:
 
 	void checkForPinSelection(const MouseEvent& e, Module* m);
 	void addConnection(const MouseEvent& e, Module* m);
+	bool PointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<int> pt, double epsilon);
 
     //[/UserMethods]
 
@@ -71,6 +72,10 @@ private:
 	bool isMovingModule = true;
 
     std::vector<Module*> modules;
+
+	int mouseX = 0;
+	int mouseY = 0;
+
     int lineStartX = 0;
     int lineStartY = 0;
     int lineStopX = 0;
