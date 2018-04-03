@@ -10,7 +10,7 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../../Source/SynthEditor.cpp"
-            timestampString = "544455829.647783"
+            timestampString = "544456247.411334"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "124"
@@ -26,23 +26,7 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../../Source/SynthEditor.cpp"
-            timestampString = "544455829.6482199"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "398"
-            endingLineNumber = "398"
-            landmarkName = "SynthEditor::keyPressed (const KeyPress&amp; key)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "../../Source/SynthEditor.cpp"
-            timestampString = "544455829.648401"
+            timestampString = "544456247.4119461"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "91"

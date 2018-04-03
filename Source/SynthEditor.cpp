@@ -395,42 +395,7 @@ bool SynthEditor::keyPressed (const KeyPress& key)
     //[UserCode_keyPressed] -- Add your code here...
 
 	if (key.getKeyCode() == KeyPress::deleteKey) {
-		for (int i = 0; i < connections.size(); i++) {
-			Connection* c = connections.at(i);
-			if (c->selected) {
-				delete c;
-				connections.erase(connections.begin() + i);
-			}
-		}
-        
-        for (int i = 0; i < modules.size(); i++) {
-            
-            Module* m = modules.at(i);
-            
-            for (std::vector<Connection*>::iterator it = connections.begin(); it != connections.end() ; ++it) {
-                
-                if ((*it) != NULL && (*it) != nullptr) {
-                    if ((*it)->source == m || (*it)->target == m) {
-                        connections.erase(it);
-                        
-                        if (connections.size() == 0) {
-                            break;
-                        }
-                    }
-                }
-            
-
-            }
-
-            if (m->isSelected()) {
-                delete m;
-                modules.erase(modules.begin() + i);
-            }
-        }
-        
-
-        
-        
+        deleteSelected();
 		repaint();
 	}
 
@@ -455,6 +420,35 @@ void SynthEditor::modifierKeysChanged (const ModifierKeys& modifiers)
 
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
+
+void SynthEditor::deleteSelected() {
+    for (int i = 0; i < connections.size(); i++) {
+        Connection* c = connections.at(i);
+        if (c->selected) {
+            delete c;
+            connections.erase(connections.begin() + i);
+        }
+    }
+    
+    for (int i = 0; i < modules.size(); i++) {
+        
+        Module* m = modules.at(i);
+        
+        for (int i = 0; i < connections.size(); i++) {
+            Connection* c = connections.at(i);
+            if (c->source == m || c->target == m) {
+                delete c;
+                connections.erase(connections.begin() + i);
+            }
+        }
+        
+        if (m->isSelected()) {
+            delete m;
+            modules.erase(modules.begin() + i);
+        }
+    }
+}
+
 
 void SynthEditor::checkForPinSelection(const MouseEvent& e, Module* m) {
 

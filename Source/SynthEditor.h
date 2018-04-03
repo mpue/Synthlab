@@ -49,7 +49,9 @@ public:
 
 	void checkForPinSelection(const MouseEvent& e, Module* m);
 	void addConnection(const MouseEvent& e, Module* m);
-	bool PointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<int> pt, double epsilon);
+    void deleteSelected();
+    
+    bool PointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<int> pt, double epsilon);
 
     //[/UserMethods]
 
