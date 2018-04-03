@@ -27,6 +27,8 @@ MainComponent::MainComponent()
     editor->setTab(tab);
     
     
+    
+    
     addAndMakeVisible(tab);
     
     

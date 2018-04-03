@@ -25,9 +25,11 @@
 #include <vector>
 #include "Pin.h"
 // #include "Connection.h"
-//[/Headers]
 
 class Connection;
+
+//[/Headers]
+
 
 
 //==============================================================================
@@ -66,24 +68,22 @@ public:
 	long getIndex();
 	void setIndex(long index);
 	void setEditing(bool editing);
-    
+
     std::vector<Connection*> getConnections();
     std::vector<Module*> getModules();
 
     void setConnections(std::vector<Connection*> connections);
+
+    void textEditorReturnKeyPressed(juce::TextEditor &) override;
     void setModules(std::vector<Module*> modules);
-    
+
     //[/UserMethods]
 
     void paint (Graphics& g) override;
     void resized() override;
     void mouseDoubleClick (const MouseEvent& e) override;
 
-    /** Called when the user presses the return key. */
-    void textEditorReturnKeyPressed (TextEditor&) override;
-    
 
-    
 
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
@@ -94,12 +94,12 @@ private:
 
     std::vector<Module*> modules;
     std::vector<Connection*> connections;
-    
+
     //[/UserVariables]
 
     //==============================================================================
-    ScopedPointer<Label> nameLabel;
     ScopedPointer<TextEditor> nameEditor;
+    ScopedPointer<Label> nameLabel;
 
 
     //==============================================================================

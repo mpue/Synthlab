@@ -32,16 +32,6 @@ Module::Module ()
     //[Constructor_pre] You can add your own custom stuff here..
     //[/Constructor_pre]
 
-    addAndMakeVisible (nameLabel = new Label ("nameLabel",
-                                              TRANS("unnamed")));
-    nameLabel->setFont (Font (15.00f, Font::plain).withTypefaceStyle ("Regular"));
-    nameLabel->setJustificationType (Justification::centredTop);
-    nameLabel->setEditable (false, false, false);
-    nameLabel->setColour (TextEditor::textColourId, Colours::black);
-    nameLabel->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
-
-    nameLabel->setBounds (0, 16, 120, 24);
-
     addAndMakeVisible (nameEditor = new TextEditor ("nameEditor"));
     nameEditor->setMultiLine (false);
     nameEditor->setReturnKeyStartsNewLine (false);
@@ -51,7 +41,17 @@ Module::Module ()
     nameEditor->setPopupMenuEnabled (true);
     nameEditor->setText (String());
 
-    nameEditor->setBounds (0, 8, 150, 24);
+    nameEditor->setBounds (0, 16, 120, 24);
+
+    addAndMakeVisible (nameLabel = new Label ("nameLabel",
+                                              TRANS("unnamed")));
+    nameLabel->setFont (Font (15.00f, Font::plain).withTypefaceStyle ("Regular"));
+    nameLabel->setJustificationType (Justification::centredTop);
+    nameLabel->setEditable (false, false, false);
+    nameLabel->setColour (TextEditor::textColourId, Colours::black);
+    nameLabel->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
+
+    nameLabel->setBounds (0, 16, 120, 24);
 
 
     //[UserPreSize]
@@ -72,8 +72,8 @@ Module::~Module()
     //[Destructor_pre]. You can add your own custom destruction code here..
     //[/Destructor_pre]
 
-    nameLabel = nullptr;
     nameEditor = nullptr;
+    nameLabel = nullptr;
 
 
     //[Destructor]. You can add your own custom destruction code here..
@@ -297,15 +297,15 @@ BEGIN_JUCER_METADATA
     <METHOD name="mouseDoubleClick (const MouseEvent&amp; e)"/>
   </METHODS>
   <BACKGROUND backgroundColour="ff323e44"/>
+  <TEXTEDITOR name="nameEditor" id="c38a5dbf58fc5656" memberName="nameEditor"
+              virtualName="" explicitFocusOrder="0" pos="0 16 120 24" initialText=""
+              multiline="0" retKeyStartsLine="0" readonly="0" scrollbars="0"
+              caret="1" popupmenu="1"/>
   <LABEL name="nameLabel" id="61c171a5486b2448" memberName="nameLabel"
          virtualName="" explicitFocusOrder="0" pos="0 16 120 24" edTextCol="ff000000"
          edBkgCol="0" labelText="unnamed" editableSingleClick="0" editableDoubleClick="0"
          focusDiscardsChanges="0" fontname="Default font" fontsize="15.00000000000000000000"
          kerning="0.00000000000000000000" bold="0" italic="0" justification="12"/>
-  <TEXTEDITOR name="nameEditor" id="c38a5dbf58fc5656" memberName="nameEditor"
-              virtualName="" explicitFocusOrder="0" pos="0 8 150 24" initialText=""
-              multiline="0" retKeyStartsLine="0" readonly="0" scrollbars="0"
-              caret="1" popupmenu="1"/>
 </JUCER_COMPONENT>
 
 END_JUCER_METADATA

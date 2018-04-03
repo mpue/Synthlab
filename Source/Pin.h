@@ -20,10 +20,15 @@ public:
 		OUT
 	};
 
+    static enum Type {
+        AUDIO,
+        EVENT
+    };
+    
     int x;
     int y;
     bool selected;
 	Direction direction;
-
+    Type type;
     
 };

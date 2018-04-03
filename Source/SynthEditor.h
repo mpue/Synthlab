@@ -7,7 +7,7 @@
   the "//[xyz]" and "//[/xyz]" sections will be retained when the file is loaded
   and re-saved.
 
-  Created with Projucer version: 5.3.0
+  Created with Projucer version: 5.2.1
 
   ------------------------------------------------------------------------------
 
@@ -52,13 +52,13 @@ public:
     void deleteSelected();
     bool PointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<int> pt, double epsilon);
     void setTab(TabbedComponent* t);
-    
+
     std::vector<Module*> getModules();
     void setModules(std::vector<Module*> modules);
-    
+
     std::vector<Connection*> getConnections();
     void setConnections(std::vector<Connection*> connections);
-    
+
     //[/UserMethods]
 
     void paint (Graphics& g) override;
