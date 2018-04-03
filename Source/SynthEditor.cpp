@@ -53,15 +53,18 @@ SynthEditor::~SynthEditor()
     //[Destructor_pre]. You can add your own custom destruction code here..
     //[/Destructor_pre]
 
-	for (std::vector<Module*>::iterator it = modules.begin(); it != modules.end(); ++it) {
-		delete *it;
-	}
-	for (std::vector<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it) {
-		delete *it;
-	}
 
 
     //[Destructor]. You can add your own custom destruction code here..
+
+	for (std::vector<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it) {
+		delete *it;
+	}
+	for (std::vector<Module*>::iterator it = modules.begin(); it != modules.end(); ++it) {
+		delete *it;
+	}
+
+	
     //[/Destructor]
 }
 
@@ -167,9 +170,9 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 
 
 	if (e.mods.isLeftButtonDown()) {
-		
+
 		isLeftMouseDown = true;
-		
+
 		minrepaintx = e.getPosition().x;
 		minrepainty = e.getPosition().y;
 
@@ -205,7 +208,7 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 		}
 	}
 	else if (e.mods.isRightButtonDown()) {
-	
+
 		PopupMenu m;
 
 		Module* module = nullptr;
@@ -215,7 +218,7 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 				module = modules.at(i);
 			}
 		}
-		
+
 		if (module != nullptr) {
 			m.addItem(1, "Add input");
 			m.addItem(2, "Add output");
@@ -247,9 +250,9 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 			}
 			else if (result == 1)
 			{
-		
+
 				Module* m3 = new Module("Macro");
-				
+
 				m3->setTopLeftPosition(500, 100);
 				m3->setIndex(Time::currentTimeMillis());
 
@@ -259,11 +262,11 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 			}
 			else if (result == 2)
 			{
-		
+
 			}
 		}
 
-	
+
 	}
 
 
@@ -372,6 +375,22 @@ void SynthEditor::mouseUp (const MouseEvent& e)
 	lineStopY = 0;
 
     //[/UserCode_mouseUp]
+}
+
+void SynthEditor::mouseDoubleClick (const MouseEvent& e)
+{
+    //[UserCode_mouseDoubleClick] -- Add your code here...
+	for (int i = 0; i < modules.size(); i++) {
+
+		Module* m = modules.at(i);
+
+		if (m->isSelected()) {
+			m->setEditing(true);
+			break;
+		}
+
+	}
+    //[/UserCode_mouseDoubleClick]
 }
 
 bool SynthEditor::keyPressed (const KeyPress& key)
@@ -508,9 +527,9 @@ bool SynthEditor::PointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<int> 
 BEGIN_JUCER_METADATA
 
 <JUCER_COMPONENT documentType="Component" className="SynthEditor" componentName=""
-                 parentClasses="public Component, public KeyListener" constructorParams=""
-                 variableInitialisers="" snapPixels="8" snapActive="1" snapShown="1"
-                 overlayOpacity="0.330" fixedSize="0" initialWidth="1280" initialHeight="800">
+                 parentClasses="public Component" constructorParams="" variableInitialisers=""
+                 snapPixels="8" snapActive="1" snapShown="1" overlayOpacity="0.330"
+                 fixedSize="0" initialWidth="1280" initialHeight="800">
   <METHODS>
     <METHOD name="mouseDrag (const MouseEvent&amp; e)"/>
     <METHOD name="mouseDown (const MouseEvent&amp; e)"/>
@@ -519,6 +538,7 @@ BEGIN_JUCER_METADATA
     <METHOD name="modifierKeysChanged (const ModifierKeys&amp; modifiers)"/>
     <METHOD name="mouseMove (const MouseEvent&amp; e)"/>
     <METHOD name="keyStateChanged (bool isKeyDown)"/>
+    <METHOD name="mouseDoubleClick (const MouseEvent&amp; e)"/>
   </METHODS>
   <BACKGROUND backgroundColour="ff323e44"/>
 </JUCER_COMPONENT>

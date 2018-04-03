@@ -7,7 +7,7 @@
   the "//[xyz]" and "//[/xyz]" sections will be retained when the file is loaded
   and re-saved.
 
-  Created with Projucer version: 5.2.1
+  Created with Projucer version: 5.3.0
 
   ------------------------------------------------------------------------------
 
@@ -54,7 +54,7 @@ public:
     std::vector<Pin*> pins;
 
 	bool isMouseOverPin(int pin, Point<int> pos);
-    
+
 	Point<int> getPinPosition(int i);
 
     void setSelected(bool selected);
@@ -63,10 +63,14 @@ public:
 	long getIndex();
 	void setIndex(long index);
 
+	void setEditing(bool editing);
+
     //[/UserMethods]
 
     void paint (Graphics& g) override;
     void resized() override;
+    void mouseDoubleClick (const MouseEvent& e) override;
+
 
 
 private:
@@ -79,6 +83,8 @@ private:
     //[/UserVariables]
 
     //==============================================================================
+    ScopedPointer<Label> nameLabel;
+    ScopedPointer<TextEditor> nameEditor;
 
 
     //==============================================================================
