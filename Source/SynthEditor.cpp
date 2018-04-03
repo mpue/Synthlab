@@ -219,6 +219,7 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 		if (module != nullptr) {
 			m.addItem(1, "Add input");
 			m.addItem(2, "Add output");
+            
 
 			const int result = m.show();
 
@@ -553,7 +554,7 @@ bool SynthEditor::keyPressed (const KeyPress& key)
 {
     //[UserCode_keyPressed] -- Add your code here...
 
-	if (key.getKeyCode() == KeyPress::deleteKey) {
+    if (key.getKeyCode() == KeyPress::deleteKey || key.getKeyCode() == KeyPress::backspaceKey) {
         deleteSelected();
 		repaint();
 	}
