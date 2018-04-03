@@ -111,10 +111,38 @@ void SynthEditor::paint (Graphics& g)
 
 	}
 
+
+
 	for (int i = 0; i < connections.size(); i++) {
 		Connection* c = connections.at(i);
 
-		g.drawLine(c->source->getX() + c->a->x , c->source->getY() + c->a->y + 5, c->target->getX() + c->b->x , c->target->getY() + c->b->y + 5);
+		Path p = Path();
+
+		// p.addLineSegment(Line<float>(c->source->getX() + c->a->x, c->source->getY() + c->a->y + 5, c->target->getX() + c->b->x, c->target->getY() + c->b->y + 5),1.0f);
+		
+		int x1 = c->source->getX() + c->a->x;
+		int y1 = c->source->getY() + c->a->y + 5;
+		int x2 = c->target->getX() + c->b->x;
+		int y2 = c->target->getY() + c->b->y + 5;
+		
+		p.addLineSegment(Line<float>(x1, y1, x2, y2), 1.0f);
+		
+		int xm = (x1 + x2) / 2;
+		int ym = (y1 + y2) / 2 + 2 ;
+
+		p.cubicTo(Point<float>(x1,y1), Point<float>(xm,ym),Point<float>(x2,y2));
+		
+		/*
+		PathStrokeType(50.0, juce::PathStrokeType::JointStyle::curved,
+			juce::PathStrokeType::EndCapStyle::rounded)
+			.createStrokedPath(p, p);
+	*/
+
+		g.strokePath(p,PathStrokeType(1));
+	
+		
+
+		//g.drawLine(c->source->getX() + c->a->x , c->source->getY() + c->a->y + 5, c->target->getX() + c->b->x , c->target->getY() + c->b->y + 5);
 
 	}
 
