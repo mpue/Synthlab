@@ -7,7 +7,7 @@
   the "//[xyz]" and "//[/xyz]" sections will be retained when the file is loaded
   and re-saved.
 
-  Created with Projucer version: 5.2.1
+  Created with Projucer version: 5.3.0
 
   ------------------------------------------------------------------------------
 
@@ -60,6 +60,7 @@ public:
     void mouseDrag (const MouseEvent& e) override;
     void mouseUp (const MouseEvent& e) override;
     bool keyPressed (const KeyPress& key) override;
+    bool keyStateChanged (bool isKeyDown) override;
     void modifierKeysChanged (const ModifierKeys& modifiers) override;
 
 

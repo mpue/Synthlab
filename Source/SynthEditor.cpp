@@ -7,7 +7,7 @@
   the "//[xyz]" and "//[/xyz]" sections will be retained when the file is loaded
   and re-saved.
 
-  Created with Projucer version: 5.2.1
+  Created with Projucer version: 5.3.0
 
   ------------------------------------------------------------------------------
 
@@ -21,7 +21,7 @@
 //[/Headers]
 
 #include "SynthEditor.h"
-#include <algorithm>
+
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 //[/MiscUserDefs]
@@ -76,8 +76,8 @@ SynthEditor::SynthEditor ()
 	modules.push_back(m3);
 
 	setRepaintsOnMouseActivity(true);
-
-
+	setMouseClickGrabsKeyboardFocus(true);
+	setWantsKeyboardFocus(true);
     //[/Constructor]
 }
 
@@ -107,7 +107,7 @@ void SynthEditor::paint (Graphics& g)
 	if (isLeftMouseDown) {
 
 		if (lineStopX > 0 && lineStopY > 0) {
-			g.drawLine(lineStartX, lineStartY, lineStopX, lineStopY);		
+			g.drawLine(lineStartX, lineStartY, lineStopX, lineStopY);
 		}
 
 	}
@@ -125,24 +125,24 @@ void SynthEditor::paint (Graphics& g)
 		Path p = Path();
 
 		// p.addLineSegment(Line<float>(c->source->getX() + c->a->x, c->source->getY() + c->a->y + 5, c->target->getX() + c->b->x, c->target->getY() + c->b->y + 5),1.0f);
-		
-		
+
+
 		p.addLineSegment(Line<float>(x1, y1, x2, y2), 1.0f);
-		
+
 		int xm = (x1 + x2) / 2;
 		int ym = (y1 + y2) / 2 + 2 ;
 
 		p.cubicTo(Point<float>(x1,y1), Point<float>(xm,ym),Point<float>(x2,y2));
-		
-		
+
+
 		PathStrokeType(50.0, juce::PathStrokeType::JointStyle::curved,
 			juce::PathStrokeType::EndCapStyle::rounded)
 			.createStrokedPath(p, p);
 
 
 		g.strokePath(p,PathStrokeType(1));
-	
-		*/	
+
+		*/
 
 
 		if (c->selected) {
@@ -179,10 +179,10 @@ void SynthEditor::mouseMove (const MouseEvent& e)
 		checkForPinSelection(e, m);
 
 	}
-	
+
 	mouseX = e.getPosition().getX();
 	mouseY = e.getPosition().getY();
-	
+
     //[/UserCode_mouseMove]
 }
 
@@ -196,9 +196,9 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 		minrepainty = e.getPosition().y;
 	}
 
-    
+
     for (int i = 0; i < modules.size(); i++) {
-        
+
         if (modules.at(i)->getBounds().contains(e.x,e.y)) {
             modules.at(i)->setSelected(true);
 			dragStartX = modules.at(i)->getX();
@@ -208,8 +208,8 @@ void SynthEditor::mouseDown (const MouseEvent& e)
         else {
             modules.at(i)->setSelected(false);
         }
-            
-        
+
+
     }
 
 	for (int i = 0; i < connections.size(); i++) {
@@ -220,7 +220,7 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 		int x2 = c->target->getX() + c->b->x;
 		int y2 = c->target->getY() + c->b->y + 5;
 
-		if (PointOnLineSegment(Point<int>(x1, y1), Point<int>(x2, y2), Point<int>(mouseX, mouseY), 0.001)) {
+		if (PointOnLineSegment(Point<int>(x1, y1), Point<int>(x2, y2), Point<int>(mouseX, mouseY), 1)) {
 			c->selected = true;
 		}
 		else {
@@ -237,7 +237,7 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
 {
     //[UserCode_mouseDrag] -- Add your code here...
 
-	
+
 
 	lineStartX = e.getMouseDownPosition().x;
 	lineStartY = e.getMouseDownPosition().y;
@@ -336,7 +336,9 @@ void SynthEditor::mouseUp (const MouseEvent& e)
 
 bool SynthEditor::keyPressed (const KeyPress& key)
 {
-	if (key == KeyPress::deleteKey) {
+    //[UserCode_keyPressed] -- Add your code here...
+
+	if (key.getKeyCode() == KeyPress::deleteKey) {
 		for (int i = 0; i < connections.size(); i++) {
 			Connection* c = connections.at(i);
 			if (c->selected) {
@@ -345,12 +347,17 @@ bool SynthEditor::keyPressed (const KeyPress& key)
 			}
 		}
 		repaint();
-		return true;
 	}
 
-    //[UserCode_keyPressed] -- Add your code here...
-    return false;  // Return true if your handler uses this key event, or false to allow it to be passed-on.
+    return true;  // Return true if your handler uses this key event, or false to allow it to be passed-on.
     //[/UserCode_keyPressed]
+}
+
+bool SynthEditor::keyStateChanged (bool isKeyDown)
+{
+    //[UserCode_keyStateChanged] -- Add your code here...
+    return false;  // Return true if your handler uses this key event, or false to allow it to be passed-on.
+    //[/UserCode_keyStateChanged]
 }
 
 void SynthEditor::modifierKeysChanged (const ModifierKeys& modifiers)
@@ -470,9 +477,9 @@ bool SynthEditor::PointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<int> 
 BEGIN_JUCER_METADATA
 
 <JUCER_COMPONENT documentType="Component" className="SynthEditor" componentName=""
-                 parentClasses="public Component" constructorParams="" variableInitialisers=""
-                 snapPixels="8" snapActive="1" snapShown="1" overlayOpacity="0.330"
-                 fixedSize="0" initialWidth="1280" initialHeight="800">
+                 parentClasses="public Component, public KeyListener" constructorParams=""
+                 variableInitialisers="" snapPixels="8" snapActive="1" snapShown="1"
+                 overlayOpacity="0.330" fixedSize="0" initialWidth="1280" initialHeight="800">
   <METHODS>
     <METHOD name="mouseDrag (const MouseEvent&amp; e)"/>
     <METHOD name="mouseDown (const MouseEvent&amp; e)"/>
@@ -480,6 +487,7 @@ BEGIN_JUCER_METADATA
     <METHOD name="keyPressed (const KeyPress&amp; key)"/>
     <METHOD name="modifierKeysChanged (const ModifierKeys&amp; modifiers)"/>
     <METHOD name="mouseMove (const MouseEvent&amp; e)"/>
+    <METHOD name="keyStateChanged (bool isKeyDown)"/>
   </METHODS>
   <BACKGROUND backgroundColour="ff323e44"/>
 </JUCER_COMPONENT>
@@ -491,4 +499,3 @@ END_JUCER_METADATA
 
 //[EndFile] You can add extra defines here...
 //[/EndFile]
-

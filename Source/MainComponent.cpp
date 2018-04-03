@@ -18,6 +18,7 @@ MainComponent::MainComponent()
     // specify the number of input and output channels that we want to open
     setAudioChannels (2, 2);
     
+	
     addAndMakeVisible(new SynthEditor());
     
     
