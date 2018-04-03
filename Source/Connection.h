@@ -18,9 +18,9 @@ public:
 	Connection();
 	Connection(Module* source, Pin* output,	Module* target, Pin* input);
 	~Connection();
-	Module* source;
+	Module* source = nullptr;
 	Pin* a;
-	Module* target;
+	Module* target = nullptr;
 	Pin* b;
 	bool selected = false;
 

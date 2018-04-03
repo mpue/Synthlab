@@ -85,10 +85,7 @@ void SynthEditor::paint (Graphics& g)
 		if (lineStopX > 0 && lineStopY > 0) {
 			g.drawLine(lineStartX, lineStartY, lineStopX, lineStopY);
 		}
-
 	}
-
-
 
 	for (int i = 0; i < connections.size(); i++) {
 		Connection* c = connections.at(i);
@@ -405,6 +402,35 @@ bool SynthEditor::keyPressed (const KeyPress& key)
 				connections.erase(connections.begin() + i);
 			}
 		}
+        
+        for (int i = 0; i < modules.size(); i++) {
+            
+            Module* m = modules.at(i);
+            
+            for (std::vector<Connection*>::iterator it = connections.begin(); it != connections.end() ; ++it) {
+                
+                if ((*it) != NULL && (*it) != nullptr) {
+                    if ((*it)->source == m || (*it)->target == m) {
+                        connections.erase(it);
+                        
+                        if (connections.size() == 0) {
+                            break;
+                        }
+                    }
+                }
+            
+
+            }
+
+            if (m->isSelected()) {
+                delete m;
+                modules.erase(modules.begin() + i);
+            }
+        }
+        
+
+        
+        
 		repaint();
 	}
 
