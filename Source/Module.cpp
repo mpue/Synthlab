@@ -177,6 +177,10 @@ void Module::setEditing(bool editing) {
 	}
 }
 
+void Module::addPin(Pin* p) {
+    pins.push_back(p);
+}
+
 void Module::addPin(Pin::Direction direction) {
 
     Pin* p = new Pin();
@@ -218,6 +222,10 @@ Pin* Module::getSelectedPin() {
 	}
 
     return nullptr;
+}
+
+std::vector<Pin*> Module::getPins() {
+    return pins;
 }
 
 void Module::setSelected(bool selected) {

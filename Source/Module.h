@@ -51,7 +51,7 @@ public:
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
     void addPin(Pin::Direction direction);
-
+    void addPin(Pin* p);
 	Module(String name);
 
     Pin* getSelectedPin();
@@ -71,6 +71,7 @@ public:
 
     std::vector<Connection*> getConnections();
     std::vector<Module*> getModules();
+    std::vector<Pin*> getPins();
 
     void setConnections(std::vector<Connection*> connections);
 

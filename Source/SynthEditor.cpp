@@ -279,8 +279,11 @@ void SynthEditor::mouseDown (const MouseEvent& e)
                         
                         for (std::vector<Pin*>::iterator it2 =  (*it)->pins.begin(); it2 != (*it)->pins.end(); ++it2) {
                             ValueTree pin = ValueTree("Pin");
-                            pin.setProperty("type", (*it2)->type, nil);
-                            pin.setProperty("direction", (*it2)->direction, nil);
+                            pin.setProperty("type", (*it2)->type, nullptr);
+                            pin.setProperty("direction", (*it2)->direction, nullptr);
+                            pin.setProperty("index", String(((*it2)->index)), nullptr);
+                            pin.setProperty("x", (*it2)->x, nullptr);
+                            pin.setProperty("y", (*it2)->y, nullptr);
                             pins.addChild(pin,-1,nil);
                         }
                         
@@ -296,7 +299,8 @@ void SynthEditor::mouseDown (const MouseEvent& e)
                         ValueTree con = ValueTree("Connection");
                         con.setProperty("source", String((*it)->source->getIndex()), nullptr);
                         con.setProperty("target", String((*it)->target->getIndex()), nullptr);
-                        
+                        con.setProperty("a", String((*it)->a->index), nullptr);
+                        con.setProperty("b", String((*it)->b->index), nullptr);
                         cons.addChild(con,-1, nullptr);
                     }
                     
@@ -339,12 +343,18 @@ void SynthEditor::mouseDown (const MouseEvent& e)
                             
                             int type = pin.getProperty("type").toString().getIntValue();
                             int direction = pin.getProperty("direction").toString().getIntValue();
-
+                            long index = pin.getProperty("index").toString().getLargeIntValue();
+                            int x = pin.getProperty("x").toString().getIntValue();
+                            int y = pin.getProperty("y").toString().getIntValue();
+                            
                             Pin::Direction dir = static_cast<Pin::Direction>(direction);
                             p->direction = dir;
                             Pin::Type t = static_cast<Pin::Type>(type);
                             p->type = t;
-                            m->addPin(p->direction);
+                            p->index = index;
+                            p->x = x;
+                            p->y = y;
+                            m->addPin(p);
                         }
                         
                         modules.push_back(m);
@@ -352,16 +362,47 @@ void SynthEditor::mouseDown (const MouseEvent& e)
                         
                     }
                     
-                    ValueTree cons = v.getChildWithName("Connection");
+                    ValueTree cons = v.getChildWithName("Connections");
                     
                     for (int i = 0; i < cons.getNumChildren();i++) {
-                        ValueTree com = cons.getChild(i);
+                        ValueTree con = cons.getChild(i);
                         
                         Connection* c = new Connection();
+                        long sourceIndex = con.getProperty("source").toString().getLargeIntValue();
+                        long targetIndex = con.getProperty("target").toString().getLargeIntValue();
+                        long a = con.getProperty("a").toString().getLargeIntValue();
+                        long b = con.getProperty("b").toString().getLargeIntValue();
+                        
+                        for (int j = 0; j < modules.size(); j++) {
+                            
+                            Module* m = modules.at(j);
+                       
+                            if (m->getIndex() == sourceIndex) {
+                                c->source = m;
+                            }
+                            if (m->getIndex() == targetIndex) {
+                                c->target = m;
+                            }
+
+                            for (int k = 0; k < m->getPins().size();k++) {
+                                if (m->getPins().at(k)->index == a) {
+                                    c->a = m->getPins().at(k);
+                                }
+                                if (m->getPins().at(k)->index == b) {
+                                    c->b = m->getPins().at(k);
+                                }
+                            }
+                            
+                            
+                            
+                        }
+                        
+                        connections.push_back(c);
+                        
                 
                     }
                 
-                    repaint();
+                    //repaint();
                 }
             }
 		}

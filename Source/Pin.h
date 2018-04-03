@@ -26,7 +26,7 @@ public:
     };
     
     int x;
-    int index;
+    long index;
     int y;
     bool selected;
 	Direction direction;
