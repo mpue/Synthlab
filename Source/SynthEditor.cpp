@@ -416,25 +416,14 @@ void SynthEditor::checkForPinSelection(const MouseEvent& e, Module* m) {
 	for (int j = 0; j < m->pins.size(); j++) {
 
 		if (m->isMouseOverPin(j, e.getPosition())) {
-			m->pins.at(j).selected = true;
+			m->pins.at(j)->selected = true;
 		}
 		else {
-			m->pins.at(j).selected = false;
+			m->pins.at(j)->selected = false;
 		}
 
 	}
 
-	for (int j = 0; j < m->outputs.size(); j++) {
-
-		if (m->isMouseOverPin(j, e.getPosition())) {
-			m->outputs.at(j).selected = true;
-		}
-		else {
-			m->outputs.at(j).selected = false;
-
-		}
-
-	}
 
 	m->repaint();
 
@@ -449,8 +438,8 @@ void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
 	// find the selected input of the source module
 	for (int j = 0; j < source->pins.size(); j++) {
 
-		if (source->pins.at(j).selected) {
-			a = &source->pins.at(j);
+		if (source->pins.at(j)->selected) {
+			a = source->pins.at(j);
 			break;
 		}
 
@@ -468,8 +457,8 @@ void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
 		// find the selected input of the target  module
 		for (int j = 0; j < m->pins.size(); j++) {
 
-			if (m->pins.at(j).selected) {
-				b = &m->pins.at(j);
+			if (m->pins.at(j)->selected) {
+				b = m->pins.at(j);
 				target = m;
 				break;
 			}

@@ -51,7 +51,13 @@ Module::~Module()
 
 
     //[Destructor]. You can add your own custom destruction code here..
+    for (std::vector<Pin*>::iterator it = pins.begin(); it != pins.end(); ++it) {
+        delete *it;
+    }
+    
     //[/Destructor]
+    
+    
 }
 
 //==============================================================================
@@ -79,18 +85,18 @@ void Module::paint (Graphics& g)
 
     for (int i = 0; i < pins.size();i++) {
 
-        if (pins.at(i).selected) {
+        if (pins.at(i)->selected) {
             g.setColour(juce::Colours::red);
         }
         else {
             g.setColour(juce::Colours::black);
         }
 
-		if (pins.at(i).direction == Pin::Direction::IN) {
-			g.fillRect(pins.at(i).x,pins.at(i).y, 5, 10);
+		if (pins.at(i)->direction == Pin::Direction::IN) {
+			g.fillRect(pins.at(i)->x,pins.at(i)->y, 5, 10);
 		}
 		else {
-			g.fillRect(pins.at(i).x + 5, pins.at(i).y, 5, 10);
+			g.fillRect(pins.at(i)->x + 5, pins.at(i)->y, 5, 10);
 		}
     }
 
@@ -114,13 +120,13 @@ void Module::resized()
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 void Module::addPin(Pin::Direction direction) {
 
-    Pin p;
+    Pin* p = new Pin();
 
 	int numInputs = 0;
 	int numOutputs = 0;
 
 	for (int i = 0; i < pins.size(); i++) {
-		if (pins.at(i).direction == Pin::Direction::IN) {
+		if (pins.at(i)->direction == Pin::Direction::IN) {
 			numInputs++;
 		}
 		else {
@@ -129,15 +135,15 @@ void Module::addPin(Pin::Direction direction) {
 	}
 
 	if (direction == Pin::Direction::IN) {
-		p.x = 0;
-	    p.y = 10 + numInputs * 20;
+		p->x = 0;
+	    p->y = 10 + numInputs * 20;
 	}
 	else {
-		p.x = getWidth() - 10;
-		p.y = 10 + numOutputs * 20;
+		p->x = getWidth() - 10;
+		p->y = 10 + numOutputs * 20;
 	}
 
-	p.direction = direction;
+	p->direction = direction;
 
     pins.push_back(p);
 }
@@ -146,8 +152,8 @@ void Module::addPin(Pin::Direction direction) {
 Pin* Module::getSelectedPin() {
 
 	for (int i = 0; i < pins.size(); i++) {
-		if (pins.at(i).selected) {
-			return &pins.at(i);
+		if (pins.at(i)->selected) {
+			return pins.at(i);
 		}
 	}
 
@@ -164,8 +170,8 @@ bool Module::isSelected() {
 
 bool Module::isMouseOverPin(int pin, Point<int> pos) {
 
-	if (pos.x >= pins.at(pin).x + getX() && pos.x <= pins.at(pin).x + getX() + 10 &&
-		pos.y >= pins.at(pin).y+ getY() &&  pos.y <= pins.at(pin).y + getY() + 10) {
+	if (pos.x >= pins.at(pin)->x + getX() && pos.x <= pins.at(pin)->x + getX() + 10 &&
+        pos.y >= pins.at(pin)->y+ getY() &&  pos.y <= pins.at(pin)->y + getY() + 10) {
 		return true;
 	}
 
@@ -175,7 +181,7 @@ bool Module::isMouseOverPin(int pin, Point<int> pos) {
 
 
 Point<int> Module::getPinPosition(int i) {
-	return Point<int>(pins.at(i).x + getX(), pins.at(i).x + getX());
+	return Point<int>(pins.at(i)->x + getX(), pins.at(i)->x + getX());
 }
 
 
