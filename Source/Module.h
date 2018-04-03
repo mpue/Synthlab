@@ -7,7 +7,7 @@
   the "//[xyz]" and "//[/xyz]" sections will be retained when the file is loaded
   and re-saved.
 
-  Created with Projucer version: 5.3.0
+  Created with Projucer version: 5.2.1
 
   ------------------------------------------------------------------------------
 
@@ -36,7 +36,8 @@
     Describe your class and how it works here!
                                                                     //[/Comments]
 */
-class Module  : public Component
+class Module  : public Component,
+                public TextEditor::Listener
 {
 public:
     //==============================================================================
@@ -71,7 +72,11 @@ public:
     void resized() override;
     void mouseDoubleClick (const MouseEvent& e) override;
 
+    /** Called when the user presses the return key. */
+    void textEditorReturnKeyPressed (TextEditor&) override;
+    
 
+    
 
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.

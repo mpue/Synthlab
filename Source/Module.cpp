@@ -7,7 +7,7 @@
   the "//[xyz]" and "//[/xyz]" sections will be retained when the file is loaded
   and re-saved.
 
-  Created with Projucer version: 5.3.0
+  Created with Projucer version: 5.2.1
 
   ------------------------------------------------------------------------------
 
@@ -63,6 +63,7 @@ Module::Module ()
     //[Constructor] You can add your own custom stuff here..
     setInterceptsMouseClicks(false, false);
 	nameEditor->setVisible(false);
+    nameEditor->addListener(this);
     //[/Constructor]
 }
 
@@ -162,11 +163,17 @@ void Module::setEditing(bool editing) {
 		nameLabel->setVisible(false);
 		nameEditor->setVisible(true);
 		nameEditor->setText(getName());
+        setInterceptsMouseClicks(false,true);
+        nameEditor->setWantsKeyboardFocus(true);
+
 	}
 	else {
 		setName(nameEditor->getText());
+        nameLabel->setText(getName(), NotificationType::dontSendNotification);
 		nameLabel->setVisible(true);
 		nameEditor->setVisible(false);
+        setInterceptsMouseClicks(false,false);
+        nameEditor->setWantsKeyboardFocus(false);
 	}
 }
 
@@ -247,6 +254,10 @@ void Module::setIndex(long index) {
 	this->index = index;
 }
 
+void Module::textEditorReturnKeyPressed(juce::TextEditor &) {
+    setEditing(false);
+}
+
 //[/MiscUserCode]
 
 
@@ -260,9 +271,10 @@ void Module::setIndex(long index) {
 BEGIN_JUCER_METADATA
 
 <JUCER_COMPONENT documentType="Component" className="Module" componentName=""
-                 parentClasses="public Component" constructorParams="" variableInitialisers=""
-                 snapPixels="8" snapActive="1" snapShown="1" overlayOpacity="0.330"
-                 fixedSize="0" initialWidth="120" initialHeight="140">
+                 parentClasses="public Component, public TextEditor::Listener"
+                 constructorParams="" variableInitialisers="" snapPixels="8" snapActive="1"
+                 snapShown="1" overlayOpacity="0.330" fixedSize="0" initialWidth="120"
+                 initialHeight="140">
   <METHODS>
     <METHOD name="mouseDoubleClick (const MouseEvent&amp; e)"/>
   </METHODS>
