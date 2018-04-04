@@ -30,10 +30,10 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     
     propertyView =  new PropertyView();
     
+    editor->addChangeListener(propertyView);
+    
     addAndMakeVisible (propertyView);
-    
     addAndMakeVisible (resizerBar);
-    
     addAndMakeVisible (tab);
     
     // we have to set up our StretchableLayoutManager so it know the limits and preferred sizes of it's contents
@@ -56,6 +56,7 @@ MainComponent::~MainComponent()
 {
     // This shuts down the audio device and clears the audio source.
     shutdownAudio();
+    editor->removeAllChangeListeners();
 	delete editor;
     delete tab;
     delete propertyView;

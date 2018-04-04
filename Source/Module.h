@@ -74,10 +74,10 @@ public:
     std::vector<Pin*> getPins();
 
     void setConnections(std::vector<Connection*>* connections);
-
     void textEditorReturnKeyPressed(juce::TextEditor &) override;
     void setModules(std::vector<Module*>* modules);
-
+    void setName(String name) ;
+    
     //[/UserMethods]
 
     void paint (Graphics& g) override;

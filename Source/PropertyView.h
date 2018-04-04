@@ -34,7 +34,8 @@
     Describe your class and how it works here!
                                                                     //[/Comments]
 */
-class PropertyView  : public Component
+class PropertyView  : public Component,
+                      public ChangeListener
 {
 public:
     //==============================================================================
@@ -43,6 +44,9 @@ public:
 
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
+
+    void changeListenerCallback (ChangeBroadcaster* source) override;
+
     //[/UserMethods]
 
     void paint (Graphics& g) override;
@@ -52,6 +56,31 @@ public:
 
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
+
+    struct NameListener : Value::Listener
+    {
+        NameListener (Value& v, PropertyView* view) : value (v), view(view){ value.addListener (this); }
+        ~NameListener()  {}  // no need to remove the listener
+
+        void valueChanged (Value& value) override {
+            view->currentEditor->getSelectedModule()->setName(value.toString());
+        }
+        PropertyView* view;
+        Value value;
+    };
+    
+    String name;
+
+    SynthEditor* currentEditor;
+    PropertyPanel* propertyPanel;
+    Value* nameValue;
+    Value* numInputsValue;
+    Value* numOutputsValue;
+    NameListener* nameListener;
+    juce::Array<PropertyComponent*> properties;
+    PropertyComponent* nameProp;
+    PropertyComponent* inputsProp;
+
     //[/UserVariables]
 
     //==============================================================================

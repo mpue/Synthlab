@@ -24,6 +24,5 @@ public:
 	Module* target = nullptr;
 	Pin* b;
 	bool selected = false;
-
 };
 

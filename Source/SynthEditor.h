@@ -37,7 +37,8 @@
     Describe your class and how it works here!
                                                                     //[/Comments]
 */
-class SynthEditor  : public Component
+class SynthEditor  : public Component,
+                     public ChangeBroadcaster
 {
 public:
     //==============================================================================
@@ -55,14 +56,16 @@ public:
 
     void setModule(Module * m);
     Module* getModule();
-    
+
     void cleanUp();
     void newFile();
     void saveFile();
     void openFile();
-    
+
     void saveStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections, ValueTree* v);
     void loadStructure(std::vector<Module *>* modules, std::vector<Connection*>* connections,ValueTree* v);
+
+    Module* getSelectedModule();    
     
     //[/UserMethods]
 

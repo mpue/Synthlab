@@ -304,6 +304,10 @@ std::vector<Module*>* Module::getModules() {
     return modules;
 }
 
+void Module::setName(juce::String name) {
+    Component::setName(name);
+    nameLabel->setText(getName(), NotificationType::dontSendNotification);
+}
 
 
 //[/MiscUserCode]
