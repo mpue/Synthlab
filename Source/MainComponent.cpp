@@ -8,6 +8,7 @@
 
 #include "MainComponent.h"
 #include "SynthEditor.h"
+#include "MainTabbedComponent.h"
 //==============================================================================
 MainComponent::MainComponent()
 {
@@ -20,11 +21,12 @@ MainComponent::MainComponent()
 
     editor = new SynthEditor();
     
-    tab = new TabbedComponent(TabbedButtonBar::Orientation::TabsAtTop);    
+    tab = new MainTabbedComponent();    
     tab->setBounds(0,0,getWidth(),getHeight());
     tab->addTab("Main", juce::Colours::grey, editor, true);
     
     editor->setTab(tab);
+    
     
         
     
