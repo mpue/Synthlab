@@ -61,8 +61,10 @@ SynthEditor::~SynthEditor()
 
     cleanUp();
 
+    /*
     if (root)
         delete root;
+    */
     
     //[/Destructor]
 }

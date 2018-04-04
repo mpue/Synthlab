@@ -26,6 +26,7 @@ MainComponent::MainComponent()
     
     editor->setTab(tab);
     
+        
     
     
     
