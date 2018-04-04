@@ -41,6 +41,7 @@
 		A9E35193DD2EC8FBBD34471E = {isa = PBXBuildFile; fileRef = 4320085596F548776FD6DCEC; };
 		B737CE5B3A4E6B234A35473E = {isa = PBXBuildFile; fileRef = B13D998212CBEAFFD86785EA; };
 		78E22F7789526644E90535A5 = {isa = PBXBuildFile; fileRef = A3DC3980576B82E0C6D0DD6A; };
+		4D453AB22B2AA699455F363A = {isa = PBXBuildFile; fileRef = BA501B2DEBA61FBB6E1353F7; };
 		085BCA932F6C94D0610CA598 = {isa = PBXBuildFile; fileRef = 60906077CE461C818E1ABB90; };
 		7E01A3C5A0B48CBD47116265 = {isa = PBXBuildFile; fileRef = 7F0451FF5AC492701786CEFC; };
 		EFDF67705A4FC60D687E758A = {isa = PBXBuildFile; fileRef = DFA455CA82A89413C0F2D209; };
@@ -69,6 +70,7 @@
 		04565D44BC47ECEB294AC3F3 = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Sine.h; path = ../../Source/AudioEngine/Sine.h; sourceTree = "SOURCE_ROOT"; };
 		04C0A3D7597D64FCEB2279AD = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DiscRecording.framework; path = System/Library/Frameworks/DiscRecording.framework; sourceTree = SDKROOT; };
 		05930DF7324E552B076C0742 = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVFoundation.framework; path = System/Library/Frameworks/AVFoundation.framework; sourceTree = SDKROOT; };
+		083C95C4798EE4DFB39ACEEF = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = MidiGate.h; path = ../../Source/MidiGate.h; sourceTree = "SOURCE_ROOT"; };
 		0FC63CA611A0EE6498BD0739 = {isa = PBXFileReference; lastKnownFileType = file; name = "juce_audio_basics"; path = "../../../JUCE/modules/juce_audio_basics"; sourceTree = "SOURCE_ROOT"; };
 		10C3C9A1DC533DC0366C19B8 = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Filter.cpp; path = ../../Source/AudioEngine/Filter.cpp; sourceTree = "SOURCE_ROOT"; };
 		1270312A05773539478A10B4 = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Pin.h; path = ../../Source/Pin.h; sourceTree = "SOURCE_ROOT"; };
@@ -145,6 +147,7 @@
 		B13D998212CBEAFFD86785EA = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Voice.cpp; path = ../../Source/AudioEngine/Voice.cpp; sourceTree = "SOURCE_ROOT"; };
 		B287A1B7A5D05E5358913C3A = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Note.h; path = ../../Source/AudioEngine/Note.h; sourceTree = "SOURCE_ROOT"; };
 		B958C14CA6B0131146DAD7F3 = {isa = PBXFileReference; lastKnownFileType = file; name = "juce_data_structures"; path = "../../../JUCE/modules/juce_data_structures"; sourceTree = "SOURCE_ROOT"; };
+		BA501B2DEBA61FBB6E1353F7 = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = MidiGate.cpp; path = ../../Source/MidiGate.cpp; sourceTree = "SOURCE_ROOT"; };
 		BEABC88233780CFF0A5FF493 = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Sawtooth.h; path = ../../Source/AudioEngine/Sawtooth.h; sourceTree = "SOURCE_ROOT"; };
 		C1CAD9D57965D31D94D63403 = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = "include_juce_audio_formats.mm"; path = "../../JuceLibraryCode/include_juce_audio_formats.mm"; sourceTree = "SOURCE_ROOT"; };
 		C6B977942D525818B775A722 = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = "include_juce_audio_devices.mm"; path = "../../JuceLibraryCode/include_juce_audio_devices.mm"; sourceTree = "SOURCE_ROOT"; };
@@ -209,7 +212,11 @@
 					C7DC055B8C128E93B44B640F,
 					A3DC3980576B82E0C6D0DD6A,
 					A485FF22BED02497474E3555, ); name = AudioEngine; sourceTree = "<group>"; };
+		2751412A34A4C2F2F5E4D649 = {isa = PBXGroup; children = (
+					BA501B2DEBA61FBB6E1353F7,
+					083C95C4798EE4DFB39ACEEF, ); name = Prefabs; sourceTree = "<group>"; };
 		E2C835988328D01F3C6871A9 = {isa = PBXGroup; children = (
+					2751412A34A4C2F2F5E4D649,
 					60906077CE461C818E1ABB90,
 					F5F78A91C0B5C72D085C1F78,
 					7F0451FF5AC492701786CEFC,
@@ -457,6 +464,7 @@
 					A9E35193DD2EC8FBBD34471E,
 					B737CE5B3A4E6B234A35473E,
 					78E22F7789526644E90535A5,
+					4D453AB22B2AA699455F363A,
 					085BCA932F6C94D0610CA598,
 					7E01A3C5A0B48CBD47116265,
 					EFDF67705A4FC60D687E758A,

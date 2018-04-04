@@ -57,6 +57,10 @@
         <FILE id="RO3JEM" name="WhiteNoise.h" compile="0" resource="0" file="Source/AudioEngine/WhiteNoise.h"/>
       </GROUP>
       <GROUP id="{F7A67158-9DD4-9E2C-0BDC-1B58ED967D9B}" name="Editor">
+        <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
+          <FILE id="yEGMSd" name="MidiGate.cpp" compile="1" resource="0" file="Source/MidiGate.cpp"/>
+          <FILE id="dev5Rg" name="MidiGate.h" compile="0" resource="0" file="Source/MidiGate.h"/>
+        </GROUP>
         <FILE id="j8BgnE" name="Module.cpp" compile="1" resource="0" file="Source/Module.cpp"/>
         <FILE id="FdpOd5" name="Module.h" compile="0" resource="0" file="Source/Module.h"/>
         <FILE id="SU8eIE" name="SynthEditor.cpp" compile="1" resource="0" file="Source/SynthEditor.cpp"/>

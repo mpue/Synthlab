@@ -77,6 +77,8 @@ public:
     void textEditorReturnKeyPressed(juce::TextEditor &) override;
     void setModules(std::vector<Module*>* modules);
     void setName(String name) ;
+
+    bool isEditable() { return editable;}
     
     //[/UserMethods]
 
@@ -86,13 +88,13 @@ public:
 
 
 
-private:
+protected:
     //[UserVariables]   -- You can add your own custom variables in this section.
     MultiComponentDragger* dragger;
 
     bool selected = false;
 	long index;
-
+    bool editable = true;
     std::vector<Module*>* modules;
     std::vector<Connection*>* connections;
 

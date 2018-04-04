@@ -21,7 +21,7 @@
 //[/Headers]
 
 #include "SynthEditor.h"
-
+#include "MidiGate.h"
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 //[/MiscUserDefs]
@@ -217,7 +217,7 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 			}
 		}
 
-		if (module != nullptr) {
+        if (module != nullptr && module->isEditable()) {
 			m->addItem(1, "Add input");
 			m->addItem(2, "Add output");
 
@@ -243,6 +243,12 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 			m->addItem(2, "Save");
             m->addItem(3, "Load");
             m->addItem(4, "New");
+            
+            PopupMenu* prefabMenu = new PopupMenu();
+            
+            prefabMenu->addItem(51,"MIDI Gate");
+            
+            m->addSubMenu("Prefabs",*prefabMenu);
 
 			const int result = m->show();
 
@@ -271,6 +277,16 @@ void SynthEditor::mouseDown (const MouseEvent& e)
             }
             else if (result == 4) {
                 newFile();
+            }
+            else if (result == 51) {
+                Module* m = new MidiGate();
+                m->setName("Gate");
+                
+                m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
+                m->setIndex(Time::currentTimeMillis());
+
+                addAndMakeVisible(m);
+                root->getModules()->push_back(m);
             }
 		}
 
