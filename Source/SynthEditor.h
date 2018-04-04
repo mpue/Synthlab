@@ -58,6 +58,11 @@ public:
 
     std::vector<Connection*> getConnections();
     void setConnections(std::vector<Connection*> connections);
+    
+    void cleanUp();
+    void newFile();
+    void saveFile();
+    void openFile();
 
     //[/UserMethods]
 
