@@ -56,6 +56,7 @@ Module::Module ()
 
     nameLabel->setBounds (0, 16, 120, 24);
 
+    cachedImage_materialicons_301_viewmodule_64_0_ffffff_none_png_1 = ImageCache::getFromMemory (materialicons_301_viewmodule_64_0_ffffff_none_png, materialicons_301_viewmodule_64_0_ffffff_none_pngSize);
 
     //[UserPreSize]
     //[/UserPreSize]
@@ -110,45 +111,62 @@ Module::~Module()
 void Module::paint (Graphics& g)
 {
     //[UserPrePaint] Add your own custom painting code here..
+
+
+
+    // g.drawFittedText(getName(), 40, 10, getWidth(), 20, juce::Justification::top, 2);
+
+
+
     //[/UserPrePaint]
 
     g.fillAll (Colour (0xff323e44));
 
-    //[UserPaint] Add your own custom painting code here..
-
-    if (selected) {
-        g.setColour(juce::Colours::lightgrey);
-    }
-    else {
-        g.setColour(juce::Colours::grey);
-    }
-
-    g.fillRect(0,0,getWidth(), getHeight());
-
-	g.setColour(juce::Colours::black);
-	g.drawRect(0, 0, getWidth(), getHeight());
-
-
-    for (int i = 0; i < pins.size();i++) {
-
-        if (pins.at(i)->selected) {
-            g.setColour(juce::Colours::red);
+    {
+        int x = 28, y = 44, width = 64, height = 64;
+        //[UserPaintCustomArguments] Customize the painting arguments here..
+        if (selected) {
+            g.setColour(juce::Colours::lightgrey);
         }
         else {
-            g.setColour(juce::Colours::black);
+            g.setColour(juce::Colours::grey);
         }
 
-		if (pins.at(i)->direction == Pin::Direction::IN) {
-			g.fillRect(pins.at(i)->x,pins.at(i)->y, 5, 10);
-		}
-		else {
-			g.fillRect(pins.at(i)->x + 5, pins.at(i)->y, 5, 10);
-		}
+        g.fillRect(0,0,getWidth(), getHeight());
+
+        g.setColour(juce::Colours::black);
+        g.drawRect(0, 0, getWidth(), getHeight());
+
+
+        for (int i = 0; i < pins.size();i++) {
+
+            if (pins.at(i)->selected) {
+                g.setColour(juce::Colours::red);
+            }
+            else {
+                g.setColour(juce::Colours::black);
+            }
+
+            if (pins.at(i)->direction == Pin::Direction::IN) {
+                g.fillRect(pins.at(i)->x,pins.at(i)->y, 5, 10);
+            }
+            else {
+                g.fillRect(pins.at(i)->x + 5, pins.at(i)->y, 5, 10);
+            }
+        }
+
+        Component::paint(g);
+        //[/UserPaintCustomArguments]
+        g.setColour (Colours::black);
+        g.drawImageWithin (cachedImage_materialicons_301_viewmodule_64_0_ffffff_none_png_1,
+                           x, y, width, height,
+                           RectanglePlacement::centred,
+                           false);
     }
 
-	// g.drawFittedText(getName(), 40, 10, getWidth(), 20, juce::Justification::top, 2);
+    //[UserPaint] Add your own custom painting code here..
 
-	Component::paint(g);
+
 
     //[/UserPaint]
 }
@@ -330,7 +348,10 @@ BEGIN_JUCER_METADATA
   <METHODS>
     <METHOD name="mouseDoubleClick (const MouseEvent&amp; e)"/>
   </METHODS>
-  <BACKGROUND backgroundColour="ff323e44"/>
+  <BACKGROUND backgroundColour="ff323e44">
+    <IMAGE pos="28 44 64 64" resource="materialicons_301_viewmodule_64_0_ffffff_none_png"
+           opacity="1.00000000000000000000" mode="1"/>
+  </BACKGROUND>
   <TEXTEDITOR name="nameEditor" id="c38a5dbf58fc5656" memberName="nameEditor"
               virtualName="" explicitFocusOrder="0" pos="0 16 120 24" initialText=""
               multiline="0" retKeyStartsLine="0" readonly="0" scrollbars="0"
@@ -345,6 +366,21 @@ BEGIN_JUCER_METADATA
 END_JUCER_METADATA
 */
 #endif
+
+//==============================================================================
+// Binary resources - be careful not to edit any of these sections!
+
+// JUCER_RESOURCE: materialicons_301_viewmodule_64_0_ffffff_none_png, 335, "../../../../Downloads/material-icons_3-0-1_view-module_64_0_ffffff_none.png"
+static const unsigned char resource_Module_materialicons_301_viewmodule_64_0_ffffff_none_png[] = { 137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,64,0,0,0,64,8,3,0,0,0,157,183,129,236,0,0,0,105,80,
+76,84,69,0,0,0,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+255,255,255,255,255,252,27,173,118,0,0,0,34,116,82,78,83,0,2,3,6,7,9,12,17,20,21,25,26,32,33,36,39,42,49,56,60,64,71,75,94,100,111,133,136,140,145,171,183,197,241,75,188,238,113,0,0,0,115,73,68,65,84,
+88,195,237,151,185,14,130,0,20,4,7,148,75,84,14,185,81,57,254,255,35,109,73,182,181,34,59,229,20,83,109,242,242,192,156,129,160,20,46,64,33,54,1,50,177,119,226,93,120,2,155,216,1,152,196,174,14,56,224,
+128,3,14,28,2,209,34,228,192,87,108,11,244,98,223,103,184,76,97,35,68,192,75,236,13,120,136,173,60,36,7,28,112,192,129,127,6,174,31,33,5,102,177,53,208,137,29,253,113,25,128,31,3,127,77,21,129,60,2,142,
+0,0,0,0,73,69,78,68,174,66,96,130,0,0};
+
+const char* Module::materialicons_301_viewmodule_64_0_ffffff_none_png = (const char*) resource_Module_materialicons_301_viewmodule_64_0_ffffff_none_png;
+const int Module::materialicons_301_viewmodule_64_0_ffffff_none_pngSize = 335;
 
 
 //[EndFile] You can add extra defines here...

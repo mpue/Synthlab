@@ -79,13 +79,16 @@ public:
     void setName(String name) ;
 
     bool isEditable() { return editable;}
-    
+    bool isPrefab() { return prefab;};
     //[/UserMethods]
 
     void paint (Graphics& g) override;
     void resized() override;
     void mouseDoubleClick (const MouseEvent& e) override;
 
+    // Binary resources:
+    static const char* materialicons_301_viewmodule_64_0_ffffff_none_png;
+    static const int materialicons_301_viewmodule_64_0_ffffff_none_pngSize;
 
 
 protected:
@@ -95,6 +98,7 @@ protected:
     bool selected = false;
 	long index;
     bool editable = true;
+    bool prefab = false;
     std::vector<Module*>* modules;
     std::vector<Connection*>* connections;
 
@@ -103,6 +107,7 @@ protected:
     //==============================================================================
     ScopedPointer<TextEditor> nameEditor;
     ScopedPointer<Label> nameLabel;
+    Image cachedImage_materialicons_301_viewmodule_64_0_ffffff_none_png_1;
 
 
     //==============================================================================

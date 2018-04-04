@@ -19,7 +19,7 @@ MidiGate::MidiGate()
    
     setSize(70,30);
     nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(0,0);
+    nameLabel->setTopLeftPosition(2,2);
     addPin(Pin::Direction::OUT);
     editable = false;
 }
@@ -28,5 +28,9 @@ MidiGate::~MidiGate()
 {
     
  
+}
+
+void MidiGate::paint(juce::Graphics &g) {
+    Module::paint(g);
 }
 
