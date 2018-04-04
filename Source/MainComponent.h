@@ -10,7 +10,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "SynthEditor.h"
-
+#include "PropertyView.h"
 #include "MainTabbedComponent.h"
 //==============================================================================
 /*
@@ -39,6 +39,10 @@ private:
 
 	SynthEditor* editor;
     MainTabbedComponent* tab;
+    PropertyView* propertyView;
+    
+    StretchableLayoutManager stretchableManager;
+    StretchableLayoutResizerBar resizerBar;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

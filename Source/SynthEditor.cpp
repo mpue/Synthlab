@@ -135,7 +135,8 @@ void SynthEditor::paint (Graphics& g)
 }
 
 void SynthEditor::cleanUp() {
-  
+    removeAllChildren();
+    
 }
 
 void SynthEditor::resized()

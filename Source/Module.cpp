@@ -23,7 +23,7 @@
 class Connection;
 //[/Headers]
 
-
+#include "Module.h"
 
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
@@ -67,10 +67,10 @@ Module::Module ()
     setInterceptsMouseClicks(false, false);
 	nameEditor->setVisible(false);
     nameEditor->addListener(this);
-    
+
     modules = new std::vector<Module*>();
     connections = new std::vector<Connection*>();
-    
+
     //[/Constructor]
 }
 
@@ -87,15 +87,15 @@ Module::~Module()
     for (std::vector<Pin*>::iterator it = pins.begin(); it != pins.end(); ++it) {
         delete *it;
     }
-    
+
     for (std::vector<Connection*>::iterator it = connections->begin(); it != connections->end(); ++it) {
         delete *it;
     }
     for (std::vector<Module*>::iterator it = modules->begin(); it != modules->end(); ++it) {
         delete *it;
     }
-    
-    
+
+
     connections->clear();
     modules->clear();
 
@@ -229,7 +229,7 @@ void Module::addPin(Pin::Direction direction) {
 
 	p->direction = direction;
     p->index = (long)Time::currentTimeMillis();
-    
+
     pins.push_back(p);
 }
 

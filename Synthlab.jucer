@@ -3,18 +3,23 @@
 <JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.2.1">
   <MAINGROUP id="CKGTaZ" name="Synthlab">
     <GROUP id="{CA20D122-1EA5-3A93-F1F8-F6EE53DA457E}" name="Source">
-      <FILE id="Sp2rpr" name="MainTabbedComponent.cpp" compile="1" resource="0"
+      <GROUP id="{F7A67158-9DD4-9E2C-0BDC-1B58ED967D9B}" name="Editor">
+        <FILE id="j8BgnE" name="Module.cpp" compile="1" resource="0" file="Source/Module.cpp"/>
+        <FILE id="FdpOd5" name="Module.h" compile="0" resource="0" file="Source/Module.h"/>
+        <FILE id="SU8eIE" name="SynthEditor.cpp" compile="1" resource="0" file="Source/SynthEditor.cpp"/>
+        <FILE id="ZyXyBq" name="SynthEditor.h" compile="0" resource="0" file="Source/SynthEditor.h"/>
+        <FILE id="wdEhY6" name="PropertyView.cpp" compile="1" resource="0"
+              file="Source/PropertyView.cpp"/>
+        <FILE id="yeeY5O" name="PropertyView.h" compile="0" resource="0" file="Source/PropertyView.h"/>
+        <FILE id="oEHdkD" name="Connection.cpp" compile="1" resource="0" file="Source/Connection.cpp"/>
+        <FILE id="PoD2gS" name="Connection.h" compile="0" resource="0" file="Source/Connection.h"/>
+        <FILE id="forMne" name="Pin.cpp" compile="1" resource="0" file="Source/Pin.cpp"/>
+        <FILE id="NJudCk" name="Pin.h" compile="0" resource="0" file="Source/Pin.h"/>
+      </GROUP>
+      <FILE id="p4Fr6r" name="MainTabbedComponent.cpp" compile="1" resource="0"
             file="Source/MainTabbedComponent.cpp"/>
-      <FILE id="InzvkI" name="MainTabbedComponent.h" compile="0" resource="0"
+      <FILE id="dUs9k8" name="MainTabbedComponent.h" compile="0" resource="0"
             file="Source/MainTabbedComponent.h"/>
-      <FILE id="oEHdkD" name="Connection.cpp" compile="1" resource="0" file="Source/Connection.cpp"/>
-      <FILE id="PoD2gS" name="Connection.h" compile="0" resource="0" file="Source/Connection.h"/>
-      <FILE id="forMne" name="Pin.cpp" compile="1" resource="0" file="Source/Pin.cpp"/>
-      <FILE id="NJudCk" name="Pin.h" compile="0" resource="0" file="Source/Pin.h"/>
-      <FILE id="j8BgnE" name="Module.cpp" compile="1" resource="0" file="Source/Module.cpp"/>
-      <FILE id="FdpOd5" name="Module.h" compile="0" resource="0" file="Source/Module.h"/>
-      <FILE id="SU8eIE" name="SynthEditor.cpp" compile="1" resource="0" file="Source/SynthEditor.cpp"/>
-      <FILE id="ZyXyBq" name="SynthEditor.h" compile="0" resource="0" file="Source/SynthEditor.h"/>
       <FILE id="JkR4sJ" name="MultiComponentDragger.h" compile="0" resource="0"
             file="Source/MultiComponentDragger.h"/>
       <FILE id="prQp1n" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>

@@ -8,9 +8,10 @@
 
 #include "MainComponent.h"
 #include "SynthEditor.h"
+#include "PropertyView.h"
 #include "MainTabbedComponent.h"
 //==============================================================================
-MainComponent::MainComponent()
+MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
 {
     // Make sure you set the size of the component after
     // you add any child components.
@@ -27,13 +28,27 @@ MainComponent::MainComponent()
     
     editor->setTab(tab);
     
+    propertyView =  new PropertyView();
     
-        
+    addAndMakeVisible (propertyView);
     
+    addAndMakeVisible (resizerBar);
     
+    addAndMakeVisible (tab);
     
-    addAndMakeVisible(tab);
+    // we have to set up our StretchableLayoutManager so it know the limits and preferred sizes of it's contents
+    stretchableManager.setItemLayout (0,            // for the fileTree
+                                      -0.1, -0.9,   // must be between 50 pixels and 90% of the available space
+                                      -0.2);        // and its preferred size is 30% of the total available space
     
+    stretchableManager.setItemLayout (1,            // for the resize bar
+                                      5, 5, 5);     // hard limit to 5 pixels
+    
+    stretchableManager.setItemLayout (2,            // for the imagePreview
+                                      -0.1, -0.9,   // size must be between 50 pixels and 90% of the available space
+                                      -0.8);
+    
+    resized();
     
 }
 
@@ -43,6 +58,7 @@ MainComponent::~MainComponent()
     shutdownAudio();
 	delete editor;
     delete tab;
+    delete propertyView;
 }
 
 //==============================================================================
@@ -87,7 +103,15 @@ void MainComponent::paint (Graphics& g)
 
 void MainComponent::resized()
 {
-    // This is called when the MainContentComponent is resized.
-    // If you add any child components, this is where you should
-    // update their positions.
+
+    auto r = getLocalBounds().reduced (4);
+    
+    // make a list of two of our child components that we want to reposition
+    Component* comps[] = { propertyView, &resizerBar, tab };
+    
+    // this will position the 3 components, one above the other, to fit
+    // vertically into the rectangle provided.
+    stretchableManager.layOutComponents (comps, 3,
+                                         r.getX(), r.getY(), r.getWidth(), r.getHeight(),
+                                         false, true);
 }

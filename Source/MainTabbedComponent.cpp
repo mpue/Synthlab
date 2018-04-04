@@ -19,18 +19,24 @@ MainTabbedComponent::MainTabbedComponent() : juce::TabbedComponent(TabbedButtonB
 
 }
 
+MainTabbedComponent::MainTabbedComponent(TabbedButtonBar::Orientation orientation) : juce::TabbedComponent(TabbedButtonBar::Orientation::TabsAtTop){
+    
+}
+
 MainTabbedComponent::~MainTabbedComponent()
 {
 }
 
 void MainTabbedComponent::popupMenuClickOnTab(int tabIndex, const juce::String &tabName) {
     
+    if (tabIndex == 0){
+        return;
+    }
+    
     PopupMenu* m = new PopupMenu();
     
     m->addItem(1, "Close tab");
 
-    
-    
     const int result = m->show();
     
     if (result == 0)
