@@ -3,6 +3,59 @@
 <JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.2.1">
   <MAINGROUP id="CKGTaZ" name="Synthlab">
     <GROUP id="{CA20D122-1EA5-3A93-F1F8-F6EE53DA457E}" name="Source">
+      <GROUP id="{A79C9093-D329-37A0-AEE1-CF7BDC5C60DE}" name="AudioEngine">
+        <FILE id="WWyH1B" name="ADSR.cpp" compile="1" resource="0" file="Source/AudioEngine/ADSR.cpp"/>
+        <FILE id="Q1bcuf" name="ADSR.h" compile="0" resource="0" file="Source/AudioEngine/ADSR.h"/>
+        <FILE id="LraLF9" name="BasicDelayLine.cpp" compile="1" resource="0"
+              file="Source/AudioEngine/BasicDelayLine.cpp"/>
+        <FILE id="vyxCfs" name="BasicDelayLine.h" compile="0" resource="0"
+              file="Source/AudioEngine/BasicDelayLine.h"/>
+        <FILE id="ITYUMv" name="Distortion.cpp" compile="1" resource="0" file="Source/AudioEngine/Distortion.cpp"/>
+        <FILE id="jSixlx" name="Distortion.h" compile="0" resource="0" file="Source/AudioEngine/Distortion.h"/>
+        <FILE id="CnPcMF" name="Filter.cpp" compile="1" resource="0" file="Source/AudioEngine/Filter.cpp"/>
+        <FILE id="GhSX1O" name="Filter.h" compile="0" resource="0" file="Source/AudioEngine/Filter.h"/>
+        <FILE id="Uw2zTY" name="HighPassFilter.cpp" compile="1" resource="0"
+              file="Source/AudioEngine/HighPassFilter.cpp"/>
+        <FILE id="qJWJDK" name="HighPassFilter.h" compile="0" resource="0"
+              file="Source/AudioEngine/HighPassFilter.h"/>
+        <FILE id="uZImfS" name="LowPassFilter.cpp" compile="1" resource="0"
+              file="Source/AudioEngine/LowPassFilter.cpp"/>
+        <FILE id="sUckWJ" name="LowPassFilter.h" compile="0" resource="0" file="Source/AudioEngine/LowPassFilter.h"/>
+        <FILE id="EO4FK3" name="ModTarget.cpp" compile="1" resource="0" file="Source/AudioEngine/ModTarget.cpp"/>
+        <FILE id="IdH8yy" name="ModTarget.h" compile="0" resource="0" file="Source/AudioEngine/ModTarget.h"/>
+        <FILE id="oplYBo" name="Modulation.cpp" compile="1" resource="0" file="Source/AudioEngine/Modulation.cpp"/>
+        <FILE id="zr03bu" name="Modulation.h" compile="0" resource="0" file="Source/AudioEngine/Modulation.h"/>
+        <FILE id="RgHiPD" name="Modulator.h" compile="0" resource="0" file="Source/AudioEngine/Modulator.h"/>
+        <FILE id="Zz9Mm5" name="MonoEffect.h" compile="0" resource="0" file="Source/AudioEngine/MonoEffect.h"/>
+        <FILE id="FBZyTf" name="MultimodeFilter.cpp" compile="1" resource="0"
+              file="Source/AudioEngine/MultimodeFilter.cpp"/>
+        <FILE id="qMIEl0" name="MultimodeFilter.h" compile="0" resource="0"
+              file="Source/AudioEngine/MultimodeFilter.h"/>
+        <FILE id="BcVxiX" name="MultimodeOscillator.cpp" compile="1" resource="0"
+              file="Source/AudioEngine/MultimodeOscillator.cpp"/>
+        <FILE id="QIegJY" name="MultimodeOscillator.h" compile="0" resource="0"
+              file="Source/AudioEngine/MultimodeOscillator.h"/>
+        <FILE id="FOgG8B" name="Note.cpp" compile="1" resource="0" file="Source/AudioEngine/Note.cpp"/>
+        <FILE id="UQXVJ8" name="Note.h" compile="0" resource="0" file="Source/AudioEngine/Note.h"/>
+        <FILE id="sOkGWO" name="Oszillator.cpp" compile="1" resource="0" file="Source/AudioEngine/Oszillator.cpp"/>
+        <FILE id="tcxIYB" name="Oszillator.h" compile="0" resource="0" file="Source/AudioEngine/Oszillator.h"/>
+        <FILE id="vdmaqz" name="Pulse.cpp" compile="1" resource="0" file="Source/AudioEngine/Pulse.cpp"/>
+        <FILE id="dBBZy4" name="Pulse.h" compile="0" resource="0" file="Source/AudioEngine/Pulse.h"/>
+        <FILE id="uZMvBA" name="Sawtooth.cpp" compile="1" resource="0" file="Source/AudioEngine/Sawtooth.cpp"/>
+        <FILE id="k32EE6" name="Sawtooth.h" compile="0" resource="0" file="Source/AudioEngine/Sawtooth.h"/>
+        <FILE id="pe3cRl" name="Sine.cpp" compile="1" resource="0" file="Source/AudioEngine/Sine.cpp"/>
+        <FILE id="muOuv5" name="Sine.h" compile="0" resource="0" file="Source/AudioEngine/Sine.h"/>
+        <FILE id="l2daS5" name="StereoDelay.cpp" compile="1" resource="0" file="Source/AudioEngine/StereoDelay.cpp"/>
+        <FILE id="CpIBfb" name="StereoDelay.h" compile="0" resource="0" file="Source/AudioEngine/StereoDelay.h"/>
+        <FILE id="xJDFiq" name="StereoEffect.h" compile="0" resource="0" file="Source/AudioEngine/StereoEffect.h"/>
+        <FILE id="S04z0y" name="StereoReverb.cpp" compile="1" resource="0"
+              file="Source/AudioEngine/StereoReverb.cpp"/>
+        <FILE id="jt1CwU" name="StereoReverb.h" compile="0" resource="0" file="Source/AudioEngine/StereoReverb.h"/>
+        <FILE id="dKtTsC" name="Voice.cpp" compile="1" resource="0" file="Source/AudioEngine/Voice.cpp"/>
+        <FILE id="gh5DcG" name="Voice.h" compile="0" resource="0" file="Source/AudioEngine/Voice.h"/>
+        <FILE id="qiQl6a" name="WhiteNoise.cpp" compile="1" resource="0" file="Source/AudioEngine/WhiteNoise.cpp"/>
+        <FILE id="RO3JEM" name="WhiteNoise.h" compile="0" resource="0" file="Source/AudioEngine/WhiteNoise.h"/>
+      </GROUP>
       <GROUP id="{F7A67158-9DD4-9E2C-0BDC-1B58ED967D9B}" name="Editor">
         <FILE id="j8BgnE" name="Module.cpp" compile="1" resource="0" file="Source/Module.cpp"/>
         <FILE id="FdpOd5" name="Module.h" compile="0" resource="0" file="Source/Module.h"/>
