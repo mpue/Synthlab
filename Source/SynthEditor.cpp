@@ -41,6 +41,7 @@ SynthEditor::SynthEditor ()
 
     //[Constructor] You can add your own custom stuff here..
 
+    root = new Module();
 
 	setRepaintsOnMouseActivity(true);
 	setMouseClickGrabsKeyboardFocus(true);
@@ -59,6 +60,8 @@ SynthEditor::~SynthEditor()
 
     cleanUp();
 
+    // delete root;
+    
     //[/Destructor]
 }
 
@@ -81,8 +84,8 @@ void SynthEditor::paint (Graphics& g)
 		}
 	}
 
-	for (int i = 0; i < connections.size(); i++) {
-		Connection* c = connections.at(i);
+	for (int i = 0; i < root->getConnections()->size(); i++) {
+		Connection* c = root->getConnections()->at(i);
 
 		int x1 = c->source->getX() + c->a->x;
 		int y1 = c->source->getY() + c->a->y + 5;
@@ -119,8 +122,6 @@ void SynthEditor::paint (Graphics& g)
 			g.setColour(juce::Colours::white);
 		}
 
-		Logger::writeToLog("Connection : " + String(x1) + "," + String(y1) + "," + String(x2) + "," + String(y2));
-
 		g.drawLine(x1,y1,x2,y2);
 
 	}
@@ -130,37 +131,7 @@ void SynthEditor::paint (Graphics& g)
 }
 
 void SynthEditor::cleanUp() {
-    
-    /*
-    for (int i = 0; i < connections.size(); i++) {
-        Connection* c = connections.at(i);
-        delete c;
-        connections.erase(connections.begin() + i);
-        
-    }
-    
-    for (int i = 0; i < modules.size(); i++) {
-        
-        Module* m = modules.at(i);
-    
-        delete m;
-        modules.erase(modules.begin() + i);
-        
-    }
-     */
-    
-    
-    for (std::vector<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it) {
-        delete *it;
-    }
-    for (std::vector<Module*>::iterator it = modules.begin(); it != modules.end(); ++it) {
-        delete *it;
-    }
-    
-    connections.clear();
-    modules.clear();
-    
-    
+  
 }
 
 void SynthEditor::resized()
@@ -176,9 +147,9 @@ void SynthEditor::mouseMove (const MouseEvent& e)
 {
     //[UserCode_mouseMove] -- Add your code here...
 
-	for (int i = 0; i < modules.size(); i++) {
+    for (int i = 0; i < root->getModules()->size(); i++) {
 
-		Module* m = modules.at(i);
+		Module* m = root->getModules()->at(i);
 		checkForPinSelection(e, m);
 
 	}
@@ -201,23 +172,23 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 		minrepaintx = e.getPosition().x;
 		minrepainty = e.getPosition().y;
 
-		for (int i = 0; i < modules.size(); i++) {
+		for (int i = 0; i < root->getModules()->size(); i++) {
 
-			if (modules.at(i)->getBounds().contains(e.x,e.y)) {
-				modules.at(i)->setSelected(true);
-				dragStartX = modules.at(i)->getX();
-				dragStartY = modules.at(i)->getY();
+			if (root->getModules()->at(i)->getBounds().contains(e.x,e.y)) {
+				root->getModules()->at(i)->setSelected(true);
+				dragStartX = root->getModules()->at(i)->getX();
+				dragStartY = root->getModules()->at(i)->getY();
 
 			}
 			else {
-				modules.at(i)->setSelected(false);
+				root->getModules()->at(i)->setSelected(false);
 			}
 
 
 		}
 
-		for (int i = 0; i < connections.size(); i++) {
-			Connection* c = connections.at(i);
+		for (int i = 0; i < root->getConnections()->size(); i++) {
+			Connection* c = root->getConnections()->at(i);
 
 			int x1 = c->source->getX() + c->a->x;
 			int y1 = c->source->getY() + c->a->y + 5;
@@ -238,9 +209,9 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 
 		Module* module = nullptr;
 
-		for (int i = 0; i < modules.size(); i++) {
-			if (modules.at(i)->isSelected()) {
-				module = modules.at(i);
+		for (int i = 0; i < root->getModules()->size(); i++) {
+			if (root->getModules()->at(i)->isSelected()) {
+				module = root->getModules()->at(i);
 			}
 		}
 
@@ -285,7 +256,7 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 				m3->setIndex(Time::currentTimeMillis());
 
 				addAndMakeVisible(m3);
-				modules.push_back(m3);
+				root->getModules()->push_back(m3);
 
 			}
 			else if (result == 2)
@@ -320,9 +291,9 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
 	lineStopX = lineStartX + e.getDistanceFromDragStartX();
 	lineStopY = lineStartY + e.getDistanceFromDragStartY();
 
-	for (int i = 0; i < modules.size(); i++) {
+	for (int i = 0; i < root->getModules()->size(); i++) {
 
-		Module* m = modules.at(i);
+		Module* m = root->getModules()->at(i);
 
 		if (m->isSelected()) {
 
@@ -351,9 +322,9 @@ void SynthEditor::mouseUp (const MouseEvent& e)
 		isLeftMouseDown = false;
 	}
 
-	for (int i = 0; i < modules.size(); i++) {
+	for (int i = 0; i < root->getModules()->size(); i++) {
 
-		Module* m = modules.at(i);
+		Module* m = root->getModules()->at(i);
 
 		if (m->isSelected()) {
 			addConnection(e, m);
@@ -370,10 +341,11 @@ void SynthEditor::mouseDoubleClick (const MouseEvent& e)
 {
     //[UserCode_mouseDoubleClick] -- Add your code here...
 
+    
     if (isAltDown) {
-        for (int i = 0; i < modules.size(); i++) {
+        for (int i = 0; i < root->getModules()->size(); i++) {
 
-            Module* m = modules.at(i);
+            Module* m = root->getModules()->at(i);
 
             if (m->isSelected()) {
                 m->setEditing(true);
@@ -382,20 +354,19 @@ void SynthEditor::mouseDoubleClick (const MouseEvent& e)
         }
     }
     else {
-        for (int i = 0; i < modules.size(); i++) {
+        for (int i = 0; i < root->getModules()->size(); i++) {
 
-            Module* m = modules.at(i);
+            Module* m = root->getModules()->at(i);
 
             if (m->isSelected()) {
                 SynthEditor* editor = new SynthEditor();
-                editor->setModules(m->getModules());
-                editor->setConnections(m->getConnections());
+                editor->setModule(m);
                 tab->addTab(m->getName(), juce::Colours::grey,editor, true);
             }
         }
 
     }
-
+    
 
     //[/UserCode_mouseDoubleClick]
 }
@@ -436,61 +407,68 @@ void SynthEditor::newFile() {
     repaint();
 }
 
+void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Connection*>* connections, ValueTree* v) {
+    ValueTree mods = ValueTree("Modules");
+    
+    for (std::vector<Module*>::iterator it = modules->begin(); it != modules->end(); ++it) {
+        
+        ValueTree file = ValueTree("Module");
+        
+        file.setProperty("name",(*it)->getName(), nullptr);
+        file.setProperty("index",String((*it)->getIndex()), nullptr);
+        file.setProperty("x",(*it)->getPosition().getX(),nullptr);
+        file.setProperty("y",(*it)->getPosition().getY(),nullptr);
+        
+        ValueTree pins = ValueTree("Pins");
+        
+        for (std::vector<Pin*>::iterator it2 =  (*it)->pins.begin(); it2 != (*it)->pins.end(); ++it2) {
+            ValueTree pin = ValueTree("Pin");
+            pin.setProperty("type", (*it2)->type, nullptr);
+            pin.setProperty("direction", (*it2)->direction, nullptr);
+            pin.setProperty("index", String(((*it2)->index)), nullptr);
+            pin.setProperty("x", (*it2)->x, nullptr);
+            pin.setProperty("y", (*it2)->y, nullptr);
+            pins.addChild(pin,-1,nil);
+        }
+        
+        mods.addChild(file,-1, nullptr);
+        file.addChild(pins,-1, nullptr);
+        
+        saveStructure((*it)->getModules(), (*it)->getConnections(), &file);
+    }
+    
+    ValueTree cons = ValueTree("Connections");
+    
+    for (std::vector<Connection*>::iterator it = connections->begin(); it != connections->end(); ++it) {
+        ValueTree con = ValueTree("Connection");
+        con.setProperty("source", String((*it)->source->getIndex()), nullptr);
+        con.setProperty("target", String((*it)->target->getIndex()), nullptr);
+        con.setProperty("a", String((*it)->a->index), nullptr);
+        con.setProperty("b", String((*it)->b->index), nullptr);
+        cons.addChild(con,-1, nullptr);
+    }
+    
+    v->addChild(mods, -1, nullptr);
+    v->addChild(cons, -1, nullptr);
+
+    
+}
+
 void SynthEditor::saveFile() {
     FileChooser chooser("Select target file...", File::nonexistent, "*");
     
     if (chooser.browseForFileToSave(true)) {
         
-        cleanUp();
+        ValueTree* v = new ValueTree("Synth");
         
-        ValueTree v = ValueTree("Synth");
-        
-        ValueTree mods = ValueTree("Modules");
-        
-        for (std::vector<Module*>::iterator it = modules.begin(); it != modules.end(); ++it) {
-            ValueTree file = ValueTree("Module");
-            file.setProperty("name",(*it)->getName(), nullptr);
-            file.setProperty("index",String((*it)->getIndex()), nullptr);
-            file.setProperty("x",(*it)->getPosition().getX(),nullptr);
-            file.setProperty("y",(*it)->getPosition().getY(),nullptr);
-            
-            ValueTree pins = ValueTree("Pins");
-            
-            for (std::vector<Pin*>::iterator it2 =  (*it)->pins.begin(); it2 != (*it)->pins.end(); ++it2) {
-                ValueTree pin = ValueTree("Pin");
-                pin.setProperty("type", (*it2)->type, nullptr);
-                pin.setProperty("direction", (*it2)->direction, nullptr);
-                pin.setProperty("index", String(((*it2)->index)), nullptr);
-                pin.setProperty("x", (*it2)->x, nullptr);
-                pin.setProperty("y", (*it2)->y, nullptr);
-                pins.addChild(pin,-1,nil);
-            }
-            
-            
-            
-            mods.addChild(file,-1, nullptr);
-            file.addChild(pins,-1, nullptr);
-        }
-        
-        ValueTree cons = ValueTree("Connections");
-        
-        for (std::vector<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it) {
-            ValueTree con = ValueTree("Connection");
-            con.setProperty("source", String((*it)->source->getIndex()), nullptr);
-            con.setProperty("target", String((*it)->target->getIndex()), nullptr);
-            con.setProperty("a", String((*it)->a->index), nullptr);
-            con.setProperty("b", String((*it)->b->index), nullptr);
-            cons.addChild(con,-1, nullptr);
-        }
-        
-        v.addChild(mods, -1, nullptr);
-        v.addChild(cons, -1, nullptr);
+        saveStructure(root->getModules(),root->getConnections(), v);
         
         File file = chooser.getResult();
         
-        XmlElement* xml = v.createXml();
+        XmlElement* xml = v->createXml();
         xml->writeToFile(file, "");
         delete xml;
+        delete v;
         
     }
 }
@@ -500,85 +478,101 @@ void SynthEditor::openFile() {
     
     if (chooser.browseForFileToOpen()) {
         
+        cleanUp();
+        
         File file = chooser.getResult();
+        
         
         ScopedPointer<XmlElement> xml = XmlDocument(file).getDocumentElement();
         ValueTree v = ValueTree::fromXml(*xml.get());
+        
+        loadStructure(root->getModules(),root->getConnections(), &v);
+        
+        for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
+            addAndMakeVisible((*it));
+        }
+        
         xml = nullptr;
         
-        ValueTree mods = v.getChildWithName("Modules");
-        
-        for (int i = 0; i < mods.getNumChildren();i++) {
-            ValueTree mod = mods.getChild(i);
-            
-            Module* m = new Module(mod.getProperty("name"));
-            m->setIndex(mod.getProperty("index").toString().getLargeIntValue());
-            m->setTopLeftPosition(mod.getProperty("x").toString().getIntValue(), mod.getProperty("y").toString().getIntValue());
-            
-            ValueTree pins = mod.getChildWithName("Pins");
-            
-            for (int j = 0; j < pins.getNumChildren();j++) {
-                ValueTree pin = pins.getChild(j);
-                Pin* p = new Pin();
-                
-                int type = pin.getProperty("type").toString().getIntValue();
-                int direction = pin.getProperty("direction").toString().getIntValue();
-                long index = pin.getProperty("index").toString().getLargeIntValue();
-                int x = pin.getProperty("x").toString().getIntValue();
-                int y = pin.getProperty("y").toString().getIntValue();
-                
-                Pin::Direction dir = static_cast<Pin::Direction>(direction);
-                p->direction = dir;
-                Pin::Type t = static_cast<Pin::Type>(type);
-                p->type = t;
-                p->index = index;
-                p->x = x;
-                p->y = y;
-                m->addPin(p);
-            }
-            
-            modules.push_back(m);
-            addAndMakeVisible(m);
-            
-        }
-        
-        ValueTree cons = v.getChildWithName("Connections");
-        
-        for (int i = 0; i < cons.getNumChildren();i++) {
-            ValueTree con = cons.getChild(i);
-            
-            Connection* c = new Connection();
-            long sourceIndex = con.getProperty("source").toString().getLargeIntValue();
-            long targetIndex = con.getProperty("target").toString().getLargeIntValue();
-            long a = con.getProperty("a").toString().getLargeIntValue();
-            long b = con.getProperty("b").toString().getLargeIntValue();
-            
-            for (int j = 0; j < modules.size(); j++) {
-                
-                Module* m = modules.at(j);
-                
-                if (m->getIndex() == sourceIndex) {
-                    c->source = m;
-                }
-                if (m->getIndex() == targetIndex) {
-                    c->target = m;
-                }
-                
-                for (int k = 0; k < m->getPins().size();k++) {
-                    if (m->getPins().at(k)->index == a) {
-                        c->a = m->getPins().at(k);
-                    }
-                    if (m->getPins().at(k)->index == b) {
-                        c->b = m->getPins().at(k);
-                    }
-                }
-                
-            }
-            
-            connections.push_back(c);
-
-        }
     }
+}
+
+void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Connection*>* connections,juce::ValueTree *v) {
+    ValueTree mods = v->getChildWithName("Modules");
+    
+    for (int i = 0; i < mods.getNumChildren();i++) {
+        ValueTree mod = mods.getChild(i);
+        
+        Module* m = new Module(mod.getProperty("name"));
+        
+        m->setIndex(mod.getProperty("index").toString().getLargeIntValue());
+        m->setTopLeftPosition(mod.getProperty("x").toString().getIntValue(), mod.getProperty("y").toString().getIntValue());
+        
+        ValueTree pins = mod.getChildWithName("Pins");
+        
+        for (int j = 0; j < pins.getNumChildren();j++) {
+            ValueTree pin = pins.getChild(j);
+            Pin* p = new Pin();
+            
+            int type = pin.getProperty("type").toString().getIntValue();
+            int direction = pin.getProperty("direction").toString().getIntValue();
+            long index = pin.getProperty("index").toString().getLargeIntValue();
+            int x = pin.getProperty("x").toString().getIntValue();
+            int y = pin.getProperty("y").toString().getIntValue();
+            
+            Pin::Direction dir = static_cast<Pin::Direction>(direction);
+            p->direction = dir;
+            Pin::Type t = static_cast<Pin::Type>(type);
+            p->type = t;
+            p->index = index;
+            p->x = x;
+            p->y = y;
+            m->addPin(p);
+        }
+        
+        modules->push_back(m);
+        // addAndMakeVisible(m);
+        
+        loadStructure(m->getModules(),m->getConnections(),&mod);
+    }
+    
+    ValueTree cons = v->getChildWithName("Connections");
+    
+    for (int i = 0; i < cons.getNumChildren();i++) {
+        ValueTree con = cons.getChild(i);
+        
+        Connection* c = new Connection();
+        long sourceIndex = con.getProperty("source").toString().getLargeIntValue();
+        long targetIndex = con.getProperty("target").toString().getLargeIntValue();
+        long a = con.getProperty("a").toString().getLargeIntValue();
+        long b = con.getProperty("b").toString().getLargeIntValue();
+        
+        for (int j = 0; j < modules->size(); j++) {
+            
+            Module* m = modules->at(j);
+            
+            if (m->getIndex() == sourceIndex) {
+                c->source = m;
+            }
+            if (m->getIndex() == targetIndex) {
+                c->target = m;
+            }
+            
+            for (int k = 0; k < m->getPins().size();k++) {
+                if (m->getPins().at(k)->index == a) {
+                    c->a = m->getPins().at(k);
+                }
+                if (m->getPins().at(k)->index == b) {
+                    c->b = m->getPins().at(k);
+                }
+            }
+            
+        }
+        
+        connections->push_back(c);
+        
+    }
+
 }
 
 void SynthEditor::setTab(juce::TabbedComponent *t) {
@@ -586,29 +580,29 @@ void SynthEditor::setTab(juce::TabbedComponent *t) {
 }
 
 void SynthEditor::deleteSelected() {
-    for (int i = 0; i < connections.size(); i++) {
-        Connection* c = connections.at(i);
+    for (int i = 0; i < root->getConnections()->size(); i++) {
+        Connection* c = root->getConnections()->at(i);
         if (c->selected) {
             delete c;
-            connections.erase(connections.begin() + i);
+            root->getConnections()->erase(root->getConnections()->begin() + i);
         }
     }
 
-    for (int i = 0; i < modules.size(); i++) {
+    for (int i = 0; i < root->getModules()->size(); i++) {
 
-        Module* m = modules.at(i);
+        Module* m = root->getModules()->at(i);
 
-        for (int i = 0; i < connections.size(); i++) {
-            Connection* c = connections.at(i);
+        for (int i = 0; i < root->getConnections()->size(); i++) {
+            Connection* c = root->getConnections()->at(i);
             if (c->source == m || c->target == m) {
                 delete c;
-                connections.erase(connections.begin() + i);
+                root->getConnections()->erase(root->getConnections()->begin() + i);
             }
         }
 
         if (m->isSelected()) {
             delete m;
-            modules.erase(modules.begin() + i);
+            root->getModules()->erase(root->getModules()->begin() + i);
         }
     }
 }
@@ -649,9 +643,9 @@ void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
 	}
 
 	// now find the target module
-	for (int i = 0; i < modules.size(); i++) {
+	for (int i = 0; i < root->getModules()->size(); i++) {
 
-		Module* m = modules.at(i);
+		Module* m = root->getModules()->at(i);
 
 		if (m->getIndex() == source->getIndex()) {
 			continue;
@@ -674,7 +668,7 @@ void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
 		Logger::writeToLog("Adding new connection");
 
 		Connection* c = new Connection(source, a, target, b);
-		connections.push_back(c);
+		root->getConnections()->push_back(c);
 		repaint();
 	}
 
@@ -699,23 +693,21 @@ bool SynthEditor::PointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<int> 
 	return abs(pt.x - x) < epsilon ||abs(pt.y - y) < epsilon;
 }
 
-void SynthEditor::setConnections(std::vector<Connection *> connections) {
-    this->connections = connections;
+
+
+void SynthEditor::setModule(Module *m) {
+    this->root = m;
+    
+    for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
+        addAndMakeVisible((*it));
+    }
+    
+    repaint();
 }
 
-void SynthEditor::setModules(std::vector<Module *> modules) {
-    this->modules = modules;
+Module* SynthEditor::getModule() {
+    return root;
 }
-
-std::vector<Connection*> SynthEditor::getConnections() {
-    return connections;
-}
-
-std::vector<Module*> SynthEditor::getModules() {
-    return modules;
-}
-
-
 //[/MiscUserCode]
 
 

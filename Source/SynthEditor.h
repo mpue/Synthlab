@@ -53,17 +53,17 @@ public:
     bool PointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<int> pt, double epsilon);
     void setTab(TabbedComponent* t);
 
-    std::vector<Module*> getModules();
-    void setModules(std::vector<Module*> modules);
-
-    std::vector<Connection*> getConnections();
-    void setConnections(std::vector<Connection*> connections);
+    void setModule(Module * m);
+    Module* getModule();
     
     void cleanUp();
     void newFile();
     void saveFile();
     void openFile();
-
+    
+    void saveStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections, ValueTree* v);
+    void loadStructure(std::vector<Module *>* modules, std::vector<Connection*>* connections,ValueTree* v);
+    
     //[/UserMethods]
 
     void paint (Graphics& g) override;
@@ -87,8 +87,7 @@ private:
 	bool isMovingModule = true;
 	bool isDraggingConnection = false;
 
-    std::vector<Module*> modules;
-	std::vector<Connection*> connections;
+    Module* root;
 
 	int mouseX = 0;
 	int mouseY = 0;

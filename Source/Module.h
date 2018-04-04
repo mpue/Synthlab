@@ -69,14 +69,14 @@ public:
 	void setIndex(long index);
 	void setEditing(bool editing);
 
-    std::vector<Connection*> getConnections();
-    std::vector<Module*> getModules();
+    std::vector<Connection*>* getConnections();
+    std::vector<Module*>* getModules();
     std::vector<Pin*> getPins();
 
-    void setConnections(std::vector<Connection*> connections);
+    void setConnections(std::vector<Connection*>* connections);
 
     void textEditorReturnKeyPressed(juce::TextEditor &) override;
-    void setModules(std::vector<Module*> modules);
+    void setModules(std::vector<Module*>* modules);
 
     //[/UserMethods]
 
@@ -93,8 +93,8 @@ private:
     bool selected = false;
 	long index;
 
-    std::vector<Module*> modules;
-    std::vector<Connection*> connections;
+    std::vector<Module*>* modules;
+    std::vector<Connection*>* connections;
 
     //[/UserVariables]
 

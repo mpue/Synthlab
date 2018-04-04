@@ -18,9 +18,12 @@
 */
 
 //[Headers] You can add your own extra header files here...
+#include "Module.h"
+
+class Connection;
 //[/Headers]
 
-#include "Module.h"
+
 
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
@@ -64,6 +67,10 @@ Module::Module ()
     setInterceptsMouseClicks(false, false);
 	nameEditor->setVisible(false);
     nameEditor->addListener(this);
+    
+    modules = new std::vector<Module*>();
+    connections = new std::vector<Connection*>();
+    
     //[/Constructor]
 }
 
@@ -80,7 +87,20 @@ Module::~Module()
     for (std::vector<Pin*>::iterator it = pins.begin(); it != pins.end(); ++it) {
         delete *it;
     }
+    
+    for (std::vector<Connection*>::iterator it = connections->begin(); it != connections->end(); ++it) {
+        delete *it;
+    }
+    for (std::vector<Module*>::iterator it = modules->begin(); it != modules->end(); ++it) {
+        delete *it;
+    }
+    
+    
+    connections->clear();
+    modules->clear();
 
+    delete modules;
+    delete connections;
 
 
     //[/Destructor]
@@ -145,6 +165,7 @@ void Module::resized()
 void Module::mouseDoubleClick (const MouseEvent& e)
 {
     //[UserCode_mouseDoubleClick] -- Add your code here...
+    setEditing(true);
     //[/UserCode_mouseDoubleClick]
 }
 
@@ -267,19 +288,19 @@ void Module::textEditorReturnKeyPressed(juce::TextEditor &) {
     setEditing(false);
 }
 
-void Module::setConnections(std::vector<Connection *> connections) {
+void Module::setConnections(std::vector<Connection *>* connections) {
     this->connections = connections;
 }
 
-void Module::setModules(std::vector<Module *> modules) {
+void Module::setModules(std::vector<Module *>* modules) {
     this->modules = modules;
 }
 
-std::vector<Connection*> Module::getConnections() {
+std::vector<Connection*>* Module::getConnections() {
     return connections;
 }
 
-std::vector<Module*> Module::getModules() {
+std::vector<Module*>* Module::getModules() {
     return modules;
 }
 
