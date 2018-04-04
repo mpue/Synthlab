@@ -41,11 +41,14 @@ SynthEditor::SynthEditor ()
 
     //[Constructor] You can add your own custom stuff here..
 
-    root = new Module();
+    root = new Module("Root");
 
 	setRepaintsOnMouseActivity(true);
 	setMouseClickGrabsKeyboardFocus(true);
 	setWantsKeyboardFocus(true);
+    
+    addChildComponent(root);
+    
     //[/Constructor]
 }
 
@@ -54,13 +57,12 @@ SynthEditor::~SynthEditor()
     //[Destructor_pre]. You can add your own custom destruction code here..
     //[/Destructor_pre]
 
-
-
     //[Destructor]. You can add your own custom destruction code here..
 
     cleanUp();
 
-    // delete root;
+    if (root)
+        delete root;
     
     //[/Destructor]
 }
@@ -205,7 +207,7 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 	}
 	else if (e.mods.isRightButtonDown()) {
 
-		PopupMenu m;
+		PopupMenu* m = new PopupMenu();
 
 		Module* module = nullptr;
 
@@ -216,11 +218,11 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 		}
 
 		if (module != nullptr) {
-			m.addItem(1, "Add input");
-			m.addItem(2, "Add output");
+			m->addItem(1, "Add input");
+			m->addItem(2, "Add output");
             
 
-			const int result = m.show();
+			const int result = m->show();
 
 			if (result == 0)
 			{
@@ -237,12 +239,12 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 		}
 		else {
 
-			m.addItem(1, "Add module");
-			m.addItem(2, "Save");
-            m.addItem(3, "Load");
-            m.addItem(4, "New");
+			m->addItem(1, "Add module");
+			m->addItem(2, "Save");
+            m->addItem(3, "Load");
+            m->addItem(4, "New");
 
-			const int result = m.show();
+			const int result = m->show();
 
 			if (result == 0)
 			{
@@ -272,9 +274,12 @@ void SynthEditor::mouseDown (const MouseEvent& e)
             }
 		}
 
+        delete m;
 	}
 
     repaint();
+    
+
 
     //[/UserCode_mouseDown]
 }
