@@ -39,6 +39,7 @@
 */
 class SynthEditor  : public Component,
                      public ChangeBroadcaster
+
 {
 public:
     //==============================================================================
@@ -53,7 +54,8 @@ public:
     void deleteSelected();
     bool PointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<int> pt, double epsilon);
     void setTab(TabbedComponent* t);
-
+    void setDeviceManager(AudioDeviceManager* manager);
+    
     void setModule(Module * m);
     Module* getModule();
 
@@ -63,9 +65,11 @@ public:
     void openFile();
 
     void saveStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections, ValueTree* v);
-    void loadStructure(std::vector<Module *>* modules, std::vector<Connection*>* connections,ValueTree* v);
+    void loadStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections,ValueTree* v);
 
     Module* getSelectedModule();    
+    
+    void openSettings();
     
     //[/UserMethods]
 
@@ -109,7 +113,9 @@ private:
 	int minrepainty = 0;
 
     TabbedComponent* tab;
-
+    
+    AudioDeviceManager* deviceManager;
+    
     //[/UserVariables]
 
     //==============================================================================

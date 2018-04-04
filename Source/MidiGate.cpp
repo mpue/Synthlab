@@ -34,3 +34,7 @@ void MidiGate::paint(juce::Graphics &g) {
     Module::paint(g);
 }
 
+void MidiGate::gate() {
+    Logger::writeToLog(getName() + " : Gate received.");
+}
+

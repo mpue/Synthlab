@@ -243,6 +243,7 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 			m->addItem(2, "Save");
             m->addItem(3, "Load");
             m->addItem(4, "New");
+            m->addItem(5, "Settings");
             
             PopupMenu* prefabMenu = new PopupMenu();
             
@@ -277,6 +278,9 @@ void SynthEditor::mouseDown (const MouseEvent& e)
             }
             else if (result == 4) {
                 newFile();
+            }
+            else if (result == 5) {
+                openSettings();
             }
             else if (result == 51) {
                 Module* m = new MidiGate();
@@ -744,6 +748,25 @@ Module* SynthEditor::getSelectedModule() {
     return nullptr;
 }
 
+void SynthEditor::setDeviceManager(juce::AudioDeviceManager* manager) {
+    this->deviceManager = manager;
+}
+
+void SynthEditor::openSettings() {
+    AudioDeviceSelectorComponent* selector = new AudioDeviceSelectorComponent(*deviceManager, 2, 16, 2, 16, true, true, true, false);
+    DialogWindow::LaunchOptions launchOptions;
+    launchOptions.dialogTitle = ("Audio Settings");
+    launchOptions.escapeKeyTriggersCloseButton = true;
+    launchOptions.resizable = true;
+    launchOptions.useNativeTitleBar = false;
+    launchOptions.useBottomRightCornerResizer = true;
+    launchOptions.componentToCentreAround = getParentComponent();
+    launchOptions.content.setOwned(selector);
+    launchOptions.content->setSize(600, 580);
+    launchOptions.runModal();
+    
+    // setupIO();
+}
 //[/MiscUserCode]
 
 

@@ -10,6 +10,7 @@
 #include "SynthEditor.h"
 #include "PropertyView.h"
 #include "MainTabbedComponent.h"
+#include "MidiGate.h"
 //==============================================================================
 MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
 {
@@ -20,6 +21,9 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     // specify the number of input and output channels that we want to open
     setAudioChannels (2, 2);
 
+    deviceManager.setMidiInputEnabled("Rev2", true);
+    deviceManager.addMidiInputCallback("Rev2", this);
+    
     editor = new SynthEditor();
     
     tab = new MainTabbedComponent();    
@@ -31,6 +35,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     propertyView =  new PropertyView();
     
     editor->addChangeListener(propertyView);
+    editor->setDeviceManager(&deviceManager);
     
     addAndMakeVisible (propertyView);
     addAndMakeVisible (resizerBar);
@@ -116,3 +121,32 @@ void MainComponent::resized()
                                          r.getX(), r.getY(), r.getWidth(), r.getHeight(),
                                          false, true);
 }
+
+void MainComponent::handleIncomingMidiMessage(juce::MidiInput *source, const juce::MidiMessage &message) {
+    Logger::writeToLog(message.getDescription());
+    
+    if (message.isNoteOn()) {
+        for (int i = 0; i < editor->getModule()->getModules()->size();i++) {
+            sendGateMessage(editor->getModule()->getModules()->at(i));
+        }
+    }
+}
+
+void MainComponent::sendGateMessage(Module *module) {
+    
+    MidiGate* gate;
+    
+    if ((gate = dynamic_cast<MidiGate*>(module)) != NULL) {
+        gate->gate();
+    }
+    
+    for (int i = 0; i< module->getModules()->size();i++) {
+        
+        if ((gate = dynamic_cast<MidiGate*>(module->getModules()->at(i)))!= NULL) {
+            gate->gate();
+            sendGateMessage(module->getModules()->at(i));
+        }
+    }
+    
+}
+

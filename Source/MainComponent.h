@@ -17,7 +17,7 @@
     This component lives inside our window, and this is where you should put all
     your controls and content.
 */
-class MainComponent   : public AudioAppComponent
+class MainComponent   : public AudioAppComponent, AudioProcessorPlayer
 {
 public:
     //==============================================================================
@@ -29,6 +29,10 @@ public:
     void getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill) override;
     void releaseResources() override;
 
+    void handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) override;
+    
+    void sendGateMessage(Module* module);
+    
     //==============================================================================
     void paint (Graphics& g) override;
     void resized() override;

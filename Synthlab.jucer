@@ -2,6 +2,10 @@
 
 <JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.2.1">
   <MAINGROUP id="CKGTaZ" name="Synthlab">
+    <GROUP id="{CEEB3DEE-53A5-006F-633B-91BE10C6A8CA}" name="Images">
+      <FILE id="gJAegc" name="led_off.png" compile="1" resource="1" file="Images/led_off.png"/>
+      <FILE id="xTBQB1" name="led_on.png" compile="1" resource="1" file="Images/led_on.png"/>
+    </GROUP>
     <GROUP id="{CA20D122-1EA5-3A93-F1F8-F6EE53DA457E}" name="Source">
       <GROUP id="{A79C9093-D329-37A0-AEE1-CF7BDC5C60DE}" name="AudioEngine">
         <FILE id="WWyH1B" name="ADSR.cpp" compile="1" resource="0" file="Source/AudioEngine/ADSR.cpp"/>
