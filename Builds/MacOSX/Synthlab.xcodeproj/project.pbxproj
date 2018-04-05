@@ -49,6 +49,7 @@
 		B7AD2539F07679B2F8BB192A /* MultimodeFilter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 90A8DE0F66F4B257829B0152 /* MultimodeFilter.cpp */; };
 		BF1E2A0B20755A1900C78BC9 /* MidiOut.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF1E2A0A20755A1900C78BC9 /* MidiOut.cpp */; };
 		BF582CE22075FD3C0047A2ED /* Event.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF582CE02075FD3C0047A2ED /* Event.cpp */; };
+		BF582CE5207612AA0047A2ED /* MidiNote.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF582CE4207612AA0047A2ED /* MidiNote.cpp */; };
 		C039879734BFC23379C3E7D0 /* MainTabbedComponent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EAB86FFC05CAC97D9B6A7923 /* MainTabbedComponent.cpp */; };
 		C610F81049F1521AC882376B /* include_juce_gui_basics.mm in Sources */ = {isa = PBXBuildFile; fileRef = 40463DDCBC6E269C2ADA7C11 /* include_juce_gui_basics.mm */; };
 		C9893935C89DD89BB9D666F8 /* Sawtooth.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7BCD392FAB5A17F3E71335BF /* Sawtooth.cpp */; };
@@ -164,6 +165,8 @@
 		BF1E2A0A20755A1900C78BC9 /* MidiOut.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MidiOut.cpp; path = ../../Source/MidiOut.cpp; sourceTree = "<group>"; };
 		BF582CE02075FD3C0047A2ED /* Event.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Event.cpp; path = ../../Source/AudioEngine/Event.cpp; sourceTree = "<group>"; };
 		BF582CE12075FD3C0047A2ED /* Event.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Event.h; path = ../../Source/AudioEngine/Event.h; sourceTree = "<group>"; };
+		BF582CE3207612A90047A2ED /* MidiNote.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MidiNote.h; path = ../../Source/MidiNote.h; sourceTree = "<group>"; };
+		BF582CE4207612AA0047A2ED /* MidiNote.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MidiNote.cpp; path = ../../Source/MidiNote.cpp; sourceTree = "<group>"; };
 		C1CAD9D57965D31D94D63403 /* include_juce_audio_formats.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_formats.mm; path = ../../JuceLibraryCode/include_juce_audio_formats.mm; sourceTree = SOURCE_ROOT; };
 		C6B977942D525818B775A722 /* include_juce_audio_devices.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_audio_devices.mm; path = ../../JuceLibraryCode/include_juce_audio_devices.mm; sourceTree = SOURCE_ROOT; };
 		C7298C8B444183C6141B9096 /* HighPassFilter.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = HighPassFilter.h; path = ../../Source/AudioEngine/HighPassFilter.h; sourceTree = SOURCE_ROOT; };
@@ -233,6 +236,8 @@
 		2751412A34A4C2F2F5E4D649 /* Prefabs */ = {
 			isa = PBXGroup;
 			children = (
+				BF582CE4207612AA0047A2ED /* MidiNote.cpp */,
+				BF582CE3207612A90047A2ED /* MidiNote.h */,
 				BF1E2A0A20755A1900C78BC9 /* MidiOut.cpp */,
 				BF1E2A0920755A1800C78BC9 /* MidiOut.h */,
 				BA501B2DEBA61FBB6E1353F7 /* MidiGate.cpp */,
@@ -510,6 +515,7 @@
 				DFE49E4705DBADCC8A76B32F /* BasicDelayLine.cpp in Sources */,
 				60F3E3D33377862266516D44 /* Distortion.cpp in Sources */,
 				A49787803BF4BA8803A254F6 /* Filter.cpp in Sources */,
+				BF582CE5207612AA0047A2ED /* MidiNote.cpp in Sources */,
 				88E9CDA429FDFC4A45EA17B7 /* HighPassFilter.cpp in Sources */,
 				122F8FA2A61EFE22DBDF565F /* LowPassFilter.cpp in Sources */,
 				2CC7CB38A2303419A5E7B4FB /* ModTarget.cpp in Sources */,

@@ -32,3 +32,12 @@ String Event::getName() {
 Event::Type Event::getType() {
     return type;
 }
+
+void Event::setValue(int value) {
+    this->value = value;
+}
+
+int Event::getValue() {
+    return value;
+}
+

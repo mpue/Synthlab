@@ -11,6 +11,7 @@
 #include "PropertyView.h"
 #include "MainTabbedComponent.h"
 #include "MidiGate.h"
+#include "MidiNote.h"
 //==============================================================================
 MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
 {
@@ -129,6 +130,7 @@ void MainComponent::handleIncomingMidiMessage(juce::MidiInput *source, const juc
     if (message.isNoteOn()) {
         for (int i = 0; i < editor->getModule()->getModules()->size();i++) {
             sendGateMessage(editor->getModule()->getModules()->at(i), message.getVelocity(),true);
+            sendNoteMessage(editor->getModule()->getModules()->at(i), message.getNoteNumber());
         }
     }
     else if (message.isNoteOff()) {
@@ -165,5 +167,21 @@ void MainComponent::sendGateMessage(Module *module,int velocity,  bool on) {
         }
     }
     
+}
+
+void MainComponent::sendNoteMessage(Module *module, int note) {
+    
+    MidiNote* midiNote;
+    
+    if ((midiNote = dynamic_cast<MidiNote*>(module)) != NULL) {
+        midiNote->note(note);
+    }
+    
+    for (int i = 0; i< module->getModules()->size();i++) {
+        
+        if ((midiNote = dynamic_cast<MidiNote*>(module->getModules()->at(i)))!= NULL) {
+            sendNoteMessage(module->getModules()->at(i), note);
+        }
+    }
 }
 

@@ -15,7 +15,8 @@ class Event {
 public:
     
     static enum Type {
-        GATE
+        GATE,
+        NOTE
     };
     
     Event();
@@ -25,12 +26,14 @@ public:
     
   String getName();
     Type getType();
+    int getValue();
+    void setValue(int value);
     
 private:
     
     Type type;
     String name;
-    
+    int value = 0;
 };
 
 

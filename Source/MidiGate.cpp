@@ -38,7 +38,10 @@ void MidiGate::paint(juce::Graphics &g) {
 
 void MidiGate::gateOn(int velocity) {
     
-    pins.at(0)->sendEvent(new Event("gate",Event::Type::GATE));
+    Event* e = new Event("gate",Event::Type::GATE);
+    e->setValue(velocity);
+    pins.at(0)->sendEvent(e);
+    
     
     /*
     for (int i = 0; i < pins.size();i++) {
