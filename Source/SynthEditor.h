@@ -95,6 +95,8 @@ private:
 	bool isDraggingConnection = false;
 
     Module* root;
+    
+    bool isRoot = true;;
 
 	int mouseX = 0;
 	int mouseY = 0;

@@ -26,6 +26,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     deviceManager.setMidiInputEnabled("Scarlett 6i6 USB", true);
     deviceManager.addMidiInputCallback("Scarlett 6i6 USB", this);
     
+    
     editor = new SynthEditor();
     
     tab = new MainTabbedComponent();    
@@ -63,10 +64,12 @@ MainComponent::~MainComponent()
 {
     // This shuts down the audio device and clears the audio source.
     shutdownAudio();
+    
     editor->removeAllChangeListeners();
 	delete editor;
     delete tab;
     delete propertyView;
+     
 }
 
 //==============================================================================

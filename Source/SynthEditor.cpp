@@ -65,10 +65,10 @@ SynthEditor::~SynthEditor()
 
     cleanUp();
 
-    /*
-    if (root)
+    
+    if (isRoot)
         delete root;
-    */
+    
 
     //[/Destructor]
 }
@@ -316,6 +316,8 @@ void SynthEditor::mouseDown (const MouseEvent& e)
                 addAndMakeVisible(m);
                 root->getModules()->push_back(m);
             }
+            
+            delete prefabMenu;
 		}
 
         delete m;
@@ -807,6 +809,7 @@ bool SynthEditor::PointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<int> 
 
 void SynthEditor::setModule(Module *m) {
     this->root = m;
+    isRoot = false;
 
     for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
         addAndMakeVisible((*it));
