@@ -24,6 +24,7 @@
 #include "MultiComponentDragger.h"
 #include <vector>
 #include "Pin.h"
+#include "AudioEngine/EventListener.h"
 // #include "Connection.h"
 
 class Connection;
@@ -41,7 +42,8 @@ class Connection;
                                                                     //[/Comments]
 */
 class Module  : public Component,
-                public TextEditor::Listener
+                public TextEditor::Listener,
+                public EventListener
 {
 public:
     //==============================================================================
@@ -51,6 +53,7 @@ public:
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
     void addPin(Pin::Direction direction);
+    void addPin(Pin::Direction direction, Pin *p);
     void addPin(Pin* p);
 	Module(String name);
 
@@ -80,6 +83,8 @@ public:
 
     bool isEditable() { return editable;}
     bool isPrefab() { return prefab;};
+    
+    void eventReceived(Event* e) override;
     //[/UserMethods]
 
     void paint (Graphics& g) override;

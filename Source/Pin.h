@@ -11,6 +11,7 @@
 #pragma once
 
 #include "AudioEngine/Event.h"
+#include "AudioEngine/EventListener.h"
 
 class Pin {
 
@@ -37,6 +38,7 @@ public:
     Type type;
     
     std::vector<Pin*> connections;
+    std::vector<EventListener*> listeners;
     
     void sendEvent(Event* e);
     

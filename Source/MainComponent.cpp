@@ -22,9 +22,9 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     // specify the number of input and output channels that we want to open
     setAudioChannels (2, 2);
 
-    deviceManager.setDefaultMidiOutput("MPKmini2");
-    deviceManager.setMidiInputEnabled("MPKmini2", true);
-    deviceManager.addMidiInputCallback("MPKmini2", this);
+    deviceManager.setDefaultMidiOutput("Scarlett 6i6 USB");
+    deviceManager.setMidiInputEnabled("Scarlett 6i6 USB", true);
+    deviceManager.addMidiInputCallback("Scarlett 6i6 USB", this);
     
     editor = new SynthEditor();
     
@@ -125,7 +125,7 @@ void MainComponent::resized()
 }
 
 void MainComponent::handleIncomingMidiMessage(juce::MidiInput *source, const juce::MidiMessage &message) {
-    Logger::writeToLog(message.getDescription());
+
     
     if (message.isNoteOn()) {
         for (int i = 0; i < editor->getModule()->getModules()->size();i++) {
@@ -138,6 +138,8 @@ void MainComponent::handleIncomingMidiMessage(juce::MidiInput *source, const juc
             sendGateMessage(editor->getModule()->getModules()->at(i), message.getVelocity(),false);
         }
     }
+    
+    // deviceManager.getDefaultMidiOutput()->sendMessageNow(message);
 }
 
 void MainComponent::sendGateMessage(Module *module,int velocity,  bool on) {
@@ -147,7 +149,8 @@ void MainComponent::sendGateMessage(Module *module,int velocity,  bool on) {
     
     if ((gate = dynamic_cast<MidiGate*>(module)) != NULL) {
         if (on) {
-            gate->gateOn(velocity);
+            if (velocity > 0)
+                gate->gateOn(velocity);
         }
         else {
             gate->gateOff();
@@ -163,6 +166,7 @@ void MainComponent::sendGateMessage(Module *module,int velocity,  bool on) {
             else {
                 gate->gateOff();
             }
+            
             sendGateMessage(module->getModules()->at(i),velocity,on);
         }
     }
@@ -174,7 +178,8 @@ void MainComponent::sendNoteMessage(Module *module, int note) {
     MidiNote* midiNote;
     
     if ((midiNote = dynamic_cast<MidiNote*>(module)) != NULL) {
-        midiNote->note(note);
+        if (note > 0)
+            midiNote->note(note);
     }
     
     for (int i = 0; i< module->getModules()->size();i++) {

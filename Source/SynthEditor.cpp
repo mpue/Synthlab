@@ -23,6 +23,7 @@
 #include "SynthEditor.h"
 #include "MidiGate.h"
 #include "MidiNote.h"
+#include "MidiOut.h"
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 //[/MiscUserDefs]
@@ -292,6 +293,16 @@ void SynthEditor::mouseDown (const MouseEvent& e)
                 m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
                 m->setIndex(Time::currentTimeMillis());
 
+                addAndMakeVisible(m);
+                root->getModules()->push_back(m);
+            }
+            else if (result == 52) {
+                MidiOut* m = new MidiOut();
+                m->setName("Midi Out");
+                
+                m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
+                m->setIndex(Time::currentTimeMillis());
+                m->setDeviceManager(deviceManager);
                 addAndMakeVisible(m);
                 root->getModules()->push_back(m);
             }
@@ -632,13 +643,17 @@ void SynthEditor::deleteSelected() {
             // remove connections from pin
             
             // for all connections to the pin a
-            for (int j = 0; j < c->a->connections.size();j++) {
+            // for (int j = 0; j < c->a->connections.size();j++) {
+            for (std::vector<Pin*>::iterator it = c->a->connections.begin(); it != c->a->connections.end();) {
                 // find the connections to pin a
                 for (int k = 0; k < c->target->getPins().size();k++) {
                     // if the index of the pin matches it must be a connection to the pin
-                    if (c->a->connections.at(j)->index == c->target->getPins().at(k)->index) {
+                    if ((*it) != nullptr && (*it)->index == c->target->getPins().at(k)->index) {
                         // erase the connection from the vector
-                        c->a->connections.erase(c->a->connections.begin() + j);
+                        it = c->a->connections.erase(it);
+                    }
+                    else {
+                        ++it;
                     }
                 }
             }

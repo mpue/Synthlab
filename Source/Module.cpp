@@ -220,6 +220,35 @@ void Module::addPin(Pin* p) {
     pins.push_back(p);
 }
 
+void Module::addPin(Pin::Direction direction, Pin* p) {
+       
+    int numInputs = 0;
+    int numOutputs = 0;
+    
+    for (int i = 0; i < pins.size(); i++) {
+        if (pins.at(i)->direction == Pin::Direction::IN) {
+            numInputs++;
+        }
+        else {
+            numOutputs++;
+        }
+    }
+    
+    if (direction == Pin::Direction::IN) {
+        p->x = 0;
+        p->y = 10 + numInputs * 20;
+    }
+    else {
+        p->x = getWidth() - 10;
+        p->y = 10 + numOutputs * 20;
+    }
+    
+    p->direction = direction;
+    p->index = (long)Time::currentTimeMillis();
+    
+    pins.push_back(p);
+}
+
 void Module::addPin(Pin::Direction direction) {
 
     Pin* p = new Pin();
@@ -327,6 +356,9 @@ void Module::setName(juce::String name) {
     nameLabel->setText(getName(), NotificationType::dontSendNotification);
 }
 
+void Module::eventReceived(Event *e) {
+    
+}
 
 //[/MiscUserCode]
 

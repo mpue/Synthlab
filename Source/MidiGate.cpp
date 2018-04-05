@@ -62,13 +62,7 @@ void MidiGate::gateOn(int velocity) {
 }
 
 void MidiGate::gateOff() {
-    for (int i = 0; i < connections->size();i++) {
-        
-        MidiOut* out;
-        
-        if ((out = dynamic_cast<MidiOut*>(connections->at(i)->target)) != NULL) {
-            out->gate(true, 0);
-        }
-        
-    }
+    Event* e = new Event("gate",Event::Type::GATE);
+    e->setValue(0);
+    pins.at(0)->sendEvent(e);
 }

@@ -48,6 +48,7 @@
 		B737CE5B3A4E6B234A35473E /* Voice.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B13D998212CBEAFFD86785EA /* Voice.cpp */; };
 		B7AD2539F07679B2F8BB192A /* MultimodeFilter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 90A8DE0F66F4B257829B0152 /* MultimodeFilter.cpp */; };
 		BF1E2A0B20755A1900C78BC9 /* MidiOut.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF1E2A0A20755A1900C78BC9 /* MidiOut.cpp */; };
+		BF5201862076A91F00F288E2 /* SawtoothModule.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF5201842076A91E00F288E2 /* SawtoothModule.cpp */; };
 		BF582CE22075FD3C0047A2ED /* Event.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF582CE02075FD3C0047A2ED /* Event.cpp */; };
 		BF582CE5207612AA0047A2ED /* MidiNote.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF582CE4207612AA0047A2ED /* MidiNote.cpp */; };
 		C039879734BFC23379C3E7D0 /* MainTabbedComponent.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EAB86FFC05CAC97D9B6A7923 /* MainTabbedComponent.cpp */; };
@@ -161,8 +162,11 @@
 		B958C14CA6B0131146DAD7F3 /* juce_data_structures */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_data_structures; path = ../../../JUCE/modules/juce_data_structures; sourceTree = SOURCE_ROOT; };
 		BA501B2DEBA61FBB6E1353F7 /* MidiGate.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = MidiGate.cpp; path = ../../Source/MidiGate.cpp; sourceTree = SOURCE_ROOT; };
 		BEABC88233780CFF0A5FF493 /* Sawtooth.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Sawtooth.h; path = ../../Source/AudioEngine/Sawtooth.h; sourceTree = SOURCE_ROOT; };
+		BF0F9223207637AB0087CE07 /* EventListener.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = EventListener.h; path = ../../Source/AudioEngine/EventListener.h; sourceTree = "<group>"; };
 		BF1E2A0920755A1800C78BC9 /* MidiOut.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MidiOut.h; path = ../../Source/MidiOut.h; sourceTree = "<group>"; };
 		BF1E2A0A20755A1900C78BC9 /* MidiOut.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MidiOut.cpp; path = ../../Source/MidiOut.cpp; sourceTree = "<group>"; };
+		BF5201842076A91E00F288E2 /* SawtoothModule.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SawtoothModule.cpp; path = ../../Source/SawtoothModule.cpp; sourceTree = "<group>"; };
+		BF5201852076A91E00F288E2 /* SawtoothModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SawtoothModule.h; path = ../../Source/SawtoothModule.h; sourceTree = "<group>"; };
 		BF582CE02075FD3C0047A2ED /* Event.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Event.cpp; path = ../../Source/AudioEngine/Event.cpp; sourceTree = "<group>"; };
 		BF582CE12075FD3C0047A2ED /* Event.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Event.h; path = ../../Source/AudioEngine/Event.h; sourceTree = "<group>"; };
 		BF582CE3207612A90047A2ED /* MidiNote.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MidiNote.h; path = ../../Source/MidiNote.h; sourceTree = "<group>"; };
@@ -236,6 +240,8 @@
 		2751412A34A4C2F2F5E4D649 /* Prefabs */ = {
 			isa = PBXGroup;
 			children = (
+				BF5201842076A91E00F288E2 /* SawtoothModule.cpp */,
+				BF5201852076A91E00F288E2 /* SawtoothModule.h */,
 				BF582CE4207612AA0047A2ED /* MidiNote.cpp */,
 				BF582CE3207612A90047A2ED /* MidiNote.h */,
 				BF1E2A0A20755A1900C78BC9 /* MidiOut.cpp */,
@@ -362,6 +368,7 @@
 				C7DC055B8C128E93B44B640F /* Voice.h */,
 				A3DC3980576B82E0C6D0DD6A /* WhiteNoise.cpp */,
 				A485FF22BED02497474E3555 /* WhiteNoise.h */,
+				BF0F9223207637AB0087CE07 /* EventListener.h */,
 			);
 			name = AudioEngine;
 			sourceTree = "<group>";
@@ -552,6 +559,7 @@
 				6DC3919609FD3539E05A7E25 /* include_juce_cryptography.mm in Sources */,
 				8075CC9E317A92C05DEC6261 /* include_juce_data_structures.mm in Sources */,
 				116BB02B028F386691AD7F33 /* include_juce_events.mm in Sources */,
+				BF5201862076A91F00F288E2 /* SawtoothModule.cpp in Sources */,
 				9E845A4E4FFF3B8136095846 /* include_juce_graphics.mm in Sources */,
 				C610F81049F1521AC882376B /* include_juce_gui_basics.mm in Sources */,
 				6E98A9E2464C472C5FCF72FA /* include_juce_gui_extra.mm in Sources */,
