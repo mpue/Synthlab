@@ -31,7 +31,20 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     
     tab = new MainTabbedComponent();    
     tab->setBounds(0,0,getWidth(),getHeight());
-    tab->addTab("Main", juce::Colours::grey, editor, true);
+    
+    
+    view = new Viewport();
+    
+    addAndMakeVisible(view);
+    
+    view->setSize(500,200);
+    view->setViewedComponent(editor);
+    view->setScrollBarsShown(true,true);
+    view->setScrollOnDragEnabled(true);
+    view->setWantsKeyboardFocus(false);
+    view->setMouseClickGrabsKeyboardFocus(false);
+    
+    tab->addTab("Main", juce::Colours::grey, view, true);
     
     editor->setTab(tab);
     

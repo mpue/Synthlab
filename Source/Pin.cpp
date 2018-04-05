@@ -11,6 +11,7 @@
 #include "Pin.h"
 
 Pin::Pin() {
+    name = "";
 }
 
 void Pin::sendEvent(Event *e) {
@@ -26,4 +27,12 @@ void Pin::sendEvent(Event *e) {
     }
     
     delete e;
+}
+
+String Pin::getName() {
+    return name;
+}
+
+void Pin::setName(String name) {
+    this->name = name;
 }

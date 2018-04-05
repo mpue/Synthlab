@@ -12,6 +12,7 @@
 
 #include "AudioEngine/Event.h"
 #include "AudioEngine/EventListener.h"
+#include "../JuceLibraryCode/JuceHeader.h"
 
 class Pin {
 
@@ -41,5 +42,11 @@ public:
     std::vector<EventListener*> listeners;
     
     void sendEvent(Event* e);
+    
+    String getName();
+    void setName(String name);
+    
+private:
+    String name;
     
 };

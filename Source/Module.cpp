@@ -23,8 +23,6 @@
 class Connection;
 //[/Headers]
 
-#include "Module.h"
-
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 //[/MiscUserDefs]
@@ -149,10 +147,14 @@ void Module::paint (Graphics& g)
 
             if (pins.at(i)->direction == Pin::Direction::IN) {
                 g.fillRect(pins.at(i)->x,pins.at(i)->y, 5, 10);
+                g.drawText(pins.at(i)->getName() , pins.at(i)->x +7,pins.at(i)->y, 10, 10, juce::Justification::left);
             }
             else {
                 g.fillRect(pins.at(i)->x + 5, pins.at(i)->y, 5, 10);
+                g.drawText(pins.at(i)->getName() , pins.at(i)->x - 10,pins.at(i)->y, 10, 10, juce::Justification::right);
             }
+            
+            
         }
 
         Component::paint(g);

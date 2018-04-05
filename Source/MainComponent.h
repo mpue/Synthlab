@@ -45,6 +45,7 @@ private:
 	SynthEditor* editor;
     MainTabbedComponent* tab;
     PropertyView* propertyView;
+    Viewport* view;
     
     StretchableLayoutManager stretchableManager;
     StretchableLayoutResizerBar resizerBar;

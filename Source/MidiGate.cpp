@@ -23,6 +23,7 @@ MidiGate::MidiGate()
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(2,2);
     addPin(Pin::Direction::OUT);
+    pins.at(0)->setName("G");
     editable = false;
 }
 

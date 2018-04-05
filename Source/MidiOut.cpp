@@ -17,17 +17,19 @@ MidiOut::MidiOut()
     // In your constructor, you should add any child components, and
     // initialise any special settings that your component needs.
    
-    setSize (70, 50);
+    setSize (80, 50);
     nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(2,2);
+    nameLabel->setTopLeftPosition(101,2);
     
     Pin* p1 = new Pin();
     p1->direction = Pin::Direction::IN;
     p1->listeners.push_back(this);
+    p1->setName("P");
     
     Pin* p2 = new Pin();
     p2->direction = Pin::Direction::IN;
     p2->listeners.push_back(this);
+    p2->setName("G");
     
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::IN,p2);

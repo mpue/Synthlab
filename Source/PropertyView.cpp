@@ -56,7 +56,7 @@ PropertyView::PropertyView ()
     nameValue = new Value();
     numInputsValue = new Value();
     
-    nameProp = new TextPropertyComponent(*nameValue,"name",16, true,true);
+    nameProp = new TextPropertyComponent(*nameValue,"name",16, false,true);
     inputsProp = new SliderPropertyComponent(*numInputsValue,"numInputs",0,16,1,1.0,true);
     
     nameListener = new NameListener(*nameValue, this);
