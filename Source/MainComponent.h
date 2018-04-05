@@ -31,7 +31,7 @@ public:
 
     void handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) override;
     
-    void sendGateMessage(Module* module);
+    void sendGateMessage(Module* module, int velocity, bool on);
     
     //==============================================================================
     void paint (Graphics& g) override;

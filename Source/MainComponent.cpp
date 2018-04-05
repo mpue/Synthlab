@@ -21,8 +21,9 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     // specify the number of input and output channels that we want to open
     setAudioChannels (2, 2);
 
-    deviceManager.setMidiInputEnabled("Rev2", true);
-    deviceManager.addMidiInputCallback("Rev2", this);
+    deviceManager.setDefaultMidiOutput("MPKmini2");
+    deviceManager.setMidiInputEnabled("MPKmini2", true);
+    deviceManager.addMidiInputCallback("MPKmini2", this);
     
     editor = new SynthEditor();
     
@@ -127,24 +128,40 @@ void MainComponent::handleIncomingMidiMessage(juce::MidiInput *source, const juc
     
     if (message.isNoteOn()) {
         for (int i = 0; i < editor->getModule()->getModules()->size();i++) {
-            sendGateMessage(editor->getModule()->getModules()->at(i));
+            sendGateMessage(editor->getModule()->getModules()->at(i), message.getVelocity(),true);
+        }
+    }
+    else if (message.isNoteOff()) {
+        for (int i = 0; i < editor->getModule()->getModules()->size();i++) {
+            sendGateMessage(editor->getModule()->getModules()->at(i), message.getVelocity(),false);
         }
     }
 }
 
-void MainComponent::sendGateMessage(Module *module) {
+void MainComponent::sendGateMessage(Module *module,int velocity,  bool on) {
+    
     
     MidiGate* gate;
     
     if ((gate = dynamic_cast<MidiGate*>(module)) != NULL) {
-        gate->gate();
+        if (on) {
+            gate->gateOn(velocity);
+        }
+        else {
+            gate->gateOff();
+        }
     }
     
     for (int i = 0; i< module->getModules()->size();i++) {
         
         if ((gate = dynamic_cast<MidiGate*>(module->getModules()->at(i)))!= NULL) {
-            gate->gate();
-            sendGateMessage(module->getModules()->at(i));
+            if (on) {
+                gate->gateOn(velocity);
+            }
+            else {
+                gate->gateOff();
+            }
+            sendGateMessage(module->getModules()->at(i),velocity,on);
         }
     }
     

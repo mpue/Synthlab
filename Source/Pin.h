@@ -10,11 +10,15 @@
 
 #pragma once
 
+#include "AudioEngine/Event.h"
+
 class Pin {
 
 
 public:
 
+    Pin();
+    
 	static enum Direction{
 		IN,
 		OUT
@@ -31,5 +35,9 @@ public:
     bool selected;
 	Direction direction;
     Type type;
+    
+    std::vector<Pin*> connections;
+    
+    void sendEvent(Event* e);
     
 };

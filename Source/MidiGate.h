@@ -24,8 +24,8 @@ public:
 
     void paint (Graphics& g) override;
 
-    void gate();
-    
+    void gateOn(int velocity);
+    void gateOff();
     
 private:
     

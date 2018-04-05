@@ -10,4 +10,15 @@
 
 #include "Pin.h"
 
+Pin::Pin() {
+}
 
+void Pin::sendEvent(Event *e) {
+    Logger::writeToLog("received event : "+e->getName());
+    
+    for (int i = 0; i < connections.size();i++) {
+        connections.at(i)->sendEvent(new Event(e));
+    }
+    
+    delete e;
+}

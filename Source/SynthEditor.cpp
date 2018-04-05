@@ -609,27 +609,78 @@ void SynthEditor::setTab(juce::TabbedComponent *t) {
 }
 
 void SynthEditor::deleteSelected() {
+    
+    // handle connections at root level
+    
     for (int i = 0; i < root->getConnections()->size(); i++) {
         Connection* c = root->getConnections()->at(i);
         if (c->selected) {
+            
+            // remove connections from pin
+            
+            // for all connections to the pin a
+            for (int j = 0; j < c->a->connections.size();j++) {
+                // find the connections to pin a
+                for (int k = 0; k < c->target->getPins().size();k++) {
+                    // if the index of the pin matches it must be a connection to the pin
+                    if (c->a->connections.at(j)->index == c->target->getPins().at(k)->index) {
+                        // erase the connection from the vector
+                        c->a->connections.erase(c->a->connections.begin() + j);
+                    }
+                }
+            }
+            
             delete c;
             root->getConnections()->erase(root->getConnections()->begin() + i);
+            
         }
     }
+    
+    // delete module if selected
 
     for (int i = 0; i < root->getModules()->size(); i++) {
 
         Module* m = root->getModules()->at(i);
 
-        for (int i = 0; i < root->getConnections()->size(); i++) {
-            Connection* c = root->getConnections()->at(i);
-            if (c->source == m || c->target == m) {
-                delete c;
-                root->getConnections()->erase(root->getConnections()->begin() + i);
-            }
-        }
-
         if (m->isSelected()) {
+            
+            // remove connections first
+            
+            for (int i = 0; i < root->getConnections()->size(); i++) {
+                Connection* c = root->getConnections()->at(i);
+                if (c->source == m || c->target == m) {
+                    
+                    delete c;
+                    root->getConnections()->erase(root->getConnections()->begin() + i);
+                }
+            }
+            
+            // now remove all pin related connections from other modules
+            
+            // for each module
+            for (int j = 0; j < root->getModules()->size(); j++) {
+                
+                // for each pin
+                for (int k = 0; k < root->getModules()->at(j)->getPins().size(); k++) {
+
+                    // for every connection of each pin
+                    for (int l = 0; l < root->getModules()->at(j)->getPins().at(k)->connections.size(); l++) {
+                    
+                        // for each pn of the module being removed
+                        for (int n = 0; n < m->getPins().size();n++) {
+                            // if the index matches remove pin from vector
+                            
+                            if (root->getModules()->at(j)->getPins().at(k)->connections.at(l)->index == m->getPins().at(n)->index) {
+                                root->getModules()->at(j)->getPins().at(k)->connections.erase(root->getModules()->at(j)->getPins().at(k)->connections.begin() + l);
+                            }
+                        }
+                        
+                    }
+                    
+                }
+                
+            }
+            
             delete m;
             root->getModules()->erase(root->getModules()->begin() + i);
         }
@@ -696,6 +747,8 @@ void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
 	if (source != nullptr && target != nullptr && a != nullptr && b != nullptr) {
 		Logger::writeToLog("Adding new connection");
 
+        a->connections.push_back(b);
+        
 		Connection* c = new Connection(source, a, target, b);
 		root->getConnections()->push_back(c);
 		repaint();
