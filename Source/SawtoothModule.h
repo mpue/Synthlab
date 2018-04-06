@@ -33,6 +33,7 @@ private:
     int pitch;
     float amplitude;
     float fine = 0;
+    Image* image;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SawtoothModule)
 };

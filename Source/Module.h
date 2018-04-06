@@ -112,6 +112,7 @@ protected:
     //==============================================================================
     ScopedPointer<TextEditor> nameEditor;
     ScopedPointer<Label> nameLabel;
+    Image cachedImage_materialicons_301_viewmodule_64_0_ffffff_none_png_1;
 
 
     //==============================================================================

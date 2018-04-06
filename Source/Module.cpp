@@ -23,6 +23,8 @@
 class Connection;
 //[/Headers]
 
+#include "Module.h"
+
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 //[/MiscUserDefs]
@@ -53,6 +55,8 @@ Module::Module ()
     nameLabel->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
 
     nameLabel->setBounds (0, 16, 120, 24);
+
+    cachedImage_materialicons_301_viewmodule_64_0_ffffff_none_png_1 = ImageCache::getFromMemory (materialicons_301_viewmodule_64_0_ffffff_none_png, materialicons_301_viewmodule_64_0_ffffff_none_pngSize);
 
     //[UserPreSize]
     //[/UserPreSize]
@@ -121,52 +125,55 @@ void Module::paint (Graphics& g)
     {
         int x = 28, y = 44, width = 64, height = 64;
         //[UserPaintCustomArguments] Customize the painting arguments here..
-        g.setColour(juce::Colours::grey);
-
-        g.fillRect(0,0,getWidth(), getHeight());
-
-        if (selected) {
-            g.setColour(juce::Colours::orange);
-        }
-        else {
-            g.setColour(juce::Colours::black);
-        }
-        g.drawRect(0, 0, getWidth(), getHeight());
-
-
-        for (int i = 0; i < pins.size();i++) {
-
-            if (pins.at(i)->selected) {
-                g.setColour(juce::Colours::white);
-            }
-            else {
-                g.setColour(juce::Colours::orange);
-            }
-
-            if (pins.at(i)->direction == Pin::Direction::IN) {
-                //g.fillRect(pins.at(i)->x,pins.at(i)->y, 5, 10);
-                g.drawEllipse(pins.at(i)->x,pins.at(i)->y, 10, 10,1);
-                g.fillEllipse(pins.at(i)->x+2,pins.at(i)->y+2, 6, 6);
-                g.drawText(pins.at(i)->getName() , pins.at(i)->x + 12,pins.at(i)->y, 10, 10, juce::Justification::left);
-            }
-            else {
-                // g.fillRect(pins.at(i)->x + 5, pins.at(i)->y, 5, 10);
-                 g.drawEllipse(pins.at(i)->x, pins.at(i)->y, 10, 10,1);
-                g.fillEllipse(pins.at(i)->x+2,pins.at(i)->y +2, 6, 6);
-                g.drawText(pins.at(i)->getName() , pins.at(i)->x - 14,pins.at(i)->y, 20, 10, juce::Justification::right);
-            }
-            
-            
-        }
-
-        Component::paint(g);
         //[/UserPaintCustomArguments]
         g.setColour (Colours::black);
-
+        g.drawImageWithin (cachedImage_materialicons_301_viewmodule_64_0_ffffff_none_png_1,
+                           x, y, width, height,
+                           RectanglePlacement::centred,
+                           false);
     }
 
     //[UserPaint] Add your own custom painting code here..
 
+    g.setColour(juce::Colours::grey);
+
+    g.fillRect(0,0,getWidth(), getHeight());
+
+    if (selected) {
+        g.setColour(juce::Colours::orange);
+    }
+    else {
+        g.setColour(juce::Colours::black);
+    }
+    g.drawRect(0, 0, getWidth(), getHeight());
+
+
+    for (int i = 0; i < pins.size();i++) {
+
+        if (pins.at(i)->selected) {
+            g.setColour(juce::Colours::white);
+        }
+        else {
+            g.setColour(juce::Colours::orange);
+        }
+
+        if (pins.at(i)->direction == Pin::Direction::IN) {
+            //g.fillRect(pins.at(i)->x,pins.at(i)->y, 5, 10);
+            g.drawEllipse(pins.at(i)->x,pins.at(i)->y, 10, 10,1);
+            g.fillEllipse(pins.at(i)->x+2,pins.at(i)->y+2, 6, 6);
+            g.drawText(pins.at(i)->getName() , pins.at(i)->x + 12,pins.at(i)->y, 10, 10, juce::Justification::left);
+        }
+        else {
+            // g.fillRect(pins.at(i)->x + 5, pins.at(i)->y, 5, 10);
+            g.drawEllipse(pins.at(i)->x, pins.at(i)->y, 10, 10,1);
+            g.fillEllipse(pins.at(i)->x+2,pins.at(i)->y +2, 6, 6);
+            g.drawText(pins.at(i)->getName() , pins.at(i)->x - 14,pins.at(i)->y, 20, 10, juce::Justification::right);
+        }
+
+
+    }
+
+    Component::paint(g);
 
 
     //[/UserPaint]
@@ -222,10 +229,10 @@ void Module::addPin(Pin* p) {
 }
 
 void Module::addPin(Pin::Direction direction, Pin* p) {
-       
+
     int numInputs = 0;
     int numOutputs = 0;
-    
+
     for (int i = 0; i < pins.size(); i++) {
         if (pins.at(i)->direction == Pin::Direction::IN) {
             numInputs++;
@@ -234,7 +241,7 @@ void Module::addPin(Pin::Direction direction, Pin* p) {
             numOutputs++;
         }
     }
-    
+
     if (direction == Pin::Direction::IN) {
         p->x = 0;
         p->y = 10 + numInputs * 20;
@@ -243,10 +250,10 @@ void Module::addPin(Pin::Direction direction, Pin* p) {
         p->x = getWidth() - 10;
         p->y = 10 + numOutputs * 20;
     }
-    
+
     p->direction = direction;
     p->index = (long)Time::currentTimeMillis();
-    
+
     pins.push_back(p);
 }
 
@@ -358,7 +365,7 @@ void Module::setName(juce::String name) {
 }
 
 void Module::eventReceived(Event *e) {
-    
+
 }
 
 //[/MiscUserCode]
@@ -374,7 +381,7 @@ void Module::eventReceived(Event *e) {
 BEGIN_JUCER_METADATA
 
 <JUCER_COMPONENT documentType="Component" className="Module" componentName=""
-                 parentClasses="public Component, public TextEditor::Listener"
+                 parentClasses="public Component, public TextEditor::Listener, public EventListener"
                  constructorParams="" variableInitialisers="" snapPixels="8" snapActive="1"
                  snapShown="1" overlayOpacity="0.330" fixedSize="0" initialWidth="120"
                  initialHeight="140">
