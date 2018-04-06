@@ -139,19 +139,23 @@ void Module::paint (Graphics& g)
         for (int i = 0; i < pins.size();i++) {
 
             if (pins.at(i)->selected) {
-                g.setColour(juce::Colours::red);
+                g.setColour(juce::Colours::white);
             }
             else {
-                g.setColour(juce::Colours::black);
+                g.setColour(juce::Colours::orange);
             }
 
             if (pins.at(i)->direction == Pin::Direction::IN) {
-                g.fillRect(pins.at(i)->x,pins.at(i)->y, 5, 10);
-                g.drawText(pins.at(i)->getName() , pins.at(i)->x +7,pins.at(i)->y, 10, 10, juce::Justification::left);
+                //g.fillRect(pins.at(i)->x,pins.at(i)->y, 5, 10);
+                g.drawEllipse(pins.at(i)->x,pins.at(i)->y, 10, 10,1);
+                g.fillEllipse(pins.at(i)->x+2,pins.at(i)->y+2, 6, 6);
+                g.drawText(pins.at(i)->getName() , pins.at(i)->x + 12,pins.at(i)->y, 10, 10, juce::Justification::left);
             }
             else {
-                g.fillRect(pins.at(i)->x + 5, pins.at(i)->y, 5, 10);
-                g.drawText(pins.at(i)->getName() , pins.at(i)->x - 10,pins.at(i)->y, 10, 10, juce::Justification::right);
+                // g.fillRect(pins.at(i)->x + 5, pins.at(i)->y, 5, 10);
+                 g.drawEllipse(pins.at(i)->x, pins.at(i)->y, 10, 10,1);
+                g.fillEllipse(pins.at(i)->x+2,pins.at(i)->y +2, 6, 6);
+                g.drawText(pins.at(i)->getName() , pins.at(i)->x - 12,pins.at(i)->y, 10, 10, juce::Justification::right);
             }
             
             
