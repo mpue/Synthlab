@@ -10,7 +10,7 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../../Source/MainTabbedComponent.cpp"
-            timestampString = "544653705.1902061"
+            timestampString = "544541632.347068"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "51"
@@ -26,11 +26,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../../Source/SynthEditor.cpp"
-            timestampString = "544653705.1904401"
+            timestampString = "544685221.25611"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "289"
-            endingLineNumber = "289"
+            startingLineNumber = "287"
+            endingLineNumber = "287"
             landmarkName = "SynthEditor::mouseDown (const MouseEvent&amp; e)"
             landmarkType = "7">
          </BreakpointContent>
@@ -42,23 +42,7 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../../Source/MainComponent.cpp"
-            timestampString = "544653705.19064"
-            startingColumnNumber = "9223372036854775807"
-            endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "177"
-            endingLineNumber = "177"
-            landmarkName = "MainComponent::sendGateMessage(Module *module,int velocity, bool on)"
-            landmarkType = "7">
-         </BreakpointContent>
-      </BreakpointProxy>
-      <BreakpointProxy
-         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
-         <BreakpointContent
-            shouldBeEnabled = "No"
-            ignoreCount = "0"
-            continueAfterRunningActions = "No"
-            filePath = "../../Source/MainComponent.cpp"
-            timestampString = "544653705.190677"
+            timestampString = "544655740.314086"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "164"
@@ -73,12 +57,28 @@
             shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "../../Source/MidiGate.cpp"
-            timestampString = "544653705.190708"
+            filePath = "../../Source/MainComponent.cpp"
+            timestampString = "544655740.31436"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "50"
-            endingLineNumber = "50"
+            startingLineNumber = "151"
+            endingLineNumber = "151"
+            landmarkName = "MainComponent::handleIncomingMidiMessage(juce::MidiInput *source, const juce::MidiMessage &amp;message)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "../../Source/MidiGate.cpp"
+            timestampString = "544637031.459307"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "49"
+            endingLineNumber = "49"
             landmarkName = "MidiGate::gateOn(int velocity)"
             landmarkType = "7">
          </BreakpointContent>
@@ -90,12 +90,12 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../../Source/SynthEditor.cpp"
-            timestampString = "544653705.190888"
+            timestampString = "544685221.256505"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "653"
-            endingLineNumber = "653"
-            landmarkName = "SynthEditor::deleteSelected()"
+            startingLineNumber = "641"
+            endingLineNumber = "641"
+            landmarkName = "SynthEditor::loadStructure(std::vector&lt;Module *&gt;* modules, std::vector&lt;Connection*&gt;* connections,juce::ValueTree *v)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -106,11 +106,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../../Source/MidiOut.cpp"
-            timestampString = "544653705.191101"
+            timestampString = "544639577.962338"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "51"
-            endingLineNumber = "51"
+            startingLineNumber = "49"
+            endingLineNumber = "49"
             landmarkName = "MidiOut::message(juce::MidiMessage *message)"
             landmarkType = "7">
          </BreakpointContent>
@@ -122,11 +122,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../../Source/MidiOut.cpp"
-            timestampString = "544653705.1911401"
+            timestampString = "544639577.962539"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "61"
-            endingLineNumber = "61"
+            startingLineNumber = "59"
+            endingLineNumber = "59"
             landmarkName = "MidiOut::gate(bool on, int note, int velocity)"
             landmarkType = "7">
          </BreakpointContent>
@@ -138,11 +138,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../../Source/MidiOut.cpp"
-            timestampString = "544653705.1911711"
+            timestampString = "544639577.962689"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "56"
-            endingLineNumber = "56"
+            startingLineNumber = "54"
+            endingLineNumber = "54"
             landmarkName = "MidiOut::gate(bool on, int note, int velocity)"
             landmarkType = "7">
          </BreakpointContent>
@@ -154,11 +154,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../../Source/MidiOut.cpp"
-            timestampString = "544653705.1912"
+            timestampString = "544639577.962833"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "66"
-            endingLineNumber = "66"
+            startingLineNumber = "64"
+            endingLineNumber = "64"
             landmarkName = "MidiOut::gate(bool on, int note, int velocity)"
             landmarkType = "7">
          </BreakpointContent>
@@ -170,11 +170,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../../Source/MidiOut.cpp"
-            timestampString = "544653705.191228"
+            timestampString = "544639577.962974"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "87"
-            endingLineNumber = "87"
+            startingLineNumber = "85"
+            endingLineNumber = "85"
             landmarkName = "MidiOut::eventReceived(Event *e)"
             landmarkType = "7">
          </BreakpointContent>
@@ -186,11 +186,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../../Source/MidiOut.cpp"
-            timestampString = "544653705.191257"
+            timestampString = "544639577.963117"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "82"
-            endingLineNumber = "82"
+            startingLineNumber = "80"
+            endingLineNumber = "80"
             landmarkName = "MidiOut::eventReceived(Event *e)"
             landmarkType = "7">
          </BreakpointContent>

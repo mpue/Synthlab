@@ -123,16 +123,16 @@ void Module::paint (Graphics& g)
     {
         int x = 28, y = 44, width = 64, height = 64;
         //[UserPaintCustomArguments] Customize the painting arguments here..
-        if (selected) {
-            g.setColour(juce::Colours::lightgrey);
-        }
-        else {
-            g.setColour(juce::Colours::grey);
-        }
+        g.setColour(juce::Colours::grey);
 
         g.fillRect(0,0,getWidth(), getHeight());
 
-        g.setColour(juce::Colours::black);
+        if (selected) {
+            g.setColour(juce::Colours::orange);
+        }
+        else {
+            g.setColour(juce::Colours::black);
+        }
         g.drawRect(0, 0, getWidth(), getHeight());
 
 
@@ -155,7 +155,7 @@ void Module::paint (Graphics& g)
                 // g.fillRect(pins.at(i)->x + 5, pins.at(i)->y, 5, 10);
                  g.drawEllipse(pins.at(i)->x, pins.at(i)->y, 10, 10,1);
                 g.fillEllipse(pins.at(i)->x+2,pins.at(i)->y +2, 6, 6);
-                g.drawText(pins.at(i)->getName() , pins.at(i)->x - 12,pins.at(i)->y, 10, 10, juce::Justification::right);
+                g.drawText(pins.at(i)->getName() , pins.at(i)->x - 14,pins.at(i)->y, 20, 10, juce::Justification::right);
             }
             
             

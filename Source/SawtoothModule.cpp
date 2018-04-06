@@ -21,7 +21,7 @@ SawtoothModule::SawtoothModule()
    
     setSize(120,140);
     nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(12,2);
+    nameLabel->setTopLeftPosition(18,2);
     
     setName("Sawtooth");
     Pin* p1 = new Pin();
