@@ -14,6 +14,10 @@ Pin::Pin() {
     name = "";
 }
 
+Pin::~Pin() {
+    removeAllChangeListeners();
+}
+
 void Pin::sendEvent(Event *e) {
     
     // Logger::writeToLog("received event : "+e->getName() + " value "+String(e->getValue()));
@@ -35,4 +39,13 @@ String Pin::getName() {
 
 void Pin::setName(String name) {
     this->name = name;
+}
+
+void Pin::setSelected(bool selected) {
+    this->selected = selected;
+    sendChangeMessage();
+}
+
+bool Pin::isSelected() {
+    return this->selected;
 }

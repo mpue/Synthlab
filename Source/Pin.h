@@ -14,12 +14,13 @@
 #include "AudioEngine/EventListener.h"
 #include "../JuceLibraryCode/JuceHeader.h"
 
-class Pin {
+class Pin : public ChangeBroadcaster {
 
 
 public:
 
     Pin();
+    ~Pin();
     
 	static enum Direction{
 		IN,
@@ -34,9 +35,12 @@ public:
     int x;
     long index;
     int y;
-    bool selected;
+
 	Direction direction;
     Type type;
+    
+    void setSelected(bool selected);
+    bool isSelected();
     
     std::vector<Pin*> connections;
     std::vector<EventListener*> listeners;
@@ -47,6 +51,7 @@ public:
     void setName(String name);
     
 private:
+    bool selected = false;
     String name;
     
 };

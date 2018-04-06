@@ -152,12 +152,7 @@ void SynthEditor::mouseMove (const MouseEvent& e)
 {
     //[UserCode_mouseMove] -- Add your code here...
 
-    for (int i = 0; i < root->getModules()->size(); i++) {
 
-		Module* m = root->getModules()->at(i);
-		checkForPinSelection(e, m);
-
-	}
 
 	mouseX = e.getPosition().getX();
 	mouseY = e.getPosition().getY();
@@ -177,6 +172,13 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 		minrepaintx = e.getPosition().x;
 		minrepainty = e.getPosition().y;
 
+        for (int i = 0; i < root->getModules()->size(); i++) {
+            
+            Module* m = root->getModules()->at(i);
+            checkForPinSelection(e, m);
+            
+        }
+        
 		for (int i = 0; i < root->getModules()->size(); i++) {
 
 			if (root->getModules()->at(i)->getBounds().contains(e.x,e.y)) {
@@ -360,7 +362,7 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
 
 		if (m->isSelected()) {
 
-			if (m->getSelectedPin() == nullptr) {
+			if (m->getSelectedPin() == nullptr || m->getSelectedPin() == NULL ) {
 				m->setTopLeftPosition(e.getDistanceFromDragStartX() + dragStartX, e.getDistanceFromDragStartY() + dragStartY);
 				lineStopX = 0;
 				lineStopY = 0;
@@ -368,9 +370,9 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
 			}
 
 		}
-		else {
-			checkForPinSelection(e, m);
-		}
+
+        checkForPinSelection(e, m);
+		
 	}
 
 	repaint();
@@ -735,10 +737,10 @@ void SynthEditor::checkForPinSelection(const MouseEvent& e, Module* m) {
 	for (int j = 0; j < m->pins.size(); j++) {
 
 		if (m->isMouseOverPin(j, e.getPosition())) {
-			m->pins.at(j)->selected = true;
+			m->pins.at(j)->setSelected(true);
 		}
 		else {
-			m->pins.at(j)->selected = false;
+			m->pins.at(j)->setSelected(false);
 		}
 
 	}
@@ -757,7 +759,7 @@ void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
 	// find the selected input of the source module
 	for (int j = 0; j < source->pins.size(); j++) {
 
-		if (source->pins.at(j)->selected) {
+		if (source->pins.at(j)->isSelected()) {
 			a = source->pins.at(j);
 			break;
 		}
@@ -776,7 +778,7 @@ void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
 		// find the selected input of the target  module
 		for (int j = 0; j < m->pins.size(); j++) {
 
-			if (m->pins.at(j)->selected) {
+			if (m->pins.at(j)->isSelected()) {
 				b = m->pins.at(j);
 				target = m;
 				break;

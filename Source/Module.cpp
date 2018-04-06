@@ -150,7 +150,7 @@ void Module::paint (Graphics& g)
 
     for (int i = 0; i < pins.size();i++) {
 
-        if (pins.at(i)->selected) {
+        if (pins.at(i)->isSelected()) {
             g.setColour(juce::Colours::white);
         }
         else {
@@ -167,7 +167,7 @@ void Module::paint (Graphics& g)
             // g.fillRect(pins.at(i)->x + 5, pins.at(i)->y, 5, 10);
             g.drawEllipse(pins.at(i)->x, pins.at(i)->y, 10, 10,1);
             g.fillEllipse(pins.at(i)->x+2,pins.at(i)->y +2, 6, 6);
-            g.drawText(pins.at(i)->getName() , pins.at(i)->x - 14,pins.at(i)->y, 20, 10, juce::Justification::right);
+            g.drawText(pins.at(i)->getName() , pins.at(i)->x - 25,pins.at(i)->y, 20, 10, juce::Justification::right);
         }
 
 
@@ -226,6 +226,7 @@ void Module::setEditing(bool editing) {
 
 void Module::addPin(Pin* p) {
     pins.push_back(p);
+    p->addChangeListener(this);
 }
 
 void Module::addPin(Pin::Direction direction, Pin* p) {
@@ -255,6 +256,7 @@ void Module::addPin(Pin::Direction direction, Pin* p) {
     p->index = (long)Time::currentTimeMillis();
 
     pins.push_back(p);
+    p->addChangeListener(this);
 }
 
 void Module::addPin(Pin::Direction direction) {
@@ -286,16 +288,19 @@ void Module::addPin(Pin::Direction direction) {
     p->index = (long)Time::currentTimeMillis();
 
     pins.push_back(p);
+    p->addChangeListener(this);
 }
 
 
 Pin* Module::getSelectedPin() {
 
+    
 	for (int i = 0; i < pins.size(); i++) {
-		if (pins.at(i)->selected) {
+		if (pins.at(i)->isSelected()) {
 			return pins.at(i);
 		}
 	}
+    
 
     return nullptr;
 }
@@ -366,6 +371,15 @@ void Module::setName(juce::String name) {
 
 void Module::eventReceived(Event *e) {
 
+}
+
+void Module::changeListenerCallback (ChangeBroadcaster* source) {
+    /*
+    if ((selectedPin = dynamic_cast<Pin*>(source)) != NULL) {
+        sendChangeMessage();
+      
+    }
+     */
 }
 
 //[/MiscUserCode]

@@ -43,7 +43,9 @@ class Connection;
 */
 class Module  : public Component,
                 public TextEditor::Listener,
-                public EventListener
+                public EventListener,
+                public ChangeListener,
+                public ChangeBroadcaster
 {
 public:
     //==============================================================================
@@ -85,6 +87,7 @@ public:
     bool isPrefab() { return prefab;};
 
     void eventReceived(Event* e) override;
+    void changeListenerCallback (ChangeBroadcaster* source);
     //[/UserMethods]
 
     void paint (Graphics& g) override;
@@ -106,7 +109,8 @@ protected:
     bool prefab = false;
     std::vector<Module*>* modules;
     std::vector<Connection*>* connections;
-
+    Pin* selectedPin = nullptr;
+    
     //[/UserVariables]
 
     //==============================================================================

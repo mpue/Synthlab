@@ -19,7 +19,7 @@ MidiGate::MidiGate()
     // In your constructor, you should add any child components, and
     // initialise any special settings that your component needs.
    
-    setSize(70,30);
+    setSize(120,30);
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(2,2);
     addPin(Pin::Direction::OUT);
