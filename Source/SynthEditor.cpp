@@ -24,6 +24,7 @@
 #include "MidiGate.h"
 #include "MidiNote.h"
 #include "MidiOut.h"
+#include "SawtoothModule.h"
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 //[/MiscUserDefs]
@@ -252,6 +253,7 @@ void SynthEditor::mouseDown (const MouseEvent& e)
             prefabMenu->addItem(51,"MIDI Gate");
             prefabMenu->addItem(52,"MIDI Out");
             prefabMenu->addItem(53,"MIDI Note");
+            prefabMenu->addItem(54,"Sawtooth Osc");
             
             m->addSubMenu("Prefabs",*prefabMenu);
 
@@ -309,6 +311,16 @@ void SynthEditor::mouseDown (const MouseEvent& e)
             else if (result == 53) {
                 Module* m = new MidiNote();
                 m->setName("Note");
+                
+                m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
+                m->setIndex(Time::currentTimeMillis());
+                
+                addAndMakeVisible(m);
+                root->getModules()->push_back(m);
+            }
+
+            else if (result == 54) {
+                Module* m = new SawtoothModule();
                 
                 m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
                 m->setIndex(Time::currentTimeMillis());

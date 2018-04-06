@@ -25,10 +25,14 @@ public:
     void paint (Graphics& g) override;
 
     void setPitch(int pitch);
-    void setAmplitude(int amplitude);
+    void setAmplitude(float amplitude);
     void setFine(float fine);
     
 private:
+    
+    int pitch;
+    float amplitude;
+    float fine = 0;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SawtoothModule)
 };
