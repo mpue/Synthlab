@@ -54,8 +54,6 @@ Module::Module ()
 
     nameLabel->setBounds (0, 16, 120, 24);
 
-    cachedImage_materialicons_301_viewmodule_64_0_ffffff_none_png_1 = ImageCache::getFromMemory (materialicons_301_viewmodule_64_0_ffffff_none_png, materialicons_301_viewmodule_64_0_ffffff_none_pngSize);
-
     //[UserPreSize]
     //[/UserPreSize]
 
@@ -164,10 +162,7 @@ void Module::paint (Graphics& g)
         Component::paint(g);
         //[/UserPaintCustomArguments]
         g.setColour (Colours::black);
-        g.drawImageWithin (cachedImage_materialicons_301_viewmodule_64_0_ffffff_none_png_1,
-                           x, y, width, height,
-                           RectanglePlacement::centred,
-                           false);
+
     }
 
     //[UserPaint] Add your own custom painting code here..

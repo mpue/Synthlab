@@ -5,6 +5,7 @@
     <GROUP id="{CEEB3DEE-53A5-006F-633B-91BE10C6A8CA}" name="Images">
       <FILE id="gJAegc" name="led_off.png" compile="1" resource="1" file="Images/led_off.png"/>
       <FILE id="xTBQB1" name="led_on.png" compile="1" resource="1" file="Images/led_on.png"/>
+      <FILE id="WPhORY" name="sawtooth.png" compile="1" resource="1" file="Images/sawtooth.png"/>
     </GROUP>
     <GROUP id="{CA20D122-1EA5-3A93-F1F8-F6EE53DA457E}" name="Source">
       <GROUP id="{A79C9093-D329-37A0-AEE1-CF7BDC5C60DE}" name="AudioEngine">
@@ -16,6 +17,9 @@
               file="Source/AudioEngine/BasicDelayLine.h"/>
         <FILE id="ITYUMv" name="Distortion.cpp" compile="1" resource="0" file="Source/AudioEngine/Distortion.cpp"/>
         <FILE id="jSixlx" name="Distortion.h" compile="0" resource="0" file="Source/AudioEngine/Distortion.h"/>
+        <FILE id="Qd6qyo" name="Event.cpp" compile="1" resource="0" file="Source/AudioEngine/Event.cpp"/>
+        <FILE id="rApJ3R" name="Event.h" compile="0" resource="0" file="Source/AudioEngine/Event.h"/>
+        <FILE id="wD0Dzb" name="EventListener.h" compile="0" resource="0" file="Source/AudioEngine/EventListener.h"/>
         <FILE id="CnPcMF" name="Filter.cpp" compile="1" resource="0" file="Source/AudioEngine/Filter.cpp"/>
         <FILE id="GhSX1O" name="Filter.h" compile="0" resource="0" file="Source/AudioEngine/Filter.h"/>
         <FILE id="Uw2zTY" name="HighPassFilter.cpp" compile="1" resource="0"
@@ -64,6 +68,14 @@
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
           <FILE id="yEGMSd" name="MidiGate.cpp" compile="1" resource="0" file="Source/MidiGate.cpp"/>
           <FILE id="dev5Rg" name="MidiGate.h" compile="0" resource="0" file="Source/MidiGate.h"/>
+          <FILE id="BQH021" name="MidiNote.cpp" compile="1" resource="0" file="Source/MidiNote.cpp"/>
+          <FILE id="ix9bnI" name="MidiNote.h" compile="0" resource="0" file="Source/MidiNote.h"/>
+          <FILE id="zLO7X9" name="MidiOut.cpp" compile="1" resource="0" file="Source/MidiOut.cpp"/>
+          <FILE id="ineRQR" name="MidiOut.h" compile="0" resource="0" file="Source/MidiOut.h"/>
+          <FILE id="f1yiPr" name="SawtoothModule.cpp" compile="1" resource="0"
+                file="Source/SawtoothModule.cpp"/>
+          <FILE id="oFkcCq" name="SawtoothModule.h" compile="0" resource="0"
+                file="Source/SawtoothModule.h"/>
         </GROUP>
         <FILE id="j8BgnE" name="Module.cpp" compile="1" resource="0" file="Source/Module.cpp"/>
         <FILE id="FdpOd5" name="Module.h" compile="0" resource="0" file="Source/Module.h"/>
