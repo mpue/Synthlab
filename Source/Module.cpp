@@ -378,17 +378,6 @@ void Module::changeListenerCallback (ChangeBroadcaster* source) {
 }
 
 void Module::process() {
-    for (int i = 0;i < pins.size();i++) {
-        if (pins.at(i)->getAudioBuffer() != nullptr) {
-            
-            if (pins.at(i)->direction == Pin::Direction::IN) {
-                
-            }
-            
-
-            
-        }
-    }
 }
 
 //[/MiscUserCode]

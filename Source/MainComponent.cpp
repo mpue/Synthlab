@@ -71,6 +71,8 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     
     resized();
     
+    deviceManager.addAudioCallback(this);
+    
 }
 
 MainComponent::~MainComponent()
@@ -101,7 +103,7 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
 {
     // Your audio-processing code goes here!
 
-    
+    //processModule(editor->getModule());
     
     
     // For more details, see the help for AudioProcessor::getNextAudioBlock()
@@ -211,9 +213,10 @@ void MainComponent::sendNoteMessage(Module *module, int note) {
 
 void MainComponent::processModule(Module* m) {
     
+    m->process();
+    
     for (int i = 0; i< m->getModules()->size();i++) {
-        m->process();
-        processModule(m);
+        processModule(m->getModules()->at(i));
     }
     
 }

@@ -58,7 +58,6 @@ public:
     
     void setModule(Module * m);
     Module* getModule();
-
     void cleanUp();
     void newFile();
     void saveFile();
