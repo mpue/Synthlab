@@ -21,22 +21,22 @@ SawtoothModule::SawtoothModule()
     nameLabel->setTopLeftPosition(18,2);
     
     setName("Sawtooth");
-    Pin* p1 = new Pin();
+    Pin* p1 = new Pin(Pin::Type::EVENT);
     p1->direction = Pin::Direction::IN;
     p1->listeners.push_back(this);
     p1->setName("P");
     
-    Pin* p2 = new Pin();
+    Pin* p2 = new Pin(Pin::Type::EVENT);
     p2->direction = Pin::Direction::IN;
     p2->listeners.push_back(this);
     p2->setName("F");
 
-    Pin* p3 = new Pin();
+    Pin* p3 = new Pin(Pin::Type::EVENT);
     p3->direction = Pin::Direction::IN;
     p3->listeners.push_back(this);
     p3->setName("A");
     
-    Pin* p4 = new Pin();
+    Pin* p4 = new Pin(Pin::Type::AUDIO);
     p4->direction = Pin::Direction::OUT;
     p4->listeners.push_back(this);
     p4->setName("Out");

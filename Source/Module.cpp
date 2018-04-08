@@ -261,7 +261,7 @@ void Module::addPin(Pin::Direction direction, Pin* p) {
 
 void Module::addPin(Pin::Direction direction) {
 
-    Pin* p = new Pin();
+    Pin* p = new Pin(Pin::Type::AUDIO);
 
 	int numInputs = 0;
 	int numOutputs = 0;
@@ -327,18 +327,13 @@ bool Module::isMouseOverPin(int pin, Point<int> pos) {
 	return false;
 }
 
-
-
 Point<int> Module::getPinPosition(int i) {
 	return Point<int>(pins.at(i)->x + getX(), pins.at(i)->x + getX());
 }
 
-
-
 long Module::getIndex() {
 	return index;
 }
-
 
 void Module::setIndex(long index) {
 	this->index = index;
@@ -380,6 +375,20 @@ void Module::changeListenerCallback (ChangeBroadcaster* source) {
       
     }
      */
+}
+
+void Module::process() {
+    for (int i = 0;i < pins.size();i++) {
+        if (pins.at(i)->getAudioBuffer() != nullptr) {
+            
+            if (pins.at(i)->direction == Pin::Direction::IN) {
+                
+            }
+            
+
+            
+        }
+    }
 }
 
 //[/MiscUserCode]

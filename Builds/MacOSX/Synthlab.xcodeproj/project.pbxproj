@@ -162,6 +162,7 @@
 		BC5928F9751F2E0618EA1D90 /* include_juce_cryptography.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_cryptography.mm; path = ../../JuceLibraryCode/include_juce_cryptography.mm; sourceTree = SOURCE_ROOT; };
 		BF066E5D207A9D9900D164A7 /* AudioOut.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = AudioOut.cpp; path = ../../Source/AudioOut.cpp; sourceTree = "<group>"; };
 		BF066E5E207A9D9900D164A7 /* AudioOut.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AudioOut.h; path = ../../Source/AudioOut.h; sourceTree = "<group>"; };
+		BF066E60207AAD5F00D164A7 /* AudioProcessorModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = AudioProcessorModule.h; path = ../../Source/AudioEngine/AudioProcessorModule.h; sourceTree = "<group>"; };
 		C3B1A3BFBDDA944E2EC11177 /* include_juce_opengl.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_opengl.mm; path = ../../JuceLibraryCode/include_juce_opengl.mm; sourceTree = SOURCE_ROOT; };
 		C3D422378DDF29321D7A43B0 /* juce_core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_core; path = ../../../JUCE/modules/juce_core; sourceTree = SOURCE_ROOT; };
 		C4F25050977E70EA332793A6 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
@@ -361,6 +362,7 @@
 				0225EEAC0C1BF459BCD31A89 /* Voice.h */,
 				7FB2EE5C50BEBDAC657E020C /* WhiteNoise.cpp */,
 				55ACC26DA63D71CD0BAFE817 /* WhiteNoise.h */,
+				BF066E60207AAD5F00D164A7 /* AudioProcessorModule.h */,
 			);
 			name = AudioEngine;
 			sourceTree = "<group>";

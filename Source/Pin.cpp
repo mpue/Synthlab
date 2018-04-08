@@ -10,8 +10,12 @@
 
 #include "Pin.h"
 
-Pin::Pin() {
+Pin::Pin(Pin::Type type) {
     name = "";
+    this->type = type;
+    if (type == Pin::Type::AUDIO) {
+        audioBuffer = new AudioSampleBuffer(1,512);
+    }
 }
 
 Pin::~Pin() {
@@ -48,4 +52,16 @@ void Pin::setSelected(bool selected) {
 
 bool Pin::isSelected() {
     return this->selected;
+}
+
+AudioSampleBuffer* Pin::getAudioBuffer() {
+    return audioBuffer;
+}
+
+void Pin::process(float *in, float *out, int numSamples) {
+    
+    for (int i = 0; i < numSamples;i++) {
+        audioBuffer->addSample(0, i, in[i]);
+    }
+    
 }

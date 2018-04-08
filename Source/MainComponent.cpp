@@ -209,3 +209,11 @@ void MainComponent::sendNoteMessage(Module *module, int note) {
     }
 }
 
+void MainComponent::processModule(Module* m) {
+    
+    for (int i = 0; i< m->getModules()->size();i++) {
+        m->process();
+        processModule(m);
+    }
+    
+}

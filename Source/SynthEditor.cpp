@@ -614,7 +614,7 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
 
         for (int j = 0; j < pins.getNumChildren();j++) {
             ValueTree pin = pins.getChild(j);
-            Pin* p = new Pin();
+            Pin* p = new Pin(Pin::Type::AUDIO);
 
             int type = pin.getProperty("type").toString().getIntValue();
             int direction = pin.getProperty("direction").toString().getIntValue();

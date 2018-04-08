@@ -21,12 +21,12 @@ MidiOut::MidiOut()
     // nameLabel->setJustificationType (Justification::left);
     // nameLabel->setTopLeftPosition(2,2);
     
-    Pin* p1 = new Pin();
+    Pin* p1 = new Pin(Pin::Type::EVENT);
     p1->direction = Pin::Direction::IN;
     p1->listeners.push_back(this);
     p1->setName("P");
     
-    Pin* p2 = new Pin();
+    Pin* p2 = new Pin(Pin::Type::EVENT);
     p2->direction = Pin::Direction::IN;
     p2->listeners.push_back(this);
     p2->setName("G");

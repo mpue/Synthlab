@@ -25,6 +25,7 @@
 #include <vector>
 #include "Pin.h"
 #include "AudioEngine/EventListener.h"
+#include "AudioEngine/AudioProcessorModule.h"
 // #include "Connection.h"
 
 class Connection;
@@ -88,6 +89,8 @@ public:
 
     void eventReceived(Event* e) override;
     void changeListenerCallback (ChangeBroadcaster* source);
+    void process();
+    
     //[/UserMethods]
 
     void paint (Graphics& g) override;

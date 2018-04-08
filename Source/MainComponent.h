@@ -29,6 +29,8 @@ public:
     void getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill) override;
     void releaseResources() override;
 
+    void processModule(Module* m);
+    
     void handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) override;
     
     void sendGateMessage(Module* module, int velocity, bool on);

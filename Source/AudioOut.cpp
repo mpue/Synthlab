@@ -20,11 +20,11 @@ AudioOut::AudioOut()
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(18,2);
     setName("Audio out");
-    Pin* p1 = new Pin();
+    Pin* p1 = new Pin(Pin::Type::AUDIO);
     p1->direction = Pin::Direction::IN;
     p1->setName("L");
     
-    Pin* p2 = new Pin();
+    Pin* p2 = new Pin(Pin::Type::AUDIO);
     p2->direction = Pin::Direction::IN;
     p2->setName("R");
     
