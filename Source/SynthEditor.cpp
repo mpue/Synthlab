@@ -24,6 +24,7 @@
 #include "MidiGate.h"
 #include "MidiNote.h"
 #include "MidiOut.h"
+#include "AudioOut.h"
 #include "SawtoothModule.h"
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
@@ -88,7 +89,7 @@ void SynthEditor::paint (Graphics& g)
 
 	if (isLeftMouseDown) {
 
-		if (lineStopX > 0 && lineStopY > 0) {
+		if (startPin != nullptr) {
 			g.drawLine(lineStartX, lineStartY, lineStopX, lineStopY);
 		}
 	}
@@ -175,6 +176,10 @@ void SynthEditor::mouseDown (const MouseEvent& e)
         for (int i = 0; i < root->getModules()->size(); i++) {
             
             Module* m = root->getModules()->at(i);
+            
+            for (int j = 0; j < m->pins.size(); j++) {
+                m->pins.at(j)->setSelected(false);
+            }
             checkForPinSelection(e, m);
             
         }
@@ -256,6 +261,7 @@ void SynthEditor::mouseDown (const MouseEvent& e)
             prefabMenu->addItem(52,"MIDI Out");
             prefabMenu->addItem(53,"MIDI Note");
             prefabMenu->addItem(54,"Sawtooth Osc");
+            prefabMenu->addItem(55,"Audio Out");
             
             m->addSubMenu("Prefabs",*prefabMenu);
 
@@ -331,6 +337,16 @@ void SynthEditor::mouseDown (const MouseEvent& e)
                 root->getModules()->push_back(m);
             }
             
+            else if (result == 55) {
+                Module* m = new AudioOut();
+                
+                m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
+                m->setIndex(Time::currentTimeMillis());
+                
+                addAndMakeVisible(m);
+                root->getModules()->push_back(m);
+            }
+            
             delete prefabMenu;
 		}
 
@@ -348,10 +364,25 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
 {
     //[UserCode_mouseDrag] -- Add your code here...
 
-
-
-	lineStartX = e.getMouseDownPosition().x;
-	lineStartY = e.getMouseDownPosition().y;
+    for (int i = 0; i < root->getModules()->size(); i++) {
+        
+        Module* m = root->getModules()->at(i);
+        
+        if (m->isSelected()) {
+            for (int j = 0; j < m->pins.size(); j++) {
+                if (m->pins.at(j)->isSelected()) {
+                    lineStartX = m->getX() + m->pins.at(j)->x + 5;
+                    lineStartY = m->getY() + m->pins.at(j)->y + 5;
+                    startPin = m->pins.at(j);
+                    break;
+                }
+                
+            }
+        }
+    }
+    
+	//lineStartX = e.getMouseDownPosition().x;
+	//lineStartY = e.getMouseDownPosition().y;
 
 	lineStopX = lineStartX + e.getDistanceFromDragStartX();
 	lineStopY = lineStartY + e.getDistanceFromDragStartY();
@@ -368,11 +399,11 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
 				lineStopY = 0;
 				repaint();
 			}
-
+            else {
+               
+            }
 		}
-
         checkForPinSelection(e, m);
-		
 	}
 
 	repaint();
@@ -398,6 +429,8 @@ void SynthEditor::mouseUp (const MouseEvent& e)
 
 	lineStopX = 0;
 	lineStopY = 0;
+    
+    startPin = nullptr;
 
     //[/UserCode_mouseUp]
 }
@@ -738,10 +771,9 @@ void SynthEditor::checkForPinSelection(const MouseEvent& e, Module* m) {
 
 		if (m->isMouseOverPin(j, e.getPosition())) {
 			m->pins.at(j)->setSelected(true);
+            break;
 		}
-		else {
-			m->pins.at(j)->setSelected(false);
-		}
+
 
 	}
 

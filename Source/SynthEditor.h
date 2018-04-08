@@ -114,6 +114,8 @@ private:
 	int minrepaintx = 0;
 	int minrepainty = 0;
 
+    Pin* startPin = nullptr;
+    
     TabbedComponent* tab;
     
     AudioDeviceManager* deviceManager;

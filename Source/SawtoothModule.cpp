@@ -16,9 +16,6 @@
 //==============================================================================
 SawtoothModule::SawtoothModule()
 {
-    // In your constructor, you should add any child components, and
-    // initialise any special settings that your component needs.
-   
     setSize(120,140);
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(18,2);
