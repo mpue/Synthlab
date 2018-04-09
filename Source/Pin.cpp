@@ -9,6 +9,8 @@
 */
 
 #include "Pin.h"
+#include <stdio.h>
+#include <string.h>
 
 Pin::Pin(Pin::Type type) {
     name = "";
@@ -61,25 +63,21 @@ AudioSampleBuffer* Pin::getAudioBuffer() {
     return audioBuffer;
 }
 
-void Pin::process(float *in, float *out, int numSamples) {
+void Pin::process(const float *in, float *out, int numSamples) {
     
     if (type == Pin::Type::AUDIO) {
         
         if (direction == Pin::Direction::IN ) {
-            for (int i = 0; i < numSamples;i++){
-                audioBuffer->addSample(0, i, in[i]);
+            for (int j = 0; j < connections.size();j++) {
+               // audioBuffer->copyFrom(0, 0, *connections.at(j)->getAudioBuffer(), 0, 0, numSamples);
             }
         }
-        else {
-            for (int i = 0; i < numSamples;i++){
-                out[i] = audioBuffer->getSample(0, i);
-            }
+        /*
+        if (direction == Pin::Direction::OUT ) {
+            memcpy(out, audioBuffer->getReadPointer(0), numSamples);
         }
+         */
         
-        for (int i = 0; i < connections.size();i++) {
-            if (connections.at(i)->direction == Pin::Direction::OUT) {
-                connections.at(i)->process(in, out, numSamples);
-            }
-        }
+
     }
 }

@@ -24,6 +24,7 @@
 #include "MultiComponentDragger.h"
 #include "Module.h"
 #include "Connection.h"
+#include "AudioOut.h"
 #include <vector>
 //[/Headers]
 
@@ -38,11 +39,13 @@
                                                                     //[/Comments]
 */
 class SynthEditor  : public Component,
-                     public ChangeBroadcaster
+                     public ChangeBroadcaster,
+                     public AudioProcessorPlayer   
 
 {
 public:
     //==============================================================================
+    SynthEditor (double sampleRate, int buffersize );
     SynthEditor ();
     ~SynthEditor();
 
@@ -78,7 +81,10 @@ public:
     std::vector<Module*> getSelectedModules();
     
     void openSettings();
-    
+
+    void handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) override;
+    void sendGateMessage(Module* module, int velocity, bool on);
+    void sendNoteMessage(Module* module, int note);
     //[/UserMethods]
 
     void paint (Graphics& g) override;
@@ -92,8 +98,18 @@ public:
     bool keyStateChanged (bool isKeyDown) override;
     void modifierKeysChanged (const ModifierKeys& modifiers) override;
 
+    void audioDeviceIOCallback (const float** inputChannelData,
+                                int numInputChannels,
+                                float** outputChannelData,
+                                int numOutputChannels,
+                                int numSamples) override;
 
-
+    void prepareToPlay (int samplesPerBlockExpected, double sampleRate);
+    
+    void setSamplerate(double rate);
+    void setBufferSize(int buffersize);
+    void processModule(Module* m);
+    
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
 
@@ -133,15 +149,14 @@ private:
     Pin* startPin = nullptr;
 
     EditorState state = EditorState::NONE;
-    
     TabbedComponent* tab;
-    
     AudioDeviceManager* deviceManager;
-    
     Rectangle<int> selectionFrame = Rectangle<int>(0, 0, 0, 0);
-    
     std::vector<Module*> selectedModules;
+    std::vector<AudioOut*> outputChannels;
     
+    int bufferSize;
+    double _sampleRate;
     //[/UserVariables]
 
     //==============================================================================

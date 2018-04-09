@@ -26,14 +26,21 @@
 #include "MidiOut.h"
 #include "AudioOut.h"
 #include "SawtoothModule.h"
-
+#include <stdio.h>
+#include <string.h>
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 //[/MiscUserDefs]
 
+SynthEditor::SynthEditor() {
+    
+}
+
 //==============================================================================
-SynthEditor::SynthEditor ()
+SynthEditor::SynthEditor (double sampleRate, int buffersize)
 {
     //[Constructor_pre] You can add your own custom stuff here..
+    this->bufferSize  = buffersize;
+    this->_sampleRate = sampleRate;
     //[/Constructor_pre]
 
 
@@ -52,6 +59,8 @@ SynthEditor::SynthEditor ()
 	setWantsKeyboardFocus(true);
 
     addChildComponent(root);
+    
+    
 
     //[/Constructor]
 }
@@ -358,7 +367,7 @@ void SynthEditor::mouseDown (const MouseEvent& e)
             }
 
             else if (result == 54) {
-                Module* m = new SawtoothModule();
+                Module* m = new SawtoothModule(this->_sampleRate, bufferSize);
                 
                 m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
                 m->setIndex(Time::currentTimeMillis());
@@ -368,13 +377,14 @@ void SynthEditor::mouseDown (const MouseEvent& e)
             }
             
             else if (result == 55) {
-                Module* m = new AudioOut();
+                AudioOut* m = new AudioOut();
                 
                 m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
                 m->setIndex(Time::currentTimeMillis());
                 
                 addAndMakeVisible(m);
                 root->getModules()->push_back(m);
+                outputChannels.push_back(m);
             }
             
             delete prefabMenu;
@@ -538,7 +548,7 @@ void SynthEditor::mouseDoubleClick (const MouseEvent& e)
             Module* m = root->getModules()->at(i);
 
             if (m->isSelected()) {
-                SynthEditor* editor = new SynthEditor();
+                SynthEditor* editor = new SynthEditor(_sampleRate, bufferSize);
                 editor->setModule(m);
                 tab->addTab(m->getName(), juce::Colours::grey,editor, true);
             }
@@ -973,6 +983,7 @@ Module* SynthEditor::getSelectedModule() {
 
 void SynthEditor::setDeviceManager(juce::AudioDeviceManager* manager) {
     this->deviceManager = manager;
+    deviceManager->addAudioCallback(this);
 }
 
 void SynthEditor::openSettings() {
@@ -995,6 +1006,152 @@ std::vector<Module*> SynthEditor::getSelectedModules() {
     return selectedModules;
 }
 
+void SynthEditor::handleIncomingMidiMessage(juce::MidiInput *source, const juce::MidiMessage &message) {
+    
+    
+    if (message.isNoteOn()) {
+        for (int i = 0; i < getModule()->getModules()->size();i++) {
+            sendGateMessage(getModule()->getModules()->at(i), message.getVelocity(),true);
+            sendNoteMessage(getModule()->getModules()->at(i), message.getNoteNumber());
+        }
+    }
+    else if (message.isNoteOff()) {
+        for (int i = 0; i < getModule()->getModules()->size();i++) {
+            sendGateMessage(getModule()->getModules()->at(i), message.getVelocity(),false);
+        }
+    }
+    
+    // deviceManager.getDefaultMidiOutput()->sendMessageNow(message);
+}
+
+void SynthEditor::sendGateMessage(Module *module,int velocity,  bool on) {
+    
+    
+    MidiGate* gate;
+    
+    if ((gate = dynamic_cast<MidiGate*>(module)) != NULL) {
+        if (on) {
+            if (velocity > 0)
+                gate->gateOn(velocity);
+        }
+        else {
+            gate->gateOff();
+        }
+    }
+    
+    for (int i = 0; i< module->getModules()->size();i++) {
+        
+        if ((gate = dynamic_cast<MidiGate*>(module->getModules()->at(i)))!= NULL) {
+            if (on) {
+                gate->gateOn(velocity);
+            }
+            else {
+                gate->gateOff();
+            }
+            
+            sendGateMessage(module->getModules()->at(i),velocity,on);
+        }
+    }
+    
+}
+
+void SynthEditor::sendNoteMessage(Module *module, int note) {
+    
+    MidiNote* midiNote;
+    
+    if ((midiNote = dynamic_cast<MidiNote*>(module)) != NULL) {
+        if (note > 0)
+            midiNote->note(note);
+    }
+    
+    for (int i = 0; i< module->getModules()->size();i++) {
+        
+        if ((midiNote = dynamic_cast<MidiNote*>(module->getModules()->at(i)))!= NULL) {
+            sendNoteMessage(module->getModules()->at(i), note);
+        }
+    }
+}
+
+static Sine saw = Sine(44100);
+
+void SynthEditor::audioDeviceIOCallback(const float **inputChannelData, int numInputChannels, float **outputChannelData, int numOutputChannels, int numSamples) {
+    
+     processModule(getModule());
+    
+    
+    /*
+    
+    // copy all samples from the connected pins audiobuffer to the output
+    for (int i = 0; i < outputChannels.size();i++) {
+        for (int j = 0; j < numSamples;j++) {
+            outputChannelData[0][j] = outputChannels.at(i)->getPins().at(0)->getAudioBuffer()->getSample(0, j);
+            outputChannelData[1][j] = outputChannels.at(i)->getPins().at(1)->getAudioBuffer()->getSample(0, j);
+        }
+    }
+     */
+    
+
+    
+    
+    // mute if there are no channels
+    if (outputChannels.size() == 0) {
+        for (int j = 0;j < numSamples;j++) {
+            outputChannelData[0][j] = 0;
+            outputChannelData[1][j] = 0;
+        }
+    }
+    else {
+        
+        
+        
+        
+        
+
+        
+        // process all output pins of the connected module
+        // outputChannels.at(0)->getPins().at(0)->process(inputChannelData[0], outputChannelData[0], numSamples);
+        if (outputChannels.at(0)->getPins().at(0)->connections.size() == 1) {
+            const float* outL = outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+             for (int j = 0;j < numSamples;j++) {
+                 outputChannelData[0][j] = outL[j];
+             }
+        }
+
+        if (outputChannels.at(0)->getPins().at(1)->connections.size() == 1) {
+            const float* outR = outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+            for (int j = 0;j < numSamples;j++) {
+                outputChannelData[1][j] = outR[j];
+            }
+        }
+        
+    }
+    
+    
+}
+
+void SynthEditor::prepareToPlay(int samplesPerBlockExpected, double sampleRate) {
+
+}
+
+void SynthEditor::setSamplerate(double rate) {
+    this->_sampleRate = rate;
+}
+
+void SynthEditor::setBufferSize(int buffersize) {
+    this->bufferSize = buffersize;
+}
+
+
+void SynthEditor::processModule(Module* m) {
+    
+    m->process();
+    
+    
+    for (int i = 0; i< m->getModules()->size();i++) {
+        processModule(m->getModules()->at(i));
+    }
+    
+}
 //[/MiscUserCode]
 
 

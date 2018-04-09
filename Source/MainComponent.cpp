@@ -22,13 +22,9 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     // specify the number of input and output channels that we want to open
     setAudioChannels (2, 2);
 
-    deviceManager.setDefaultMidiOutput("Scarlett 6i6 USB");
-    deviceManager.setMidiInputEnabled("Scarlett 6i6 USB", true);
-    deviceManager.addMidiInputCallback("Scarlett 6i6 USB", this);
+
     
-    
-    editor = new SynthEditor();
-    
+    editor = new SynthEditor(44100.0,512);
     tab = new MainTabbedComponent();    
     tab->setBounds(0,0,getWidth(),getHeight());
     
@@ -47,6 +43,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     tab->addTab("Main", juce::Colours::grey, view, true);
     
     editor->setTab(tab);
+
     
     propertyView =  new PropertyView();
     
@@ -71,7 +68,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     
     resized();
     
-    deviceManager.addAudioCallback(this);
+
     
 }
 
@@ -97,6 +94,8 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     // but be careful - it will be called on the audio thread, not the GUI thread.
 
     // For more details, see the help for AudioProcessor::prepareToPlay()
+    // editor->setSamplerate(sampleRate);
+    // editor->setBufferSize(samplesPerBlockExpected);
 }
 
 void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill)
@@ -104,7 +103,7 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
     // Your audio-processing code goes here!
 
 
-    
+
     
     // For more details, see the help for AudioProcessor::getNextAudioBlock()
 
@@ -145,78 +144,6 @@ void MainComponent::resized()
                                          false, true);
 }
 
-void MainComponent::handleIncomingMidiMessage(juce::MidiInput *source, const juce::MidiMessage &message) {
 
-    
-    if (message.isNoteOn()) {
-        for (int i = 0; i < editor->getModule()->getModules()->size();i++) {
-            sendGateMessage(editor->getModule()->getModules()->at(i), message.getVelocity(),true);
-            sendNoteMessage(editor->getModule()->getModules()->at(i), message.getNoteNumber());
-        }
-    }
-    else if (message.isNoteOff()) {
-        for (int i = 0; i < editor->getModule()->getModules()->size();i++) {
-            sendGateMessage(editor->getModule()->getModules()->at(i), message.getVelocity(),false);
-        }
-    }
-    
-    // deviceManager.getDefaultMidiOutput()->sendMessageNow(message);
-}
 
-void MainComponent::sendGateMessage(Module *module,int velocity,  bool on) {
-    
-    
-    MidiGate* gate;
-    
-    if ((gate = dynamic_cast<MidiGate*>(module)) != NULL) {
-        if (on) {
-            if (velocity > 0)
-                gate->gateOn(velocity);
-        }
-        else {
-            gate->gateOff();
-        }
-    }
-    
-    for (int i = 0; i< module->getModules()->size();i++) {
-        
-        if ((gate = dynamic_cast<MidiGate*>(module->getModules()->at(i)))!= NULL) {
-            if (on) {
-                gate->gateOn(velocity);
-            }
-            else {
-                gate->gateOff();
-            }
-            
-            sendGateMessage(module->getModules()->at(i),velocity,on);
-        }
-    }
-    
-}
 
-void MainComponent::sendNoteMessage(Module *module, int note) {
-    
-    MidiNote* midiNote;
-    
-    if ((midiNote = dynamic_cast<MidiNote*>(module)) != NULL) {
-        if (note > 0)
-            midiNote->note(note);
-    }
-    
-    for (int i = 0; i< module->getModules()->size();i++) {
-        
-        if ((midiNote = dynamic_cast<MidiNote*>(module->getModules()->at(i)))!= NULL) {
-            sendNoteMessage(module->getModules()->at(i), note);
-        }
-    }
-}
-
-void MainComponent::processModule(Module* m) {
-    
-    m->process();
-    
-    for (int i = 0; i< m->getModules()->size();i++) {
-        processModule(m->getModules()->at(i));
-    }
-    
-}

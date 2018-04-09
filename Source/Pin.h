@@ -53,7 +53,7 @@ public:
     String getName();
     void setName(String name);
     
-    virtual void process(float *in, float *out,int numSamples) override;
+    virtual void process(const float *in, float *out,int numSamples) override;
     
 private:
     bool selected = false;

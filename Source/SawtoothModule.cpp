@@ -11,11 +11,19 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "SawtoothModule.h"
 #include "Connection.h"
-
+#include "AudioEngine/Sawtooth.h"
 
 //==============================================================================
-SawtoothModule::SawtoothModule()
+SawtoothModule::SawtoothModule(double sampleRate, int buffersize)
 {
+    this->sampleRate = sampleRate;
+    this->buffersize = buffersize;
+    
+    oscillator = new Sine(sampleRate);
+    
+    oscillator->setFrequency(440);
+    oscillator->setVolume(0.5f);
+    
     setSize(120,140);
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(18,2);
@@ -51,6 +59,7 @@ SawtoothModule::SawtoothModule()
 
 SawtoothModule::~SawtoothModule()
 {
+    delete oscillator;
 }
 
 void SawtoothModule::paint(juce::Graphics &g) {
@@ -61,12 +70,28 @@ void SawtoothModule::paint(juce::Graphics &g) {
 
 void SawtoothModule::setPitch(int pitch) {
     this->pitch = pitch;
+    this->oscillator->setPitch(pitch);
 }
 
 void SawtoothModule::setFine(float fine) {
     this->fine = fine;
+    this->oscillator->setFine(fine);
 }
 
 void SawtoothModule::setAmplitude(float amplitude) {
     this->amplitude = amplitude;
+    this->oscillator->setVolume(amplitude);
+}
+
+void SawtoothModule::process() {
+    for (int i = 0; i < buffersize; i++) {
+        float value = oscillator->process();
+        pins.at(3)->getAudioBuffer()->setSample(0,i ,value);
+        // std::cout << "In value " << value << std::endl;
+    }
+
+    
+    
+    //currentSample = (currentSample + 1) % buffersize;
+    
 }
