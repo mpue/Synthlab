@@ -103,7 +103,7 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
 {
     // Your audio-processing code goes here!
 
-    //processModule(editor->getModule());
+
     
     
     // For more details, see the help for AudioProcessor::getNextAudioBlock()

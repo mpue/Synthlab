@@ -58,5 +58,5 @@ public:
 private:
     bool selected = false;
     String name;
-    AudioSampleBuffer* audioBuffer;
+    AudioSampleBuffer* audioBuffer = nullptr;
 };

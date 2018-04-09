@@ -378,10 +378,20 @@ void Module::changeListenerCallback (ChangeBroadcaster* source) {
 }
 
 void Module::process() {
-    for (int i = 0; i < pins.size();i++) {
-    
-        
-    }
+
+}
+
+void Module::savePosition() {
+    this->savedPosition.x = getX();
+    this->savedPosition.y = getY();
+}
+
+Point<int> Module::getSavedPosition() {
+    return savedPosition;
+}
+
+void Module::moveTo(int x, int y) {
+    setTopLeftPosition(savedPosition.x + x, savedPosition.y + y);
 }
 
 //[/MiscUserCode]

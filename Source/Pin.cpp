@@ -20,6 +20,9 @@ Pin::Pin(Pin::Type type) {
 
 Pin::~Pin() {
     removeAllChangeListeners();
+    if (audioBuffer != nullptr) {
+        delete audioBuffer;
+    }
 }
 
 void Pin::sendEvent(Event *e) {

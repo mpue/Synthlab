@@ -89,7 +89,11 @@ public:
 
     void eventReceived(Event* e) override;
     void changeListenerCallback (ChangeBroadcaster* source);
-    void process();
+    virtual void process();
+    
+    void savePosition();
+    void moveTo(int x, int y);
+    Point<int> getSavedPosition();
     
     //[/UserMethods]
 
@@ -114,6 +118,7 @@ protected:
     std::vector<Connection*>* connections;
     Pin* selectedPin = nullptr;
     
+    Point<int> savedPosition;
     //[/UserVariables]
 
     //==============================================================================

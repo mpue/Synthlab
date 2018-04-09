@@ -89,9 +89,12 @@ void SynthEditor::paint (Graphics& g)
 
 	if (isLeftMouseDown) {
 
-		if (startPin != nullptr) {
+		if (state == DRAGGING_CONNECTION) {
 			g.drawLine(lineStartX, lineStartY, lineStopX, lineStopY);
 		}
+        else if (state == DRAGGING_SELECTION) {
+            g.drawRect(selectionFrame);
+        }
 	}
 
 	for (int i = 0; i < root->getConnections()->size(); i++) {
@@ -153,8 +156,6 @@ void SynthEditor::mouseMove (const MouseEvent& e)
 {
     //[UserCode_mouseMove] -- Add your code here...
 
-
-
 	mouseX = e.getPosition().getX();
 	mouseY = e.getPosition().getY();
 
@@ -165,14 +166,15 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 {
     //[UserCode_mouseDown] -- Add your code here...
 
+    mouseDownX = e.getPosition().getX();
+    mouseDownY = e.getPosition().getY();
 
 	if (e.mods.isLeftButtonDown()) {
 
+        bool hit = false;
 		isLeftMouseDown = true;
-
-		minrepaintx = e.getPosition().x;
-		minrepainty = e.getPosition().y;
-
+        
+        // deselect all pins
         for (int i = 0; i < root->getModules()->size(); i++) {
             
             Module* m = root->getModules()->at(i);
@@ -183,22 +185,50 @@ void SynthEditor::mouseDown (const MouseEvent& e)
             checkForPinSelection(e, m);
             
         }
+ 
+        for (int i = 0; i < getSelectedModules().size(); i++) {
+            
+            if (getSelectedModules().at(i)->getBounds().contains(e.x,e.y)) {
+
+                dragStartX = getSelectedModules().at(i)->getX();
+                dragStartY = getSelectedModules().at(i)->getY();
+                state = MOVING_SELECTION;
+                hit = true;
+                break;
+            }
+            
+        }
         
-		for (int i = 0; i < root->getModules()->size(); i++) {
+        if (getSelectedModules().size() == 0) {
+            
+            state = DRAGGING_SELECTION;
+            
+            for (int i = 0; i < root->getModules()->size(); i++) {
+                if (root->getModules()->at(i)->getBounds().contains(e.x,e.y)) {
+                    root->getModules()->at(i)->setSelected(true);
+                    selectedModules.push_back(root->getModules()->at(i));
+                    root->getModules()->at(i)->savePosition();
+                    hit = true;
+                }
+                else {
+                    root->getModules()->at(i)->setSelected(false);
+                }
+            }
+            if (getSelectedModules().size() > 0) {
+                state = MOVING_SELECTION;
+            }
+            
+        }
 
-			if (root->getModules()->at(i)->getBounds().contains(e.x,e.y)) {
-				root->getModules()->at(i)->setSelected(true);
-				dragStartX = root->getModules()->at(i)->getX();
-				dragStartY = root->getModules()->at(i)->getY();
-
-			}
-			else {
-				root->getModules()->at(i)->setSelected(false);
-			}
-
-
-		}
-
+        if (hit == false) {
+            selectedModules.clear();
+            
+            for (int i = 0; i < root->getModules()->size(); i++) {
+                root->getModules()->at(i)->setSelected(false);
+    
+            }
+        }
+        
 		for (int i = 0; i < root->getConnections()->size(); i++) {
 			Connection* c = root->getConnections()->at(i);
 
@@ -364,19 +394,28 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
 {
     //[UserCode_mouseDrag] -- Add your code here...
 
-    for (int i = 0; i < root->getModules()->size(); i++) {
+    mouseX = e.getPosition().getX();
+    mouseY = e.getPosition().getY();
+    
+    dragDistanceX = e.getDistanceFromDragStartX();
+    dragDistanceY = e.getDistanceFromDragStartY();
+    
+    if (state != DRAGGING_SELECTION) {
+        for (int i = 0; i < root->getModules()->size(); i++) {
         
-        Module* m = root->getModules()->at(i);
+            Module* m = root->getModules()->at(i);
         
-        if (m->isSelected()) {
-            for (int j = 0; j < m->pins.size(); j++) {
-                if (m->pins.at(j)->isSelected()) {
-                    lineStartX = m->getX() + m->pins.at(j)->x + 5;
-                    lineStartY = m->getY() + m->pins.at(j)->y + 5;
-                    startPin = m->pins.at(j);
-                    break;
+            if (m->isSelected()) {
+                for (int j = 0; j < m->pins.size(); j++) {
+                    if (m->pins.at(j)->isSelected()) {
+                        lineStartX = m->getX() + m->pins.at(j)->x + 5;
+                        lineStartY = m->getY() + m->pins.at(j)->y + 5;
+                        startPin = m->pins.at(j);
+                        state = DRAGGING_CONNECTION;
+                        break;
+                    }
+                    
                 }
-                
             }
         }
     }
@@ -387,25 +426,63 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
 	lineStopX = lineStartX + e.getDistanceFromDragStartX();
 	lineStopY = lineStartY + e.getDistanceFromDragStartY();
 
-	for (int i = 0; i < root->getModules()->size(); i++) {
+    if (state == MOVING_SELECTION) {
+        for (int i = 0; i < root->getModules()->size(); i++) {
+            
+            Module* m = root->getModules()->at(i);
+            
+            if (m->isSelected()) {
+                
+                if (m->getSelectedPin() == nullptr || m->getSelectedPin() == NULL ) {
+                    
+                   
+                    m->setTopLeftPosition(m->getSavedPosition().getX() + e.getOffsetFromDragStart().getX(), m->getSavedPosition().getY()+ e.getOffsetFromDragStart().getY());
+                    
 
-		Module* m = root->getModules()->at(i);
-
-		if (m->isSelected()) {
-
-			if (m->getSelectedPin() == nullptr || m->getSelectedPin() == NULL ) {
-				m->setTopLeftPosition(e.getDistanceFromDragStartX() + dragStartX, e.getDistanceFromDragStartY() + dragStartY);
-				lineStopX = 0;
-				lineStopY = 0;
-				repaint();
-			}
-            else {
-               
+                    repaint();
+                }
             }
-		}
-        checkForPinSelection(e, m);
-	}
+            checkForPinSelection(e, m);
+        }
+    }
+    else {
+        for (int i = 0; i < root->getModules()->size(); i++) {
+            Module* m = root->getModules()->at(i);
+            if (!m->isSelected()) {
+                checkForPinSelection(e,m);
+            }
+        }
+    }
+    
+    if (state == DRAGGING_SELECTION) {
 
+        int x = mouseDownX;
+        int y = mouseDownY;
+        
+        if (mouseX < x) {
+            x = mouseX;
+        }
+        if (mouseY < y) {
+            y = mouseY;
+        }
+        selectionFrame.setBounds(x,y,abs(dragDistanceX),abs(dragDistanceY));
+        
+        for (int i = 0; i < root->getModules()->size(); i++) {
+            Module* m = root->getModules()->at(i);
+            
+            if (selectionFrame.contains(m->getBounds())) {
+                if (!m->isSelected()) {
+                    m->setSelected(true);
+                    m->savePosition();
+                    
+                    selectedModules.push_back(m);
+                }
+
+            }
+        }
+    }
+
+    
 	repaint();
 
     //[/UserCode_mouseDrag]
@@ -421,6 +498,8 @@ void SynthEditor::mouseUp (const MouseEvent& e)
 	for (int i = 0; i < root->getModules()->size(); i++) {
 
 		Module* m = root->getModules()->at(i);
+        
+        m->savePosition();
 
 		if (m->isSelected()) {
 			addConnection(e, m);
@@ -431,6 +510,8 @@ void SynthEditor::mouseUp (const MouseEvent& e)
 	lineStopY = 0;
     
     startPin = nullptr;
+    
+    state = NONE;
 
     //[/UserCode_mouseUp]
 }
@@ -502,6 +583,7 @@ void SynthEditor::modifierKeysChanged (const ModifierKeys& modifiers)
 
 void SynthEditor::cleanUp() {
     removeAllChildren();
+    selectedModules.clear();
 }
 
 void SynthEditor::newFile() {
@@ -897,6 +979,11 @@ void SynthEditor::openSettings() {
     
     // setupIO();
 }
+
+std::vector<Module*> SynthEditor::getSelectedModules() {
+    return selectedModules;
+}
+
 //[/MiscUserCode]
 
 

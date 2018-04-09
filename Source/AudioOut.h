@@ -25,7 +25,7 @@ public:
     
     void paint (Graphics& g) override;
     void setDeviceManager(AudioDeviceManager* manager);
-
+    virtual void process() override;
     
 private:
     AudioDeviceManager* deviceManager;

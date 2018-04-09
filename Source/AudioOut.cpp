@@ -44,4 +44,7 @@ void AudioOut::paint(juce::Graphics &g) {
     Module::paint(g);
 }
 
+void AudioOut::process() {
+    
+}
 

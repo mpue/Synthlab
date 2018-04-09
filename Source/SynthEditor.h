@@ -49,6 +49,14 @@ public:
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
 
+    enum EditorState {
+        NONE,
+        DRAGGING_SELECTION,
+        SELECT_ELEMENT,
+        MOVING_SELECTION,
+        DRAGGING_CONNECTION
+    };
+    
 	void checkForPinSelection(const MouseEvent& e, Module* m);
 	void addConnection(const MouseEvent& e, Module* m);
     void deleteSelected();
@@ -67,6 +75,7 @@ public:
     void loadStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections,ValueTree* v);
 
     Module* getSelectedModule();    
+    std::vector<Module*> getSelectedModules();
     
     void openSettings();
     
@@ -107,17 +116,30 @@ private:
 
 	int dragStartX = 0;
 	int dragStartY = 0;
+    
+    int mouseDownX = 0;
+    int mouseDownY = 0;
 
+    int dragDistanceX = 0;
+    int dragDistanceY = 0;
+    
+    
 	int maxrepaintw = 0;
 	int maxrepainth = 0;
 	int minrepaintx = 0;
 	int minrepainty = 0;
 
     Pin* startPin = nullptr;
+
+    EditorState state = EditorState::NONE;
     
     TabbedComponent* tab;
     
     AudioDeviceManager* deviceManager;
+    
+    Rectangle<int> selectionFrame = Rectangle<int>(0, 0, 0, 0);
+    
+    std::vector<Module*> selectedModules;
     
     //[/UserVariables]
 
