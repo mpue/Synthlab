@@ -59,6 +59,7 @@
 		B495433102F0A9C097578400 /* Note.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F2646B9C56D452230BCBE390 /* Note.cpp */; };
 		B6B2F6DF52BF661817602934 /* BasicDelayLine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F7572AEFA3D00CDE84741D5F /* BasicDelayLine.cpp */; };
 		BF066E5F207A9D9900D164A7 /* AudioOut.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF066E5D207A9D9900D164A7 /* AudioOut.cpp */; };
+		BFC6F6C8207C01E600F1F217 /* Constant.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BFC6F6C6207C01E600F1F217 /* Constant.cpp */; };
 		C6DE1AC19784D6853697B38D /* HighPassFilter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 88918A7C414007033B30BFE2 /* HighPassFilter.cpp */; };
 		D69D9F38FAF7FDBC1D39AB2F /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 83E9D76B59B49AFC8072F5FD /* WebKit.framework */; };
 		D6F6CDF05367B43E88A27289 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 99ED36708D17C575CDD60A04 /* Cocoa.framework */; };
@@ -163,6 +164,8 @@
 		BF066E5D207A9D9900D164A7 /* AudioOut.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = AudioOut.cpp; path = ../../Source/AudioOut.cpp; sourceTree = "<group>"; };
 		BF066E5E207A9D9900D164A7 /* AudioOut.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AudioOut.h; path = ../../Source/AudioOut.h; sourceTree = "<group>"; };
 		BF066E60207AAD5F00D164A7 /* AudioProcessorModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = AudioProcessorModule.h; path = ../../Source/AudioEngine/AudioProcessorModule.h; sourceTree = "<group>"; };
+		BFC6F6C6207C01E600F1F217 /* Constant.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Constant.cpp; path = ../../Source/Constant.cpp; sourceTree = "<group>"; };
+		BFC6F6C7207C01E600F1F217 /* Constant.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Constant.h; path = ../../Source/Constant.h; sourceTree = "<group>"; };
 		C3B1A3BFBDDA944E2EC11177 /* include_juce_opengl.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_opengl.mm; path = ../../JuceLibraryCode/include_juce_opengl.mm; sourceTree = SOURCE_ROOT; };
 		C3D422378DDF29321D7A43B0 /* juce_core */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_core; path = ../../../JUCE/modules/juce_core; sourceTree = SOURCE_ROOT; };
 		C4F25050977E70EA332793A6 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
@@ -229,6 +232,8 @@
 		019AA793B6B5EF2ACC9FB238 /* Prefabs */ = {
 			isa = PBXGroup;
 			children = (
+				BFC6F6C6207C01E600F1F217 /* Constant.cpp */,
+				BFC6F6C7207C01E600F1F217 /* Constant.h */,
 				BF066E5D207A9D9900D164A7 /* AudioOut.cpp */,
 				BF066E5E207A9D9900D164A7 /* AudioOut.h */,
 				8D4132E7042E4B6034B58062 /* MidiGate.cpp */,
@@ -549,6 +554,7 @@
 				33154C278C82AA02536792F0 /* StereoDelay.cpp in Sources */,
 				9066AA41CC8AF3325DC4C91E /* StereoReverb.cpp in Sources */,
 				42DF2CBB15B3B82427579C41 /* Voice.cpp in Sources */,
+				BFC6F6C8207C01E600F1F217 /* Constant.cpp in Sources */,
 				F4039AD9B271769246EBD180 /* WhiteNoise.cpp in Sources */,
 				41AA6C9441D6DE474F3A06F3 /* MidiGate.cpp in Sources */,
 				DB89B03B884CC885F8405CCF /* MidiNote.cpp in Sources */,

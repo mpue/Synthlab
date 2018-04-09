@@ -27,7 +27,8 @@ public:
     
     static enum Type {
         AUDIO,
-        EVENT
+        EVENT,
+        VALUE
     };
     
     Pin(Type type);
@@ -53,10 +54,14 @@ public:
     String getName();
     void setName(String name);
     
+    float getValue();
+    void setValue(float value);
+    
     virtual void process(const float *in, float *out,int numSamples) override;
     
 private:
     bool selected = false;
     String name;
+    float value;
     AudioSampleBuffer* audioBuffer = nullptr;
 };

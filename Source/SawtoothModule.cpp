@@ -19,7 +19,7 @@ SawtoothModule::SawtoothModule(double sampleRate, int buffersize)
     this->sampleRate = sampleRate;
     this->buffersize = buffersize;
     
-    oscillator = new Sine(sampleRate);
+    oscillator = new Sawtooth(sampleRate);
     
     oscillator->setFrequency(440);
     oscillator->setVolume(0.5f);
@@ -29,17 +29,17 @@ SawtoothModule::SawtoothModule(double sampleRate, int buffersize)
     nameLabel->setTopLeftPosition(18,2);
     
     setName("Sawtooth");
-    Pin* p1 = new Pin(Pin::Type::EVENT);
+    Pin* p1 = new Pin(Pin::Type::VALUE);
     p1->direction = Pin::Direction::IN;
     p1->listeners.push_back(this);
     p1->setName("P");
     
-    Pin* p2 = new Pin(Pin::Type::EVENT);
+    Pin* p2 = new Pin(Pin::Type::VALUE);
     p2->direction = Pin::Direction::IN;
     p2->listeners.push_back(this);
     p2->setName("F");
 
-    Pin* p3 = new Pin(Pin::Type::EVENT);
+    Pin* p3 = new Pin(Pin::Type::VALUE);
     p3->direction = Pin::Direction::IN;
     p3->listeners.push_back(this);
     p3->setName("A");
@@ -84,6 +84,14 @@ void SawtoothModule::setAmplitude(float amplitude) {
 }
 
 void SawtoothModule::process() {
+    
+    if (pins.at(0)->connections.size() ==  1) {
+        this->oscillator->setFrequency(pins.at(0)->connections.at(0)->getValue());
+    }
+    if (pins.at(1)->connections.size() ==  1) {
+        this->setFine(pins.at(1)->connections.at(0)->getValue());
+    }
+    
     for (int i = 0; i < buffersize; i++) {
         float value = oscillator->process();
         pins.at(3)->getAudioBuffer()->setSample(0,i ,value);

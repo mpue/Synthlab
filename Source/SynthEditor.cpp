@@ -26,6 +26,7 @@
 #include "MidiOut.h"
 #include "AudioOut.h"
 #include "SawtoothModule.h"
+#include "Constant.h"
 #include <stdio.h>
 #include <string.h>
 //[MiscUserDefs] You can add your own user definitions and misc code here...
@@ -301,6 +302,7 @@ void SynthEditor::mouseDown (const MouseEvent& e)
             prefabMenu->addItem(53,"MIDI Note");
             prefabMenu->addItem(54,"Sawtooth Osc");
             prefabMenu->addItem(55,"Audio Out");
+            prefabMenu->addItem(56,"Constant");
             
             m->addSubMenu("Prefabs",*prefabMenu);
 
@@ -385,6 +387,17 @@ void SynthEditor::mouseDown (const MouseEvent& e)
                 addAndMakeVisible(m);
                 root->getModules()->push_back(m);
                 outputChannels.push_back(m);
+            }
+            
+            else if (result == 56) {
+                Constant* m = new Constant();
+                
+                m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
+                m->setIndex(Time::currentTimeMillis());
+                
+                addAndMakeVisible(m);
+                root->getModules()->push_back(m);
+               
             }
             
             delete prefabMenu;
@@ -924,7 +937,6 @@ void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
 	}
 
 	if (source != nullptr && target != nullptr && a != nullptr && b != nullptr) {
-		Logger::writeToLog("Adding new connection");
 
         a->connections.push_back(b);
         
@@ -1072,8 +1084,6 @@ void SynthEditor::sendNoteMessage(Module *module, int note) {
     }
 }
 
-static Sine saw = Sine(44100);
-
 void SynthEditor::audioDeviceIOCallback(const float **inputChannelData, int numInputChannels, float **outputChannelData, int numOutputChannels, int numSamples) {
     
      processModule(getModule());
@@ -1101,12 +1111,6 @@ void SynthEditor::audioDeviceIOCallback(const float **inputChannelData, int numI
         }
     }
     else {
-        
-        
-        
-        
-        
-
         
         // process all output pins of the connected module
         // outputChannels.at(0)->getPins().at(0)->process(inputChannelData[0], outputChannelData[0], numSamples);

@@ -40,7 +40,6 @@ PropertyView::PropertyView ()
 
     tabbedComponent->setBounds (0, 0, 288, 632);
 
-
     //[UserPreSize]
     //[/UserPreSize]
 
@@ -55,13 +54,17 @@ PropertyView::PropertyView ()
     properties = juce::Array<PropertyComponent*>();
     nameValue = new Value();
     numInputsValue = new Value();
+    value = new Value();
     
     nameProp = new TextPropertyComponent(*nameValue,"name",16, false,true);
+    valueProp = new TextPropertyComponent(*value,"value",16, false,true);
     inputsProp = new SliderPropertyComponent(*numInputsValue,"numInputs",0,16,1,1.0,true);
     
     nameListener = new NameListener(*nameValue, this);
+    valueListener = new ValueListener(*value, this);
     
     properties.add(nameProp);
+    properties.add(valueProp);
     properties.add(inputsProp);
     
     propertyPanel->addProperties(properties);
@@ -120,6 +123,12 @@ void PropertyView::changeListenerCallback(juce::ChangeBroadcaster *source) {
 
         if (editor->getSelectedModule() != nullptr) {
             nameValue->setValue(editor->getSelectedModule()->getName());
+            
+            Constant* c = nullptr;
+            
+            if ((c = dynamic_cast<Constant*>(editor->getSelectedModule())) != NULL) {
+                value->setValue(c->getValue());
+            }
             currentEditor = editor;
         }
 

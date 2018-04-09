@@ -22,6 +22,7 @@
 //[Headers]     -- You can add your own extra header files here --
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "MainTabbedComponent.h"
+#include "Constant.h"
 //[/Headers]
 
 
@@ -63,7 +64,34 @@ private:
         ~NameListener()  {}  // no need to remove the listener
 
         void valueChanged (Value& value) override {
-            view->currentEditor->getSelectedModule()->setName(value.toString());
+            if (view->currentEditor->getSelectedModule() != NULL) {
+                view->currentEditor->getSelectedModule()->setName(value.toString());
+            }
+        }
+        PropertyView* view;
+        Value value;
+    };
+    
+    struct ValueListener : Value::Listener
+    {
+        ValueListener (Value& v, PropertyView* view) : value (v), view(view){ value.addListener (this); }
+        ~ValueListener()  {}  // no need to remove the listener
+        
+        void valueChanged (Value& value) override {
+            
+            if (view->currentEditor->getSelectedModule() != nullptr) {
+                
+                Constant* c = nullptr;
+            
+                
+                if ((c = dynamic_cast<Constant*>(view->currentEditor->getSelectedModule())) != NULL) {
+                    c->setValue(value.toString().getFloatValue());
+                }
+                            
+                
+            }
+            
+            
         }
         PropertyView* view;
         Value value;
@@ -74,13 +102,15 @@ private:
     SynthEditor* currentEditor;
     PropertyPanel* propertyPanel;
     Value* nameValue;
+    Value* value;
     Value* numInputsValue;
     Value* numOutputsValue;
     NameListener* nameListener;
+    ValueListener* valueListener;
     juce::Array<PropertyComponent*> properties;
     PropertyComponent* nameProp;
     PropertyComponent* inputsProp;
-
+    PropertyComponent* valueProp;
     //[/UserVariables]
 
     //==============================================================================

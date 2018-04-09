@@ -13,7 +13,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Module.h"
 #include "AudioEngine/Sawtooth.h"
-#include "AudioEngine/Sine.h"
+
 //==============================================================================
 /*
 */
@@ -35,7 +35,7 @@ private:
     float amplitude;
     float fine = 0;
     Image* image;
-    Sine* oscillator;
+    Sawtooth* oscillator;
     double sampleRate;
     int buffersize;
     int currentSample = 0;

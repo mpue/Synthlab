@@ -55,6 +55,16 @@ void Pin::setSelected(bool selected) {
     sendChangeMessage();
 }
 
+float Pin::getValue() {
+    return value;
+}
+
+
+void Pin::setValue(float value) {
+    this->value = value;
+}
+
+
 bool Pin::isSelected() {
     return this->selected;
 }
