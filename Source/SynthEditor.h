@@ -59,7 +59,7 @@ public:
     
 	void checkForPinSelection(const MouseEvent& e, Module* m);
 	void addConnection(const MouseEvent& e, Module* m);
-    void deleteSelected();
+    void deleteSelected(bool deleteAll);
     bool PointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<int> pt, double epsilon);
     void setTab(TabbedComponent* t);
     void setDeviceManager(AudioDeviceManager* manager);
@@ -98,6 +98,7 @@ private:
     //[UserVariables]   -- You can add your own custom variables in this section.
 
     bool isAltDown = false;
+    bool isCtrlDown = false;
     bool isLeftMouseDown = false;
 	bool isMovingModule = true;
 	bool isDraggingConnection = false;

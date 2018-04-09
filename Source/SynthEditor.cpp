@@ -555,9 +555,17 @@ bool SynthEditor::keyPressed (const KeyPress& key)
     //[UserCode_keyPressed] -- Add your code here...
 
     if (key.getKeyCode() == KeyPress::deleteKey || key.getKeyCode() == KeyPress::backspaceKey) {
-        deleteSelected();
-		repaint();
-	}
+        deleteSelected(false);
+    }
+    if(key.getKeyCode() == 65 && isCtrlDown) {
+        for (int i = 0; i < root->getModules()->size();i++) {
+            root->getModules()->at(i)->setSelected(true);
+            selectedModules.push_back(root->getModules()->at(i));
+        }
+    }
+    
+    repaint();
+    
 
     return true;  // Return true if your handler uses this key event, or false to allow it to be passed-on.
     //[/UserCode_keyPressed]
@@ -574,6 +582,7 @@ void SynthEditor::modifierKeysChanged (const ModifierKeys& modifiers)
 {
     //[UserCode_modifierKeysChanged] -- Add your code here...
     isAltDown = modifiers.isAltDown();
+    isCtrlDown = modifiers.isCtrlDown() ||  modifiers.isCommandDown();
     //[/UserCode_modifierKeysChanged]
 }
 
@@ -583,6 +592,7 @@ void SynthEditor::modifierKeysChanged (const ModifierKeys& modifiers)
 
 void SynthEditor::cleanUp() {
     removeAllChildren();
+    deleteSelected(true);
     selectedModules.clear();
 }
 
@@ -763,13 +773,13 @@ void SynthEditor::setTab(juce::TabbedComponent *t) {
     this->tab = t;
 }
 
-void SynthEditor::deleteSelected() {
+void SynthEditor::deleteSelected(bool deleteAll) {
     
     // handle connections at root level
     
     for (int i = 0; i < root->getConnections()->size(); i++) {
         Connection* c = root->getConnections()->at(i);
-        if (c->selected) {
+        if (c->selected || deleteAll) {
             
             // remove connections from pin
             
@@ -797,17 +807,14 @@ void SynthEditor::deleteSelected() {
     
     // delete module if selected
 
-    for (int i = 0; i < root->getModules()->size(); i++) {
+    for (std::vector<Module*>::iterator it = root->getModules()->begin(); it !=  root->getModules()->end();) {
+        
+        // remove connections first
 
-        Module* m = root->getModules()->at(i);
-
-        if (m->isSelected()) {
-            
-            // remove connections first
-            
+        if((*it)->isSelected() || deleteAll) {
             for (int i = 0; i < root->getConnections()->size(); i++) {
                 Connection* c = root->getConnections()->at(i);
-                if (c->source == m || c->target == m) {
+                if (c->source == (*it) || c->target == (*it)) {
                     
                     delete c;
                     root->getConnections()->erase(root->getConnections()->begin() + i);
@@ -821,15 +828,15 @@ void SynthEditor::deleteSelected() {
                 
                 // for each pin
                 for (int k = 0; k < root->getModules()->at(j)->getPins().size(); k++) {
-
+                    
                     // for every connection of each pin
                     for (int l = 0; l < root->getModules()->at(j)->getPins().at(k)->connections.size(); l++) {
-                    
+                        
                         // for each pn of the module being removed
-                        for (int n = 0; n < m->getPins().size();n++) {
+                        for (int n = 0; n < (*it)->getPins().size();n++) {
                             // if the index matches remove pin from vector
                             
-                            if (root->getModules()->at(j)->getPins().at(k)->connections.at(l)->index == m->getPins().at(n)->index) {
+                            if (root->getModules()->at(j)->getPins().at(k)->connections.at(l)->index == (*it)->getPins().at(n)->index) {
                                 root->getModules()->at(j)->getPins().at(k)->connections.erase(root->getModules()->at(j)->getPins().at(k)->connections.begin() + l);
                             }
                         }
@@ -839,11 +846,15 @@ void SynthEditor::deleteSelected() {
                 }
                 
             }
+            delete (*it);
+            root->getModules()->erase(it);
             
-            delete m;
-            root->getModules()->erase(root->getModules()->begin() + i);
         }
+        
+
+        
     }
+    
 }
 
 
