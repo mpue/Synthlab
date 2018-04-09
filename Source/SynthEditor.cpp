@@ -559,8 +559,8 @@ void SynthEditor::mouseDoubleClick (const MouseEvent& e)
         for (int i = 0; i < root->getModules()->size(); i++) {
 
             Module* m = root->getModules()->at(i);
-
-            if (m->isSelected()) {
+            
+            if (m->isSelected() && m->isEditable()) {
                 SynthEditor* editor = new SynthEditor(_sampleRate, bufferSize);
                 editor->setModule(m);
                 tab->addTab(m->getName(), juce::Colours::grey,editor, true);
@@ -814,7 +814,8 @@ void SynthEditor::deleteSelected(bool deleteAll) {
                     // if the index of the pin matches it must be a connection to the pin
                     if ((*it) != nullptr && (*it)->index == c->target->getPins().at(k)->index) {
                         // erase the connection from the vector
-                        it = c->a->connections.erase(it);
+                        c->a->connections.erase(it);
+                
                     }
                     else {
                         ++it;

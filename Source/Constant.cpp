@@ -40,6 +40,7 @@ float Constant::getValue() {
 void Constant::setValue(float value) {
     this->value = value;
     this->pins.at(0)->setValue(value);
+    this->nameLabel->setText(String(value),juce::NotificationType::dontSendNotification);
 }
 
 
