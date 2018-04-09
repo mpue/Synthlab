@@ -60,8 +60,23 @@ AudioSampleBuffer* Pin::getAudioBuffer() {
 
 void Pin::process(float *in, float *out, int numSamples) {
     
-    for (int i = 0; i < numSamples;i++) {
-        audioBuffer->addSample(0, i, in[i]);
+    if (type == Pin::Type::AUDIO) {
+        
+        if (direction == Pin::Direction::IN ) {
+            for (int i = 0; i < numSamples;i++){
+                audioBuffer->addSample(0, i, in[i]);
+            }
+        }
+        else {
+            for (int i = 0; i < numSamples;i++){
+                out[i] = audioBuffer->getSample(0, i);
+            }
+        }
+        
+        for (int i = 0; i < connections.size();i++) {
+            if (connections.at(i)->direction == Pin::Direction::OUT) {
+                connections.at(i)->process(in, out, numSamples);
+            }
+        }
     }
-    
 }

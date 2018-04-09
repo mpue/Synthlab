@@ -378,6 +378,10 @@ void Module::changeListenerCallback (ChangeBroadcaster* source) {
 }
 
 void Module::process() {
+    for (int i = 0; i < pins.size();i++) {
+    
+        
+    }
 }
 
 //[/MiscUserCode]
