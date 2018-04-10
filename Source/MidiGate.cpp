@@ -19,13 +19,21 @@ MidiGate::MidiGate()
     // In your constructor, you should add any child components, and
     // initialise any special settings that your component needs.
    
-    setSize(120,30);
+    setSize(120,60);
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(2,2);
     addPin(Pin::Direction::OUT);
     pins.at(0)->setName("G");
+    
+    Pin* p2 = new Pin(Pin::Type::VALUE);
+    p2->direction = Pin::Direction::OUT;
+    p2->listeners.push_back(this);
+    p2->setName("V");
+    addPin(Pin::Direction::OUT,p2);
+
     editable = false;
     prefab = true;
+    
 }
 
 MidiGate::~MidiGate()
@@ -44,7 +52,7 @@ void MidiGate::gateOn(int velocity) {
     e->setValue(velocity);
     pins.at(0)->sendEvent(e);
     
-    
+    pins.at(1)->setValue(1);
     /*
     for (int i = 0; i < pins.size();i++) {
 
@@ -67,4 +75,6 @@ void MidiGate::gateOff() {
     Event* e = new Event("gate",Event::Type::GATE);
     e->setValue(0);
     pins.at(0)->sendEvent(e);
+    
+    pins.at(1)->setValue(0);
 }

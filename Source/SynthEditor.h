@@ -155,6 +155,9 @@ private:
     std::vector<Module*> selectedModules;
     std::vector<AudioOut*> outputChannels;
     
+    static String defaultMidiInputName;
+    static String defaultMidiOutputName;
+    
     int bufferSize;
     double _sampleRate;
     //[/UserVariables]

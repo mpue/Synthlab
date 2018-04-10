@@ -92,7 +92,7 @@ void SawtoothModule::setAmplitude(float amplitude) {
 void SawtoothModule::process() {
     
     if (pins.at(0)->connections.size() ==  1) {
-        this->oscillator->setFrequency(pins.at(0)->connections.at(0)->getValue()*2000);
+        this->oscillator->setFrequency(pins.at(0)->connections.at(0)->getValue());
     }
     if (pins.at(1)->connections.size() ==  1) {
         this->setFine(pins.at(1)->connections.at(0)->getValue());

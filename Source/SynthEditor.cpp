@@ -31,6 +31,10 @@
 #include "Constant.h"
 #include <stdio.h>
 #include <string.h>
+
+String SynthEditor::defaultMidiOutputName = "Express 128 Port 7";
+String SynthEditor::defaultMidiInputName = "Express 128 Port 7";
+
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 //[/MiscUserDefs]
 
@@ -1169,7 +1173,11 @@ void SynthEditor::audioDeviceIOCallback(const float **inputChannelData, int numI
 }
 
 void SynthEditor::prepareToPlay(int samplesPerBlockExpected, double sampleRate) {
-
+    
+    
+    deviceManager->setMidiInputEnabled("Express  128 Port 7", true);
+    deviceManager->setDefaultMidiOutput("Express  128 Port 7");
+    deviceManager->addMidiInputCallback("Express  128 Port 7", this);
 }
 
 void SynthEditor::setSamplerate(double rate) {

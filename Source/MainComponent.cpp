@@ -24,32 +24,13 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
 
 
     
-    editor = new SynthEditor(44100.0,512);
-    tab = new MainTabbedComponent();    
-    tab->setBounds(0,0,getWidth(),getHeight());
-    
-    
-    view = new Viewport();
-    
-    addAndMakeVisible(view);
-    
-    view->setSize(500,200);
-    view->setViewedComponent(editor);
-    view->setScrollBarsShown(true,true);
-    view->setScrollOnDragEnabled(true);
-    view->setWantsKeyboardFocus(false);
-    view->setMouseClickGrabsKeyboardFocus(false);
-    
-    tab->addTab("Main", juce::Colours::grey, view, true);
-    
-    editor->setTab(tab);
+
 
     
     propertyView =  new PropertyView();
     
+
     editor->addChangeListener(propertyView);
-    editor->setDeviceManager(&deviceManager);
-    
     addAndMakeVisible (propertyView);
     addAndMakeVisible (resizerBar);
     addAndMakeVisible (tab);
@@ -96,6 +77,29 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     // For more details, see the help for AudioProcessor::prepareToPlay()
     // editor->setSamplerate(sampleRate);
     // editor->setBufferSize(samplesPerBlockExpected);
+    
+    editor = new SynthEditor(sampleRate,samplesPerBlockExpected);
+    tab = new MainTabbedComponent();
+    tab->setBounds(0,0,getWidth(),getHeight());
+    
+    
+    view = new Viewport();
+    
+    addAndMakeVisible(view);
+    
+    view->setSize(500,200);
+    view->setViewedComponent(editor);
+    view->setScrollBarsShown(true,true);
+    view->setScrollOnDragEnabled(true);
+    view->setWantsKeyboardFocus(false);
+    view->setMouseClickGrabsKeyboardFocus(false);
+    
+    tab->addTab("Main", juce::Colours::grey, view, true);
+    
+    editor->setTab(tab);
+ 
+    editor->setDeviceManager(&deviceManager);
+    editor->prepareToPlay( samplesPerBlockExpected, sampleRate);
 }
 
 void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill)
