@@ -35,6 +35,7 @@ MidiOut::MidiOut()
     addPin(Pin::Direction::IN,p2);
     
     editable = false;
+    prefab = true;
 }
 
 MidiOut::~MidiOut()

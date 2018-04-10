@@ -80,13 +80,14 @@ PropertyView::~PropertyView()
 
     tabbedComponent = nullptr;
 
-
     //[Destructor]. You can add your own custom destruction code here..
     
     delete nameListener;
+    delete valueListener;
     delete nameValue;
     delete numInputsValue;
-
+    delete value;
+    
     //[/Destructor]
 }
 

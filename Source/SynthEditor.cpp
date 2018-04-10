@@ -26,6 +26,7 @@
 #include "MidiOut.h"
 #include "AudioOut.h"
 #include "SawtoothModule.h"
+#include "NoiseModule.h"
 #include "Constant.h"
 #include <stdio.h>
 #include <string.h>
@@ -301,8 +302,9 @@ void SynthEditor::mouseDown (const MouseEvent& e)
             prefabMenu->addItem(52,"MIDI Out");
             prefabMenu->addItem(53,"MIDI Note");
             prefabMenu->addItem(54,"Sawtooth Osc");
-            prefabMenu->addItem(55,"Audio Out");
-            prefabMenu->addItem(56,"Constant");
+            prefabMenu->addItem(55,"White noise");
+            prefabMenu->addItem(56,"Audio Out");
+            prefabMenu->addItem(57,"Constant");
             
             m->addSubMenu("Prefabs",*prefabMenu);
 
@@ -377,8 +379,18 @@ void SynthEditor::mouseDown (const MouseEvent& e)
                 addAndMakeVisible(m);
                 root->getModules()->push_back(m);
             }
-            
             else if (result == 55) {
+                NoiseModule* m = new NoiseModule(this->_sampleRate, bufferSize);
+                
+                m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
+                m->setIndex(Time::currentTimeMillis());
+                
+                addAndMakeVisible(m);
+                root->getModules()->push_back(m);
+                
+            }
+            
+            else if (result == 56) {
                 AudioOut* m = new AudioOut();
                 
                 m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
@@ -389,7 +401,7 @@ void SynthEditor::mouseDown (const MouseEvent& e)
                 outputChannels.push_back(m);
             }
             
-            else if (result == 56) {
+            else if (result == 57) {
                 Constant* m = new Constant();
                 
                 m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
@@ -399,6 +411,17 @@ void SynthEditor::mouseDown (const MouseEvent& e)
                 root->getModules()->push_back(m);
                
             }
+            else if (result == 58) {
+                NoiseModule* m = new NoiseModule(this->_sampleRate, bufferSize);
+                
+                m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
+                m->setIndex(Time::currentTimeMillis());
+                
+                addAndMakeVisible(m);
+                root->getModules()->push_back(m);
+    
+            }
+            
             
             delete prefabMenu;
 		}
@@ -630,12 +653,13 @@ void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Conn
     for (std::vector<Module*>::iterator it = modules->begin(); it != modules->end(); ++it) {
 
         ValueTree file = ValueTree("Module");
-
+        
         file.setProperty("name",(*it)->getName(), nullptr);
         file.setProperty("index",String((*it)->getIndex()), nullptr);
         file.setProperty("x",(*it)->getPosition().getX(),nullptr);
         file.setProperty("y",(*it)->getPosition().getY(),nullptr);
-
+        file.setProperty("isPrefab",(*it)->isPrefab(),nullptr);
+        
         ValueTree pins = ValueTree("Pins");
 
         for (std::vector<Pin*>::iterator it2 =  (*it)->pins.begin(); it2 != (*it)->pins.end(); ++it2) {
@@ -720,7 +744,14 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
     for (int i = 0; i < mods.getNumChildren();i++) {
         ValueTree mod = mods.getChild(i);
 
-        Module* m = new Module(mod.getProperty("name"));
+        Module* m = nullptr;
+        
+        if (mod.getProperty("isPrefab").toString().getIntValue() == 1) {
+            
+        }
+        else {
+             m = new Module(mod.getProperty("name"));
+        }
 
         m->setIndex(mod.getProperty("index").toString().getLargeIntValue());
         m->setTopLeftPosition(mod.getProperty("x").toString().getIntValue(), mod.getProperty("y").toString().getIntValue());
@@ -796,91 +827,74 @@ void SynthEditor::setTab(juce::TabbedComponent *t) {
     this->tab = t;
 }
 
+/*
 void SynthEditor::deleteSelected(bool deleteAll) {
+    std::vector<Connection*>* cons = root->getConnections();
+    cons->erase(std::remove_if(cons->begin(), cons->end(), [](Connection* c){return c->selected;}),cons->end());
+
+    for (int j = 0; j < root->getModules()->size(); j++) {
+        if (root->getModules()->at(j)->isSelected()) {
+ 
+            removeChildComponent(root->getModules()->at(j));
+ 
+            for (int k = 0; k < root->getModules()->at(j)->getPins().size(); k++) {
+ 
+                // for every connection of each pin
+                for (int l = 0; l < root->getModules()->at(j)->getPins().at(k)->connections.size(); l++) {
+ 
+                    // for each pin of the module being removed
+                    for (int n = 0; n < (*it)->getPins().size();n++) {
+                        // if the index matches remove pin from vector
+                        
+                        if (root->getModules()->at(j)->getPins().at(k)->connections.at(l)->index == (*it)->getPins().at(n)->index) {
+                            root->getModules()->at(j)->getPins().at(k)->connections.erase(root->getModules()->at(j)->getPins().at(k)->connections.begin() + l);
+                        }
+                    }
+                    
+                }
+            }
+        }
+    }
+ 
+    std::vector<Module*>* mods = root->getModules();
+    mods->erase(std::remove_if(mods->begin(), mods->end(), [](Module* m){return m->isSelected();}),mods->end());
+ 
+}
+*/
+
+
+    void SynthEditor::deleteSelected(bool deleteAll) {
     
     // handle connections at root level
+    if (deleteAll) {
+        std::vector<Connection*>* cons = root->getConnections();
+        cons->erase(std::remove_if(cons->begin(), cons->end(), [](Connection* c){return true;}),cons->end());
+        
     
-    for (int i = 0; i < root->getConnections()->size(); i++) {
-        Connection* c = root->getConnections()->at(i);
-        if (c->selected || deleteAll) {
-            
-            // remove connections from pin
-            
-            // for all connections to the pin a
-            // for (int j = 0; j < c->a->connections.size();j++) {
-            for (std::vector<Pin*>::iterator it = c->a->connections.begin(); it != c->a->connections.end();) {
-                // find the connections to pin a
-                for (int k = 0; k < c->target->getPins().size();k++) {
-                    // if the index of the pin matches it must be a connection to the pin
-                    if ((*it) != nullptr && (*it)->index == c->target->getPins().at(k)->index) {
-                        // erase the connection from the vector
-                        c->a->connections.erase(it);
-                
-                    }
-                    else {
-                        ++it;
-                    }
-                }
-            }
-            
-            delete c;
-            root->getConnections()->erase(root->getConnections()->begin() + i);
-            
-        }
+        
+
     }
-    
-    // delete module if selected
-
-    for (std::vector<Module*>::iterator it = root->getModules()->begin(); it !=  root->getModules()->end();) {
-        
-        // remove connections first
-
-        if((*it)->isSelected() || deleteAll) {
-            for (int i = 0; i < root->getConnections()->size(); i++) {
-                Connection* c = root->getConnections()->at(i);
-                if (c->source == (*it) || c->target == (*it)) {
-                    
-                    delete c;
-                    root->getConnections()->erase(root->getConnections()->begin() + i);
-                }
+    else {
+        std::vector<Connection*>* cons = root->getConnections();
+        cons->erase(std::remove_if(cons->begin(), cons->end(), [](Connection* c){
+            if (c->selected){
+                delete c;
+                return true;
             }
-            
-            // now remove all pin related connections from other modules
-            
-            // for each module
-            for (int j = 0; j < root->getModules()->size(); j++) {
-                
-                // for each pin
-                for (int k = 0; k < root->getModules()->at(j)->getPins().size(); k++) {
-                    
-                    // for every connection of each pin
-                    for (int l = 0; l < root->getModules()->at(j)->getPins().at(k)->connections.size(); l++) {
-                        
-                        // for each pn of the module being removed
-                        for (int n = 0; n < (*it)->getPins().size();n++) {
-                            // if the index matches remove pin from vector
-                            
-                            if (root->getModules()->at(j)->getPins().at(k)->connections.at(l)->index == (*it)->getPins().at(n)->index) {
-                                root->getModules()->at(j)->getPins().at(k)->connections.erase(root->getModules()->at(j)->getPins().at(k)->connections.begin() + l);
-                            }
-                        }
-                        
-                    }
-                    
-                }
-                
-            }
-            delete (*it);
-            root->getModules()->erase(it);
-            
-        }
-        
-
-        
+            return false;
+        }),cons->end());
     }
+    std::vector<Module*>* mods = root->getModules();
     
+    mods->erase(std::remove_if(mods->begin(), mods->end(), [](Module* m){
+        bool selected =  m->isSelected();
+        if (selected) delete m;
+        return selected;
+    }),mods->end());
+    
+
+ 
 }
-
 
 void SynthEditor::checkForPinSelection(const MouseEvent& e, Module* m) {
 
@@ -1101,9 +1115,6 @@ void SynthEditor::audioDeviceIOCallback(const float **inputChannelData, int numI
     }
      */
     
-
-    
-    
     // mute if there are no channels
     if (outputChannels.size() == 0) {
         for (int j = 0;j < numSamples;j++) {
@@ -1111,25 +1122,46 @@ void SynthEditor::audioDeviceIOCallback(const float **inputChannelData, int numI
             outputChannelData[1][j] = 0;
         }
     }
+    
     else {
         
         // process all output pins of the connected module
         // outputChannels.at(0)->getPins().at(0)->process(inputChannelData[0], outputChannelData[0], numSamples);
         if (outputChannels.at(0)->getPins().at(0)->connections.size() == 1) {
-            const float* outL = outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-             for (int j = 0;j < numSamples;j++) {
-                 outputChannelData[0][j] = outL[j];
-             }
+            if (outputChannels.at(0)->getPins().at(0)->connections.at(0) != nullptr) {
+                const float* outL = outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+                for (int j = 0;j < numSamples;j++) {
+                    outputChannelData[0][j] = outL[j];
+                }
+            }
+
+
+        }
+        else {
+            for (int j = 0;j < numSamples;j++) {
+                outputChannelData[0][j] = 0;
+          
+            }
         }
 
         if (outputChannels.at(0)->getPins().at(1)->connections.size() == 1) {
-            const float* outR = outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+            if (outputChannels.at(0)->getPins().at(1)->connections.at(0) != nullptr) {
+                const float* outR = outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+                for (int j = 0;j < numSamples;j++) {
+                    outputChannelData[1][j] = outR[j];
+                }
+            }
+
+        }
+        else {
             for (int j = 0;j < numSamples;j++) {
-                outputChannelData[1][j] = outR[j];
+           
+                outputChannelData[1][j] = 0;
             }
         }
-        
     }
+
+    
     
     
 }

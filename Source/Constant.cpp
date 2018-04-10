@@ -22,6 +22,7 @@ Constant::Constant()
     addPin(Pin::Direction::OUT);
     pins.at(0)->setName("");
     editable = false;
+    prefab = true;
 }
 
 Constant::~Constant()

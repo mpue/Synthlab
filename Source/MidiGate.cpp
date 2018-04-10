@@ -25,6 +25,7 @@ MidiGate::MidiGate()
     addPin(Pin::Direction::OUT);
     pins.at(0)->setName("G");
     editable = false;
+    prefab = true;
 }
 
 MidiGate::~MidiGate()

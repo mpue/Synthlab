@@ -25,6 +25,7 @@ MidiNote::MidiNote()
     addPin(Pin::Direction::OUT);
     pins.at(0)->setName("P");
     editable = false;
+     prefab = true;
 }
 
 MidiNote::~MidiNote()

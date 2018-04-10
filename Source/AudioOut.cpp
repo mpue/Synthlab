@@ -32,6 +32,7 @@ AudioOut::AudioOut()
     addPin(Pin::Direction::IN,p2);
     
     editable = false;
+    prefab = true;
 }
 
 AudioOut::~AudioOut()

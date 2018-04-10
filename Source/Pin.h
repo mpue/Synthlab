@@ -57,6 +57,11 @@ public:
     float getValue();
     void setValue(float value);
     
+    void invalidate() {
+        delete audioBuffer;
+        audioBuffer = nullptr;
+    }
+    
     virtual void process(const float *in, float *out,int numSamples) override;
     
 private:

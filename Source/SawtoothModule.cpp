@@ -1,7 +1,7 @@
 /*
   ==============================================================================
 
-    MidiGate.cpp
+    SawtoothModule
     Created: 4 Apr 2018 3:48:23pm
     Author:  Matthias Pueski
 
@@ -49,12 +49,18 @@ SawtoothModule::SawtoothModule(double sampleRate, int buffersize)
     p4->listeners.push_back(this);
     p4->setName("Out");
     
+    Pin* p5 = new Pin(Pin::Type::VALUE);
+    p5->direction = Pin::Direction::OUT;
+    p5->listeners.push_back(this);
+    p5->setName("V");
+    
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::IN,p2);
     addPin(Pin::Direction::IN,p3);
     addPin(Pin::Direction::OUT,p4);
     
     editable = false;
+    prefab = true;
 }
 
 SawtoothModule::~SawtoothModule()
@@ -91,15 +97,15 @@ void SawtoothModule::process() {
     if (pins.at(1)->connections.size() ==  1) {
         this->setFine(pins.at(1)->connections.at(0)->getValue());
     }
-    
+    if (pins.at(2)->connections.size() ==  1) {
+        this->setAmplitude(pins.at(2)->connections.at(0)->getValue());
+    }
     for (int i = 0; i < buffersize; i++) {
         float value = oscillator->process();
-        pins.at(3)->getAudioBuffer()->setSample(0,i ,value);
-        // std::cout << "In value " << value << std::endl;
-    }
+        
+        if (pins.at(3)->getAudioBuffer() != nullptr && pins.at(3)->getAudioBuffer()->getNumChannels() > 0)
+            pins.at(3)->getAudioBuffer()->setSample(0,i ,value);
 
-    
-    
-    //currentSample = (currentSample + 1) % buffersize;
+    }
     
 }
