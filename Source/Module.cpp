@@ -253,10 +253,10 @@ void Module::addPin(Pin::Direction direction, Pin* p) {
     }
 
     p->direction = direction;
-    p->index = (long)Time::currentTimeMillis();
 
     pins.push_back(p);
     p->addChangeListener(this);
+    p->index = 1000 + getId() + pins.size();
 }
 
 void Module::addPin(Pin::Direction direction) {
@@ -285,10 +285,10 @@ void Module::addPin(Pin::Direction direction) {
 	}
 
 	p->direction = direction;
-    p->index = (long)Time::currentTimeMillis();
 
     pins.push_back(p);
     p->addChangeListener(this);
+     p->index = 1000 + getId() + pins.size();
 }
 
 

@@ -10,6 +10,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Module.h"
+#include <map>
 
 class PrefabFactory {
     
@@ -27,14 +28,24 @@ public:
     
     PopupMenu createPrefabMenu();
     
-    Module* getPrefab(String name, float sampleRate, int bufferSize);
+    Module* getPrefab(int id, float sampleRate, int bufferSize);
     
+    std::map<int,String> getPrefabNames() {return prefabs;};
 private:
     static PrefabFactory* instance;
     
-
+    std::map<int,String> prefabs;
     
-    PrefabFactory();
+    PrefabFactory() {
+        prefabs[60] = "AdderModule";
+        prefabs[61] = "MidiGate";
+        prefabs[62] = "MidiOut";
+        prefabs[63] = "MidiNote";
+        prefabs[64] = "SawtoothModule";
+        prefabs[65] = "NoiseModule";
+        prefabs[66] = "AudioOut";
+
+    };
     ~PrefabFactory();
 };
 

@@ -27,10 +27,6 @@ public:
     void setDeviceManager(AudioDeviceManager* manager);
     virtual void process() override;
 
-    virtual int getId() override {
-        return 53;
-    }
-    
 private:
     AudioDeviceManager* deviceManager;
 

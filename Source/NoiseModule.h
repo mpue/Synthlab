@@ -29,9 +29,7 @@ public:
     void setAmplitude(float amplitude);
     void process() override;
     
-    virtual int getId() override {
-        return 51;
-    }
+
     
 private:
     

@@ -30,10 +30,7 @@ public:
     void setFine(float fine);
     void process() override;
     
-    virtual int getId() override {
-        return 57;
-    }
-    
+
 private:
     
     int pitch;

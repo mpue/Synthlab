@@ -26,9 +26,6 @@ public:
     void paint (Graphics& g) override;
     virtual void process() override;
 
-    virtual int getId() override {
-        return 50;
-    }
     
 private:
 

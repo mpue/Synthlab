@@ -29,6 +29,7 @@
 #include "NoiseModule.h"
 #include "AdderModule.h"
 #include "Constant.h"
+#include "PrefabFactory.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -303,14 +304,11 @@ void SynthEditor::mouseDown (const MouseEvent& e)
             
             PopupMenu* prefabMenu = new PopupMenu();
             
-            prefabMenu->addItem(51,"MIDI Gate");
-            prefabMenu->addItem(52,"MIDI Out");
-            prefabMenu->addItem(53,"MIDI Note");
-            prefabMenu->addItem(54,"Sawtooth Osc");
-            prefabMenu->addItem(55,"White noise");
-            prefabMenu->addItem(56,"Audio Out");
-            prefabMenu->addItem(57,"Constant");
-            prefabMenu->addItem(58,"Adder");
+            std::map<int,String> prefabs = PrefabFactory::getInstance()->getPrefabNames();
+            
+            for (std::map<int,String>::iterator it  = prefabs.begin();it != prefabs.end();++it) {
+                prefabMenu->addItem((*it).first,(*it).second);
+            }
             
             m->addSubMenu("Prefabs",*prefabMenu);
 
@@ -345,89 +343,19 @@ void SynthEditor::mouseDown (const MouseEvent& e)
             else if (result == 5) {
                 openSettings();
             }
-            else if (result == 51) {
-                Module* m = new MidiGate();
-                m->setName("Gate");
-                
+            else {
+                Module* m = PrefabFactory::getInstance()->getPrefab(result, _sampleRate, bufferSize);
                 m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
-                m->setIndex(Time::currentTimeMillis());
-
-                addAndMakeVisible(m);
-                root->getModules()->push_back(m);
-            }
-            else if (result == 52) {
-                MidiOut* m = new MidiOut();
-                m->setName("Midi Out");
                 
-                m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
-                m->setIndex(Time::currentTimeMillis());
-                m->setDeviceManager(deviceManager);
-                addAndMakeVisible(m);
-                root->getModules()->push_back(m);
-            }
-            else if (result == 53) {
-                Module* m = new MidiNote();
-                m->setName("Note");
-                
-                m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
-                m->setIndex(Time::currentTimeMillis());
-                
-                addAndMakeVisible(m);
-                root->getModules()->push_back(m);
-            }
-
-            else if (result == 54) {
-                Module* m = new SawtoothModule(this->_sampleRate, bufferSize);
-                
-                m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
-                m->setIndex(Time::currentTimeMillis());
-                
-                addAndMakeVisible(m);
-                root->getModules()->push_back(m);
-            }
-            else if (result == 55) {
-                NoiseModule* m = new NoiseModule(this->_sampleRate, bufferSize);
-                
-                m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
-                m->setIndex(Time::currentTimeMillis());
                 
                 addAndMakeVisible(m);
                 root->getModules()->push_back(m);
                 
+                AudioOut* out;
+                if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
+                    outputChannels.push_back(out);
+                }
             }
-            
-            else if (result == 56) {
-                AudioOut* m = new AudioOut();
-                
-                m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
-                m->setIndex(Time::currentTimeMillis());
-                
-                addAndMakeVisible(m);
-                root->getModules()->push_back(m);
-                outputChannels.push_back(m);
-            }
-            
-            else if (result == 57) {
-                Constant* m = new Constant();
-                
-                m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
-                m->setIndex(Time::currentTimeMillis());
-                
-                addAndMakeVisible(m);
-                root->getModules()->push_back(m);
-               
-            }
-            else if (result == 58) {
-                AdderModule* m = new AdderModule();
-                
-                m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
-                m->setIndex(Time::currentTimeMillis());
-                
-                addAndMakeVisible(m);
-                root->getModules()->push_back(m);
-    
-            }
-            
             
             delete prefabMenu;
 		}
@@ -665,6 +593,7 @@ void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Conn
         file.setProperty("x",(*it)->getPosition().getX(),nullptr);
         file.setProperty("y",(*it)->getPosition().getY(),nullptr);
         file.setProperty("isPrefab",(*it)->isPrefab(),nullptr);
+        file.setProperty("prefabId", (*it)->getId(), nullptr);
         
         ValueTree pins = ValueTree("Pins");
 
@@ -753,38 +682,43 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         Module* m = nullptr;
         
         if (mod.getProperty("isPrefab").toString().getIntValue() == 1) {
+            m = PrefabFactory::getInstance()->getPrefab(mod.getProperty("prefabId").toString().getIntValue(), _sampleRate, bufferSize);
             
         }
         else {
-             m = new Module(mod.getProperty("name"));
+            m = new Module(mod.getProperty("name"));
+            
+            ValueTree pins = mod.getChildWithName("Pins");
+            
+            for (int j = 0; j < pins.getNumChildren();j++) {
+                ValueTree pin = pins.getChild(j);
+                Pin* p = new Pin(Pin::Type::AUDIO);
+                
+                int type = pin.getProperty("type").toString().getIntValue();
+                int direction = pin.getProperty("direction").toString().getIntValue();
+                long index = pin.getProperty("index").toString().getLargeIntValue();
+                int x = pin.getProperty("x").toString().getIntValue();
+                int y = pin.getProperty("y").toString().getIntValue();
+                
+                Pin::Direction dir = static_cast<Pin::Direction>(direction);
+                p->direction = dir;
+                Pin::Type t = static_cast<Pin::Type>(type);
+                p->type = t;
+                p->index = index;
+                p->x = x;
+                p->y = y;
+                m->addPin(p);
+            }
         }
 
         m->setIndex(mod.getProperty("index").toString().getLargeIntValue());
         m->setTopLeftPosition(mod.getProperty("x").toString().getIntValue(), mod.getProperty("y").toString().getIntValue());
 
-        ValueTree pins = mod.getChildWithName("Pins");
-
-        for (int j = 0; j < pins.getNumChildren();j++) {
-            ValueTree pin = pins.getChild(j);
-            Pin* p = new Pin(Pin::Type::AUDIO);
-
-            int type = pin.getProperty("type").toString().getIntValue();
-            int direction = pin.getProperty("direction").toString().getIntValue();
-            long index = pin.getProperty("index").toString().getLargeIntValue();
-            int x = pin.getProperty("x").toString().getIntValue();
-            int y = pin.getProperty("y").toString().getIntValue();
-
-            Pin::Direction dir = static_cast<Pin::Direction>(direction);
-            p->direction = dir;
-            Pin::Type t = static_cast<Pin::Type>(type);
-            p->type = t;
-            p->index = index;
-            p->x = x;
-            p->y = y;
-            m->addPin(p);
-        }
-
         modules->push_back(m);
+        AudioOut* out;
+        if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
+            outputChannels.push_back(out);
+        }
         // addAndMakeVisible(m);
 
         loadStructure(m->getModules(),m->getConnections(),&mod);
@@ -798,27 +732,49 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         Connection* c = new Connection();
         long sourceIndex = con.getProperty("source").toString().getLargeIntValue();
         long targetIndex = con.getProperty("target").toString().getLargeIntValue();
-        long a = con.getProperty("a").toString().getLargeIntValue();
-        long b = con.getProperty("b").toString().getLargeIntValue();
+        long aIndex = con.getProperty("a").toString().getLargeIntValue();
+        long bIndex = con.getProperty("b").toString().getLargeIntValue();
 
+        Module* source = nullptr;
+        Module* target = nullptr;
+        Pin* a = nullptr;
+        Pin* b = nullptr;
+        
         for (int j = 0; j < modules->size(); j++) {
 
             Module* m = modules->at(j);
-
+            
             if (m->getIndex() == sourceIndex) {
-                c->source = m;
+                source = m;
             }
             if (m->getIndex() == targetIndex) {
-                c->target = m;
+                target = m;
             }
-
+            
             for (int k = 0; k < m->getPins().size();k++) {
-                if (m->getPins().at(k)->index == a) {
-                    c->a = m->getPins().at(k);
+                if (m->getPins().at(k)->index == aIndex) {
+                    a = m->getPins().at(k);
                 }
-                if (m->getPins().at(k)->index == b) {
-                    c->b = m->getPins().at(k);
+                if (m->getPins().at(k)->index == bIndex) {
+                    b = m->getPins().at(k);
                 }
+            }
+            
+            if (source != nullptr && target != nullptr && a != nullptr && b != nullptr) {
+                
+                if (a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT) {
+                    a->connections.push_back(b);
+                    Connection* c = new Connection(source, a, target, b);
+                    root->getConnections()->push_back(c);
+                }
+                else if (a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN) {
+                    b->connections.push_back(a);
+                    
+                    Connection* c = new Connection(source, a, target, b);
+                    root->getConnections()->push_back(c);
+                }
+                
+                repaint();
             }
 
         }
@@ -959,10 +915,18 @@ void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
 
 	if (source != nullptr && target != nullptr && a != nullptr && b != nullptr) {
 
-        a->connections.push_back(b);
-        
-		Connection* c = new Connection(source, a, target, b);
-		root->getConnections()->push_back(c);
+        if (a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT) {
+            a->connections.push_back(b);
+            Connection* c = new Connection(source, a, target, b);
+            root->getConnections()->push_back(c);
+        }
+        else if (a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN) {
+            b->connections.push_back(a);
+            
+            Connection* c = new Connection(source, a, target, b);
+            root->getConnections()->push_back(c);
+        }
+
 		repaint();
 	}
 

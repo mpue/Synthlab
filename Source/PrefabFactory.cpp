@@ -17,47 +17,40 @@
 
 PrefabFactory* PrefabFactory::instance = NULL;
 
-Module* PrefabFactory::getPrefab(String name, float sampleRate, int bufferSize) {
+Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
 
     Module* m = nullptr;
     
-    if (name == "AdderModule") {
+    if (prefabs[id] == "AdderModule") {
         m = new AdderModule();
-        m->setIndex(Time::currentTimeMillis());
     }
-    else if (name == "MidiGate") {
+    else if (prefabs[id] == "MidiGate") {
         m = new MidiGate();
         m->setName("Gate");
-        m->setIndex(Time::currentTimeMillis());
     }
-    else if (name == "MidiOut") {
+    else if (prefabs[id] == "MidiOut") {
         m = new MidiOut();
         m->setName("Midi Out");
-        m->setIndex(Time::currentTimeMillis());
     }
-    else if (name == "MidiNote") {
+    else if (prefabs[id] == "MidiNote") {
         m = new MidiNote();
         m->setName("Note");
-        m->setIndex(Time::currentTimeMillis());
     }
-    else if (name == "SawtoothModule") {
+    else if (prefabs[id] == "SawtoothModule") {
         m = new SawtoothModule(sampleRate, bufferSize);
-        m->setIndex(Time::currentTimeMillis());
     }
-    else if (name == "NoiseModule") {
+    else if (prefabs[id] == "NoiseModule") {
         m = new NoiseModule(sampleRate, bufferSize);
-        m->setIndex(Time::currentTimeMillis());
     }
-    else if (name == "AudioOut") {
+    else if (prefabs[id] == "AudioOut") {
         m = new AudioOut();
-        m->setIndex(Time::currentTimeMillis());
     }
-    else if (name == "Constant") {
+    else if (prefabs[id] == "Constant") {
         m = new Constant();
-        m->setIndex(Time::currentTimeMillis());
     }
     
-        
+    m->setIndex(id);
+    m->setId(id);
     
     return m;
 }

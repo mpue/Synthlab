@@ -95,7 +95,8 @@ public:
     void moveTo(int x, int y);
     Point<int> getSavedPosition();
     
-    virtual int getId() { return 0;};
+    virtual int getId() { return id;};
+    virtual void setId(int id) {this->id = id;};
     
     //[/UserMethods]
 
@@ -128,7 +129,8 @@ protected:
     ScopedPointer<Label> nameLabel;
     Image cachedImage_materialicons_301_viewmodule_64_0_ffffff_none_png_1;
 
-
+    int id = 0;
+    
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Module)
 };

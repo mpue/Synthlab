@@ -15,15 +15,17 @@
 
 //==============================================================================
 MidiGate::MidiGate()
-{
-    // In your constructor, you should add any child components, and
-    // initialise any special settings that your component needs.
-   
+{   
     setSize(120,60);
+    
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(2,2);
-    addPin(Pin::Direction::OUT);
-    pins.at(0)->setName("G");
+
+    Pin* p1 = new Pin(Pin::Type::EVENT);
+    p1->direction = Pin::Direction::OUT;
+    p1->listeners.push_back(this);
+    p1->setName("G");
+    addPin(Pin::Direction::OUT,p1);
     
     Pin* p2 = new Pin(Pin::Type::VALUE);
     p2->direction = Pin::Direction::OUT;

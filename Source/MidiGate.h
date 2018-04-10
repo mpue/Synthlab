@@ -27,9 +27,7 @@ public:
     void gateOn(int velocity);
     void gateOff();
     
-    virtual int getId() override {
-        return 54;
-    }
+
     
 private:
     
