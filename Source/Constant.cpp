@@ -31,7 +31,11 @@ Constant::~Constant()
 }
 
 void Constant::configurePins() {
-    
+    Pin* p1 = new Pin(Pin::Type::VALUE);
+    p1->direction = Pin::Direction::OUT;
+    p1->setName("V");
+    addPin(Pin::Direction::OUT,p1);
+
 }
 
 void Constant::paint(juce::Graphics &g) {

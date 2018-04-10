@@ -47,6 +47,8 @@ private:
 
     };
     ~PrefabFactory();
+    
+    int numPrefabInstances = 0;
 };
 
 #endif /* PrefabFactory_hpp */

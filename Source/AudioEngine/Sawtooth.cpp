@@ -82,7 +82,7 @@ void Sawtooth::setFrequency(double frequency) {
 
 void Sawtooth::setFine(float fine) {
     this->fine = fine;
-    setFrequency(frequency + fine);
+    setFrequency(frequency);
 }
 
 float Sawtooth::getFine() const {

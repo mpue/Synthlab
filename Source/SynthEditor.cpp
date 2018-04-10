@@ -796,7 +796,7 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
                     c->target = source;
                     break;
                 }
-                     
+                
                 
                
             }
@@ -1123,9 +1123,11 @@ void SynthEditor::audioDeviceIOCallback(const float **inputChannelData, int numI
         // outputChannels.at(0)->getPins().at(0)->process(inputChannelData[0], outputChannelData[0], numSamples);
         if (outputChannels.at(0)->getPins().at(0)->connections.size() == 1) {
             if (outputChannels.at(0)->getPins().at(0)->connections.at(0) != nullptr) {
-                const float* outL = outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-                for (int j = 0;j < numSamples;j++) {
-                    outputChannelData[0][j] = outL[j];
+                if (outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer() != nullptr) {
+                    const float* outL = outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+                    for (int j = 0;j < numSamples;j++) {
+                        outputChannelData[0][j] = outL[j];
+                    }
                 }
             }
 
@@ -1140,10 +1142,13 @@ void SynthEditor::audioDeviceIOCallback(const float **inputChannelData, int numI
 
         if (outputChannels.at(0)->getPins().at(1)->connections.size() == 1) {
             if (outputChannels.at(0)->getPins().at(1)->connections.at(0) != nullptr) {
-                const float* outR = outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-                for (int j = 0;j < numSamples;j++) {
-                    outputChannelData[1][j] = outR[j];
+                if (outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer() != nullptr) {
+                    const float* outR = outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+                    for (int j = 0;j < numSamples;j++) {
+                        outputChannelData[1][j] = outR[j];
+                    }
                 }
+
             }
 
         }
