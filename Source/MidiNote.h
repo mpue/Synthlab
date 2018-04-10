@@ -26,7 +26,7 @@ public:
 
     void note(int note);
 
-
+    virtual void configurePins() override;
     
 private:
     

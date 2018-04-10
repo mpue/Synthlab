@@ -29,7 +29,7 @@ public:
     void setAmplitude(float amplitude);
     void process() override;
     
-
+    virtual void configurePins() override;
     
 private:
     

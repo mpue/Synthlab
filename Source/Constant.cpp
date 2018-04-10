@@ -19,15 +19,19 @@ Constant::Constant()
     setSize(120,30);
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(2,2);
-    addPin(Pin::Direction::OUT);
-    pins.at(0)->setName("");
+
     editable = false;
     prefab = true;
 }
 
 Constant::~Constant()
 {
- 
+    addPin(Pin::Direction::OUT);
+    pins.at(0)->setName("");
+}
+
+void Constant::configurePins() {
+    
 }
 
 void Constant::paint(juce::Graphics &g) {

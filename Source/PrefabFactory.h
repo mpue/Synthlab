@@ -27,10 +27,9 @@ public:
     }
     
     PopupMenu createPrefabMenu();
-    
     Module* getPrefab(int id, float sampleRate, int bufferSize);
-    
     std::map<int,String> getPrefabNames() {return prefabs;};
+    
 private:
     static PrefabFactory* instance;
     

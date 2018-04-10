@@ -51,6 +51,7 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     
     m->setIndex(id);
     m->setId(id);
+    m->configurePins();
     
     return m;
 }

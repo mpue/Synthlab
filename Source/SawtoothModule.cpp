@@ -29,6 +29,17 @@ SawtoothModule::SawtoothModule(double sampleRate, int buffersize)
     nameLabel->setTopLeftPosition(18,2);
     
     setName("Sawtooth");
+
+    editable = false;
+    prefab = true;
+}
+
+SawtoothModule::~SawtoothModule()
+{
+    delete oscillator;
+}
+
+void SawtoothModule::configurePins() {
     Pin* p1 = new Pin(Pin::Type::VALUE);
     p1->direction = Pin::Direction::IN;
     p1->listeners.push_back(this);
@@ -38,7 +49,7 @@ SawtoothModule::SawtoothModule(double sampleRate, int buffersize)
     p2->direction = Pin::Direction::IN;
     p2->listeners.push_back(this);
     p2->setName("F");
-
+    
     Pin* p3 = new Pin(Pin::Type::VALUE);
     p3->direction = Pin::Direction::IN;
     p3->listeners.push_back(this);
@@ -59,13 +70,6 @@ SawtoothModule::SawtoothModule(double sampleRate, int buffersize)
     addPin(Pin::Direction::IN,p3);
     addPin(Pin::Direction::OUT,p4);
     addPin(Pin::Direction::OUT,p5);
-    editable = false;
-    prefab = true;
-}
-
-SawtoothModule::~SawtoothModule()
-{
-    delete oscillator;
 }
 
 void SawtoothModule::paint(juce::Graphics &g) {

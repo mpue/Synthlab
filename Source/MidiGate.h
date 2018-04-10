@@ -27,6 +27,7 @@ public:
     void gateOn(int velocity);
     void gateOff();
     
+    virtual void configurePins() override;
 
     
 private:

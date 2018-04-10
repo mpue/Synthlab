@@ -36,7 +36,7 @@ public:
     void gate(bool on, int note, int velocity);
     void setDeviceManager(AudioDeviceManager* manager);
     void eventReceived(Event* e) override;
-    
+    virtual void configurePins() override;
     
 private:
     AudioDeviceManager* deviceManager;

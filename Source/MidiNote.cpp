@@ -22,6 +22,19 @@ MidiNote::MidiNote()
     setSize(120,60);
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(2,2);
+
+    
+    editable = false;
+     prefab = true;
+}
+
+MidiNote::~MidiNote()
+{
+    
+ 
+}
+
+void MidiNote::configurePins() {
     addPin(Pin::Direction::OUT);
     
     pins.at(0)->setName("P");
@@ -32,15 +45,6 @@ MidiNote::MidiNote()
     p2->listeners.push_back(this);
     p2->setName("V");
     addPin(Pin::Direction::OUT,p2);
-    
-    editable = false;
-     prefab = true;
-}
-
-MidiNote::~MidiNote()
-{
-    
- 
 }
 
 void MidiNote::paint(juce::Graphics &g) {

@@ -28,6 +28,18 @@ NoiseModule::NoiseModule(double sampleRate, int buffersize)
     nameLabel->setTopLeftPosition(18,2);
     
     setName("White noise");
+
+    
+    editable = false;
+    prefab = true;
+}
+
+NoiseModule::~NoiseModule()
+{
+    delete oscillator;
+}
+
+void NoiseModule::configurePins() {
     Pin* p1 = new Pin(Pin::Type::VALUE);
     p1->direction = Pin::Direction::IN;
     p1->listeners.push_back(this);
@@ -37,17 +49,9 @@ NoiseModule::NoiseModule(double sampleRate, int buffersize)
     p2->direction = Pin::Direction::OUT;
     p2->listeners.push_back(this);
     p2->setName("O");
-
+    
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::OUT,p2);
-    
-    editable = false;
-    prefab = true;
-}
-
-NoiseModule::~NoiseModule()
-{
-    delete oscillator;
 }
 
 void NoiseModule::paint(juce::Graphics &g) {

@@ -22,11 +22,12 @@ public:
     AudioOut();
     ~AudioOut();
    
-    
     void paint (Graphics& g) override;
     void setDeviceManager(AudioDeviceManager* manager);
     virtual void process() override;
 
+    virtual void configurePins() override;
+    
 private:
     AudioDeviceManager* deviceManager;
 

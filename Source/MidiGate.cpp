@@ -20,7 +20,18 @@ MidiGate::MidiGate()
     
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(2,2);
+    editable = false;
+    prefab = true;
+    
+}
 
+MidiGate::~MidiGate()
+{
+    
+ 
+}
+
+void MidiGate::configurePins() {
     Pin* p1 = new Pin(Pin::Type::EVENT);
     p1->direction = Pin::Direction::OUT;
     p1->listeners.push_back(this);
@@ -32,16 +43,6 @@ MidiGate::MidiGate()
     p2->listeners.push_back(this);
     p2->setName("V");
     addPin(Pin::Direction::OUT,p2);
-
-    editable = false;
-    prefab = true;
-    
-}
-
-MidiGate::~MidiGate()
-{
-    
- 
 }
 
 void MidiGate::paint(juce::Graphics &g) {

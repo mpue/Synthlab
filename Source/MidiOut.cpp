@@ -21,6 +21,19 @@ MidiOut::MidiOut()
     // nameLabel->setJustificationType (Justification::left);
     // nameLabel->setTopLeftPosition(2,2);
     
+
+    
+    editable = false;
+    prefab = true;
+}
+
+MidiOut::~MidiOut()
+{
+    
+ 
+}
+
+void MidiOut::configurePins() {
     Pin* p1 = new Pin(Pin::Type::EVENT);
     p1->direction = Pin::Direction::IN;
     p1->listeners.push_back(this);
@@ -33,15 +46,6 @@ MidiOut::MidiOut()
     
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::IN,p2);
-    
-    editable = false;
-    prefab = true;
-}
-
-MidiOut::~MidiOut()
-{
-    
- 
 }
 
 void MidiOut::paint(juce::Graphics &g) {

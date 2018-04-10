@@ -26,7 +26,7 @@ public:
 
     void setValue(float value);
     float getValue();
-    
+    virtual void configurePins() override;
 
     
 private:

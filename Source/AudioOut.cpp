@@ -20,6 +20,18 @@ AudioOut::AudioOut()
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(18,2);
     setName("Audio out");
+
+    editable = false;
+    prefab = true;
+}
+
+AudioOut::~AudioOut()
+{
+    
+ 
+}
+
+void AudioOut::configurePins() {
     Pin* p1 = new Pin(Pin::Type::AUDIO);
     p1->direction = Pin::Direction::IN;
     p1->setName("L");
@@ -31,14 +43,6 @@ AudioOut::AudioOut()
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::IN,p2);
     
-    editable = false;
-    prefab = true;
-}
-
-AudioOut::~AudioOut()
-{
-    
- 
 }
 
 void AudioOut::paint(juce::Graphics &g) {

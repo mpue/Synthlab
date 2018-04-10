@@ -25,7 +25,7 @@ public:
     
     void paint (Graphics& g) override;
     virtual void process() override;
-
+    virtual void configurePins() override;
     
 private:
 

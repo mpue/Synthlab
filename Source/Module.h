@@ -98,6 +98,9 @@ public:
     virtual int getId() { return id;};
     virtual void setId(int id) {this->id = id;};
     
+    virtual void configurePins() {};
+    
+    
     //[/UserMethods]
 
     void paint (Graphics& g) override;
@@ -109,6 +112,7 @@ public:
     static const int materialicons_301_viewmodule_64_0_ffffff_none_pngSize;
 
 
+    
 protected:
     //[UserVariables]   -- You can add your own custom variables in this section.
     MultiComponentDragger* dragger;

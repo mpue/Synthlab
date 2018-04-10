@@ -20,6 +20,15 @@ AdderModule::AdderModule()
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(18,2);
     setName("Add");
+    editable = false;
+    prefab = true;
+}
+
+AdderModule::~AdderModule()
+{   
+}
+
+void AdderModule::configurePins() {
     Pin* p1 = new Pin(Pin::Type::AUDIO);
     p1->direction = Pin::Direction::IN;
     p1->setName("A");
@@ -31,19 +40,10 @@ AdderModule::AdderModule()
     Pin* p3 = new Pin(Pin::Type::AUDIO);
     p3->direction = Pin::Direction::OUT;
     p3->setName("C");
-
+    
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::IN,p2);
     addPin(Pin::Direction::OUT,p3);
-    
-    editable = false;
-    prefab = true;
-}
-
-AdderModule::~AdderModule()
-{
-    
- 
 }
 
 void AdderModule::paint(juce::Graphics &g) {
