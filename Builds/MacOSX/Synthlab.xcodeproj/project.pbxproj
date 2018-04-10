@@ -60,6 +60,8 @@
 		B6B2F6DF52BF661817602934 /* BasicDelayLine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F7572AEFA3D00CDE84741D5F /* BasicDelayLine.cpp */; };
 		BF066E5F207A9D9900D164A7 /* AudioOut.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF066E5D207A9D9900D164A7 /* AudioOut.cpp */; };
 		BFA4DF67207CD2F400EBFA5A /* NoiseModule.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BFA4DF65207CD2F400EBFA5A /* NoiseModule.cpp */; };
+		BFA4DF6A207CD7D400EBFA5A /* AdderModule.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BFA4DF69207CD7D400EBFA5A /* AdderModule.cpp */; };
+		BFA4DF6D207CEFB500EBFA5A /* PrefabFactory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BFA4DF6B207CEFB500EBFA5A /* PrefabFactory.cpp */; };
 		BFC6F6C8207C01E600F1F217 /* Constant.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BFC6F6C6207C01E600F1F217 /* Constant.cpp */; };
 		C6DE1AC19784D6853697B38D /* HighPassFilter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 88918A7C414007033B30BFE2 /* HighPassFilter.cpp */; };
 		D69D9F38FAF7FDBC1D39AB2F /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 83E9D76B59B49AFC8072F5FD /* WebKit.framework */; };
@@ -167,6 +169,10 @@
 		BF066E60207AAD5F00D164A7 /* AudioProcessorModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = AudioProcessorModule.h; path = ../../Source/AudioEngine/AudioProcessorModule.h; sourceTree = "<group>"; };
 		BFA4DF65207CD2F400EBFA5A /* NoiseModule.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NoiseModule.cpp; path = ../../Source/NoiseModule.cpp; sourceTree = "<group>"; };
 		BFA4DF66207CD2F400EBFA5A /* NoiseModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NoiseModule.h; path = ../../Source/NoiseModule.h; sourceTree = "<group>"; };
+		BFA4DF68207CD7D300EBFA5A /* AdderModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AdderModule.h; path = ../../Source/AdderModule.h; sourceTree = "<group>"; };
+		BFA4DF69207CD7D400EBFA5A /* AdderModule.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = AdderModule.cpp; path = ../../Source/AdderModule.cpp; sourceTree = "<group>"; };
+		BFA4DF6B207CEFB500EBFA5A /* PrefabFactory.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = PrefabFactory.cpp; path = ../../Source/PrefabFactory.cpp; sourceTree = "<group>"; };
+		BFA4DF6C207CEFB500EBFA5A /* PrefabFactory.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = PrefabFactory.h; path = ../../Source/PrefabFactory.h; sourceTree = "<group>"; };
 		BFC6F6C6207C01E600F1F217 /* Constant.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = Constant.cpp; path = ../../Source/Constant.cpp; sourceTree = "<group>"; };
 		BFC6F6C7207C01E600F1F217 /* Constant.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Constant.h; path = ../../Source/Constant.h; sourceTree = "<group>"; };
 		C3B1A3BFBDDA944E2EC11177 /* include_juce_opengl.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = include_juce_opengl.mm; path = ../../JuceLibraryCode/include_juce_opengl.mm; sourceTree = SOURCE_ROOT; };
@@ -235,6 +241,8 @@
 		019AA793B6B5EF2ACC9FB238 /* Prefabs */ = {
 			isa = PBXGroup;
 			children = (
+				BFA4DF69207CD7D400EBFA5A /* AdderModule.cpp */,
+				BFA4DF68207CD7D300EBFA5A /* AdderModule.h */,
 				BFA4DF65207CD2F400EBFA5A /* NoiseModule.cpp */,
 				BFA4DF66207CD2F400EBFA5A /* NoiseModule.h */,
 				BFC6F6C6207C01E600F1F217 /* Constant.cpp */,
@@ -249,6 +257,8 @@
 				71D63EA1C0975CB8236AA506 /* MidiOut.h */,
 				63A65965476BBD41C1FD2E6C /* SawtoothModule.cpp */,
 				19C70167460564EAD55543C9 /* SawtoothModule.h */,
+				BFA4DF6B207CEFB500EBFA5A /* PrefabFactory.cpp */,
+				BFA4DF6C207CEFB500EBFA5A /* PrefabFactory.h */,
 			);
 			name = Prefabs;
 			sourceTree = "<group>";
@@ -538,6 +548,7 @@
 			files = (
 				6FAE6A852A1B6B5318187F13 /* led_off.png in Sources */,
 				5ACCC0A505FCF4650B0625B6 /* led_on.png in Sources */,
+				BFA4DF6D207CEFB500EBFA5A /* PrefabFactory.cpp in Sources */,
 				F36CABAC102F69AFC176ED83 /* sawtooth.png in Sources */,
 				BFA4DF67207CD2F400EBFA5A /* NoiseModule.cpp in Sources */,
 				E8231C9E1E7FB3057C68C0DB /* ADSR.cpp in Sources */,
@@ -566,6 +577,7 @@
 				DB89B03B884CC885F8405CCF /* MidiNote.cpp in Sources */,
 				035D6E4374093D1FAD9A419F /* MidiOut.cpp in Sources */,
 				8082F8061EDB06685E78C232 /* SawtoothModule.cpp in Sources */,
+				BFA4DF6A207CD7D400EBFA5A /* AdderModule.cpp in Sources */,
 				896B16F5D4CEB350A3A60669 /* Module.cpp in Sources */,
 				F12AC83FF424AC1A7A7EF9D4 /* SynthEditor.cpp in Sources */,
 				338E87D9150CF67F6750077A /* PropertyView.cpp in Sources */,

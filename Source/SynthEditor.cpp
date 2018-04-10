@@ -27,6 +27,7 @@
 #include "AudioOut.h"
 #include "SawtoothModule.h"
 #include "NoiseModule.h"
+#include "AdderModule.h"
 #include "Constant.h"
 #include <stdio.h>
 #include <string.h>
@@ -305,6 +306,7 @@ void SynthEditor::mouseDown (const MouseEvent& e)
             prefabMenu->addItem(55,"White noise");
             prefabMenu->addItem(56,"Audio Out");
             prefabMenu->addItem(57,"Constant");
+            prefabMenu->addItem(58,"Adder");
             
             m->addSubMenu("Prefabs",*prefabMenu);
 
@@ -412,7 +414,7 @@ void SynthEditor::mouseDown (const MouseEvent& e)
                
             }
             else if (result == 58) {
-                NoiseModule* m = new NoiseModule(this->_sampleRate, bufferSize);
+                AdderModule* m = new AdderModule();
                 
                 m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
                 m->setIndex(Time::currentTimeMillis());

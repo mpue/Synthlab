@@ -95,6 +95,8 @@ public:
     void moveTo(int x, int y);
     Point<int> getSavedPosition();
     
+    virtual int getId() { return 0;};
+    
     //[/UserMethods]
 
     void paint (Graphics& g) override;

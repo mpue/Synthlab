@@ -37,6 +37,10 @@ public:
     void setDeviceManager(AudioDeviceManager* manager);
     void eventReceived(Event* e) override;
     
+    
+    virtual int getId() override {
+        return 56;
+    }
 private:
     AudioDeviceManager* deviceManager;
     int note = 0;

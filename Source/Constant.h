@@ -27,6 +27,10 @@ public:
     void setValue(float value);
     float getValue();
     
+    virtual int getId() override {
+        return 52;
+    }
+    
 private:
     
     float value;

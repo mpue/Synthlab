@@ -58,7 +58,7 @@ SawtoothModule::SawtoothModule(double sampleRate, int buffersize)
     addPin(Pin::Direction::IN,p2);
     addPin(Pin::Direction::IN,p3);
     addPin(Pin::Direction::OUT,p4);
-    
+    addPin(Pin::Direction::OUT,p5);
     editable = false;
     prefab = true;
 }
@@ -92,13 +92,13 @@ void SawtoothModule::setAmplitude(float amplitude) {
 void SawtoothModule::process() {
     
     if (pins.at(0)->connections.size() ==  1) {
-        this->oscillator->setFrequency(pins.at(0)->connections.at(0)->getValue());
+        this->oscillator->setFrequency(pins.at(0)->connections.at(0)->getValue()*2000);
     }
     if (pins.at(1)->connections.size() ==  1) {
         this->setFine(pins.at(1)->connections.at(0)->getValue());
     }
     if (pins.at(2)->connections.size() ==  1) {
-        this->setAmplitude(pins.at(2)->connections.at(0)->getValue());
+        this->setAmplitude(abs(pins.at(2)->connections.at(0)->getValue()));
     }
     for (int i = 0; i < buffersize; i++) {
         float value = oscillator->process();
@@ -106,6 +106,7 @@ void SawtoothModule::process() {
         if (pins.at(3)->getAudioBuffer() != nullptr && pins.at(3)->getAudioBuffer()->getNumChannels() > 0)
             pins.at(3)->getAudioBuffer()->setSample(0,i ,value);
 
+        pins.at(4)->setValue(value);
     }
     
 }

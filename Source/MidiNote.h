@@ -26,6 +26,9 @@ public:
 
     void note(int note);
 
+    virtual int getId() override {
+        return 55;
+    }
     
 private:
     
