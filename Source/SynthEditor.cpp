@@ -117,10 +117,22 @@ void SynthEditor::paint (Graphics& g)
 	for (int i = 0; i < root->getConnections()->size(); i++) {
 		Connection* c = root->getConnections()->at(i);
 
-		int x1 = c->source->getX() + c->a->x;
-		int y1 = c->source->getY() + c->a->y + 5;
-		int x2 = c->target->getX() + c->b->x;
-		int y2 = c->target->getY() + c->b->y + 5;
+        if (c->source != NULL && c->target != NULL) {
+            int x1 = c->source->getX() + c->a->x;
+            int y1 = c->source->getY() + c->a->y + 5;
+            int x2 = c->target->getX() + c->b->x;
+            int y2 = c->target->getY() + c->b->y + 5;
+            
+            if (c->selected) {
+                g.setColour(juce::Colours::cyan);
+            }
+            else {
+                g.setColour(juce::Colours::white);
+            }
+            
+            g.drawLine(x1,y1,x2,y2);
+        }
+        
 		/*
 		Path p = Path();
 
@@ -145,14 +157,7 @@ void SynthEditor::paint (Graphics& g)
 		*/
 
 
-		if (c->selected) {
-			g.setColour(juce::Colours::cyan);
-		}
-		else {
-			g.setColour(juce::Colours::white);
-		}
 
-		g.drawLine(x1,y1,x2,y2);
 
 	}
 
@@ -248,18 +253,21 @@ void SynthEditor::mouseDown (const MouseEvent& e)
         
 		for (int i = 0; i < root->getConnections()->size(); i++) {
 			Connection* c = root->getConnections()->at(i);
+            
+            if (c->source != NULL && c->target != NULL)  {
+                int x1 = c->source->getX() + c->a->x;
+                int y1 = c->source->getY() + c->a->y + 5;
+                int x2 = c->target->getX() + c->b->x;
+                int y2 = c->target->getY() + c->b->y + 5;
+                
+                if (PointOnLineSegment(Point<int>(x1, y1), Point<int>(x2, y2), Point<int>(mouseX, mouseY), 5)) {
+                    c->selected = true;
+                }
+                else {
+                    c->selected = false;
+                }
+            }
 
-			int x1 = c->source->getX() + c->a->x;
-			int y1 = c->source->getY() + c->a->y + 5;
-			int x2 = c->target->getX() + c->b->x;
-			int y2 = c->target->getY() + c->b->y + 5;
-
-			if (PointOnLineSegment(Point<int>(x1, y1), Point<int>(x2, y2), Point<int>(mouseX, mouseY), 5)) {
-				c->selected = true;
-			}
-			else {
-				c->selected = false;
-			}
 		}
 	}
 	else if (e.mods.isRightButtonDown()) {
@@ -683,7 +691,6 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         
         if (mod.getProperty("isPrefab").toString().getIntValue() == 1) {
             m = PrefabFactory::getInstance()->getPrefab(mod.getProperty("prefabId").toString().getIntValue(), _sampleRate, bufferSize);
-            
         }
         else {
             m = new Module(mod.getProperty("name"));
@@ -708,10 +715,11 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
                 p->x = x;
                 p->y = y;
                 m->addPin(p);
+                m->setIndex(mod.getProperty("index").toString().getLargeIntValue());
             }
         }
 
-        m->setIndex(mod.getProperty("index").toString().getLargeIntValue());
+        
         m->setTopLeftPosition(mod.getProperty("x").toString().getIntValue(), mod.getProperty("y").toString().getIntValue());
 
         modules->push_back(m);
@@ -735,6 +743,8 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         long aIndex = con.getProperty("a").toString().getLargeIntValue();
         long bIndex = con.getProperty("b").toString().getLargeIntValue();
 
+
+        
         Module* source = nullptr;
         Module* target = nullptr;
         Pin* a = nullptr;
@@ -764,23 +774,37 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
                 
                 if (a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT) {
                     a->connections.push_back(b);
-                    Connection* c = new Connection(source, a, target, b);
-                    root->getConnections()->push_back(c);
+                    
+                    // xConnection* c = new Connection(source, a, target, b);
+                    // root->getConnections()->push_back(c);
+                    
+                    c->a = a;
+                    c->b = b;
+                    c->source = source;
+                    c->target = target;
+                    break;
+                    
                 }
                 else if (a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN) {
                     b->connections.push_back(a);
                     
-                    Connection* c = new Connection(source, a, target, b);
-                    root->getConnections()->push_back(c);
+                    // Connection* c = new Connection(target, b, source, a);
+                    // root->getConnections()->push_back(c);
+                    c->a = b;
+                    c->b = a;
+                    c->source = target;
+                    c->target = source;
+                    break;
                 }
+                     
                 
-                repaint();
+               
             }
 
         }
 
         connections->push_back(c);
-
+        repaint();
     }
 
 }

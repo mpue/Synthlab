@@ -32,17 +32,13 @@ MidiGate::~MidiGate()
 }
 
 void MidiGate::configurePins() {
-    Pin* p1 = new Pin(Pin::Type::EVENT);
+
+    
+    Pin* p1 = new Pin(Pin::Type::VALUE);
     p1->direction = Pin::Direction::OUT;
     p1->listeners.push_back(this);
     p1->setName("G");
     addPin(Pin::Direction::OUT,p1);
-    
-    Pin* p2 = new Pin(Pin::Type::VALUE);
-    p2->direction = Pin::Direction::OUT;
-    p2->listeners.push_back(this);
-    p2->setName("V");
-    addPin(Pin::Direction::OUT,p2);
 }
 
 void MidiGate::paint(juce::Graphics &g) {
@@ -50,34 +46,9 @@ void MidiGate::paint(juce::Graphics &g) {
 }
 
 void MidiGate::gateOn(int velocity) {
-    
-    Event* e = new Event("gate",Event::Type::GATE);
-    e->setValue(velocity);
-    pins.at(0)->sendEvent(e);
-    
-    pins.at(1)->setValue(1);
-    /*
-    for (int i = 0; i < pins.size();i++) {
-
-        MidiOut* out;
-        Module* module;
-        
-        if ((out = dynamic_cast<MidiOut*>(connections->at(i)->target)) != NULL) {
-            out->gate(true, velocity);
-        }
-        if ((module = dynamic_cast<Module*>(connections->at(i)->target)) != NULL) {
-            connections->at(i)->b->sendEvent(new Event("gate",Event::Type::GATE));
-        }
-        
-
-    }
-     */
+    pins.at(0)->setValue(1);
 }
 
 void MidiGate::gateOff() {
-    Event* e = new Event("gate",Event::Type::GATE);
-    e->setValue(0);
-    pins.at(0)->sendEvent(e);
-    
-    pins.at(1)->setValue(0);
+    pins.at(0)->setValue(0);
 }

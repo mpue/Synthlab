@@ -43,6 +43,7 @@ private:
         prefabs[64] = "SawtoothModule";
         prefabs[65] = "NoiseModule";
         prefabs[66] = "AudioOut";
+        prefabs[67] = "Constant";
 
     };
     ~PrefabFactory();
