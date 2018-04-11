@@ -256,7 +256,7 @@ void Module::addPin(Pin::Direction direction, Pin* p) {
 
     pins.push_back(p);
     p->addChangeListener(this);
-    p->index = 2 *(1000 * getId() + pins.size());
+    p->index = 100 * getId() + pins.size();
 }
 
 void Module::addPin(Pin::Direction direction) {
@@ -288,7 +288,7 @@ void Module::addPin(Pin::Direction direction) {
 
     pins.push_back(p);
     p->addChangeListener(this);
-    p->index = 2 * (1000 * getId() + pins.size());
+        p->index = 100 * getId() + pins.size();
 }
 
 

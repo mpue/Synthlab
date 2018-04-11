@@ -29,8 +29,17 @@ public:
         String getCategory() {
             return category;
         }
-    private:
         
+        int getNumInstances() {
+            return numInstances;
+        }
+        
+        void addInstance() {
+            numInstances++;
+        }
+        
+    private:
+        int numInstances = 0;
         String name;
         String category;
     };

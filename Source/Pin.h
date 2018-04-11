@@ -62,6 +62,8 @@ public:
         audioBuffer = nullptr;
     }
     
+    bool hasConnection(Pin* target);
+    
     virtual void process(const float *in, float *out,int numSamples) override;
     
 private:

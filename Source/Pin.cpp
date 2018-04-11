@@ -95,3 +95,12 @@ void Pin::process(const float *in, float *out, int numSamples) {
 
     }
 }
+
+bool Pin::hasConnection(Pin *target) {
+    for (int i = 0; i < connections.size();i++) {
+        if (connections.at(i)->index == target->index) {
+            return true;
+        }
+    }
+    return false;
+}

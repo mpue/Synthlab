@@ -805,8 +805,14 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
             
             if (source != nullptr && target != nullptr && a != nullptr && b != nullptr) {
                 
+                
+                
                 if (a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT) {
-                    a->connections.push_back(b);
+                    
+                    if (!a->hasConnection(b)) {
+                        a->connections.push_back(b);
+                        Logger::writeToLog("Connecting pin "+ String(a->index)+ " to pin "  +String(b->index));
+                    }
                     
                     // xConnection* c = new Connection(source, a, target, b);
                     // root->getConnections()->push_back(c);
@@ -815,31 +821,52 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
                     c->b = b;
                     c->source = source;
                     c->target = target;
-                    break;
+                    if (!connectionExists(*connections, c)) {
+                        Logger::writeToLog("Adding connection from module "+ source->getName() + ", index "+ String(source->getIndex()) + " to module "  +target->getName()+ ", index : " + String(target->getIndex()));
+                        connections->push_back(c);
+                    }
                     
                 }
                 else if (a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN) {
-                    b->connections.push_back(a);
-                    
+                    if (!b->hasConnection(a)) {
+                        b->connections.push_back(a);
+                        Logger::writeToLog("Conencting pin "+ String(b->index)+ " to pin "  +String(a->index));
+                    }
+
                     // Connection* c = new Connection(target, b, source, a);
                     // root->getConnections()->push_back(c);
                     c->a = b;
                     c->b = a;
                     c->source = target;
                     c->target = source;
-                    break;
+                    if (!connectionExists(*connections, c)) {
+                        Logger::writeToLog("Adding connection from module "+ source->getName() + ", index "+ String(source->getIndex()) + " to module "  +target->getName()+ ", index : " + String(target->getIndex()));
+                        connections->push_back(c);
+                    }
                 }
-                
-                
                
             }
 
         }
 
-        connections->push_back(c);
         repaint();
+        
     }
 
+}
+
+bool SynthEditor::connectionExists(std::vector<Connection*> connections,Connection *c) {
+    
+    for (int i = 0; i < connections.size();i++) {
+        
+        Connection* d = connections.at(i);
+        if (d->a->index == c->a->index && d->b->index == c->b->index && d->source->getIndex() == c->source->getIndex() && d->target->getIndex() == c->target->getIndex()) {
+            return true;
+        }
+
+    }
+    
+    return false;
 }
 
 void SynthEditor::setTab(juce::TabbedComponent *t) {

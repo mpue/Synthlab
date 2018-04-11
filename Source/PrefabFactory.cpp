@@ -56,11 +56,11 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     else if (prefabs[id].getName() == "LP filter") {
         m = new LPFilterModule(sampleRate,bufferSize);
     }
-    m->setIndex(id + 100 * numPrefabInstances);
+    m->setIndex(id + 100 * prefabs[id].getNumInstances());
     m->setId(id);
+    prefabs[id].addInstance();
     m->configurePins();
     
-    numPrefabInstances++;
     
     return m;
 }

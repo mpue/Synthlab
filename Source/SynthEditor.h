@@ -109,6 +109,8 @@ public:
     void setSamplerate(double rate);
     void setBufferSize(int buffersize);
     void processModule(Module* m);
+    bool connectionExists(std::vector<Connection*> connections, Connection* c);
+    
     
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
