@@ -23,7 +23,7 @@
 //[/Headers]
 
 #include "PropertyView.h"
-
+#include "Knob.h"
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 //[/MiscUserDefs]
@@ -129,6 +129,10 @@ void PropertyView::resized()
     //[/UserPreResize]
 
     //[UserResized] Add your own custom resize handling here..
+    tabbedComponent->setSize(300q,getParentHeight());
+    // setSize(getParentWidth(), getParentHeight());
+    if (propertyPanel != nullptr)
+        propertyPanel->setSize(tabbedComponent->getWidth(), getParentHeight());
     //[/UserResized]
 }
 
@@ -150,6 +154,16 @@ void PropertyView::changeListenerCallback(juce::ChangeBroadcaster *source) {
             if ((c = dynamic_cast<Constant*>(editor->getSelectedModule())) != NULL) {
                 value->setValue(c->getValue());
             }
+            
+            Knob* k = nullptr;
+            
+            if ((k = dynamic_cast<Knob*>(editor->getSelectedModule())) != NULL) {
+                value->setValue(k->getValue());
+                stepsizeValue->setValue(k->getStepsize());
+                minValue->setValue(k->getMinimum());
+                maxValue->setValue(k->getMaximum());
+            }
+            
             currentEditor = editor;
         }
 

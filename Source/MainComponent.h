@@ -28,12 +28,6 @@ public:
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate) override;
     void getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill) override;
     void releaseResources() override;
-
-
-    
-
-    
-
     
     //==============================================================================
     void paint (Graphics& g) override;
@@ -45,7 +39,7 @@ private:
 
 	SynthEditor* editor;
     MainTabbedComponent* tab;
-    PropertyView* propertyView;
+    PropertyView* propertyView = nullptr    ;
     Viewport* view;
     
     StretchableLayoutManager stretchableManager;

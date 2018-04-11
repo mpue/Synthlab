@@ -159,7 +159,7 @@ private:
                 
                 
                 if ((k = dynamic_cast<Knob*>(view->currentEditor->getSelectedModule())) != NULL) {
-                    k->setMinimum(value.toString().getFloatValue());
+                    k->setStepSize(value.toString().getFloatValue());
                 }
                 
                 
@@ -174,7 +174,7 @@ private:
     String name;
 
     SynthEditor* currentEditor;
-    PropertyPanel* propertyPanel;
+    PropertyPanel* propertyPanel = nullptr;
     
     Value* nameValue;
     Value* value;

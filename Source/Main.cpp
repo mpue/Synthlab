@@ -69,7 +69,9 @@ public:
             setContentOwned (new MainComponent(), true);
             setResizable (true, true);
 
-            centreWithSize (getWidth(), getHeight());
+            Rectangle<int> r = Desktop::getInstance().getDisplays().getMainDisplay().userArea;
+            
+            centreWithSize (r.getWidth(), r.getHeight() - 25);
             setVisible (true);
         }
 

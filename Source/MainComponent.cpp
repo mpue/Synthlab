@@ -48,7 +48,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     addAndMakeVisible (tab);
     
     // we have to set up our StretchableLayoutManager so it know the limits and preferred sizes of it's contents
-    stretchableManager.setItemLayout (0,            // for the fileTree
+    stretchableManager.setItemLayout (0,            // for the properties
                                       -0.1, -0.9,   // must be between 50 pixels and 90% of the available space
                                       -0.2);        // and its preferred size is 30% of the total available space
     
@@ -158,6 +158,9 @@ void MainComponent::resized()
     stretchableManager.layOutComponents (comps, 3,
                                          r.getX(), r.getY(), r.getWidth(), r.getHeight(),
                                          false, true);
+    
+    if (propertyView != nullptr && propertyView->getParentComponent() != NULL)
+        propertyView->setSize(r.getWidth()-tab->getWidth(), propertyView->getHeight());
 }
 
 

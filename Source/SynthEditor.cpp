@@ -172,6 +172,8 @@ void SynthEditor::resized()
     //[UserPreResize] Add your own custom resize code here..
     //[/UserPreResize]
 
+    setSize(getParentWidth()*1.5, getParentHeight()*1.5);
+    
     //[UserResized] Add your own custom resize handling here..
     //[/UserResized]
 }
