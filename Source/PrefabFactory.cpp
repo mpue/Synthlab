@@ -15,6 +15,7 @@
 #include "Constant.h"
 #include "AdderModule.h"
 #include "LPFilterModule.h"
+#include "Knob.h"
 
 PrefabFactory* PrefabFactory::instance = NULL;
 
@@ -49,7 +50,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     else if (prefabs[id].getName() == "Constant") {
         m = new Constant();
     }
-
+    else if (prefabs[id].getName() == "Knob") {
+        m = new Knob();
+    }
     else if (prefabs[id].getName() == "LP filter") {
         m = new LPFilterModule(sampleRate,bufferSize);
     }

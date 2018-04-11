@@ -90,16 +90,16 @@ void LPFilterModule::process() {
     
     if (pins.at(0)->connections.size() ==  1) {
         
-        if (this->frequency != pins.at(0)->getValue()) {
-            this->frequency = pins.at(0)->getValue();
+        if (this->frequency != pins.at(0)->connections.at(0)->getValue()) {
+            this->frequency =  pins.at(0)->connections.at(0)->getValue();
             filter->coefficients(frequency, resonance);
         }
         
     }
     if (pins.at(1)->connections.size() ==  1) {
         
-        if (this->resonance != pins.at(1)->getValue()) {
-            this->resonance = pins.at(1)->getValue();
+        if (this->resonance != pins.at(1)->connections.at(0)->getValue()) {
+            this->resonance =  pins.at(1)->connections.at(0)->getValue();
             filter->coefficients(frequency, resonance);
         }
     }

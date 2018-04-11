@@ -23,6 +23,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "MainTabbedComponent.h"
 #include "Constant.h"
+#include "Knob.h"
 //[/Headers]
 
 
@@ -97,6 +98,56 @@ private:
         Value value;
     };
     
+    struct MaxValueListener : Value::Listener
+    {
+        MaxValueListener (Value& v, PropertyView* view) : value (v), view(view){ value.addListener (this); }
+        ~MaxValueListener()  {}  // no need to remove the listener
+        
+        void valueChanged (Value& value) override {
+            
+            if (view->currentEditor->getSelectedModule() != nullptr) {
+                
+                Knob* k = nullptr;
+                
+                
+                if ((k = dynamic_cast<Knob*>(view->currentEditor->getSelectedModule())) != NULL) {
+                    k->setMaximum(value.toString().getFloatValue());
+                }
+                
+                
+            }
+            
+            
+        }
+        PropertyView* view;
+        Value value;
+    };
+    
+    struct MinValueListener : Value::Listener
+    {
+        MinValueListener (Value& v, PropertyView* view) : value (v), view(view){ value.addListener (this); }
+        ~MinValueListener()  {}  // no need to remove the listener
+        
+        void valueChanged (Value& value) override {
+            
+            if (view->currentEditor->getSelectedModule() != nullptr) {
+                
+                Knob* k = nullptr;
+                
+                
+                if ((k = dynamic_cast<Knob*>(view->currentEditor->getSelectedModule())) != NULL) {
+                    k->setMinimum(value.toString().getFloatValue());
+                }
+                
+                
+            }
+            
+            
+        }
+        PropertyView* view;
+        Value value;
+    };
+    
     String name;
 
     SynthEditor* currentEditor;
@@ -105,12 +156,18 @@ private:
     Value* value;
     Value* numInputsValue;
     Value* numOutputsValue;
+    Value* minValue;
+    Value* maxValue;
     NameListener* nameListener;
     ValueListener* valueListener;
+    MinValueListener* minValueListener;
+    MaxValueListener* maxValueListener;
     juce::Array<PropertyComponent*> properties;
     PropertyComponent* nameProp;
     PropertyComponent* inputsProp;
     PropertyComponent* valueProp;
+    PropertyComponent* minValueProp;
+    PropertyComponent* maxValueProp;
     //[/UserVariables]
 
     //==============================================================================

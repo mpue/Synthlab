@@ -68,9 +68,11 @@ private:
         prefabs[66] = Prefab("Audio out","Input / Output");
         prefabs[67] = Prefab("Constant","Math");
         prefabs[68] = Prefab("LP filter","Filter");
+        prefabs[69] = Prefab("Knob","Controls");
         
         categories = new StringArray();
 
+        categories->add("Controls");
         categories->add("Filter");
         categories->add("Math");
         categories->add("Input / Output");
