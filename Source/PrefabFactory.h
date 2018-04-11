@@ -44,6 +44,7 @@ private:
         prefabs[65] = "NoiseModule";
         prefabs[66] = "AudioOut";
         prefabs[67] = "Constant";
+        prefabs[68] = "LP Filter";
 
     };
     ~PrefabFactory();

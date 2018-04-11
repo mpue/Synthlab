@@ -14,6 +14,7 @@
 #include "AudioOut.h"
 #include "Constant.h"
 #include "AdderModule.h"
+#include "LPFilterModule.h"
 
 PrefabFactory* PrefabFactory::instance = NULL;
 
@@ -47,6 +48,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id] == "Constant") {
         m = new Constant();
+    }
+    else if (prefabs[id] == "LP Filter") {
+        m = new LPFilterModule(sampleRate,bufferSize);
     }
     
     m->setIndex(id + numPrefabInstances);

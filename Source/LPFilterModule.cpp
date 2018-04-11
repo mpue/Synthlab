@@ -20,12 +20,14 @@ LPFilterModule::LPFilterModule(double sampleRate, int buffersize)
     this->buffersize = buffersize;
     
     filter = new LowPassFilter();
+    filter->coefficients(frequency, resonance);
+
     
     setSize(120,140);
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(18,2);
     
-    setName("LPFilter");
+    setName("LP Filter");
 
     editable = false;
     prefab = true;
@@ -72,25 +74,34 @@ void LPFilterModule::paint(juce::Graphics &g) {
 
 void LPFilterModule::process() {
     
+    if (pins.at(2)->connections.size() == 1 && pins.at(2)->connections.at(0)->getAudioBuffer() != nullptr && pins.at(3)->getAudioBuffer() != nullptr) {
+        const float* in = pins.at(2)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+        float* out = pins.at(3)->getAudioBuffer()->getWritePointer(0);
+        filter->process(const_cast<float*>(in),out,buffersize);
+        for (int i = 0; i < buffersize;i++) {
+            pins.at(3)->getAudioBuffer()->getWritePointer(0)[i] = in[i];
+        }
+    }
+    else {
+        for (int i = 0; i < buffersize;i++) {
+            pins.at(3)->getAudioBuffer()->getWritePointer(0)[i] = 0;
+        }
+    }
+    
     if (pins.at(0)->connections.size() ==  1) {
-   
+        
+        if (this->frequency != pins.at(0)->getValue()) {
+            this->frequency = pins.at(0)->getValue();
+            filter->coefficients(frequency, resonance);
+        }
+        
     }
     if (pins.at(1)->connections.size() ==  1) {
-        // this->setFine(pins.at(1)->connections.at(0)->getValue());
-    }
-    if (pins.at(2)->connections.size() ==  1) {
-        //this->setAmplitude(abs(pins.at(2)->connections.at(0)->getValue()));
-    }
-    for (int i = 0; i < buffersize; i++) {
-        /*
-        const float* in = pins.at(2)->getAudioBuffer()->getReadPointer(0);
-        float* out = pins.at(3)->getAudioBuffer()->getWritePointer(0);
         
-        float value = filter->process((const float*)in,out,1);
-        
-        if (pins.at(3)->getAudioBuffer() != nullptr && pins.at(3)->getAudioBuffer()->getNumChannels() > 0)
-            pins.at(3)->getAudioBuffer()->setSample(0,i ,value);
-         */
+        if (this->resonance != pins.at(1)->getValue()) {
+            this->resonance = pins.at(1)->getValue();
+            filter->coefficients(frequency, resonance);
+        }
     }
     
 }
