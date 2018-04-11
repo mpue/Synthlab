@@ -59,6 +59,7 @@
 		B495433102F0A9C097578400 /* Note.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F2646B9C56D452230BCBE390 /* Note.cpp */; };
 		B6B2F6DF52BF661817602934 /* BasicDelayLine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F7572AEFA3D00CDE84741D5F /* BasicDelayLine.cpp */; };
 		BF066E5F207A9D9900D164A7 /* AudioOut.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF066E5D207A9D9900D164A7 /* AudioOut.cpp */; };
+		BF50DA52207DD7DB0059C79A /* LPFilterModule.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF50DA51207DD7DB0059C79A /* LPFilterModule.cpp */; };
 		BFA4DF67207CD2F400EBFA5A /* NoiseModule.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BFA4DF65207CD2F400EBFA5A /* NoiseModule.cpp */; };
 		BFA4DF6A207CD7D400EBFA5A /* AdderModule.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BFA4DF69207CD7D400EBFA5A /* AdderModule.cpp */; };
 		BFA4DF6D207CEFB500EBFA5A /* PrefabFactory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BFA4DF6B207CEFB500EBFA5A /* PrefabFactory.cpp */; };
@@ -167,6 +168,8 @@
 		BF066E5D207A9D9900D164A7 /* AudioOut.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = AudioOut.cpp; path = ../../Source/AudioOut.cpp; sourceTree = "<group>"; };
 		BF066E5E207A9D9900D164A7 /* AudioOut.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AudioOut.h; path = ../../Source/AudioOut.h; sourceTree = "<group>"; };
 		BF066E60207AAD5F00D164A7 /* AudioProcessorModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = AudioProcessorModule.h; path = ../../Source/AudioEngine/AudioProcessorModule.h; sourceTree = "<group>"; };
+		BF50DA50207DD7DA0059C79A /* LPFilterModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = LPFilterModule.h; path = ../../Source/LPFilterModule.h; sourceTree = "<group>"; };
+		BF50DA51207DD7DB0059C79A /* LPFilterModule.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = LPFilterModule.cpp; path = ../../Source/LPFilterModule.cpp; sourceTree = "<group>"; };
 		BFA4DF65207CD2F400EBFA5A /* NoiseModule.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NoiseModule.cpp; path = ../../Source/NoiseModule.cpp; sourceTree = "<group>"; };
 		BFA4DF66207CD2F400EBFA5A /* NoiseModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NoiseModule.h; path = ../../Source/NoiseModule.h; sourceTree = "<group>"; };
 		BFA4DF68207CD7D300EBFA5A /* AdderModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AdderModule.h; path = ../../Source/AdderModule.h; sourceTree = "<group>"; };
@@ -241,6 +244,8 @@
 		019AA793B6B5EF2ACC9FB238 /* Prefabs */ = {
 			isa = PBXGroup;
 			children = (
+				BF50DA51207DD7DB0059C79A /* LPFilterModule.cpp */,
+				BF50DA50207DD7DA0059C79A /* LPFilterModule.h */,
 				BFA4DF69207CD7D400EBFA5A /* AdderModule.cpp */,
 				BFA4DF68207CD7D300EBFA5A /* AdderModule.h */,
 				BFA4DF65207CD2F400EBFA5A /* NoiseModule.cpp */,
@@ -581,6 +586,7 @@
 				896B16F5D4CEB350A3A60669 /* Module.cpp in Sources */,
 				F12AC83FF424AC1A7A7EF9D4 /* SynthEditor.cpp in Sources */,
 				338E87D9150CF67F6750077A /* PropertyView.cpp in Sources */,
+				BF50DA52207DD7DB0059C79A /* LPFilterModule.cpp in Sources */,
 				1AA281E4AAF5C8E2D5049065 /* Connection.cpp in Sources */,
 				A9051DA8355C6A26A9622871 /* Pin.cpp in Sources */,
 				84D6E213FCEEB881EC6FCC31 /* MainTabbedComponent.cpp in Sources */,
