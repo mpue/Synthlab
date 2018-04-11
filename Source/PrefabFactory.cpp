@@ -49,6 +49,7 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     else if (prefabs[id].getName() == "Constant") {
         m = new Constant();
     }
+
     else if (prefabs[id].getName() == "LP filter") {
         m = new LPFilterModule(sampleRate,bufferSize);
     }

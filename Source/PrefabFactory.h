@@ -58,6 +58,7 @@ private:
     StringArray* categories;
     
     PrefabFactory() {
+
         prefabs[60] = Prefab("Adder","Math");
         prefabs[61] = Prefab("Midi gate","MIDI");
         prefabs[62] = Prefab("Midi out","MIDI");
