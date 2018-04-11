@@ -154,10 +154,23 @@ void Module::paint (Graphics& g)
             g.setColour(juce::Colours::white);
         }
         else {
-            g.setColour(juce::Colours::orange);
+            
+            if(pins.at(i)->type == Pin::Type::AUDIO) {
+                g.setColour(juce::Colours::orange);
+            }
+            else if (pins.at(i)->type == Pin::Type::VALUE) {
+                 g.setColour(juce::Colours::yellow);
+            }
+            else {
+                g.setColour(juce::Colours::lightblue);
+            }
+            
         }
 
         if (pins.at(i)->direction == Pin::Direction::IN) {
+            
+            
+            
             //g.fillRect(pins.at(i)->x,pins.at(i)->y, 5, 10);
             g.drawEllipse(pins.at(i)->x,pins.at(i)->y, 10, 10,1);
             g.fillEllipse(pins.at(i)->x+2,pins.at(i)->y+2, 6, 6);

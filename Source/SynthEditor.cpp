@@ -498,21 +498,22 @@ void SynthEditor::mouseUp (const MouseEvent& e)
 		isLeftMouseDown = false;
 	}
 
-	for (int i = 0; i < root->getModules()->size(); i++) {
+    if (state == DRAGGING_CONNECTION) {
+        for (int i = 0; i < root->getModules()->size(); i++) {
 
-		Module* m = root->getModules()->at(i);
-        
-        m->savePosition();
+            Module* m = root->getModules()->at(i);
+            
+            m->savePosition();
 
-		if (m->isSelected()) {
-			addConnection(e, m);
-		}
-	}
-
+            if (m->isSelected()) {
+                addConnection(e, m);
+            }
+        }
+    }
 	lineStopX = 0;
 	lineStopY = 0;
     
-    startPin = nullptr;
+    // startPin = nullptr;
     
     state = NONE;
 
@@ -1022,16 +1023,19 @@ void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
 
 	if (source != nullptr && target != nullptr && a != nullptr && b != nullptr) {
 
-        if (a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT) {
-            a->connections.push_back(b);
-            Connection* c = new Connection(source, a, target, b);
-            root->getConnections()->push_back(c);
-        }
-        else if (a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN) {
-            b->connections.push_back(a);
-            
-            Connection* c = new Connection(source, a, target, b);
-            root->getConnections()->push_back(c);
+        if (a->type == b->type) {
+        
+            if (a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT) {
+                a->connections.push_back(b);
+                Connection* c = new Connection(source, a, target, b);
+                root->getConnections()->push_back(c);
+            }
+            else if (a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN) {
+                b->connections.push_back(a);
+                
+                Connection* c = new Connection(source, a, target, b);
+                root->getConnections()->push_back(c);
+            }
         }
 
 		repaint();

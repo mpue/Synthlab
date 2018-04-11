@@ -129,7 +129,7 @@ void PropertyView::resized()
     //[/UserPreResize]
 
     //[UserResized] Add your own custom resize handling here..
-    tabbedComponent->setSize(300q,getParentHeight());
+    tabbedComponent->setSize(300,getParentHeight());
     // setSize(getParentWidth(), getParentHeight());
     if (propertyPanel != nullptr)
         propertyPanel->setSize(tabbedComponent->getWidth(), getParentHeight());
