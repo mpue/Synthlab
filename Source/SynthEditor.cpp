@@ -30,6 +30,7 @@
 #include "AdderModule.h"
 #include "Constant.h"
 #include "PrefabFactory.h"
+#include "Knob.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -604,7 +605,7 @@ void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Conn
     ValueTree mods = ValueTree("Modules");
 
     for (std::vector<Module*>::iterator it = modules->begin(); it != modules->end(); ++it) {
-
+        
         ValueTree file = ValueTree("Module");
         
         file.setProperty("name",(*it)->getName(), nullptr);
@@ -613,6 +614,15 @@ void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Conn
         file.setProperty("y",(*it)->getPosition().getY(),nullptr);
         file.setProperty("isPrefab",(*it)->isPrefab(),nullptr);
         file.setProperty("prefabId", (*it)->getId(), nullptr);
+        
+        Knob* k;
+        
+        if ((k = dynamic_cast<Knob*>((*it))) != NULL) {
+            file.setProperty("minvalue",k->getMinimum(), nullptr);
+            file.setProperty("maxvalue",k->getMaximum(), nullptr);
+            file.setProperty("stepsize", k->getStepsize(), nullptr);
+            file.setProperty("value", k->getValue(), nullptr);
+        }
         
         ValueTree pins = ValueTree("Pins");
 
@@ -681,6 +691,7 @@ void SynthEditor::openFile() {
         ScopedPointer<XmlElement> xml = XmlDocument(file).getDocumentElement();
         ValueTree v = ValueTree::fromXml(*xml.get());
 
+        running = false;
         loadStructure(root->getModules(),root->getConnections(), &v);
 
         for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
@@ -688,6 +699,7 @@ void SynthEditor::openFile() {
         }
 
         xml = nullptr;
+        running = true;
 
     }
 }
@@ -734,10 +746,20 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         m->setTopLeftPosition(mod.getProperty("x").toString().getIntValue(), mod.getProperty("y").toString().getIntValue());
 
         modules->push_back(m);
+        
         AudioOut* out;
         if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
             outputChannels.push_back(out);
         }
+        
+        Knob* k;
+        if ((k = dynamic_cast<Knob*>(m)) != NULL) {
+            k->setMaximum(mod.getProperty("maxvalue").toString().getFloatValue());
+            k->setMinimum(mod.getProperty("minvalue").toString().getFloatValue());
+            k->setStepSize(mod.getProperty("stepsize").toString().getFloatValue());
+            k->setValue(mod.getProperty("value").toString().getFloatValue());
+        }
+        
         // addAndMakeVisible(m);
 
         loadStructure(m->getModules(),m->getConnections(),&mod);
@@ -1105,6 +1127,10 @@ void SynthEditor::sendNoteMessage(Module *module, int note) {
 }
 
 void SynthEditor::audioDeviceIOCallback(const float **inputChannelData, int numInputChannels, float **outputChannelData, int numOutputChannels, int numSamples) {
+    
+    if(!running) {
+        Thread::sleep(100);
+    }
     
      processModule(getModule());
     
