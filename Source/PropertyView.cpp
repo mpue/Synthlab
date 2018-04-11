@@ -58,23 +58,27 @@ PropertyView::PropertyView ()
     value = new Value();
     minValue = new Value();
     maxValue = new Value();
+    stepsizeValue = new Value();
     
     nameProp = new TextPropertyComponent(*nameValue,"name",16, false,true);
     valueProp = new TextPropertyComponent(*value,"value",16, false,true);
     inputsProp = new SliderPropertyComponent(*numInputsValue,"numInputs",0,16,1,1.0,true);
     minValueProp = new TextPropertyComponent(*minValue,"minValue",16, false,true);
     maxValueProp = new TextPropertyComponent(*maxValue,"maxValue",16, false,true);
+    stepsizeValueProp = new TextPropertyComponent(*stepsizeValue,"stepsize",16, false,true);
     
     nameListener = new NameListener(*nameValue, this);
     valueListener = new ValueListener(*value, this);
     minValueListener = new MinValueListener(*minValue, this);
     maxValueListener = new MaxValueListener(*maxValue, this);
+    stepsizeValueListener = new StepsizeValueListener(*stepsizeValue, this);
     
     properties.add(nameProp);
     properties.add(valueProp);
     properties.add(inputsProp);
     properties.add(minValueProp);
     properties.add(maxValueProp);
+    properties.add(stepsizeValueProp);
     
     propertyPanel->addProperties(properties);
 
@@ -95,11 +99,14 @@ PropertyView::~PropertyView()
     delete valueListener;
     delete nameValue;
     delete numInputsValue;
+    delete stepsizeValue;
     delete value;
+    
     delete minValue;
     delete maxValue;
     delete minValueListener;
     delete maxValueListener;
+    delete stepsizeValueListener;
     
     //[/Destructor]
 }

@@ -101,6 +101,22 @@ void ADSRModule::setRelease(float release) {
     this->envelope->setReleaseRate(sampleRate * release);
 }
 
+float ADSRModule::getAttack() {
+    return attack;
+}
+
+float ADSRModule::getDecay() {
+    return decay;
+}
+
+float ADSRModule::getSustain() {
+    return sustain;
+}
+
+float ADSRModule::getRelease() {
+    return release;
+}
+
 void ADSRModule::process() {
     
     if (pins.at(0)->connections.size() ==  1) {

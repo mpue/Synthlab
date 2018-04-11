@@ -37,6 +37,11 @@ public:
     void setSustain(float sustain);
     void setRelease(float release);
     
+    float getAttack();
+    float getDecay();
+    float getSustain();
+    float getRelease();
+        
 private:
     
 

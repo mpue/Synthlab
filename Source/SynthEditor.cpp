@@ -31,6 +31,7 @@
 #include "Constant.h"
 #include "PrefabFactory.h"
 #include "Knob.h"
+#include "ADSRModule.h"
 #include <stdio.h>
 #include <string.h>
 
@@ -624,6 +625,15 @@ void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Conn
             file.setProperty("value", k->getValue(), nullptr);
         }
         
+        ADSRModule* adsr;
+        
+        if ((adsr = dynamic_cast<ADSRModule*>((*it))) != NULL) {
+            file.setProperty("attack",adsr->getAttack(), nullptr);
+            file.setProperty("decay",adsr->getDecay(), nullptr);
+            file.setProperty("sustain", adsr->getSustain(), nullptr);
+            file.setProperty("release", adsr->getRelease(), nullptr);
+        }
+        
         ValueTree pins = ValueTree("Pins");
 
         for (std::vector<Pin*>::iterator it2 =  (*it)->pins.begin(); it2 != (*it)->pins.end(); ++it2) {
@@ -748,16 +758,27 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         modules->push_back(m);
         
         AudioOut* out;
+        
         if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
             outputChannels.push_back(out);
         }
         
         Knob* k;
+        
         if ((k = dynamic_cast<Knob*>(m)) != NULL) {
             k->setMaximum(mod.getProperty("maxvalue").toString().getFloatValue());
             k->setMinimum(mod.getProperty("minvalue").toString().getFloatValue());
             k->setStepSize(mod.getProperty("stepsize").toString().getFloatValue());
             k->setValue(mod.getProperty("value").toString().getFloatValue());
+        }
+        
+        ADSRModule* adsr;
+        
+        if ((adsr = dynamic_cast<ADSRModule*>(m)) != NULL) {
+            adsr->setAttack(mod.getProperty("attack").toString().getFloatValue());
+            adsr->setDecay(mod.getProperty("decay").toString().getFloatValue());
+            adsr->setSustain(mod.getProperty("sustain").toString().getFloatValue());
+            adsr->setRelease(mod.getProperty("release").toString().getFloatValue());
         }
         
         // addAndMakeVisible(m);

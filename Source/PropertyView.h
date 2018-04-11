@@ -54,8 +54,6 @@ public:
     void paint (Graphics& g) override;
     void resized() override;
 
-
-
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
 
@@ -148,26 +146,59 @@ private:
         Value value;
     };
     
+    struct StepsizeValueListener : Value::Listener
+    {
+        StepsizeValueListener (Value& v, PropertyView* view) : value (v), view(view){ value.addListener (this); }
+        ~StepsizeValueListener()  {}  // no need to remove the listener
+        
+        void valueChanged (Value& value) override {
+            
+            if (view->currentEditor->getSelectedModule() != nullptr) {
+                
+                Knob* k = nullptr;
+                
+                
+                if ((k = dynamic_cast<Knob*>(view->currentEditor->getSelectedModule())) != NULL) {
+                    k->setMinimum(value.toString().getFloatValue());
+                }
+                
+                
+            }
+            
+            
+        }
+        PropertyView* view;
+        Value value;
+    };
+    
     String name;
 
     SynthEditor* currentEditor;
     PropertyPanel* propertyPanel;
+    
     Value* nameValue;
     Value* value;
     Value* numInputsValue;
     Value* numOutputsValue;
     Value* minValue;
     Value* maxValue;
+    Value* stepsizeValue;
+    
     NameListener* nameListener;
     ValueListener* valueListener;
     MinValueListener* minValueListener;
     MaxValueListener* maxValueListener;
+    StepsizeValueListener* stepsizeValueListener;
+    
     juce::Array<PropertyComponent*> properties;
+    
     PropertyComponent* nameProp;
     PropertyComponent* inputsProp;
     PropertyComponent* valueProp;
     PropertyComponent* minValueProp;
     PropertyComponent* maxValueProp;
+    PropertyComponent* stepsizeValueProp;
+    
     //[/UserVariables]
 
     //==============================================================================
