@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Synth>
+  <Modules>
+    <Module name="Audio out" index="66" x="616" y="347" isPrefab="1" prefabId="66">
+      <Pins>
+        <Pin type="0" direction="0" index="132002" x="0" y="10"/>
+        <Pin type="0" direction="0" index="132004" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="White noise" index="165" x="178" y="469" isPrefab="1" prefabId="65">
+      <Pins>
+        <Pin type="2" direction="0" index="130002" x="0" y="10"/>
+        <Pin type="0" direction="1" index="130004" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="LP Filter" index="268" x="415" y="436" isPrefab="1" prefabId="68">
+      <Pins>
+        <Pin type="2" direction="0" index="136002" x="0" y="10"/>
+        <Pin type="2" direction="0" index="136004" x="0" y="30"/>
+        <Pin type="0" direction="0" index="136006" x="0" y="50"/>
+        <Pin type="0" direction="1" index="136008" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Knob" index="369" x="238" y="245" isPrefab="1" prefabId="69" minvalue="1" maxvalue="10000" stepsize="10" value="1000">
+      <Pins>
+        <Pin type="2" direction="1" index="138002" x="90" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections>
+    <Connection source="66" target="268" a="132002" b="136008"/>
+    <Connection source="66" target="268" a="132004" b="136008"/>
+    <Connection source="268" target="165" a="136006" b="130004"/>
+    <Connection source="268" target="369" a="136002" b="138002"/>
+  </Connections>
+</Synth>

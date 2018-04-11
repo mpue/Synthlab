@@ -61,6 +61,8 @@
 		BF066E5F207A9D9900D164A7 /* AudioOut.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF066E5D207A9D9900D164A7 /* AudioOut.cpp */; };
 		BF3758D6207E4DFD00B3C8D0 /* Knob.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF3758D4207E4DFC00B3C8D0 /* Knob.cpp */; };
 		BF3758D9207E7AF400B3C8D0 /* ADSRModule.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF3758D7207E7AF300B3C8D0 /* ADSRModule.cpp */; };
+		BF3758DE207E92FB00B3C8D0 /* 1osc.xml in Resources */ = {isa = PBXBuildFile; fileRef = BF3758DC207E92FB00B3C8D0 /* 1osc.xml */; };
+		BF3758DF207E92FB00B3C8D0 /* noise.xml in Resources */ = {isa = PBXBuildFile; fileRef = BF3758DD207E92FB00B3C8D0 /* noise.xml */; };
 		BF50DA52207DD7DB0059C79A /* LPFilterModule.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF50DA51207DD7DB0059C79A /* LPFilterModule.cpp */; };
 		BFA4DF67207CD2F400EBFA5A /* NoiseModule.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BFA4DF65207CD2F400EBFA5A /* NoiseModule.cpp */; };
 		BFA4DF6A207CD7D400EBFA5A /* AdderModule.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BFA4DF69207CD7D400EBFA5A /* AdderModule.cpp */; };
@@ -174,6 +176,8 @@
 		BF3758D5207E4DFD00B3C8D0 /* Knob.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Knob.h; path = ../../Source/Knob.h; sourceTree = "<group>"; };
 		BF3758D7207E7AF300B3C8D0 /* ADSRModule.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ADSRModule.cpp; path = ../../Source/ADSRModule.cpp; sourceTree = "<group>"; };
 		BF3758D8207E7AF400B3C8D0 /* ADSRModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ADSRModule.h; path = ../../Source/ADSRModule.h; sourceTree = "<group>"; };
+		BF3758DC207E92FB00B3C8D0 /* 1osc.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; name = 1osc.xml; path = ../../../Regression/1osc.xml; sourceTree = "<group>"; };
+		BF3758DD207E92FB00B3C8D0 /* noise.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; name = noise.xml; path = ../../../Regression/noise.xml; sourceTree = "<group>"; };
 		BF50DA50207DD7DA0059C79A /* LPFilterModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = LPFilterModule.h; path = ../../Source/LPFilterModule.h; sourceTree = "<group>"; };
 		BF50DA51207DD7DB0059C79A /* LPFilterModule.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = LPFilterModule.cpp; path = ../../Source/LPFilterModule.cpp; sourceTree = "<group>"; };
 		BFA4DF65207CD2F400EBFA5A /* NoiseModule.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NoiseModule.cpp; path = ../../Source/NoiseModule.cpp; sourceTree = "<group>"; };
@@ -420,9 +424,19 @@
 			name = Editor;
 			sourceTree = "<group>";
 		};
+		BF3758DB207E92E300B3C8D0 /* Regression */ = {
+			isa = PBXGroup;
+			children = (
+				BF3758DC207E92FB00B3C8D0 /* 1osc.xml */,
+				BF3758DD207E92FB00B3C8D0 /* noise.xml */,
+			);
+			path = Regression;
+			sourceTree = "<group>";
+		};
 		C4FDC7FC00EF0DCBE1A4005C /* Synthlab */ = {
 			isa = PBXGroup;
 			children = (
+				BF3758DB207E92E300B3C8D0 /* Regression */,
 				D25EA593C1ACD65FED304EDF /* Images */,
 				EA8637650DBF013DD0F7E274 /* Source */,
 			);
@@ -550,7 +564,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				BF3758DF207E92FB00B3C8D0 /* noise.xml in Resources */,
 				97A01F3A0C5553BE0A5D8556 /* RecentFilesMenuTemplate.nib in Resources */,
+				BF3758DE207E92FB00B3C8D0 /* 1osc.xml in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
