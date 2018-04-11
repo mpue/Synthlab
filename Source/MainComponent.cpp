@@ -12,6 +12,8 @@
 #include "MainTabbedComponent.h"
 #include "MidiGate.h"
 #include "MidiNote.h"
+#include "PrefabFactory.h"
+
 //==============================================================================
 MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
 {
@@ -62,7 +64,7 @@ MainComponent::~MainComponent()
 	delete editor;
     delete tab;
     delete propertyView;
-     
+    PrefabFactory::getInstance()->destroy();
 }
 
 //==============================================================================
