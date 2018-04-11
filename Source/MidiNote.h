@@ -28,6 +28,12 @@ public:
 
     virtual void configurePins() override;
     
+    
+    virtual String getCategory() override {
+        return "MIDI";
+    }
+    
+    
 private:
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MidiNote)

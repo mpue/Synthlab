@@ -28,6 +28,9 @@ public:
     float getValue();
     virtual void configurePins() override;
 
+    virtual String getCategory() override {
+        return "Math";
+    }
     
 private:
     

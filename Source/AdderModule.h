@@ -27,6 +27,10 @@ public:
     virtual void process() override;
     virtual void configurePins() override;
     
+    virtual String getCategory() override {
+        return "Math";
+    }
+    
 private:
 
 

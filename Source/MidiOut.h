@@ -38,6 +38,10 @@ public:
     void eventReceived(Event* e) override;
     virtual void configurePins() override;
     
+    virtual String getCategory() override {
+        return "MIDI";
+    }
+    
 private:
     AudioDeviceManager* deviceManager;
     int note = 0;

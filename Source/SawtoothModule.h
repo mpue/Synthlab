@@ -30,7 +30,11 @@ public:
     void setFine(float fine);
     void process() override;
     virtual void configurePins() override;
-
+    
+    virtual String getCategory() override {
+        return "Sound sources";
+    }
+    
 
 private:
     

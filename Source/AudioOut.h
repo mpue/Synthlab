@@ -28,6 +28,10 @@ public:
 
     virtual void configurePins() override;
     
+    virtual String getCategory() override {
+        return "Input / Output";
+    }
+    
 private:
     AudioDeviceManager* deviceManager;
 

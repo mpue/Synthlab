@@ -312,10 +312,21 @@ void SynthEditor::mouseDown (const MouseEvent& e)
             
             PopupMenu* prefabMenu = new PopupMenu();
             
-            std::map<int,String> prefabs = PrefabFactory::getInstance()->getPrefabNames();
+            StringArray* categories = PrefabFactory::getInstance()->getCategories();
             
-            for (std::map<int,String>::iterator it  = prefabs.begin();it != prefabs.end();++it) {
-                prefabMenu->addItem((*it).first,(*it).second);
+            for (int i = 0; i < categories->size();i++) {
+                PopupMenu category = PopupMenu();
+                
+                std::map<int,PrefabFactory::Prefab> prefabs = PrefabFactory::getInstance()->getPrefabNames();
+                
+                for (std::map<int,PrefabFactory::Prefab>::iterator it  = prefabs.begin();it != prefabs.end();++it) {
+                    if ((*it).second.getCategory() == categories->getReference(i)) {
+                        category.addItem((*it).first,(*it).second.getName(), true);
+                    }
+                    
+                }
+                
+                prefabMenu->addSubMenu(categories->getReference(i), category, true);
             }
             
             m->addSubMenu("Prefabs",*prefabMenu);

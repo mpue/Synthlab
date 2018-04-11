@@ -394,6 +394,9 @@ void Module::moveTo(int x, int y) {
     setTopLeftPosition(savedPosition.x + x, savedPosition.y + y);
 }
 
+String Module::getCategory() {
+    return "none";
+}
 //[/MiscUserCode]
 
 

@@ -28,7 +28,11 @@ public:
     void gateOff();
     
     virtual void configurePins() override;
-
+    
+    virtual String getCategory() override {
+        return "MIDI";
+    }
+    
     
 private:
     

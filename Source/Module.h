@@ -100,6 +100,7 @@ public:
     
     virtual void configurePins() {};
     
+    virtual String getCategory();
     
     //[/UserMethods]
 
