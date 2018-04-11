@@ -14,7 +14,7 @@
 
 
 //==============================================================================
-AdderModule::AdderModule()
+AdderModule::AdderModule(int bufferSize)
 {
     setSize(120,70);
     nameLabel->setJustificationType (Justification::left);
@@ -22,6 +22,7 @@ AdderModule::AdderModule()
     setName("Add");
     editable = false;
     prefab = true;
+    this->buffersize = bufferSize;
 }
 
 AdderModule::~AdderModule()
@@ -62,7 +63,7 @@ void AdderModule::process() {
         if (buffer1 != nullptr && buffer2 != nullptr) {
             const float* in1 = pins.at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
             const float* in2 = pins.at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-            for (int i = 0; i  <512;i++) {
+            for (int i = 0; i < buffersize;i++) {
                 out[i] = in1[i] + in2[i];
             }
             

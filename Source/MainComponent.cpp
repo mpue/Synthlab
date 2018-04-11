@@ -24,11 +24,21 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     // specify the number of input and output channels that we want to open
     setAudioChannels (2, 2);
 
-
+    String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
     
-
-
+    File appDir = File(userHome+"/.Synthlab");
     
+    if (!appDir.exists()) {
+        appDir.createDirectory();
+    }
+    
+    File configFile = File(userHome+"/.Synthlab/config.xml");
+    
+    if (configFile.exists()) {
+        ScopedPointer<XmlElement> xml = XmlDocument(configFile).getDocumentElement();
+        deviceManager.initialise(2,2, xml, true);
+    }
+        
     propertyView =  new PropertyView();
     
 

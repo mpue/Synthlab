@@ -19,7 +19,7 @@
 class AdderModule    : public Module
 {
 public:
-    AdderModule();
+    AdderModule(int buffersize);
     ~AdderModule();
    
     
@@ -32,7 +32,7 @@ public:
     }
     
 private:
-
+    int buffersize;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AdderModule)
 };

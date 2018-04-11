@@ -1080,7 +1080,23 @@ void SynthEditor::openSettings() {
     launchOptions.content->setSize(600, 580);
     launchOptions.runModal();
     
-    // setupIO();
+    
+    AudioDeviceManager::AudioDeviceSetup setup;
+    deviceManager->getAudioDeviceSetup(setup);
+    
+    XmlElement* config = deviceManager->createStateXml();
+    
+    String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
+    
+    File appDir = File(userHome+"/.Synthlab");
+    
+    if (!appDir.exists()) {
+        appDir.createDirectory();
+    }
+    
+    File configFile = File(userHome+"/.Synthlab/config.xml");
+    config->writeToFile(configFile,"");
+
 }
 
 std::vector<Module*> SynthEditor::getSelectedModules() {

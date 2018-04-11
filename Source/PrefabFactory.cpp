@@ -24,7 +24,7 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     Module* m = nullptr;
     
     if (prefabs[id].getName() == "Adder") {
-        m = new AdderModule();
+        m = new AdderModule(bufferSize);
     }
     else if (prefabs[id].getName() == "Midi gate") {
         m = new MidiGate();
