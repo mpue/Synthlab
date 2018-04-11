@@ -46,7 +46,7 @@ void MidiGate::paint(juce::Graphics &g) {
 }
 
 void MidiGate::gateOn(int velocity) {
-    pins.at(0)->setValue(1);
+    pins.at(0)->setValue(velocity);
 }
 
 void MidiGate::gateOff() {

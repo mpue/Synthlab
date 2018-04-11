@@ -78,6 +78,7 @@ private:
         prefabs[67] = Prefab("Constant","Math");
         prefabs[68] = Prefab("LP filter","Filter");
         prefabs[69] = Prefab("Knob","Controls");
+        prefabs[70] = Prefab("ADSR","Input / Output");
         
         categories = new StringArray();
 

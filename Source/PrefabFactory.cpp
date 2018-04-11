@@ -16,6 +16,7 @@
 #include "AdderModule.h"
 #include "LPFilterModule.h"
 #include "Knob.h"
+#include "ADSRModule.h"
 
 PrefabFactory* PrefabFactory::instance = NULL;
 
@@ -56,6 +57,10 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     else if (prefabs[id].getName() == "LP filter") {
         m = new LPFilterModule(sampleRate,bufferSize);
     }
+    else if (prefabs[id].getName() == "ADSR") {
+        m = new ADSRModule(sampleRate,bufferSize);
+    }
+    
     m->setIndex(id + 100 * prefabs[id].getNumInstances());
     m->setId(id);
     prefabs[id].addInstance();

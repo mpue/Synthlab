@@ -38,7 +38,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
         ScopedPointer<XmlElement> xml = XmlDocument(configFile).getDocumentElement();
         deviceManager.initialise(2,2, xml, true);
     }
-        
+     
     propertyView =  new PropertyView();
     
 
