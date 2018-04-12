@@ -61,8 +61,15 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     
     resized();
     
-
+    this->menu = new MenuBarComponent();
     
+#if JUCE_MAC
+    menu->setModel (nullptr);
+    MenuBarModel::setMacMainMenu (this);
+#else
+    menu->setModel(this);
+#endif
+    createKeyMap();
 }
 
 MainComponent::~MainComponent()
@@ -71,9 +78,12 @@ MainComponent::~MainComponent()
     shutdownAudio();
     
     editor->removeAllChangeListeners();
+
 	delete editor;
     delete tab;
     delete propertyView;
+    MenuBarModel::setMacMainMenu(nullptr);
+    delete menu;
     PrefabFactory::getInstance()->destroy();
 }
 
@@ -102,7 +112,7 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     view->setSize(500,200);
     view->setViewedComponent(editor);
     view->setScrollBarsShown(true,true);
-    view->setScrollOnDragEnabled(true);
+    // view->setScrollOnDragEnabled(true);
     view->setWantsKeyboardFocus(false);
     view->setMouseClickGrabsKeyboardFocus(false);
     
@@ -112,6 +122,7 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
  
     editor->setDeviceManager(&deviceManager);
     editor->prepareToPlay( samplesPerBlockExpected, sampleRate);
+    addKeyListener(this);
 }
 
 void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill)
@@ -163,6 +174,119 @@ void MainComponent::resized()
         propertyView->setSize(r.getWidth()-tab->getWidth(), propertyView->getHeight());
 }
 
+PopupMenu MainComponent::getMenuForIndex(int index, const String & menuName) {
+    PopupMenu menu;
+    
+    if (index == 0) {
+        menu.addItem(1, "New project", true, false, nullptr);
+        menu.addItem(2, "Load project", true, false, nullptr);
+        menu.addItem(3, "Save project", true, false, nullptr);
+        menu.addItem(4, "Save project as", true, false, nullptr);
+        menu.addItem(5, "Settings", true, false, nullptr);
+        menu.addItem(999, "Exit", true, false, nullptr);
+    }
 
 
+    
+    return menu;
+}
+
+void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
+    
+    if (menuItemID == 1) {
+        editor->cleanUp();
+    }
+    else if (menuItemID == 2) {
+        editor->openFile();
+    }
+    else if (menuItemID == 2) {
+        editor->saveFile();
+    }
+    else if (menuItemID == 4) {
+        
+    }
+    else if (menuItemID == 5) {
+        openSettings();
+    }
+    else if (menuItemID == 999) {
+        JUCEApplication::getInstance()->shutdown();
+    }
+    
+}
+
+StringArray MainComponent::getMenuBarNames() {
+    const char* const names[] = { "File", nullptr };
+    
+    return StringArray(names);
+    
+}
+
+void MainComponent::openSettings() {
+
+    AudioDeviceSelectorComponent* selector = new AudioDeviceSelectorComponent(deviceManager, 2, 16, 2, 16, true, true, true, false);
+    DialogWindow::LaunchOptions launchOptions;
+    
+    launchOptions.dialogTitle = ("Audio Settings");
+    launchOptions.escapeKeyTriggersCloseButton = true;
+    launchOptions.resizable = true;
+    launchOptions.useNativeTitleBar = false;
+    launchOptions.useBottomRightCornerResizer = true;
+    launchOptions.componentToCentreAround = getParentComponent();
+    launchOptions.content.setOwned(selector);
+    launchOptions.content->setSize(600, 580);
+    launchOptions.runModal();
+    
+    AudioDeviceManager::AudioDeviceSetup setup;
+    deviceManager.getAudioDeviceSetup(setup);
+    
+    XmlElement* config = deviceManager.createStateXml();
+    
+    String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
+    
+    File appDir = File(userHome+"/.Synthlab");
+    
+    if (!appDir.exists()) {
+        appDir.createDirectory();
+    }
+    
+    File configFile = File(userHome+"/.Synthlab/config.xml");
+    config->writeToFile(configFile,"");
+    
+}
+
+bool MainComponent::keyStateChanged(bool isKeyDown, juce::Component *originatingComponent) {
+    for (std::map<int, int>::iterator it = keyCodeMidiNote.begin();it != keyCodeMidiNote.end();it++) {
+        if (KeyPress::isKeyCurrentlyDown((*it).first)) {
+            editor->sendNoteMessage(editor->getModule(), (*it).second + 12 * currentOctave);
+            editor->sendGateMessage(editor->getModule(), 64, true);
+        }
+        else {
+            if (!isKeyDown)
+                editor->sendGateMessage(editor->getModule(), 0, false);
+        }
+    }
+    return true;
+}
+
+bool MainComponent::keyPressed(const juce::KeyPress &key, juce::Component *originatingComponent) {
+    
+}
+
+void MainComponent::createKeyMap() {
+    keyCodeMidiNote['a'] = 36 ;
+    keyCodeMidiNote['w'] = 36;
+    keyCodeMidiNote['s'] = 38;
+    keyCodeMidiNote['e'] = 39;
+    keyCodeMidiNote['d'] = 40;
+    keyCodeMidiNote['f'] = 41;
+    keyCodeMidiNote['t'] = 42;
+    keyCodeMidiNote['g'] = 43;
+    keyCodeMidiNote['z'] = 44;
+    keyCodeMidiNote['h'] = 45;
+    keyCodeMidiNote['u'] = 46;
+    keyCodeMidiNote['j'] = 47;
+    keyCodeMidiNote['k'] = 48;
+    keyCodeMidiNote['o'] = 49;
+    keyCodeMidiNote['l'] = 50;
+}
 

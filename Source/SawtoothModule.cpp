@@ -74,7 +74,7 @@ void SawtoothModule::configurePins() {
 
 void SawtoothModule::paint(juce::Graphics &g) {
     Module::paint(g);
-    g.drawImageAt(ImageCache::getFromMemory(BinaryData::sawtooth_png, BinaryData::sawtooth_pngSize),25,40);
+    //g.drawImageAt(ImageCache::getFromMemory(BinaryData::sawtooth_png, BinaryData::sawtooth_pngSize),25,40);
 }
 
 
@@ -110,7 +110,7 @@ void SawtoothModule::process() {
         if (pins.at(3)->getAudioBuffer() != nullptr && pins.at(3)->getAudioBuffer()->getNumChannels() > 0)
             pins.at(3)->getAudioBuffer()->setSample(0,i ,value);
 
-        pins.at(4)->setValue(value);
+        pins.at(4)->setValue(abs(value + 1));
     }
     
 }

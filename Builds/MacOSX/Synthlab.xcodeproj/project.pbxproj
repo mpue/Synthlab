@@ -64,6 +64,7 @@
 		BF3758DE207E92FB00B3C8D0 /* 1osc.xml in Resources */ = {isa = PBXBuildFile; fileRef = BF3758DC207E92FB00B3C8D0 /* 1osc.xml */; };
 		BF3758DF207E92FB00B3C8D0 /* noise.xml in Resources */ = {isa = PBXBuildFile; fileRef = BF3758DD207E92FB00B3C8D0 /* noise.xml */; };
 		BF50DA52207DD7DB0059C79A /* LPFilterModule.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF50DA51207DD7DB0059C79A /* LPFilterModule.cpp */; };
+		BF654A4E207F58BB000F3C9A /* SineModule.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF654A4C207F58B9000F3C9A /* SineModule.cpp */; };
 		BFA4DF67207CD2F400EBFA5A /* NoiseModule.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BFA4DF65207CD2F400EBFA5A /* NoiseModule.cpp */; };
 		BFA4DF6A207CD7D400EBFA5A /* AdderModule.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BFA4DF69207CD7D400EBFA5A /* AdderModule.cpp */; };
 		BFA4DF6D207CEFB500EBFA5A /* PrefabFactory.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BFA4DF6B207CEFB500EBFA5A /* PrefabFactory.cpp */; };
@@ -180,6 +181,8 @@
 		BF3758DD207E92FB00B3C8D0 /* noise.xml */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xml; name = noise.xml; path = ../../../Regression/noise.xml; sourceTree = "<group>"; };
 		BF50DA50207DD7DA0059C79A /* LPFilterModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = LPFilterModule.h; path = ../../Source/LPFilterModule.h; sourceTree = "<group>"; };
 		BF50DA51207DD7DB0059C79A /* LPFilterModule.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = LPFilterModule.cpp; path = ../../Source/LPFilterModule.cpp; sourceTree = "<group>"; };
+		BF654A4C207F58B9000F3C9A /* SineModule.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = SineModule.cpp; path = ../../Source/SineModule.cpp; sourceTree = "<group>"; };
+		BF654A4D207F58BA000F3C9A /* SineModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = SineModule.h; path = ../../Source/SineModule.h; sourceTree = "<group>"; };
 		BFA4DF65207CD2F400EBFA5A /* NoiseModule.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = NoiseModule.cpp; path = ../../Source/NoiseModule.cpp; sourceTree = "<group>"; };
 		BFA4DF66207CD2F400EBFA5A /* NoiseModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = NoiseModule.h; path = ../../Source/NoiseModule.h; sourceTree = "<group>"; };
 		BFA4DF68207CD7D300EBFA5A /* AdderModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = AdderModule.h; path = ../../Source/AdderModule.h; sourceTree = "<group>"; };
@@ -254,6 +257,8 @@
 		019AA793B6B5EF2ACC9FB238 /* Prefabs */ = {
 			isa = PBXGroup;
 			children = (
+				BF654A4C207F58B9000F3C9A /* SineModule.cpp */,
+				BF654A4D207F58BA000F3C9A /* SineModule.h */,
 				BF3758D7207E7AF300B3C8D0 /* ADSRModule.cpp */,
 				BF3758D8207E7AF400B3C8D0 /* ADSRModule.h */,
 				BF3758D4207E4DFC00B3C8D0 /* Knob.cpp */,
@@ -628,6 +633,7 @@
 				7FF3AEA59EF455CCB643A951 /* include_juce_core.mm in Sources */,
 				15277F9798DD2586B4FE025B /* include_juce_cryptography.mm in Sources */,
 				06E61167F3B4A539EEC471C2 /* include_juce_data_structures.mm in Sources */,
+				BF654A4E207F58BB000F3C9A /* SineModule.cpp in Sources */,
 				BF3758D9207E7AF400B3C8D0 /* ADSRModule.cpp in Sources */,
 				FE4D516A7B5CC5EECAC96310 /* include_juce_events.mm in Sources */,
 				6F215116A591095A894A7B59 /* include_juce_graphics.mm in Sources */,

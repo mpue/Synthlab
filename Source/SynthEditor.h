@@ -80,11 +80,12 @@ public:
     Module* getSelectedModule();    
     std::vector<Module*> getSelectedModules();
     
-    void openSettings();
+
 
     void handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) override;
     void sendGateMessage(Module* module, int velocity, bool on);
     void sendNoteMessage(Module* module, int note);
+    
     //[/UserMethods]
 
     void paint (Graphics& g) override;

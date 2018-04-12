@@ -42,7 +42,7 @@ public:
     {
         // This is called when the app is being asked to quit: you can ignore this
         // request and let the app carry on running, or call quit() to allow the app to close.
-        quit();
+        JUCEApplication::getInstance()->shutdown();
     }
 
     void anotherInstanceStarted (const String& commandLine) override
@@ -80,7 +80,7 @@ public:
             // This is called when the user tries to close this window. Here, we'll just
             // ask the app to quit when this happens, but you can change this to do
             // whatever you need.
-            JUCEApplication::getInstance()->systemRequestedQuit();
+            JUCEApplication::getInstance()->shutdown();
         }
 
         /* Note: Be careful if you override any DocumentWindow methods - the base

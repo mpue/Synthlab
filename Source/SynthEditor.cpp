@@ -312,8 +312,7 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 			m->addItem(2, "Save");
             m->addItem(3, "Load");
             m->addItem(4, "New");
-            m->addItem(5, "Settings");
-            
+
             PopupMenu* prefabMenu = new PopupMenu();
             
             StringArray* categories = PrefabFactory::getInstance()->getCategories();
@@ -363,9 +362,7 @@ void SynthEditor::mouseDown (const MouseEvent& e)
             else if (result == 4) {
                 newFile();
             }
-            else if (result == 5) {
-                openSettings();
-            }
+
             else {
                 Module* m = PrefabFactory::getInstance()->getPrefab(result, _sampleRate, bufferSize);
                 m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
@@ -1094,37 +1091,7 @@ void SynthEditor::setDeviceManager(juce::AudioDeviceManager* manager) {
     deviceManager->addAudioCallback(this);
 }
 
-void SynthEditor::openSettings() {
-    AudioDeviceSelectorComponent* selector = new AudioDeviceSelectorComponent(*deviceManager, 2, 16, 2, 16, true, true, true, false);
-    DialogWindow::LaunchOptions launchOptions;
-    launchOptions.dialogTitle = ("Audio Settings");
-    launchOptions.escapeKeyTriggersCloseButton = true;
-    launchOptions.resizable = true;
-    launchOptions.useNativeTitleBar = false;
-    launchOptions.useBottomRightCornerResizer = true;
-    launchOptions.componentToCentreAround = getParentComponent();
-    launchOptions.content.setOwned(selector);
-    launchOptions.content->setSize(600, 580);
-    launchOptions.runModal();
-    
-    
-    AudioDeviceManager::AudioDeviceSetup setup;
-    deviceManager->getAudioDeviceSetup(setup);
-    
-    XmlElement* config = deviceManager->createStateXml();
-    
-    String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
-    
-    File appDir = File(userHome+"/.Synthlab");
-    
-    if (!appDir.exists()) {
-        appDir.createDirectory();
-    }
-    
-    File configFile = File(userHome+"/.Synthlab/config.xml");
-    config->writeToFile(configFile,"");
 
-}
 
 std::vector<Module*> SynthEditor::getSelectedModules() {
     return selectedModules;

@@ -17,6 +17,7 @@
 #include "LPFilterModule.h"
 #include "Knob.h"
 #include "ADSRModule.h"
+#include "SineModule.h"
 
 PrefabFactory* PrefabFactory::instance = NULL;
 
@@ -41,6 +42,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Sawtooth") {
         m = new SawtoothModule(sampleRate, bufferSize);
+    }
+    else if (prefabs[id].getName() == "Sine") {
+        m = new SineModule(sampleRate, bufferSize);
     }
     else if (prefabs[id].getName() == "White noise") {
         m = new NoiseModule(sampleRate, bufferSize);
