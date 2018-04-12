@@ -43,6 +43,7 @@ private:
     
     float frequency = 10000;
     float resonance = 1;
+    float mod = 1;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LPFilterModule)
 };

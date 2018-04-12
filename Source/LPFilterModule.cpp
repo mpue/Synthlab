@@ -49,6 +49,7 @@ void LPFilterModule::configurePins() {
     p2->listeners.push_back(this);
     p2->setName("R");
     
+    
     Pin* p3 = new Pin(Pin::Type::AUDIO);
     p3->direction = Pin::Direction::IN;
     p3->listeners.push_back(this);
@@ -59,16 +60,21 @@ void LPFilterModule::configurePins() {
     p4->listeners.push_back(this);
     p4->setName("Out");
     
+    Pin* p5 = new Pin(Pin::Type::VALUE);
+    p5->direction = Pin::Direction::IN;
+    p5->listeners.push_back(this);
+    p5->setName("Mod");
+    
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::IN,p2);
     addPin(Pin::Direction::IN,p3);
     addPin(Pin::Direction::OUT,p4);
-
+    addPin(Pin::Direction::IN,p5);
 }
 
 void LPFilterModule::paint(juce::Graphics &g) {
     Module::paint(g);
-    g.drawImageAt(ImageCache::getFromMemory(BinaryData::sawtooth_png, BinaryData::sawtooth_pngSize),25,40);
+    // g.drawImageAt(ImageCache::getFromMemory(BinaryData::sawtooth_png, BinaryData::sawtooth_pngSize),25,40);
 }
 
 
@@ -101,6 +107,15 @@ void LPFilterModule::process() {
         if (this->resonance != pins.at(1)->connections.at(0)->getValue()) {
             this->resonance =  pins.at(1)->connections.at(0)->getValue();
             filter->coefficients(frequency, resonance);
+        }
+    }
+    if (pins.at(4)->connections.size() ==  1) {
+        
+        if (this->mod != pins.at(4)->connections.at(0)->getValue()) {
+            this->mod =  pins.at(4)->connections.at(0)->getValue();
+            if (this->mod < 0.1)
+                this->mod = 0.1;
+            filter->coefficients(frequency * mod, resonance);
         }
     }
     

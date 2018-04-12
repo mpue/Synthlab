@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Synth>
+  <Modules>
+    <Module name="White noise" index="65" x="447" y="414" isPrefab="1" prefabId="65">
+      <Pins>
+        <Pin type="2" direction="0" index="6501" x="0" y="10"/>
+        <Pin type="0" direction="1" index="6502" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Audio out" index="66" x="989" y="512" isPrefab="1" prefabId="66">
+      <Pins>
+        <Pin type="0" direction="0" index="6601" x="0" y="10"/>
+        <Pin type="0" direction="0" index="6602" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="LP Filter" index="68" x="687" y="528" isPrefab="1" prefabId="68">
+      <Pins>
+        <Pin type="2" direction="0" index="6801" x="0" y="10"/>
+        <Pin type="2" direction="0" index="6802" x="0" y="30"/>
+        <Pin type="0" direction="0" index="6803" x="0" y="50"/>
+        <Pin type="0" direction="1" index="6804" x="110" y="10"/>
+        <Pin type="2" direction="0" index="6805" x="0" y="70"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="ADSR" index="70" x="292" y="590" isPrefab="1" prefabId="70"
+            attack="0.00000000000000000000" decay="0.00000000000000000000"
+            sustain="0.80000001192092895508" release="0.80000001192092895508">
+      <Pins>
+        <Pin type="2" direction="0" index="7001" x="0" y="10"/>
+        <Pin type="2" direction="0" index="7002" x="0" y="30"/>
+        <Pin type="2" direction="0" index="7003" x="0" y="50"/>
+        <Pin type="2" direction="0" index="7004" x="0" y="70"/>
+        <Pin type="2" direction="0" index="7005" x="0" y="90"/>
+        <Pin type="2" direction="1" index="7006" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Gate" index="61" x="95" y="601" isPrefab="1" prefabId="61">
+      <Pins>
+        <Pin type="2" direction="1" index="6101" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="69" x="134" y="753" isPrefab="1" prefabId="69"
+            minvalue="0.00000000000000000000" maxvalue="10.00000000000000000000"
+            stepsize="0.10000000149011611938" value="0.80000001192092895508">
+      <Pins>
+        <Pin type="2" direction="1" index="6901" x="90" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="ADSR" index="170" x="301" y="373" isPrefab="1" prefabId="70"
+            attack="0.00000000000000000000" decay="0.00000000000000000000"
+            sustain="0.80000001192092895508" release="2.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="0" index="7001" x="0" y="10"/>
+        <Pin type="2" direction="0" index="7002" x="0" y="30"/>
+        <Pin type="2" direction="0" index="7003" x="0" y="50"/>
+        <Pin type="2" direction="0" index="7004" x="0" y="70"/>
+        <Pin type="2" direction="0" index="7005" x="0" y="90"/>
+        <Pin type="2" direction="1" index="7006" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="169" x="130" y="385" isPrefab="1" prefabId="69"
+            minvalue="0.00000000000000000000" maxvalue="10.00000000000000000000"
+            stepsize="0.10000000149011611938" value="2.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="6901" x="90" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections>
+    <Connection source="65" target="68" a="6502" b="6803"/>
+    <Connection source="68" target="66" a="6804" b="6601"/>
+    <Connection source="68" target="66" a="6804" b="6602"/>
+    <Connection source="70" target="68" a="7006" b="6805"/>
+    <Connection source="70" target="69" a="7005" b="6901"/>
+    <Connection source="170" target="61" a="7001" b="6101"/>
+    <Connection source="170" target="65" a="7006" b="6501"/>
+    <Connection source="70" target="61" a="7001" b="6101"/>
+    <Connection source="170" target="169" a="7005" b="6901"/>
+  </Connections>
+</Synth>

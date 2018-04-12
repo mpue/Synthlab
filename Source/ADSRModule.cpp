@@ -78,7 +78,7 @@ void ADSRModule::configurePins() {
 
 void ADSRModule::paint(juce::Graphics &g) {
     Module::paint(g);
-    g.drawImageAt(ImageCache::getFromMemory(BinaryData::sawtooth_png, BinaryData::sawtooth_pngSize),25,40);
+    // g.drawImageAt(ImageCache::getFromMemory(BinaryData::sawtooth_png, BinaryData::sawtooth_pngSize),25,40);
 }
 
 void ADSRModule::setAttack(float attack) {
@@ -149,8 +149,10 @@ void ADSRModule::process() {
     if (pins.at(4)->connections.size() ==  1) {
         this->setRelease(abs(pins.at(4)->connections.at(0)->getValue()));
     }
-  
-    float value = envelope->process();
-    pins.at(5)->setValue(value);
+    for (int i = 0; i < buffersize;i++) {
+        float value = envelope->process();
+        pins.at(5)->setValue(value);
+    }
+
     
 }
