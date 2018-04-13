@@ -18,6 +18,7 @@
 #include "Knob.h"
 #include "ADSRModule.h"
 #include "SineModule.h"
+#include "RandomModule.h"
 
 PrefabFactory* PrefabFactory::instance = NULL;
 
@@ -45,6 +46,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Sine") {
         m = new SineModule(sampleRate, bufferSize);
+    }
+    else if (prefabs[id].getName() == "Random") {
+        m = new RandomModule(sampleRate, bufferSize);
     }
     else if (prefabs[id].getName() == "White noise") {
         m = new NoiseModule(sampleRate, bufferSize);

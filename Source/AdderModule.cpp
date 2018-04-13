@@ -16,7 +16,7 @@
 //==============================================================================
 AdderModule::AdderModule(int bufferSize)
 {
-    setSize(120,70);
+    setSize(120,140);
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(18,2);
     setName("Add");
@@ -49,6 +49,7 @@ void AdderModule::configurePins() {
 
 void AdderModule::paint(juce::Graphics &g) {
     Module::paint(g);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::adder_png, BinaryData::adder_pngSize),25,40);
 }
 
 void AdderModule::process() {

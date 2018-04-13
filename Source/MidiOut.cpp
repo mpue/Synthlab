@@ -17,7 +17,7 @@ MidiOut::MidiOut()
     // In your constructor, you should add any child components, and
     // initialise any special settings that your component needs.
    
-    setSize (120, 50);
+    setSize (120, 140);
     // nameLabel->setJustificationType (Justification::left);
     // nameLabel->setTopLeftPosition(2,2);
     
@@ -50,6 +50,7 @@ void MidiOut::configurePins() {
 
 void MidiOut::paint(juce::Graphics &g) {
     Module::paint(g);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::midiout_png, BinaryData::midiout_pngSize),25,40);
 }
 
 void MidiOut::message(juce::MidiMessage *message) {

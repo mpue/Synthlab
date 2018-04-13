@@ -19,7 +19,7 @@ MidiNote::MidiNote()
     // In your constructor, you should add any child components, and
     // initialise any special settings that your component needs.
    
-    setSize(120,60);
+    setSize(120,140);
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(2,2);
 
@@ -49,6 +49,7 @@ void MidiNote::configurePins() {
 
 void MidiNote::paint(juce::Graphics &g) {
     Module::paint(g);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::note_png, BinaryData::note_pngSize),25,40);
 }
 
 void MidiNote::note(int note) {

@@ -45,6 +45,10 @@ public:
         enum oolbarItemIds
         {
             doc_new         = 1,
+            doc_open        = 2,
+            doc_save        = 3,
+            delete_element  = 4,
+            
         };
         
         void getAllToolbarItemIds (Array<int>& ids) override
@@ -54,6 +58,9 @@ public:
             // order in which they are listed will be used by the toolbar customisation panel.
             
             ids.add (doc_new);
+            ids.add (doc_open);
+            ids.add (doc_save);
+            ids.add (delete_element);
 
         }
         
@@ -63,6 +70,9 @@ public:
             // toolbar's default set. Not all items need to be on this list, and
             // items can appear multiple times (e.g. the separators used here).
             ids.add (doc_new);
+            ids.add (doc_open);
+            ids.add (doc_save);
+            ids.add (delete_element);
 
         }
         
@@ -70,9 +80,10 @@ public:
         {
             switch (itemId)
             {
-                case doc_new:           return new ToolbarButton(itemId,"New",getImage(itemId), getImage(itemId));
-       
-   
+                case doc_new:         return new ToolbarButton(itemId,"New",getImage(itemId), getImage(itemId));
+                case doc_open:        return new ToolbarButton(itemId,"Open",getImage(itemId), getImage(itemId));
+                case doc_save:        return new ToolbarButton(itemId,"Save",getImage(itemId), getImage(itemId));
+                case delete_element:  return new ToolbarButton(itemId,"Delete",getImage(itemId), getImage(itemId));
                 default:                break;
             }
             
@@ -80,8 +91,18 @@ public:
         }
         
         Drawable* getImage(int itemId) {
+            
             DrawableImage* di = new DrawableImage();
-            di->setImage(ImageCache::getFromMemory(BinaryData::sawtooth_png, BinaryData::sawtooth_pngSize));
+            
+            if (itemId == 1)
+                di->setImage(ImageCache::getFromMemory(BinaryData::new_png, BinaryData::new_pngSize));
+            else if(itemId == 2)
+                di->setImage(ImageCache::getFromMemory(BinaryData::open_png, BinaryData::open_pngSize));
+            else if(itemId == 3)
+                di->setImage(ImageCache::getFromMemory(BinaryData::save_png, BinaryData::save_pngSize));
+            else if(itemId == 4)
+                di->setImage(ImageCache::getFromMemory(BinaryData::delete_png, BinaryData::delete_pngSize));
+            
             return di;
         }
         
@@ -96,10 +117,10 @@ private:
 
     void openSettings();
     
-	SynthEditor* editor;
-    MainTabbedComponent* tab;
+	SynthEditor* editor = nullptr;
+    MainTabbedComponent* tab = nullptr;
     PropertyView* propertyView = nullptr    ;
-    Viewport* view;
+    Viewport* view = nullptr;
     MenuBarComponent* menu;
     
     virtual StringArray getMenuBarNames() override;
@@ -114,6 +135,8 @@ private:
     int currentOctave = 2;
     DefaultToolbarItemFactory* toolbarFactory;
     Toolbar* toolbar = nullptr;
+    
+    bool initialized = false;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

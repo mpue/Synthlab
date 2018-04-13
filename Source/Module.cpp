@@ -167,6 +167,8 @@ void Module::paint (Graphics& g)
             
         }
 
+        g.setFont(10);
+        
         if (pins.at(i)->direction == Pin::Direction::IN) {
             
             

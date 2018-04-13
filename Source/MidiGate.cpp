@@ -16,7 +16,7 @@
 //==============================================================================
 MidiGate::MidiGate()
 {   
-    setSize(120,60);
+    setSize(120,140);
     
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(2,2);
@@ -43,6 +43,7 @@ void MidiGate::configurePins() {
 
 void MidiGate::paint(juce::Graphics &g) {
     Module::paint(g);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::midiin_png, BinaryData::midiin_pngSize),25,40);
 }
 
 void MidiGate::gateOn(int velocity) {

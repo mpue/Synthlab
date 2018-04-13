@@ -16,7 +16,7 @@
 //==============================================================================
 AudioOut::AudioOut()
 {
-    setSize(120,70);
+    setSize(120,140);
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(18,2);
     setName("Audio out");
@@ -47,6 +47,7 @@ void AudioOut::configurePins() {
 
 void AudioOut::paint(juce::Graphics &g) {
     Module::paint(g);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::speaker_png, BinaryData::speaker_pngSize),25,40);
 }
 
 void AudioOut::process() {

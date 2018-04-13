@@ -74,7 +74,7 @@ void SawtoothModule::configurePins() {
 
 void SawtoothModule::paint(juce::Graphics &g) {
     Module::paint(g);
-    //g.drawImageAt(ImageCache::getFromMemory(BinaryData::sawtooth_png, BinaryData::sawtooth_pngSize),25,40);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::saw_png, BinaryData::saw_pngSize),25,40);
 }
 
 

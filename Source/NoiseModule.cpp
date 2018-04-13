@@ -56,7 +56,7 @@ void NoiseModule::configurePins() {
 
 void NoiseModule::paint(juce::Graphics &g) {
     Module::paint(g);
-    // g.drawImageAt(ImageCache::getFromMemory(BinaryData::sawtooth_png, BinaryData::sawtooth_pngSize),25,40);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::whitenoise_png, BinaryData::whitenoise_pngSize),25,40);
 }
 
 

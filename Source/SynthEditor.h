@@ -160,7 +160,7 @@ private:
     
     int bufferSize;
     double _sampleRate;
-    bool running = true;
+    bool running = false;
     //[/UserVariables]
 
     //==============================================================================

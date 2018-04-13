@@ -74,7 +74,7 @@ void SineModule::configurePins() {
 
 void SineModule::paint(juce::Graphics &g) {
     Module::paint(g);
-    //g.drawImageAt(ImageCache::getFromMemory(BinaryData::sawtooth_png, BinaryData::sawtooth_pngSize),25,40);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::sine_png, BinaryData::sine_pngSize),25,40);
 }
 
 

@@ -40,7 +40,29 @@ String SynthEditor::defaultMidiInputName = "Express 128 Port 7";
 //[/MiscUserDefs]
 
 SynthEditor::SynthEditor() {
+    //[Constructor_pre] You can add your own custom stuff here..
+    //[/Constructor_pre]
     
+    
+    //[UserPreSize]
+    //[/UserPreSize]
+    
+    setSize (1280, 800);
+    
+    
+    //[Constructor] You can add your own custom stuff here..
+    
+    root = new Module("Root");
+    
+    setRepaintsOnMouseActivity(true);
+    setMouseClickGrabsKeyboardFocus(true);
+    setWantsKeyboardFocus(true);
+    
+    addChildComponent(root);
+    
+    
+    
+    //[/Constructor]
 }
 
 //==============================================================================
@@ -384,6 +406,9 @@ void SynthEditor::showContextMenu(Point<int> position) {
             AudioOut* out;
             if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
                 outputChannels.push_back(out);
+                if (!running) {
+                    running = true;
+                }
             }
         }
         
@@ -601,6 +626,7 @@ void SynthEditor::cleanUp() {
     removeAllChildren();
     deleteSelected(true);
     selectedModules.clear();
+    outputChannels.clear();
 }
 
 void SynthEditor::newFile() {
@@ -971,7 +997,7 @@ void SynthEditor::deleteSelected(bool deleteAll) {
 */
 
 
-    void SynthEditor::deleteSelected(bool deleteAll) {
+void SynthEditor::deleteSelected(bool deleteAll) {
     
     // handle connections at root level
     if (deleteAll) {
@@ -1204,8 +1230,11 @@ void SynthEditor::sendNoteMessage(Module *module, int note) {
 
 void SynthEditor::audioDeviceIOCallback(const float **inputChannelData, int numInputChannels, float **outputChannelData, int numOutputChannels, int numSamples) {
     
+    // Logger::writeToLog(String(outputChannels.size()));
+    
     if(!running) {
         Thread::sleep(100);
+        return;
     }
     
      processModule(getModule());
@@ -1276,6 +1305,8 @@ void SynthEditor::audioDeviceIOCallback(const float **inputChannelData, int numI
 }
 
 void SynthEditor::prepareToPlay(int samplesPerBlockExpected, double sampleRate) {
+    this->_sampleRate = sampleRate;
+    this->bufferSize = samplesPerBlockExpected;
         /*
     String defaultMidiOutput = deviceManager->getDefaultMidiOutputName();
     for (int i = 0; i < MidiInput::getDevices().size();i++) {
@@ -1297,11 +1328,14 @@ void SynthEditor::setBufferSize(int buffersize) {
 
 void SynthEditor::processModule(Module* m) {
     
-    m->process();
+    if (m != nullptr) {
     
-    
-    for (int i = 0; i< m->getModules()->size();i++) {
-        processModule(m->getModules()->at(i));
+        m->process();
+        
+        
+        for (int i = 0; i< m->getModules()->size();i++) {
+            processModule(m->getModules()->at(i));
+        }
     }
     
 }

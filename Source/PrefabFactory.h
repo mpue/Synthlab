@@ -80,6 +80,7 @@ private:
         prefabs[69] = Prefab("Knob","Controls");
         prefabs[70] = Prefab("ADSR","Input / Output");
         prefabs[71] = Prefab("Sine","Sound sources");
+        prefabs[72] = Prefab("Random","Sound sources");
         
         categories = new StringArray();
 
