@@ -95,7 +95,6 @@ public:
     
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate);
     void showContextMenu(Point<int> position);
-    void openSettings();
     
     //[/UserMethods]
 

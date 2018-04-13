@@ -341,7 +341,6 @@ void SynthEditor::showContextMenu(Point<int> position) {
         m->addItem(2, "Save");
         m->addItem(3, "Load");
         m->addItem(4, "New");
-        m->addItem(5, "Settings");
         
         PopupMenu* prefabMenu = new PopupMenu();
         
@@ -391,9 +390,6 @@ void SynthEditor::showContextMenu(Point<int> position) {
         }
         else if (result == 4) {
             newFile();
-        }
-        else if (result == 5) {
-            openSettings();
         }
         else {
             Module* m = PrefabFactory::getInstance()->getPrefab(result, _sampleRate, bufferSize);
@@ -666,6 +662,11 @@ void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Conn
             file.setProperty("release", adsr->getRelease(), nullptr);
         }
         
+        Constant* c = nullptr;
+        if ((c = dynamic_cast<Constant*>((*it))) != NULL) {
+            file.setProperty("value", c->getValue(), nullptr);
+        }
+        
         ValueTree pins = ValueTree("Pins");
 
         for (std::vector<Pin*>::iterator it2 =  (*it)->pins.begin(); it2 != (*it)->pins.end(); ++it2) {
@@ -848,6 +849,11 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
             adsr->setRelease(mod.getProperty("release").toString().getFloatValue());
         }
         
+        Constant* c = nullptr;
+        if ((c = dynamic_cast<Constant*>((m))) != NULL) {
+            c->setValue(mod.getProperty("value").toString().getFloatValue());
+        }
+        
         // addAndMakeVisible(m);
 
         loadStructure(m->getModules(),m->getConnections(),&mod);
@@ -863,8 +869,6 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         long targetIndex = con.getProperty("target").toString().getLargeIntValue();
         long aIndex = con.getProperty("a").toString().getLargeIntValue();
         long bIndex = con.getProperty("b").toString().getLargeIntValue();
-
-
         
         Module* source = nullptr;
         Module* target = nullptr;
@@ -1232,12 +1236,8 @@ void SynthEditor::audioDeviceIOCallback(const float **inputChannelData, int numI
     
     // Logger::writeToLog(String(outputChannels.size()));
     
-    if(!running) {
-        Thread::sleep(100);
-        return;
-    }
-    
-     processModule(getModule());
+    if (running)
+        processModule(getModule());
     
     
     /*
@@ -1340,26 +1340,6 @@ void SynthEditor::processModule(Module* m) {
     
 }
 
-void SynthEditor::openSettings() {
-    
-    AudioDeviceSelectorComponent* selector = new AudioDeviceSelectorComponent(*deviceManager, 2, 16, 2, 16, true, true, true, false);
-    DialogWindow::LaunchOptions launchOptions;
-    
-    launchOptions.dialogTitle = ("Audio Settings");
-    launchOptions.escapeKeyTriggersCloseButton = true;
-    launchOptions.resizable = true;
-    launchOptions.useNativeTitleBar = false;
-    launchOptions.useBottomRightCornerResizer = true;
-    launchOptions.componentToCentreAround = getParentComponent();
-    launchOptions.content.setOwned(selector);
-    launchOptions.content->setSize(600, 580);
-    launchOptions.runModal();
-    String defaultMidiOutput = deviceManager->getDefaultMidiOutputName();
-    for (int i = 0; i < MidiInput::getDevices().size();i++) {
-        deviceManager->setMidiInputEnabled(MidiInput::getDevices().getReference(i),true);
-        deviceManager->addMidiInputCallback(MidiInput::getDevices().getReference(i), this);
-    }
-}
 //[/MiscUserCode]
 
 
