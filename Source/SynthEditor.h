@@ -79,12 +79,21 @@ public:
 
     Module* getSelectedModule();    
     std::vector<Module*> getSelectedModules();
-    
-
 
     void handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) override;
     void sendGateMessage(Module* module, int velocity, bool on);
     void sendNoteMessage(Module* module, int note);
+    void setSamplerate(double rate);
+    void setBufferSize(int buffersize);
+    void processModule(Module* m);
+    bool connectionExists(std::vector<Connection*> connections, Connection* c);
+    void audioDeviceIOCallback (const float** inputChannelData,
+                                int numInputChannels,
+                                float** outputChannelData,
+                                int numOutputChannels,
+                                int numSamples) override;
+    
+    void prepareToPlay (int samplesPerBlockExpected, double sampleRate);
     
     //[/UserMethods]
 
@@ -98,20 +107,6 @@ public:
     bool keyPressed (const KeyPress& key) override;
     bool keyStateChanged (bool isKeyDown) override;
     void modifierKeysChanged (const ModifierKeys& modifiers) override;
-
-    void audioDeviceIOCallback (const float** inputChannelData,
-                                int numInputChannels,
-                                float** outputChannelData,
-                                int numOutputChannels,
-                                int numSamples) override;
-
-    void prepareToPlay (int samplesPerBlockExpected, double sampleRate);
-    
-    void setSamplerate(double rate);
-    void setBufferSize(int buffersize);
-    void processModule(Module* m);
-    bool connectionExists(std::vector<Connection*> connections, Connection* c);
-    
     
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.

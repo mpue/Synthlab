@@ -18,8 +18,6 @@
 */
 
 //[Headers] You can add your own extra header files here...
-//[/Headers]
-
 #include "SynthEditor.h"
 #include "MidiGate.h"
 #include "MidiNote.h"
@@ -34,11 +32,11 @@
 #include "ADSRModule.h"
 #include <stdio.h>
 #include <string.h>
-
-String SynthEditor::defaultMidiOutputName = "Express 128 Port 7";
-String SynthEditor::defaultMidiInputName = "Express 128 Port 7";
+//[/Headers]
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
+String SynthEditor::defaultMidiOutputName = "Express 128 Port 7";
+String SynthEditor::defaultMidiInputName = "Express 128 Port 7";
 //[/MiscUserDefs]
 
 SynthEditor::SynthEditor() {
@@ -172,9 +170,8 @@ void SynthEditor::resized()
     //[UserPreResize] Add your own custom resize code here..
     //[/UserPreResize]
 
-    setSize(getParentWidth()*1.5, getParentHeight()*1.5);
-    
     //[UserResized] Add your own custom resize handling here..
+    setSize(getParentWidth()*1.5, getParentHeight()*1.5);
     //[/UserResized]
 }
 
@@ -521,7 +518,6 @@ void SynthEditor::mouseDoubleClick (const MouseEvent& e)
 {
     //[UserCode_mouseDoubleClick] -- Add your code here...
 
-
     if (isAltDown) {
         for (int i = 0; i < root->getModules()->size(); i++) {
 
@@ -546,7 +542,6 @@ void SynthEditor::mouseDoubleClick (const MouseEvent& e)
         }
 
     }
-
 
     //[/UserCode_mouseDoubleClick]
 }
@@ -1090,8 +1085,6 @@ void SynthEditor::setDeviceManager(juce::AudioDeviceManager* manager) {
     this->deviceManager = manager;
     deviceManager->addAudioCallback(this);
 }
-
-
 
 std::vector<Module*> SynthEditor::getSelectedModules() {
     return selectedModules;
