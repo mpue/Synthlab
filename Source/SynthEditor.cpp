@@ -272,119 +272,126 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 		}
 	}
 	else if (e.mods.isRightButtonDown()) {
-
-		PopupMenu* m = new PopupMenu();
-
-		Module* module = nullptr;
-
-		for (int i = 0; i < root->getModules()->size(); i++) {
-			if (root->getModules()->at(i)->isSelected()) {
-				module = root->getModules()->at(i);
-			}
-		}
-
-        if (module != nullptr && module->isEditable()) {
-			m->addItem(1, "Add input");
-			m->addItem(2, "Add output");
-
-
-			const int result = m->show();
-
-			if (result == 0)
-			{
-				// user dismissed the menu without picking anything
-			}
-			else if (result == 1) {
-				module->addPin(Pin::Direction::IN);
-
-			}
-			else if (result == 2) {
-				module->addPin(Pin::Direction::OUT);
-			}
-
-		}
-		else {
-
-			m->addItem(1, "Add module");
-			m->addItem(2, "Save");
-            m->addItem(3, "Load");
-            m->addItem(4, "New");
-
-            PopupMenu* prefabMenu = new PopupMenu();
-            
-            StringArray* categories = PrefabFactory::getInstance()->getCategories();
-            
-            for (int i = 0; i < categories->size();i++) {
-                PopupMenu category = PopupMenu();
-                
-                std::map<int,PrefabFactory::Prefab> prefabs = PrefabFactory::getInstance()->getPrefabNames();
-                
-                for (std::map<int,PrefabFactory::Prefab>::iterator it  = prefabs.begin();it != prefabs.end();++it) {
-                    if ((*it).second.getCategory() == categories->getReference(i)) {
-                        category.addItem((*it).first,(*it).second.getName(), true);
-                    }
-                    
-                }
-                
-                prefabMenu->addSubMenu(categories->getReference(i), category, true);
-            }
-            
-            m->addSubMenu("Prefabs",*prefabMenu);
-
-			const int result = m->show();
-
-			if (result == 0)
-			{
-				// user dismissed the menu without picking anything
-			}
-			else if (result == 1)
-			{
-				Module* m3 = new Module("Macro");
-
-				m3->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
-				m3->setIndex(Time::currentTimeMillis());
-
-				addAndMakeVisible(m3);
-				root->getModules()->push_back(m3);
-
-			}
-			else if (result == 2)
-			{
-                saveFile();
-			}
-            else if (result == 3) {
-                newFile();
-                openFile();
-            }
-            else if (result == 4) {
-                newFile();
-            }
-
-            else {
-                Module* m = PrefabFactory::getInstance()->getPrefab(result, _sampleRate, bufferSize);
-                m->setTopLeftPosition(e.getPosition().x, e.getPosition().y);
-                
-                
-                addAndMakeVisible(m);
-                root->getModules()->push_back(m);
-                
-                AudioOut* out;
-                if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
-                    outputChannels.push_back(out);
-                }
-            }
-            
-            delete prefabMenu;
-		}
-
-        delete m;
-	}
+        showContextMenu(e.getPosition());
+    }
 
     repaint();
 
     sendChangeMessage();
 
     //[/UserCode_mouseDown]
+}
+
+void SynthEditor::showContextMenu(Point<int> position) {
+    PopupMenu* m = new PopupMenu();
+    
+    Module* module = nullptr;
+    
+    for (int i = 0; i < root->getModules()->size(); i++) {
+        if (root->getModules()->at(i)->isSelected()) {
+            module = root->getModules()->at(i);
+        }
+    }
+    
+    if (module != nullptr && module->isEditable()) {
+        m->addItem(1, "Add input");
+        m->addItem(2, "Add output");
+        
+        
+        const int result = m->show();
+        
+        if (result == 0)
+        {
+            // user dismissed the menu without picking anything
+        }
+        else if (result == 1) {
+            module->addPin(Pin::Direction::IN);
+            
+        }
+        else if (result == 2) {
+            module->addPin(Pin::Direction::OUT);
+        }
+        
+    }
+    else {
+        
+        m->addItem(1, "Add module");
+        m->addItem(2, "Save");
+        m->addItem(3, "Load");
+        m->addItem(4, "New");
+        m->addItem(5, "Settings");
+        
+        PopupMenu* prefabMenu = new PopupMenu();
+        
+        StringArray* categories = PrefabFactory::getInstance()->getCategories();
+        
+        for (int i = 0; i < categories->size();i++) {
+            PopupMenu category = PopupMenu();
+            
+            std::map<int,PrefabFactory::Prefab> prefabs = PrefabFactory::getInstance()->getPrefabNames();
+            
+            for (std::map<int,PrefabFactory::Prefab>::iterator it  = prefabs.begin();it != prefabs.end();++it) {
+                if ((*it).second.getCategory() == categories->getReference(i)) {
+                    category.addItem((*it).first,(*it).second.getName(), true);
+                }
+                
+            }
+            
+            prefabMenu->addSubMenu(categories->getReference(i), category, true);
+        }
+        
+        m->addSubMenu("Prefabs",*prefabMenu);
+        
+        const int result = m->show();
+        
+        if (result == 0)
+        {
+            // user dismissed the menu without picking anything
+        }
+        else if (result == 1)
+        {
+            Module* m3 = new Module("Macro");
+            
+            m3->setTopLeftPosition(position.getX(), position.getY());
+            m3->setIndex(Time::currentTimeMillis());
+            
+            addAndMakeVisible(m3);
+            root->getModules()->push_back(m3);
+            
+        }
+        else if (result == 2)
+        {
+            saveFile();
+        }
+        else if (result == 3) {
+            newFile();
+            openFile();
+        }
+        else if (result == 4) {
+            newFile();
+        }
+        else if (result == 5) {
+            openSettings();
+        }
+        else {
+            Module* m = PrefabFactory::getInstance()->getPrefab(result, _sampleRate, bufferSize);
+            m->setTopLeftPosition(position);
+            
+            
+            addAndMakeVisible(m);
+            root->getModules()->push_back(m);
+            
+            AudioOut* out;
+            if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
+                outputChannels.push_back(out);
+            }
+        }
+        
+        delete prefabMenu;
+    }
+    
+    delete m;
+
 }
 
 void SynthEditor::mouseDrag (const MouseEvent& e)
@@ -542,6 +549,10 @@ void SynthEditor::mouseDoubleClick (const MouseEvent& e)
         }
 
     }
+    
+    if (getSelectedModules().size() == 0) {
+        showContextMenu(e.getPosition());
+    }
 
     //[/UserCode_mouseDoubleClick]
 }
@@ -665,22 +676,50 @@ void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Conn
 }
 
 void SynthEditor::saveFile() {
-    FileChooser chooser("Select target file...", File::nonexistent, "*");
-
+    
+#if JUCE_IOS
+    File path = File::getSpecialLocation(File::userApplicationDataDirectory);
+    File outputDir = File(path.getFullPathName()+"/structure.xml");
+    
+    FileChooser chooser("Select target file...",outputDir, "*");
+    
     if (chooser.browseForFileToSave(true)) {
-
+        
         ValueTree* v = new ValueTree("Synth");
-
+        
         saveStructure(root->getModules(),root->getConnections(), v);
-
+        
+        URL file = chooser.getURLResult();
+        
+        OutputStream* os = file.createOutputStream();
+        
+        XmlElement* xml = v->createXml();
+        xml->writeToStream(*os, "");
+        
+        delete os;
+        delete xml;
+        delete v;
+    }
+#else
+    FileChooser chooser("Select target file...", File::nonexistent, "*");
+    
+    if (chooser.browseForFileToSave(true)) {
+        
+        ValueTree* v = new ValueTree("Synth");
+        
+        saveStructure(root->getModules(),root->getConnections(), v);
+        
         File file = chooser.getResult();
-
+        
         XmlElement* xml = v->createXml();
         xml->writeToFile(file, "");
         delete xml;
         delete v;
-
+        
     }
+#endif
+    
+
 }
 
 void SynthEditor::openFile() {
@@ -689,11 +728,18 @@ void SynthEditor::openFile() {
     if (chooser.browseForFileToOpen()) {
 
         cleanUp();
-
+#if JUCE_IOS
+        URL url = chooser.getURLResult();
+        InputStream* is = url.createInputStream(false);
+        String data = is->readEntireStreamAsString();
+        delete is;
+        
+        ScopedPointer<XmlElement> xml = XmlDocument(data).getDocumentElement();
+#else
         File file = chooser.getResult();
-
-
         ScopedPointer<XmlElement> xml = XmlDocument(file).getDocumentElement();
+#endif
+   
         ValueTree v = ValueTree::fromXml(*xml.get());
 
         running = false;
@@ -1227,17 +1273,17 @@ void SynthEditor::audioDeviceIOCallback(const float **inputChannelData, int numI
         }
     }
 
-    
-    
-    
 }
 
 void SynthEditor::prepareToPlay(int samplesPerBlockExpected, double sampleRate) {
-    
-    
-    deviceManager->setMidiInputEnabled("Express  128 Port 7", true);
-    deviceManager->setDefaultMidiOutput("Express  128 Port 7");
-    deviceManager->addMidiInputCallback("Express  128 Port 7", this);
+        /*
+    String defaultMidiOutput = deviceManager->getDefaultMidiOutputName();
+    for (int i = 0; i < MidiInput::getDevices().size();i++) {
+        deviceManager->setMidiInputEnabled(MidiInput::getDevices().getReference(i),true);
+        deviceManager->addMidiInputCallback(MidiInput::getDevices().getReference(i), this);
+    }
+         */
+   
 }
 
 void SynthEditor::setSamplerate(double rate) {
@@ -1258,6 +1304,27 @@ void SynthEditor::processModule(Module* m) {
         processModule(m->getModules()->at(i));
     }
     
+}
+
+void SynthEditor::openSettings() {
+    
+    AudioDeviceSelectorComponent* selector = new AudioDeviceSelectorComponent(*deviceManager, 2, 16, 2, 16, true, true, true, false);
+    DialogWindow::LaunchOptions launchOptions;
+    
+    launchOptions.dialogTitle = ("Audio Settings");
+    launchOptions.escapeKeyTriggersCloseButton = true;
+    launchOptions.resizable = true;
+    launchOptions.useNativeTitleBar = false;
+    launchOptions.useBottomRightCornerResizer = true;
+    launchOptions.componentToCentreAround = getParentComponent();
+    launchOptions.content.setOwned(selector);
+    launchOptions.content->setSize(600, 580);
+    launchOptions.runModal();
+    String defaultMidiOutput = deviceManager->getDefaultMidiOutputName();
+    for (int i = 0; i < MidiInput::getDevices().size();i++) {
+        deviceManager->setMidiInputEnabled(MidiInput::getDevices().getReference(i),true);
+        deviceManager->addMidiInputCallback(MidiInput::getDevices().getReference(i), this);
+    }
 }
 //[/MiscUserCode]
 

@@ -38,7 +38,18 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
         ScopedPointer<XmlElement> xml = XmlDocument(configFile).getDocumentElement();
         deviceManager.initialise(2,2, xml, true);
     }
-     
+    
+    toolbar = new Toolbar();
+    toolbar->setBounds(0,0,  getWidth(), 50);
+    
+    addAndMakeVisible(toolbar);
+    
+    toolbarFactory = new DefaultToolbarItemFactory();
+    toolbar->addItem(*toolbarFactory, 1);
+    
+    for (int i = 0; i < toolbar->getNumItems();i++) {
+        toolbar->getItemComponent(i)->addListener(this);
+    }
     propertyView =  new PropertyView();
     
 
@@ -82,8 +93,9 @@ MainComponent::~MainComponent()
 	delete editor;
     delete tab;
     delete propertyView;
-    MenuBarModel::setMacMainMenu(nullptr);
+    // MenuBarModel::setMacMainMenu(nullptr);
     delete menu;
+    delete toolbarFactory;
     PrefabFactory::getInstance()->destroy();
 }
 
@@ -102,7 +114,7 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     
     editor = new SynthEditor(sampleRate,samplesPerBlockExpected);
     tab = new MainTabbedComponent();
-    tab->setBounds(0,0,getWidth(),getHeight());
+    tab->setBounds(0,50,getWidth(),getHeight());
     
     
     view = new Viewport();
@@ -112,7 +124,7 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     view->setSize(500,200);
     view->setViewedComponent(editor);
     view->setScrollBarsShown(true,true);
-    // view->setScrollOnDragEnabled(true);
+    view->setScrollOnDragEnabled(false);
     view->setWantsKeyboardFocus(false);
     view->setMouseClickGrabsKeyboardFocus(false);
     
@@ -159,7 +171,10 @@ void MainComponent::paint (Graphics& g)
 void MainComponent::resized()
 {
 
-    auto r = getLocalBounds().reduced (4);
+    auto r = getLocalBounds().reduced (4).removeFromBottom(getHeight() - 55);
+    
+    if (toolbar != nullptr)
+        toolbar->setSize(getLocalBounds().getWidth() , 50);
     
     // make a list of two of our child components that we want to reposition
     Component* comps[] = { propertyView, &resizerBar, tab };
@@ -290,3 +305,7 @@ void MainComponent::createKeyMap() {
     keyCodeMidiNote['l'] = 50;
 }
 
+void MainComponent::buttonClicked (Button* b)
+{
+    editor->showContextMenu(b->getPosition());
+}

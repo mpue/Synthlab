@@ -66,16 +66,37 @@
       </GROUP>
       <GROUP id="{F7A67158-9DD4-9E2C-0BDC-1B58ED967D9B}" name="Editor">
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
+          <FILE id="ltD2cO" name="AdderModule.cpp" compile="1" resource="0" file="Source/AdderModule.cpp"/>
+          <FILE id="GhVXGb" name="AdderModule.h" compile="0" resource="0" file="Source/AdderModule.h"/>
+          <FILE id="k0jYkO" name="ADSRModule.cpp" compile="1" resource="0" file="Source/ADSRModule.cpp"/>
+          <FILE id="Tg2QZR" name="ADSRModule.h" compile="0" resource="0" file="Source/ADSRModule.h"/>
+          <FILE id="bl08fP" name="AudioOut.cpp" compile="1" resource="0" file="Source/AudioOut.cpp"/>
+          <FILE id="tqfYhi" name="AudioOut.h" compile="0" resource="0" file="Source/AudioOut.h"/>
+          <FILE id="qF57bh" name="Constant.cpp" compile="1" resource="0" file="Source/Constant.cpp"/>
+          <FILE id="T9jNhy" name="Constant.h" compile="0" resource="0" file="Source/Constant.h"/>
+          <FILE id="yhgzmV" name="Knob.cpp" compile="1" resource="0" file="Source/Knob.cpp"/>
+          <FILE id="PBm2CJ" name="Knob.h" compile="0" resource="0" file="Source/Knob.h"/>
+          <FILE id="UX3HFt" name="LPFilterModule.cpp" compile="1" resource="0"
+                file="Source/LPFilterModule.cpp"/>
+          <FILE id="RNaOYu" name="LPFilterModule.h" compile="0" resource="0"
+                file="Source/LPFilterModule.h"/>
           <FILE id="yEGMSd" name="MidiGate.cpp" compile="1" resource="0" file="Source/MidiGate.cpp"/>
           <FILE id="dev5Rg" name="MidiGate.h" compile="0" resource="0" file="Source/MidiGate.h"/>
           <FILE id="BQH021" name="MidiNote.cpp" compile="1" resource="0" file="Source/MidiNote.cpp"/>
           <FILE id="ix9bnI" name="MidiNote.h" compile="0" resource="0" file="Source/MidiNote.h"/>
           <FILE id="zLO7X9" name="MidiOut.cpp" compile="1" resource="0" file="Source/MidiOut.cpp"/>
           <FILE id="ineRQR" name="MidiOut.h" compile="0" resource="0" file="Source/MidiOut.h"/>
+          <FILE id="HJM3uf" name="NoiseModule.cpp" compile="1" resource="0" file="Source/NoiseModule.cpp"/>
+          <FILE id="gg4XoQ" name="NoiseModule.h" compile="0" resource="0" file="Source/NoiseModule.h"/>
+          <FILE id="kZfRvk" name="PrefabFactory.cpp" compile="1" resource="0"
+                file="Source/PrefabFactory.cpp"/>
+          <FILE id="JNR4eo" name="PrefabFactory.h" compile="0" resource="0" file="Source/PrefabFactory.h"/>
           <FILE id="f1yiPr" name="SawtoothModule.cpp" compile="1" resource="0"
                 file="Source/SawtoothModule.cpp"/>
           <FILE id="oFkcCq" name="SawtoothModule.h" compile="0" resource="0"
                 file="Source/SawtoothModule.h"/>
+          <FILE id="QEYQZu" name="SineModule.cpp" compile="1" resource="0" file="Source/SineModule.cpp"/>
+          <FILE id="MtgQfK" name="SineModule.h" compile="0" resource="0" file="Source/SineModule.h"/>
         </GROUP>
         <FILE id="j8BgnE" name="Module.cpp" compile="1" resource="0" file="Source/Module.cpp"/>
         <FILE id="FdpOd5" name="Module.h" compile="0" resource="0" file="Source/Module.h"/>
@@ -146,6 +167,28 @@
         <MODULEPATH id="juce_audio_basics" path="..\JUCE\modules"/>
       </MODULEPATHS>
     </VS2015>
+    <XCODE_IPHONE targetFolder="Builds/iOS">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug"/>
+        <CONFIGURATION isDebug="0" name="Release"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_video" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_opengl" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_cryptography" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_basics" path="../JUCE/modules"/>
+      </MODULEPATHS>
+    </XCODE_IPHONE>
   </EXPORTFORMATS>
   <MODULES>
     <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>

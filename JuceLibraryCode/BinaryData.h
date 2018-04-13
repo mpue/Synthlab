@@ -15,7 +15,7 @@ namespace BinaryData
     const int            led_on_pngSize = 11713;
 
     extern const char*   sawtooth_png;
-    const int            sawtooth_pngSize = 4921;
+    const int            sawtooth_pngSize = 5130;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];
