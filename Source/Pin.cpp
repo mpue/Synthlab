@@ -16,7 +16,7 @@ Pin::Pin(Pin::Type type) {
     name = "";
     this->type = type;
     if (type == Pin::Type::AUDIO) {
-        audioBuffer = new AudioSampleBuffer(1,512);
+        audioBuffer = new AudioSampleBuffer(1,513);
     }
 }
 

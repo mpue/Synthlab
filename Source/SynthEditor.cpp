@@ -1233,23 +1233,8 @@ void SynthEditor::sendNoteMessage(Module *module, int note) {
 }
 
 void SynthEditor::audioDeviceIOCallback(const float **inputChannelData, int numInputChannels, float **outputChannelData, int numOutputChannels, int numSamples) {
-    
-    // Logger::writeToLog(String(outputChannels.size()));
-    
-    if (running)
-        processModule(getModule());
-    
-    
-    /*
-    
-    // copy all samples from the connected pins audiobuffer to the output
-    for (int i = 0; i < outputChannels.size();i++) {
-        for (int j = 0; j < numSamples;j++) {
-            outputChannelData[0][j] = outputChannels.at(i)->getPins().at(0)->getAudioBuffer()->getSample(0, j);
-            outputChannelData[1][j] = outputChannels.at(i)->getPins().at(1)->getAudioBuffer()->getSample(0, j);
-        }
-    }
-     */
+       
+    processModule(getModule());
     
     // mute if there are no channels
     if (outputChannels.size() == 0) {
@@ -1263,45 +1248,36 @@ void SynthEditor::audioDeviceIOCallback(const float **inputChannelData, int numI
         
         // process all output pins of the connected module
         // outputChannels.at(0)->getPins().at(0)->process(inputChannelData[0], outputChannelData[0], numSamples);
-        if (outputChannels.at(0)->getPins().at(0)->connections.size() == 1) {
-            if (outputChannels.at(0)->getPins().at(0)->connections.at(0) != nullptr) {
-                if (outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer() != nullptr) {
-                    const float* outL = outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-                    for (int j = 0;j < numSamples;j++) {
-                        outputChannelData[0][j] = outL[j];
-                    }
-                }
+        for (int j = 0;j < numSamples;j++) {
+            
+            if (channelIsValid(0)) {
+                const float* outL = outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+                outputChannelData[0][j] = outL[j];
             }
-
-
-        }
-        else {
-            for (int j = 0;j < numSamples;j++) {
+            else {
                 outputChannelData[0][j] = 0;
-          
             }
-        }
-
-        if (outputChannels.at(0)->getPins().at(1)->connections.size() == 1) {
-            if (outputChannels.at(0)->getPins().at(1)->connections.at(0) != nullptr) {
-                if (outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer() != nullptr) {
-                    const float* outR = outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-                    for (int j = 0;j < numSamples;j++) {
-                        outputChannelData[1][j] = outR[j];
-                    }
-                }
+            
+            if (channelIsValid(1)) {
+                const float* outR = outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+                outputChannelData[1][j] = outR[j];
 
             }
-
-        }
-        else {
-            for (int j = 0;j < numSamples;j++) {
-           
+            else {
                 outputChannelData[1][j] = 0;
             }
         }
     }
 
+}
+
+bool SynthEditor::channelIsValid(int channel) {
+    if (outputChannels.at(0)->getPins().at(channel)->connections.size() == 1 &&
+        outputChannels.at(0)->getPins().at(channel)->connections.at(0) != nullptr &&
+        outputChannels.at(0)->getPins().at(channel)->connections.at(0)->getAudioBuffer() != nullptr) {
+        return true;
+    }
+    return false;
 }
 
 void SynthEditor::prepareToPlay(int samplesPerBlockExpected, double sampleRate) {

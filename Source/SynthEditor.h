@@ -95,7 +95,7 @@ public:
     
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate);
     void showContextMenu(Point<int> position);
-    
+    bool channelIsValid(int channel);
     //[/UserMethods]
 
     void paint (Graphics& g) override;
@@ -157,11 +157,13 @@ private:
     static String defaultMidiInputName;
     static String defaultMidiOutputName;
     
+    int currentSample = 0;
     int bufferSize;
     double _sampleRate;
     bool running = false;
     //[/UserVariables]
 
+    
     //==============================================================================
 
 

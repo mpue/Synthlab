@@ -53,56 +53,9 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     for (int i = 0; i < toolbar->getNumItems();i++) {
         toolbar->getItemComponent(i)->addListener(this);
     }
-    propertyView =  new PropertyView();
+   
     
-    editor = new SynthEditor();
-    
-    tab = new MainTabbedComponent();
-    tab->setBounds(0,50,getWidth(),getHeight());
-    
-    
-    view = new Viewport();
-    
-    addAndMakeVisible(view);
-    
-    view->setSize(500,200);
-    view->setViewedComponent(editor);
-    view->setScrollBarsShown(true,true);
-    view->setScrollOnDragEnabled(false);
-    view->setWantsKeyboardFocus(false);
-    view->setMouseClickGrabsKeyboardFocus(false);
-    
-    tab->addTab("Main", juce::Colours::grey, view, true);
-    
-    addAndMakeVisible (propertyView);
-    addAndMakeVisible (resizerBar);
-    addAndMakeVisible (tab);
-    
-    editor->setTab(tab);
-    
-    editor->setDeviceManager(&deviceManager);
 
-    addKeyListener(this);
-    resized();
-
-    editor->addChangeListener(propertyView);
-    
- 
-    
-    // we have to set up our StretchableLayoutManager so it know the limits and preferred sizes of it's contents
-    stretchableManager.setItemLayout (0,            // for the properties
-                                      -0.1, -0.9,   // must be between 50 pixels and 90% of the available space
-                                      -0.2);        // and its preferred size is 30% of the total available space
-    
-    stretchableManager.setItemLayout (1,            // for the resize bar
-                                      5, 5, 5);     // hard limit to 5 pixels
-    
-    stretchableManager.setItemLayout (2,            // for the imagePreview
-                                      -0.1, -0.9,   // size must be between 50 pixels and 90% of the available space
-                                      -0.8);
-
-    
-    this->menu = new MenuBarComponent();
     
 #if JUCE_MAC
     menu->setModel (nullptr);
@@ -142,6 +95,60 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     // editor->setSamplerate(sampleRate);
     // editor->setBufferSize(samplesPerBlockExpected);
     
+    if (!initialized) {
+    
+        propertyView =  new PropertyView();
+        editor = new SynthEditor();
+        
+        tab = new MainTabbedComponent();
+        tab->setBounds(0,50,getWidth(),getHeight());
+        
+        
+        view = new Viewport();
+        
+        addAndMakeVisible(view);
+        
+        view->setSize(500,200);
+        view->setViewedComponent(editor);
+        view->setScrollBarsShown(true,true);
+        view->setScrollOnDragEnabled(false);
+        view->setWantsKeyboardFocus(false);
+        view->setMouseClickGrabsKeyboardFocus(false);
+        
+        tab->addTab("Main", juce::Colours::grey, view, true);
+        
+        addAndMakeVisible (propertyView);
+        addAndMakeVisible (resizerBar);
+        addAndMakeVisible (tab);
+        
+        editor->setTab(tab);
+        
+        editor->setDeviceManager(&deviceManager);
+        
+        addKeyListener(this);
+        resized();
+        
+        editor->addChangeListener(propertyView);
+        
+        
+        
+        // we have to set up our StretchableLayoutManager so it know the limits and preferred sizes of it's contents
+        stretchableManager.setItemLayout (0,            // for the properties
+                                          -0.1, -0.9,   // must be between 50 pixels and 90% of the available space
+                                          -0.2);        // and its preferred size is 30% of the total available space
+        
+        stretchableManager.setItemLayout (1,            // for the resize bar
+                                          5, 5, 5);     // hard limit to 5 pixels
+        
+        stretchableManager.setItemLayout (2,            // for the imagePreview
+                                          -0.1, -0.9,   // size must be between 50 pixels and 90% of the available space
+                                          -0.8);
+        
+        
+        this->menu = new MenuBarComponent();
+
+        initialized = true;
+    }
     if (editor != nullptr) {
         editor->prepareToPlay( samplesPerBlockExpected,  sampleRate);
         resized();
