@@ -15,6 +15,7 @@ Event::Event(Event* e){
     this->name = e->getName();
     this->type = e->getType();
     this->value = e->getValue();
+    this->note = e->getNote();
 }
 
 Event::Event(String name, Type type) {
@@ -42,3 +43,10 @@ int Event::getValue() {
     return value;
 }
 
+void Event::setNote(int note) {
+    this->note = note;
+}
+
+int Event::getNote(){
+    return note;
+}

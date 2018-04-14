@@ -57,11 +57,16 @@ public:
     float getValue();
     void setValue(float value);
     
+    int getNote();
+    void setNote(int note);
+    
     void invalidate() {
         delete audioBuffer;
         audioBuffer = nullptr;
     }
-    
+    float value;
+    float data[128] = {0};
+    bool dataEnabled[128];
     bool hasConnection(Pin* target);
     
     virtual void process(const float *in, float *out,int numSamples) override;
@@ -69,6 +74,7 @@ public:
 private:
     bool selected = false;
     String name;
-    float value;
+    int note = 0;
+
     AudioSampleBuffer* audioBuffer = nullptr;
 };

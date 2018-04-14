@@ -39,8 +39,8 @@
                                                                     //[/Comments]
 */
 class SynthEditor  : public Component,
-                     public ChangeBroadcaster,
-                     public AudioProcessorPlayer   
+                     public ChangeBroadcaster
+         
 
 {
 public:
@@ -65,7 +65,6 @@ public:
     void deleteSelected(bool deleteAll);
     bool PointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<int> pt, double epsilon);
     void setTab(TabbedComponent* t);
-    void setDeviceManager(AudioDeviceManager* manager);
     
     void setModule(Module * m);
     Module* getModule();
@@ -79,19 +78,13 @@ public:
 
     Module* getSelectedModule();    
     std::vector<Module*> getSelectedModules();
+    std::vector<AudioOut*> getOutputChannels();
 
-    void handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) override;
-    void sendGateMessage(Module* module, int velocity, bool on);
-    void sendNoteMessage(Module* module, int note);
     void setSamplerate(double rate);
     void setBufferSize(int buffersize);
     void processModule(Module* m);
     bool connectionExists(std::vector<Connection*> connections, Connection* c);
-    void audioDeviceIOCallback (const float** inputChannelData,
-                                int numInputChannels,
-                                float** outputChannelData,
-                                int numOutputChannels,
-                                int numSamples) override;
+
     
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate);
     void showContextMenu(Point<int> position);
@@ -149,7 +142,6 @@ private:
 
     EditorState state = EditorState::NONE;
     TabbedComponent* tab;
-    AudioDeviceManager* deviceManager;
     Rectangle<int> selectionFrame = Rectangle<int>(0, 0, 0, 0);
     std::vector<Module*> selectedModules;
     std::vector<AudioOut*> outputChannels;

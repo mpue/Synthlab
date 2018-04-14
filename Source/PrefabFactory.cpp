@@ -19,6 +19,7 @@
 #include "ADSRModule.h"
 #include "SineModule.h"
 #include "RandomModule.h"
+#include "DelayModule.h"
 
 PrefabFactory* PrefabFactory::instance = NULL;
 
@@ -67,6 +68,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "ADSR") {
         m = new ADSRModule(sampleRate,bufferSize);
+    }
+    else if (prefabs[id].getName() == "Stereo delay") {
+        m = new DelayModule(sampleRate,bufferSize);
     }
     
     m->setIndex(id + 100 * prefabs[id].getNumInstances());

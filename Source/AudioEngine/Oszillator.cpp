@@ -30,6 +30,10 @@ void Oszillator::setVolume(float volume) {
     this->volume = volume;
 }
 
+float Oszillator::getVolume() {
+    return volume;
+}
+
 void Oszillator::setFrequency(double frequency) {
     this->frequency = frequency;
 }

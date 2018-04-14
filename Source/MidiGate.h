@@ -24,8 +24,8 @@ public:
 
     void paint (Graphics& g) override;
 
-    void gateOn(int velocity);
-    void gateOff();
+    void gateOn(int velocity, int note);
+    void gateOff(int note);
     
     virtual void configurePins() override;
     

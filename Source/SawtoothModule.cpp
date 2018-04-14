@@ -18,11 +18,22 @@ SawtoothModule::SawtoothModule(double sampleRate, int buffersize)
 {
     this->sampleRate = sampleRate;
     this->buffersize = buffersize;
+
+    for (int i = 0; i < 128;i++) {
+        
+        oscillator[i] = nullptr;
+    }
     
-    oscillator = new Sawtooth(sampleRate);
+    /*
+    for (int i = 0; i < 128;i++) {
     
-    oscillator->setFrequency(440);
-    oscillator->setVolume(0.5f);
+        oscillator[i] = new Sawtooth(sampleRate);
+        oscillator[i]->setFrequency((440 * pow(2.0,((i+1)-69.0)/12.0)));
+        oscillator[i]->setVolume(0.5f);
+    }
+     */
+    
+
     
     setSize(120,140);
     nameLabel->setJustificationType (Justification::left);
@@ -36,7 +47,10 @@ SawtoothModule::SawtoothModule(double sampleRate, int buffersize)
 
 SawtoothModule::~SawtoothModule()
 {
-    delete oscillator;
+    for (int i = 0; i < 128;i++) {
+        if (oscillator[i] != nullptr)
+            delete oscillator[i];
+    }
 }
 
 void SawtoothModule::configurePins() {
@@ -80,37 +94,70 @@ void SawtoothModule::paint(juce::Graphics &g) {
 
 void SawtoothModule::setPitch(int pitch) {
     this->pitch = pitch;
-    this->oscillator->setPitch(pitch);
+    for (int i = 0; i < 128;i++){
+        if (oscillator[i] != nullptr)
+            this->oscillator[i]->setPitch(pitch);
+    }
 }
 
 void SawtoothModule::setFine(float fine) {
-    this->fine = fine;
-    this->oscillator->setFine(fine);
+    if (this->fine != fine) {
+        this->fine = fine;
+        for (int i = 0; i < 128;i++){
+            if (oscillator[i] != nullptr)
+                this->oscillator[i]->setFine(fine);
+        }
+    }
 }
 
 void SawtoothModule::setAmplitude(float amplitude) {
     this->amplitude = amplitude;
-    this->oscillator->setVolume(amplitude);
+    /*
+    for (int i = 0; i < 128;i++){
+        this->oscillator[i]->setVolume(amplitude);
+    }
+     */
 }
 
 void SawtoothModule::process() {
-    
-    if (pins.at(0)->connections.size() ==  1) {
-        this->oscillator->setFrequency(pins.at(0)->connections.at(0)->getValue());
-    }
+    bool volumegate = false;
+
     if (pins.at(1)->connections.size() ==  1) {
         this->setFine(pins.at(1)->connections.at(0)->getValue());
     }
     if (pins.at(2)->connections.size() ==  1) {
-        this->setAmplitude(abs(pins.at(2)->connections.at(0)->getValue()));
+        volumegate = true;
     }
-    for (int i = 0; i < buffersize; i++) {
-        float value = oscillator->process();
-        
-        if (pins.at(3)->getAudioBuffer() != nullptr && pins.at(3)->getAudioBuffer()->getNumChannels() > 0)
-            pins.at(3)->getAudioBuffer()->setSample(0,i ,value);
+    if (pins.at(2)->connections.size() == 1) {
+        for (int i = 0; i < buffersize; i++) {
+            float value = 0;
+            for (int j = 0; j < 128;j++){
 
-        pins.at(4)->setValue(abs(value + 1));
+                if(pins.at(2)->connections.at(0)->dataEnabled[j]) {
+                    if (oscillator[j] ==  nullptr) {
+                        oscillator[j] = new Sawtooth(sampleRate);
+                        
+                        oscillator[j]->setFrequency((440 * pow(2.0,((j+1)-69.0)/12.0)));
+                    }
+                    float volume = pins.at(2)->connections.at(0)->data[j];
+                
+                    this->oscillator[j]->setVolume(volume);
+                }
+                else {
+                    if (oscillator[j] != nullptr) {
+                         delete this->oscillator[j];
+                        this->oscillator[j] = nullptr;
+                    }
+                }
+                if (oscillator[j] != nullptr)
+                    value += oscillator[j]->process();
+            }
+            if (pins.at(3)->getAudioBuffer() != nullptr && pins.at(3)->getAudioBuffer()->getNumChannels() > 0)
+                pins.at(3)->getAudioBuffer()->setSample(0,i ,value);
+
+
+            //pins.at(4)->setValue(abs(value + 1));
+        }
     }
     
 }

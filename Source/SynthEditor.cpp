@@ -876,7 +876,7 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         Pin* b = nullptr;
         
         for (int j = 0; j < modules->size(); j++) {
-
+            
             Module* m = modules->at(j);
             
             if (m->getIndex() == sourceIndex) {
@@ -898,10 +898,13 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
             if (source != nullptr && target != nullptr && a != nullptr && b != nullptr) {
                 
                 
-                
-                if (a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT) {
+                // EVENTS: in listens at out
+                // OTHER: in gets its values from out
+                if ((a->type != Pin::Type::EVENT && a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT)
+                    || (a->type == Pin::Type::EVENT && a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN)) {
                     
                     if (!a->hasConnection(b)) {
+                        
                         a->connections.push_back(b);
                         Logger::writeToLog("Connecting pin "+ String(a->index)+ " to pin "  +String(b->index));
                     }
@@ -919,12 +922,13 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
                     }
                     
                 }
-                else if (a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN) {
+                else if ((a->type != Pin::Type::EVENT && a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN)
+                         || (a->type == Pin::Type::EVENT && a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT)) {
                     if (!b->hasConnection(a)) {
                         b->connections.push_back(a);
                         Logger::writeToLog("Conencting pin "+ String(b->index)+ " to pin "  +String(a->index));
                     }
-
+                    
                     // Connection* c = new Connection(target, b, source, a);
                     // root->getConnections()->push_back(c);
                     c->a = b;
@@ -936,9 +940,9 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
                         connections->push_back(c);
                     }
                 }
-               
+                
             }
-
+            
         }
 
         repaint();
@@ -1052,64 +1056,85 @@ void SynthEditor::checkForPinSelection(const MouseEvent& e, Module* m) {
 }
 
 void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
-
-	Pin* a = nullptr;
-	Pin* b = nullptr;
-	Module* target = nullptr;
-
-	// find the selected input of the source module
-	for (int j = 0; j < source->pins.size(); j++) {
-
-		if (source->pins.at(j)->isSelected()) {
-			a = source->pins.at(j);
-			break;
-		}
-
-	}
-
-	// now find the target module
-	for (int i = 0; i < root->getModules()->size(); i++) {
-
-		Module* m = root->getModules()->at(i);
-
-		if (m->getIndex() == source->getIndex()) {
-			continue;
-		}
-
-		// find the selected input of the target  module
-		for (int j = 0; j < m->pins.size(); j++) {
-
-			if (m->pins.at(j)->isSelected()) {
-				b = m->pins.at(j);
-				target = m;
-				break;
-			}
-
-		}
-
-	}
-
-	if (source != nullptr && target != nullptr && a != nullptr && b != nullptr) {
-
-        if (a->type == b->type) {
+    
+    Pin* a = nullptr;
+    Pin* b = nullptr;
+    Module* target = nullptr;
+    
+    // find the selected input of the source module
+    for (int j = 0; j < source->pins.size(); j++) {
         
-            if (a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT) {
-                a->connections.push_back(b);
-                Connection* c = new Connection(source, a, target, b);
-                root->getConnections()->push_back(c);
-            }
-            else if (a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN) {
-                b->connections.push_back(a);
-                
-                Connection* c = new Connection(source, a, target, b);
-                root->getConnections()->push_back(c);
-            }
+        if (source->pins.at(j)->isSelected()) {
+            a = source->pins.at(j);
+            break;
         }
-
-		repaint();
-	}
-
+        
+    }
+    
+    // now find the target module
+    for (int i = 0; i < root->getModules()->size(); i++) {
+        
+        Module* m = root->getModules()->at(i);
+        
+        if (m->getIndex() == source->getIndex()) {
+            continue;
+        }
+        
+        // find the selected input of the target  module
+        for (int j = 0; j < m->pins.size(); j++) {
+            
+            if (m->pins.at(j)->isSelected()) {
+                b = m->pins.at(j);
+                target = m;
+                break;
+            }
+            
+        }
+        
+    }
+    
+    if (source != nullptr && target != nullptr && a != nullptr && b != nullptr) {
+        
+        if (a->type == b->type) {
+            
+            // for event based pins the direction is from source to target
+            if (a->type == Pin::Type::EVENT ) {
+                if (a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT) {
+                    
+                    b->connections.push_back(a);
+                    Connection* c = new Connection(source, a, target, b);
+                    root->getConnections()->push_back(c);
+                    
+                }
+                else if (a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN) {
+                    a->connections.push_back(b);
+                    Connection* c = new Connection(source, a, target, b);
+                    root->getConnections()->push_back(c);
+                }
+            }
+            // in all other cases its the opposite direction
+            else {
+                if (a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT) {
+                    a->connections.push_back(b);
+                    Connection* c = new Connection(source, a, target, b);
+                    root->getConnections()->push_back(c);
+                }
+                else if (a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN) {
+                    b->connections.push_back(a);
+                    
+                    Connection* c = new Connection(source, a, target, b);
+                    root->getConnections()->push_back(c);
+                }
+            }
+            
+            
+        }
+        
+        repaint();
+    }
+    
 }
+
 
 bool SynthEditor::PointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<int> pt, double epsilon = 0.001)
 {
@@ -1157,119 +1182,10 @@ Module* SynthEditor::getSelectedModule() {
     return nullptr;
 }
 
-void SynthEditor::setDeviceManager(juce::AudioDeviceManager* manager) {
-    this->deviceManager = manager;
-    deviceManager->addAudioCallback(this);
-}
-
 std::vector<Module*> SynthEditor::getSelectedModules() {
     return selectedModules;
 }
 
-void SynthEditor::handleIncomingMidiMessage(juce::MidiInput *source, const juce::MidiMessage &message) {
-    
-    
-    if (message.isNoteOn()) {
-        for (int i = 0; i < getModule()->getModules()->size();i++) {
-            sendGateMessage(getModule()->getModules()->at(i), message.getVelocity(),true);
-            sendNoteMessage(getModule()->getModules()->at(i), message.getNoteNumber());
-        }
-    }
-    else if (message.isNoteOff()) {
-        for (int i = 0; i < getModule()->getModules()->size();i++) {
-            sendGateMessage(getModule()->getModules()->at(i), message.getVelocity(),false);
-        }
-    }
-    
-    // deviceManager.getDefaultMidiOutput()->sendMessageNow(message);
-}
-
-void SynthEditor::sendGateMessage(Module *module,int velocity,  bool on) {
-    
-    
-    MidiGate* gate;
-    
-    if ((gate = dynamic_cast<MidiGate*>(module)) != NULL) {
-        if (on) {
-            if (velocity > 0)
-                gate->gateOn(velocity);
-        }
-        else {
-            gate->gateOff();
-        }
-    }
-    
-    for (int i = 0; i< module->getModules()->size();i++) {
-        
-        if ((gate = dynamic_cast<MidiGate*>(module->getModules()->at(i)))!= NULL) {
-            if (on) {
-                gate->gateOn(velocity);
-            }
-            else {
-                gate->gateOff();
-            }
-            
-            sendGateMessage(module->getModules()->at(i),velocity,on);
-        }
-    }
-    
-}
-
-void SynthEditor::sendNoteMessage(Module *module, int note) {
-    
-    MidiNote* midiNote;
-    
-    if ((midiNote = dynamic_cast<MidiNote*>(module)) != NULL) {
-        if (note > 0)
-            midiNote->note(note);
-    }
-    
-    for (int i = 0; i< module->getModules()->size();i++) {
-        
-        if ((midiNote = dynamic_cast<MidiNote*>(module->getModules()->at(i)))!= NULL) {
-            sendNoteMessage(module->getModules()->at(i), note);
-        }
-    }
-}
-
-void SynthEditor::audioDeviceIOCallback(const float **inputChannelData, int numInputChannels, float **outputChannelData, int numOutputChannels, int numSamples) {
-       
-    processModule(getModule());
-    
-    // mute if there are no channels
-    if (outputChannels.size() == 0) {
-        for (int j = 0;j < numSamples;j++) {
-            outputChannelData[0][j] = 0;
-            outputChannelData[1][j] = 0;
-        }
-    }
-    
-    else {
-        
-        // process all output pins of the connected module
-        // outputChannels.at(0)->getPins().at(0)->process(inputChannelData[0], outputChannelData[0], numSamples);
-        for (int j = 0;j < numSamples;j++) {
-            
-            if (channelIsValid(0)) {
-                const float* outL = outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-                 outputChannelData[0][j] = outL[j];
-            }
-            else {
-                outputChannelData[0][j] = 0;
-            }
-            
-            if (channelIsValid(1)) {
-                const float* outR = outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-                outputChannelData[1][j] = outR[j];
-
-            }
-            else {
-                outputChannelData[1][j] = 0;
-            }
-        }
-    }
-
-}
 
 bool SynthEditor::channelIsValid(int channel) {
     if (outputChannels.at(0)->getPins().at(channel)->connections.size() == 1 &&
@@ -1314,6 +1230,10 @@ void SynthEditor::processModule(Module* m) {
         }
     }
     
+}
+
+std::vector<AudioOut*> SynthEditor::getOutputChannels() {
+    return outputChannels;
 }
 
 //[/MiscUserCode]

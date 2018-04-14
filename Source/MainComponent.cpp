@@ -64,6 +64,15 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     menu->setModel(this);
 #endif
     createKeyMap();
+    
+    for (int i = 0; i < MidiInput::getDevices().size();i++) {
+        if (deviceManager.isMidiInputEnabled(MidiInput::getDevices().getReference(i))) {
+            deviceManager.addMidiInputCallback(MidiInput::getDevices().getReference(i),this);
+        }
+       
+    }
+    
+   //  deviceManager.addAudioCallback(this);
 }
 
 MainComponent::~MainComponent()
@@ -122,8 +131,7 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
         addAndMakeVisible (tab);
         
         editor->setTab(tab);
-        
-        editor->setDeviceManager(&deviceManager);
+
         
         addKeyListener(this);
         resized();
@@ -158,16 +166,55 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
 
 void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill)
 {
+    
     // Your audio-processing code goes here!
+    int numSamples = bufferToFill.numSamples;
+    float** outputChannelData = bufferToFill.buffer->getArrayOfWritePointers();
 
-
-
+    
+    // for (int i = 0; i < numSamples;i++)
+    editor->processModule(editor->getModule());
+    
+    std::vector<AudioOut*> outputChannels = editor->getOutputChannels();
+    
+    // mute if there are no channels
+    if (outputChannels.size() == 0) {
+        for (int j = 0;j < numSamples;j++) {
+            outputChannelData[0][j] = 0;
+            outputChannelData[1][j] = 0;
+        }
+    }
+    
+    else {
+        
+        // process all output pins of the connected module
+        // outputChannels.at(0)->getPins().at(0)->process(inputChannelData[0], outputChannelData[0], numSamples);
+        for (int j = 0;j < numSamples;j++) {
+            
+            if (editor->channelIsValid(0)) {
+                const float* outL = outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+                outputChannelData[0][j] = outL[j];
+            }
+            else {
+                outputChannelData[0][j] = 0;
+            }
+            
+            if (editor->channelIsValid(1)) {
+                const float* outR = outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+                outputChannelData[1][j] = outR[j];
+                
+            }
+            else {
+                outputChannelData[1][j] = 0;
+            }
+        }
+    }
     
     // For more details, see the help for AudioProcessor::getNextAudioBlock()
 
     // Right now we are not producing any data, in which case we need to clear the buffer
     // (to prevent the output of random noise)
-    bufferToFill.clearActiveBufferRegion();
+    // bufferToFill.clearActiveBufferRegion();
 }
 
 void MainComponent::releaseResources()
@@ -291,12 +338,12 @@ void MainComponent::openSettings() {
 bool MainComponent::keyStateChanged(bool isKeyDown, juce::Component *originatingComponent) {
     for (std::map<int, int>::iterator it = keyCodeMidiNote.begin();it != keyCodeMidiNote.end();it++) {
         if (KeyPress::isKeyCurrentlyDown((*it).first)) {
-            editor->sendNoteMessage(editor->getModule(), (*it).second + 12 * currentOctave);
-            editor->sendGateMessage(editor->getModule(), 64, true);
+            sendNoteMessage(editor->getModule(), (*it).second + 12 * currentOctave);
+            sendGateMessage(editor->getModule(), 64,(*it).second + 12 * currentOctave, true);
         }
         else {
             if (!isKeyDown)
-                editor->sendGateMessage(editor->getModule(), 0, false);
+                sendGateMessage(editor->getModule(), 0,(*it).second + 12 * currentOctave, false);
         }
     }
     return true;
@@ -328,3 +375,113 @@ void MainComponent::buttonClicked (Button* b)
 {
     editor->showContextMenu(b->getPosition());
 }
+
+void MainComponent::handleIncomingMidiMessage(juce::MidiInput *source, const juce::MidiMessage &message) {
+    
+    
+    if (message.isNoteOn()) {
+        for (int i = 0; i < editor->getModule()->getModules()->size();i++) {
+            sendNoteMessage(editor->getModule()->getModules()->at(i), message.getNoteNumber());
+            sendGateMessage(editor->getModule()->getModules()->at(i), message.getVelocity(),message.getNoteNumber(),true);
+            
+        }
+    }
+    else if (message.isNoteOff()) {
+        for (int i = 0; i < editor->getModule()->getModules()->size();i++) {
+            sendGateMessage(editor->getModule()->getModules()->at(i), message.getVelocity(),message.getNoteNumber(),false);
+        }
+    }
+    
+    // deviceManager.getDefaultMidiOutput()->sendMessageNow(message);
+}
+
+void MainComponent::sendGateMessage(Module *module,int velocity,int note,  bool on) {
+    
+    
+    MidiGate* gate;
+    
+    if ((gate = dynamic_cast<MidiGate*>(module)) != NULL) {
+        if (on) {
+            if (velocity > 0)
+                gate->gateOn(velocity,note);
+        }
+        else {
+            gate->gateOff(note);
+        }
+    }
+    
+    for (int i = 0; i< module->getModules()->size();i++) {
+        
+        if ((gate = dynamic_cast<MidiGate*>(module->getModules()->at(i)))!= NULL) {
+            if (on) {
+                gate->gateOn(velocity,note);
+            }
+            else {
+                gate->gateOff(note);
+            }
+            
+            sendGateMessage(module->getModules()->at(i),velocity,note,on);
+        }
+    }
+    
+}
+
+void MainComponent::sendNoteMessage(Module *module, int note) {
+    
+    MidiNote* midiNote;
+    
+    if ((midiNote = dynamic_cast<MidiNote*>(module)) != NULL) {
+        if (note > 0)
+            midiNote->note(note);
+    }
+    
+    for (int i = 0; i< module->getModules()->size();i++) {
+        
+        if ((midiNote = dynamic_cast<MidiNote*>(module->getModules()->at(i)))!= NULL) {
+            sendNoteMessage(module->getModules()->at(i), note);
+        }
+    }
+}
+
+void MainComponent::audioDeviceIOCallback(const float **inputChannelData, int numInputChannels, float **outputChannelData, int numOutputChannels, int numSamples) {
+    
+    for (int i = 0; i < numSamples;i++)
+        editor->processModule(editor->getModule());
+    
+    std::vector<AudioOut*> outputChannels = editor->getOutputChannels();
+    
+    // mute if there are no channels
+    if (outputChannels.size() == 0) {
+        for (int j = 0;j < numSamples;j++) {
+            outputChannelData[0][j] = 0;
+            outputChannelData[1][j] = 0;
+        }
+    }
+    
+    else {
+        
+        // process all output pins of the connected module
+        // outputChannels.at(0)->getPins().at(0)->process(inputChannelData[0], outputChannelData[0], numSamples);
+        for (int j = 0;j < numSamples;j++) {
+            
+            if (editor->channelIsValid(0)) {
+                const float* outL = outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+                outputChannelData[0][j] = outL[j];
+            }
+            else {
+                outputChannelData[0][j] = 0;
+            }
+            
+            if (editor->channelIsValid(1)) {
+                const float* outR = outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+                outputChannelData[1][j] = outR[j];
+                
+            }
+            else {
+                outputChannelData[1][j] = 0;
+            }
+        }
+    }
+    
+}
+

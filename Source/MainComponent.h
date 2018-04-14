@@ -14,7 +14,7 @@
 #include <map>
 //==============================================================================
 
-class MainComponent   : public AudioAppComponent, public MenuBarModel, public KeyListener, public Button::Listener
+class MainComponent   : public AudioAppComponent, public MenuBarModel, public KeyListener, public Button::Listener, public AudioProcessorPlayer
 {
 public:
     //==============================================================================
@@ -33,6 +33,15 @@ public:
     bool keyPressed (const KeyPress& key, Component* originatingComponent) override;
     void createKeyMap();
     void buttonClicked (Button*);
+    void handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) override;
+    void sendGateMessage(Module* module, int velocity,int note,bool on);
+    void sendNoteMessage(Module* module, int note);
+    
+    void audioDeviceIOCallback (const float** inputChannelData,
+                                int numInputChannels,
+                                float** outputChannelData,
+                                int numOutputChannels,
+                                int numSamples) override;
     
     class DefaultToolbarItemFactory   : public ToolbarItemFactory
     {

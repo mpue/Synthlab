@@ -25,8 +25,9 @@ ADSRModule::ADSRModule(double sampleRate, int buffersize)
     
     setName("ADSR");
 
-    this->envelope = new ADSR();
-    
+    for (int i = 0; i < 128;i++) {
+        this->envelopes[i] = new ADSR();
+    }
     editable = false;
     prefab = true;
 }
@@ -38,7 +39,7 @@ ADSRModule::~ADSRModule()
 
 void ADSRModule::configurePins() {
     
-    Pin* p1 = new Pin(Pin::Type::VALUE);
+    Pin* p1 = new Pin(Pin::Type::EVENT);
     p1->direction = Pin::Direction::IN;
     p1->listeners.push_back(this);
     p1->setName("G");
@@ -68,12 +69,14 @@ void ADSRModule::configurePins() {
     p6->listeners.push_back(this);
     p6->setName("Out");
     
+    
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::IN,p2);
     addPin(Pin::Direction::IN,p3);
     addPin(Pin::Direction::IN,p4);
     addPin(Pin::Direction::IN,p5);
     addPin(Pin::Direction::OUT,p6);
+  
 }
 
 void ADSRModule::paint(juce::Graphics &g) {
@@ -82,23 +85,39 @@ void ADSRModule::paint(juce::Graphics &g) {
 }
 
 void ADSRModule::setAttack(float attack) {
-    this->attack = attack;
-    this->envelope->setAttackRate(sampleRate * attack);
+    if (attack != this->attack) {
+        this->attack = attack;
+        for (int i = 0; i < 128;i++){
+            this->envelopes[i]->setAttackRate(sampleRate * attack );
+        }
+    }
 }
 
 void ADSRModule::setDecay(float decay) {
-    this->decay = decay;
-    this->envelope->setDecayRate(sampleRate * decay);
+    if (decay != this->decay) {
+        this->decay = decay;
+        for (int i = 0; i < 128;i++){
+            this->envelopes[i]->setDecayRate(sampleRate * decay );
+        }
+    }
 }
 
 void ADSRModule::setSustain(float sustain) {
-    this->sustain = sustain;
-    this->envelope->setSustainLevel(sustain);
+    if (sustain != this->sustain) {
+        this->sustain = sustain;
+        for (int i = 0; i < 128;i++) {
+            this->envelopes[i]->setSustainLevel(sustain);
+        }
+    }
 }
 
 void ADSRModule::setRelease(float release) {
-    this->release = release;
-    this->envelope->setReleaseRate(sampleRate * release);
+    if (release != this->release) {
+        this->release = release;
+        for (int i = 0; i < 128;i++) {
+            this->envelopes[i]->setReleaseRate(sampleRate * release );
+        }
+    }
 }
 
 float ADSRModule::getAttack() {
@@ -119,22 +138,6 @@ float ADSRModule::getRelease() {
 
 void ADSRModule::process() {
     
-    if (pins.at(0)->connections.size() ==  1) {
-        if (this->value != pins.at(0)->connections.at(0)->getValue()) {
-            
-            if (this->value < pins.at(0)->connections.at(0)->getValue()) {
-                this->gate = true;
-                this->envelope->gate(pins.at(0)->connections.at(0)->getValue());
-            }
-            else {
-                this->gate = false;
-                this->envelope->gate(0);
-            }
-            
-            this->value = pins.at(0)->connections.at(0)->getValue();
-        }
-
-    }
     if (pins.at(1)->connections.size() ==  1) {
         this->setAttack(abs(pins.at(1)->connections.at(0)->getValue()));
     }
@@ -149,10 +152,36 @@ void ADSRModule::process() {
     if (pins.at(4)->connections.size() ==  1) {
         this->setRelease(abs(pins.at(4)->connections.at(0)->getValue()));
     }
-    for (int i = 0; i < buffersize;i++) {
-        float value = envelope->process();
-        pins.at(5)->setValue(value);
+    
+    //if (pins.at(5)->connections.size() >=  1) {
+    for (int i = 0; i < buffersize;i++) {
+    for (int j = 0; j < 128;j++) {
+            pins.at(5)->data[j] = this->envelopes[j]->process();
     }
+    }
+    //}
 
+    
+}
+
+void ADSRModule::eventReceived(Event *e) {
+    
+    if (e->getType() == Event::Type::GATE) {
+        if (e->getValue() > 0) {
+            this->gate[e->getNote()] = true;
+            pins.at(5)->dataEnabled[e->getNote()] = true;
+            voices++;
+            this->envelopes[e->getNote()]->gate(e->getValue());
+            // Logger::writeToLog("Voices "+String(voices));
+        }
+        else {
+             this->gate[e->getNote()]= false;
+            this->envelopes[e->getNote()]->gate(0);
+            if (voices > 0)
+                voices--;
+           //  Logger::writeToLog("Voices "+String(voices));
+        }
+
+    }
     
 }

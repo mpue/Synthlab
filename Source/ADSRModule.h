@@ -41,12 +41,13 @@ public:
     float getDecay();
     float getSustain();
     float getRelease();
-        
+    
+    void eventReceived(Event *e) override;
 private:
     
 
     Image* image;
-    ADSR* envelope;
+    ADSR* envelopes[128];
     double sampleRate;
     int buffersize;
     int currentSample = 0;
@@ -57,7 +58,10 @@ private:
     float release = 0;
     
     float value = 0;
-    bool gate = false;
+    bool gate[128] = {false};
+    int voices = 0;
     
+    int lastNote = 0;
+    int lastVelocity = 0;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ADSRModule)
 };

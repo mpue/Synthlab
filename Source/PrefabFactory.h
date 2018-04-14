@@ -81,6 +81,7 @@ private:
         prefabs[70] = Prefab("ADSR","Input / Output");
         prefabs[71] = Prefab("Sine","Sound sources");
         prefabs[72] = Prefab("Random","Sound sources");
+        prefabs[73] = Prefab("Stereo delay","FX");
         
         categories = new StringArray();
 
@@ -90,6 +91,7 @@ private:
         categories->add("Input / Output");
         categories->add("MIDI");
         categories->add("Sound sources");
+        categories->add("FX");
         
     };
     ~PrefabFactory() {

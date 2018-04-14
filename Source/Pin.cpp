@@ -104,3 +104,11 @@ bool Pin::hasConnection(Pin *target) {
     }
     return false;
 }
+
+void Pin::setNote(int note) {
+    this->note = note;
+}
+
+int Pin::getNote() {
+    return note;
+}

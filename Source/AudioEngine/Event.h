@@ -28,12 +28,14 @@ public:
     Type getType();
     int getValue();
     void setValue(int value);
-    
+    int getNote();
+    void setNote(int note);
 private:
     
     Type type;
     String name;
     int value = 0;
+    int note = 0;
 };
 
 

@@ -42,10 +42,11 @@ private:
     float amplitude;
     float fine = 0;
     Image* image;
-    Sawtooth* oscillator;
+    Sawtooth* oscillator[128];
     double sampleRate;
     int buffersize;
     int currentSample = 0;
+
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SawtoothModule)
 };

@@ -30,7 +30,9 @@ public:
 
     virtual void setFrequency(double frequency);
     void setPhase(double phase);
+    
     virtual void setVolume(float volume);
+    virtual float getVolume();
     
     virtual float process() = 0;
     void setPitch(int pitch);

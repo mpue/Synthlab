@@ -40,7 +40,7 @@ void StereoDelay::processStereo(float *const left, float *const right, const int
 
 void StereoDelay::setDelay(StereoDelay::Channel channel, float time) {
 
-	Logger::getCurrentLogger()->writeToLog("Setting delayTime for channel " + String(channel) + " to " + String(time) + "ms");
+	// Logger::getCurrentLogger()->writeToLog("Setting delayTime for channel " + String(channel) + " to " + String(time) + "ms");
 
     if (channel == LEFT) {
         delayLeft->setDelay(time);
