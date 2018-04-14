@@ -623,6 +623,7 @@ void SynthEditor::cleanUp() {
     deleteSelected(true);
     selectedModules.clear();
     outputChannels.clear();
+    
 }
 
 void SynthEditor::newFile() {
@@ -1011,9 +1012,6 @@ void SynthEditor::deleteSelected(bool deleteAll) {
     if (deleteAll) {
         std::vector<Connection*>* cons = root->getConnections();
         cons->erase(std::remove_if(cons->begin(), cons->end(), [](Connection* c){return true;}),cons->end());
-        
-    
-        
 
     }
     else {
@@ -1028,11 +1026,21 @@ void SynthEditor::deleteSelected(bool deleteAll) {
     }
     std::vector<Module*>* mods = root->getModules();
     
-    mods->erase(std::remove_if(mods->begin(), mods->end(), [](Module* m){
-        bool selected =  m->isSelected();
-        if (selected) delete m;
-        return selected;
-    }),mods->end());
+    if (deleteAll) {
+        
+        mods->erase(std::remove_if(mods->begin(), mods->end(), [](Module* m){
+            delete m; return true;
+        }),mods->end());
+    }
+    else {
+        
+        mods->erase(std::remove_if(mods->begin(), mods->end(), [](Module* m){
+            bool selected =  m->isSelected();
+            if (selected) delete m;
+            return selected;
+        }),mods->end());
+    }
+
     
 
  

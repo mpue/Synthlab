@@ -69,9 +69,6 @@ Module::Module ()
 	nameEditor->setVisible(false);
     nameEditor->addListener(this);
 
-    modules = new std::vector<Module*>();
-    connections = new std::vector<Connection*>();
-
     //[/Constructor]
 }
 
@@ -89,20 +86,16 @@ Module::~Module()
         delete *it;
     }
 
-    for (std::vector<Connection*>::iterator it = connections->begin(); it != connections->end(); ++it) {
+    for (std::vector<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it) {
         delete *it;
     }
-    for (std::vector<Module*>::iterator it = modules->begin(); it != modules->end(); ++it) {
+    for (std::vector<Module*>::iterator it = modules.begin(); it != modules.end(); ++it) {
         delete *it;
     }
 
 
-    connections->clear();
-    modules->clear();
-
-    delete modules;
-    delete connections;
-
+    connections.clear();
+    modules.clear();
 
     //[/Destructor]
 }
@@ -359,19 +352,19 @@ void Module::textEditorReturnKeyPressed(juce::TextEditor &) {
 }
 
 void Module::setConnections(std::vector<Connection *>* connections) {
-    this->connections = connections;
+    this->connections = *connections;
 }
 
 void Module::setModules(std::vector<Module *>* modules) {
-    this->modules = modules;
+    this->modules = *modules;
 }
 
 std::vector<Connection*>* Module::getConnections() {
-    return connections;
+    return &connections;
 }
 
 std::vector<Module*>* Module::getModules() {
-    return modules;
+    return &modules;
 }
 
 void Module::setName(juce::String name) {
