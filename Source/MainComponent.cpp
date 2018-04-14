@@ -350,7 +350,16 @@ bool MainComponent::keyStateChanged(bool isKeyDown, juce::Component *originating
 }
 
 bool MainComponent::keyPressed(const juce::KeyPress &key, juce::Component *originatingComponent) {
-    
+    if (key.getTextCharacter() == 'y') {
+        if (currentOctave > 0) {
+            currentOctave--;
+        }
+    }
+    if (key.getTextCharacter() == 'x') {
+        if (currentOctave < 8) {
+            currentOctave++;
+        }
+    }
 }
 
 void MainComponent::createKeyMap() {

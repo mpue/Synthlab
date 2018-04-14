@@ -23,8 +23,8 @@ Pin::Pin(Pin::Type type) {
 Pin::~Pin() {
     removeAllChangeListeners();
     
-    
     if (audioBuffer != nullptr) {
+        audioBuffer->clear();
         delete audioBuffer;
     }
 
