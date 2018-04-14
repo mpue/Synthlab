@@ -15,6 +15,7 @@
 #include "Constant.h"
 #include "AdderModule.h"
 #include "LPFilterModule.h"
+#include "HPFilterModule.h"
 #include "Knob.h"
 #include "ADSRModule.h"
 #include "SineModule.h"
@@ -65,6 +66,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "LP filter") {
         m = new LPFilterModule(sampleRate,bufferSize);
+    }
+    else if (prefabs[id].getName() == "HP filter") {
+        m = new HPFilterModule(sampleRate,bufferSize);
     }
     else if (prefabs[id].getName() == "ADSR") {
         m = new ADSRModule(sampleRate,bufferSize);

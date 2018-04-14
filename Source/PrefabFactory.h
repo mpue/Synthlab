@@ -82,6 +82,7 @@ private:
         prefabs[71] = Prefab("Sine","Sound sources");
         prefabs[72] = Prefab("Random","Sound sources");
         prefabs[73] = Prefab("Stereo delay","FX");
+        prefabs[74] = Prefab("HP filter","Filter");
         
         categories = new StringArray();
 

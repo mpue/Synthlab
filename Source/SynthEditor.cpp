@@ -308,30 +308,85 @@ void SynthEditor::showContextMenu(Point<int> position) {
     PopupMenu* m = new PopupMenu();
     
     Module* module = nullptr;
-    
-    for (int i = 0; i < root->getModules()->size(); i++) {
-        if (root->getModules()->at(i)->isSelected()) {
-            module = root->getModules()->at(i);
-        }
+
+    if (getSelectedModules().size() == 1){
+        module = getSelectedModules().at(0);
     }
-    
-    if (module != nullptr && module->isEditable()) {
-        m->addItem(1, "Add input");
-        m->addItem(2, "Add output");
+
+    if (module != nullptr) {
+
+        int pinIndex = -1;
         
-        
-        const int result = m->show();
-        
-        if (result == 0)
-        {
-            // user dismissed the menu without picking anything
+        for (int i = 0; i < module->getPins().size();i++) {
+            if (module->getPins().at(i)->isSelected()) {
+                pinIndex = i;
+            }
         }
-        else if (result == 1) {
-            module->addPin(Pin::Direction::IN);
+        
+        if(pinIndex < 0 && module->isEditable()) {
+            m->addItem(1, "Add input");
+            m->addItem(2, "Add output");
             
+            
+            const int result = m->show();
+            
+            if (result == 0)
+            {
+                // user dismissed the menu without picking anything
+            }
+            else if (result == 1) {
+                module->addPin(Pin::Direction::IN);
+                
+            }
+            else if (result == 2) {
+                module->addPin(Pin::Direction::OUT);
+            }
         }
-        else if (result == 2) {
-            module->addPin(Pin::Direction::OUT);
+        else {
+            m->addItem(1, "Add control");
+            m->addItem(2, "Add constant");
+            
+            const int result = m->show();
+            
+            if (result == 0)
+            {
+                // user dismissed the menu without picking anything
+            }
+            else if (result == 1) {
+                Knob* k = dynamic_cast<Knob*>(PrefabFactory::getInstance()->getPrefab(69, _sampleRate, bufferSize));
+                k->setValue(1);
+                k->setName(module->getPins().at(pinIndex)->getName());
+                Point<int> pos = module->getPinPosition(pinIndex);
+                k->setTopLeftPosition(pos.getX() - 150, mouseY - k->getHeight() / 2);
+                k->getPins().at(0)->connections.push_back(module->pins.at(pinIndex));
+                addAndMakeVisible(k);
+                Connection* con = new Connection();
+                con->a = k->getPins().at(0);
+                con->b = module->pins.at(pinIndex);
+                con->source = k;
+                con->target = module;
+                root->getConnections()->push_back(con);
+                root->getModules()->push_back(k);
+                repaint();
+            }
+            else if (result == 2) {
+                Constant* c = dynamic_cast<Constant*>(PrefabFactory::getInstance()->getPrefab(67, _sampleRate, bufferSize));
+                c->setValue(1);
+                c->setName(module->getPins().at(pinIndex)->getName());
+                Point<int> pos = module->getPinPosition(pinIndex);
+                c->setTopLeftPosition(pos.getX() - 150, mouseY - c->getHeight() / 2);
+                c->getPins().at(0)->connections.push_back(module->pins.at(pinIndex));
+                addAndMakeVisible(c);
+                Connection* con = new Connection();
+                con->a = c->getPins().at(0);
+                con->b = module->pins.at(pinIndex);
+                con->source = c;
+                con->target = module;
+                root->getConnections()->push_back(con);
+                root->getModules()->push_back(c);
+                repaint();
+                
+            }
         }
         
     }

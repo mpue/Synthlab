@@ -16,12 +16,13 @@
 Knob::Knob()
 {
    
-    setSize(100,100);
+    setSize(80,80);
     nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(2,2);
-
+    nameLabel->setTopLeftPosition(10,58);
+    
+    
     slider = new Slider ("knob");
-    slider->setSize(80,80);
+    slider->setSize(70,70);
     slider->setRange (0, 127, 1);
     slider->setSliderStyle (Slider::RotaryVerticalDrag);
     slider->setTextBoxStyle (Slider::NoTextBox, false, 80, 20);

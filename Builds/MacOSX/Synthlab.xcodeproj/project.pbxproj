@@ -65,6 +65,7 @@
 		BBC6E7B8491B21FE6161A730 /* AVKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E9AADE945E694FD8BD3CFFD4 /* AVKit.framework */; };
 		BDB95BA654419C01C3E52568 /* include_juce_data_structures.mm in Sources */ = {isa = PBXBuildFile; fileRef = 25A5A28604EEB1BB189B3BF8 /* include_juce_data_structures.mm */; };
 		BF3B46DC20824A0300EAB91D /* DelayModule.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF3B46DB20824A0300EAB91D /* DelayModule.cpp */; };
+		BF829D7C20829B81007BC3D5 /* HPFilterModule.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF829D7A20829B80007BC3D5 /* HPFilterModule.cpp */; };
 		BFB91264B0607B0E680C6A46 /* Oszillator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 76E491198ADF283BAFA74357 /* Oszillator.cpp */; };
 		C59772C397DFE2C299AB6342 /* Pin.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B710B23FD3991D7A8C98077F /* Pin.cpp */; };
 		C6A01C6391E660898FDAFDBC /* include_juce_cryptography.mm in Sources */ = {isa = PBXBuildFile; fileRef = 42070ED568EC3512AD5D8E41 /* include_juce_cryptography.mm */; };
@@ -217,6 +218,8 @@
 		BE8157B65174DE31C515EBD0 /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = System/Library/Frameworks/OpenGL.framework; sourceTree = SDKROOT; };
 		BF3B46DA20824A0300EAB91D /* DelayModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = DelayModule.h; path = ../../Source/DelayModule.h; sourceTree = "<group>"; };
 		BF3B46DB20824A0300EAB91D /* DelayModule.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = DelayModule.cpp; path = ../../Source/DelayModule.cpp; sourceTree = "<group>"; };
+		BF829D7A20829B80007BC3D5 /* HPFilterModule.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = HPFilterModule.cpp; path = ../../Source/HPFilterModule.cpp; sourceTree = "<group>"; };
+		BF829D7B20829B81007BC3D5 /* HPFilterModule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = HPFilterModule.h; path = ../../Source/HPFilterModule.h; sourceTree = "<group>"; };
 		C120C505BC8CEC157D3237F6 /* juce_audio_processors */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_processors; path = ../../../JUCE/modules/juce_audio_processors; sourceTree = SOURCE_ROOT; };
 		C20CE1391D85F27059BE3D99 /* WhiteNoise.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = WhiteNoise.cpp; path = ../../Source/AudioEngine/WhiteNoise.cpp; sourceTree = SOURCE_ROOT; };
 		C410E734C0E0786C805BDE2F /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
@@ -457,6 +460,8 @@
 		D2E72FB9109CCFD4476901D5 /* Prefabs */ = {
 			isa = PBXGroup;
 			children = (
+				BF829D7A20829B80007BC3D5 /* HPFilterModule.cpp */,
+				BF829D7B20829B81007BC3D5 /* HPFilterModule.h */,
 				BF3B46DB20824A0300EAB91D /* DelayModule.cpp */,
 				BF3B46DA20824A0300EAB91D /* DelayModule.h */,
 				3147DC41F7F07B8A5700849A /* AdderModule.cpp */,
@@ -625,6 +630,7 @@
 				1AE62A2E768CB0D3D9EEF8BA /* Filter.cpp in Sources */,
 				DE48FF405132EDAA7DC85354 /* HighPassFilter.cpp in Sources */,
 				B992B773099121C30D340730 /* LowPassFilter.cpp in Sources */,
+				BF829D7C20829B81007BC3D5 /* HPFilterModule.cpp in Sources */,
 				98F7138BE262FC0B9FD5AA78 /* ModTarget.cpp in Sources */,
 				60096C6D78D73B1FA26B5364 /* Modulation.cpp in Sources */,
 				6CFDF467D0CA64040D6F3609 /* MultimodeFilter.cpp in Sources */,
