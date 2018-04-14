@@ -73,22 +73,32 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     }
     
    //  deviceManager.addAudioCallback(this);
+    running = true;
 }
 
 MainComponent::~MainComponent()
 {
-    // This shuts down the audio device and clears the audio source.
-    shutdownAudio();
+    running = false;
     
     editor->removeAllChangeListeners();
-
+    
+    for (int i = 0; i < MidiInput::getDevices().size();i++) {
+        if (deviceManager.isMidiInputEnabled(MidiInput::getDevices().getReference(i))) {
+            deviceManager.removeMidiInputCallback(MidiInput::getDevices().getReference(i),this);
+        }
+    }
 	delete editor;
     delete tab;
     delete propertyView;
-    // MenuBarModel::setMacMainMenu(nullptr);
+#if JUCE_MAC
+    MenuBarModel::setMacMainMenu(nullptr);
+#endif
     delete menu;
     delete toolbarFactory;
     PrefabFactory::getInstance()->destroy();
+    // This shuts down the audio device and clears the audio source.
+    shutdownAudio();
+
 }
 
 //==============================================================================
@@ -166,7 +176,9 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
 
 void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill)
 {
-    
+    if (!running) {
+        return;
+    }
     // Your audio-processing code goes here!
     int numSamples = bufferToFill.numSamples;
     float** outputChannelData = bufferToFill.buffer->getArrayOfWritePointers();

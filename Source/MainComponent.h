@@ -146,6 +146,7 @@ private:
     Toolbar* toolbar = nullptr;
     
     bool initialized = false;
+    bool running = false;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
