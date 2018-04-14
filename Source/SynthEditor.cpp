@@ -1251,8 +1251,8 @@ void SynthEditor::audioDeviceIOCallback(const float **inputChannelData, int numI
         for (int j = 0;j < numSamples;j++) {
             
             if (channelIsValid(0)) {
-                const float* outL = outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-                outputChannelData[0][j] = outL[j];
+                const float* outL = outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+                 outputChannelData[0][j] = outL[j];
             }
             else {
                 outputChannelData[0][j] = 0;
