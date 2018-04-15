@@ -33,11 +33,8 @@ public:
 
 private:
 
-
     Image* image;
 
-    double sampleRate;
-    int buffersize;
     int currentSample = 0;
     float* bufferLeft;
     float* bufferRight;

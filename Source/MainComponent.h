@@ -156,5 +156,9 @@ private:
     bool initialized = false;
     bool running = false;
     
+    // default settings just in case
+    float sampleRate = 44100;
+    float buffersize = 512;
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

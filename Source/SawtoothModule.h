@@ -43,8 +43,6 @@ private:
     float fine = 0;
     Image* image;
     Sawtooth* oscillator[128];
-    double sampleRate;
-    int buffersize;
     int currentSample = 0;
 
     

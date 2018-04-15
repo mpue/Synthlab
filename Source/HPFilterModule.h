@@ -40,9 +40,6 @@ private:
     HighPassFilter* filter;
 
     Image* image;
-
-    double sampleRate;
-    int buffersize;
     int currentSample = 0;
     
     float frequency = 10000;

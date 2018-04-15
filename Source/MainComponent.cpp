@@ -50,7 +50,8 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
         toolbar->addItem(*toolbarFactory, i+1);
         toolbar->getItemComponent(i)->addListener(this);
     }
-
+    
+    this->menu = new MenuBarComponent();
     
 #if JUCE_MAC
     menu->setModel (nullptr);
@@ -64,8 +65,61 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
         if (deviceManager.isMidiInputEnabled(MidiInput::getDevices().getReference(i))) {
             deviceManager.addMidiInputCallback(MidiInput::getDevices().getReference(i),this);
         }
-       
     }
+    
+    
+    propertyView =  new PropertyView();
+    
+    
+    editor = new SynthEditor(sampleRate,buffersize);
+    
+    tab = new MainTabbedComponent();
+    tab->setBounds(0,50,getWidth(),getHeight());
+    
+    
+    view = new Viewport();
+    
+    addAndMakeVisible(view);
+    
+    view->setSize(500,200);
+    view->setViewedComponent(editor);
+    view->setScrollBarsShown(true,true);
+    view->setScrollOnDragEnabled(false);
+    view->setWantsKeyboardFocus(false);
+    view->setMouseClickGrabsKeyboardFocus(false);
+    
+    tab->addTab("Main", juce::Colours::grey, view, true);
+    
+    addAndMakeVisible (propertyView);
+    addAndMakeVisible (resizerBar);
+    addAndMakeVisible (tab);
+    
+    editor->setTab(tab);
+    
+    
+    addKeyListener(this);
+    resized();
+    
+    editor->addChangeListener(propertyView);
+    
+    
+    
+    // we have to set up our StretchableLayoutManager so it know the limits and preferred sizes of it's contents
+    stretchableManager.setItemLayout (0,            // for the properties
+                                      -0.1, -0.9,   // must be between 50 pixels and 90% of the available space
+                                      -0.2);        // and its preferred size is 30% of the total available space
+    
+    stretchableManager.setItemLayout (1,            // for the resize bar
+                                      5, 5, 5);     // hard limit to 5 pixels
+    
+    stretchableManager.setItemLayout (2,            // for the imagePreview
+                                      -0.1, -0.9,   // size must be between 50 pixels and 90% of the available space
+                                      -0.8);
+    
+    
+
+    
+    initialized = true;
     
    //  deviceManager.addAudioCallback(this);
     running = true;
@@ -99,74 +153,15 @@ MainComponent::~MainComponent()
 //==============================================================================
 void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRate)
 {
-    // This function will be called when the audio device is started, or when
-    // its settings (i.e. sample rate, block size, etc) are changed.
-
-    // You can use this function to initialise any resources you might need,
-    // but be careful - it will be called on the audio thread, not the GUI thread.
-
-    // For more details, see the help for AudioProcessor::prepareToPlay()
-    // editor->setSamplerate(sampleRate);
-    // editor->setBufferSize(samplesPerBlockExpected);
+    Logger::writeToLog("prepare to play with sample rate "+String(sampleRate)+" kHz and buffer size of "+String(buffersize)+" bytes.");
     
-    if (!initialized) {
-    
-        propertyView =  new PropertyView();
-        editor = new SynthEditor();
-        
-        tab = new MainTabbedComponent();
-        tab->setBounds(0,50,getWidth(),getHeight());
-        
-        
-        view = new Viewport();
-        
-        addAndMakeVisible(view);
-        
-        view->setSize(500,200);
-        view->setViewedComponent(editor);
-        view->setScrollBarsShown(true,true);
-        view->setScrollOnDragEnabled(false);
-        view->setWantsKeyboardFocus(false);
-        view->setMouseClickGrabsKeyboardFocus(false);
-        
-        tab->addTab("Main", juce::Colours::grey, view, true);
-        
-        addAndMakeVisible (propertyView);
-        addAndMakeVisible (resizerBar);
-        addAndMakeVisible (tab);
-        
-        editor->setTab(tab);
+    this->sampleRate = sampleRate;
+    this->buffersize = samplesPerBlockExpected;
 
-        
-        addKeyListener(this);
-        resized();
-        
-        editor->addChangeListener(propertyView);
-        
-        
-        
-        // we have to set up our StretchableLayoutManager so it know the limits and preferred sizes of it's contents
-        stretchableManager.setItemLayout (0,            // for the properties
-                                          -0.1, -0.9,   // must be between 50 pixels and 90% of the available space
-                                          -0.2);        // and its preferred size is 30% of the total available space
-        
-        stretchableManager.setItemLayout (1,            // for the resize bar
-                                          5, 5, 5);     // hard limit to 5 pixels
-        
-        stretchableManager.setItemLayout (2,            // for the imagePreview
-                                          -0.1, -0.9,   // size must be between 50 pixels and 90% of the available space
-                                          -0.8);
-        
-        
-        this->menu = new MenuBarComponent();
-
-        initialized = true;
-    }
     if (editor != nullptr) {
-        editor->prepareToPlay( samplesPerBlockExpected,  sampleRate);
-        resized();
+        editor->prepareToPlay(samplesPerBlockExpected, sampleRate);
     }
-
+    
 }
 
 void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill)
@@ -326,9 +321,10 @@ void MainComponent::openSettings() {
     launchOptions.dialogBackgroundColour = LookAndFeel::getDefaultLookAndFeel().findColour(ResizableWindow::backgroundColourId);
     launchOptions.runModal();
     
-    
     AudioDeviceManager::AudioDeviceSetup setup;
     deviceManager.getAudioDeviceSetup(setup);
+    
+    deviceManager.restartLastAudioDevice();
     
     XmlElement* config = deviceManager.createStateXml();
     

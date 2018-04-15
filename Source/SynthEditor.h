@@ -25,6 +25,7 @@
 #include "Module.h"
 #include "Connection.h"
 #include "AudioOut.h"
+#include "AudioModule.h"
 #include <vector>
 //[/Headers]
 
@@ -39,7 +40,8 @@
                                                                     //[/Comments]
 */
 class SynthEditor  : public Component,
-                     public ChangeBroadcaster
+                     public ChangeBroadcaster,
+                     public AudioModule
          
 
 {
@@ -90,6 +92,16 @@ public:
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate);
     void showContextMenu(Point<int> position);
     bool channelIsValid(int channel);
+    
+    virtual float getSampleRate() override {
+        return _sampleRate;
+    }
+    
+    virtual float getBufferSize() override{
+        return bufferSize;
+    }
+    
+    
     //[/UserMethods]
 
     void paint (Graphics& g) override;
@@ -102,6 +114,8 @@ public:
     bool keyPressed (const KeyPress& key) override;
     bool keyStateChanged (bool isKeyDown) override;
     void modifierKeysChanged (const ModifierKeys& modifiers) override;
+    
+    
     
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.

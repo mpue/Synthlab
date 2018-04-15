@@ -48,8 +48,6 @@ private:
 
     Image* image;
     ADSR* envelopes[128];
-    double sampleRate;
-    int buffersize;
     int currentSample = 0;
     
     float attack = 0;

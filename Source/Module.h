@@ -126,10 +126,15 @@ protected:
     std::vector<Module*>* modules;
     std::vector<Connection*>* connections;
     Pin* selectedPin = nullptr;
-    
     Point<int> savedPosition;
+    
+    float sampleRate;
+    int buffersize;
+    
     //[/UserVariables]
 
+    
+    
     //==============================================================================
     ScopedPointer<TextEditor> nameEditor;
     ScopedPointer<Label> nameLabel;

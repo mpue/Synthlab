@@ -19,6 +19,7 @@
 
 //[Headers] You can add your own extra header files here...
 #include "Module.h"
+#include "AudioModule.h"
 
 class Connection;
 //[/Headers]
@@ -397,12 +398,14 @@ void Module::eventReceived(Event *e) {
 }
 
 void Module::changeListenerCallback (ChangeBroadcaster* source) {
-    /*
-    if ((selectedPin = dynamic_cast<Pin*>(source)) != NULL) {
-        sendChangeMessage();
-      
+
+    AudioModule* am;
+    
+    if ((am = dynamic_cast<AudioModule*>(source)) != NULL) {
+        Logger::writeToLog("Module "+getName()+" using sample rate "+String(sampleRate)+" kHz and buffer size of "+String(buffersize)+" bytes.");
+        sampleRate = am->getSampleRate();
+        buffersize = am->getBufferSize();
     }
-     */
 }
 
 void Module::process() {

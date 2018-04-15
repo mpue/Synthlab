@@ -39,8 +39,6 @@ private:
 
     Image* image;
     WhiteNoise* oscillator;
-    double sampleRate;
-    int buffersize;
     int currentSample = 0;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NoiseModule)

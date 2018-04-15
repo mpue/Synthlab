@@ -68,6 +68,8 @@ SynthEditor::SynthEditor() {
 //==============================================================================
 SynthEditor::SynthEditor (double sampleRate, int buffersize)
 {
+    Logger::writeToLog("Creating SynthEditor with sample rate "+String(sampleRate)+" kHz and buffer size of "+String(buffersize)+" bytes.");
+    
     //[Constructor_pre] You can add your own custom stuff here..
     this->bufferSize  = buffersize;
     this->_sampleRate = sampleRate;
@@ -354,6 +356,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
             }
             else if (result == 1) {
                 Knob* k = dynamic_cast<Knob*>(PrefabFactory::getInstance()->getPrefab(69, _sampleRate, bufferSize));
+                addChangeListener(k);
                 k->setValue(1);
                 k->setName(module->getPins().at(pinIndex)->getName());
                 Point<int> pos = module->getPinPosition(pinIndex);
@@ -371,6 +374,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
             }
             else if (result == 2) {
                 Constant* c = dynamic_cast<Constant*>(PrefabFactory::getInstance()->getPrefab(67, _sampleRate, bufferSize));
+                addChangeListener(c);
                 c->setValue(1);
                 c->setName(module->getPins().at(pinIndex)->getName());
                 Point<int> pos = module->getPinPosition(pinIndex);
@@ -448,6 +452,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
         }
         else {
             Module* m = PrefabFactory::getInstance()->getPrefab(result, _sampleRate, bufferSize);
+            addChangeListener(m);
             m->setTopLeftPosition(position);
             
             
@@ -891,10 +896,11 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         
         if (mod.getProperty("isPrefab").toString().getIntValue() == 1) {
             m = PrefabFactory::getInstance()->getPrefab(mod.getProperty("prefabId").toString().getIntValue(), _sampleRate, bufferSize);
+            addChangeListener(m);
         }
         else {
             m = new Module(mod.getProperty("name"));
-            
+            addChangeListener(m);
             ValueTree pins = mod.getChildWithName("Pins");
             
             for (int j = 0; j < pins.getNumChildren();j++) {
@@ -928,11 +934,13 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         
         if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
             outputChannels.push_back(out);
+            addChangeListener(out);
         }
         
         Knob* k;
         
         if ((k = dynamic_cast<Knob*>(m)) != NULL) {
+            addChangeListener(k);
             k->setMaximum(mod.getProperty("maxvalue").toString().getFloatValue());
             k->setMinimum(mod.getProperty("minvalue").toString().getFloatValue());
             k->setStepSize(mod.getProperty("stepsize").toString().getFloatValue());
@@ -942,6 +950,7 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         ADSRModule* adsr;
         
         if ((adsr = dynamic_cast<ADSRModule*>(m)) != NULL) {
+            addChangeListener(adsr);
             adsr->setAttack(mod.getProperty("attack").toString().getFloatValue());
             adsr->setDecay(mod.getProperty("decay").toString().getFloatValue());
             adsr->setSustain(mod.getProperty("sustain").toString().getFloatValue());
@@ -950,6 +959,7 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         
         Constant* c = nullptr;
         if ((c = dynamic_cast<Constant*>((m))) != NULL) {
+            addChangeListener(c);
             c->setValue(mod.getProperty("value").toString().getFloatValue());
         }
         
@@ -1067,41 +1077,6 @@ bool SynthEditor::connectionExists(std::vector<Connection*> connections,Connecti
 void SynthEditor::setTab(juce::TabbedComponent *t) {
     this->tab = t;
 }
-
-/*
-void SynthEditor::deleteSelected(bool deleteAll) {
-    std::vector<Connection*>* cons = root->getConnections();
-    cons->erase(std::remove_if(cons->begin(), cons->end(), [](Connection* c){return c->selected;}),cons->end());
-
-    for (int j = 0; j < root->getModules()->size(); j++) {
-        if (root->getModules()->at(j)->isSelected()) {
- 
-            removeChildComponent(root->getModules()->at(j));
- 
-            for (int k = 0; k < root->getModules()->at(j)->getPins().size(); k++) {
- 
-                // for every connection of each pin
-                for (int l = 0; l < root->getModules()->at(j)->getPins().at(k)->connections.size(); l++) {
- 
-                    // for each pin of the module being removed
-                    for (int n = 0; n < (*it)->getPins().size();n++) {
-                        // if the index matches remove pin from vector
-                        
-                        if (root->getModules()->at(j)->getPins().at(k)->connections.at(l)->index == (*it)->getPins().at(n)->index) {
-                            root->getModules()->at(j)->getPins().at(k)->connections.erase(root->getModules()->at(j)->getPins().at(k)->connections.begin() + l);
-                        }
-                    }
-                    
-                }
-            }
-        }
-    }
- 
-    std::vector<Module*>* mods = root->getModules();
-    mods->erase(std::remove_if(mods->begin(), mods->end(), [](Module* m){return m->isSelected();}),mods->end());
- 
-}
-*/
 
 void SynthEditor::removeModule(Module* module) {
     vector<long> pinsToBeRemoved;
@@ -1381,13 +1356,10 @@ bool SynthEditor::channelIsValid(int channel) {
 void SynthEditor::prepareToPlay(int samplesPerBlockExpected, double sampleRate) {
     this->_sampleRate = sampleRate;
     this->bufferSize = samplesPerBlockExpected;
-        /*
-    String defaultMidiOutput = deviceManager->getDefaultMidiOutputName();
-    for (int i = 0; i < MidiInput::getDevices().size();i++) {
-        deviceManager->setMidiInputEnabled(MidiInput::getDevices().getReference(i),true);
-        deviceManager->addMidiInputCallback(MidiInput::getDevices().getReference(i), this);
-    }
-         */
+    
+    Logger::writeToLog("SynthEditor using sample rate "+String(sampleRate)+" kHz and buffer size of "+String(samplesPerBlockExpected)+" bytes.");
+    
+    sendChangeMessage();
    
 }
 
