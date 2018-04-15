@@ -1,0 +1,6 @@
+When an acoustic musical instrument produces sound, the loudness and spectral content of the sound change over time in ways that vary from instrument to instrument. For example, plucked guitars and the struck keys of pianos both produce sounds that die away over time. The "attack" and "decay" of a sound have a great effect on the instrument's sonic character.[80][81] Sound synthesis techniques often employ an envelope generator that controls a sound's parameters at any point in its duration. Most often this is an (ADSR) envelope, which may be applied to overall amplitude control, filter frequency, etc. The envelope may be a discrete circuit or module, or implemented in software. The contour of an ADSR envelope is specified using four parameters:
+
+-Attack time is the time taken for initial run-up of level from nil to peak, beginning when the key is first pressed.
+-Decay time is the time taken for the subsequent run down from the attack level to the designated sustain level.
+-Sustain level is the level during the main sequence of the sound's duration, until the key is released.
+-Release time is the time taken for the level to decay from the sustain level to zero after the key is released.
