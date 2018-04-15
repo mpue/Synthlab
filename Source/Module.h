@@ -101,6 +101,7 @@ public:
     virtual void configurePins() {};
     
     virtual String getCategory();
+    virtual String getDescription();
     
     //[/UserMethods]
 

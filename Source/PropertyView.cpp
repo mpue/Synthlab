@@ -23,7 +23,7 @@
 //[/Headers]
 
 #include "PropertyView.h"
-#include "Knob.h"
+
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 //[/MiscUserDefs]
@@ -38,7 +38,15 @@ PropertyView::PropertyView ()
     tabbedComponent->setTabBarDepth (30);
     tabbedComponent->setCurrentTabIndex (-1);
 
-    tabbedComponent->setBounds (0, 0, 288, 632);
+    addAndMakeVisible (descriptionEditor = new TextEditor ("descriptionEditor"));
+    descriptionEditor->setMultiLine (true);
+    descriptionEditor->setReturnKeyStartsNewLine (true);
+    descriptionEditor->setReadOnly (false);
+    descriptionEditor->setScrollbarsShown (true);
+    descriptionEditor->setCaretVisible (true);
+    descriptionEditor->setPopupMenuEnabled (true);
+    descriptionEditor->setText (String());
+
 
     //[UserPreSize]
     //[/UserPreSize]
@@ -52,27 +60,27 @@ PropertyView::PropertyView ()
     tabbedComponent->addTab("Properties",juce::Colours::grey,propertyPanel = new PropertyPanel(), true);
 
     properties = juce::Array<PropertyComponent*>();
-    
+
     nameValue = new Value();
     numInputsValue = new Value();
     value = new Value();
     minValue = new Value();
     maxValue = new Value();
     stepsizeValue = new Value();
-    
+
     nameProp = new TextPropertyComponent(*nameValue,"name",16, false,true);
     valueProp = new TextPropertyComponent(*value,"value",16, false,true);
     inputsProp = new SliderPropertyComponent(*numInputsValue,"numInputs",0,16,1,1.0,true);
     minValueProp = new TextPropertyComponent(*minValue,"minValue",16, false,true);
     maxValueProp = new TextPropertyComponent(*maxValue,"maxValue",16, false,true);
     stepsizeValueProp = new TextPropertyComponent(*stepsizeValue,"stepsize",16, false,true);
-    
+
     nameListener = new NameListener(*nameValue, this);
     valueListener = new ValueListener(*value, this);
     minValueListener = new MinValueListener(*minValue, this);
     maxValueListener = new MaxValueListener(*maxValue, this);
     stepsizeValueListener = new StepsizeValueListener(*stepsizeValue, this);
-    
+
     properties.add(nameProp);
     properties.add(valueProp);
     properties.add(inputsProp);
@@ -80,8 +88,14 @@ PropertyView::PropertyView ()
     properties.add(maxValueProp);
     properties.add(stepsizeValueProp);
     
+
     propertyPanel->addProperties(properties);
 
+    valueProp->setVisible(false);
+    inputsProp->setVisible(false);
+    minValueProp->setVisible(false);
+    maxValueProp->setVisible(false);
+    stepsizeValueProp->setVisible(false);
     
     //[/Constructor]
 }
@@ -92,22 +106,24 @@ PropertyView::~PropertyView()
     //[/Destructor_pre]
 
     tabbedComponent = nullptr;
+    descriptionEditor = nullptr;
+
 
     //[Destructor]. You can add your own custom destruction code here..
-    
+
     delete nameListener;
     delete valueListener;
     delete nameValue;
     delete numInputsValue;
     delete stepsizeValue;
     delete value;
-    
+
     delete minValue;
     delete maxValue;
     delete minValueListener;
     delete maxValueListener;
     delete stepsizeValueListener;
-    
+
     //[/Destructor]
 }
 
@@ -128,11 +144,10 @@ void PropertyView::resized()
     //[UserPreResize] Add your own custom resize code here..
     //[/UserPreResize]
 
+    tabbedComponent->setBounds (0, 0, proportionOfWidth (1.0000f), proportionOfHeight (0.5000f));
+    descriptionEditor->setBounds (0, proportionOfHeight (0.5000f), proportionOfWidth (0.9979f), proportionOfHeight (0.5000f));
     //[UserResized] Add your own custom resize handling here..
-    tabbedComponent->setSize(300,getParentHeight());
-    // setSize(getParentWidth(), getParentHeight());
-    if (propertyPanel != nullptr)
-        propertyPanel->setSize(tabbedComponent->getWidth(), getParentHeight());
+
     //[/UserResized]
 }
 
@@ -144,26 +159,45 @@ void PropertyView::changeListenerCallback(juce::ChangeBroadcaster *source) {
 
     SynthEditor* editor = dynamic_cast<SynthEditor*>(source);
 
+
+    
+    valueProp->setVisible(false);
+    minValueProp->setVisible(false);
+    maxValueProp->setVisible(false);
+    stepsizeValueProp->setVisible(false);
+    
     if (editor != nullptr) {
 
         if (editor->getSelectedModule() != nullptr) {
+            
+            descriptionEditor->setText(editor->getSelectedModule()->getDescription());
+            
             nameValue->setValue(editor->getSelectedModule()->getName());
-            
+
             Constant* c = nullptr;
-            
+
             if ((c = dynamic_cast<Constant*>(editor->getSelectedModule())) != NULL) {
                 value->setValue(c->getValue());
+                valueProp->setVisible(true);
+                minValueProp->setVisible(false);
+                maxValueProp->setVisible(false);
+                stepsizeValueProp->setVisible(false);
             }
-            
+
             Knob* k = nullptr;
-            
+
             if ((k = dynamic_cast<Knob*>(editor->getSelectedModule())) != NULL) {
+                
+                minValueProp->setVisible(true);
+                maxValueProp->setVisible(true);
+                stepsizeValueProp->setVisible(true);
+                
                 value->setValue(k->getValue());
                 stepsizeValue->setValue(k->getStepsize());
                 minValue->setValue(k->getMinimum());
                 maxValue->setValue(k->getMaximum());
             }
-            
+
             currentEditor = editor;
         }
 
@@ -191,8 +225,12 @@ BEGIN_JUCER_METADATA
                  overlayOpacity="0.330" fixedSize="0" initialWidth="600" initialHeight="400">
   <BACKGROUND backgroundColour="ff808080"/>
   <TABBEDCOMPONENT name="new tabbed component" id="5a5a0866ea539d50" memberName="tabbedComponent"
-                   virtualName="MainTabbedComponent" explicitFocusOrder="0" pos="0 0 288 632"
+                   virtualName="MainTabbedComponent" explicitFocusOrder="0" pos="0 0 100% 50%"
                    orientation="top" tabBarDepth="30" initialTab="-1"/>
+  <TEXTEDITOR name="descriptionEditor" id="b1822b7f97ec3a44" memberName="descriptionEditor"
+              virtualName="" explicitFocusOrder="0" pos="0 50% 99.794% 50%"
+              initialText="" multiline="1" retKeyStartsLine="1" readonly="0"
+              scrollbars="1" caret="1" popupmenu="1"/>
 </JUCER_COMPONENT>
 
 END_JUCER_METADATA

@@ -30,6 +30,10 @@ public:
     virtual String getCategory() override {
         return "Filter";
     }
+    
+    virtual String getDescription() override {
+        return BinaryData::highpass_txt;
+    }
 
 private:
     

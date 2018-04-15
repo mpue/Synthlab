@@ -638,31 +638,7 @@ bool SynthEditor::keyPressed (const KeyPress& key)
     //[UserCode_keyPressed] -- Add your code here...
 
     if (key.getKeyCode() == KeyPress::deleteKey || key.getKeyCode() == KeyPress::backspaceKey) {
-        
-        std::vector<Connection*>* cons = root->getConnections();
-        cons->erase(std::remove_if(cons->begin(), cons->end(), [](Connection* c){
-            if (c->selected){
-                delete c;
-                return true;
-            }
-            return false;
-        }),cons->end());
-        
-        for(std::vector<Module*>::iterator it = root->getModules()->begin();it != root->getModules()->end();it++) {
-            if ((*it)->isSelected())
-                removeModule((*it));
-        }
-        for(std::vector<Module*>::iterator it = root->getModules()->begin();it != root->getModules()->end();) {
-            if ((*it)->isSelected()) {
-                delete *it;
-                it = root->getModules()->erase(it);
-            }
-            else {
-                ++it;
-            }
-        }
-        
-        // deleteSelected(false);
+        removeSelectedItem();
     }
     if(key.getKeyCode() == 65 && isCtrlDown) {
         for (int i = 0; i < root->getModules()->size();i++) {
@@ -717,6 +693,32 @@ void SynthEditor::cleanUp() {
     //deleteSelected(true);
     selectedModules.clear();
     outputChannels.clear();
+    
+}
+
+void SynthEditor::removeSelectedItem() {
+    std::vector<Connection*>* cons = root->getConnections();
+    cons->erase(std::remove_if(cons->begin(), cons->end(), [](Connection* c){
+        if (c->selected){
+            delete c;
+            return true;
+        }
+        return false;
+    }),cons->end());
+    
+    for(std::vector<Module*>::iterator it = root->getModules()->begin();it != root->getModules()->end();it++) {
+        if ((*it)->isSelected())
+            removeModule((*it));
+    }
+    for(std::vector<Module*>::iterator it = root->getModules()->begin();it != root->getModules()->end();) {
+        if ((*it)->isSelected()) {
+            delete *it;
+            it = root->getModules()->erase(it);
+        }
+        else {
+            ++it;
+        }
+    }
     
 }
 

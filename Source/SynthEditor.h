@@ -79,7 +79,8 @@ public:
     Module* getSelectedModule();    
     std::vector<Module*> getSelectedModules();
     std::vector<AudioOut*> getOutputChannels();
-
+    void removeSelectedItem();
+    
     void setSamplerate(double rate);
     void setBufferSize(int buffersize);
 

@@ -9,7 +9,7 @@
 	<key>CFBundleExecutable</key>
 	<string>Synthlab</string>
 	<key>CFBundleIdentifier</key>
-	<string>de.pueski.Synthlab</string>
+	<string>com.yourcompany.Synthlab</string>
 	<key>CFBundleName</key>
 	<string>Synthlab</string>
 	<key>CFBundlePackageType</key>

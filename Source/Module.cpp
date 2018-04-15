@@ -425,6 +425,11 @@ void Module::moveTo(int x, int y) {
 String Module::getCategory() {
     return "none";
 }
+
+String Module::getDescription() {
+    return "not available";
+}
+
 //[/MiscUserCode]
 
 

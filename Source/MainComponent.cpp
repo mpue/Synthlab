@@ -395,7 +395,19 @@ void MainComponent::createKeyMap() {
 
 void MainComponent::buttonClicked (Button* b)
 {
-    editor->showContextMenu(b->getPosition());
+    ToolbarButton* tb = dynamic_cast<ToolbarButton*>(b);
+    if (tb->getItemId() == toolbarFactory->delete_element) {
+        editor->removeSelectedItem();
+    }
+    else if(tb->getItemId() == toolbarFactory->doc_new) {
+        editor->newFile();
+    }
+    else if(tb->getItemId() == toolbarFactory->doc_save) {
+        editor->saveFile();
+    }
+    else if (tb->getItemId() == toolbarFactory->doc_open) {
+        editor->openFile();
+    }
 }
 
 void MainComponent::handleIncomingMidiMessage(juce::MidiInput *source, const juce::MidiMessage &message) {

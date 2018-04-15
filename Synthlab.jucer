@@ -2,6 +2,9 @@
 
 <JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.2.1">
   <MAINGROUP id="CKGTaZ" name="Synthlab">
+    <GROUP id="{4B823972-67BB-E3BB-E219-7A6E1BDAC3BE}" name="docs">
+      <FILE id="IcVqhD" name="highpass.txt" compile="0" resource="1" file="docs/highpass.txt"/>
+    </GROUP>
     <GROUP id="{CEEB3DEE-53A5-006F-633B-91BE10C6A8CA}" name="Images">
       <FILE id="DbUq4B" name="adder.png" compile="0" resource="1" file="Images/adder.png"/>
       <FILE id="LYnUGD" name="adsr.png" compile="0" resource="1" file="Images/adsr.png"/>
@@ -94,6 +97,12 @@
           <FILE id="tqfYhi" name="AudioOut.h" compile="0" resource="0" file="Source/AudioOut.h"/>
           <FILE id="qF57bh" name="Constant.cpp" compile="1" resource="0" file="Source/Constant.cpp"/>
           <FILE id="T9jNhy" name="Constant.h" compile="0" resource="0" file="Source/Constant.h"/>
+          <FILE id="RrXhoG" name="DelayModule.cpp" compile="1" resource="0" file="Source/DelayModule.cpp"/>
+          <FILE id="B9KykV" name="DelayModule.h" compile="0" resource="0" file="Source/DelayModule.h"/>
+          <FILE id="WDvbAA" name="HPFilterModule.cpp" compile="1" resource="0"
+                file="Source/HPFilterModule.cpp"/>
+          <FILE id="HQnBbd" name="HPFilterModule.h" compile="0" resource="0"
+                file="Source/HPFilterModule.h"/>
           <FILE id="yhgzmV" name="Knob.cpp" compile="1" resource="0" file="Source/Knob.cpp"/>
           <FILE id="PBm2CJ" name="Knob.h" compile="0" resource="0" file="Source/Knob.h"/>
           <FILE id="UX3HFt" name="LPFilterModule.cpp" compile="1" resource="0"

@@ -1,0 +1,6 @@
+A high-pass filter (HPF) is an electronic filter that passes signals with a frequency higher than a certain cutoff frequency and attenuates signals with frequencies lower than the cutoff frequency. 
+
+The amount of attenuation for each frequency depends on the filter design. A high-pass filter is usually modeled as a linear time-invariant system. 
+
+It is sometimes called a low-cut filter or bass-cut filter.[1] High-pass filters have many uses, such as blocking DC from circuitry sensitive to non-zero average voltages or radio frequency devices. 
+They can also be used in conjunction with a low-pass filter to produce a bandpass filter.

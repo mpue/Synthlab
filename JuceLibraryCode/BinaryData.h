@@ -8,6 +8,9 @@
 
 namespace BinaryData
 {
+    extern const char*   highpass_txt;
+    const int            highpass_txtSize = 644;
+
     extern const char*   adder_png;
     const int            adder_pngSize = 3242;
 
@@ -15,7 +18,7 @@ namespace BinaryData
     const int            adsr_pngSize = 2742;
 
     extern const char*   delete_png;
-    const int            delete_pngSize = 3053;
+    const int            delete_pngSize = 3508;
 
     extern const char*   hp_png;
     const int            hp_pngSize = 2941;
@@ -36,13 +39,13 @@ namespace BinaryData
     const int            midiout_pngSize = 4672;
 
     extern const char*   new_png;
-    const int            new_pngSize = 3352;
+    const int            new_pngSize = 3710;
 
     extern const char*   note_png;
     const int            note_pngSize = 2993;
 
     extern const char*   open_png;
-    const int            open_pngSize = 3567;
+    const int            open_pngSize = 3879;
 
     extern const char*   pulse_png;
     const int            pulse_pngSize = 1982;
@@ -51,7 +54,7 @@ namespace BinaryData
     const int            random_pngSize = 1916;
 
     extern const char*   save_png;
-    const int            save_pngSize = 3649;
+    const int            save_pngSize = 3933;
 
     extern const char*   saw_png;
     const int            saw_pngSize = 2463;
@@ -75,7 +78,7 @@ namespace BinaryData
     extern const char* namedResourceList[];
 
     // Number of elements in the namedResourceList array.
-    const int namedResourceListSize = 21;
+    const int namedResourceListSize = 22;
 
     // If you provide the name of one of the binary resource variables above, this function will
     // return the corresponding data and its size (or a null pointer if the name isn't found).
