@@ -104,10 +104,7 @@ void DelayModule::process() {
     
     if (pins.at(0)->connections.size() == 1 && pins.at(1)->connections.size() == 1) {
         const float* inL = pins.at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-            float* outL = pins.at(2)->getAudioBuffer()->getWritePointer(0);
         const float* inR = pins.at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-            float* outR = pins.at(3)->getAudioBuffer()->getWritePointer(0);
-        
         
         for (int i = 0; i < buffersize;i++){
             bufferLeft[i] = inL[i];

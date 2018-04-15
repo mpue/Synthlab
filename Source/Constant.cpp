@@ -30,7 +30,7 @@ Constant::~Constant()
     pins.at(0)->setName("");
 }
 
-void Constant::configurePins() {
+void Constant::configurePins(){
     Pin* p1 = new Pin(Pin::Type::VALUE);
     p1->direction = Pin::Direction::OUT;
     p1->setName("V");

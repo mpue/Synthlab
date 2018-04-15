@@ -25,7 +25,7 @@ ADSRModule::ADSRModule(double sampleRate, int buffersize)
     
     setName("ADSR");
 
-    for (int i = 0; i < 128;i++) {
+    for (int i = 0; i < 128;i++){
         this->envelopes[i] = new ADSR();
     }
     editable = false;
@@ -105,7 +105,7 @@ void ADSRModule::setDecay(float decay) {
 void ADSRModule::setSustain(float sustain) {
     if (sustain != this->sustain) {
         this->sustain = sustain;
-        for (int i = 0; i < 128;i++) {
+        for (int i = 0; i < 128;i++){
             this->envelopes[i]->setSustainLevel(sustain);
         }
     }
@@ -114,7 +114,7 @@ void ADSRModule::setSustain(float sustain) {
 void ADSRModule::setRelease(float release) {
     if (release != this->release) {
         this->release = release;
-        for (int i = 0; i < 128;i++) {
+        for (int i = 0; i < 128;i++){
             this->envelopes[i]->setReleaseRate(sampleRate * release );
         }
     }
@@ -154,7 +154,7 @@ void ADSRModule::process() {
     }
     
     // if (pins.at(5)->connections.size() >=  1) {
-        for (int i = 0; i < buffersize;i++) {
+        for (int i = 0; i < buffersize;i++){
             for (int j = 0; j < 128;j++) {
                 pins.at(5)->data[j] = this->envelopes[j]->process();
             }

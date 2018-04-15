@@ -75,7 +75,7 @@ void MidiOut::gate(bool on, int note, int velocity) {
 
 }
 
-void MidiOut::setNote(int value) {
+void MidiOut::setNote(int value){
     this->note = value;
 }
 

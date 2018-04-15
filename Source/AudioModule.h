@@ -15,4 +15,5 @@ class AudioModule {
 public:
     virtual float getSampleRate() = 0;
     virtual float getBufferSize() = 0;
+    virtual ~AudioModule(){};
 };

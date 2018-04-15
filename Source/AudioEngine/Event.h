@@ -14,7 +14,7 @@ class Event {
   
 public:
     
-    static enum Type {
+    enum Type {
         GATE,
         NOTE
     };

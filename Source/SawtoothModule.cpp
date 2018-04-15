@@ -19,21 +19,9 @@ SawtoothModule::SawtoothModule(double sampleRate, int buffersize)
     this->sampleRate = sampleRate;
     this->buffersize = buffersize;
 
-    for (int i = 0; i < 128;i++) {
-        
+    for (int i = 0; i < 128;i++){
         oscillator[i] = nullptr;
     }
-    
-    /*
-    for (int i = 0; i < 128;i++) {
-    
-        oscillator[i] = new Sawtooth(sampleRate);
-        oscillator[i]->setFrequency((440 * pow(2.0,((i+1)-69.0)/12.0)));
-        oscillator[i]->setVolume(0.5f);
-    }
-     */
-    
-
     
     setSize(120,140);
     nameLabel->setJustificationType (Justification::left);
@@ -47,7 +35,7 @@ SawtoothModule::SawtoothModule(double sampleRate, int buffersize)
 
 SawtoothModule::~SawtoothModule()
 {
-    for (int i = 0; i < 128;i++) {
+    for (int i = 0; i < 128;i++){
         if (oscillator[i] != nullptr)
             delete oscillator[i];
     }

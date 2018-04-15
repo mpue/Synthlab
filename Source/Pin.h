@@ -20,12 +20,12 @@ class Pin : public ChangeBroadcaster, public AudioProcessorModule {
 
 public:
 
-    static enum Direction{
+    enum Direction{
         IN,
         OUT
     };
     
-    static enum Type {
+    enum Type {
         AUDIO,
         EVENT,
         VALUE

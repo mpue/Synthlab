@@ -39,7 +39,7 @@ String SynthEditor::defaultMidiOutputName = "Express 128 Port 7";
 String SynthEditor::defaultMidiInputName = "Express 128 Port 7";
 //[/MiscUserDefs]
 
-SynthEditor::SynthEditor() {
+SynthEditor::SynthEditor(){
     //[Constructor_pre] You can add your own custom stuff here..
     //[/Constructor_pre]
     

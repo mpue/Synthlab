@@ -13,6 +13,6 @@
 class AudioProcessorModule {
 public:
     virtual void process(const float *in, float *out,int numSamples) = 0;
-    
+    virtual ~AudioProcessorModule(){};
 };
 #endif /* AudioProcessorModule_h */

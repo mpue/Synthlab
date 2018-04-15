@@ -27,8 +27,8 @@ namespace Synthlab {
         virtual float getOutput() override;
         virtual void setFrequency(double frequency) override;
         virtual void reset() override;
-        virtual void setFine(float fine){};
-        virtual float getFine() const { return 0;};
+        virtual void setFine(float fine) override{};
+        virtual float getFine() const override { return 0;};
     
     private:
         juce::Random random;

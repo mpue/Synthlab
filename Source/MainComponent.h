@@ -32,7 +32,7 @@ public:
     bool keyStateChanged (bool isKeyDown, Component* originatingComponent) override;
     bool keyPressed (const KeyPress& key, Component* originatingComponent) override;
     void createKeyMap();
-    void buttonClicked (Button*);
+    void buttonClicked (Button*) override;
     void handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) override;
     void sendGateMessage(Module* module, int velocity,int note,bool on);
     void sendNoteMessage(Module* module, int note);

@@ -8,8 +8,17 @@
 
 namespace BinaryData
 {
+    extern const char*   adsr_txt;
+    const int            adsr_txtSize = 1205;
+
     extern const char*   highpass_txt;
     const int            highpass_txtSize = 644;
+
+    extern const char*   lowpass_txt;
+    const int            lowpass_txtSize = 1363;
+
+    extern const char*   oscillator_txt;
+    const int            oscillator_txtSize = 526;
 
     extern const char*   adder_png;
     const int            adder_pngSize = 3242;
@@ -81,7 +90,7 @@ namespace BinaryData
     extern const char* namedResourceList[];
 
     // Number of elements in the namedResourceList array.
-    const int namedResourceListSize = 23;
+    const int namedResourceListSize = 26;
 
     // If you provide the name of one of the binary resource variables above, this function will
     // return the corresponding data and its size (or a null pointer if the name isn't found).

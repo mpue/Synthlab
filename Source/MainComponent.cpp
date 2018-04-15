@@ -366,6 +366,7 @@ bool MainComponent::keyPressed(const juce::KeyPress &key, juce::Component *origi
             currentOctave++;
         }
     }
+    return true;
 }
 
 void MainComponent::createKeyMap() {

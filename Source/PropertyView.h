@@ -61,7 +61,7 @@ private:
 
     struct NameListener : Value::Listener
     {
-        NameListener (Value& v, PropertyView* view) : value (v), view(view){ value.addListener (this); }
+        NameListener (Value& v, PropertyView* view) : view(view),  value (v) { value.addListener (this); }
         ~NameListener()  {}  // no need to remove the listener
 
         void valueChanged (Value& value) override {
@@ -75,7 +75,7 @@ private:
 
     struct ValueListener : Value::Listener
     {
-        ValueListener (Value& v, PropertyView* view) : value (v), view(view){ value.addListener (this); }
+        ValueListener (Value& v, PropertyView* view) : view(view), value (v){ value.addListener (this); }
         ~ValueListener()  {}  // no need to remove the listener
 
         void valueChanged (Value& value) override {
@@ -100,7 +100,7 @@ private:
 
     struct MaxValueListener : Value::Listener
     {
-        MaxValueListener (Value& v, PropertyView* view) : value (v), view(view){ value.addListener (this); }
+        MaxValueListener (Value& v, PropertyView* view) : view(view), value (v) { value.addListener (this); }
         ~MaxValueListener()  {}  // no need to remove the listener
 
         void valueChanged (Value& value) override {
@@ -125,7 +125,7 @@ private:
 
     struct MinValueListener : Value::Listener
     {
-        MinValueListener (Value& v, PropertyView* view) : value (v), view(view){ value.addListener (this); }
+        MinValueListener (Value& v, PropertyView* view) : view(view), value (v){ value.addListener (this); }
         ~MinValueListener()  {}  // no need to remove the listener
 
         void valueChanged (Value& value) override {
@@ -150,7 +150,7 @@ private:
 
     struct StepsizeValueListener : Value::Listener
     {
-        StepsizeValueListener (Value& v, PropertyView* view) : value (v), view(view){ value.addListener (this); }
+        StepsizeValueListener (Value& v, PropertyView* view) : view(view), value (v){ value.addListener (this); }
         ~StepsizeValueListener()  {}  // no need to remove the listener
 
         void valueChanged (Value& value) override {

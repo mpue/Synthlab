@@ -9,7 +9,7 @@
 */
 
 #include "Voice.h"
-#include "Math.h"
+
 
 Voice::Voice(float sampleRate) {
 

@@ -16,6 +16,6 @@ class EventListener {
     
 public:
     virtual void eventReceived(Event* e) = 0;
-    
+    virtual ~EventListener(){};
 };
 #endif /* EventListener_h */

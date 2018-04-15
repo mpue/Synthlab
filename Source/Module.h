@@ -88,7 +88,7 @@ public:
     bool isPrefab() { return prefab;};
 
     void eventReceived(Event* e) override;
-    void changeListenerCallback (ChangeBroadcaster* source);
+    void changeListenerCallback (ChangeBroadcaster* source) override;
     virtual void process();
     
     void savePosition();
