@@ -67,10 +67,6 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
         }
     }
     
-    
-    propertyView =  new PropertyView();
-    
-    
     editor = new SynthEditor(sampleRate,buffersize);
     
     tab = new MainTabbedComponent();
@@ -90,6 +86,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     
     tab->addTab("Main", juce::Colours::grey, view, true);
     
+    propertyView =  new PropertyView();
     addAndMakeVisible (propertyView);
     addAndMakeVisible (resizerBar);
     addAndMakeVisible (tab);
@@ -424,6 +421,11 @@ void MainComponent::handleIncomingMidiMessage(juce::MidiInput *source, const juc
             sendGateMessage(editor->getModule()->getModules()->at(i), message.getVelocity(),message.getNoteNumber(),false);
         }
     }
+    else if(message.isController()) {
+        for (int i = 0; i < editor->getModule()->getModules()->size();i++) {
+            sendControllerMessage(editor->getModule()->getModules()->at(i), message.getControllerNumber(),message.getControllerValue());
+        }
+    }
     
     // deviceManager.getDefaultMidiOutput()->sendMessageNow(message);
 }
@@ -472,6 +474,28 @@ void MainComponent::sendNoteMessage(Module *module, int note) {
         
         if ((midiNote = dynamic_cast<MidiNote*>(module->getModules()->at(i)))!= NULL) {
             sendNoteMessage(module->getModules()->at(i), note);
+        }
+    }
+}
+
+void MainComponent::sendControllerMessage(Module *module, int controller, float value) {
+    
+    Knob* k;
+    
+    if ((k = dynamic_cast<Knob*>(module)) != NULL) {
+        if (k->isMidiController() && k->isLearning()) {
+            k->setController(controller);
+            k->setLearning(false);
+        }
+        if (k->getController() == controller) {
+            k->setValue(value);
+        }
+        
+    }
+    for (int i = 0; i< module->getModules()->size();i++) {
+        
+        if ((k = dynamic_cast<Knob*>(module->getModules()->at(i)))!= NULL) {
+            sendControllerMessage(module->getModules()->at(i),controller, value);
         }
     }
 }

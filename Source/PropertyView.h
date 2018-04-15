@@ -26,8 +26,6 @@
 #include "Knob.h"
 //[/Headers]
 
-
-
 //==============================================================================
 /**
                                                                     //[Comments]
@@ -53,8 +51,6 @@ public:
 
     void paint (Graphics& g) override;
     void resized() override;
-
-
 
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
@@ -134,7 +130,6 @@ private:
 
                 Knob* k = nullptr;
 
-
                 if ((k = dynamic_cast<Knob*>(view->currentEditor->getSelectedModule())) != NULL) {
                     k->setMinimum(value.toString().getFloatValue());
                 }
@@ -172,6 +167,54 @@ private:
         PropertyView* view;
         Value value;
     };
+    
+    struct IsControllerValueListener : Value::Listener
+    {
+        IsControllerValueListener (Value& v, PropertyView* view) : view(view), value (v){ value.addListener (this); }
+        ~IsControllerValueListener()  {}  // no need to remove the listener
+        
+        void valueChanged (Value& value) override {
+            
+            if (view->currentEditor->getSelectedModule() != nullptr) {
+                
+                Knob* k = nullptr;
+                
+                if ((k = dynamic_cast<Knob*>(view->currentEditor->getSelectedModule())) != NULL) {
+                    k->setIsMidicontroller(value.toString().getIntValue() > 0);
+                }
+                
+                
+            }
+            
+            
+        }
+        PropertyView* view;
+        Value value;
+    };
+    
+    struct ControllerValueListener : Value::Listener
+    {
+        ControllerValueListener (Value& v, PropertyView* view) : view(view), value (v){ value.addListener (this); }
+        ~ControllerValueListener()  {}  // no need to remove the listener
+        
+        void valueChanged (Value& value) override {
+            
+            if (view->currentEditor->getSelectedModule() != nullptr) {
+                
+                Knob* k = nullptr;
+                
+                if ((k = dynamic_cast<Knob*>(view->currentEditor->getSelectedModule())) != NULL) {
+                    k->setController(value.toString().getIntValue());
+                }
+                
+                
+            }
+            
+            
+        }
+        PropertyView* view;
+        Value value;
+    };
 
     String name;
 
@@ -185,13 +228,17 @@ private:
     Value* minValue;
     Value* maxValue;
     Value* stepsizeValue;
+    Value* isControllerValue;
+    Value* controllerValue;
 
     NameListener* nameListener;
     ValueListener* valueListener;
     MinValueListener* minValueListener;
     MaxValueListener* maxValueListener;
     StepsizeValueListener* stepsizeValueListener;
-
+    IsControllerValueListener* isControllerValueListener;
+    ControllerValueListener* controllerValueListener;
+    
     juce::Array<PropertyComponent*> properties;
 
     PropertyComponent* nameProp;
@@ -200,6 +247,10 @@ private:
     PropertyComponent* minValueProp;
     PropertyComponent* maxValueProp;
     PropertyComponent* stepsizeValueProp;
+    PropertyComponent* isControllerValueProp;
+    PropertyComponent* controllerValueProp;
+    
+    
     ScopedPointer<TextEditor> descriptionEditor;
 
     //[/UserVariables]

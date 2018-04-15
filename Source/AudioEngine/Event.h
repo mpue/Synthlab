@@ -16,7 +16,8 @@ public:
     
     enum Type {
         GATE,
-        NOTE
+        NOTE,
+        CONTROLLER
     };
     
     Event();
@@ -30,10 +31,13 @@ public:
     void setValue(int value);
     int getNote();
     void setNote(int note);
+    int getNumber();
+    void setNumber(int num);
 private:
     
     Type type;
     String name;
+    int number = 1;
     int value = 0;
     int note = 0;
 };

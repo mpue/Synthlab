@@ -325,9 +325,21 @@ void SynthEditor::showContextMenu(Point<int> position) {
             }
         }
         
-        if(pinIndex < 0 && module->isEditable()) {
-            m->addItem(1, "Add input");
-            m->addItem(2, "Add output");
+        Knob* k = nullptr;
+        
+        if(pinIndex < 0 ) {
+            if (module->isEditable()) {
+                m->addItem(1, "Add input");
+                m->addItem(2, "Add output");
+            }
+            else {
+                
+                if ((k = dynamic_cast<Knob*>(module)) != NULL) {
+                    m->addItem(3, "MIDI learn");
+                }
+                
+            }
+      
             
             
             const int result = m->show();
@@ -342,6 +354,10 @@ void SynthEditor::showContextMenu(Point<int> position) {
             }
             else if (result == 2) {
                 module->addPin(Pin::Direction::OUT);
+            }
+            
+            else if (result == 3) {
+                k->setLearning(true);
             }
         }
         else {
@@ -370,6 +386,9 @@ void SynthEditor::showContextMenu(Point<int> position) {
                 con->target = module;
                 root->getConnections()->push_back(con);
                 root->getModules()->push_back(k);
+                getSelectedModules().clear();
+                k->setSelected(true);
+                getSelectedModules().push_back(k);
                 repaint();
             }
             else if (result == 2) {
@@ -458,6 +477,10 @@ void SynthEditor::showContextMenu(Point<int> position) {
             
             addAndMakeVisible(m);
             root->getModules()->push_back(m);
+            
+            m->setSelected(true);
+            getSelectedModules().push_back(m);
+            repaint();
             
             AudioOut* out;
             if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
@@ -754,6 +777,8 @@ void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Conn
             file.setProperty("maxvalue",k->getMaximum(), nullptr);
             file.setProperty("stepsize", k->getStepsize(), nullptr);
             file.setProperty("value", k->getValue(), nullptr);
+            file.setProperty("isController",k->isMidiController(), nullptr);
+            file.setProperty("controllerNum", k->getController(), nullptr);
         }
         
         ADSRModule* adsr;
@@ -945,6 +970,8 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
             k->setMinimum(mod.getProperty("minvalue").toString().getFloatValue());
             k->setStepSize(mod.getProperty("stepsize").toString().getFloatValue());
             k->setValue(mod.getProperty("value").toString().getFloatValue());
+            k->setIsMidicontroller(mod.getProperty("isController").toString().getIntValue() > 0);
+            k->setController(mod.getProperty("controllerNum").toString().getIntValue());
         }
         
         ADSRModule* adsr;
@@ -1150,6 +1177,7 @@ void SynthEditor::deleteSelected(bool deleteAll) {
     
     if(!deleteAll) {
         for (int i = 0; i < getSelectedModules().size();i++) {
+            removeChangeListener(getSelectedModules().at(i));
             removeModule(getSelectedModules().at(i));
         }
     }
@@ -1191,7 +1219,7 @@ void SynthEditor::deleteSelected(bool deleteAll) {
     }
 
     
-
+    sendChangeMessage();
  
 }
 
@@ -1331,9 +1359,11 @@ Module* SynthEditor::getModule() {
 
 
 Module* SynthEditor::getSelectedModule() {
-    for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
-        if ((*it)->isSelected()) {
-            return (*it);
+    if (root != NULL && root != nullptr) {
+        for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
+            if ((*it)->isSelected()) {
+                return (*it);
+            }
         }
     }
     return nullptr;

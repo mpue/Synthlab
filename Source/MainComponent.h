@@ -36,6 +36,7 @@ public:
     void handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) override;
     void sendGateMessage(Module* module, int velocity,int note,bool on);
     void sendNoteMessage(Module* module, int note);
+    void sendControllerMessage(Module* module, int controller, float value);
     void processModule(Module* m);
     void audioDeviceIOCallback (const float** inputChannelData,
                                 int numInputChannels,

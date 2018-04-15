@@ -69,27 +69,34 @@ PropertyView::PropertyView ()
     minValue = new Value();
     maxValue = new Value();
     stepsizeValue = new Value();
+    isControllerValue = new Value();
+    controllerValue = new Value();
 
-    nameProp = new TextPropertyComponent(*nameValue,"name",16, false,true);
-    valueProp = new TextPropertyComponent(*value,"value",16, false,true);
-    inputsProp = new SliderPropertyComponent(*numInputsValue,"numInputs",0,16,1,1.0,true);
-    minValueProp = new TextPropertyComponent(*minValue,"minValue",16, false,true);
-    maxValueProp = new TextPropertyComponent(*maxValue,"maxValue",16, false,true);
-    stepsizeValueProp = new TextPropertyComponent(*stepsizeValue,"stepsize",16, false,true);
-
+    nameProp = new TextPropertyComponent(*nameValue,"Name",16, false,true);
+    valueProp = new SliderPropertyComponent(*value,"Value",-65535,65535,0.1,1.0,true);
+    inputsProp = new SliderPropertyComponent(*numInputsValue,"Inputs",0,16,1,1.0,true);
+    minValueProp = new SliderPropertyComponent(*minValue,"Minimum",0.001,10000,0.1,1.0,true);
+    maxValueProp = new SliderPropertyComponent(*maxValue,"Maximum",0.001,10000,0.1,1.0,true);
+    stepsizeValueProp = new SliderPropertyComponent(*stepsizeValue,"Stepsize",0.001,10000,0.1,1.0,true);
+    isControllerValueProp = new BooleanPropertyComponent(*isControllerValue,"isController","Is controller");
+    controllerValueProp = new SliderPropertyComponent(*controllerValue,"Controller number",0,127,1,1.0,true);
+    
     nameListener = new NameListener(*nameValue, this);
     valueListener = new ValueListener(*value, this);
     minValueListener = new MinValueListener(*minValue, this);
     maxValueListener = new MaxValueListener(*maxValue, this);
     stepsizeValueListener = new StepsizeValueListener(*stepsizeValue, this);
-
+    isControllerValueListener = new IsControllerValueListener(*isControllerValue,this);
+    controllerValueListener = new ControllerValueListener(*controllerValue,this);
+    
     properties.add(nameProp);
     properties.add(valueProp);
     properties.add(inputsProp);
     properties.add(minValueProp);
     properties.add(maxValueProp);
     properties.add(stepsizeValueProp);
-
+    properties.add(isControllerValueProp);
+    properties.add(controllerValueProp);
 
     propertyPanel->addProperties(properties);
 
@@ -98,7 +105,9 @@ PropertyView::PropertyView ()
     minValueProp->setVisible(false);
     maxValueProp->setVisible(false);
     stepsizeValueProp->setVisible(false);
-
+    isControllerValueProp->setVisible(false);
+    controllerValueProp->setVisible(false);
+    
     //[/Constructor]
 }
 
@@ -114,12 +123,16 @@ PropertyView::~PropertyView()
     delete numInputsValue;
     delete stepsizeValue;
     delete value;
+    delete isControllerValue;
+    delete controllerValue;
     
     delete minValue;
     delete maxValue;
     delete minValueListener;
     delete maxValueListener;
     delete stepsizeValueListener;
+    delete isControllerValueListener;
+    delete controllerValueListener;
 
     //[/Destructor_pre]
 
@@ -169,6 +182,8 @@ void PropertyView::changeListenerCallback(juce::ChangeBroadcaster *source) {
     minValueProp->setVisible(false);
     maxValueProp->setVisible(false);
     stepsizeValueProp->setVisible(false);
+    isControllerValueProp->setVisible(false);
+    controllerValueProp->setVisible(false);
 
     if (editor != nullptr) {
 
@@ -186,6 +201,9 @@ void PropertyView::changeListenerCallback(juce::ChangeBroadcaster *source) {
                 minValueProp->setVisible(false);
                 maxValueProp->setVisible(false);
                 stepsizeValueProp->setVisible(false);
+                isControllerValueProp->setVisible(false);
+                controllerValueProp->setVisible(false);
+
             }
 
             Knob* k = nullptr;
@@ -195,11 +213,16 @@ void PropertyView::changeListenerCallback(juce::ChangeBroadcaster *source) {
                 minValueProp->setVisible(true);
                 maxValueProp->setVisible(true);
                 stepsizeValueProp->setVisible(true);
+                isControllerValueProp->setVisible(true);
+                controllerValueProp->setVisible(true);
+
 
                 value->setValue(k->getValue());
                 stepsizeValue->setValue(k->getStepsize());
                 minValue->setValue(k->getMinimum());
                 maxValue->setValue(k->getMaximum());
+                isControllerValue->setValue(k->isMidiController());
+                controllerValue->setValue(k->getController());
             }
 
             currentEditor = editor;

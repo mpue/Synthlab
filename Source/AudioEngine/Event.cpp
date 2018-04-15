@@ -50,3 +50,11 @@ void Event::setNote(int note) {
 int Event::getNote(){
     return note;
 }
+
+void Event::setNumber(int num) {
+    this->number = num;
+}
+
+int Event::getNumber() {
+    return number;
+}

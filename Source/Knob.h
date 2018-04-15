@@ -40,10 +40,28 @@ public:
     float getMinimum();
     float getMaximum();
     
+    bool isMidiController();
+    void setIsMidicontroller(bool isController);
+    
+    bool isLearning();
+    void setLearning(bool learning);
+    
+    int getController();
+    void setController(int num);
+    void eventReceived(Event *e) override;
+    
+    float map(float x, float in_min, float in_max, float out_min, float out_max)
+    {
+        return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+    }
+    
 private:
     
     float value;
     Slider* slider;
+    bool isController = false;
+    int controllerNum = 1;
+    bool learning = false;
     
     float minimum = 0 ;
     float maximum = 127;

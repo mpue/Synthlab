@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Synth>
+  <Modules>
+    <Module name="" index="69" x="400" y="241" isPrefab="1" prefabId="69"
+            minvalue="6353.20117187500000000000" maxvalue="127.00099945068359375000"
+            stepsize="5353.10107421875000000000" value="1.00000000000000000000"
+            isController="1" controllerNum="70">
+      <Pins>
+        <Pin type="2" direction="1" index="6901" x="70" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections/>
+</Synth>

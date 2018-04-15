@@ -71,9 +71,22 @@ float Knob::getValue() {
 }
 
 void Knob::setValue(float value) {
+    
+    if (isController) {
+        value = map(value, 0, 127, minimum, maximum);
+    }
+    
     this->value = value;
     this->pins.at(0)->setValue(value);
-    this->nameLabel->setText(String(value),juce::NotificationType::dontSendNotification);
+    
+    std::function<void(void)> changeLambda =
+    [=]() {
+        this->nameLabel->setText(String(value),juce::NotificationType::dontSendNotification);
+        this->slider->setValue(value, juce::NotificationType::dontSendNotification);
+    };
+    juce::MessageManager::callAsync(changeLambda);
+    
+
 }
 
 void Knob::sliderValueChanged(juce::Slider *slider) {
@@ -105,4 +118,33 @@ void Knob::setMaximum(float max) {
 
 float Knob::getMaximum() {
     return maximum;
+}
+
+void Knob::setIsMidicontroller(bool isController) {
+    this->isController = isController;
+}
+
+bool Knob::isMidiController() {
+    return isController;
+}
+
+void Knob::setController(int num) {
+    this->controllerNum = num;
+}
+
+int Knob::getController() {
+    return controllerNum;
+}
+
+void Knob::setLearning(bool learning) {
+    this->learning = learning;
+}
+
+bool Knob::isLearning(){
+    return learning;
+}
+
+void Knob::eventReceived(Event *e) {
+    
+
 }
