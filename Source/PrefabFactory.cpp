@@ -85,3 +85,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     
     return m;
 }
+
+void PrefabFactory::reset() {
+    for (std::map<int,Prefab>::iterator it = prefabs.begin();it != prefabs.end();it++) {
+        (*it).second.reset();
+    }
+}

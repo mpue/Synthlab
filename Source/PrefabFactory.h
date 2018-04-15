@@ -37,6 +37,9 @@ public:
         void addInstance() {
             numInstances++;
         }
+        void reset() {
+            numInstances = 0;
+        }
         
     private:
         int numInstances = 0;
@@ -59,7 +62,7 @@ public:
     Module* getPrefab(int id, float sampleRate, int bufferSize);
     std::map<int,Prefab> getPrefabNames() {return prefabs;};
     StringArray* getCategories() { return categories;};
-    
+    void reset();
 private:
     static PrefabFactory* instance;
     
@@ -99,6 +102,7 @@ private:
         categories->clear();
         delete categories;
     };
+
     
     int numPrefabInstances = 0;
 };

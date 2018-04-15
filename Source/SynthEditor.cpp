@@ -710,6 +710,8 @@ void SynthEditor::cleanUp() {
         it = root->getConnections()->erase(it);
     }
     
+    PrefabFactory::getInstance()->reset();
+    
     delete root;
     root = nullptr;
     //deleteSelected(true);
