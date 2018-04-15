@@ -10,7 +10,7 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../../Source/SynthEditor.cpp"
-            timestampString = "545487397.182735"
+            timestampString = "545489674.9891911"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "885"
@@ -26,12 +26,12 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../../Source/SynthEditor.cpp"
-            timestampString = "545487397.182947"
+            timestampString = "545489674.989422"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "1039"
             endingLineNumber = "1039"
-            landmarkName = "SynthEditor::connectionExists(std::vector&lt;Connection*&gt; connections,Connection *c)"
+            landmarkName = "SynthEditor::loadStructure(std::vector&lt;Module *&gt;* modules, std::vector&lt;Connection*&gt;* connections,juce::ValueTree *v)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -42,7 +42,7 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../../Source/SynthEditor.cpp"
-            timestampString = "545487397.182984"
+            timestampString = "545489674.989566"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "1020"
@@ -58,12 +58,12 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../../Source/SynthEditor.cpp"
-            timestampString = "545487397.183015"
+            timestampString = "545489674.989705"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "869"
             endingLineNumber = "869"
-            landmarkName = "SynthEditor::loadStructure(std::vector&lt;Module *&gt;* modules, std::vector&lt;Connection*&gt;* connections,juce::ValueTree *v)"
+            landmarkName = "SynthEditor::openFile()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -74,7 +74,7 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../../Source/SynthEditor.cpp"
-            timestampString = "545487397.183045"
+            timestampString = "545489674.989839"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
             startingLineNumber = "1026"

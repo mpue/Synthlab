@@ -57,6 +57,7 @@ public:
             doc_open        = 2,
             doc_save        = 3,
             delete_element  = 4,
+            app_settings    = 5
             
         };
         
@@ -70,6 +71,7 @@ public:
             ids.add (doc_open);
             ids.add (doc_save);
             ids.add (delete_element);
+            ids.add (app_settings);
 
         }
         
@@ -82,7 +84,7 @@ public:
             ids.add (doc_open);
             ids.add (doc_save);
             ids.add (delete_element);
-
+            ids.add (app_settings);
         }
         
         ToolbarItemComponent* createItem (int itemId) override
@@ -93,6 +95,7 @@ public:
                 case doc_open:        return new ToolbarButton(itemId,"Open",getImage(itemId), getImage(itemId));
                 case doc_save:        return new ToolbarButton(itemId,"Save",getImage(itemId), getImage(itemId));
                 case delete_element:  return new ToolbarButton(itemId,"Delete",getImage(itemId), getImage(itemId));
+                case app_settings:    return new ToolbarButton(itemId,"Settings",getImage(itemId), getImage(itemId));
                 default:                break;
             }
             
@@ -111,8 +114,13 @@ public:
                 di->setImage(ImageCache::getFromMemory(BinaryData::save_png, BinaryData::save_pngSize));
             else if(itemId == 4)
                 di->setImage(ImageCache::getFromMemory(BinaryData::delete_png, BinaryData::delete_pngSize));
-            
+            else if(itemId == 5)
+                di->setImage(ImageCache::getFromMemory(BinaryData::settings_png, BinaryData::settings_pngSize));
             return di;
+        }
+        
+        int numItems() {
+            return 5;
         }
         
     };

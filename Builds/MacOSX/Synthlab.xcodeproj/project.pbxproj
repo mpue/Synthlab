@@ -166,6 +166,7 @@
 		7CEF1AFC93F1E800C7452382 = {isa = PBXFileReference; lastKnownFileType = image.png; name = adsr.png; path = ../../Images/adsr.png; sourceTree = "SOURCE_ROOT"; };
 		7D49F7A780F023DE7473817C = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = RandomModule.cpp; path = ../../Source/RandomModule.cpp; sourceTree = "SOURCE_ROOT"; };
 		7F76496C5F4EDCCB35F88B60 = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Module.cpp; path = ../../Source/Module.cpp; sourceTree = "SOURCE_ROOT"; };
+		820CF224F349973CF214747E = {isa = PBXFileReference; lastKnownFileType = image.png; name = settings.png; path = ../../Images/settings.png; sourceTree = "SOURCE_ROOT"; };
 		83593EB88CCCB874CC88F3A5 = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Synthlab.app; sourceTree = "BUILT_PRODUCTS_DIR"; };
 		835BE49E2143678DA74F1235 = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = MainTabbedComponent.cpp; path = ../../Source/MainTabbedComponent.cpp; sourceTree = "SOURCE_ROOT"; };
 		850F50F98F57F199A2D016CE = {isa = PBXFileReference; lastKnownFileType = image.png; name = midiout.png; path = ../../Images/midiout.png; sourceTree = "SOURCE_ROOT"; };
@@ -270,6 +271,7 @@
 					42B6AB9BE4E8B22E7806E276,
 					2A0EEDDEC6CB0C7F1A9C63E3,
 					FDBA9D7147A684C997593B2F,
+					820CF224F349973CF214747E,
 					13BCE454F307309A0A4D35CF,
 					1C61A556EE14CEEC90232C68,
 					F12B8E5ADE35680A0F3D346A,

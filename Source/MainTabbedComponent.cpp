@@ -24,6 +24,12 @@ MainTabbedComponent::MainTabbedComponent(TabbedButtonBar::Orientation orientatio
 }
 
 
+void MainTabbedComponent::paint(juce::Graphics &g) {
+    g.fillAll (Colour (0xff2e373c));
+    g.setColour(Colours::grey);
+    g.drawRect(getBounds().reduced(1,0));
+}
+
 void MainTabbedComponent::popupMenuClickOnTab(int tabIndex, const juce::String &tabName) {
     
     if (tabIndex == 0){

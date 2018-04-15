@@ -818,8 +818,49 @@ static const unsigned char temp_binary_data_17[] =
 
 const char* sawtooth_png = (const char*) temp_binary_data_17;
 
-//================== sine.png ==================
+//================== settings.png ==================
 static const unsigned char temp_binary_data_18[] =
+"\x89PNG\r\n"
+"\x1a\n"
+"\0\0\0\rIHDR\0\0\0@\0\0\0@\x08\x06\0\0\0\xaaiq\xde\0\0\0\tpHYs\0\0\x0b\x13\0\0\x0b\x13\x01\0\x9a\x9c\x18\0\0\x0b\x9ciTXtXML:com.adobe.xmp\0\0\0\0\0<?xpacket begin=\"\xef\xbb\xbf\" id=\"W5M0MpCehiHzreSzNTczkc9d\"?> <x:xmpmeta xmlns:x=\"adobe:ns:meta/\""
+" x:xmptk=\"Adobe XMP Core 5.6-c140 79.160451, 2017/05/06-01:08:21        \"> <rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"> <rdf:Description rdf:about=\"\" xmlns:xmp=\"http://ns.adobe.com/xap/1.0/\" xmlns:photoshop=\"http://ns.ad"
+"obe.com/photoshop/1.0/\" xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:xmpMM=\"http://ns.adobe.com/xap/1.0/mm/\" xmlns:stEvt=\"http://ns.adobe.com/xap/1.0/sType/ResourceEvent#\" xmlns:stRef=\"http://ns.adobe.com/xap/1.0/sType/ResourceRef#\" xml"
+"ns:tiff=\"http://ns.adobe.com/tiff/1.0/\" xmlns:exif=\"http://ns.adobe.com/exif/1.0/\" xmp:CreatorTool=\"Adobe Photoshop CC (Macintosh)\" xmp:CreateDate=\"2018-04-13T16:10:11+02:00\" xmp:MetadataDate=\"2018-04-15T14:39:26+02:00\" xmp:ModifyDate=\"201"
+"8-04-15T14:39:26+02:00\" photoshop:ColorMode=\"3\" photoshop:ICCProfile=\"sRGB IEC61966-2.1\" dc:format=\"image/png\" xmpMM:InstanceID=\"xmp.iid:5403a39d-e362-45eb-a9b8-7d614b0c423c\" xmpMM:DocumentID=\"adobe:docid:photoshop:df3769de-5d1c-1b4a-bccc-9"
+"09a2235052c\" xmpMM:OriginalDocumentID=\"xmp.did:409ec9fb-5c8f-41d1-ac5a-df7fa1c6b4ab\" tiff:Orientation=\"1\" tiff:XResolution=\"720000/10000\" tiff:YResolution=\"720000/10000\" tiff:ResolutionUnit=\"2\" exif:ColorSpace=\"1\" exif:PixelXDimension=\""
+"64\" exif:PixelYDimension=\"64\"> <photoshop:TextLayers> <rdf:Bag> <rdf:li photoshop:LayerName=\"A+B\" photoshop:LayerText=\"A+B\"/> </rdf:Bag> </photoshop:TextLayers> <photoshop:DocumentAncestors> <rdf:Bag> <rdf:li>12264088433B8820AADFD81FEF4E0AAD</"
+"rdf:li> </rdf:Bag> </photoshop:DocumentAncestors> <xmpMM:History> <rdf:Seq> <rdf:li stEvt:action=\"created\" stEvt:instanceID=\"xmp.iid:409ec9fb-5c8f-41d1-ac5a-df7fa1c6b4ab\" stEvt:when=\"2018-04-13T16:10:11+02:00\" stEvt:softwareAgent=\"Adobe Photos"
+"hop CC (Macintosh)\"/> <rdf:li stEvt:action=\"saved\" stEvt:instanceID=\"xmp.iid:4bc78682-6b8e-4570-b204-3c1669501efa\" stEvt:when=\"2018-04-13T18:29:50+02:00\" stEvt:softwareAgent=\"Adobe Photoshop CC (Macintosh)\" stEvt:changed=\"/\"/> <rdf:li stEv"
+"t:action=\"saved\" stEvt:instanceID=\"xmp.iid:905fe6c7-6652-482c-8f21-198097b30557\" stEvt:when=\"2018-04-15T14:39:26+02:00\" stEvt:softwareAgent=\"Adobe Photoshop CC (Macintosh)\" stEvt:changed=\"/\"/> <rdf:li stEvt:action=\"converted\" stEvt:parame"
+"ters=\"from application/vnd.adobe.photoshop to image/png\"/> <rdf:li stEvt:action=\"derived\" stEvt:parameters=\"converted from application/vnd.adobe.photoshop to image/png\"/> <rdf:li stEvt:action=\"saved\" stEvt:instanceID=\"xmp.iid:5403a39d-e362-4"
+"5eb-a9b8-7d614b0c423c\" stEvt:when=\"2018-04-15T14:39:26+02:00\" stEvt:softwareAgent=\"Adobe Photoshop CC (Macintosh)\" stEvt:changed=\"/\"/> </rdf:Seq> </xmpMM:History> <xmpMM:DerivedFrom stRef:instanceID=\"xmp.iid:905fe6c7-6652-482c-8f21-198097b305"
+"57\" stRef:documentID=\"adobe:docid:photoshop:170826ce-451d-6c4c-8049-00eee6c25b09\" stRef:originalDocumentID=\"xmp.did:409ec9fb-5c8f-41d1-ac5a-df7fa1c6b4ab\"/> </rdf:Description> </rdf:RDF> </x:xmpmeta> <?xpacket end=\"r\"?>\xcc\xc9\xdbR\0\0\x06\"ID"
+"ATx\x9c\xed\xdby\xa8\\\xf5\x15\xc0\xf1\xcf\xe8\xcb\xf2\xach\xadQ\x9e\x8d$h\xaaV\xa3\x08\x16\x97V\\Z\xf2G\xdd\xeb""B\xa5\"U\xa2um\xb5Z\x17""4j\\ZEl\xb1\xe0\x12\xb7\xc6\xd6\r\xc5\x12\xd4\xba\x14\x05w\x8bK\xc4\xfd""5\x8a\xa2)\x06S\xc4%\xc6""D\xb3\xe8\xf3"
+"\x8f""3\xa3\x93y3\xf7\xfe\xee\x9dy\xdc?\x9c/\x0c\x93\xf7\xbb\xe7\x9e{~g~\xf7w\x96{S\x1b\x19\x19\xf1mf\xad\xaa\r\xa8\x9a\xbe\x03\xaa""6\xa0j\xfa\x0e\xa8\xda\x80\xaa\xe9;\xa0j\x03\xaa\xa6\xef\x80\xaa\r\xa8\x9a\x81<\x81\xf7\x16\xfc\xab\xac\xee\xb5\xf1K|"
+"\x8c\x07J\xea\xd8\x01{b\x1fl\x8b\xf7\xf1\xf7\xba\xbe\x05\xf8\"\xeb\xe4M~\xb8_\xee\x05r\x1d\xd0\x05G\xe2*,\xc3Q\xb8\xab\xc0\xb9\x1b\xe0\x14\x9c\x86\xc1\xa6\xf1\x8dq\x19N\xc7nx\xa3[#\xc7\xca\x01""3\xf1gL\xa8\x7f\xe6`\x15\xeeK8w\x13\\\x89\x83""2d\xee\xc3"
+"\x92.mD\xef\xf7\x80q8\x16\x97\xe3\xbbM\xe3""C\xb8Q,\xe5,\x06q\x85\xec\xc9\xdf\x84\xdf\xe2\xff\xa5\xadl\xa2\xd7\x0e\xa8\xe1\0\xac\xd7\xe6\xd8""F\x98\x8b}3\xce?\x0b\x07g\x1c\xbf\x07\xa7""byY\x03[\xe9\xb5\x03V\xe2\xd5\x8c\xe3\x1b\xe3Z\xb1\x12\xc6\xb5\x1c"
+"\x9b\x8e\xa3""3\xce}\x12'\xe3\x83n\x0cle,\xc2\xe0\x86""9\xc7\xbf\x8fK\xf0\xbd\x96\xf1\x99\xe2\xfeo\xc7\xab""8\x1e\xefteY\x1bz\xb1\t\x0e\xe0\x10l'~\xe1\xfds\xe4?\xc1\xd5\xf8\xa8i\xec;\"\xcc\xb5\xe3]\xb1""2\xb2VVi\xbau\xc0\x10\xfe*&=\x98-\x8a\x08\x89g\xe1"
+"\x9a\x96\xf1m\xc4-\xd0\x8e;\xf1L\x01\x9b\x06""1\x82\xcfS\x84\xbb\xb9\x05\xa6\xe0V\x1c\xaa\xfd\xe4G\xf0\x9c\xd8\xfd\x17\x8b\xa4""e\x96\x08\x89\xadL\xc5\xe4\x0e\xd7\xd9\x17?I\xb4i\xa2\x88@\x97""c\x9d\x94\x13\xca\xae\x80\xc9""bb?\xcb\x90\x19\xc6\x81X$V\xc8"
+"\x10\xae\xeb ;>C\xcf\x16\"\xf4\xfd\x1a\xff\xc9\x90\x1b\x8f\x0b""E\x18\x86\x9bs\xe4Qn\x05L\xc2\xf5\xb2'?\x82\xfb\xc5\xe4\x89\xf0\xd5i\xf2\xc4~\x90\xb5""d\xa7\x89\x14\xf8\xc7\x1d\x8eO\xc0\x9f""D\xe6\xd8\xa0\xd3\x8aZ\x83\xa2\x0e\x98X\xbf\xd0^9r+\xf1""D\x01"
+"\xbdo\xe2\xad\x1c\x99\xc6J\xd8\xa5""e|\xb0n\xd3\x1f""D\x1e\xd2 inE\x1d\xf0\x0b\x1c\x91([D\xf7\xdbx=A\xee\x07\xb8\x05;\xd7\xff\x9e\x80\x8b""ErTk\x91MJ\x95\x8b\x18\xb9\x05\xce\xa9_4\x8f\xf1\x98Q@\xf7j\xbc\x97(;M\xac\x84}p>~o\xf4\xe4?\x95\x98*\x17\xd9\x04"
+"\x7f\xa5s\xa8j\xa5&\x0c\xbcID\x82\x14\xd6.`\xcb\x96\xb8""7\xe3\xf8?\xf1\xdf\x14""E\xa9+`\xba\xf4\xa5\xdf`3Q\x0eOM\x90\xfd\x11\xf6(\xa8\xbf\x13Kp\xbb\x1e\xe7\x01\xfb""a\xf3\x12\xc6\xec(v\xefMsdn\xc3\xd6%\xf4\xb7""c\x0e\x1eL\x15N\xb9\x05\xa6\xe2\xf0""6"
+"\xe3K\xf0\x90\xe8\xd2""4t\xed*\xb2\xba""f\xf6\x14\x05\xd0,\x91\x0b<\xdft\xce\xae\xf8\x87\xb8\xaf{\xc1\\\\*\xc2p\x12)\x0e\x98""f\xf4\xbd\xff""8.\x12\x15\xda\xea\xa6\xf1\xc9\"o\xff\x1d\xd6o\x1a\xdf[\xec\xe0\x9b\x8a\x04\xe5\x14\xf1\xcb\xdf\xa8\xdc\xcaje"
+"\x99H\x82\xae\xc0gENL]\x01\xcd\xdc!b\xee\xa2""6\xb2\x0bq.\xe6\x8b|\x7f\xa8\xe9\xd8\x96\xf5\xef\x99u\x9d[\x89}\"\x8b\xd7\xb0""BT\x98S\x8c\xde\xed\x17\xe2""e\xd1&+\x92w|M\x8a\x03\xb6o\xfa\xf7\xd3\"\xdbj7\xf9""f\xee\x16\xb7\xc8""5b\xa2\xcd\x8c\xc3\xcf\x13"
+"\xae{\x03\xce\xc4\x87""b\x05\xce\x10\x15g\xc3\xe6""a\xd1\x1a\x1bV`\xc9\xb7\x92\xe2\x80""F\x99\xfa\x91Xf\xef&\xea~T\x84\xaaV\x07\xa4""0O4>?\xae\xff\xfdZ\xfd\xd3sR\xa2\xc0""F\xf5\xef\xb7\xc4\x06\x96\xca\x80\xc4\x8a\xac\x85Gp\x82o&?\xa6\xa4""8\xe0\x93\xfa"
+"\xf7|\xc5\x8c\xfa""B\x14@\x8f'\xca\x8f\xe0Y1\xf9\x9e""4<SHq\xc0\xcb\xf5\xef\x85\xa2\xc8Ie\x04/\xe2\xe1""D\xf9\x15\xa2\xdb\xbb\xa0\xc0""5\xba&\xc5\x01\x8dn\xcc\x97%\xf4\xff\x06\xc7%\xca\x0e\x88\xf4y\xdd\x12\xd7)M\x8a\x03^\xc4R\x11\xc7\x8b\xd4\x0e'\x88"
+"\xce\xccP\x9e`\x9d\x01\xcc\x16-\xb6I\x05\xae\xd3\x15)\x0e\x18\x16\xc9\xcbN\xe2\x91U\n"
+"'\xe3/\xa2\xd9Y\x94\xa3\xc4\xde\xd1\xa9""C\xdcSR~\xd1\xd5""8[\xe4\xeay\x05""FM$I\x17\x1b\xdd\xf7/\xc2\x81\xa2\xf9r\x8c\xf4\xb0[\x8a\xd4""bh\x89H\x82\x96\xe6\xe8:S\xf7\x93o\xb0\x97(\xa7{U'\xb4\xa5W\x0f""F\x1a\x93\xbf@\xda\xe4\xaf\xc3\x19""b\xe7\xcf\xe2"
+"\xa7\xa2R\xdc\xae+\xeb""2\xe8\x95\x03""f\x89\xc9guw\x1b\xcc\x13]\x9c\xcb""D//\x8f\x9d""D}\xbf{Y\xe3\xb2\xe8\x85\x03\xce\xab\x7fR~\xf9\x07q\xa2o*\xb6K\xc4\xae\x9f\xc7""6b#>\xa0\x84}\x99t\xe3\x80\xb5""DO\xee|i\x9b\xe9S\"4.n\x1a[-\x9cw[\xc2\xf9SD\x81td\x01"
+"\x1bs)\xeb\x80\x9a""0|\xb6\xd1%j;^\x12\x0f""7\xdb\xb5\xbe\x97\x8a\xfd\xe0\xd1\x04=\x93""D\x9b\xed\xd4$+\x13(\xe3\x80\x9a\xb8\xe7g'\xca\xbf-\xb2\xc1W2d\x16%\xc8""4XG\xbc}\xf2Gi{N&e\x1c""0]\xc4\xfa\x14\x16\x89GUO'\xc8\xbe.\xbaI)\xed\xf1\x9a\xe8(u\xfd\xae"
+"\x7f\x19\x07\xcc\xb0\xe6\xeb/\x9d\xf8\x10'\x89\xbe""a*\x8djpY\x8e\xdc\xc3\xc2\xb1\xab\n"
+"\xe8nK\x19\x07LL\x90\xf9L\xf4\x05\xe7\x95\xd0\x7f\x97\xc8):\xbd\x02\xf7\xa4\x98\xfc;%t\x8f\xa2\x8c\x03\x9e\x90\xddx\\.\xca\xda\x94\x9d\xbd\x13\x7f\x13\x9d\xe4V\xe6\x8b\xc9\xbf\xd9\x85\xee""5(\xe3\x80\xe7""D\xd7\xa6\x1d+D+kni\x8b\x82\xcf""E\xd7\xf9\xb1"
+"\xa6\xb1WD\x08\x1c\xeeR\xf7\x1a\x94q\xc0Jq\x9f\xfe\xbb""e\xfcSQ\x05^\xdd\xadQu\x16\x8b""b\xe8\x7f\"|\x1e""f\x0c\xfa\x82""e_\x90X(\x1e\x96\xec,^zZ.\x9e\xc5\xbd\xd0#\xbb\x1a\xbc!\xde\x10Ye\x8c:E\xb5\xfe\xff\x1a\xfb\x96\xd3w@\xd5\x06TM\xdf\x01U\x1bP5}\x07"
+"Tm@\xd5\xf4\x1dP\xb5\x01U\xf3\x15\xaf\xf6\x1f\xd8\xe7\xbc\xfdp\0\0\0\0IEND\xae""B`\x82";
+
+const char* settings_png = (const char*) temp_binary_data_18;
+
+//================== sine.png ==================
+static const unsigned char temp_binary_data_19[] =
 { 137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,64,0,0,0,64,8,2,0,0,0,37,11,230,137,0,0,0,9,112,72,89,115,0,0,11,19,0,0,11,19,1,0,154,156,24,0,0,5,241,105,84,88,116,88,77,76,58,99,111,109,46,97,100,111,98,101,46,120,109,112,0,0,0,0,0,60,63,120,112,
 97,99,107,101,116,32,98,101,103,105,110,61,34,239,187,191,34,32,105,100,61,34,87,53,77,48,77,112,67,101,104,105,72,122,114,101,83,122,78,84,99,122,107,99,57,100,34,63,62,32,60,120,58,120,109,112,109,101,116,97,32,120,109,108,110,115,58,120,61,34,97,100,
 111,98,101,58,110,115,58,109,101,116,97,47,34,32,120,58,120,109,112,116,107,61,34,65,100,111,98,101,32,88,77,80,32,67,111,114,101,32,53,46,54,45,99,49,52,48,32,55,57,46,49,54,48,52,53,49,44,32,50,48,49,55,47,48,53,47,48,54,45,48,49,58,48,56,58,50,49,
@@ -856,10 +897,10 @@ static const unsigned char temp_binary_data_18[] =
 235,22,92,1,160,103,156,245,239,105,29,198,144,9,0,0,22,188,226,254,145,92,114,139,180,164,224,162,4,72,2,108,108,75,223,86,196,99,54,84,213,6,129,82,0,0,176,181,43,111,237,198,116,241,184,244,143,187,134,0,106,12,1,212,24,2,168,49,4,80,99,8,160,198,
 16,64,141,33,128,26,67,0,53,127,1,73,219,54,204,93,16,244,220,0,0,0,0,73,69,78,68,174,66,96,130,0,0 };
 
-const char* sine_png = (const char*) temp_binary_data_18;
+const char* sine_png = (const char*) temp_binary_data_19;
 
 //================== speaker.png ==================
-static const unsigned char temp_binary_data_19[] =
+static const unsigned char temp_binary_data_20[] =
 "\x89PNG\r\n"
 "\x1a\n"
 "\0\0\0\rIHDR\0\0\0@\0\0\0@\x08\x02\0\0\0%\x0b\xe6\x89\0\0\0\tpHYs\0\0\x0b\x13\0\0\x0b\x13\x01\0\x9a\x9c\x18\0\0\t\xb6iTXtXML:com.adobe.xmp\0\0\0\0\0<?xpacket begin=\"\xef\xbb\xbf\" id=\"W5M0MpCehiHzreSzNTczkc9d\"?> <x:xmpmeta xmlns:x=\"adobe:ns:meta/"
@@ -896,10 +937,10 @@ static const unsigned char temp_binary_data_19[] =
 "\xe2\x9b\x85/\xbf\x7f\xfc""b\x05\xc5}\x7f+0j\xda\"}R\xb8\xf3(IN>\x18t \x10\xf8\xcf\xbb$\x03U%\xb3\x81\xd1j\x94\xc1p&\x14\xcd\x92\xbfqp\xbc\xc0\xf3\r\x83^\x15y\x92\xbf""9\x9fh\xfb""A\x04\x81\xea\xff""bKf\xf4\t\xc8\x8d>\x01\xb9\xd1' 7\xfa\x04\xe4""F\x9f"
 "\x80\xdc\xe8\x13\x90\x1b\xff\x02'AD\xc4\x18\xf1h\r\0\0\0\0IEND\xae""B`\x82";
 
-const char* speaker_png = (const char*) temp_binary_data_19;
+const char* speaker_png = (const char*) temp_binary_data_20;
 
 //================== tri.png ==================
-static const unsigned char temp_binary_data_20[] =
+static const unsigned char temp_binary_data_21[] =
 "\x89PNG\r\n"
 "\x1a\n"
 "\0\0\0\rIHDR\0\0\0@\0\0\0@\x08\x02\0\0\0%\x0b\xe6\x89\0\0\0\tpHYs\0\0\x0b\x13\0\0\x0b\x13\x01\0\x9a\x9c\x18\0\0\x05\xf1iTXtXML:com.adobe.xmp\0\0\0\0\0<?xpacket begin=\"\xef\xbb\xbf\" id=\"W5M0MpCehiHzreSzNTczkc9d\"?> <x:xmpmeta xmlns:x=\"adobe:ns:met"
@@ -920,10 +961,10 @@ static const unsigned char temp_binary_data_20[] =
 "\xf2\xf4>A\x07h5N\xdf~5\x96\x1e\x81\x0b \x84""bI\xday\xa1\xd8\xde""f3\x91\x1e\x9d\x04\x01\x84\xd0\xbb\x95\x82\xe9\xf7\x9e\xd5\xe5\xee\xc9\x81\t@\xc3\x04\xa0""a\x02\xd0""0\x01h\x98\0""4L\0\x1a&\0\xcd\xa9\x17\xf8\x0b!I?]\x8d""5\xa6\xe4\0\0\0\0IEND\xae""B"
 "`\x82";
 
-const char* tri_png = (const char*) temp_binary_data_20;
+const char* tri_png = (const char*) temp_binary_data_21;
 
 //================== whitenoise.png ==================
-static const unsigned char temp_binary_data_21[] =
+static const unsigned char temp_binary_data_22[] =
 { 137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,64,0,0,0,64,8,2,0,0,0,37,11,230,137,0,0,0,9,112,72,89,115,0,0,11,19,0,0,11,19,1,0,154,156,24,0,0,6,117,105,84,88,116,88,77,76,58,99,111,109,46,97,100,111,98,101,46,120,109,112,0,0,0,0,0,60,63,120,112,
 97,99,107,101,116,32,98,101,103,105,110,61,34,239,187,191,34,32,105,100,61,34,87,53,77,48,77,112,67,101,104,105,72,122,114,101,83,122,78,84,99,122,107,99,57,100,34,63,62,32,60,120,58,120,109,112,109,101,116,97,32,120,109,108,110,115,58,120,61,34,97,100,
 111,98,101,58,110,115,58,109,101,116,97,47,34,32,120,58,120,109,112,116,107,61,34,65,100,111,98,101,32,88,77,80,32,67,111,114,101,32,53,46,54,45,99,49,52,48,32,55,57,46,49,54,48,52,53,49,44,32,50,48,49,55,47,48,53,47,48,54,45,48,49,58,48,56,58,50,49,
@@ -1031,7 +1072,7 @@ static const unsigned char temp_binary_data_21[] =
 7,229,48,147,63,249,231,205,227,7,76,118,3,180,175,195,16,207,241,122,157,190,213,235,66,161,122,172,178,215,83,2,124,254,215,226,51,214,115,128,103,173,231,0,207,90,207,1,158,181,158,3,60,107,253,63,122,90,88,106,232,9,248,41,0,0,0,0,73,69,78,68,174,
 66,96,130,0,0 };
 
-const char* whitenoise_png = (const char*) temp_binary_data_21;
+const char* whitenoise_png = (const char*) temp_binary_data_22;
 
 
 const char* getNamedResource (const char*, int&) throw();
@@ -1062,6 +1103,7 @@ const char* getNamedResource (const char* resourceNameUTF8, int& numBytes) throw
         case 0x847b9c67:  numBytes = 3933; return save_png;
         case 0x6fac80d3:  numBytes = 2463; return saw_png;
         case 0x62e9a269:  numBytes = 5130; return sawtooth_png;
+        case 0x1fded40d:  numBytes = 4632; return settings_png;
         case 0x1e06b177:  numBytes = 2512; return sine_png;
         case 0x6d3729e9:  numBytes = 4111; return speaker_png;
         case 0xc0cfd595:  numBytes = 2335; return tri_png;
@@ -1093,6 +1135,7 @@ const char* namedResourceList[] =
     "save_png",
     "saw_png",
     "sawtooth_png",
+    "settings_png",
     "sine_png",
     "speaker_png",
     "tri_png",

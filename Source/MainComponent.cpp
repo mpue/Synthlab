@@ -45,16 +45,11 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     addAndMakeVisible(toolbar);
     
     toolbarFactory = new DefaultToolbarItemFactory();
-    toolbar->addItem(*toolbarFactory, 1);
-    toolbar->addItem(*toolbarFactory, 2);
-    toolbar->addItem(*toolbarFactory, 3);
-    toolbar->addItem(*toolbarFactory, 4);
     
-    for (int i = 0; i < toolbar->getNumItems();i++) {
+    for (int i = 0; i < toolbarFactory->numItems();i++){
+        toolbar->addItem(*toolbarFactory, i+1);
         toolbar->getItemComponent(i)->addListener(this);
     }
-   
-    
 
     
 #if JUCE_MAC
@@ -322,13 +317,15 @@ void MainComponent::openSettings() {
     
     launchOptions.dialogTitle = ("Audio Settings");
     launchOptions.escapeKeyTriggersCloseButton = true;
-    launchOptions.resizable = true;
+    launchOptions.resizable = false;
     launchOptions.useNativeTitleBar = false;
     launchOptions.useBottomRightCornerResizer = true;
     launchOptions.componentToCentreAround = getParentComponent();
     launchOptions.content.setOwned(selector);
     launchOptions.content->setSize(600, 580);
+    launchOptions.dialogBackgroundColour = LookAndFeel::getDefaultLookAndFeel().findColour(ResizableWindow::backgroundColourId);
     launchOptions.runModal();
+    
     
     AudioDeviceManager::AudioDeviceSetup setup;
     deviceManager.getAudioDeviceSetup(setup);
@@ -407,6 +404,9 @@ void MainComponent::buttonClicked (Button* b)
     }
     else if (tb->getItemId() == toolbarFactory->doc_open) {
         editor->openFile();
+    }
+    else if (tb->getItemId() == toolbarFactory->app_settings) {
+        openSettings();
     }
 }
 

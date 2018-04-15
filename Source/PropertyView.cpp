@@ -87,7 +87,7 @@ PropertyView::PropertyView ()
     properties.add(minValueProp);
     properties.add(maxValueProp);
     properties.add(stepsizeValueProp);
-    
+
 
     propertyPanel->addProperties(properties);
 
@@ -96,7 +96,7 @@ PropertyView::PropertyView ()
     minValueProp->setVisible(false);
     maxValueProp->setVisible(false);
     stepsizeValueProp->setVisible(false);
-    
+
     //[/Constructor]
 }
 
@@ -133,7 +133,7 @@ void PropertyView::paint (Graphics& g)
     //[UserPrePaint] Add your own custom painting code here..
     //[/UserPrePaint]
 
-    g.fillAll (Colours::grey);
+    g.fillAll (Colour (0xff323e44));
 
     //[UserPaint] Add your own custom painting code here..
     //[/UserPaint]
@@ -160,18 +160,18 @@ void PropertyView::changeListenerCallback(juce::ChangeBroadcaster *source) {
     SynthEditor* editor = dynamic_cast<SynthEditor*>(source);
 
 
-    
+
     valueProp->setVisible(false);
     minValueProp->setVisible(false);
     maxValueProp->setVisible(false);
     stepsizeValueProp->setVisible(false);
-    
+
     if (editor != nullptr) {
 
         if (editor->getSelectedModule() != nullptr) {
-            
+
             descriptionEditor->setText(editor->getSelectedModule()->getDescription());
-            
+
             nameValue->setValue(editor->getSelectedModule()->getName());
 
             Constant* c = nullptr;
@@ -187,11 +187,11 @@ void PropertyView::changeListenerCallback(juce::ChangeBroadcaster *source) {
             Knob* k = nullptr;
 
             if ((k = dynamic_cast<Knob*>(editor->getSelectedModule())) != NULL) {
-                
+
                 minValueProp->setVisible(true);
                 maxValueProp->setVisible(true);
                 stepsizeValueProp->setVisible(true);
-                
+
                 value->setValue(k->getValue());
                 stepsizeValue->setValue(k->getStepsize());
                 minValue->setValue(k->getMinimum());
@@ -223,7 +223,7 @@ BEGIN_JUCER_METADATA
                  parentClasses="public Component, public ChangeListener" constructorParams=""
                  variableInitialisers="" snapPixels="8" snapActive="1" snapShown="1"
                  overlayOpacity="0.330" fixedSize="0" initialWidth="600" initialHeight="400">
-  <BACKGROUND backgroundColour="ff808080"/>
+  <BACKGROUND backgroundColour="ff323e44"/>
   <TABBEDCOMPONENT name="new tabbed component" id="5a5a0866ea539d50" memberName="tabbedComponent"
                    virtualName="MainTabbedComponent" explicitFocusOrder="0" pos="0 0 100% 50%"
                    orientation="top" tabBarDepth="30" initialTab="-1"/>

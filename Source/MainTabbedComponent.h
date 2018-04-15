@@ -20,7 +20,7 @@ class MainTabbedComponent    : public TabbedComponent
 public:
     MainTabbedComponent();
     MainTabbedComponent(TabbedButtonBar::Orientation orientation);
-
+    void paint (Graphics& g) override;
     void popupMenuClickOnTab (int tabIndex, const String& tabName) override;
     
 private:
