@@ -43,6 +43,11 @@ public:
     float getRelease();
     
     void eventReceived(Event *e) override;
+    
+    virtual String getDescription() override {
+        return BinaryData::adsr_txt;
+    }
+    
 private:
     
 

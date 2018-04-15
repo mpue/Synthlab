@@ -136,12 +136,14 @@ MainComponent::~MainComponent()
             deviceManager.removeMidiInputCallback(MidiInput::getDevices().getReference(i),this);
         }
     }
-	delete editor;
-    delete tab;
-    delete propertyView;
+	
+
 #if JUCE_MAC
     MenuBarModel::setMacMainMenu(nullptr);
 #endif
+    delete editor;
+    delete tab;
+    delete propertyView;
     delete menu;
     delete toolbarFactory;
     PrefabFactory::getInstance()->destroy();

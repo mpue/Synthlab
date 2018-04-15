@@ -34,18 +34,13 @@ PropertyView::PropertyView ()
     //[Constructor_pre] You can add your own custom stuff here..
     //[/Constructor_pre]
 
-    addAndMakeVisible (tabbedComponent = new MainTabbedComponent (TabbedButtonBar::TabsAtTop));
+    addAndMakeVisible (propertyTab = new MainTabbedComponent (TabbedButtonBar::TabsAtTop));
+    propertyTab->setTabBarDepth (30);
+    propertyTab->setCurrentTabIndex (-1);
+
+    addAndMakeVisible (tabbedComponent = new TabbedComponent (TabbedButtonBar::TabsAtTop));
     tabbedComponent->setTabBarDepth (30);
     tabbedComponent->setCurrentTabIndex (-1);
-
-    addAndMakeVisible (descriptionEditor = new TextEditor ("descriptionEditor"));
-    descriptionEditor->setMultiLine (true);
-    descriptionEditor->setReturnKeyStartsNewLine (true);
-    descriptionEditor->setReadOnly (false);
-    descriptionEditor->setScrollbarsShown (true);
-    descriptionEditor->setCaretVisible (true);
-    descriptionEditor->setPopupMenuEnabled (true);
-    descriptionEditor->setText (String());
 
 
     //[UserPreSize]
@@ -57,7 +52,14 @@ PropertyView::PropertyView ()
     //[Constructor] You can add your own custom stuff here..
     setSize(getParentWidth(), getParentHeight());
 
-    tabbedComponent->addTab("Properties",juce::Colours::grey,propertyPanel = new PropertyPanel(), true);
+    propertyTab->addTab("Properties",juce::Colours::grey,propertyPanel = new PropertyPanel(), true);
+
+    descriptionEditor = new TextEditor();
+    descriptionEditor->setMultiLine(true);
+    descriptionEditor->setReadOnly(true);
+    descriptionEditor->setJustification(juce::Justification::horizontallyJustified);
+    
+    tabbedComponent->addTab("Description",juce::Colours::grey, descriptionEditor, false);
 
     properties = juce::Array<PropertyComponent*>();
 
@@ -103,13 +105,8 @@ PropertyView::PropertyView ()
 PropertyView::~PropertyView()
 {
     //[Destructor_pre]. You can add your own custom destruction code here..
-    //[/Destructor_pre]
 
-    tabbedComponent = nullptr;
-    descriptionEditor = nullptr;
-
-
-    //[Destructor]. You can add your own custom destruction code here..
+    properties.clear();
 
     delete nameListener;
     delete valueListener;
@@ -117,12 +114,21 @@ PropertyView::~PropertyView()
     delete numInputsValue;
     delete stepsizeValue;
     delete value;
-
+    
     delete minValue;
     delete maxValue;
     delete minValueListener;
     delete maxValueListener;
     delete stepsizeValueListener;
+
+    //[/Destructor_pre]
+
+    propertyTab = nullptr;
+    tabbedComponent = nullptr;
+    // descriptionEditor = nullptr;
+
+    //[Destructor]. You can add your own custom destruction code here..
+
 
     //[/Destructor]
 }
@@ -144,8 +150,8 @@ void PropertyView::resized()
     //[UserPreResize] Add your own custom resize code here..
     //[/UserPreResize]
 
-    tabbedComponent->setBounds (0, 0, proportionOfWidth (1.0000f), proportionOfHeight (0.5000f));
-    descriptionEditor->setBounds (0, proportionOfHeight (0.5000f), proportionOfWidth (0.9979f), proportionOfHeight (0.5000f));
+    propertyTab->setBounds (0, 0, proportionOfWidth (1.0000f), proportionOfHeight (0.5000f));
+    tabbedComponent->setBounds (0, proportionOfHeight (0.5000f), proportionOfWidth (1.0000f), proportionOfHeight (0.5000f));
     //[UserResized] Add your own custom resize handling here..
 
     //[/UserResized]
@@ -158,8 +164,6 @@ void PropertyView::resized()
 void PropertyView::changeListenerCallback(juce::ChangeBroadcaster *source) {
 
     SynthEditor* editor = dynamic_cast<SynthEditor*>(source);
-
-
 
     valueProp->setVisible(false);
     minValueProp->setVisible(false);
@@ -224,13 +228,12 @@ BEGIN_JUCER_METADATA
                  variableInitialisers="" snapPixels="8" snapActive="1" snapShown="1"
                  overlayOpacity="0.330" fixedSize="0" initialWidth="600" initialHeight="400">
   <BACKGROUND backgroundColour="ff323e44"/>
-  <TABBEDCOMPONENT name="new tabbed component" id="5a5a0866ea539d50" memberName="tabbedComponent"
+  <TABBEDCOMPONENT name="propertyTab" id="5a5a0866ea539d50" memberName="propertyTab"
                    virtualName="MainTabbedComponent" explicitFocusOrder="0" pos="0 0 100% 50%"
                    orientation="top" tabBarDepth="30" initialTab="-1"/>
-  <TEXTEDITOR name="descriptionEditor" id="b1822b7f97ec3a44" memberName="descriptionEditor"
-              virtualName="" explicitFocusOrder="0" pos="0 50% 99.794% 50%"
-              initialText="" multiline="1" retKeyStartsLine="1" readonly="0"
-              scrollbars="1" caret="1" popupmenu="1"/>
+  <TABBEDCOMPONENT name="MainTabbedComponent" id="c2d84f4a6b1e8bb1" memberName="tabbedComponent"
+                   virtualName="" explicitFocusOrder="0" pos="0 50% 100% 50%" orientation="top"
+                   tabBarDepth="30" initialTab="-1"/>
 </JUCER_COMPONENT>
 
 END_JUCER_METADATA

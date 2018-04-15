@@ -34,7 +34,9 @@ public:
     virtual String getCategory() override {
         return "Sound sources";
     }
-    
+    virtual String getDescription() override {
+        return BinaryData::oscillator_txt;
+    }
 
 private:
     

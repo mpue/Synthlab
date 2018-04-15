@@ -200,12 +200,13 @@ private:
     PropertyComponent* minValueProp;
     PropertyComponent* maxValueProp;
     PropertyComponent* stepsizeValueProp;
+    ScopedPointer<TextEditor> descriptionEditor;
 
     //[/UserVariables]
 
     //==============================================================================
-    ScopedPointer<MainTabbedComponent> tabbedComponent;
-    ScopedPointer<TextEditor> descriptionEditor;
+    ScopedPointer<MainTabbedComponent> propertyTab;
+    ScopedPointer<TabbedComponent> tabbedComponent;
 
 
     //==============================================================================

@@ -30,7 +30,9 @@ public:
     virtual String getCategory() override {
         return "Filter";
     }
-
+    virtual String getDescription() override {
+        return BinaryData::lowpass_txt;
+    }
 private:
     
     LowPassFilter* filter;
