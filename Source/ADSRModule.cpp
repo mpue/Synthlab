@@ -153,13 +153,13 @@ void ADSRModule::process() {
         this->setRelease(abs(pins.at(4)->connections.at(0)->getValue()));
     }
     
-    //if (pins.at(5)->connections.size() >=  1) {
-    for (int i = 0; i < buffersize;i++) {
-    for (int j = 0; j < 128;j++) {
-            pins.at(5)->data[j] = this->envelopes[j]->process();
-    }
-    }
-    //}
+    // if (pins.at(5)->connections.size() >=  1) {
+        for (int i = 0; i < buffersize;i++) {
+            for (int j = 0; j < 128;j++) {
+                pins.at(5)->data[j] = this->envelopes[j]->process();
+            }
+        }
+    // }
 
     
 }

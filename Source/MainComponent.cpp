@@ -185,7 +185,8 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
 
     
     // for (int i = 0; i < numSamples;i++)
-    editor->processModule(editor->getModule());
+    if (editor->getModule() != nullptr)
+        processModule(editor->getModule());
     
     std::vector<AudioOut*> outputChannels = editor->getOutputChannels();
     
@@ -467,7 +468,7 @@ void MainComponent::sendNoteMessage(Module *module, int note) {
 void MainComponent::audioDeviceIOCallback(const float **inputChannelData, int numInputChannels, float **outputChannelData, int numOutputChannels, int numSamples) {
     
     for (int i = 0; i < numSamples;i++)
-        editor->processModule(editor->getModule());
+        processModule(editor->getModule());
     
     std::vector<AudioOut*> outputChannels = editor->getOutputChannels();
     
@@ -502,6 +503,21 @@ void MainComponent::audioDeviceIOCallback(const float **inputChannelData, int nu
                 outputChannelData[1][j] = 0;
             }
         }
+    }
+    
+}
+
+void MainComponent::processModule(Module* m) {
+    
+    if (m != nullptr) {
+        
+        m->process();
+        
+        
+         for (int i = 0; i< m->getModules()->size();i++) {
+             processModule(m->getModules()->at(i));
+         }
+        
     }
     
 }

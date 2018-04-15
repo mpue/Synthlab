@@ -69,6 +69,9 @@ Module::Module ()
 	nameEditor->setVisible(false);
     nameEditor->addListener(this);
 
+    connections = new std::vector<Connection*>();
+    modules = new std::vector<Module*>();
+    
     //[/Constructor]
 }
 
@@ -80,22 +83,39 @@ Module::~Module()
     nameEditor = nullptr;
     nameLabel = nullptr;
 
-
     //[Destructor]. You can add your own custom destruction code here..
-    for (std::vector<Pin*>::iterator it = pins.begin(); it != pins.end(); ++it) {
+    for (std::vector<Pin*>::iterator it = pins.begin(); it != pins.end();) {
+        
+        for (std::vector<Pin*>::iterator it2 = (*it)->connections.begin(); it2 != (*it)->connections.end(); ) {
+            if ((*it)->index == (*it2)->index) {
+                it2 = (*it)->connections.erase(it2);
+            }
+            else {
+                ++it2;
+            }
+            
+        }
+        
         delete *it;
+        it = pins.erase(it);
     }
-
+    
+    
+/*
     for (std::vector<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it) {
         delete *it;
     }
     for (std::vector<Module*>::iterator it = modules.begin(); it != modules.end(); ++it) {
         delete *it;
     }
+ */
 
 
-    connections.clear();
-    modules.clear();
+    connections->clear();
+    modules->clear();
+    
+    delete connections;
+    delete modules;
 
     //[/Destructor]
 }
@@ -352,19 +372,19 @@ void Module::textEditorReturnKeyPressed(juce::TextEditor &) {
 }
 
 void Module::setConnections(std::vector<Connection *>* connections) {
-    this->connections = *connections;
+    this->connections = connections;
 }
 
 void Module::setModules(std::vector<Module *>* modules) {
-    this->modules = *modules;
+    this->modules = modules;
 }
 
 std::vector<Connection*>* Module::getConnections() {
-    return &connections;
+    return connections;
 }
 
 std::vector<Module*>* Module::getModules() {
-    return &modules;
+    return modules;
 }
 
 void Module::setName(juce::String name) {

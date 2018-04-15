@@ -638,7 +638,31 @@ bool SynthEditor::keyPressed (const KeyPress& key)
     //[UserCode_keyPressed] -- Add your code here...
 
     if (key.getKeyCode() == KeyPress::deleteKey || key.getKeyCode() == KeyPress::backspaceKey) {
-        deleteSelected(false);
+        
+        std::vector<Connection*>* cons = root->getConnections();
+        cons->erase(std::remove_if(cons->begin(), cons->end(), [](Connection* c){
+            if (c->selected){
+                delete c;
+                return true;
+            }
+            return false;
+        }),cons->end());
+        
+        for(std::vector<Module*>::iterator it = root->getModules()->begin();it != root->getModules()->end();it++) {
+            if ((*it)->isSelected())
+                removeModule((*it));
+        }
+        for(std::vector<Module*>::iterator it = root->getModules()->begin();it != root->getModules()->end();) {
+            if ((*it)->isSelected()) {
+                delete *it;
+                it = root->getModules()->erase(it);
+            }
+            else {
+                ++it;
+            }
+        }
+        
+        // deleteSelected(false);
     }
     if(key.getKeyCode() == 65 && isCtrlDown) {
         for (int i = 0; i < root->getModules()->size();i++) {
@@ -674,8 +698,21 @@ void SynthEditor::modifierKeysChanged (const ModifierKeys& modifiers)
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 
 void SynthEditor::cleanUp() {
-    removeAllChildren();
-    deleteSelected(true);
+    for(std::vector<Module*>::iterator it = root->getModules()->begin();it != root->getModules()->end();it++) {
+        removeModule((*it));
+    }
+    for(std::vector<Module*>::iterator it = root->getModules()->begin();it != root->getModules()->end();) {
+        delete *it;
+        it = root->getModules()->erase(it);
+    }
+    for(std::vector<Connection*>::iterator it = root->getConnections()->begin();it != root->getConnections()->end();) {
+        delete *it;
+        it = root->getConnections()->erase(it);
+    }
+    
+    delete root;
+    root = nullptr;
+    //deleteSelected(true);
     selectedModules.clear();
     outputChannels.clear();
     
@@ -683,6 +720,7 @@ void SynthEditor::cleanUp() {
 
 void SynthEditor::newFile() {
     cleanUp();
+    root = new Module("Root");
     repaint();
 }
 
@@ -811,6 +849,7 @@ void SynthEditor::openFile() {
     if (chooser.browseForFileToOpen()) {
 
         cleanUp();
+        root = new Module("Root");
 #if JUCE_IOS
         URL url = chooser.getURLResult();
         InputStream* is = url.createInputStream(false);
@@ -1060,8 +1099,81 @@ void SynthEditor::deleteSelected(bool deleteAll) {
 }
 */
 
+void SynthEditor::removeModule(Module* module) {
+    vector<long> pinsToBeRemoved;
+    
+    // find the indices of the pins being involved in the disconnect
+
+    for (int j = 0; j < root->getModules()->size(); j++) {
+        if (root->getModules()->at(j)->getIndex() != module->getIndex()) {
+            
+            for (int k = 0; k < root->getModules()->at(j)->getPins().size(); k++) {
+                
+                // for every connection of each pin
+                for (int l = 0; l < root->getModules()->at(j)->getPins().at(k)->connections.size(); l++) {
+                    
+                    // for each pin of the module being removed
+                    for (int n = 0; n < module->getPins().size();n++) {
+                        // if the index matches remove pin from vector
+                        
+                        if (root->getModules()->at(j)->getPins().at(k)->connections.at(l)->index == module->getPins().at(n)->index) {
+                            pinsToBeRemoved.push_back(root->getModules()->at(j)->getPins().at(k)->connections.at(l)->index);
+                            
+                        }
+                    }
+                    
+                }
+            }
+        }
+    }
+    
+    // remove according pins
+    
+    for (int i = 0; i < pinsToBeRemoved.size();i++) {
+        for (int j = 0; j < root->getModules()->size(); j++) {
+            
+            for (int k = 0; k < root->getModules()->at(j)->getPins().size();k++) {
+                
+                Pin* p = root->getModules()->at(j)->getPins().at(k);
+                for (std::vector<Pin*>::iterator it = p->connections.begin();it != p->connections.end();) {
+                    if ((*it)->index == pinsToBeRemoved.at(i)) {
+                        it = p->connections.erase(it);
+                    }
+                    else {
+                        ++it;
+                    }
+                }
+            }
+        }
+    }
+    
+    // remove dangling connections from other modules
+    
+    
+    std::vector<Connection*>* cons = root->getConnections();
+   
+    for(int i = 0;i < root->getModules()->size();i++) {
+        for (std::vector<Connection*>::iterator it = cons->begin(); it != cons->end(); ) {
+            if ((*it)->source->getIndex() == module->getIndex() ||
+                (*it)->target->getIndex() == module->getIndex() ) {
+                it = cons->erase(it);
+            }
+            else {
+                ++it;
+            }
+        }
+    }
+    
+    
+}
 
 void SynthEditor::deleteSelected(bool deleteAll) {
+    
+    if(!deleteAll) {
+        for (int i = 0; i < getSelectedModules().size();i++) {
+            removeModule(getSelectedModules().at(i));
+        }
+    }
     
     // handle connections at root level
     if (deleteAll) {
@@ -1091,7 +1203,10 @@ void SynthEditor::deleteSelected(bool deleteAll) {
         
         mods->erase(std::remove_if(mods->begin(), mods->end(), [](Module* m){
             bool selected =  m->isSelected();
-            if (selected) delete m;
+            if (selected) {
+                delete m;
+                m = nullptr;
+            }
             return selected;
         }),mods->end());
     }
@@ -1278,21 +1393,6 @@ void SynthEditor::setSamplerate(double rate) {
 
 void SynthEditor::setBufferSize(int buffersize) {
     this->bufferSize = buffersize;
-}
-
-
-void SynthEditor::processModule(Module* m) {
-    
-    if (m != nullptr) {
-    
-        m->process();
-        
-        
-        for (int i = 0; i< m->getModules()->size();i++) {
-            processModule(m->getModules()->at(i));
-        }
-    }
-    
 }
 
 std::vector<AudioOut*> SynthEditor::getOutputChannels() {

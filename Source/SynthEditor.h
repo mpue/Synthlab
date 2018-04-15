@@ -82,9 +82,9 @@ public:
 
     void setSamplerate(double rate);
     void setBufferSize(int buffersize);
-    void processModule(Module* m);
-    bool connectionExists(std::vector<Connection*> connections, Connection* c);
 
+    bool connectionExists(std::vector<Connection*> connections, Connection* c);
+    void removeModule(Module* module);
     
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate);
     void showContextMenu(Point<int> position);
