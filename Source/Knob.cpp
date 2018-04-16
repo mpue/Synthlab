@@ -29,14 +29,11 @@ Knob::Knob()
     // slider->setColour (Slider::rotarySliderOutlineColourId, Colour (0x66ffffff));
     slider->addListener (this);
     
-    
     slider->setTopLeftPosition(getWidth() / 2 - slider->getWidth() / 2, getHeight() / 2 - slider->getHeight()/2);
     
     addAndMakeVisible(slider);
 
-    
-    // slider->toFront(true);
-    setInterceptsMouseClicks(false, true);
+    setInterceptsMouseClicks(false,true);
     
     editable = false;
     prefab = true;
@@ -143,6 +140,10 @@ bool Knob::isLearning(){
 }
 
 void Knob::eventReceived(Event *e) {
-    
+}
 
+void Knob::setSelected(bool selected) {
+    Module::setSelected(selected);
+    //slider->setWantsKeyboardFocus(true);
+    // slider->grabKeyboardFocus();
 }

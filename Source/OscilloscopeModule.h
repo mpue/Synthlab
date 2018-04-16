@@ -43,6 +43,8 @@ public:
         return "A soimple oscilloscope";
     }
     
+    
+    
 private:
 
     int currentSample = 0;

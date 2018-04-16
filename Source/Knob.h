@@ -50,6 +50,8 @@ public:
     void setController(int num);
     void eventReceived(Event *e) override;
     
+    virtual void setSelected(bool selected) override;
+    
     float map(float x, float in_min, float in_max, float out_min, float out_max)
     {
         return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;

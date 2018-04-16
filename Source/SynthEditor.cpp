@@ -823,7 +823,8 @@ void SynthEditor::saveFile() {
         
         OutputStream* os = file.createOutputStream();
         
-        XmlElement* xml = v->createXml();
+        XmlElement* xml = v->createXml()
+        
         xml->writeToStream(*os, "");
         
         delete os;
@@ -843,6 +844,7 @@ void SynthEditor::saveFile() {
         
         XmlElement* xml = v->createXml();
         xml->writeToFile(file, "");
+
         delete xml;
         delete v;
         

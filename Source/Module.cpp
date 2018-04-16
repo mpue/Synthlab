@@ -389,6 +389,9 @@ std::vector<Module*>* Module::getModules() {
 }
 
 void Module::setName(juce::String name) {
+    if (!editable) {
+        return;
+    }
     Component::setName(name);
     nameLabel->setText(getName(), NotificationType::dontSendNotification);
 }

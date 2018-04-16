@@ -71,7 +71,11 @@ void OscilloscopeModule::process() {
     
     if (pins.at(0)->connections.size() == 1 ) {
         const float* in = pins.at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-        memcpy(buffer,in,buffersize);
+        for (int i = 0; i < buffersize;i++) {
+            buffer[currentSample] = in[i];
+            currentSample = (currentSample + 1) % 1024;
+        }
+        
     }
     
 }
