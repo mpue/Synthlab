@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Synth>
+  <Modules>
+    <Module name="Display value" index="58" x="556" y="248" isPrefab="1"
+            prefabId="58">
+      <Pins>
+        <Pin type="2" direction="0" index="5801" x="0" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Add value" index="59" x="248" y="172" isPrefab="1" prefabId="59">
+      <Pins>
+        <Pin type="2" direction="0" index="5901" x="0" y="10"/>
+        <Pin type="2" direction="0" index="5902" x="0" y="30"/>
+        <Pin type="2" direction="1" index="5903" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="67" x="65" y="182" isPrefab="1" prefabId="67"
+            value="2.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="167" x="63" y="239" isPrefab="1" prefabId="67"
+            value="4.69999980926513671875">
+      <Pins>
+        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections>
+    <Connection source="67" target="59" a="6701" b="5901"/>
+    <Connection source="167" target="59" a="6701" b="5902"/>
+    <Connection source="59" target="58" a="5903" b="5801"/>
+  </Connections>
+</Synth>

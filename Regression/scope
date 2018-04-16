@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Synth>
+  <Modules>
+    <Module name="Scope" index="75" x="436" y="228" isPrefab="1" prefabId="75">
+      <Pins>
+        <Pin type="0" direction="0" index="7501" x="0" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Sine" index="71" x="233" y="216" isPrefab="1" prefabId="71">
+      <Pins>
+        <Pin type="2" direction="0" index="7101" x="0" y="10"/>
+        <Pin type="2" direction="0" index="7102" x="0" y="30"/>
+        <Pin type="2" direction="0" index="7103" x="0" y="50"/>
+        <Pin type="0" direction="1" index="7104" x="110" y="10"/>
+        <Pin type="2" direction="1" index="7105" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="69" x="106" y="150" isPrefab="1" prefabId="69"
+            minvalue="0.00000000000000000000" maxvalue="10000.00000000000000000000"
+            stepsize="1.00100004673004150391" value="3699.69628906250000000000"
+            isController="0" controllerNum="1">
+      <Pins>
+        <Pin type="2" direction="1" index="6901" x="70" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="67" x="22" y="280" isPrefab="1" prefabId="67"
+            value="2.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections>
+    <Connection source="75" target="71" a="7501" b="7104"/>
+    <Connection source="71" target="69" a="7101" b="6901"/>
+    <Connection source="71" target="67" a="7103" b="6701"/>
+  </Connections>
+</Synth>

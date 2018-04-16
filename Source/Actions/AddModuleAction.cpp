@@ -17,6 +17,8 @@ AddModuleAction::AddModuleAction(SynthEditor* editor, Point<int> position, int m
 }
 
 bool AddModuleAction::undo() {
+    
+    editor->removeSelectedItem();
     return true;
 }
 
@@ -30,6 +32,7 @@ bool AddModuleAction::perform() {
     editor->getModule()->getModules()->push_back(m);
     
     m->setSelected(true);
+    m->savePosition();
     editor->getSelectedModules()->push_back(m);
     editor->repaint();
     

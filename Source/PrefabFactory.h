@@ -70,8 +70,10 @@ private:
     StringArray* categories;
     
     PrefabFactory() {
-
-        prefabs[60] = Prefab("Adder","Math");
+        prefabs[57] = Prefab("Multiply value","Math");
+        prefabs[58] = Prefab("Display value","Debug");
+        prefabs[59] = Prefab("Add value","Math");
+        prefabs[60] = Prefab("Add signal","Math");
         prefabs[61] = Prefab("Midi gate","MIDI");
         prefabs[62] = Prefab("Midi out","MIDI");
         prefabs[63] = Prefab("Midi note","MIDI");
@@ -86,6 +88,7 @@ private:
         prefabs[72] = Prefab("Random","Sound sources");
         prefabs[73] = Prefab("Stereo delay","FX");
         prefabs[74] = Prefab("HP filter","Filter");
+        prefabs[75] = Prefab("Scope","Debug");
         
         categories = new StringArray();
 
@@ -96,6 +99,7 @@ private:
         categories->add("MIDI");
         categories->add("Sound sources");
         categories->add("FX");
+        categories->add("Debug");
         
     };
     ~PrefabFactory() {

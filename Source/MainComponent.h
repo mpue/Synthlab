@@ -63,7 +63,9 @@ public:
             doc_open        = 2,
             doc_save        = 3,
             delete_element  = 4,
-            app_settings    = 5
+            app_settings    = 5,
+            app_undo        = 6,
+            app_redo        = 7
             
         };
         
@@ -78,6 +80,8 @@ public:
             ids.add (doc_save);
             ids.add (delete_element);
             ids.add (app_settings);
+            ids.add (app_undo);
+            ids.add (app_redo);
 
         }
         
@@ -91,6 +95,8 @@ public:
             ids.add (doc_save);
             ids.add (delete_element);
             ids.add (app_settings);
+            ids.add (app_undo);
+            ids.add (app_redo);
         }
         
         ToolbarItemComponent* createItem (int itemId) override
@@ -114,6 +120,12 @@ public:
                 case app_settings:
                     b = new ToolbarButton(itemId,"Settings",getImage(itemId), getImage(itemId));
                     return b;
+                case app_undo:
+                    b = new ToolbarButton(itemId,"Undo",getImage(itemId), getImage(itemId));
+                    return b;
+                case app_redo:
+                    b = new ToolbarButton(itemId,"Redo",getImage(itemId), getImage(itemId));
+                    return b;
                 default:
                     break;
             }
@@ -135,11 +147,15 @@ public:
                 di->setImage(ImageCache::getFromMemory(BinaryData::delete_png, BinaryData::delete_pngSize));
             else if(itemId == 5)
                 di->setImage(ImageCache::getFromMemory(BinaryData::settings_png, BinaryData::settings_pngSize));
+            else if(itemId == 6)
+                di->setImage(ImageCache::getFromMemory(BinaryData::undo_png, BinaryData::undo_pngSize));
+            else if(itemId == 7)
+                di->setImage(ImageCache::getFromMemory(BinaryData::redo_png, BinaryData::redo_pngSize));
             return di;
         }
         
         int numItems() {
-            return 5;
+            return 7;
         }
         
     };

@@ -402,6 +402,12 @@ void MainComponent::buttonClicked (Button* b)
     else if (tb->getItemId() == toolbarFactory->app_settings) {
         openSettings();
     }
+    else if (tb->getItemId() == toolbarFactory->app_undo) {
+        Project::getInstance()->getUndoManager()->undo();
+    }
+    else if (tb->getItemId() == toolbarFactory->app_redo) {
+        Project::getInstance()->getUndoManager()->redo();
+    }
 }
 
 void MainComponent::handleIncomingMidiMessage(juce::MidiInput *source, const juce::MidiMessage &message) {

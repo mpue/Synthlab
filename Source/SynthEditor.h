@@ -44,7 +44,8 @@ class AddModuleAction;
 */
 class SynthEditor  : public Component,
                      public ChangeBroadcaster,
-                     public AudioModule
+                     public AudioModule,
+                     public Timer 
          
 
 {
@@ -107,10 +108,16 @@ public:
     
     bool isRunning() {
         return running;
+        //stopTimer();
     }
     
     void setRunning(bool running) {
         this->running = running;
+        // startTimer(100);
+    }
+    
+    void timerCallback() override {
+        repaint();
     }
     
     //[/UserMethods]

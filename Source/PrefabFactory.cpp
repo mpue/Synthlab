@@ -21,6 +21,10 @@
 #include "SineModule.h"
 #include "RandomModule.h"
 #include "DelayModule.h"
+#include "AddValueModule.h"
+#include "DisplayValueModule.h"
+#include "MultiplyModule.h"
+#include "OscilloscopeModule.h"
 
 PrefabFactory* PrefabFactory::instance = NULL;
 
@@ -28,8 +32,14 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
 
     Module* m = nullptr;
     
-    if (prefabs[id].getName() == "Adder") {
+    if (prefabs[id].getName() == "Add signal") {
         m = new AdderModule(bufferSize);
+    }
+    else if (prefabs[id].getName() == "Add value") {
+        m = new AddValueModule();
+    }
+    else if (prefabs[id].getName() == "Multiply value") {
+        m = new MultiplyModule();
     }
     else if (prefabs[id].getName() == "Midi gate") {
         m = new MidiGate();
@@ -75,6 +85,12 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Stereo delay") {
         m = new DelayModule(sampleRate,bufferSize);
+    }
+    else if (prefabs[id].getName() == "Display value") {
+        m = new DisplayValueModule();
+    }
+    else if (prefabs[id].getName() == "Scope") {
+        m = new OscilloscopeModule(sampleRate,bufferSize);
     }
     
     m->setIndex(id + 100 * prefabs[id].getNumInstances());

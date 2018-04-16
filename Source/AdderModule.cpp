@@ -19,7 +19,7 @@ AdderModule::AdderModule(int bufferSize)
     setSize(120,140);
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(18,2);
-    setName("Add");
+    setName("Add signal");
     editable = false;
     prefab = true;
     this->buffersize = bufferSize;

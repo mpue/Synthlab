@@ -19,6 +19,7 @@ public:
     
     virtual bool perform() override;
     virtual bool undo() override;
+    
 private:
     
     SynthEditor* editor;

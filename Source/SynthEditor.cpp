@@ -469,27 +469,6 @@ void SynthEditor::showContextMenu(Point<int> position) {
             newFile();
         }
         else {
-            /*
-            Module* m = PrefabFactory::getInstance()->getPrefab(result, _sampleRate, bufferSize);
-            addChangeListener(m);
-            m->setTopLeftPosition(position);
-           
-            
-            addAndMakeVisible(m);
-            root->getModules()->push_back(m);
-            
-            m->setSelected(true);
-            getSelectedModules()->push_back(m);
-            repaint();
-            
-            AudioOut* out;
-            if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
-                outputChannels.push_back(out);
-                if (!running) {
-                    running = true;
-                }
-            }
-             */
             AddModuleAction* am = new AddModuleAction(this,position,result);
             Project::getInstance()->getUndoManager()->perform(am);
         
@@ -607,18 +586,21 @@ void SynthEditor::mouseUp (const MouseEvent& e)
 		isLeftMouseDown = false;
 	}
 
-    if (state == DRAGGING_CONNECTION) {
-        for (int i = 0; i < root->getModules()->size(); i++) {
 
-            Module* m = root->getModules()->at(i);
-            
-            m->savePosition();
+    for (int i = 0; i < root->getModules()->size(); i++) {
 
+        Module* m = root->getModules()->at(i);
+        m->savePosition();
+        
+        if (state == DRAGGING_CONNECTION)  {
             if (m->isSelected()) {
                 addConnection(e, m);
             }
         }
     }
+    
+    
+    
 	lineStopX = 0;
 	lineStopY = 0;
     
@@ -914,7 +896,7 @@ void SynthEditor::openFile() {
    
         ValueTree v = ValueTree::fromXml(*xml.get());
 
-        running = false;
+        setRunning(false);
         loadStructure(root->getModules(),root->getConnections(), &v);
 
         for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
@@ -922,8 +904,7 @@ void SynthEditor::openFile() {
         }
 
         xml = nullptr;
-        running = true;
-
+        setRunning(true);
     }
 }
 
