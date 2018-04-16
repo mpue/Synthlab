@@ -28,8 +28,8 @@ public:
     virtual ~LowPassFilter();
     
 private:
-    ScopedPointer<IIRFilter> filter1;
-    ScopedPointer<IIRFilter> filter2;
+    IIRFilter* filter1;
+    IIRFilter* filter2;
     Modulator* modulator;
     float frequency;
     float modAmount;

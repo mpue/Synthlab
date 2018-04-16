@@ -35,7 +35,7 @@ LPFilterModule::LPFilterModule(double sampleRate, int buffersize)
 
 LPFilterModule::~LPFilterModule()
 {
-
+    delete filter;
 }
 
 void LPFilterModule::configurePins() {

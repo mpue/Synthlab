@@ -32,6 +32,8 @@
 #include "ADSRModule.h"
 #include <stdio.h>
 #include <string.h>
+#include "Actions/AddModuleAction.h"
+#include "Project.h"
 //[/Headers]
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
@@ -467,10 +469,11 @@ void SynthEditor::showContextMenu(Point<int> position) {
             newFile();
         }
         else {
+            /*
             Module* m = PrefabFactory::getInstance()->getPrefab(result, _sampleRate, bufferSize);
             addChangeListener(m);
             m->setTopLeftPosition(position);
-            
+           
             
             addAndMakeVisible(m);
             root->getModules()->push_back(m);
@@ -486,6 +489,10 @@ void SynthEditor::showContextMenu(Point<int> position) {
                     running = true;
                 }
             }
+             */
+            AddModuleAction* am = new AddModuleAction(this,position,result);
+            Project::getInstance()->getUndoManager()->perform(am);
+        
         }
         
         delete prefabMenu;

@@ -13,7 +13,7 @@
 #include "MidiGate.h"
 #include "MidiNote.h"
 #include "PrefabFactory.h"
-
+#include "Project.h"
 //==============================================================================
 MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
 {
@@ -72,7 +72,6 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     tab = new MainTabbedComponent();
     tab->setBounds(0,50,getWidth(),getHeight());
     
-    
     view = new Viewport();
     
     addAndMakeVisible(view);
@@ -84,7 +83,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     view->setWantsKeyboardFocus(false);
     view->setMouseClickGrabsKeyboardFocus(false);
     
-    tab->addTab("Main", juce::Colours::grey, view, true);
+    tab->addTab("Main", juce::Colours::grey, view, false);
     
     propertyView =  new PropertyView();
     addAndMakeVisible (propertyView);
@@ -92,14 +91,11 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     addAndMakeVisible (tab);
     
     editor->setTab(tab);
-    
-    
+
     addKeyListener(this);
     resized();
     
     editor->addChangeListener(propertyView);
-    
-    
     
     // we have to set up our StretchableLayoutManager so it know the limits and preferred sizes of it's contents
     stretchableManager.setItemLayout (0,            // for the properties
@@ -117,8 +113,6 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
 
     
     initialized = true;
-    
-   //  deviceManager.addAudioCallback(this);
     running = true;
 }
 
@@ -140,10 +134,14 @@ MainComponent::~MainComponent()
 #endif
     delete editor;
     delete tab;
+    delete view;
     delete propertyView;
     delete menu;
+    delete toolbar;
     delete toolbarFactory;
+
     PrefabFactory::getInstance()->destroy();
+    Project::getInstance()->destroy();
     // This shuts down the audio device and clears the audio source.
     shutdownAudio();
 

@@ -27,6 +27,9 @@
 #include "AudioOut.h"
 #include "AudioModule.h"
 #include <vector>
+
+
+class AddModuleAction;
 //[/Headers]
 
 
@@ -102,6 +105,13 @@ public:
         return bufferSize;
     }
     
+    bool isRunning() {
+        return running;
+    }
+    
+    void setRunning(bool running) {
+        this->running = running;
+    }
     
     //[/UserMethods]
 

@@ -47,7 +47,12 @@ public:
     class DefaultToolbarItemFactory   : public ToolbarItemFactory
     {
     public:
-        DefaultToolbarItemFactory() {}
+        DefaultToolbarItemFactory() {
+
+        }
+        
+        ~DefaultToolbarItemFactory() {
+        }
         
         //==============================================================================
         // Each type of item a toolbar can contain must be given a unique ID. These
@@ -90,14 +95,27 @@ public:
         
         ToolbarItemComponent* createItem (int itemId) override
         {
+            
+            ToolbarButton* b;
             switch (itemId)
             {
-                case doc_new:         return new ToolbarButton(itemId,"New",getImage(itemId), getImage(itemId));
-                case doc_open:        return new ToolbarButton(itemId,"Open",getImage(itemId), getImage(itemId));
-                case doc_save:        return new ToolbarButton(itemId,"Save",getImage(itemId), getImage(itemId));
-                case delete_element:  return new ToolbarButton(itemId,"Delete",getImage(itemId), getImage(itemId));
-                case app_settings:    return new ToolbarButton(itemId,"Settings",getImage(itemId), getImage(itemId));
-                default:                break;
+                case doc_new:
+                    b = new ToolbarButton(itemId,"New",getImage(itemId), getImage(itemId));
+                    return b;
+                case doc_open:
+                    b = new ToolbarButton(itemId,"Open",getImage(itemId), getImage(itemId));
+                    return b;
+                case doc_save:
+                    b = new ToolbarButton(itemId,"Save",getImage(itemId), getImage(itemId));
+                    return b;
+                case delete_element:
+                    b = new ToolbarButton(itemId,"Delete",getImage(itemId), getImage(itemId));
+                    return b;
+                case app_settings:
+                    b = new ToolbarButton(itemId,"Settings",getImage(itemId), getImage(itemId));
+                    return b;
+                default:
+                    break;
             }
             
             return nullptr;
@@ -125,10 +143,6 @@ public:
         }
         
     };
-        
-
-
-
     
 private:
     //==============================================================================

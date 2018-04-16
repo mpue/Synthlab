@@ -36,11 +36,11 @@ void MainTabbedComponent::popupMenuClickOnTab(int tabIndex, const juce::String &
         return;
     }
     
-    PopupMenu m = PopupMenu();
+    PopupMenu* m = new PopupMenu();
     
-    m.addItem(1, "Close tab");
+    m->addItem(1, "Close tab");
 
-    const int result = m.show();
+    const int result = m->show();
     
     if (result == 0)
     {
@@ -49,6 +49,6 @@ void MainTabbedComponent::popupMenuClickOnTab(int tabIndex, const juce::String &
     else if (result == 1) {
         TabbedComponent::removeTab(tabIndex);
     }
-    
+    delete m;
  
 }
