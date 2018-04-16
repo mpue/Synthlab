@@ -25,6 +25,7 @@
 #include "DisplayValueModule.h"
 #include "MultiplyModule.h"
 #include "OscilloscopeModule.h"
+#include "InverterModule.h"
 
 PrefabFactory* PrefabFactory::instance = NULL;
 
@@ -40,6 +41,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Multiply value") {
         m = new MultiplyModule();
+    }
+    else if (prefabs[id].getName() == "Invert value") {
+        m = new InverterModule();
     }
     else if (prefabs[id].getName() == "Midi gate") {
         m = new MidiGate();
@@ -97,7 +101,6 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     m->setId(id);
     prefabs[id].addInstance();
     m->configurePins();
-    
     
     return m;
 }

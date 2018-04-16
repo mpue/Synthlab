@@ -336,6 +336,8 @@ void MainComponent::openSettings() {
     File configFile = File(userHome+"/.Synthlab/config.xml");
     config->writeToFile(configFile,"");
     
+    delete config;
+    
 }
 
 bool MainComponent::keyStateChanged(bool isKeyDown, juce::Component *originatingComponent) {

@@ -49,7 +49,7 @@ void MultiplyModule::configurePins() {
 
 void MultiplyModule::paint(juce::Graphics &g) {
     Module::paint(g);
-    g.drawImageAt(ImageCache::getFromMemory(BinaryData::adder_png, BinaryData::adder_pngSize),25,40);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::multiplier_png, BinaryData::multiplier_pngSize),25,40);
 }
 
 void MultiplyModule::process() {

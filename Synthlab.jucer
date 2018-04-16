@@ -12,12 +12,15 @@
       <FILE id="DbUq4B" name="adder.png" compile="0" resource="1" file="Images/adder.png"/>
       <FILE id="LYnUGD" name="adsr.png" compile="0" resource="1" file="Images/adsr.png"/>
       <FILE id="Kxq8Ss" name="delete.png" compile="0" resource="1" file="Images/delete.png"/>
+      <FILE id="rJlVP0" name="divider.png" compile="0" resource="1" file="Images/divider.png"/>
       <FILE id="v1N5Vy" name="hp.png" compile="0" resource="1" file="Images/hp.png"/>
+      <FILE id="MpStxg" name="inverter.png" compile="0" resource="1" file="Images/inverter.png"/>
       <FILE id="gJAegc" name="led_off.png" compile="1" resource="1" file="Images/led_off.png"/>
       <FILE id="xTBQB1" name="led_on.png" compile="1" resource="1" file="Images/led_on.png"/>
       <FILE id="HGa4kr" name="lp.png" compile="0" resource="1" file="Images/lp.png"/>
       <FILE id="wjQQld" name="midiin.png" compile="0" resource="1" file="Images/midiin.png"/>
       <FILE id="E9iJPb" name="midiout.png" compile="0" resource="1" file="Images/midiout.png"/>
+      <FILE id="OhXgK2" name="multiplier.png" compile="0" resource="1" file="Images/multiplier.png"/>
       <FILE id="HjBjyS" name="new.png" compile="0" resource="1" file="Images/new.png"/>
       <FILE id="trqee2" name="note.png" compile="0" resource="1" file="Images/note.png"/>
       <FILE id="WJV4UZ" name="open.png" compile="0" resource="1" file="Images/open.png"/>
@@ -126,6 +129,10 @@
                 file="Source/HPFilterModule.cpp"/>
           <FILE id="HQnBbd" name="HPFilterModule.h" compile="0" resource="0"
                 file="Source/HPFilterModule.h"/>
+          <FILE id="donBuj" name="InverterModule.cpp" compile="1" resource="0"
+                file="Source/InverterModule.cpp"/>
+          <FILE id="J8lX0s" name="InverterModule.h" compile="0" resource="0"
+                file="Source/InverterModule.h"/>
           <FILE id="yhgzmV" name="Knob.cpp" compile="1" resource="0" file="Source/Knob.cpp"/>
           <FILE id="PBm2CJ" name="Knob.h" compile="0" resource="0" file="Source/Knob.h"/>
           <FILE id="UX3HFt" name="LPFilterModule.cpp" compile="1" resource="0"
