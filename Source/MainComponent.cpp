@@ -68,6 +68,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     }
     
     editor = new SynthEditor(sampleRate,buffersize);
+    editor->loadFromString(BinaryData::delaytest6);
     
     tab = new MainTabbedComponent();
     tab->setBounds(0,50,getWidth(),getHeight());

@@ -2,6 +2,9 @@
 
 <JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.2.1">
   <MAINGROUP id="CKGTaZ" name="Synthlab">
+    <GROUP id="{76D84681-B72F-D5A2-9B1D-2A847D7CEA82}" name="Synths">
+      <FILE id="csI6SF" name="delaytest6" compile="0" resource="1" file="Regression/delaytest6"/>
+    </GROUP>
     <GROUP id="{4B823972-67BB-E3BB-E219-7A6E1BDAC3BE}" name="docs">
       <FILE id="Z3Znri" name="adsr.txt" compile="0" resource="1" file="docs/adsr.txt"/>
       <FILE id="IcVqhD" name="highpass.txt" compile="0" resource="1" file="docs/highpass.txt"/>

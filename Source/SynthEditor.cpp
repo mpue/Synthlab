@@ -805,6 +805,23 @@ void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Conn
 
 }
 
+void SynthEditor::loadFromString(juce::String in){
+    
+    ScopedPointer<XmlElement> xml = XmlDocument(in).getDocumentElement();
+    
+    ValueTree v = ValueTree::fromXml(*xml.get());
+    
+    setRunning(false);
+    loadStructure(root->getModules(),root->getConnections(), &v);
+    
+    for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
+        addAndMakeVisible((*it));
+    }
+    
+    xml = nullptr;
+    setRunning(true);
+}
+
 void SynthEditor::saveFile() {
     
 #if JUCE_IOS

@@ -98,6 +98,8 @@ public:
     void showContextMenu(Point<int> position);
     bool channelIsValid(int channel);
     
+    void loadFromString(String in);
+    
     virtual float getSampleRate() override {
         return _sampleRate;
     }
