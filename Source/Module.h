@@ -55,6 +55,14 @@ public:
 
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
+    
+    enum Layer {
+        ALL,
+        GUI,
+        MODULES,
+        CONNECTIONS
+    };
+    
     void addPin(Pin::Direction direction);
     void addPin(Pin::Direction direction, Pin *p);
     void addPin(Pin* p);
@@ -68,7 +76,7 @@ public:
 
 	Point<int> getPinPosition(int i);
 
-    void setSelected(bool selected);
+    virtual void setSelected(bool selected);
     bool isSelected();
 
 	long getIndex();
@@ -103,12 +111,16 @@ public:
     virtual String getCategory();
     virtual String getDescription();
     
+    virtual Layer getLayer() {
+        return Layer::MODULES;
+    };
+    
     //[/UserMethods]
 
     void paint (Graphics& g) override;
     void resized() override;
     void mouseDoubleClick (const MouseEvent& e) override;
-
+    
     // Binary resources:
     static const char* materialicons_301_viewmodule_64_0_ffffff_none_png;
     static const int materialicons_301_viewmodule_64_0_ffffff_none_pngSize;

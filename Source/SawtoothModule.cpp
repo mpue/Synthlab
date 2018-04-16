@@ -82,10 +82,6 @@ void SawtoothModule::paint(juce::Graphics &g) {
 
 void SawtoothModule::setPitch(int pitch) {
     this->pitch = pitch;
-    for (int i = 0; i < 128;i++){
-        if (oscillator[i] != nullptr)
-            this->oscillator[i]->setPitch(pitch);
-    }
 }
 
 void SawtoothModule::setFine(float fine) {
@@ -110,6 +106,10 @@ void SawtoothModule::setAmplitude(float amplitude) {
 void SawtoothModule::process() {
     bool volumegate = false;
 
+    
+    if (pins.at(0)->connections.size() ==  1) {
+        this->setPitch(pins.at(0)->connections.at(0)->getValue());
+    }
     if (pins.at(1)->connections.size() ==  1) {
         this->setFine(pins.at(1)->connections.at(0)->getValue());
     }
@@ -125,7 +125,7 @@ void SawtoothModule::process() {
                     if (oscillator[j] ==  nullptr) {
                         oscillator[j] = new Sawtooth(sampleRate);
                         
-                        oscillator[j]->setFrequency((440 * pow(2.0,((j+1)-69.0)/12.0)));
+                        oscillator[j]->setFrequency((440 * pow(2.0,((j+1)-69.0)/12.0)) + pitch);
                     }
                     float volume = pins.at(2)->connections.at(0)->data[j];
                 

@@ -365,6 +365,11 @@ bool MainComponent::keyPressed(const juce::KeyPress &key, juce::Component *origi
             currentOctave++;
         }
     }
+    if (key.getTextCharacter() == 'l') {
+        layer = (layer+1) % 4;
+        editor->setCurrentLayer(layer);
+        editor->repaint();
+    }
     return true;
 }
 
@@ -383,7 +388,7 @@ void MainComponent::createKeyMap() {
     keyCodeMidiNote['j'] = 47;
     keyCodeMidiNote['k'] = 48;
     keyCodeMidiNote['o'] = 49;
-    keyCodeMidiNote['l'] = 50;
+  
 }
 
 void MainComponent::buttonClicked (Button* b)

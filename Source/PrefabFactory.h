@@ -70,6 +70,9 @@ private:
     StringArray* categories;
     
     PrefabFactory() {
+        
+        prefabs[54] = Prefab("Label","Controls");
+        prefabs[55] = Prefab("Pitch to freq","Math");
         prefabs[56] = Prefab("Invert value","Math");
         prefabs[57] = Prefab("Multiply value","Math");
         prefabs[58] = Prefab("Display value","Debug");

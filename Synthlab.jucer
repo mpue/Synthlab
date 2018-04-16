@@ -135,6 +135,8 @@
                 file="Source/InverterModule.h"/>
           <FILE id="yhgzmV" name="Knob.cpp" compile="1" resource="0" file="Source/Knob.cpp"/>
           <FILE id="PBm2CJ" name="Knob.h" compile="0" resource="0" file="Source/Knob.h"/>
+          <FILE id="hxuAPu" name="LabelModule.cpp" compile="1" resource="0" file="Source/LabelModule.cpp"/>
+          <FILE id="iXCU5j" name="LabelModule.h" compile="0" resource="0" file="Source/LabelModule.h"/>
           <FILE id="UX3HFt" name="LPFilterModule.cpp" compile="1" resource="0"
                 file="Source/LPFilterModule.cpp"/>
           <FILE id="RNaOYu" name="LPFilterModule.h" compile="0" resource="0"
@@ -155,6 +157,10 @@
                 file="Source/OscilloscopeModule.cpp"/>
           <FILE id="IODVOz" name="OscilloscopeModule.h" compile="0" resource="0"
                 file="Source/OscilloscopeModule.h"/>
+          <FILE id="gsRrFQ" name="PitchToFrequencyModule.cpp" compile="1" resource="0"
+                file="Source/PitchToFrequencyModule.cpp"/>
+          <FILE id="d3DGg4" name="PitchToFrequencyModule.h" compile="0" resource="0"
+                file="Source/PitchToFrequencyModule.h"/>
           <FILE id="kZfRvk" name="PrefabFactory.cpp" compile="1" resource="0"
                 file="Source/PrefabFactory.cpp"/>
           <FILE id="JNR4eo" name="PrefabFactory.h" compile="0" resource="0" file="Source/PrefabFactory.h"/>

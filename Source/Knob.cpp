@@ -32,15 +32,15 @@ Knob::Knob()
     
     slider->setTopLeftPosition(getWidth() / 2 - slider->getWidth() / 2, getHeight() / 2 - slider->getHeight()/2);
     
-    
     addAndMakeVisible(slider);
-    
 
+    
     // slider->toFront(true);
     setInterceptsMouseClicks(false, true);
     
     editable = false;
     prefab = true;
+    stepsize = 1.0;
     minimum = 0;
     maximum = 127;
 }

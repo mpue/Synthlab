@@ -178,6 +178,8 @@ void PropertyView::changeListenerCallback(juce::ChangeBroadcaster *source) {
 
     SynthEditor* editor = dynamic_cast<SynthEditor*>(source);
 
+    // hide all properties other than the name by default
+    
     valueProp->setVisible(false);
     minValueProp->setVisible(false);
     maxValueProp->setVisible(false);
@@ -190,11 +192,12 @@ void PropertyView::changeListenerCallback(juce::ChangeBroadcaster *source) {
         if (editor->getSelectedModule() != nullptr) {
 
             descriptionEditor->setText(editor->getSelectedModule()->getDescription());
-
             nameValue->setValue(editor->getSelectedModule()->getName());
 
             Constant* c = nullptr;
 
+            // Constant has only a value
+            
             if ((c = dynamic_cast<Constant*>(editor->getSelectedModule())) != NULL) {
                 value->setValue(c->getValue());
                 valueProp->setVisible(true);
@@ -210,13 +213,14 @@ void PropertyView::changeListenerCallback(juce::ChangeBroadcaster *source) {
 
             if ((k = dynamic_cast<Knob*>(editor->getSelectedModule())) != NULL) {
 
+                // knob shows ranges
+                
+                valueProp->setVisible(true);
                 minValueProp->setVisible(true);
                 maxValueProp->setVisible(true);
                 stepsizeValueProp->setVisible(true);
                 isControllerValueProp->setVisible(true);
                 controllerValueProp->setVisible(true);
-
-
                 value->setValue(k->getValue());
                 stepsizeValue->setValue(k->getStepsize());
                 minValue->setValue(k->getMinimum());

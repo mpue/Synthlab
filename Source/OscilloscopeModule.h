@@ -35,6 +35,10 @@ public:
         repaint();
     }
     
+    virtual Layer getLayer() override {
+        return Layer::GUI;
+    };
+    
     virtual String getDescription() override {
         return "A soimple oscilloscope";
     }

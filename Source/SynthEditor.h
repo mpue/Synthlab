@@ -120,6 +120,21 @@ public:
         repaint();
     }
     
+    void setCurrentLayer(int layer) {
+        
+        currentLayer = static_cast<Module::Layer>(layer);
+        
+        for (int i = 0;i < root->getModules()->size();i++) {
+            if (currentLayer == Module::Layer::ALL || root->getModules()->at(i)->getLayer() == currentLayer) {
+                root->getModules()->at(i)->setVisible(true);
+            }
+            else {
+                root->getModules()->at(i)->setVisible(false);
+            }
+        }
+         
+    }
+    
     //[/UserMethods]
 
     void paint (Graphics& g) override;
@@ -186,6 +201,9 @@ private:
     int bufferSize;
     double _sampleRate;
     bool running = false;
+    
+    Module::Layer currentLayer = Module::Layer::ALL;
+    
     //[/UserVariables]
 
     

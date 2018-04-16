@@ -26,6 +26,8 @@
 #include "MultiplyModule.h"
 #include "OscilloscopeModule.h"
 #include "InverterModule.h"
+#include "PitchToFrequencyModule.h"
+#include "LabelModule.h"
 
 PrefabFactory* PrefabFactory::instance = NULL;
 
@@ -35,6 +37,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     
     if (prefabs[id].getName() == "Add signal") {
         m = new AdderModule(bufferSize);
+    }
+    else if (prefabs[id].getName() == "Pitch to freq") {
+        m = new PitchToFrequencyModule();
     }
     else if (prefabs[id].getName() == "Add value") {
         m = new AddValueModule();
@@ -77,6 +82,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Knob") {
         m = new Knob();
+    }
+    else if (prefabs[id].getName() == "Label") {
+        m = new LabelModule("Label");
     }
     else if (prefabs[id].getName() == "LP filter") {
         m = new LPFilterModule(sampleRate,bufferSize);

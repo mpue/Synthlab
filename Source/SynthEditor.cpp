@@ -34,6 +34,7 @@
 #include <string.h>
 #include "Actions/AddModuleAction.h"
 #include "Project.h"
+#include "LabelModule.h"
 //[/Headers]
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
@@ -141,53 +142,29 @@ void SynthEditor::paint (Graphics& g)
         }
 	}
 
-	for (int i = 0; i < root->getConnections()->size(); i++) {
-		Connection* c = root->getConnections()->at(i);
-
-        if (c->source != NULL && c->target != NULL) {
-            int x1 = c->source->getX() + c->a->x;
-            int y1 = c->source->getY() + c->a->y + 5;
-            int x2 = c->target->getX() + c->b->x;
-            int y2 = c->target->getY() + c->b->y + 5;
+    if (currentLayer == Module::Layer::ALL) {
+        for (int i = 0; i < root->getConnections()->size(); i++) {
+            Connection* c = root->getConnections()->at(i);
             
-            if (c->selected) {
-                g.setColour(juce::Colours::cyan);
-            }
-            else {
-                g.setColour(juce::Colours::white);
+            if (c->source != NULL && c->target != NULL) {
+                int x1 = c->source->getX() + c->a->x;
+                int y1 = c->source->getY() + c->a->y + 5;
+                int x2 = c->target->getX() + c->b->x;
+                int y2 = c->target->getY() + c->b->y + 5;
+                
+                if (c->selected) {
+                    g.setColour(juce::Colours::cyan);
+                }
+                else {
+                    g.setColour(juce::Colours::white);
+                }
+                
+                g.drawLine(x1,y1,x2,y2);
             }
             
-            g.drawLine(x1,y1,x2,y2);
         }
-        
-		/*
-		Path p = Path();
 
-		// p.addLineSegment(Line<float>(c->source->getX() + c->a->x, c->source->getY() + c->a->y + 5, c->target->getX() + c->b->x, c->target->getY() + c->b->y + 5),1.0f);
-
-
-		p.addLineSegment(Line<float>(x1, y1, x2, y2), 1.0f);
-
-		int xm = (x1 + x2) / 2;
-		int ym = (y1 + y2) / 2 + 2 ;
-
-		p.cubicTo(Point<float>(x1,y1), Point<float>(xm,ym),Point<float>(x2,y2));
-
-
-		PathStrokeType(50.0, juce::PathStrokeType::JointStyle::curved,
-			juce::PathStrokeType::EndCapStyle::rounded)
-			.createStrokedPath(p, p);
-
-
-		g.strokePath(p,PathStrokeType(1));
-
-		*/
-
-
-
-
-	}
-
+    }
 
     //[/UserPaint]
 }
@@ -715,6 +692,7 @@ void SynthEditor::clearSelection() {
     
     for (int i = 0; i < root->getModules()->size();i++) {
         root->getModules()->at(i)->setSelected(false);
+        root->getModules()->at(i)->setEditing(false);
     }
     
     getSelectedModules()->clear();
@@ -919,6 +897,11 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         if (mod.getProperty("isPrefab").toString().getIntValue() == 1) {
             m = PrefabFactory::getInstance()->getPrefab(mod.getProperty("prefabId").toString().getIntValue(), _sampleRate, bufferSize);
             addChangeListener(m);
+            
+            LabelModule* label = dynamic_cast<LabelModule*>(m);
+            if (label != nullptr) {
+                label->setName(mod.getProperty("name"));
+            }
         }
         else {
             m = new Module(mod.getProperty("name"));

@@ -191,5 +191,7 @@ private:
     float sampleRate = 44100;
     float buffersize = 512;
     
+    int layer = 0;
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

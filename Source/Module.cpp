@@ -45,7 +45,7 @@ Module::Module ()
     nameEditor->setPopupMenuEnabled (true);
     nameEditor->setText (String());
 
-    nameEditor->setBounds (0, 16, 120, 24);
+    nameEditor->setBounds (0, 0, 120, 24);
 
     addAndMakeVisible (nameLabel = new Label ("nameLabel",
                                               TRANS("unnamed")));
@@ -225,7 +225,6 @@ void Module::mouseDoubleClick (const MouseEvent& e)
 }
 
 
-
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 
 Module::Module(String name) : Module() {
@@ -241,7 +240,8 @@ void Module::setEditing(bool editing) {
 		nameEditor->setText(getName());
         setInterceptsMouseClicks(false,true);
         nameEditor->setWantsKeyboardFocus(true);
-
+        nameEditor->setSelectAllWhenFocused(true);
+        nameEditor->grabKeyboardFocus();
 	}
 	else {
 		setName(nameEditor->getText());

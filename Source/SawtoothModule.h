@@ -40,7 +40,7 @@ public:
 
 private:
     
-    int pitch;
+    int pitch = 0;
     float amplitude;
     float fine = 0;
     Image* image;
