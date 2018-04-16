@@ -60,7 +60,7 @@ SynthEditor::SynthEditor(){
     
     addChildComponent(root);
     
-    
+    selectedModules = new std::vector<Module*>();
     
     //[/Constructor]
 }
@@ -75,6 +75,7 @@ SynthEditor::SynthEditor (double sampleRate, int buffersize)
     this->_sampleRate = sampleRate;
     //[/Constructor_pre]
 
+    selectedModules = new std::vector<Module*>();
 
     //[UserPreSize]
     //[/UserPreSize]
@@ -233,12 +234,12 @@ void SynthEditor::mouseDown (const MouseEvent& e)
             
         }
  
-        for (int i = 0; i < getSelectedModules().size(); i++) {
+        for (int i = 0; i < getSelectedModules()->size(); i++) {
             
-            if (getSelectedModules().at(i)->getBounds().contains(e.x,e.y)) {
+            if (getSelectedModules()->at(i)->getBounds().contains(e.x,e.y)) {
 
-                dragStartX = getSelectedModules().at(i)->getX();
-                dragStartY = getSelectedModules().at(i)->getY();
+                dragStartX = getSelectedModules()->at(i)->getX();
+                dragStartY = getSelectedModules()->at(i)->getY();
                 state = MOVING_SELECTION;
                 hit = true;
                 break;
@@ -246,14 +247,14 @@ void SynthEditor::mouseDown (const MouseEvent& e)
             
         }
         
-        if (getSelectedModules().size() == 0) {
+        if (getSelectedModules()->size() == 0) {
             
             state = DRAGGING_SELECTION;
             
             for (int i = 0; i < root->getModules()->size(); i++) {
                 if (root->getModules()->at(i)->getBounds().contains(e.x,e.y)) {
                     root->getModules()->at(i)->setSelected(true);
-                    selectedModules.push_back(root->getModules()->at(i));
+                    selectedModules->push_back(root->getModules()->at(i));
                     root->getModules()->at(i)->savePosition();
                     hit = true;
                 }
@@ -261,19 +262,15 @@ void SynthEditor::mouseDown (const MouseEvent& e)
                     root->getModules()->at(i)->setSelected(false);
                 }
             }
-            if (getSelectedModules().size() > 0) {
+            if (getSelectedModules()->size() > 0) {
                 state = MOVING_SELECTION;
             }
             
         }
 
         if (hit == false) {
-            selectedModules.clear();
-            
-            for (int i = 0; i < root->getModules()->size(); i++) {
-                root->getModules()->at(i)->setSelected(false);
-    
-            }
+            clearSelection();
+            state = DRAGGING_SELECTION;
         }
         
 		for (int i = 0; i < root->getConnections()->size(); i++) {
@@ -311,8 +308,8 @@ void SynthEditor::showContextMenu(Point<int> position) {
     
     Module* module = nullptr;
 
-    if (getSelectedModules().size() == 1){
-        module = getSelectedModules().at(0);
+    if (getSelectedModules()->size() == 1){
+        module = getSelectedModules()->at(0);
     }
 
     if (module != nullptr) {
@@ -325,7 +322,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
             }
         }
         
-        Knob* k = nullptr;
+        Knob* k;
         
         if(pinIndex < 0 ) {
             if (module->isEditable()) {
@@ -377,7 +374,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
                 k->setName(module->getPins().at(pinIndex)->getName());
                 Point<int> pos = module->getPinPosition(pinIndex);
                 k->setTopLeftPosition(pos.getX() - 150, mouseY - k->getHeight() / 2);
-                k->getPins().at(0)->connections.push_back(module->pins.at(pinIndex));
+                module->pins.at(pinIndex)->connections.push_back(k->getPins().at(0));
                 addAndMakeVisible(k);
                 Connection* con = new Connection();
                 con->a = k->getPins().at(0);
@@ -386,9 +383,9 @@ void SynthEditor::showContextMenu(Point<int> position) {
                 con->target = module;
                 root->getConnections()->push_back(con);
                 root->getModules()->push_back(k);
-                getSelectedModules().clear();
+                clearSelection();
                 k->setSelected(true);
-                getSelectedModules().push_back(k);
+                getSelectedModules()->push_back(k);
                 repaint();
             }
             else if (result == 2) {
@@ -398,7 +395,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
                 c->setName(module->getPins().at(pinIndex)->getName());
                 Point<int> pos = module->getPinPosition(pinIndex);
                 c->setTopLeftPosition(pos.getX() - 150, mouseY - c->getHeight() / 2);
-                c->getPins().at(0)->connections.push_back(module->pins.at(pinIndex));
+                module->pins.at(pinIndex)->connections.push_back(c->getPins().at(0));
                 addAndMakeVisible(c);
                 Connection* con = new Connection();
                 con->a = c->getPins().at(0);
@@ -479,7 +476,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
             root->getModules()->push_back(m);
             
             m->setSelected(true);
-            getSelectedModules().push_back(m);
+            getSelectedModules()->push_back(m);
             repaint();
             
             AudioOut* out;
@@ -583,7 +580,7 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
                     m->setSelected(true);
                     m->savePosition();
                     
-                    selectedModules.push_back(m);
+                    selectedModules->push_back(m);
                 }
 
             }
@@ -654,7 +651,7 @@ void SynthEditor::mouseDoubleClick (const MouseEvent& e)
 
     }
     
-    if (getSelectedModules().size() == 0) {
+    if (getSelectedModules()->size() == 0) {
         showContextMenu(e.getPosition());
     }
 
@@ -671,7 +668,7 @@ bool SynthEditor::keyPressed (const KeyPress& key)
     if(key.getKeyCode() == 65 && isCtrlDown) {
         for (int i = 0; i < root->getModules()->size();i++) {
             root->getModules()->at(i)->setSelected(true);
-            selectedModules.push_back(root->getModules()->at(i));
+            selectedModules->push_back(root->getModules()->at(i));
         }
     }
     
@@ -719,9 +716,19 @@ void SynthEditor::cleanUp() {
     delete root;
     root = nullptr;
     //deleteSelected(true);
-    selectedModules.clear();
+    selectedModules->clear();
     outputChannels.clear();
+    delete selectedModules;
     
+}
+
+void SynthEditor::clearSelection() {
+    
+    for (int i = 0; i < root->getModules()->size();i++) {
+        root->getModules()->at(i)->setSelected(false);
+    }
+    
+    getSelectedModules()->clear();
 }
 
 void SynthEditor::removeSelectedItem() {
@@ -747,12 +754,13 @@ void SynthEditor::removeSelectedItem() {
             ++it;
         }
     }
-    
+    clearSelection();
 }
 
 void SynthEditor::newFile() {
     cleanUp();
     root = new Module("Root");
+    selectedModules = new std::vector<Module*>();
     repaint();
 }
 
@@ -884,6 +892,7 @@ void SynthEditor::openFile() {
 
         cleanUp();
         root = new Module("Root");
+        selectedModules = new std::vector<Module*>();
 #if JUCE_IOS
         URL url = chooser.getURLResult();
         InputStream* is = url.createInputStream(false);
@@ -1108,6 +1117,8 @@ void SynthEditor::setTab(juce::TabbedComponent *t) {
 void SynthEditor::removeModule(Module* module) {
     vector<long> pinsToBeRemoved;
     
+    removeChangeListener(module);
+    
     // find the indices of the pins being involved in the disconnect
 
     for (int j = 0; j < root->getModules()->size(); j++) {
@@ -1176,9 +1187,9 @@ void SynthEditor::removeModule(Module* module) {
 void SynthEditor::deleteSelected(bool deleteAll) {
     
     if(!deleteAll) {
-        for (int i = 0; i < getSelectedModules().size();i++) {
-            removeChangeListener(getSelectedModules().at(i));
-            removeModule(getSelectedModules().at(i));
+        for (int i = 0; i < getSelectedModules()->size();i++) {
+            
+            removeModule(getSelectedModules()->at(i));
         }
     }
     
@@ -1369,7 +1380,7 @@ Module* SynthEditor::getSelectedModule() {
     return nullptr;
 }
 
-std::vector<Module*> SynthEditor::getSelectedModules() {
+std::vector<Module*>* SynthEditor::getSelectedModules() {
     return selectedModules;
 }
 

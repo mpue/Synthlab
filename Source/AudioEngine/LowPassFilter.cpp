@@ -23,7 +23,7 @@ LowPassFilter::~LowPassFilter() {
 }
 
 
-void LowPassFilter::coefficients(float frequency, float resonance) {
+void LowPassFilter::coefficients(float sampleRate, float frequency, float resonance) {
 
     this->frequency = frequency;
     this->resonance = resonance;
@@ -32,7 +32,11 @@ void LowPassFilter::coefficients(float frequency, float resonance) {
         frequency = 1;
     }
     
-    IIRCoefficients ic1  = IIRCoefficients::makeLowPass (44100, frequency, resonance);
+    if (frequency > sampleRate / 2) {
+        frequency = sampleRate / 2;
+    }
+    
+    IIRCoefficients ic1  = IIRCoefficients::makeLowPass (sampleRate, frequency, resonance);
     filter1->setCoefficients(ic1);
     filter2->setCoefficients(ic1);
 }

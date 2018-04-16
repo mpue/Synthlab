@@ -20,7 +20,7 @@ HPFilterModule::HPFilterModule(double sampleRate, int buffersize)
     this->buffersize = buffersize;
     
     filter = new HighPassFilter();
-    filter->coefficients(frequency, resonance);
+    filter->coefficients(sampleRate, frequency, resonance);
 
     
     setSize(120,140);
@@ -98,7 +98,7 @@ void HPFilterModule::process() {
         
         if (this->frequency != pins.at(0)->connections.at(0)->getValue()) {
             this->frequency =  pins.at(0)->connections.at(0)->getValue();
-            filter->coefficients(frequency, resonance);
+            filter->coefficients(sampleRate, frequency, resonance);
         }
         
     }
@@ -106,7 +106,7 @@ void HPFilterModule::process() {
         
         if (this->resonance != pins.at(1)->connections.at(0)->getValue()) {
             this->resonance =  pins.at(1)->connections.at(0)->getValue();
-            filter->coefficients(frequency, resonance);
+            filter->coefficients(sampleRate, frequency, resonance);
         }
     }
     if (pins.at(4)->connections.size() ==  1) {
@@ -115,7 +115,7 @@ void HPFilterModule::process() {
             this->mod =  pins.at(4)->connections.at(0)->getValue();
             if (this->mod < 0.1)
                 this->mod = 0.1;
-            filter->coefficients(frequency * mod, resonance);
+            filter->coefficients(sampleRate, frequency * mod, resonance);
         }
     }
     

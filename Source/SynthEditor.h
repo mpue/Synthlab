@@ -74,12 +74,13 @@ public:
     void newFile();
     void saveFile();
     void openFile();
+    void clearSelection();
 
     void saveStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections, ValueTree* v);
     void loadStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections,ValueTree* v);
 
     Module* getSelectedModule();    
-    std::vector<Module*> getSelectedModules();
+    std::vector<Module*>* getSelectedModules();
     std::vector<AudioOut*> getOutputChannels();
     void removeSelectedItem();
     
@@ -158,7 +159,7 @@ private:
     EditorState state = EditorState::NONE;
     TabbedComponent* tab;
     Rectangle<int> selectionFrame = Rectangle<int>(0, 0, 0, 0);
-    std::vector<Module*> selectedModules;
+    std::vector<Module*>* selectedModules;
     std::vector<AudioOut*> outputChannels;
     
     static String defaultMidiInputName;

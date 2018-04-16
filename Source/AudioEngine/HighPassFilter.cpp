@@ -23,12 +23,12 @@ HighPassFilter::~HighPassFilter() {
 }
 
 
-void HighPassFilter::coefficients(float frequency, float resonance) {
+void HighPassFilter::coefficients(float sampleRate, float frequency, float resonance) {
     
     this->frequency = frequency / 10;
     this->resonance = resonance;
     
-    IIRCoefficients ic1  = IIRCoefficients::makeHighPass (44100, frequency / 10, resonance);
+    IIRCoefficients ic1  = IIRCoefficients::makeHighPass (sampleRate, frequency / 10, resonance);
     filter1->setCoefficients(ic1);
     filter2->setCoefficients(ic1);
 }

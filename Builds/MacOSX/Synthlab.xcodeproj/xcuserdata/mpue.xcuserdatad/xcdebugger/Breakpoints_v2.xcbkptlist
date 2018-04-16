@@ -10,12 +10,12 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../../Source/SynthEditor.cpp"
-            timestampString = "545516569.769091"
+            timestampString = "545551935.147769"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "915"
-            endingLineNumber = "915"
-            landmarkName = "SynthEditor::loadStructure(std::vector&lt;Module *&gt;* modules, std::vector&lt;Connection*&gt;* connections,juce::ValueTree *v)"
+            startingLineNumber = "342"
+            endingLineNumber = "342"
+            landmarkName = "SynthEditor::showContextMenu(Point&lt;int&gt; position)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -26,12 +26,12 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../../Source/SynthEditor.cpp"
-            timestampString = "545516569.7693"
+            timestampString = "545551935.14799"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "899"
-            endingLineNumber = "899"
-            landmarkName = "SynthEditor::openFile()"
+            startingLineNumber = "216"
+            endingLineNumber = "216"
+            landmarkName = "SynthEditor::mouseDown (const MouseEvent&amp; e)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -41,13 +41,13 @@
             shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "../../Source/PropertyView.cpp"
-            timestampString = "545516569.769354"
+            filePath = "../../Source/SynthEditor.cpp"
+            timestampString = "545551935.14803"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "120"
-            endingLineNumber = "120"
-            landmarkName = "PropertyView::~PropertyView()"
+            startingLineNumber = "237"
+            endingLineNumber = "237"
+            landmarkName = "SynthEditor::mouseDown (const MouseEvent&amp; e)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -57,13 +57,13 @@
             shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "../../Source/MainComponent.cpp"
-            timestampString = "545516569.7697541"
+            filePath = "../../Source/SynthEditor.cpp"
+            timestampString = "545551935.1480629"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "127"
-            endingLineNumber = "127"
-            landmarkName = "MainComponent::~MainComponent()"
+            startingLineNumber = "259"
+            endingLineNumber = "259"
+            landmarkName = "SynthEditor::mouseDown (const MouseEvent&amp; e)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -73,13 +73,13 @@
             shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "../../Source/MainComponent.cpp"
-            timestampString = "545516569.770044"
+            filePath = "../../Source/SynthEditor.cpp"
+            timestampString = "545551935.148096"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "137"
-            endingLineNumber = "137"
-            landmarkName = "MainComponent::~MainComponent()"
+            startingLineNumber = "272"
+            endingLineNumber = "272"
+            landmarkName = "SynthEditor::mouseDown (const MouseEvent&amp; e)"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -89,13 +89,13 @@
             shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "../../Source/MainComponent.cpp"
-            timestampString = "545516569.770208"
+            filePath = "../../Source/SynthEditor.cpp"
+            timestampString = "545551935.148127"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "483"
-            endingLineNumber = "483"
-            landmarkName = "MainComponent::sendControllerMessage(Module *module, int controller, float value)"
+            startingLineNumber = "1384"
+            endingLineNumber = "1384"
+            landmarkName = "SynthEditor::getSelectedModules()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
@@ -105,13 +105,13 @@
             shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "../../Source/Knob.cpp"
-            timestampString = "545516569.77037"
+            filePath = "../../Source/SynthEditor.cpp"
+            timestampString = "545551935.148158"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "149"
-            endingLineNumber = "149"
-            landmarkName = "Knob::eventReceived(Event *e)"
+            startingLineNumber = "730"
+            endingLineNumber = "730"
+            landmarkName = "SynthEditor::clearSelection()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

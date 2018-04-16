@@ -29,7 +29,7 @@ public:
     MultimodeFilter();
     virtual ~MultimodeFilter();
     
-    virtual void coefficients(float frequency, float resonance) override;
+    virtual void coefficients(float sampleRate, float frequency, float resonance) override;
     virtual void processStereo(float *const left, float *const right, const int numSamples) override;
     virtual void setModulator(Modulator* mod) override;
     virtual void setModAmount(float amount) override;

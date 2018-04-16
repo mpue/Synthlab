@@ -483,7 +483,8 @@ void MainComponent::sendControllerMessage(Module *module, int controller, float 
     Knob* k;
     
     if ((k = dynamic_cast<Knob*>(module)) != NULL) {
-        if (k->isMidiController() && k->isLearning()) {
+        if (k->isLearning()) {
+            k->setIsMidicontroller(true);
             k->setController(controller);
             k->setLearning(false);
         }

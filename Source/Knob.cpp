@@ -47,8 +47,6 @@ Knob::Knob()
 
 Knob::~Knob()
 {
-    addPin(Pin::Direction::OUT);
-    pins.at(0)->setName("");
     delete slider;
 }
 

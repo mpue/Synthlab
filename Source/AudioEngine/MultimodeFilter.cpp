@@ -33,14 +33,14 @@ void MultimodeFilter::setMode(Mode mode) {
     this->mode = mode;
 }
 
-void MultimodeFilter::coefficients(float frequency, float resonance) {
+void MultimodeFilter::coefficients(float sampleRate, float frequency, float resonance) {
 	if (frequency == 0) {
 		frequency = 0.1;
 	}
-    this->lowPassLeft->coefficients( frequency, resonance);
-    this->lowPassRight->coefficients( frequency, resonance);
-    this->highPassLeft->coefficients( frequency, resonance);
-    this->highPassRight->coefficients( frequency, resonance);
+    this->lowPassLeft->coefficients(sampleRate, frequency, resonance);
+    this->lowPassRight->coefficients(sampleRate, frequency, resonance);
+    this->highPassLeft->coefficients(sampleRate, frequency, resonance);
+    this->highPassRight->coefficients(sampleRate, frequency, resonance);
 }
 
 void MultimodeFilter::processStereo(float *const left, float *const right, const int numSamples) {

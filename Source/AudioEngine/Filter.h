@@ -19,7 +19,7 @@ public:
     
     virtual ~Filter();
     
-    virtual void coefficients(float frequency, float resonance) = 0;
+    virtual void coefficients(float sampleRate,float frequency, float resonance) = 0;
     
     
 };
