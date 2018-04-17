@@ -35,6 +35,7 @@
 #include "Actions/AddModuleAction.h"
 #include "Project.h"
 #include "LabelModule.h"
+#include "SamplerModule.h"
 //[/Headers]
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
@@ -607,12 +608,23 @@ void SynthEditor::mouseDoubleClick (const MouseEvent& e)
         for (int i = 0; i < root->getModules()->size(); i++) {
 
             Module* m = root->getModules()->at(i);
-            
-            if (m->isSelected() && m->isEditable()) {
-                SynthEditor* editor = new SynthEditor(_sampleRate, bufferSize);
-                editor->setModule(m);
-                tab->addTab(m->getName(), juce::Colours::grey,editor, true);
+
+            if (m->isPrefab()) {
+                SamplerModule*sm = dynamic_cast<SamplerModule*>(m);
+                
+                if (sm != NULL) {
+                    openSample(sm);
+                }
             }
+            else {
+                if (m->isSelected() && m->isEditable()) {
+                    SynthEditor* editor = new SynthEditor(_sampleRate, bufferSize);
+                    editor->setModule(m);
+                    tab->addTab(m->getName(), juce::Colours::grey,editor, true);
+                }
+            }
+            
+
         }
 
     }
@@ -869,6 +881,34 @@ void SynthEditor::saveFile() {
 #endif
     
 
+}
+
+void SynthEditor::openSample(SamplerModule *sm) {
+    
+    FileChooser chooser("Select file to open", File::nonexistent, "*");
+    
+    if (chooser.browseForFileToOpen()) {
+
+#if JUCE_IOS
+        URL url = chooser.getURLResult();
+        InputStream* is = url.createInputStream(false);
+        
+        sm->loadSample(is);
+        
+        delete is;
+        
+        ScopedPointer<XmlElement> xml = XmlDocument(data).getDocumentElement();
+#else
+        File file = chooser.getResult();
+        FileInputStream* is = new FileInputStream(file);
+        sm->loadSample(is);
+        // delete is;
+        
+#endif
+        
+
+        setRunning(true);
+    }
 }
 
 void SynthEditor::openFile() {

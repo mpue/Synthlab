@@ -37,7 +37,7 @@ public:
     
     virtual void timerCallback() override;
     virtual void eventReceived(Event *e) override;
-
+    void loadSample(InputStream* is);
     
 private:
     float samplePosX = 20;
@@ -48,5 +48,6 @@ private:
     int currentSample = 0;
     int currentEnvelope = -1;
     bool gate = false;
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SamplerModule)
 };

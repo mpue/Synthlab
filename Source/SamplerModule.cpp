@@ -30,13 +30,6 @@ SamplerModule::SamplerModule(double sampleRate, int buffersize, AudioFormatManag
     
     setName("Sampler");
     
-    MemoryInputStream* mis = new MemoryInputStream(BinaryData::boom_aif,BinaryData::boom_aifSize, false);
-    sampler->loadSample(mis);
-    this->thumbnail->reset(2, sampleRate);
-    thumbnail->addBlock(0, *sampler->getSampleBuffer(), 0, sampler->getSampleLength());
-
-
-    
     editable = false;
     prefab = true;
 }
@@ -45,6 +38,14 @@ SamplerModule::~SamplerModule()
 {
     delete sampler;
     delete thumbnail;
+    delete cache;
+}
+
+void SamplerModule::loadSample(juce::InputStream *is) {
+    sampler->loadSample(is);
+    this->thumbnail->reset(2, sampleRate);
+    thumbnail->addBlock(0, *sampler->getSampleBuffer(), 0, sampler->getSampleLength());
+    repaint();
 }
 
 void SamplerModule::configurePins() {

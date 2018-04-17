@@ -2,7 +2,7 @@
 
 <Synth>
   <Modules>
-    <Module name="Sampler" index="53" x="380" y="247" isPrefab="1" prefabId="53">
+    <Module name="Sampler" index="53" x="297" y="284" isPrefab="1" prefabId="53">
       <Pins>
         <Pin type="2" direction="0" index="5301" x="0" y="10"/>
         <Pin type="0" direction="1" index="5302" x="246" y="10"/>
@@ -50,13 +50,47 @@
       <Modules/>
       <Connections/>
     </Module>
+    <Module name="Stereo delay" index="73" x="671" y="253" isPrefab="1" prefabId="73">
+      <Pins>
+        <Pin type="0" direction="0" index="7301" x="0" y="10"/>
+        <Pin type="0" direction="0" index="7302" x="0" y="30"/>
+        <Pin type="0" direction="1" index="7303" x="110" y="10"/>
+        <Pin type="0" direction="1" index="7304" x="110" y="30"/>
+        <Pin type="2" direction="0" index="7305" x="0" y="50"/>
+        <Pin type="2" direction="0" index="7306" x="0" y="70"/>
+        <Pin type="2" direction="0" index="7307" x="0" y="90"/>
+        <Pin type="2" direction="0" index="7308" x="0" y="110"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="167" x="530" y="185" isPrefab="1" prefabId="67"
+            value="500.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="267" x="541" y="473" isPrefab="1" prefabId="67"
+            value="375.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
   </Modules>
   <Connections>
-    <Connection source="66" target="53" a="6601" b="5302"/>
-    <Connection source="66" target="53" a="6602" b="5303"/>
     <Connection source="61" target="53" a="6102" b="5304"/>
     <Connection source="53" target="70" a="5301" b="7006"/>
     <Connection source="61" target="70" a="6102" b="7001"/>
-    <Connection source="67" target="70" a="6701" b="7005"/>
+    <Connection source="70" target="67" a="7005" b="6701"/>
+    <Connection source="53" target="73" a="5302" b="7301"/>
+    <Connection source="53" target="73" a="5303" b="7302"/>
+    <Connection source="73" target="66" a="7303" b="6601"/>
+    <Connection source="73" target="66" a="7304" b="6602"/>
+    <Connection source="167" target="73" a="6701" b="7305"/>
+    <Connection source="267" target="73" a="6701" b="7306"/>
   </Connections>
 </Synth>
