@@ -24,6 +24,7 @@ public:
     void stop();
     float getSampleAt(int channel, long position);
     void loadSample(File file);
+    void loadSample(InputStream* input);
     void setStartPosition(long start);
     long getStartPosition();
     void setEndPosition(long end);
@@ -32,6 +33,8 @@ public:
     long getSampleLength();
     void setLoop(bool loop);
     bool isLoop();
+    void setVolume(float volume);
+    AudioSampleBuffer* getSampleBuffer();
     
 private:
     
@@ -39,6 +42,8 @@ private:
     
     float sampleRate;
     int bufferSize;
+    
+    float volume = 0.5;
     
     AudioSampleBuffer *sampleBuffer = nullptr;
     

@@ -29,7 +29,7 @@ void Sampler::stop() {
 }
 
 float Sampler::getSampleAt(int channel, long pos){
-    return sampleBuffer->getSample(channel, pos);
+    return sampleBuffer->getSample(channel, pos) * volume;
 }
 
 void Sampler::loadSample(File file) {
@@ -41,6 +41,17 @@ void Sampler::loadSample(File file) {
     endPosition = sampleLength;
     startPosition = 0;
 }
+
+void Sampler::loadSample(InputStream* input) {
+    AudioFormatReader* reader = manager->createReaderFor(input);
+    ScopedPointer<AudioFormatReaderSource> afr = new AudioFormatReaderSource(reader, true);
+    sampleBuffer = new AudioSampleBuffer(2, reader->lengthInSamples);
+    reader->read(sampleBuffer, 0, reader->lengthInSamples, 0, true, true);
+    sampleLength = reader->lengthInSamples;
+    endPosition = sampleLength;
+    startPosition = 0;
+}
+
 
 void Sampler::setStartPosition(long start) {
     this->startPosition = start;
@@ -72,4 +83,12 @@ void Sampler::setLoop(bool loop) {
 
 bool Sampler::isLoop() {
     return this->loop;
+}
+
+void Sampler::setVolume(float volume) {
+    this->volume = volume;
+}
+
+AudioSampleBuffer* Sampler::getSampleBuffer(){
+    return sampleBuffer;
 }

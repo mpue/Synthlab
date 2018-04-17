@@ -8,6 +8,9 @@
 
 namespace BinaryData
 {
+    extern const char*   boom_aif;
+    const int            boom_aifSize = 1768430;
+
     extern const char*   delaytest6;
     const int            delaytest6Size = 8514;
 
@@ -111,7 +114,7 @@ namespace BinaryData
     extern const char* namedResourceList[];
 
     // Number of elements in the namedResourceList array.
-    const int namedResourceListSize = 33;
+    const int namedResourceListSize = 34;
 
     // If you provide the name of one of the binary resource variables above, this function will
     // return the corresponding data and its size (or a null pointer if the name isn't found).

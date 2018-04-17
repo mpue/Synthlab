@@ -2,6 +2,9 @@
 
 <JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.2.1">
   <MAINGROUP id="CKGTaZ" name="Synthlab">
+    <GROUP id="{9F92DD62-384A-EB91-F447-5583413CC3C4}" name="samples">
+      <FILE id="hRXtES" name="boom.aif" compile="0" resource="1" file="samples/boom.aif"/>
+    </GROUP>
     <GROUP id="{76D84681-B72F-D5A2-9B1D-2A847D7CEA82}" name="Synths">
       <FILE id="csI6SF" name="delaytest6" compile="0" resource="1" file="Regression/delaytest6"/>
     </GROUP>
@@ -173,6 +176,9 @@
           <FILE id="RSCly7" name="RandomModule.cpp" compile="1" resource="0"
                 file="Source/RandomModule.cpp"/>
           <FILE id="NEmphq" name="RandomModule.h" compile="0" resource="0" file="Source/RandomModule.h"/>
+          <FILE id="PBMkAh" name="SamplerModule.cpp" compile="1" resource="0"
+                file="Source/SamplerModule.cpp"/>
+          <FILE id="nAhKxq" name="SamplerModule.h" compile="0" resource="0" file="Source/SamplerModule.h"/>
           <FILE id="f1yiPr" name="SawtoothModule.cpp" compile="1" resource="0"
                 file="Source/SawtoothModule.cpp"/>
           <FILE id="oFkcCq" name="SawtoothModule.h" compile="0" resource="0"

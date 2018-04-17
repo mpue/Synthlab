@@ -5,6 +5,7 @@
 //  Created by Matthias Pueski on 10.04.18.
 //
 
+#include "Project.h"
 #include "PrefabFactory.h"
 #include "MidiGate.h"
 #include "MidiOut.h"
@@ -28,6 +29,7 @@
 #include "InverterModule.h"
 #include "PitchToFrequencyModule.h"
 #include "LabelModule.h"
+#include "SamplerModule.h"
 
 PrefabFactory* PrefabFactory::instance = NULL;
 
@@ -103,6 +105,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Scope") {
         m = new OscilloscopeModule(sampleRate,bufferSize);
+    }
+    else if (prefabs[id].getName() == "Sampler") {
+        m = new SamplerModule(sampleRate,bufferSize,Project::getInstance()->getFormatManager());
     }
     
     m->setIndex(id + 100 * prefabs[id].getNumInstances());
