@@ -334,7 +334,7 @@ Pin* Module::getSelectedPin() {
     return nullptr;
 }
 
-std::vector<Pin*> Module::getPins() {
+std::vector<Pin*>& Module::getPins() {
     return pins;
 }
 

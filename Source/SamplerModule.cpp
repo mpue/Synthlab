@@ -73,16 +73,22 @@ void SamplerModule::configurePins() {
     addPin(Pin::Direction::OUT,p2);
     addPin(Pin::Direction::OUT,p3);
     addPin(Pin::Direction::IN,p4);
+    
+    
+    
 }
 
 void SamplerModule::paint(juce::Graphics &g) {
     Module::paint(g);
-    Rectangle<int> tb = Rectangle<int>(10,10,236,120);
+    Rectangle<int> tb = Rectangle<int>(20,20,220,100);
     g.setColour(Colours::black);
     g.fillRect(tb);
     g.setColour(Colours::orange);
     this->thumbnail->drawChannels(g, tb,0,sampler->getSampleLength() / sampleRate,1);
 
+    g.setColour(juce::Colours::white);
+    
+    g.drawLine(samplePosX, 20,samplePosX, 120);
 }
 
 
@@ -91,19 +97,26 @@ void SamplerModule::setAmplitude(float amplitude) {
     this->sampler->setVolume(amplitude);
 }
 
+void SamplerModule::timerCallback() {
+    samplePosX = (100.0 / sampler->getSampleLength())* currentSample + 20;
+    repaint();
+}
+
 void SamplerModule::process() {
     
     if (!gate) {
+        pins.at(1)->getAudioBuffer()->clear();
+        pins.at(2)->getAudioBuffer()->clear();
         return;
     }
     
     if (currentEnvelope < 0)
-    for (int j = 0; j < 128;j++) {
-        if(pins.at(0)->connections.at(0)->dataEnabled[j]) {
-            currentEnvelope = j;
-            break;
+        for (int j = 0; j < 128;j++) {
+            if(pins.at(0)->connections.at(0)->dataEnabled[j]) {
+                currentEnvelope = j;
+                break;
+            }
         }
-    }
         
     
     sampler->setVolume(pins.at(0)->connections.at(0)->data[currentEnvelope]);
@@ -122,6 +135,10 @@ void SamplerModule::process() {
             }
             else {
                 currentSample = 0;
+                if (!sampler->isLoop()) {
+                    gate = false;
+                    stopTimer();
+                }
             }
         }
     }
@@ -136,7 +153,12 @@ void SamplerModule::eventReceived(Event *e) {
             currentSample = 0;
             gate = true;
             currentEnvelope = e->getNote();
-        }        
+            if (isTimerRunning()) {
+                stopTimer();
+            }
+            startTimer(100);
+        }
+    
     }
     
 }

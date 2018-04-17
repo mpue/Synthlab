@@ -19,7 +19,7 @@
 //==============================================================================
 /*
  */
-class SamplerModule : public Module
+class SamplerModule : public Module, public Timer
 {
 public:
     SamplerModule(double sampleRate, int buffersize, AudioFormatManager* manager);
@@ -34,11 +34,13 @@ public:
     virtual String getCategory() override {
         return "Sound sources";
     }
+    
+    virtual void timerCallback() override;
     virtual void eventReceived(Event *e) override;
 
     
 private:
-    
+    float samplePosX = 20;
     AudioFormatManager* manager;
     AudioThumbnailCache* cache = nullptr;
     AudioThumbnail* thumbnail = nullptr;
