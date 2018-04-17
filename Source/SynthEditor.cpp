@@ -1402,7 +1402,7 @@ void SynthEditor::setBufferSize(int buffersize) {
     this->bufferSize = buffersize;
 }
 
-std::vector<AudioOut*> SynthEditor::getOutputChannels() {
+std::vector<AudioOut*>& SynthEditor::getOutputChannels() {
     return outputChannels;
 }
 

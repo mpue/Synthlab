@@ -27,17 +27,26 @@ public:
         return undoManager;
     }
     
+    AudioFormatManager* getFormatManager() {
+        return manager;
+    }
+    
 private:
     
     Project() {
         undoManager = new UndoManager();
+        manager = new AudioFormatManager();
+        manager->registerBasicFormats();
     }
     
     ~Project() {
         delete undoManager;
+        delete manager;
     }
     static Project* instance;
     UndoManager* undoManager;
+    
+    AudioFormatManager* manager;
 };
 
 #endif /* Project_hp*/

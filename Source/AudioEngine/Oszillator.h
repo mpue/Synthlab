@@ -40,8 +40,8 @@ public:
     void setPitchBend(float bend);
     float getPitchBend() const;
     
-    virtual void setFine(float fine) = 0;
-    virtual float getFine() const = 0;
+    virtual void setFine(float fine) {};
+    virtual float getFine() const { return 0; };
     
     void setMode(OscMode mode);
     

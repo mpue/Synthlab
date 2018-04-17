@@ -14,6 +14,7 @@
     <GROUP id="{CEEB3DEE-53A5-006F-633B-91BE10C6A8CA}" name="Images">
       <FILE id="DbUq4B" name="adder.png" compile="0" resource="1" file="Images/adder.png"/>
       <FILE id="LYnUGD" name="adsr.png" compile="0" resource="1" file="Images/adsr.png"/>
+      <FILE id="udjGbx" name="apicon.png" compile="0" resource="1" file="Images/apicon.png"/>
       <FILE id="Kxq8Ss" name="delete.png" compile="0" resource="1" file="Images/delete.png"/>
       <FILE id="rJlVP0" name="divider.png" compile="0" resource="1" file="Images/divider.png"/>
       <FILE id="v1N5Vy" name="hp.png" compile="0" resource="1" file="Images/hp.png"/>
@@ -93,6 +94,8 @@
         <FILE id="dBBZy4" name="Pulse.h" compile="0" resource="0" file="Source/AudioEngine/Pulse.h"/>
         <FILE id="Pq2ni7" name="Random.cpp" compile="1" resource="0" file="Source/AudioEngine/Random.cpp"/>
         <FILE id="KaYmiI" name="Random.h" compile="0" resource="0" file="Source/AudioEngine/Random.h"/>
+        <FILE id="JYk3AG" name="Sampler.cpp" compile="1" resource="0" file="Source/AudioEngine/Sampler.cpp"/>
+        <FILE id="ADVgJq" name="Sampler.h" compile="0" resource="0" file="Source/AudioEngine/Sampler.h"/>
         <FILE id="uZMvBA" name="Sawtooth.cpp" compile="1" resource="0" file="Source/AudioEngine/Sawtooth.cpp"/>
         <FILE id="k32EE6" name="Sawtooth.h" compile="0" resource="0" file="Source/AudioEngine/Sawtooth.h"/>
         <FILE id="pe3cRl" name="Sine.cpp" compile="1" resource="0" file="Source/AudioEngine/Sine.cpp"/>
@@ -202,7 +205,7 @@
     </GROUP>
   </MAINGROUP>
   <EXPORTFORMATS>
-    <XCODE_MAC targetFolder="Builds/MacOSX">
+    <XCODE_MAC targetFolder="Builds/MacOSX" smallIcon="udjGbx" bigIcon="udjGbx">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug"/>
         <CONFIGURATION isDebug="0" name="Release"/>
@@ -246,7 +249,8 @@
         <MODULEPATH id="juce_audio_basics" path="..\JUCE\modules"/>
       </MODULEPATHS>
     </VS2015>
-    <XCODE_IPHONE targetFolder="Builds/iOS">
+    <XCODE_IPHONE targetFolder="Builds/iOS" iPadScreenOrientation="landscape" smallIcon="udjGbx"
+                  bigIcon="udjGbx">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug"/>
         <CONFIGURATION isDebug="0" name="Release"/>
