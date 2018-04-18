@@ -11,19 +11,20 @@
 #include "SamplerModule.h"
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Connection.h"
-
+#include "Project.h"
+#include "push2/JuceToPush2DisplayBridge.h"
 //==============================================================================
 SamplerModule::SamplerModule(double sampleRate, int buffersize, AudioFormatManager* manager)
 {
     this->sampleRate = sampleRate;
     this->buffersize = buffersize;
-    
-    sampler = new Sampler(sampleRate, buffersize, manager);
-    cache = new AudioThumbnailCache(1);
-    thumbnail = new AudioThumbnail(buffersize   ,*manager,*cache);
-    
-    sampler->setVolume(0.5f);
-    
+    for(int i = 0; i < 128;i++) {
+        sampler[i] = nullptr;
+    }
+
+    cache = new AudioThumbnailCache(128);
+    thumbnail = new AudioThumbnail(buffersize ,*manager,*cache);
+
     setSize(256,140);
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(18,2);
@@ -32,16 +33,17 @@ SamplerModule::SamplerModule(double sampleRate, int buffersize, AudioFormatManag
     
     interpolatorLeft = new CatmullRomInterpolator();
     interpolatorRight = new CatmullRomInterpolator();
-    
-  
-    
+
     editable = false;
     prefab = true;
+    
+    selectSample(0);
+    this->manager = manager;
 }
 
 SamplerModule::~SamplerModule()
 {
-    delete sampler;
+
     delete thumbnail;
     delete cache;
     delete interpolatorLeft;
@@ -55,13 +57,14 @@ SamplerModule::~SamplerModule()
 }
 
 void SamplerModule::loadSample(juce::InputStream *is) {
-    sampler->loadSample(is);
+    
+    sampler[currentSampler]->loadSample(is);
     this->thumbnail->reset(2, sampleRate);
-    thumbnail->addBlock(0, *sampler->getSampleBuffer(), 0, sampler->getSampleLength());
+    thumbnail->addBlock(0, *sampler[currentSampler]->getSampleBuffer(), 0, sampler[currentSampler]->getSampleLength());
     repaint();
     
-    bufferLeft = new float[sampler->getSampleLength()];
-    bufferRight = new float[sampler->getSampleLength()];
+    bufferLeft = new float[sampler[currentSampler]->getSampleLength()];
+    bufferRight = new float[sampler[currentSampler]->getSampleLength()];
 }
 
 void SamplerModule::configurePins() {
@@ -104,22 +107,26 @@ void SamplerModule::paint(juce::Graphics &g) {
     g.setColour(Colours::black);
     g.fillRect(tb);
     g.setColour(Colours::orange);
-    this->thumbnail->drawChannels(g, tb,0,sampler->getSampleLength() / sampleRate,1);
+    this->thumbnail->drawChannels(g, tb,0,sampler[currentSampler]->getSampleLength() / sampleRate,1);
 
     g.setColour(juce::Colours::white);
-    
     g.drawLine(samplePosX, 20,samplePosX, 120);
+    
+    updatePush2Display();
 }
 
 
 
 void SamplerModule::setAmplitude(float amplitude) {
-    this->sampler->setVolume(amplitude);
+    this->sampler[currentSampler]->setVolume(amplitude);
 }
 
 void SamplerModule::timerCallback() {
-    samplePosX = (100.0 / sampler->getSampleLength())* currentSample + 20;
+    samplePosX = (100.0 / sampler[currentSampler]->getSampleLength())* currentSample + 20;
+    pushSamplePosX = ((float)ableton::Push2DisplayBitmap::kWidth / sampler[currentSampler]->getSampleLength())* currentSample;
+    
     repaint();
+    updatePush2Display();
 }
 
 void SamplerModule::process() {
@@ -143,7 +150,7 @@ void SamplerModule::process() {
         }
         
     
-    sampler->setVolume(pins.at(0)->connections.at(0)->data[currentEnvelope]);
+    sampler[currentSampler]->setVolume(pins.at(0)->connections.at(0)->data[currentEnvelope]);
     
     if (pins.at(1)->getAudioBuffer() != nullptr && pins.at(1)->getAudioBuffer()->getNumChannels() > 0){
         
@@ -153,8 +160,8 @@ void SamplerModule::process() {
             correction = 1;
         }
         
-        interpolatorLeft->process(1, sampler->getSampleBuffer()->getReadPointer(0),bufferLeft , sampler->getSampleLength());
-        interpolatorLeft->process(1, sampler->getSampleBuffer()->getReadPointer(1),bufferRight, sampler->getSampleLength());
+        interpolatorLeft->process(1, sampler[currentSampler]->getSampleBuffer()->getReadPointer(0),bufferLeft , sampler[currentSampler]->getSampleLength());
+        interpolatorLeft->process(1, sampler[currentSampler]->getSampleBuffer()->getReadPointer(1),bufferRight, sampler[currentSampler]->getSampleLength());
         
         for (int j = 0; j < buffersize;j++) {
             
@@ -164,12 +171,12 @@ void SamplerModule::process() {
             pins.at(1)->getAudioBuffer()->setSample(0,j ,valueL);
             pins.at(2)->getAudioBuffer()->setSample(0,j ,valueR);
             
-            if (currentSample < sampler->getSampleLength() - 1) {
+            if (currentSample < sampler[currentSampler]->getSampleLength() - 1) {
                 currentSample++;
             }
             else {
                 currentSample = 0;
-                if (!sampler->isLoop()) {
+                if (!sampler[currentSampler]->isLoop()) {
                     gate = false;
                     stopTimer();
                 }
@@ -192,7 +199,7 @@ void SamplerModule::eventReceived(Event *e) {
             if (isTimerRunning()) {
                 stopTimer();
             }
-            startTimer(100);
+            startTimer(20);
         }
     
     }
@@ -223,5 +230,41 @@ void SamplerModule::setBuffersize(int buffersize){
 }
 
 AudioSampleBuffer* SamplerModule::getBuffer() {
-    return sampler->getSampleBuffer();
+    return sampler[currentSampler]->getSampleBuffer();
+}
+
+void SamplerModule::selectSample(int i) {
+    
+    currentSampler = i;
+    
+    if (sampler[currentSampler] == nullptr) {
+        Sampler* sampler = new Sampler(sampleRate, buffersize);
+        sampler->setVolume(0.5f);
+        this->sampler[i] = sampler;
+        repaint();
+        updatePush2Display();
+    }
+}
+
+void SamplerModule::updatePush2Display() {
+    auto& g = Project::getInstance()->getPush2Bridge()->GetGraphic();
+    
+    // Clear previous frame
+    g.fillAll(juce::Colour(0xff000000));
+    
+    // Create a path for the animated wave
+    const auto height = ableton::Push2DisplayBitmap::kHeight;
+    const auto width = ableton::Push2DisplayBitmap::kWidth;
+    
+
+    Rectangle<int> tb = Rectangle<int>(0,0,width,height);
+    g.setColour(Colours::black);
+    g.fillRect(tb);
+    g.setColour(Colours::orange);
+    this->thumbnail->drawChannels(g, tb,0,sampler[currentSampler]->getSampleLength() / sampleRate,1);
+    
+    g.setColour(juce::Colours::white);
+    
+    g.drawLine(pushSamplePosX, 0,pushSamplePosX, height);
+    Project::getInstance()->getPush2Bridge()->Flip();
 }

@@ -4,7 +4,8 @@
 #include "AudioThumbnailComponent.h"
 #include "SamplerModule.h"
 
-class SampleEditor  : public Component
+
+class SampleEditor  : public Component, public MidiKeyboardStateListener
 {
 public:
 
@@ -14,6 +15,9 @@ public:
     void paint (Graphics& g) override;
     void resized() override;
 
+    virtual void handleNoteOff (MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override;
+    virtual void handleNoteOn (MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override;
+    
 private:
     MidiKeyboardState state;
     MidiKeyboardComponent::Orientation orientation = MidiKeyboardComponent::Orientation::horizontalKeyboard;
@@ -24,6 +28,9 @@ private:
     ScopedPointer<AudioThumbnailComponent> component;
 
     SamplerModule* sampleModule;
+    
+    
+
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SampleEditor)
 };

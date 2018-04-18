@@ -17,7 +17,7 @@ class Sampler  {
     
 public:
     
-    Sampler(float sampleRate, int bufferSize, AudioFormatManager* manager);
+    Sampler(float sampleRate, int bufferSize);
     ~Sampler();
 
     void play();

@@ -9,11 +9,13 @@
 */
 
 #include "Sampler.h"
+#include "Project.h"
 
-Sampler::Sampler(float sampleRate, int bufferSize, AudioFormatManager* manager) {
+
+Sampler::Sampler(float sampleRate, int bufferSize) {
     this->sampleRate = sampleRate;
     this->bufferSize = bufferSize;
-    this->manager = manager;
+    this->manager = Project::getInstance()->getFormatManager();
 }
 
 Sampler::~Sampler() {

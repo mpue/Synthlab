@@ -62,7 +62,7 @@ Result::Result(const Result &other) {
 }
 
 Result::~Result() {
-	assert(checked_) ;
+	//assert(checked_) ;
 	delete(child_) ;
 }
 

@@ -42,15 +42,19 @@ public:
     String getSamplePath();
     void setPitch(float pitch);
     float getPitch();
+    void updatePush2Display();
     
     AudioSampleBuffer* getBuffer();
     
+    void selectSample(int i);
+    
 private:
     float samplePosX = 20;
+    float pushSamplePosX = 0;
     AudioFormatManager* manager;
     AudioThumbnailCache* cache = nullptr;
     AudioThumbnail* thumbnail = nullptr;
-    Sampler* sampler = nullptr;
+    Sampler* sampler[128] = { nullptr };
     int currentSample = 0;
     int currentEnvelope = -1;
     bool gate = false;
@@ -66,6 +70,8 @@ private:
     
     CatmullRomInterpolator* interpolatorLeft;
     CatmullRomInterpolator* interpolatorRight;
+    
+    int currentSampler = 0;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SamplerModule)
 };

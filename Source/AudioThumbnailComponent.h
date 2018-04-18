@@ -11,6 +11,7 @@
 #pragma once
 
 #include "../JuceLibraryCode/JuceHeader.h"
+#include "push2/JuceToPush2DisplayBridge.h"
 
 //==============================================================================
 /*
@@ -35,6 +36,7 @@ private:
     
     float sampleRate;
     int buffersize;
+
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioThumbnailComponent)
 };

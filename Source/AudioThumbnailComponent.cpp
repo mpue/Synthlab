@@ -15,6 +15,8 @@
 //==============================================================================
 AudioThumbnailComponent::AudioThumbnailComponent(int buffersize, float sampleRate)
 {
+
+    
     this->sampleRate = sampleRate;
     this->buffersize = buffersize;
     this->manager = Project::getInstance()->getFormatManager();
@@ -52,6 +54,7 @@ void AudioThumbnailComponent::resized()
 
 void AudioThumbnailComponent::setSampleBuffer(AudioSampleBuffer *buffer) {
     
+
     this->buffer = buffer;
     /*
     if (this->buffer == nullptr) {
@@ -63,5 +66,8 @@ void AudioThumbnailComponent::setSampleBuffer(AudioSampleBuffer *buffer) {
      */
     this->thumbnail->reset(2, sampleRate);
     this->thumbnail->addBlock(0, *buffer, 0, buffer->getNumSamples());
+    
+
+    
     repaint();
 }
