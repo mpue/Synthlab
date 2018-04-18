@@ -37,6 +37,7 @@
 #include "Project.h"
 #include "LabelModule.h"
 #include "SamplerModule.h"
+#include "SampleEditor.h"
 #include "OneShotTimer.h"
 //[/Headers]
 
@@ -615,7 +616,7 @@ void SynthEditor::mouseDoubleClick (const MouseEvent& e)
                 SamplerModule*sm = dynamic_cast<SamplerModule*>(m);
                 
                 if (sm != NULL) {
-                    openSample(sm);
+                    openSampleEditor(sm);
                 }
             }
             else {
@@ -894,6 +895,24 @@ void SynthEditor::saveFile() {
 
 }
 
+void SynthEditor::openSampleEditor(SamplerModule *sm) {
+    DialogWindow::LaunchOptions launchOptions;
+    
+    SampleEditor* se = new SampleEditor(bufferSize, _sampleRate, Project::getInstance()->getFormatManager(), sm);
+    
+    launchOptions.dialogTitle = ("Edit samples");
+    launchOptions.escapeKeyTriggersCloseButton = true;
+    launchOptions.resizable = false;
+    launchOptions.useNativeTitleBar = false;
+    launchOptions.useBottomRightCornerResizer = true;
+    launchOptions.componentToCentreAround = getParentComponent();
+    launchOptions.content.setOwned(se);
+    launchOptions.content->setSize(600, 580);
+    launchOptions.dialogBackgroundColour = LookAndFeel::getDefaultLookAndFeel().findColour(ResizableWindow::backgroundColourId);
+    launchOptions.runModal();
+
+}
+
 void SynthEditor::openSample(SamplerModule *sm) {
     
     FileChooser chooser("Select file to open", File::nonexistent, "*");
@@ -914,6 +933,8 @@ void SynthEditor::openSample(SamplerModule *sm) {
         FileInputStream* is = new FileInputStream(file);
         sm->setSamplePath(file.getFullPathName());
         sm->loadSample(is);
+        
+        
         // delete is;
         
 #endif

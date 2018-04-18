@@ -153,32 +153,26 @@ void SamplerModule::process() {
             correction = 1;
         }
         
-        interpolatorLeft->process(pitch, sampler->getSampleBuffer()->getReadPointer(0),bufferLeft , sampler->getSampleLength());
-        interpolatorLeft->process(pitch, sampler->getSampleBuffer()->getReadPointer(1),bufferRight, sampler->getSampleLength());
+        interpolatorLeft->process(1, sampler->getSampleBuffer()->getReadPointer(0),bufferLeft , sampler->getSampleLength());
+        interpolatorLeft->process(1, sampler->getSampleBuffer()->getReadPointer(1),bufferRight, sampler->getSampleLength());
         
-        int outSampleNum = 0;
-        
-        for (int j = currentSample; j < buffersize + currentSample;j++) {
+        for (int j = 0; j < buffersize;j++) {
             
-            float valueL =  bufferLeft[j]; // sampler->getSampleAt(0, currentSample);
-            float valueR =  bufferRight[j];// sampler->getSampleAt(1, currentSample);
+            float valueL =  bufferLeft[currentSample]; // sampler->getSampleAt(0, currentSample);
+            float valueR =  bufferRight[currentSample];// sampler->getSampleAt(1, currentSample);
             
-            pins.at(1)->getAudioBuffer()->setSample(0,outSampleNum ,valueL);
-            pins.at(2)->getAudioBuffer()->setSample(0,outSampleNum ,valueR);
+            pins.at(1)->getAudioBuffer()->setSample(0,j ,valueL);
+            pins.at(2)->getAudioBuffer()->setSample(0,j ,valueR);
             
-
-            
-            outSampleNum = (outSampleNum + 1) % buffersize;
-        }
-        
-        if (currentSample + buffersize < sampler->getSampleLength() - 1) {
-            currentSample += buffersize;
-        }
-        else {
-            currentSample = 0;
-            if (!sampler->isLoop()) {
-                gate = false;
-                stopTimer();
+            if (currentSample < sampler->getSampleLength() - 1) {
+                currentSample++;
+            }
+            else {
+                currentSample = 0;
+                if (!sampler->isLoop()) {
+                    gate = false;
+                    stopTimer();
+                }
             }
         }
         
@@ -224,6 +218,10 @@ void SamplerModule::setSampleRate(float rate) {
     this->sampleRate = rate;
 }
 
-void SamplerModule::setBuffersize(int buffersize) {
+void SamplerModule::setBuffersize(int buffersize){
     this->buffersize = buffersize;
+}
+
+AudioSampleBuffer* SamplerModule::getBuffer() {
+    return sampler->getSampleBuffer();
 }

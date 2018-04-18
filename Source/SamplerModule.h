@@ -43,6 +43,8 @@ public:
     void setPitch(float pitch);
     float getPitch();
     
+    AudioSampleBuffer* getBuffer();
+    
 private:
     float samplePosX = 20;
     AudioFormatManager* manager;

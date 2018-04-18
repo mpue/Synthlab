@@ -33,6 +33,7 @@ private:
     AudioThumbnail* thumbnail;
     AudioSampleBuffer* buffer;
     
+    float sampleRate;
     int buffersize;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioThumbnailComponent)
