@@ -53,7 +53,6 @@ void DelayModule::configurePins() {
     p2->listeners.push_back(this);
     p2->setName("R");
     
-    
     Pin* p3 = new Pin(Pin::Type::AUDIO);
     p3->direction = Pin::Direction::OUT;
     p3->listeners.push_back(this);

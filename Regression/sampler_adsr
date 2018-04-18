@@ -2,7 +2,8 @@
 
 <Synth>
   <Modules>
-    <Module name="Sampler" index="53" x="297" y="284" isPrefab="1" prefabId="53">
+    <Module name="Sampler" index="53" x="297" y="284" isPrefab="1" prefabId="53"
+            samplePath="/Users/mpue/Documents/devel/Synthlab/samples/boom.aif">
       <Pins>
         <Pin type="2" direction="0" index="5301" x="0" y="10"/>
         <Pin type="0" direction="1" index="5302" x="246" y="10"/>
@@ -86,11 +87,11 @@
     <Connection source="53" target="70" a="5301" b="7006"/>
     <Connection source="61" target="70" a="6102" b="7001"/>
     <Connection source="70" target="67" a="7005" b="6701"/>
-    <Connection source="53" target="73" a="5302" b="7301"/>
-    <Connection source="53" target="73" a="5303" b="7302"/>
-    <Connection source="73" target="66" a="7303" b="6601"/>
-    <Connection source="73" target="66" a="7304" b="6602"/>
-    <Connection source="167" target="73" a="6701" b="7305"/>
-    <Connection source="267" target="73" a="6701" b="7306"/>
+    <Connection source="73" target="53" a="7301" b="5302"/>
+    <Connection source="73" target="53" a="7302" b="5303"/>
+    <Connection source="66" target="73" a="6601" b="7303"/>
+    <Connection source="66" target="73" a="6602" b="7304"/>
+    <Connection source="73" target="167" a="7305" b="6701"/>
+    <Connection source="73" target="267" a="7306" b="6701"/>
   </Connections>
 </Synth>

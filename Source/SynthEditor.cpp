@@ -36,6 +36,7 @@
 #include "Project.h"
 #include "LabelModule.h"
 #include "SamplerModule.h"
+#include "OneShotTimer.h"
 //[/Headers]
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
@@ -782,6 +783,13 @@ void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Conn
             file.setProperty("value", c->getValue(), nullptr);
         }
         
+        SamplerModule* sm;
+        
+        if ((sm = dynamic_cast<SamplerModule*>((*it))) != NULL) {
+             file.setProperty("samplePath", sm->getSamplePath(), nullptr);
+        }
+        
+        
         ValueTree pins = ValueTree("Pins");
 
         for (std::vector<Pin*>::iterator it2 =  (*it)->pins.begin(); it2 != (*it)->pins.end(); ++it2) {
@@ -831,6 +839,7 @@ void SynthEditor::loadFromString(juce::String in){
     }
     
     xml = nullptr;
+   
     setRunning(true);
 }
 
@@ -888,7 +897,7 @@ void SynthEditor::openSample(SamplerModule *sm) {
     FileChooser chooser("Select file to open", File::nonexistent, "*");
     
     if (chooser.browseForFileToOpen()) {
-
+        
 #if JUCE_IOS
         URL url = chooser.getURLResult();
         InputStream* is = url.createInputStream(false);
@@ -901,11 +910,11 @@ void SynthEditor::openSample(SamplerModule *sm) {
 #else
         File file = chooser.getResult();
         FileInputStream* is = new FileInputStream(file);
+        sm->setSamplePath(file.getFullPathName());
         sm->loadSample(is);
         // delete is;
         
 #endif
-        
 
         setRunning(true);
     }
@@ -941,6 +950,7 @@ void SynthEditor::openFile() {
         }
 
         xml = nullptr;
+        
         setRunning(true);
     }
 }
@@ -1024,9 +1034,25 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         }
         
         Constant* c = nullptr;
-        if ((c = dynamic_cast<Constant*>((m))) != NULL) {
+        if ((c = dynamic_cast<Constant*>(m)) != NULL) {
             addChangeListener(c);
             c->setValue(mod.getProperty("value").toString().getFloatValue());
+        }
+        
+        SamplerModule* sm;
+        
+        if ((sm = dynamic_cast<SamplerModule*>(m)) != NULL) {
+            
+            if (mod.hasProperty("samplePath")) {
+                sm->setSamplePath(mod.getProperty("samplePath").toString());
+                File file = File(sm->getSamplePath());
+                if (file.exists()) {
+                    FileInputStream* is = new FileInputStream(file);
+                    sm->setSamplePath(file.getFullPathName());
+                    sm->loadSample(is);
+                }
+            }
+ 
         }
         
         // addAndMakeVisible(m);

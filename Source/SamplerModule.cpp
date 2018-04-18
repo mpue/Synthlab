@@ -146,7 +146,6 @@ void SamplerModule::process() {
     
 }
 
-
 void SamplerModule::eventReceived(Event *e) {
     
     if (e->getType() == Event::Type::GATE) {
@@ -162,4 +161,12 @@ void SamplerModule::eventReceived(Event *e) {
     
     }
     
+}
+
+void SamplerModule::setSamplePath(juce::String sample) {
+    this->samplePath = sample;
+}
+
+String SamplerModule::getSamplePath() {
+    return samplePath;
 }

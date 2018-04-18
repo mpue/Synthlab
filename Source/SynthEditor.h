@@ -81,7 +81,7 @@ public:
     void openFile();
     void openSample(SamplerModule* sm);
     void clearSelection();
-
+    
     void saveStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections, ValueTree* v);
     void loadStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections,ValueTree* v);
 
