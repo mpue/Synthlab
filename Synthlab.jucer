@@ -48,6 +48,10 @@
       <FILE id="LTbDuF" name="Project.cpp" compile="1" resource="0" file="Source/Project.cpp"/>
       <FILE id="WcR5ED" name="Project.h" compile="0" resource="0" file="Source/Project.h"/>
       <GROUP id="{77AE62B9-7144-98DD-6972-2AE372C2CB32}" name="Actions">
+        <FILE id="d4mKKq" name="AddConnectionAction.cpp" compile="1" resource="0"
+              file="Source/Actions/AddConnectionAction.cpp"/>
+        <FILE id="bKTfFE" name="AddConnectionAction.h" compile="0" resource="0"
+              file="Source/Actions/AddConnectionAction.h"/>
         <FILE id="DC1B9g" name="AddModuleAction.cpp" compile="1" resource="0"
               file="Source/Actions/AddModuleAction.cpp"/>
         <FILE id="h8KNVV" name="AddModuleAction.h" compile="0" resource="0"
@@ -115,6 +119,13 @@
         <FILE id="RO3JEM" name="WhiteNoise.h" compile="0" resource="0" file="Source/AudioEngine/WhiteNoise.h"/>
       </GROUP>
       <GROUP id="{F7A67158-9DD4-9E2C-0BDC-1B58ED967D9B}" name="Editor">
+        <FILE id="zDXqTh" name="AudioThumbnailComponent.cpp" compile="1" resource="0"
+              file="Source/AudioThumbnailComponent.cpp"/>
+        <FILE id="rtSeW2" name="AudioThumbnailComponent.h" compile="0" resource="0"
+              file="Source/AudioThumbnailComponent.h"/>
+        <FILE id="fWNKSv" name="SampleEditor.cpp" compile="1" resource="0"
+              file="Source/SampleEditor.cpp"/>
+        <FILE id="NDciKQ" name="SampleEditor.h" compile="0" resource="0" file="Source/SampleEditor.h"/>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
           <FILE id="ltD2cO" name="AdderModule.cpp" compile="1" resource="0" file="Source/AdderModule.cpp"/>
           <FILE id="GhVXGb" name="AdderModule.h" compile="0" resource="0" file="Source/AdderModule.h"/>

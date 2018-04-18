@@ -18,13 +18,37 @@ AddModuleAction::AddModuleAction(SynthEditor* editor, Point<int> position, int m
 
 bool AddModuleAction::undo() {
     
-    editor->removeSelectedItem();
+    if (module == nullptr) {
+        return false;
+    }
+    
+    for (std::vector<Module*>::iterator it = editor->getModule()->getModules()->begin();it != editor->getModule()->getModules()->end();) {
+        
+        if ((*it)->getIndex() == module->getIndex()) {
+            editor->removeChangeListener((*it));
+            // delete (*it);
+            it = editor->getModule()->getModules()->erase(it);
+            editor->removeChildComponent((*it));
+        }
+        else {
+            ++it;
+        }
+    }
+    
+    editor->repaint();
+    
+    
     return true;
 }
 
 bool AddModuleAction::perform() {
     
-    Module* m = PrefabFactory::getInstance()->getPrefab(moduleId, editor->getSampleRate(), editor->getBufferSize());
+    Module* m = module;
+    
+    if (m == nullptr) {
+        m = PrefabFactory::getInstance()->getPrefab(moduleId, editor->getSampleRate(), editor->getBufferSize());
+    }
+    
     editor->addChangeListener(m);
     m->setTopLeftPosition(position);
     
@@ -35,6 +59,8 @@ bool AddModuleAction::perform() {
     m->savePosition();
     editor->getSelectedModules()->push_back(m);
     editor->repaint();
+    
+    module = m;
     
     AudioOut* out;
     if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {

@@ -1,0 +1,131 @@
+//
+//  AddConnectionAction.cpp
+//  Synthlab - App
+//
+//  Created by Matthias Pueski on 18.04.18.
+//
+
+#include "AddConnectionAction.h"
+
+AddConnectionAction::AddConnectionAction(SynthEditor* editor, Module* module) {
+    this->editor = editor;
+    this->source = module;
+    this->root = editor->getModule();
+}
+
+bool AddConnectionAction::perform() {
+
+    
+    // find the selected input of the source module
+    for (int j = 0; j < source->pins.size(); j++) {
+        
+        if (source->pins.at(j)->isSelected()) {
+            a = source->pins.at(j);
+            break;
+        }
+        
+    }
+    
+    // now find the target module
+    for (int i = 0; i < root->getModules()->size(); i++) {
+        
+        Module* m = root->getModules()->at(i);
+        
+        if (m->getIndex() == source->getIndex()) {
+            continue;
+        }
+        
+        // find the selected input of the target  module
+        for (int j = 0; j < m->pins.size(); j++) {
+            
+            if (m->pins.at(j)->isSelected()) {
+                b = m->pins.at(j);
+                target = m;
+                break;
+            }
+            
+        }
+        
+    }
+    
+    if (source != nullptr && target != nullptr && a != nullptr && b != nullptr) {
+        
+        if (a->type == b->type) {
+            
+            // for event based pins the direction is from source to target
+            if (a->type == Pin::Type::EVENT ) {
+                if (a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT) {
+                    
+                    b->connections.push_back(a);
+                    c = new Connection(source, a, target, b);
+                    root->getConnections()->push_back(c);
+                    
+                }
+                else if (a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN) {
+                    a->connections.push_back(b);
+                    c = new Connection(source, a, target, b);
+                    root->getConnections()->push_back(c);
+                }
+            }
+            // in all other cases its the opposite direction
+            else {
+                if (a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT) {
+                    a->connections.push_back(b);
+                    Connection* c = new Connection(source, a, target, b);
+                    root->getConnections()->push_back(c);
+                }
+                else if (a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN) {
+                    b->connections.push_back(a);
+                    
+                    c = new Connection(source, a, target, b);
+                    root->getConnections()->push_back(c);
+                }
+            }
+            
+            
+        }
+        
+    }
+    
+    editor->repaint();
+    
+    return true;
+}
+
+
+bool AddConnectionAction::undo() {
+    
+    for (std::vector<Pin*>::iterator ita = a->connections.begin();ita != a->connections.end();) {
+        if ((*ita) == b) {
+            ita = a->connections.erase(ita);
+        }
+        else {
+            ++ita;
+        }
+    }
+    
+    for (std::vector<Pin*>::iterator itb = b->connections.begin();itb != b->connections.end();) {
+        if ((*itb) == a) {
+            itb = b->connections.erase(itb);
+        }
+        else {
+            ++itb;
+        }
+    }
+    
+    for (std::vector<Connection*>::iterator it = root->getConnections()->begin();it != root->getConnections()->end();) {
+        if ((*it) == c) {
+            
+            delete (*it);
+            it = root->getConnections()->erase(it);
+        }
+        else {
+            ++it;
+        }
+        
+    }
+    
+    editor->repaint();
+    
+    return true;
+}

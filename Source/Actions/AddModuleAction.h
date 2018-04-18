@@ -25,6 +25,7 @@ private:
     SynthEditor* editor;
     Point<int> position;
     int moduleId;
+    Module* module = nullptr;
     
 };
 

@@ -9,13 +9,13 @@
             shouldBeEnabled = "No"
             ignoreCount = "0"
             continueAfterRunningActions = "No"
-            filePath = "../../Source/SynthEditor.cpp"
-            timestampString = "545724705.071362"
+            filePath = "../../Source/Actions/AddModuleAction.cpp"
+            timestampString = "545747793.024599"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "1047"
-            endingLineNumber = "1047"
-            landmarkName = "SynthEditor::loadStructure(std::vector&lt;Module *&gt;* modules, std::vector&lt;Connection*&gt;* connections,juce::ValueTree *v)"
+            startingLineNumber = "21"
+            endingLineNumber = "21"
+            landmarkName = "AddModuleAction::undo()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>

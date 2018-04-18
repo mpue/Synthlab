@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "Actions/AddModuleAction.h"
+#include "Actions/AddConnectionAction.h"
 #include "Project.h"
 #include "LabelModule.h"
 #include "SamplerModule.h"
@@ -441,7 +442,6 @@ void SynthEditor::showContextMenu(Point<int> position) {
             saveFile();
         }
         else if (result == 3) {
-            newFile();
             openFile();
         }
         else if (result == 4) {
@@ -449,6 +449,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
         }
         else {
             AddModuleAction* am = new AddModuleAction(this,position,result);
+            Project::getInstance()->getUndoManager()->beginNewTransaction();
             Project::getInstance()->getUndoManager()->perform(am);
         
         }
@@ -699,6 +700,8 @@ void SynthEditor::cleanUp() {
     outputChannels.clear();
     delete selectedModules;
     
+    Project::getInstance()->getUndoManager()->clearUndoHistory();
+    
 }
 
 void SynthEditor::clearSelection() {
@@ -738,7 +741,6 @@ void SynthEditor::removeSelectedItem() {
 }
 
 void SynthEditor::newFile() {
-    cleanUp();
     root = new Module("Root");
     selectedModules = new std::vector<Module*>();
     repaint();
@@ -925,6 +927,7 @@ void SynthEditor::openFile() {
 
     if (chooser.browseForFileToOpen()) {
 
+        newFile();
         cleanUp();
         root = new Module("Root");
         selectedModules = new std::vector<Module*>();
@@ -1308,83 +1311,9 @@ void SynthEditor::checkForPinSelection(const MouseEvent& e, Module* m) {
 }
 
 void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
-    
-    Pin* a = nullptr;
-    Pin* b = nullptr;
-    Module* target = nullptr;
-    
-    // find the selected input of the source module
-    for (int j = 0; j < source->pins.size(); j++) {
-        
-        if (source->pins.at(j)->isSelected()) {
-            a = source->pins.at(j);
-            break;
-        }
-        
-    }
-    
-    // now find the target module
-    for (int i = 0; i < root->getModules()->size(); i++) {
-        
-        Module* m = root->getModules()->at(i);
-        
-        if (m->getIndex() == source->getIndex()) {
-            continue;
-        }
-        
-        // find the selected input of the target  module
-        for (int j = 0; j < m->pins.size(); j++) {
-            
-            if (m->pins.at(j)->isSelected()) {
-                b = m->pins.at(j);
-                target = m;
-                break;
-            }
-            
-        }
-        
-    }
-    
-    if (source != nullptr && target != nullptr && a != nullptr && b != nullptr) {
-        
-        if (a->type == b->type) {
-            
-            // for event based pins the direction is from source to target
-            if (a->type == Pin::Type::EVENT ) {
-                if (a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT) {
-                    
-                    b->connections.push_back(a);
-                    Connection* c = new Connection(source, a, target, b);
-                    root->getConnections()->push_back(c);
-                    
-                }
-                else if (a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN) {
-                    a->connections.push_back(b);
-                    Connection* c = new Connection(source, a, target, b);
-                    root->getConnections()->push_back(c);
-                }
-            }
-            // in all other cases its the opposite direction
-            else {
-                if (a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT) {
-                    a->connections.push_back(b);
-                    Connection* c = new Connection(source, a, target, b);
-                    root->getConnections()->push_back(c);
-                }
-                else if (a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN) {
-                    b->connections.push_back(a);
-                    
-                    Connection* c = new Connection(source, a, target, b);
-                    root->getConnections()->push_back(c);
-                }
-            }
-            
-            
-        }
-        
-        repaint();
-    }
-    
+    AddConnectionAction* ac = new AddConnectionAction(this,source);
+    Project::getInstance()->getUndoManager()->beginNewTransaction();
+    Project::getInstance()->getUndoManager()->perform(ac);
 }
 
 

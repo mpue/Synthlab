@@ -406,13 +406,21 @@ void Module::changeListenerCallback (ChangeBroadcaster* source) {
     
     if ((am = dynamic_cast<AudioModule*>(source)) != NULL) {
         Logger::writeToLog("Module "+getName()+" using sample rate "+String(sampleRate)+" kHz and buffer size of "+String(buffersize)+" bytes.");
-        sampleRate = am->getSampleRate();
+        am->getSampleRate();
         buffersize = am->getBufferSize();
     }
 }
 
 void Module::process() {
 
+}
+
+void Module::setSampleRate(float rate) {
+    this->sampleRate = rate;
+}
+
+void Module::setBuffersize(int buffersize) {
+    this->buffersize = buffersize;
 }
 
 void Module::savePosition() {

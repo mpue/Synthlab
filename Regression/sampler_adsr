@@ -9,6 +9,7 @@
         <Pin type="0" direction="1" index="5302" x="246" y="10"/>
         <Pin type="0" direction="1" index="5303" x="246" y="30"/>
         <Pin type="1" direction="0" index="5304" x="0" y="30"/>
+        <Pin type="2" direction="0" index="5305" x="0" y="50"/>
       </Pins>
       <Modules/>
       <Connections/>
@@ -81,6 +82,14 @@
       <Modules/>
       <Connections/>
     </Module>
+    <Module name="" index="367" x="193" y="508" isPrefab="1" prefabId="67"
+            value="1.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
   </Modules>
   <Connections>
     <Connection source="61" target="53" a="6102" b="5304"/>
@@ -93,5 +102,6 @@
     <Connection source="66" target="73" a="6602" b="7304"/>
     <Connection source="73" target="167" a="7305" b="6701"/>
     <Connection source="73" target="267" a="7306" b="6701"/>
+    <Connection source="367" target="53" a="6701" b="5305"/>
   </Connections>
 </Synth>

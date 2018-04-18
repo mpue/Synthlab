@@ -46,8 +46,12 @@ SamplerModule::~SamplerModule()
     delete cache;
     delete interpolatorLeft;
     delete interpolatorRight;
-    delete bufferLeft;
-    delete bufferRight;
+    
+    if (bufferLeft != nullptr)
+        delete bufferLeft;
+    
+    if (bufferRight != nullptr)
+        delete bufferRight;
 }
 
 void SamplerModule::loadSample(juce::InputStream *is) {
@@ -81,10 +85,16 @@ void SamplerModule::configurePins() {
     p4->listeners.push_back(this);
     p4->setName("E");
     
+    Pin* p5 = new Pin(Pin::Type::VALUE);
+    p5->direction = Pin::Direction::IN;
+    p5->listeners.push_back(this);
+    p5->setName("P");
+    
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::OUT,p2);
     addPin(Pin::Direction::OUT,p3);
     addPin(Pin::Direction::IN,p4);
+    addPin(Pin::Direction::IN,p5);
     
 }
 
@@ -120,6 +130,10 @@ void SamplerModule::process() {
         return;
     }
     
+    if (pins.at(4)->connections.size() == 1) {
+        setPitch(pins.at(4)->connections.at(0)->getValue());
+    }
+    
     if (currentEnvelope < 0)
         for (int j = 0; j < 128;j++) {
             if(pins.at(0)->connections.at(0)->dataEnabled[j]) {
@@ -133,26 +147,38 @@ void SamplerModule::process() {
     
     if (pins.at(1)->getAudioBuffer() != nullptr && pins.at(1)->getAudioBuffer()->getNumChannels() > 0){
         
-        interpolatorLeft->process(1, sampler->getSampleBuffer()->getReadPointer(0),bufferLeft , sampler->getSampleLength());
-        interpolatorLeft->process(1, sampler->getSampleBuffer()->getReadPointer(1),bufferRight, sampler->getSampleLength());
+        float correction = pitch;
         
-        for (int j = 0; j < buffersize;j++) {
+        if (pitch < 1) {
+            correction = 1;
+        }
+        
+        interpolatorLeft->process(pitch, sampler->getSampleBuffer()->getReadPointer(0),bufferLeft , sampler->getSampleLength());
+        interpolatorLeft->process(pitch, sampler->getSampleBuffer()->getReadPointer(1),bufferRight, sampler->getSampleLength());
+        
+        int outSampleNum = 0;
+        
+        for (int j = currentSample; j < buffersize + currentSample;j++) {
             
-            float valueL =  bufferLeft[currentSample]; // sampler->getSampleAt(0, currentSample);
-            float valueR =  bufferRight[currentSample];// sampler->getSampleAt(1, currentSample);
+            float valueL =  bufferLeft[j]; // sampler->getSampleAt(0, currentSample);
+            float valueR =  bufferRight[j];// sampler->getSampleAt(1, currentSample);
             
-            pins.at(1)->getAudioBuffer()->setSample(0,j ,valueL);
-            pins.at(2)->getAudioBuffer()->setSample(0,j ,valueR);
+            pins.at(1)->getAudioBuffer()->setSample(0,outSampleNum ,valueL);
+            pins.at(2)->getAudioBuffer()->setSample(0,outSampleNum ,valueR);
             
-            if (currentSample < sampler->getSampleLength() - 1) {
-                currentSample++;
-            }
-            else {
-                currentSample = 0;
-                if (!sampler->isLoop()) {
-                    gate = false;
-                    stopTimer();
-                }
+
+            
+            outSampleNum = (outSampleNum + 1) % buffersize;
+        }
+        
+        if (currentSample + buffersize < sampler->getSampleLength() - 1) {
+            currentSample += buffersize;
+        }
+        else {
+            currentSample = 0;
+            if (!sampler->isLoop()) {
+                gate = false;
+                stopTimer();
             }
         }
         
@@ -185,4 +211,19 @@ void SamplerModule::setSamplePath(juce::String sample) {
 
 String SamplerModule::getSamplePath() {
     return samplePath;
+}
+
+void SamplerModule::setPitch(float pitch) {
+    this->pitch = pitch;
+}
+
+float SamplerModule::getPitch() {
+    return pitch;
+}
+void SamplerModule::setSampleRate(float rate) {
+    this->sampleRate = rate;
+}
+
+void SamplerModule::setBuffersize(int buffersize) {
+    this->buffersize = buffersize;
 }

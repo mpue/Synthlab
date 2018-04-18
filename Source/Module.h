@@ -111,6 +111,9 @@ public:
     virtual String getCategory();
     virtual String getDescription();
     
+    virtual void setSampleRate(float rate);
+    virtual void setBuffersize(int buffersize);
+    
     virtual Layer getLayer() {
         return Layer::MODULES;
     };

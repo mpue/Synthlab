@@ -40,6 +40,8 @@ public:
     void loadSample(InputStream* is);
     void setSamplePath(String sample);
     String getSamplePath();
+    void setPitch(float pitch);
+    float getPitch();
     
 private:
     float samplePosX = 20;
@@ -52,8 +54,13 @@ private:
     bool gate = false;
     String samplePath;
     
-    float* bufferLeft;
-    float* bufferRight;
+    float* bufferLeft = nullptr;
+    float* bufferRight = nullptr;
+    
+    float pitch = 1.0;
+    
+    virtual void setSampleRate(float rate) override;
+    virtual void setBuffersize(int buffersize) override;
     
     CatmullRomInterpolator* interpolatorLeft;
     CatmullRomInterpolator* interpolatorRight;
