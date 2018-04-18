@@ -52,5 +52,11 @@ private:
     bool gate = false;
     String samplePath;
     
+    float* bufferLeft;
+    float* bufferRight;
+    
+    CatmullRomInterpolator* interpolatorLeft;
+    CatmullRomInterpolator* interpolatorRight;
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SamplerModule)
 };

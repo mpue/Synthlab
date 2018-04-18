@@ -30,6 +30,11 @@ SamplerModule::SamplerModule(double sampleRate, int buffersize, AudioFormatManag
     
     setName("Sampler");
     
+    interpolatorLeft = new CatmullRomInterpolator();
+    interpolatorRight = new CatmullRomInterpolator();
+    
+  
+    
     editable = false;
     prefab = true;
 }
@@ -39,6 +44,10 @@ SamplerModule::~SamplerModule()
     delete sampler;
     delete thumbnail;
     delete cache;
+    delete interpolatorLeft;
+    delete interpolatorRight;
+    delete bufferLeft;
+    delete bufferRight;
 }
 
 void SamplerModule::loadSample(juce::InputStream *is) {
@@ -46,6 +55,9 @@ void SamplerModule::loadSample(juce::InputStream *is) {
     this->thumbnail->reset(2, sampleRate);
     thumbnail->addBlock(0, *sampler->getSampleBuffer(), 0, sampler->getSampleLength());
     repaint();
+    
+    bufferLeft = new float[sampler->getSampleLength()];
+    bufferRight = new float[sampler->getSampleLength()];
 }
 
 void SamplerModule::configurePins() {
@@ -69,13 +81,10 @@ void SamplerModule::configurePins() {
     p4->listeners.push_back(this);
     p4->setName("E");
     
-    
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::OUT,p2);
     addPin(Pin::Direction::OUT,p3);
     addPin(Pin::Direction::IN,p4);
-    
-    
     
 }
 
@@ -123,10 +132,14 @@ void SamplerModule::process() {
     sampler->setVolume(pins.at(0)->connections.at(0)->data[currentEnvelope]);
     
     if (pins.at(1)->getAudioBuffer() != nullptr && pins.at(1)->getAudioBuffer()->getNumChannels() > 0){
+        
+        interpolatorLeft->process(1, sampler->getSampleBuffer()->getReadPointer(0),bufferLeft , sampler->getSampleLength());
+        interpolatorLeft->process(1, sampler->getSampleBuffer()->getReadPointer(1),bufferRight, sampler->getSampleLength());
+        
         for (int j = 0; j < buffersize;j++) {
             
-            float valueL = sampler->getSampleAt(0, currentSample);
-            float valueR = sampler->getSampleAt(1, currentSample);
+            float valueL =  bufferLeft[currentSample]; // sampler->getSampleAt(0, currentSample);
+            float valueR =  bufferRight[currentSample];// sampler->getSampleAt(1, currentSample);
             
             pins.at(1)->getAudioBuffer()->setSample(0,j ,valueL);
             pins.at(2)->getAudioBuffer()->setSample(0,j ,valueR);
@@ -142,6 +155,9 @@ void SamplerModule::process() {
                 }
             }
         }
+        
+        interpolatorLeft->reset();
+        interpolatorRight->reset();
     }
     
 }
