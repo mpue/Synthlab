@@ -1,12 +1,12 @@
 /*
-  ==============================================================================
-
-    SawtoothModule
-    Created: 4 Apr 2018 3:48:23pm
-    Author:  Matthias Pueski
-
-  ==============================================================================
-*/
+ ==============================================================================
+ 
+ SineModule
+ Created: 4 Apr 2018 3:48:23pm
+ Author:  Matthias Pueski
+ 
+ ==============================================================================
+ */
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "SineModule.h"
@@ -19,24 +19,26 @@ SineModule::SineModule(double sampleRate, int buffersize)
     this->sampleRate = sampleRate;
     this->buffersize = buffersize;
     
-    oscillator = new Sine(sampleRate);
-    
-    oscillator->setFrequency(440);
-    oscillator->setVolume(0.5f);
+    for (int i = 0; i < 128;i++){
+        oscillator[i] = nullptr;
+    }
     
     setSize(120,140);
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(18,2);
     
     setName("Sine");
-
+    
     editable = false;
     prefab = true;
 }
 
 SineModule::~SineModule()
 {
-    delete oscillator;
+    for (int i = 0; i < 128;i++){
+        if (oscillator[i] != nullptr)
+            delete oscillator[i];
+    }
 }
 
 void SineModule::configurePins() {
@@ -80,37 +82,66 @@ void SineModule::paint(juce::Graphics &g) {
 
 void SineModule::setPitch(int pitch) {
     this->pitch = pitch;
-    this->oscillator->setPitch(pitch);
 }
 
 void SineModule::setFine(float fine) {
-    this->fine = fine;
-    this->oscillator->setFine(fine);
+    if (this->fine != fine) {
+        this->fine = fine;
+        for (int i = 0; i < 128;i++){
+            if (oscillator[i] != nullptr)
+                this->oscillator[i]->setFine(fine);
+        }
+    }
 }
 
 void SineModule::setAmplitude(float amplitude) {
     this->amplitude = amplitude;
-    this->oscillator->setVolume(amplitude);
 }
 
 void SineModule::process() {
+    bool volumegate = false;
+    
     
     if (pins.at(0)->connections.size() ==  1) {
-        this->oscillator->setFrequency(pins.at(0)->connections.at(0)->getValue());
+        this->setPitch(pins.at(0)->connections.at(0)->getValue());
     }
     if (pins.at(1)->connections.size() ==  1) {
         this->setFine(pins.at(1)->connections.at(0)->getValue());
     }
     if (pins.at(2)->connections.size() ==  1) {
-        this->setAmplitude(abs(pins.at(2)->connections.at(0)->getValue()));
+        volumegate = true;
     }
-    for (int i = 0; i < buffersize; i++) {
-        float value = oscillator->process();
-        
-        if (pins.at(3)->getAudioBuffer() != nullptr && pins.at(3)->getAudioBuffer()->getNumChannels() > 0)
-            pins.at(3)->getAudioBuffer()->setSample(0,i ,value);
-
-        pins.at(4)->setValue(abs(value + 1));
+    if (pins.at(2)->connections.size() == 1) {
+        for (int i = 0; i < buffersize; i++) {
+            float value = 0;
+            for (int j = 0; j < 128;j++){
+                
+                if(pins.at(2)->connections.at(0)->dataEnabled[j]) {
+                    if (oscillator[j] ==  nullptr) {
+                        oscillator[j] = new Sine(sampleRate);
+                        
+                        oscillator[j]->setFrequency((440 * pow(2.0,((j+1)-69.0)/12.0)) + pitch);
+                    }
+                    float volume = pins.at(2)->connections.at(0)->data[j];
+                    
+                    this->oscillator[j]->setVolume(volume);
+                }
+                else {
+                    if (oscillator[j] != nullptr) {
+                        delete this->oscillator[j];
+                        this->oscillator[j] = nullptr;
+                    }
+                }
+                if (oscillator[j] != nullptr)
+                    value += oscillator[j]->process();
+            }
+            if (pins.at(3)->getAudioBuffer() != nullptr && pins.at(3)->getAudioBuffer()->getNumChannels() > 0)
+                pins.at(3)->getAudioBuffer()->setSample(0,i ,value);
+            
+            
+            //pins.at(4)->setValue(abs(value + 1));
+        }
     }
     
 }
+

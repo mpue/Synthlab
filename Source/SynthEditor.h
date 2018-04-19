@@ -26,7 +26,7 @@
 #include "Connection.h"
 #include "AudioOut.h"
 #include "AudioModule.h"
-
+#include "SampleEditor.h"
 #include <vector>
 
 class SamplerModule;
@@ -79,7 +79,7 @@ public:
     void newFile();
     void saveFile();
     void openFile();
-    void openSample(SamplerModule* sm);
+
     void openSampleEditor(SamplerModule* sm);
     void clearSelection();
     

@@ -60,8 +60,8 @@ private:
     bool gate = false;
     String samplePath;
     
-    float* bufferLeft = nullptr;
-    float* bufferRight = nullptr;
+    float bufferLeft [1024*1024] = {0};
+    float bufferRight [1024*1024] = {0};
     
     float pitch = 1.0;
     

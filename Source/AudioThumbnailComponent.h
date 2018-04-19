@@ -31,8 +31,8 @@ private:
     
     AudioFormatManager* manager;
     AudioThumbnailCache* cache;
-    AudioThumbnail* thumbnail;
-    AudioSampleBuffer* buffer;
+    AudioThumbnail* thumbnail = nullptr;
+    AudioSampleBuffer* buffer = nullptr;
     
     float sampleRate;
     int buffersize;

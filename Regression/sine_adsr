@@ -51,22 +51,6 @@
       <Modules/>
       <Connections/>
     </Module>
-    <Module name="" index="63" x="77" y="399" isPrefab="1" prefabId="63">
-      <Pins>
-        <Pin type="0" direction="1" index="6301" x="110" y="10"/>
-        <Pin type="2" direction="1" index="6302" x="110" y="30"/>
-      </Pins>
-      <Modules/>
-      <Connections/>
-    </Module>
-    <Module name="" index="55" x="253" y="380" isPrefab="1" prefabId="55">
-      <Pins>
-        <Pin type="2" direction="0" index="5501" x="0" y="10"/>
-        <Pin type="2" direction="1" index="5502" x="110" y="10"/>
-      </Pins>
-      <Modules/>
-      <Connections/>
-    </Module>
   </Modules>
   <Connections>
     <Connection source="61" target="70" a="6102" b="7001"/>
@@ -74,7 +58,5 @@
     <Connection source="66" target="71" a="6601" b="7104"/>
     <Connection source="66" target="71" a="6602" b="7104"/>
     <Connection source="70" target="67" a="7005" b="6701"/>
-    <Connection source="63" target="55" a="6302" b="5501"/>
-    <Connection source="55" target="71" a="5502" b="7101"/>
   </Connections>
 </Synth>

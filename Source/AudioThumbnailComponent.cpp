@@ -41,7 +41,7 @@ void AudioThumbnailComponent::paint (Graphics& g)
     g.fillRect(getBounds());
     g.setColour(juce::Colours::orange);
     
-    if (this->thumbnail != nullptr && buffer != nullptr){
+    if (this->thumbnail != nullptr && buffer != nullptr && buffer->getNumSamples() > 0){
         this->thumbnail->drawChannels(g, getBounds(), 0, this->buffer->getNumSamples() / sampleRate, 1);
         
     };

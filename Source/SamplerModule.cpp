@@ -40,7 +40,7 @@ SamplerModule::SamplerModule(double sampleRate, int buffersize, AudioFormatManag
     editable = false;
     prefab = true;
     
-    selectSample(0);
+    selectSample(64);
     this->manager = manager;
 }
 
@@ -52,12 +52,15 @@ SamplerModule::~SamplerModule()
     delete interpolatorLeft;
     delete interpolatorRight;
     
+    /*
     if (bufferLeft != nullptr)
         delete bufferLeft;
     
     if (bufferRight != nullptr)
         delete bufferRight;
     
+    */
+     
     for(int i = 0; i < 128;i++) {
         if (sampler[i] != nullptr) {
             delete sampler[i];
@@ -73,8 +76,9 @@ void SamplerModule::loadSample(juce::InputStream *is) {
     thumbnail->addBlock(0, *sampler[currentSampler]->getSampleBuffer(), 0, sampler[currentSampler]->getSampleLength());
     repaint();
     
-    bufferLeft = new float[sampler[currentSampler]->getSampleLength()];
-    bufferRight = new float[sampler[currentSampler]->getSampleLength()];
+    
+    // bufferLeft = new float[sampler[currentSampler]->getSampleLength()];
+    // bufferRight = new float[sampler[currentSampler]->getSampleLength()];
 }
 
 void SamplerModule::configurePins() {
@@ -142,27 +146,27 @@ void SamplerModule::timerCallback() {
 }
 
 void SamplerModule::process() {
-    
-    if (!gate) {
+
+    /*
+    if (
         pins.at(1)->getAudioBuffer()->clear();
         pins.at(2)->getAudioBuffer()->clear();
         return;
     }
+     */
     
     if (pins.at(4)->connections.size() == 1) {
         setPitch(pins.at(4)->connections.at(0)->getValue());
     }
     
-    if (currentEnvelope < 0)
-        for (int j = 0; j < 128;j++) {
-            if(pins.at(0)->connections.at(0)->dataEnabled[j]) {
-                currentEnvelope = j;
-                break;
+    if (pins.at(0)->connections.size() == 1) {
+        for (int i = 0; i < 128; i++) {
+            if (sampler[i] != nullptr) {
+                sampler[i]->setVolume(pins.at(0)->connections.at(0)->data[i]);
             }
         }
         
-    
-    sampler[currentSampler]->setVolume(pins.at(0)->connections.at(0)->data[currentEnvelope]);
+    }
     
     if (pins.at(1)->getAudioBuffer() != nullptr && pins.at(1)->getAudioBuffer()->getNumChannels() > 0){
         
@@ -171,32 +175,44 @@ void SamplerModule::process() {
         if (pitch < 1) {
             correction = 1;
         }
-        
-        interpolatorLeft->process(1, sampler[currentSampler]->getSampleBuffer()->getReadPointer(0),bufferLeft , sampler[currentSampler]->getSampleLength());
-        interpolatorLeft->process(1, sampler[currentSampler]->getSampleBuffer()->getReadPointer(1),bufferRight, sampler[currentSampler]->getSampleLength());
+        /*
+        for (int i = 0; i < 128;i++) {
+            if (sampler[i] != nullptr && sampler[i]->getSampleLength() > 0) {
+                interpolatorLeft->process(1, sampler[i]->getSampleBuffer()->getReadPointer(0),bufferLeft , sampler[i]->getSampleLength());
+                interpolatorLeft->process(1, sampler[i]->getSampleBuffer()->getReadPointer(1),bufferRight, sampler[i]->getSampleLength());
+            }
+        }
+         */
         
         for (int j = 0; j < buffersize;j++) {
             
-            float valueL =  bufferLeft[currentSample]; // sampler->getSampleAt(0, currentSample);
-            float valueR =  bufferRight[currentSample];// sampler->getSampleAt(1, currentSample);
+            float valueL = 0;
+            float valueR = 0;
             
+            for (int i = 0; i < 128;i++) {
+                if (sampler[i] != nullptr) {
+                    valueL +=  sampler[i]->getCurrentSample(0);// bufferLeft[sampler[i]->getCurrentPosition()] * sampler[i]->getVolume(); // sampler->getSampleAt(0, currentSample);
+                    valueR +=  sampler[i]->getCurrentSample(1);// bufferRight[sampler[i]->getCurrentPosition()]* sampler[i]->getVolume();// sampler->getSampleAt(1, currentSample);
+                    sampler[i]->nextSample();
+                }
+                    
+            }
+        
             pins.at(1)->getAudioBuffer()->setSample(0,j ,valueL);
             pins.at(2)->getAudioBuffer()->setSample(0,j ,valueR);
-            
-            if (currentSample < sampler[currentSampler]->getSampleLength() - 1) {
-                currentSample++;
-            }
-            else {
-                currentSample = 0;
-                if (!sampler[currentSampler]->isLoop()) {
-                    gate = false;
-                    stopTimer();
+        
+            /*
+            for (int i = 0; i < 128;i++) {
+                if (sampler[i] != nullptr) {
+                    sampler[i]->nextSample();
                 }
             }
+             */
         }
-        
+        /*
         interpolatorLeft->reset();
         interpolatorRight->reset();
+         */
     }
     
 }
@@ -205,15 +221,11 @@ void SamplerModule::eventReceived(Event *e) {
     
     if (e->getType() == Event::Type::GATE) {
         if (e->getValue() > 0) {
-            currentSample = 0;
-            gate = true;
-            currentEnvelope = e->getNote();
-            if (isTimerRunning()) {
-                stopTimer();
+            selectSample(e->getNote());
+            if (sampler[e->getNote()] != nullptr) {
+                sampler[e->getNote()]->reset();
             }
-            startTimer(20);
-        }
-    
+        }    
     }
     
 }
@@ -242,7 +254,10 @@ void SamplerModule::setBuffersize(int buffersize){
 }
 
 AudioSampleBuffer* SamplerModule::getBuffer() {
-    return sampler[currentSampler]->getSampleBuffer();
+    if (sampler[currentSampler] != nullptr && sampler[currentSampler]->getSampleLength() > 0) {
+         return sampler[currentSampler]->getSampleBuffer();
+    }
+    return nullptr;
 }
 
 void SamplerModule::selectSample(int i) {
@@ -259,8 +274,10 @@ void SamplerModule::selectSample(int i) {
     if (sampler[currentSampler]->hasSample()) {
         thumbnail->addBlock(0, *sampler[currentSampler]->getSampleBuffer(), 0, sampler[currentSampler]->getSampleLength());
     }
+    std::function<void(void)> changeLambda =
+    [=]() {  repaint(); };
+    juce::MessageManager::callAsync(changeLambda);
 
-    repaint();
 #ifdef USE_PUSH
     updatePush2Display();
 #endif

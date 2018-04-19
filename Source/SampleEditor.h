@@ -5,7 +5,7 @@
 #include "SamplerModule.h"
 
 
-class SampleEditor  : public Component, public MidiKeyboardStateListener
+class SampleEditor  : public Component, public MidiKeyboardStateListener, public MouseListener
 {
 public:
 
@@ -17,6 +17,12 @@ public:
 
     virtual void handleNoteOff (MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override;
     virtual void handleNoteOn (MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override;
+    
+    void mouseDoubleClick (const MouseEvent& event) override;
+    
+    void openSample(SamplerModule* sm);
+    
+
     
 private:
     MidiKeyboardState state;

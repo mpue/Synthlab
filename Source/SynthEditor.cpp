@@ -37,8 +37,10 @@
 #include "Project.h"
 #include "LabelModule.h"
 #include "SamplerModule.h"
-#include "SampleEditor.h"
 #include "OneShotTimer.h"
+
+
+class SampleEditor;
 //[/Headers]
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
@@ -920,35 +922,7 @@ void SynthEditor::openSampleEditor(SamplerModule *sm) {
 
 }
 
-void SynthEditor::openSample(SamplerModule *sm) {
-    
-    FileChooser chooser("Select file to open", File::nonexistent, "*");
-    
-    if (chooser.browseForFileToOpen()) {
-        
-#if JUCE_IOS
-        URL url = chooser.getURLResult();
-        InputStream* is = url.createInputStream(false);
-        
-        sm->loadSample(is);
-        
-        delete is;
-        
-        ScopedPointer<XmlElement> xml = XmlDocument(data).getDocumentElement();
-#else
-        File file = chooser.getResult();
-        FileInputStream* is = new FileInputStream(file);
-        sm->setSamplePath(file.getFullPathName());
-        sm->loadSample(is);
-        
-        
-        // delete is;
-        
-#endif
 
-        setRunning(true);
-    }
-}
 
 void SynthEditor::openFile() {
     FileChooser chooser("Select file to open", File::nonexistent, "*");

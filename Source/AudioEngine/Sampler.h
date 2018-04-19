@@ -34,9 +34,19 @@ public:
     void setLoop(bool loop);
     bool isLoop();
     void setVolume(float volume);
+    float getVolume() {
+        return volume;
+    }
     AudioSampleBuffer* getSampleBuffer();
     bool hasSample();
-    
+    void nextSample();
+    float getCurrentSample(int channel);
+    long getCurrentPosition() {
+        return currentSample;
+    }
+    void reset(){
+        currentSample = 0;
+    } 
 private:
     
     AudioFormatManager* manager;

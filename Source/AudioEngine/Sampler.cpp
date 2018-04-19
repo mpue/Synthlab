@@ -24,10 +24,22 @@ Sampler::~Sampler() {
     }
 }
 
+void Sampler::nextSample() {
+    if (sampleLength > 0)
+        currentSample = (currentSample + 1) % sampleLength;
+}
+
 void Sampler::play() {
 }
 
 void Sampler::stop() {
+}
+
+float Sampler::getCurrentSample(int channel){
+    if (sampleBuffer != nullptr && sampleLength > 0)
+        return sampleBuffer->getSample(channel, currentSample) * volume;
+    
+    return 0;
 }
 
 float Sampler::getSampleAt(int channel, long pos){
