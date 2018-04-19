@@ -446,7 +446,10 @@ void SynthEditor::showContextMenu(Point<int> position) {
             openFile();
         }
         else if (result == 4) {
+            setRunning(false);
+            cleanUp();
             newFile();
+            setRunning(true);
         }
         else {
             AddModuleAction* am = new AddModuleAction(this,position,result);
