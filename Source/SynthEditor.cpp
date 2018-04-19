@@ -443,7 +443,11 @@ void SynthEditor::showContextMenu(Point<int> position) {
             saveFile();
         }
         else if (result == 3) {
+            setRunning(false);
+            cleanUp();
+            newFile();
             openFile();
+            setRunning(true);
         }
         else if (result == 4) {
             setRunning(false);
@@ -951,10 +955,6 @@ void SynthEditor::openFile() {
 
     if (chooser.browseForFileToOpen()) {
 
-        newFile();
-        cleanUp();
-        root = new Module("Root");
-        selectedModules = new std::vector<Module*>();
 #if JUCE_IOS
         URL url = chooser.getURLResult();
         InputStream* is = url.createInputStream(false);

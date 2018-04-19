@@ -22,11 +22,20 @@ Constant::Constant()
 
     editable = false;
     prefab = true;
+
+    createProperties();
+    
+}
+
+void Constant::createProperties() {
+    valueValue = new Value();
+    valueListener = new ValueListener(*valueValue, this);
 }
 
 Constant::~Constant()
 {
-
+    delete valueValue;
+    delete valueListener;
 }
 
 void Constant::configurePins(){
@@ -77,5 +86,15 @@ void Constant::setEditing(bool editing) {
         }
     }
 
+}
+
+juce::Array<PropertyComponent*>& Constant::getProperties() {
+    
+    properties = juce::Array<PropertyComponent*>();
+    valueProp = new SliderPropertyComponent(*valueValue,"Value",-65535,65535,0.1,1.0,true);
+
+    properties.add(valueProp);
+    
+    return properties;
 }
 

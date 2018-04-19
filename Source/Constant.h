@@ -45,7 +45,26 @@ public:
         return "Math";
     }
     
+    struct ValueListener : Value::Listener
+    {
+        ValueListener (Value& v, Constant* c) : c(c),  value (v) { value.addListener (this); }
+        ~ValueListener()  {}  // no need to remove the listener
+        
+        void valueChanged (Value& value) override {
+            c->setValue(value.toString().getFloatValue());
+        }
+        Constant* c;
+        Value value;
+    };
+    
+    virtual juce::Array<PropertyComponent*>& getProperties() override;
+    virtual void createProperties() override;
+    
 private:
+    
+    Value* valueValue;
+    PropertyComponent* valueProp;
+    ValueListener* valueListener;
     
     float value = 0;
     String name;

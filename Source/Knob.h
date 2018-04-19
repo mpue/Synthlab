@@ -52,6 +52,9 @@ public:
     
     virtual void setSelected(bool selected) override;
     
+    virtual juce::Array<PropertyComponent*>& getProperties() override;
+    virtual void createProperties() override;
+    
     float map(float x, float in_min, float in_max, float out_min, float out_max)
     {
         return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
@@ -64,6 +67,78 @@ public:
     
 private:
     
+    struct ValueListener : Value::Listener
+    {
+        ValueListener (Value& v, Knob* k) : k(k),  value (v) { value.addListener (this); }
+        ~ValueListener()  {}  // no need to remove the listener
+        
+        void valueChanged (Value& value) override {
+            k->setValue(value.toString().getFloatValue());
+        }
+        Knob* k;
+        Value value;
+    };
+    
+    struct MaxValueListener : Value::Listener
+    {
+        MaxValueListener (Value& v, Knob* k) : k(k), value (v) { value.addListener (this); }
+        ~MaxValueListener()  {}  // no need to remove the listener
+        
+        void valueChanged (Value& value) override {
+            k->setMaximum(value.toString().getFloatValue());
+        }
+        Knob* k;
+        Value value;
+    };
+    
+    struct MinValueListener : Value::Listener
+    {
+        MinValueListener (Value& v, Knob* k) : k(k), value (v){ value.addListener (this); }
+        ~MinValueListener()  {}  // no need to remove the listener
+        
+        void valueChanged (Value& value) override {
+            k->setMinimum(value.toString().getFloatValue());
+        }
+        Knob* k;
+        Value value;
+    };
+    
+    struct StepsizeValueListener : Value::Listener
+    {
+        StepsizeValueListener (Value& v, Knob* k) : k(k), value (v){ value.addListener (this); }
+        ~StepsizeValueListener()  {}  // no need to remove the listener
+        
+        void valueChanged (Value& value) override {
+            k->setStepSize(value.toString().getFloatValue());
+        }
+        Knob* k;
+        Value value;
+    };
+    
+    struct IsControllerValueListener : Value::Listener
+    {
+        IsControllerValueListener (Value& v, Knob* k) : k(k), value (v){ value.addListener (this); }
+        ~IsControllerValueListener()  {}  // no need to remove the listener
+        
+        void valueChanged (Value& value) override {
+            k->setIsMidicontroller(value.toString().getIntValue() > 0);
+        }
+        Knob* k;
+        Value value;
+    };
+    
+    struct ControllerValueListener : Value::Listener
+    {
+        ControllerValueListener (Value& v, Knob* k) : k(k), value (v){ value.addListener (this); }
+        ~ControllerValueListener()  {}  // no need to remove the listener
+        
+        void valueChanged (Value& value) override {
+            k->setController(value.toString().getIntValue());
+        }
+        Knob* k;
+        Value value;
+    };
+    
     float value;
     Slider* slider;
     bool isController = false;
@@ -73,6 +148,27 @@ private:
     float minimum = 0 ;
     float maximum = 127;
     float stepsize = 1;
+
+    Value* valueValue;
+    Value* minValue;
+    Value* maxValue;
+    Value* stepsizeValue;
+    Value* isControllerValue;
+    Value* controllerValue;
+    
+    PropertyComponent* valueProp;
+    PropertyComponent* minValueProp;
+    PropertyComponent* maxValueProp;
+    PropertyComponent* stepsizeValueProp;
+    PropertyComponent* isControllerValueProp;
+    PropertyComponent* controllerValueProp;
+    
+    ValueListener* valueListener;
+    MinValueListener* minValueListener;
+    MaxValueListener* maxValueListener;
+    StepsizeValueListener* stepsizeValueListener;
+    IsControllerValueListener* isControllerValueListener;
+    ControllerValueListener* controllerValueListener;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Knob)
 };

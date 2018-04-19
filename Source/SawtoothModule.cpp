@@ -96,11 +96,6 @@ void SawtoothModule::setFine(float fine) {
 
 void SawtoothModule::setAmplitude(float amplitude) {
     this->amplitude = amplitude;
-    /*
-    for (int i = 0; i < 128;i++){
-        this->oscillator[i]->setVolume(amplitude);
-    }
-     */
 }
 
 void SawtoothModule::process() {

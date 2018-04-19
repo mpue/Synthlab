@@ -42,16 +42,38 @@ public:
     float getSustain();
     float getRelease();
     
+    bool isMono();
+    void setMono(bool value);
+    
     void eventReceived(Event *e) override;
     
     virtual String getDescription() override {
         return BinaryData::adsr_txt;
     }
     
+    virtual juce::Array<PropertyComponent*>& getProperties() override;
+    virtual void createProperties() override;
+    
 private:
     
+    struct IsMonoListener : Value::Listener
+    {
+        IsMonoListener (Value& v, ADSRModule* mod) : mod(mod),  value (v) { value.addListener (this); }
+        ~IsMonoListener()  {}  // no need to remove the listener
+        
+        void valueChanged (Value& value) override {
+            mod->setMono(value.toString().getIntValue() > 0);
+        }
+        ADSRModule* mod;
+        Value value;
+    };
+    
+    Value* isMonoValue;
+    PropertyComponent* isMonoProp;
+    IsMonoListener* isMonoListener;
 
     Image* image;
+    ADSR* envelope;
     ADSR* envelopes[128];
     int currentSample = 0;
     
@@ -66,5 +88,8 @@ private:
     
     int lastNote = 0;
     int lastVelocity = 0;
+    
+    bool mono = false;
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ADSRModule)
 };

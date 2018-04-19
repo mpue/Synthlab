@@ -72,13 +72,22 @@ Module::Module ()
 
     connections = new std::vector<Connection*>();
     modules = new std::vector<Module*>();
+
+    createProperties();
     
     //[/Constructor]
+}
+
+void Module::createProperties() {
+    nameValue = new Value();
+    nameListener = new NameListener(*nameValue, this);
 }
 
 Module::~Module()
 {
     //[Destructor_pre]. You can add your own custom destruction code here..
+    delete nameListener;
+    delete nameValue;
     //[/Destructor_pre]
 
     nameEditor = nullptr;
@@ -398,6 +407,13 @@ void Module::setName(juce::String name) {
 
 void Module::eventReceived(Event *e) {
 
+}
+
+ juce::Array<PropertyComponent*>& Module::getProperties() {
+    nameProp = new TextPropertyComponent(*nameValue,"Name",16, false,true);
+    properties = juce::Array<PropertyComponent*>();
+    properties.add(nameProp);
+    return properties;
 }
 
 void Module::changeListenerCallback (ChangeBroadcaster* source) {

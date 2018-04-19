@@ -26,6 +26,7 @@
 #include "Pin.h"
 #include "AudioEngine/EventListener.h"
 #include "AudioEngine/AudioProcessorModule.h"
+#include "PropertyView.h"
 // #include "Connection.h"
 
 class Connection;
@@ -117,6 +118,22 @@ public:
     virtual Layer getLayer() {
         return Layer::MODULES;
     };
+
+    struct NameListener : Value::Listener
+    {
+        NameListener (Value& v, Module* module) : module(module),  value (v) { value.addListener (this); }
+        ~NameListener()  {}  // no need to remove the listener
+        
+        void valueChanged (Value& value) override {
+            module->setName(value.toString());
+        }
+        Module* module;
+        Value value;
+    };
+    
+
+    virtual juce::Array<PropertyComponent*>& getProperties();
+    virtual void createProperties();
     
     //[/UserMethods]
 
@@ -134,6 +151,12 @@ protected:
     //[UserVariables]   -- You can add your own custom variables in this section.
     MultiComponentDragger* dragger;
 
+    NameListener* nameListener;
+    Value* nameValue;
+
+    PropertyComponent* nameProp;
+    juce::Array<PropertyComponent*> properties;
+    
     bool selected = false;
 	long index;
     bool editable = true;

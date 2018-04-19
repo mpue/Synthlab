@@ -14,6 +14,7 @@
 #include "MidiNote.h"
 #include "PrefabFactory.h"
 #include "Project.h"
+#include "Knob.h"
 //==============================================================================
 MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
 {
@@ -276,10 +277,17 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String & menuName) {
 void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
     
     if (menuItemID == 1) {
+        editor->setRunning(false);
         editor->cleanUp();
+        editor->newFile();
+        editor->setRunning(true);
     }
     else if (menuItemID == 2) {
+        editor->setRunning(false);
+        editor->cleanUp();
+        editor->newFile();
         editor->openFile();
+        editor->setRunning(true);
     }
     else if (menuItemID == 2) {
         editor->saveFile();
@@ -399,13 +407,20 @@ void MainComponent::buttonClicked (Button* b)
         editor->removeSelectedItem();
     }
     else if(tb->getItemId() == toolbarFactory->doc_new) {
+        editor->setRunning(false);
+        editor->cleanUp();
         editor->newFile();
+        editor->setRunning(true);
     }
     else if(tb->getItemId() == toolbarFactory->doc_save) {
         editor->saveFile();
     }
     else if (tb->getItemId() == toolbarFactory->doc_open) {
+        editor->setRunning(false);
+        editor->cleanUp();
+        editor->newFile();
         editor->openFile();
+        editor->setRunning(true);
     }
     else if (tb->getItemId() == toolbarFactory->app_settings) {
         openSettings();

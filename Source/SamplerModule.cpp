@@ -57,6 +57,13 @@ SamplerModule::~SamplerModule()
     
     if (bufferRight != nullptr)
         delete bufferRight;
+    
+    for(int i = 0; i < 128;i++) {
+        if (sampler[i] != nullptr) {
+            delete sampler[i];
+        }
+    }
+    
 }
 
 void SamplerModule::loadSample(juce::InputStream *is) {

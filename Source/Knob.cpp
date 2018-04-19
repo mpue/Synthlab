@@ -40,11 +40,44 @@ Knob::Knob()
     stepsize = 1.0;
     minimum = 0;
     maximum = 127;
+    
+    createProperties();
+    
 }
+
+void Knob::createProperties() {
+    valueValue = new Value();
+    minValue = new Value();
+    maxValue = new Value();
+    stepsizeValue = new Value();
+    isControllerValue = new Value();
+    controllerValue = new Value();
+    valueListener = new ValueListener(*valueValue, this);
+    minValueListener = new MinValueListener(*minValue, this);
+    maxValueListener = new MaxValueListener(*maxValue, this);
+    stepsizeValueListener = new StepsizeValueListener(*stepsizeValue, this);
+    isControllerValueListener = new IsControllerValueListener(*isControllerValue,this);
+    controllerValueListener = new ControllerValueListener(*controllerValue,this);
+}
+
 
 Knob::~Knob()
 {
     delete slider;
+
+    delete valueValue;
+    delete stepsizeValue;
+    delete isControllerValue;
+    delete controllerValue;
+    delete minValue;
+    delete maxValue;
+    
+    delete valueListener;
+    delete minValueListener;
+    delete maxValueListener;
+    delete stepsizeValueListener;
+    delete isControllerValueListener;
+    delete controllerValueListener;
 }
 
 void Knob::configurePins(){
@@ -146,4 +179,25 @@ void Knob::setSelected(bool selected) {
     Module::setSelected(selected);
     //slider->setWantsKeyboardFocus(true);
     // slider->grabKeyboardFocus();
+}
+
+juce::Array<PropertyComponent*>& Knob::getProperties() {
+    
+    properties = juce::Array<PropertyComponent*>();
+    
+    valueProp = new SliderPropertyComponent(*valueValue,"Value",-65535,65535,0.1,1.0,true);
+    minValueProp = new SliderPropertyComponent(*minValue,"Minimum",0.001,10000,0.1,1.0,true);
+    maxValueProp = new SliderPropertyComponent(*maxValue,"Maximum",0.001,10000,0.1,1.0,true);
+    stepsizeValueProp = new SliderPropertyComponent(*stepsizeValue,"Stepsize",0.001,10000,0.1,1.0,true);
+    isControllerValueProp = new BooleanPropertyComponent(*isControllerValue,"isController","Is controller");
+    controllerValueProp = new SliderPropertyComponent(*controllerValue,"Controller number",0,127,1,1.0,true);
+    
+    properties.add(valueProp);
+    properties.add(minValueProp);
+    properties.add(maxValueProp);
+    properties.add(stepsizeValueProp);
+    properties.add(isControllerValueProp);
+    properties.add(controllerValueProp);
+    
+    return properties;
 }
