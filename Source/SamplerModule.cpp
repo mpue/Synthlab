@@ -246,11 +246,17 @@ void SamplerModule::selectSample(int i) {
         Sampler* sampler = new Sampler(sampleRate, buffersize);
         sampler->setVolume(0.5f);
         this->sampler[i] = sampler;
-        repaint();
-#ifdef USE_PUSH
-        updatePush2Display();
-#endif
     }
+    
+    this->thumbnail->reset(2, sampleRate);
+    if (sampler[currentSampler]->hasSample()) {
+        thumbnail->addBlock(0, *sampler[currentSampler]->getSampleBuffer(), 0, sampler[currentSampler]->getSampleLength());
+    }
+
+    repaint();
+#ifdef USE_PUSH
+    updatePush2Display();
+#endif
 }
 
 #ifdef USE_PUSH

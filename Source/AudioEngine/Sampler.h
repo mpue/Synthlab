@@ -35,6 +35,7 @@ public:
     bool isLoop();
     void setVolume(float volume);
     AudioSampleBuffer* getSampleBuffer();
+    bool hasSample();
     
 private:
     
@@ -54,5 +55,5 @@ private:
     long sampleLength = 0;
     
     bool loop = false;
-    
+    bool loaded = false;
 };

@@ -19,13 +19,14 @@ SampleEditor::SampleEditor (int buffersize, float sampleRate, AudioFormatManager
     if (sampleModule->getBuffer() != nullptr) {
         component->setSampleBuffer(sampleModule->getBuffer());
     }
-
+    state.addListener(this);
     
     
 }
 
 SampleEditor::~SampleEditor()
 {
+    state.removeListener(this);
     midiKeyboard = nullptr;
     component = nullptr;
 
@@ -46,7 +47,7 @@ void SampleEditor::resized()
 }
 
 void SampleEditor::handleNoteOn(juce::MidiKeyboardState *source, int midiChannel, int midiNoteNumber, float velocity) {
-    
+    sampleModule->selectSample(midiNoteNumber);
 }
 
 void SampleEditor::handleNoteOff(juce::MidiKeyboardState *source, int midiChannel, int midiNoteNumber, float velocity) {

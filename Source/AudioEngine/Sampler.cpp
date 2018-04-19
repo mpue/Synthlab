@@ -42,6 +42,7 @@ void Sampler::loadSample(File file) {
     sampleLength = reader->lengthInSamples;
     endPosition = sampleLength;
     startPosition = 0;
+    loaded = true;
 }
 
 void Sampler::loadSample(InputStream* input) {
@@ -52,6 +53,7 @@ void Sampler::loadSample(InputStream* input) {
     sampleLength = reader->lengthInSamples;
     endPosition = sampleLength;
     startPosition = 0;
+    loaded = true;
 }
 
 
@@ -93,4 +95,7 @@ void Sampler::setVolume(float volume) {
 
 AudioSampleBuffer* Sampler::getSampleBuffer(){
     return sampleBuffer;
+}
+bool Sampler::hasSample() {
+    return loaded;
 }
