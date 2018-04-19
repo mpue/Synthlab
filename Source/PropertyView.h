@@ -62,7 +62,16 @@ private:
 
         void valueChanged (Value& value) override {
             if (view->currentEditor->getSelectedModule() != NULL) {
-                view->currentEditor->getSelectedModule()->setName(value.toString());
+                
+                Constant* c = nullptr;
+                
+                if ((c = dynamic_cast<Constant*>(view->currentEditor->getSelectedModule())) != NULL) {
+                    c->setName(value.toString());
+                }
+                else {
+                    view->currentEditor->getSelectedModule()->setName(value.toString());
+                }
+           
             }
         }
         PropertyView* view;

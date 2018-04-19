@@ -26,8 +26,7 @@ Constant::Constant()
 
 Constant::~Constant()
 {
-    addPin(Pin::Direction::OUT);
-    pins.at(0)->setName("");
+
 }
 
 void Constant::configurePins(){
@@ -49,8 +48,34 @@ float Constant::getValue() {
 void Constant::setValue(float value) {
     this->value = value;
     this->pins.at(0)->setValue(value);
-    this->nameLabel->setText(String(value),juce::NotificationType::dontSendNotification);
+    this->nameLabel->setText(name +" = "+String(value),juce::NotificationType::dontSendNotification);
 }
 
+void Constant::setEditing(bool editing) {
+    
+    if (editing) {
+        if (!this->editing) {
+            this->editing = true;
+            nameLabel->setVisible(false);
+            nameEditor->setVisible(true);
+            nameEditor->setText(getName());
+            setInterceptsMouseClicks(false,true);
+            nameEditor->setWantsKeyboardFocus(true);
+            nameEditor->setSelectAllWhenFocused(true);
+            nameEditor->grabKeyboardFocus();
+        }
+    }
+    else {
+        if (this->editing) {
+            this->editing = false;
+            setName(nameEditor->getText());
+            this->nameLabel->setText(name +" = "+String(value),juce::NotificationType::dontSendNotification);
+            nameLabel->setVisible(true);
+            nameEditor->setVisible(false);
+            setInterceptsMouseClicks(false,false);
+            nameEditor->setWantsKeyboardFocus(false);
+        }
+    }
 
+}
 

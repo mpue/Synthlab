@@ -81,7 +81,7 @@ public:
 
 	long getIndex();
 	void setIndex(long index);
-	void setEditing(bool editing);
+	virtual void setEditing(bool editing);
 
     std::vector<Connection*>* getConnections();
     std::vector<Module*>* getModules();

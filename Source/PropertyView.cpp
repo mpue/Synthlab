@@ -192,13 +192,13 @@ void PropertyView::changeListenerCallback(juce::ChangeBroadcaster *source) {
         if (editor->getSelectedModule() != nullptr) {
 
             descriptionEditor->setText(editor->getSelectedModule()->getDescription());
-            nameValue->setValue(editor->getSelectedModule()->getName());
-
+        
             Constant* c = nullptr;
 
             // Constant has only a value
             
             if ((c = dynamic_cast<Constant*>(editor->getSelectedModule())) != NULL) {
+                nameValue->setValue(c->getName());
                 value->setValue(c->getValue());
                 valueProp->setVisible(true);
                 minValueProp->setVisible(false);
@@ -213,6 +213,8 @@ void PropertyView::changeListenerCallback(juce::ChangeBroadcaster *source) {
 
             if ((k = dynamic_cast<Knob*>(editor->getSelectedModule())) != NULL) {
 
+                
+                nameValue->setValue(k->getName());
                 // knob shows ranges
                 
                 valueProp->setVisible(true);
