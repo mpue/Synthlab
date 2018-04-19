@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Synth>
+  <Modules>
+    <Module name="Sampler" index="53" x="297" y="284" isPrefab="1" prefabId="53"
+            samplePath="/Users/mpue/Documents/devel/Synthlab/samples/boom.aif">
+      <Pins>
+        <Pin type="2" direction="0" index="5301" x="0" y="10"/>
+        <Pin type="0" direction="1" index="5302" x="246" y="10"/>
+        <Pin type="0" direction="1" index="5303" x="246" y="30"/>
+        <Pin type="1" direction="0" index="5304" x="0" y="30"/>
+        <Pin type="2" direction="0" index="5305" x="0" y="50"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Audio out" index="66" x="833" y="297" isPrefab="1" prefabId="66">
+      <Pins>
+        <Pin type="0" direction="0" index="6601" x="0" y="10"/>
+        <Pin type="0" direction="0" index="6602" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="61" x="129" y="244" isPrefab="1" prefabId="61">
+      <Pins>
+        <Pin type="2" direction="1" index="6101" x="110" y="10"/>
+        <Pin type="1" direction="1" index="6102" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="ADSR" index="70" x="272" y="93" isPrefab="1" prefabId="70"
+            attack="0.00000000000000000000" decay="0.00000000000000000000"
+            sustain="0.80000001192092895508" release="5.00000000000000000000">
+      <Pins>
+        <Pin type="1" direction="0" index="7001" x="0" y="10"/>
+        <Pin type="2" direction="0" index="7002" x="0" y="30"/>
+        <Pin type="2" direction="0" index="7003" x="0" y="50"/>
+        <Pin type="2" direction="0" index="7004" x="0" y="70"/>
+        <Pin type="2" direction="0" index="7005" x="0" y="90"/>
+        <Pin type="2" direction="1" index="7006" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="67" x="102" y="142" isPrefab="1" prefabId="67"
+            value="5.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Stereo delay" index="73" x="671" y="253" isPrefab="1" prefabId="73">
+      <Pins>
+        <Pin type="0" direction="0" index="7301" x="0" y="10"/>
+        <Pin type="0" direction="0" index="7302" x="0" y="30"/>
+        <Pin type="0" direction="1" index="7303" x="110" y="10"/>
+        <Pin type="0" direction="1" index="7304" x="110" y="30"/>
+        <Pin type="2" direction="0" index="7305" x="0" y="50"/>
+        <Pin type="2" direction="0" index="7306" x="0" y="70"/>
+        <Pin type="2" direction="0" index="7307" x="0" y="90"/>
+        <Pin type="2" direction="0" index="7308" x="0" y="110"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="167" x="530" y="185" isPrefab="1" prefabId="67"
+            value="500.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="267" x="541" y="473" isPrefab="1" prefabId="67"
+            value="375.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="367" x="193" y="508" isPrefab="1" prefabId="67"
+            value="1.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Scope" index="75" x="706" y="89" isPrefab="1" prefabId="75">
+      <Pins>
+        <Pin type="0" direction="0" index="7501" x="0" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections>
+    <Connection source="61" target="53" a="6102" b="5304"/>
+    <Connection source="53" target="70" a="5301" b="7006"/>
+    <Connection source="61" target="70" a="6102" b="7001"/>
+    <Connection source="70" target="67" a="7005" b="6701"/>
+    <Connection source="73" target="53" a="7301" b="5302"/>
+    <Connection source="73" target="53" a="7302" b="5303"/>
+    <Connection source="66" target="73" a="6601" b="7303"/>
+    <Connection source="66" target="73" a="6602" b="7304"/>
+    <Connection source="73" target="167" a="7305" b="6701"/>
+    <Connection source="73" target="267" a="7306" b="6701"/>
+    <Connection source="53" target="367" a="5305" b="6701"/>
+    <Connection source="53" target="75" a="5302" b="7501"/>
+  </Connections>
+</Synth>

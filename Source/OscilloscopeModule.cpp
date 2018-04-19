@@ -55,14 +55,13 @@ void OscilloscopeModule::paint(juce::Graphics &g) {
     g.setColour(juce::Colours::black);
     g.fillRect(10,25,120,100);
     g.setColour(juce::Colours::green);
-    
     int periods = buffersize / 120;
     
     int sample = 0;
     
     for (int i = 0; i < (buffersize*periods) - 1;i++) {
         sample = i % buffersize;
-        g.drawLine(Line<float>(10 + i,buffer[sample] * yscale + 75,10 + (i * xscale),buffer[sample+1]*yscale + 75), 1);
+        g.drawLine(Line<float>(10 + i,buffer[sample] * yscale + 75,10 + (i * xscale),buffer[sample+1]*yscale + 75),2);
     }
 }
 

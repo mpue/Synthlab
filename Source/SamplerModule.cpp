@@ -12,7 +12,10 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Connection.h"
 #include "Project.h"
+
+#ifdef USE_PUSH
 #include "push2/JuceToPush2DisplayBridge.h"
+#endif
 //==============================================================================
 SamplerModule::SamplerModule(double sampleRate, int buffersize, AudioFormatManager* manager)
 {
@@ -111,8 +114,9 @@ void SamplerModule::paint(juce::Graphics &g) {
 
     g.setColour(juce::Colours::white);
     g.drawLine(samplePosX, 20,samplePosX, 120);
-    
+#ifdef USE_PUSH
     updatePush2Display();
+#endif
 }
 
 
@@ -123,10 +127,11 @@ void SamplerModule::setAmplitude(float amplitude) {
 
 void SamplerModule::timerCallback() {
     samplePosX = (100.0 / sampler[currentSampler]->getSampleLength())* currentSample + 20;
-    pushSamplePosX = ((float)ableton::Push2DisplayBitmap::kWidth / sampler[currentSampler]->getSampleLength())* currentSample;
-    
     repaint();
+#ifdef USE_PUSH
+    pushSamplePosX = ((float)ableton::Push2DisplayBitmap::kWidth / sampler[currentSampler]->getSampleLength())* currentSample
     updatePush2Display();
+#endif
 }
 
 void SamplerModule::process() {
@@ -242,10 +247,13 @@ void SamplerModule::selectSample(int i) {
         sampler->setVolume(0.5f);
         this->sampler[i] = sampler;
         repaint();
+#ifdef USE_PUSH
         updatePush2Display();
+#endif
     }
 }
 
+#ifdef USE_PUSH
 void SamplerModule::updatePush2Display() {
     auto& g = Project::getInstance()->getPush2Bridge()->GetGraphic();
     
@@ -268,3 +276,4 @@ void SamplerModule::updatePush2Display() {
     g.drawLine(pushSamplePosX, 0,pushSamplePosX, height);
     Project::getInstance()->getPush2Bridge()->Flip();
 }
+#endif

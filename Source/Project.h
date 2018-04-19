@@ -8,9 +8,13 @@
 #ifndef Project_h
 #define Project_h
 
-#include "../JuceLibraryCode/JuceHeader.h"
-#include "push2/JuceToPush2DisplayBridge.h"
+// #define USE_PUSH
 
+#include "../JuceLibraryCode/JuceHeader.h"
+
+#ifdef USE_PUSH
+#include "push2/JuceToPush2DisplayBridge.h"
+#endif
 
 class Project {
 public:
@@ -33,11 +37,11 @@ public:
     AudioFormatManager* getFormatManager() {
         return manager;
     }
-    
+#ifdef USE_PUSH
     ableton::Push2DisplayBridge*  getPush2Bridge() {
         return &bridge;
     }
-    
+#endif
     
 private:
     
@@ -45,6 +49,7 @@ private:
         undoManager = new UndoManager();
         manager = new AudioFormatManager();
         manager->registerBasicFormats();
+#ifdef USE_PUSH
         
         // First we initialise the low level push2 object
         // First we initialise the low level push2 object
@@ -59,7 +64,7 @@ private:
         const auto width = ableton::Push2DisplayBitmap::kWidth;
         
         Rectangle<int> pushBounds = Rectangle<int>(0,0,width,height);
-        
+#endif
     }
     
     ~Project() {
@@ -69,10 +74,10 @@ private:
     static Project* instance;
     UndoManager* undoManager;
     
-    
+#ifdef USE_PUSH
     ableton::Push2DisplayBridge bridge;    /*!< The bridge allowing to use juce::graphics for push */
     ableton::Push2Display push2Display;
-    
+#endif
     AudioFormatManager* manager;
 };
 
