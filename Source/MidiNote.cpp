@@ -55,7 +55,8 @@ void MidiNote::paint(juce::Graphics &g) {
 void MidiNote::note(int note) {
     
     pins.at(1)->data[note] = (440 * pow(2.0,(note-69.0)/12.0));
-
+    pins.at(1)->setValue(note);
+    
     Event* e = new Event("note",Event::Type::NOTE);
     e->setValue(note);
     

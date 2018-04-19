@@ -176,7 +176,9 @@ void ADSRModule::process() {
     }
     
     if (mono) {
-        pins.at(5)->setValue(this->envelope->process());
+        for (int i = 0; i < buffersize;i++){
+            pins.at(5)->setValue(this->envelope->process());
+        }
     }
     else {
         for (int i = 0; i < buffersize;i++){

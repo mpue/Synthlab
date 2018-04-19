@@ -10,11 +10,11 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../../Source/ADSRModule.cpp"
-            timestampString = "545837835.524637"
+            timestampString = "545839240.412858"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "204"
-            endingLineNumber = "204"
+            startingLineNumber = "206"
+            endingLineNumber = "206"
             landmarkName = "ADSRModule::eventReceived(Event *e)"
             landmarkType = "7">
          </BreakpointContent>
@@ -26,12 +26,28 @@
             ignoreCount = "0"
             continueAfterRunningActions = "No"
             filePath = "../../Source/ADSRModule.cpp"
-            timestampString = "545837835.524727"
+            timestampString = "545839240.4129519"
             startingColumnNumber = "9223372036854775807"
             endingColumnNumber = "9223372036854775807"
-            startingLineNumber = "201"
-            endingLineNumber = "201"
+            startingLineNumber = "203"
+            endingLineNumber = "203"
             landmarkName = "ADSRModule::eventReceived(Event *e)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "../../Source/SineModule.cpp"
+            timestampString = "545838964.929426"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "105"
+            endingLineNumber = "105"
+            landmarkName = "SineModule::process()"
             landmarkType = "7">
          </BreakpointContent>
       </BreakpointProxy>
