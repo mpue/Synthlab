@@ -621,7 +621,7 @@ void SynthEditor::mouseDoubleClick (const MouseEvent& e)
 
             Module* m = root->getModules()->at(i);
 
-            if (m->isPrefab()) {
+            if (m->isPrefab() && m->getBounds().contains(e.getPosition())) {
                 SamplerModule*sm = dynamic_cast<SamplerModule*>(m);
                 
                 if (sm != NULL) {

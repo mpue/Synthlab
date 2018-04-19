@@ -37,6 +37,7 @@ AudioThumbnailComponent::~AudioThumbnailComponent()
 
 void AudioThumbnailComponent::paint (Graphics& g)
 {
+
     g.setColour(juce::Colours::black);
     g.fillRect(getBounds());
     g.setColour(juce::Colours::orange);
