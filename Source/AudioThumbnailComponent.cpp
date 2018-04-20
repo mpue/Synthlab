@@ -21,7 +21,7 @@ AudioThumbnailComponent::AudioThumbnailComponent(int buffersize, float sampleRat
     this->buffersize = buffersize;
     this->manager = Project::getInstance()->getFormatManager();
     this->cache = new AudioThumbnailCache(1);
-    this->thumbnail = new AudioThumbnail(buffersize, *manager, *cache);
+    this->thumbnail = new AudioThumbnail(64, *manager, *cache);
     setBounds(0,0,600,200);
     
 }
@@ -49,6 +49,7 @@ void AudioThumbnailComponent::paint (Graphics& g)
 
 void AudioThumbnailComponent::resized()
 {
+    
     repaint();
 }
 

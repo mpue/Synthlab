@@ -971,12 +971,12 @@ void SynthEditor::openSampleEditor(SamplerModule *sm) {
 
     launchOptions.dialogTitle = ("Edit samples");
     launchOptions.escapeKeyTriggersCloseButton = true;
-    launchOptions.resizable = false;
+    launchOptions.resizable = true;
     launchOptions.useNativeTitleBar = false;
     launchOptions.useBottomRightCornerResizer = true;
-    launchOptions.componentToCentreAround = getParentComponent();
+    launchOptions.componentToCentreAround = nullptr;
     launchOptions.content.setOwned(se);
-    launchOptions.content->setSize(600, 580);
+    launchOptions.content->setSize(1000, 400);
     launchOptions.dialogBackgroundColour = LookAndFeel::getDefaultLookAndFeel().findColour(ResizableWindow::backgroundColourId);
     
     launchOptions.launchAsync();

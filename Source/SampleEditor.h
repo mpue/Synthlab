@@ -3,7 +3,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "AudioThumbnailComponent.h"
 #include "SamplerModule.h"
-
+#include "SamplePropertiesPanel.h"
 
 class SampleEditor  : public Component, public MidiKeyboardStateListener, public MidiInputCallback
 {
@@ -19,7 +19,7 @@ public:
     virtual void handleNoteOn (MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override;
     
     void mouseDoubleClick (const MouseEvent& event) override;
-    void openSample(SamplerModule* sm, int forSampler);
+    void openSample();
     
     void handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) override;
     
@@ -31,7 +31,8 @@ private:
 
     ScopedPointer<MidiKeyboardComponent> midiKeyboard;
     ScopedPointer<AudioThumbnailComponent> component;
-
+    ScopedPointer<SamplePropertiesPanel> propertiesPanel;
+    
     SamplerModule* sampleModule;
     
     

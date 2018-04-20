@@ -13,8 +13,9 @@ SampleEditor::SampleEditor (int buffersize, float sampleRate, AudioFormatManager
 
     addAndMakeVisible (midiKeyboard = new MidiKeyboardComponent (state,orientation));
     addAndMakeVisible (component = new AudioThumbnailComponent(buffersize, sampleRate));
-
-    setSize (600, 400);
+    addAndMakeVisible(propertiesPanel = new SamplePropertiesPanel());
+    
+    setSize (500, 400);
     
     if (sampleModule->getBuffer() != nullptr) {
         component->setSampleBuffer(sampleModule->getBuffer());
@@ -37,6 +38,7 @@ SampleEditor::~SampleEditor()
     state.removeListener(this);
     midiKeyboard = nullptr;
     component = nullptr;
+    propertiesPanel = nullptr;
 
     AudioDeviceManager* deviceManager = Project::getInstance()->getDeviceManager();
     
@@ -50,7 +52,7 @@ SampleEditor::~SampleEditor()
 
 
 void SampleEditor::mouseDoubleClick(const juce::MouseEvent &event) {
-    openSample(sampleModule, sampleModule->getCurrentSampler());
+    openSample();
 }
 
 void SampleEditor::paint (Graphics& g)
@@ -62,8 +64,10 @@ void SampleEditor::paint (Graphics& g)
 
 void SampleEditor::resized()
 {
-    midiKeyboard->setBounds (0, 200, proportionOfWidth (1.0000f), 100);
-    component->setBounds (0, 0, proportionOfWidth (1.0000f), 200);
+    
+    component->setBounds (0, 0, proportionOfWidth (1.0000f), proportionOfHeight(0.4f));
+    propertiesPanel->setBounds (0, proportionOfHeight(0.4f), proportionOfWidth (1.0000f), proportionOfHeight(0.4f));
+    midiKeyboard->setBounds (0, proportionOfHeight(0.8), proportionOfWidth (1.0000f), proportionOfHeight(0.2f));
 }
 
 void SampleEditor::handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) {
@@ -85,7 +89,7 @@ void SampleEditor::handleNoteOff(juce::MidiKeyboardState *source, int midiChanne
     
 }
 
-void SampleEditor::openSample(SamplerModule *sm, int forSampler) {
+void SampleEditor::openSample() {
     
     FileChooser chooser("Select file to open", File::nonexistent, "*");
     
@@ -103,10 +107,10 @@ void SampleEditor::openSample(SamplerModule *sm, int forSampler) {
 #else
         File file = chooser.getResult();
         FileInputStream* is = new FileInputStream(file);
-        sm->setSamplePath(file.getFullPathName(),forSampler);
-        sm->loadSample(is, forSampler);
-        if (sm->getBuffer() != nullptr) {
-            component->setSampleBuffer(sm->getBuffer());
+        sampleModule->setSamplePath(file.getFullPathName(),sampleModule->getCurrentSampler());
+        sampleModule->loadSample(is, sampleModule->getCurrentSampler());
+        if (sampleModule->getBuffer() != nullptr) {
+            component->setSampleBuffer(sampleModule->getBuffer());
         }
         
         // delete is;

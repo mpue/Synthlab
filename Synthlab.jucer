@@ -141,6 +141,13 @@
         <FILE id="RO3JEM" name="WhiteNoise.h" compile="0" resource="0" file="Source/AudioEngine/WhiteNoise.h"/>
       </GROUP>
       <GROUP id="{F7A67158-9DD4-9E2C-0BDC-1B58ED967D9B}" name="Editor">
+        <GROUP id="{19B8F02D-4185-9D0D-F820-8F1C70EECC53}" name="Components">
+          <FILE id="mkTk7I" name="ISampleEditor.h" compile="0" resource="0" file="Source/ISampleEditor.h"/>
+          <FILE id="oWKCqJ" name="SamplePropertiesPanel.cpp" compile="1" resource="0"
+                file="Source/SamplePropertiesPanel.cpp"/>
+          <FILE id="tQYIpN" name="SamplePropertiesPanel.h" compile="0" resource="0"
+                file="Source/SamplePropertiesPanel.h"/>
+        </GROUP>
         <FILE id="VXsCEb" name="ToolbarComboBox.cpp" compile="1" resource="0"
               file="Source/ToolbarComboBox.cpp"/>
         <FILE id="lExpGC" name="ToolbarComboBox.h" compile="0" resource="0"
