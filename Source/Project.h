@@ -8,7 +8,7 @@
 #ifndef Project_h
 #define Project_h
 
-// #define USE_PUSH
+#define USE_PUSH
 
 #include "../JuceLibraryCode/JuceHeader.h"
 

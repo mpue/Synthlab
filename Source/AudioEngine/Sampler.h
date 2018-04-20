@@ -51,6 +51,10 @@ public:
     bool isDone() {
         return !loop && currentSample >= sampleLength - 1;
     }
+    
+    float getPitch();
+    void setPitch(float pitch);
+    
 private:
     
     AudioFormatManager* manager;
@@ -70,4 +74,12 @@ private:
     
     bool loop = false;
     bool loaded = false;
+    
+    float pitch = 1;
+    
+    float* tempBufferLeft = nullptr;
+    float* tempBufferRight = nullptr;
+    
+    CatmullRomInterpolator* interpolatorLeft;
+    CatmullRomInterpolator* interpolatorRight;
 };

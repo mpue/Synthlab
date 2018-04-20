@@ -16,12 +16,18 @@ Sampler::Sampler(float sampleRate, int bufferSize) {
     this->sampleRate = sampleRate;
     this->bufferSize = bufferSize;
     this->manager = Project::getInstance()->getFormatManager();
+    interpolatorLeft = new CatmullRomInterpolator();
+    interpolatorRight = new CatmullRomInterpolator();
 }
 
 Sampler::~Sampler() {
     if(sampleBuffer != nullptr) {
         delete sampleBuffer;
     }
+    if (tempBufferLeft != nullptr)
+        delete this->tempBufferLeft;
+    if (tempBufferRight != nullptr)
+        delete this->tempBufferRight;
 }
 
 void Sampler::nextSample() {
@@ -54,8 +60,22 @@ void Sampler::stop() {
 }
 
 float Sampler::getCurrentSample(int channel){
-    if (sampleBuffer != nullptr && sampleLength > 0 && !isDone())
-        return sampleBuffer->getSample(channel, currentSample) * volume;
+    
+    if (sampleBuffer != nullptr && sampleLength > 0 && !isDone()) {
+
+        if (pitch != 1) {
+            if (channel == 0) {
+                return tempBufferLeft[currentSample] * volume;
+            }
+            else {
+                return tempBufferRight[currentSample] * volume;
+            }
+        }
+        else {
+            return sampleBuffer->getSample(channel, currentSample) * volume;
+        }
+
+    }
     
     return 0;
 }
@@ -68,6 +88,8 @@ void Sampler::loadSample(File file) {
     AudioFormatReader* reader = manager->createReaderFor(file);
     ScopedPointer<AudioFormatReaderSource> afr = new AudioFormatReaderSource(reader, true);
     sampleBuffer = new AudioSampleBuffer(2, reader->lengthInSamples);
+    this->tempBufferLeft = new float[reader->lengthInSamples * 2];
+    this->tempBufferRight = new float[reader->lengthInSamples * 2];
     reader->read(sampleBuffer, 0, reader->lengthInSamples, 0, true, true);
     sampleLength = reader->lengthInSamples;
     endPosition = sampleLength;
@@ -79,6 +101,9 @@ void Sampler::loadSample(InputStream* input) {
     AudioFormatReader* reader = manager->createReaderFor(input);
     ScopedPointer<AudioFormatReaderSource> afr = new AudioFormatReaderSource(reader, true);
     sampleBuffer = new AudioSampleBuffer(2, reader->lengthInSamples);
+    this->tempBufferLeft = new float[reader->lengthInSamples * 2];
+    this->tempBufferRight = new float[reader->lengthInSamples * 2];
+    
     reader->read(sampleBuffer, 0, reader->lengthInSamples, 0, true, true);
     sampleLength = reader->lengthInSamples;
     endPosition = sampleLength;
@@ -114,6 +139,32 @@ long Sampler::getSampleLength(){
 void Sampler::setLoop(bool loop) {
     this->loop = loop;
 }
+
+float Sampler::getPitch() {
+    return pitch;
+}
+
+void Sampler::setPitch(float pitch) {
+    
+    this->pitch = pitch;
+    
+    if (pitch < 0.25) {
+        pitch = 0.25;
+    }
+    if (pitch > 2) {
+        pitch = 2;
+    }
+    
+    if (getSampleLength() > 0) {
+        interpolatorLeft->process(pitch, getSampleBuffer()->getReadPointer(0),tempBufferLeft , getSampleBuffer()->getNumSamples());
+        interpolatorLeft->process(pitch, getSampleBuffer()->getReadPointer(1),tempBufferRight, getSampleBuffer()->getNumSamples());
+    }
+
+}
+
+
+
+
 
 bool Sampler::isLoop() {
     return this->loop;

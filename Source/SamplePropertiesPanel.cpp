@@ -64,21 +64,39 @@ SamplePropertiesPanel::SamplePropertiesPanel ()
     endLabel->setColour (TextEditor::textColourId, Colours::black);
     endLabel->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
 
-    endLabel->setBounds (312, 40, 150, 24);
+    endLabel->setBounds (496, 40, 150, 24);
 
     addAndMakeVisible (sampleEndSlider = new Slider ("sampleEndSlider"));
     sampleEndSlider->setRange (0, 10, 1);
     sampleEndSlider->setSliderStyle (Slider::LinearHorizontal);
-    sampleEndSlider->setTextBoxStyle (Slider::TextBoxLeft, false, 80, 20);
+    sampleEndSlider->setTextBoxStyle (Slider::TextBoxRight, false, 80, 20);
     sampleEndSlider->addListener (this);
 
-    sampleEndSlider->setBounds (312, 72, 280, 24);
+    sampleEndSlider->setBounds (296, 72, 280, 24);
 
     addAndMakeVisible (loopToggleButton = new ToggleButton ("loopToggleButton"));
     loopToggleButton->setButtonText (TRANS("loopSample"));
     loopToggleButton->addListener (this);
 
-    loopToggleButton->setBounds (472, 16, 104, 24);
+    loopToggleButton->setBounds (168, 128, 104, 24);
+
+    addAndMakeVisible (pitchSlider = new Slider ("pitchSlider"));
+    pitchSlider->setRange (0.25, 2, 0.025);
+    pitchSlider->setSliderStyle (Slider::LinearHorizontal);
+    pitchSlider->setTextBoxStyle (Slider::TextBoxRight, false, 80, 20);
+    pitchSlider->addListener (this);
+
+    pitchSlider->setBounds (296, 128, 280, 24);
+
+    addAndMakeVisible (pitchLabel = new Label ("pitchLabel",
+                                               TRANS("Pitch\n")));
+    pitchLabel->setFont (Font (15.00f, Font::plain).withTypefaceStyle ("Regular"));
+    pitchLabel->setJustificationType (Justification::centredLeft);
+    pitchLabel->setEditable (false, false, false);
+    pitchLabel->setColour (TextEditor::textColourId, Colours::black);
+    pitchLabel->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
+
+    pitchLabel->setBounds (496, 104, 56, 24);
 
 
     //[UserPreSize]
@@ -102,6 +120,8 @@ SamplePropertiesPanel::~SamplePropertiesPanel()
     endLabel = nullptr;
     sampleEndSlider = nullptr;
     loopToggleButton = nullptr;
+    pitchSlider = nullptr;
+    pitchLabel = nullptr;
 
 
     //[Destructor]. You can add your own custom destruction code here..
@@ -143,7 +163,7 @@ void SamplePropertiesPanel::buttonClicked (Button* buttonThatWasClicked)
     else if (buttonThatWasClicked == loopToggleButton)
     {
         //[UserButtonCode_loopToggleButton] -- add your button handler code here..
-        module->setLoop(loopToggleButton->getToggleState());        
+        module->setLoop(loopToggleButton->getToggleState());
         //[/UserButtonCode_loopToggleButton]
     }
 
@@ -170,9 +190,15 @@ void SamplePropertiesPanel::sliderValueChanged (Slider* sliderThatWasMoved)
         thumb->setEndPosition(sliderThatWasMoved->getValue());
         //[/UserSliderCode_sampleEndSlider]
     }
+    else if (sliderThatWasMoved == pitchSlider)
+    {
+        //[UserSliderCode_pitchSlider] -- add your slider handling code here..
+        module->getCurrentSampler()->setPitch(pitchSlider->getValue());
+        //[/UserSliderCode_pitchSlider]
+    }
 
     //[UsersliderValueChanged_Post]
-    
+
     thumb->repaint();
     //[/UsersliderValueChanged_Post]
 }
@@ -183,7 +209,7 @@ void SamplePropertiesPanel::sliderValueChanged (Slider* sliderThatWasMoved)
 
 void SamplePropertiesPanel::setModule(SamplerModule *module) {
     this->module = module;
-    
+
 }
 
 void SamplePropertiesPanel::setThumbnail(AudioThumbnailComponent* thumbnail) {
@@ -191,19 +217,19 @@ void SamplePropertiesPanel::setThumbnail(AudioThumbnailComponent* thumbnail) {
 }
 
 void SamplePropertiesPanel::openSample() {
-    
+
     FileChooser chooser("Select file to open", File::nonexistent, "*");
-    
+
     if (chooser.browseForFileToOpen()) {
-        
+
 #if JUCE_IOS
         URL url = chooser.getURLResult();
         InputStream* is = url.createInputStream(false);
-        
+
         module->loadSample(is);
-        
+
         delete is;
-        
+
         ScopedPointer<XmlElement> xml = XmlDocument(data).getDocumentElement();
 #else
         File file = chooser.getResult();
@@ -213,11 +239,11 @@ void SamplePropertiesPanel::openSample() {
         if (module->getBuffer() != nullptr) {
             thumb->setSampleBuffer(module->getBuffer());
         }
-        
+
         // delete is;
-        
+
 #endif
-        
+
     }
 }
 
@@ -225,20 +251,21 @@ void SamplePropertiesPanel::updateValues() {
     std::function<void(void)> changeLambda =
     [=]() {
         loopToggleButton->setToggleState(module->isLoop(), juce::NotificationType::dontSendNotification);
-        
+
         long start = module->getCurrentSampler()->getStartPosition();
         long end = module->getCurrentSampler()->getEndPosition();
-        
+
         thumb->setStartPosition(start);
         thumb->setEndPosition(end);
-        
+
         sampleStartSlider->setRange(0, module->getCurrentSampler()->getEndPosition() - 1, juce::NotificationType::dontSendNotification);
         sampleEndSlider->setRange(module->getCurrentSampler()->getStartPosition() + 1,module->getCurrentSampler()->getSampleLength(), juce::NotificationType::dontSendNotification);
         sampleStartSlider->setValue(start);
         sampleEndSlider->setValue(end);
+        pitchSlider->setValue(module->getCurrentSampler()->getPitch());
     };
     juce::MessageManager::callAsync(changeLambda);
-    
+
 }
 
 //[/MiscUserCode]
@@ -273,19 +300,29 @@ BEGIN_JUCER_METADATA
          fontsize="15.00000000000000000000" kerning="0.00000000000000000000"
          bold="0" italic="0" justification="33"/>
   <LABEL name="endLabel" id="9c8285b56816945c" memberName="endLabel" virtualName=""
-         explicitFocusOrder="0" pos="312 40 150 24" edTextCol="ff000000"
+         explicitFocusOrder="0" pos="496 40 150 24" edTextCol="ff000000"
          edBkgCol="0" labelText="Sample end&#10;" editableSingleClick="0"
          editableDoubleClick="0" focusDiscardsChanges="0" fontname="Default font"
          fontsize="15.00000000000000000000" kerning="0.00000000000000000000"
          bold="0" italic="0" justification="33"/>
   <SLIDER name="sampleEndSlider" id="d602ebbdcb49beb6" memberName="sampleEndSlider"
-          virtualName="" explicitFocusOrder="0" pos="312 72 280 24" min="0.00000000000000000000"
+          virtualName="" explicitFocusOrder="0" pos="296 72 280 24" min="0.00000000000000000000"
           max="10.00000000000000000000" int="1.00000000000000000000" style="LinearHorizontal"
-          textBoxPos="TextBoxLeft" textBoxEditable="1" textBoxWidth="80"
+          textBoxPos="TextBoxRight" textBoxEditable="1" textBoxWidth="80"
           textBoxHeight="20" skewFactor="1.00000000000000000000" needsCallback="1"/>
   <TOGGLEBUTTON name="loopToggleButton" id="c99e9f970df31557" memberName="loopToggleButton"
-                virtualName="" explicitFocusOrder="0" pos="472 16 104 24" buttonText="loopSample"
+                virtualName="" explicitFocusOrder="0" pos="168 128 104 24" buttonText="loopSample"
                 connectedEdges="0" needsCallback="1" radioGroupId="0" state="0"/>
+  <SLIDER name="pitchSlider" id="3bdd1a5a126708ef" memberName="pitchSlider"
+          virtualName="" explicitFocusOrder="0" pos="296 128 280 24" min="0.25000000000000000000"
+          max="2.00000000000000000000" int="0.02500000000000000139" style="LinearHorizontal"
+          textBoxPos="TextBoxRight" textBoxEditable="1" textBoxWidth="80"
+          textBoxHeight="20" skewFactor="1.00000000000000000000" needsCallback="1"/>
+  <LABEL name="pitchLabel" id="2ddf56590cbe152d" memberName="pitchLabel"
+         virtualName="" explicitFocusOrder="0" pos="496 104 56 24" edTextCol="ff000000"
+         edBkgCol="0" labelText="Pitch&#10;" editableSingleClick="0" editableDoubleClick="0"
+         focusDiscardsChanges="0" fontname="Default font" fontsize="15.00000000000000000000"
+         kerning="0.00000000000000000000" bold="0" italic="0" justification="33"/>
 </JUCER_COMPONENT>
 
 END_JUCER_METADATA

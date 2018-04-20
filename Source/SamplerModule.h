@@ -40,8 +40,8 @@ public:
     void loadSample(InputStream* is, int sampler);
     void setSamplePath(String sample, int sampler);
     String getSamplePath(int i);
-    void setPitch(float pitch);
-    float getPitch();
+    void setPitch(float pitch, int samplerIndex);
+    float getPitch(int samplerIndex);
     void updatePush2Display();
     
     bool hasSampleAt(int i);
@@ -84,15 +84,8 @@ private:
     float bufferLeft [1024*1024] = {0};
     float bufferRight [1024*1024] = {0};
     
-    float pitch = 1.0;
-    
     virtual void setSampleRate(float rate) override;
     virtual void setBuffersize(int buffersize) override;
-    
-    CatmullRomInterpolator* interpolatorLeft;
-    CatmullRomInterpolator* interpolatorRight;
-    
-    
     
     int currentSampler = 0;
     

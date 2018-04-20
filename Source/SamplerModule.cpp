@@ -33,9 +33,6 @@ SamplerModule::SamplerModule(double sampleRate, int buffersize, AudioFormatManag
     nameLabel->setTopLeftPosition(18,2);
     
     setName("Sampler");
-    
-    interpolatorLeft = new CatmullRomInterpolator();
-    interpolatorRight = new CatmullRomInterpolator();
 
     editable = false;
     prefab = true;
@@ -49,17 +46,6 @@ SamplerModule::~SamplerModule()
 
     delete thumbnail;
     delete cache;
-    delete interpolatorLeft;
-    delete interpolatorRight;
-    
-    /*
-    if (bufferLeft != nullptr)
-        delete bufferLeft;
-    
-    if (bufferRight != nullptr)
-        delete bufferRight;
-    
-    */
      
     for(int i = 0; i < 128;i++) {
         if (sampler[i] != nullptr) {
@@ -136,23 +122,15 @@ void SamplerModule::timerCallback() {
     samplePosX = (100.0 / sampler[currentSampler]->getSampleLength())* currentSample + 20;
     repaint();
 #ifdef USE_PUSH
-    pushSamplePosX = ((float)ableton::Push2DisplayBitmap::kWidth / sampler[currentSampler]->getSampleLength())* currentSample
+    pushSamplePosX = ((float)ableton::Push2DisplayBitmap::kWidth / sampler[currentSampler]->getSampleLength())* currentSample;
     updatePush2Display();
 #endif
 }
 
 void SamplerModule::process() {
-
-    /*
-    if (
-        pins.at(1)->getAudioBuffer()->clear();
-        pins.at(2)->getAudioBuffer()->clear();
-        return;
-    }
-     */
     
     if (pins.at(4)->connections.size() == 1) {
-        setPitch(pins.at(4)->connections.at(0)->getValue());
+        setPitch(pins.at(4)->connections.at(0)->getValue(),getCurrentSamplerIndex());
     }
     
     if (pins.at(0)->connections.size() == 1) {
@@ -166,20 +144,6 @@ void SamplerModule::process() {
     
     if (pins.at(1)->getAudioBuffer() != nullptr && pins.at(1)->getAudioBuffer()->getNumChannels() > 0){
         
-        float correction = pitch;
-        
-        if (pitch < 1) {
-            correction = 1;
-        }
-        /*
-        for (int i = 0; i < 128;i++) {
-            if (sampler[i] != nullptr && sampler[i]->getSampleLength() > 0) {
-                interpolatorLeft->process(1, sampler[i]->getSampleBuffer()->getReadPointer(0),bufferLeft , sampler[i]->getSampleLength());
-                interpolatorLeft->process(1, sampler[i]->getSampleBuffer()->getReadPointer(1),bufferRight, sampler[i]->getSampleLength());
-            }
-        }
-         */
-        
         for (int j = 0; j < buffersize;j++) {
             
             float valueL = 0;
@@ -187,8 +151,8 @@ void SamplerModule::process() {
             
             for (int i = 0; i < 128;i++) {
                 if (sampler[i] != nullptr) {
-                    valueL +=  sampler[i]->getCurrentSample(0);// bufferLeft[sampler[i]->getCurrentPosition()] * sampler[i]->getVolume(); // sampler->getSampleAt(0, currentSample);
-                    valueR +=  sampler[i]->getCurrentSample(1);// bufferRight[sampler[i]->getCurrentPosition()]* sampler[i]->getVolume();// sampler->getSampleAt(1, currentSample);
+                    valueL +=  sampler[i]->getCurrentSample(0);
+                    valueR +=  sampler[i]->getCurrentSample(1);
                  
                     if (!sampler[i]->isDone())  {
                         sampler[i]->nextSample();
@@ -201,18 +165,7 @@ void SamplerModule::process() {
             pins.at(1)->getAudioBuffer()->setSample(0,j ,valueL);
             pins.at(2)->getAudioBuffer()->setSample(0,j ,valueR);
         
-            /*
-            for (int i = 0; i < 128;i++) {
-                if (sampler[i] != nullptr) {
-                    sampler[i]->nextSample();
-                }
-            }
-             */
         }
-        /*
-        interpolatorLeft->reset();
-        interpolatorRight->reset();
-         */
     }
     
 }
@@ -238,12 +191,12 @@ String SamplerModule::getSamplePath(int i) {
     return samplePaths[i];
 }
 
-void SamplerModule::setPitch(float pitch) {
-    this->pitch = pitch;
+void SamplerModule::setPitch(float pitch, int samplerIndex) {
+    this->sampler[samplerIndex]->setPitch(pitch);
 }
 
-float SamplerModule::getPitch() {
-    return pitch;
+float SamplerModule::getPitch(int samplerIndex) {
+    return sampler[samplerIndex]->getPitch();
 }
 void SamplerModule::setSampleRate(float rate) {
     this->sampleRate = rate;

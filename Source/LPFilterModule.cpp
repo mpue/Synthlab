@@ -80,7 +80,7 @@ void LPFilterModule::paint(juce::Graphics &g) {
 
 void LPFilterModule::process() {
     
-    if (pins.at(2)->connections.size() == 1 && pins.at(2)->connections.at(0)->getAudioBuffer() != nullptr && pins.at(3)->getAudioBuffer() != nullptr) {
+    if (pins.at(2)->connections.size() >= 1 && pins.at(2)->connections.at(0)->getAudioBuffer() != nullptr && pins.at(3)->getAudioBuffer() != nullptr) {
         const float* in = pins.at(2)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
         float* out = pins.at(3)->getAudioBuffer()->getWritePointer(0);
         filter->process(const_cast<float*>(in),out,buffersize);
