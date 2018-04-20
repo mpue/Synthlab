@@ -137,12 +137,13 @@ void SamplePropertiesPanel::buttonClicked (Button* buttonThatWasClicked)
     if (buttonThatWasClicked == loadSampleButton)
     {
         //[UserButtonCode_loadSampleButton] -- add your button handler code here..
-
+        openSample();
         //[/UserButtonCode_loadSampleButton]
     }
     else if (buttonThatWasClicked == loopToggleButton)
     {
         //[UserButtonCode_loopToggleButton] -- add your button handler code here..
+        module->setLoop(loopToggleButton->getToggleState());        
         //[/UserButtonCode_loopToggleButton]
     }
 
@@ -173,6 +174,54 @@ void SamplePropertiesPanel::sliderValueChanged (Slider* sliderThatWasMoved)
 
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
+
+void SamplePropertiesPanel::setModule(SamplerModule *module) {
+    this->module = module;
+    
+}
+
+void SamplePropertiesPanel::setThumbnail(AudioThumbnailComponent* thumbnail) {
+    this->thumb = thumbnail;
+}
+
+void SamplePropertiesPanel::openSample() {
+    
+    FileChooser chooser("Select file to open", File::nonexistent, "*");
+    
+    if (chooser.browseForFileToOpen()) {
+        
+#if JUCE_IOS
+        URL url = chooser.getURLResult();
+        InputStream* is = url.createInputStream(false);
+        
+        module->loadSample(is);
+        
+        delete is;
+        
+        ScopedPointer<XmlElement> xml = XmlDocument(data).getDocumentElement();
+#else
+        File file = chooser.getResult();
+        FileInputStream* is = new FileInputStream(file);
+        module->setSamplePath(file.getFullPathName(),module->getCurrentSampler());
+        module->loadSample(is, module->getCurrentSampler());
+        if (module->getBuffer() != nullptr) {
+            thumb->setSampleBuffer(module->getBuffer());
+        }
+        
+        // delete is;
+        
+#endif
+        
+    }
+}
+
+void SamplePropertiesPanel::updateValues() {
+    std::function<void(void)> changeLambda =
+    [=]() {  loopToggleButton->setToggleState(module->isLoop(), juce::NotificationType::dontSendNotification); };
+    juce::MessageManager::callAsync(changeLambda);
+    
+}
+
 //[/MiscUserCode]
 
 

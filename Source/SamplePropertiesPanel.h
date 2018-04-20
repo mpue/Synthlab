@@ -21,6 +21,8 @@
 
 //[Headers]     -- You can add your own extra header files here --
 #include "../JuceLibraryCode/JuceHeader.h"
+#include "SamplerModule.h"
+#include "AudioThumbnailComponent.h"
 //[/Headers]
 
 
@@ -44,13 +46,18 @@ public:
 
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
+    void setModule(SamplerModule* module);
+    void setThumbnail(AudioThumbnailComponent* thumbnail);
+    void openSample();
+    void updateValues();
+    
     //[/UserMethods]
 
     void paint (Graphics& g) override;
     void resized() override;
     void buttonClicked (Button* buttonThatWasClicked) override;
     void sliderValueChanged (Slider* sliderThatWasMoved) override;
-
+    
 
 
 private:
@@ -65,6 +72,8 @@ private:
     ScopedPointer<Slider> sampleEndSlider;
     ScopedPointer<ToggleButton> loopToggleButton;
 
+    SamplerModule* module;
+    AudioThumbnailComponent* thumb;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SamplePropertiesPanel)

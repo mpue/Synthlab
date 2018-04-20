@@ -30,6 +30,8 @@ SampleEditor::SampleEditor (int buffersize, float sampleRate, AudioFormatManager
         }
     }
     
+    propertiesPanel->setModule(module);
+    propertiesPanel->setThumbnail(component);
     
 }
 
@@ -37,7 +39,7 @@ SampleEditor::~SampleEditor()
 {
     state.removeListener(this);
     midiKeyboard = nullptr;
-    component = nullptr;
+    delete component;
     propertiesPanel = nullptr;
 
     AudioDeviceManager* deviceManager = Project::getInstance()->getDeviceManager();
@@ -48,11 +50,6 @@ SampleEditor::~SampleEditor()
         }
     }
     
-}
-
-
-void SampleEditor::mouseDoubleClick(const juce::MouseEvent &event) {
-    openSample();
 }
 
 void SampleEditor::paint (Graphics& g)
@@ -81,6 +78,7 @@ void SampleEditor::handleIncomingMidiMessage (MidiInput* source, const MidiMessa
 
 void SampleEditor::handleNoteOn(juce::MidiKeyboardState *source, int midiChannel, int midiNoteNumber, float velocity) {
     sampleModule->selectSample(midiNoteNumber);
+    propertiesPanel->updateValues();
     component->setSampleBuffer(sampleModule->getBuffer());
     
 }
@@ -89,33 +87,3 @@ void SampleEditor::handleNoteOff(juce::MidiKeyboardState *source, int midiChanne
     
 }
 
-void SampleEditor::openSample() {
-    
-    FileChooser chooser("Select file to open", File::nonexistent, "*");
-    
-    if (chooser.browseForFileToOpen()) {
-        
-#if JUCE_IOS
-        URL url = chooser.getURLResult();
-        InputStream* is = url.createInputStream(false);
-        
-        sm->loadSample(is);
-        
-        delete is;
-        
-        ScopedPointer<XmlElement> xml = XmlDocument(data).getDocumentElement();
-#else
-        File file = chooser.getResult();
-        FileInputStream* is = new FileInputStream(file);
-        sampleModule->setSamplePath(file.getFullPathName(),sampleModule->getCurrentSampler());
-        sampleModule->loadSample(is, sampleModule->getCurrentSampler());
-        if (sampleModule->getBuffer() != nullptr) {
-            component->setSampleBuffer(sampleModule->getBuffer());
-        }
-        
-        // delete is;
-        
-#endif
-        
-    }
-}

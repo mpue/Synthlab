@@ -18,8 +18,6 @@ public:
     virtual void handleNoteOff (MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override;
     virtual void handleNoteOn (MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override;
     
-    void mouseDoubleClick (const MouseEvent& event) override;
-    void openSample();
     
     void handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) override;
     
@@ -30,7 +28,7 @@ private:
     int buffersize;
 
     ScopedPointer<MidiKeyboardComponent> midiKeyboard;
-    ScopedPointer<AudioThumbnailComponent> component;
+    AudioThumbnailComponent* component;
     ScopedPointer<SamplePropertiesPanel> propertiesPanel;
     
     SamplerModule* sampleModule;

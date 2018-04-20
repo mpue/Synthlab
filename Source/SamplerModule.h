@@ -53,6 +53,14 @@ public:
         return currentSampler;
     }
     
+    void setLoop(bool loop) {
+        sampler[currentSampler]->setLoop(loop);
+    }
+    
+    bool isLoop() {
+        return sampler[currentSampler]->isLoop();
+    }
+    
 private:
     float samplePosX = 20;
     float pushSamplePosX = 0;

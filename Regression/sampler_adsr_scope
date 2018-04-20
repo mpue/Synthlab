@@ -13,6 +13,8 @@
               note="66"/>
       <sample samplePath="/Users/mpue/Documents/samples/Studio_Essentials-Breaks-Zenhiser/Studio Essentials - Breaks Part 2 - Zenhiser/SEB - Drums - 02 Hi Hats/007 SEB - HiHat Cl.wav"
               note="68"/>
+      <sample samplePath="/Users/mpue/Documents/samples/Studio_Essentials-Breaks-Zenhiser/Studio Essentials - Breaks Part 1 - Zenhiser/SEB - Drum Beats/036(b) SEB - Drum Beat 134bpm.wav"
+              note="70"/>
       <Pins>
         <Pin type="2" direction="0" index="5301" x="0" y="10"/>
         <Pin type="0" direction="1" index="5302" x="246" y="10"/>
@@ -23,7 +25,7 @@
       <Modules/>
       <Connections/>
     </Module>
-    <Module name="Audio out" index="66" x="833" y="297" isPrefab="1" prefabId="66">
+    <Module name="Audio out" index="66" x="1031" y="272" isPrefab="1" prefabId="66">
       <Pins>
         <Pin type="0" direction="0" index="6601" x="0" y="10"/>
         <Pin type="0" direction="0" index="6602" x="0" y="30"/>
@@ -62,22 +64,6 @@
       <Modules/>
       <Connections/>
     </Module>
-    <Module name="" index="167" x="530" y="185" isPrefab="1" prefabId="67"
-            value="500.00000000000000000000">
-      <Pins>
-        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
-      </Pins>
-      <Modules/>
-      <Connections/>
-    </Module>
-    <Module name="" index="267" x="541" y="473" isPrefab="1" prefabId="67"
-            value="375.00000000000000000000">
-      <Pins>
-        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
-      </Pins>
-      <Modules/>
-      <Connections/>
-    </Module>
     <Module name="" index="367" x="193" y="508" isPrefab="1" prefabId="67"
             value="1.00000000000000000000">
       <Pins>
@@ -86,9 +72,41 @@
       <Modules/>
       <Connections/>
     </Module>
-    <Module name="Scope" index="75" x="706" y="89" isPrefab="1" prefabId="75">
+    <Module name="Scope" index="75" x="860" y="33" isPrefab="1" prefabId="75">
       <Pins>
         <Pin type="0" direction="0" index="7501" x="0" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="LP Filter" index="68" x="702" y="473" isPrefab="1" prefabId="68">
+      <Pins>
+        <Pin type="2" direction="0" index="6801" x="0" y="10"/>
+        <Pin type="2" direction="0" index="6802" x="0" y="30"/>
+        <Pin type="0" direction="0" index="6803" x="0" y="50"/>
+        <Pin type="0" direction="1" index="6804" x="110" y="10"/>
+        <Pin type="2" direction="0" index="6805" x="0" y="70"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="LP Filter" index="168" x="789" y="273" isPrefab="1" prefabId="68">
+      <Pins>
+        <Pin type="2" direction="0" index="6801" x="0" y="10"/>
+        <Pin type="2" direction="0" index="6802" x="0" y="30"/>
+        <Pin type="0" direction="0" index="6803" x="0" y="50"/>
+        <Pin type="0" direction="1" index="6804" x="110" y="10"/>
+        <Pin type="2" direction="0" index="6805" x="0" y="70"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="69" x="546" y="61" isPrefab="1" prefabId="69"
+            minvalue="10.00000000000000000000" maxvalue="10000.00000000000000000000"
+            stepsize="10.00100040435791015625" value="45.00000000000000000000"
+            isController="0" controllerNum="1">
+      <Pins>
+        <Pin type="2" direction="1" index="6901" x="70" y="10"/>
       </Pins>
       <Modules/>
       <Connections/>
@@ -101,7 +119,11 @@
     <Connection source="70" target="67" a="7005" b="6701"/>
     <Connection source="53" target="367" a="5305" b="6701"/>
     <Connection source="75" target="53" a="7501" b="5302"/>
-    <Connection source="53" target="66" a="5302" b="6601"/>
-    <Connection source="53" target="66" a="5303" b="6602"/>
+    <Connection source="168" target="66" a="6804" b="6601"/>
+    <Connection source="68" target="66" a="6804" b="6602"/>
+    <Connection source="53" target="168" a="5302" b="6803"/>
+    <Connection source="53" target="68" a="5303" b="6803"/>
+    <Connection source="69" target="168" a="6901" b="6801"/>
+    <Connection source="69" target="68" a="6901" b="6801"/>
   </Connections>
 </Synth>
