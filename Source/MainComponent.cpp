@@ -50,6 +50,16 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     for (int i = 0; i < toolbarFactory->numItems();i++){
         toolbar->addItem(*toolbarFactory, i+1);
         toolbar->getItemComponent(i)->addListener(this);
+        
+        ToolbarComboBox* tcb = dynamic_cast<ToolbarComboBox*>(toolbar->getItemComponent(i));
+        
+        
+        if (tcb != NULL) {
+            tcb->getComboBox().onChange = [tcb,this]() {
+                int id = tcb->getComboBox().getSelectedId() - 1;
+                editor->setCurrentLayer(id);
+            };
+        }
     }
     
     this->menu = new MenuBarComponent();
@@ -352,10 +362,15 @@ void MainComponent::openSettings() {
 bool MainComponent::keyStateChanged(bool isKeyDown, juce::Component *originatingComponent) {
     for (std::map<int, int>::iterator it = keyCodeMidiNote.begin();it != keyCodeMidiNote.end();it++) {
         if (KeyPress::isKeyCurrentlyDown((*it).first)) {
-            sendNoteMessage(editor->getModule(), (*it).second + 12 * currentOctave);
-            sendGateMessage(editor->getModule(), 64,(*it).second + 12 * currentOctave, true);
+            if (!keyStates[(*it).second]) {
+                sendNoteMessage(editor->getModule(), (*it).second + 12 * currentOctave);
+                sendGateMessage(editor->getModule(), 64,(*it).second + 12 * currentOctave, true);
+                keyStates[(*it).second] = true;
+            }
+
         }
         else {
+            keyStates[(*it).second] = false;
             if (!isKeyDown)
                 sendGateMessage(editor->getModule(), 0,(*it).second + 12 * currentOctave, false);
         }
@@ -403,35 +418,41 @@ void MainComponent::createKeyMap() {
 void MainComponent::buttonClicked (Button* b)
 {
     ToolbarButton* tb = dynamic_cast<ToolbarButton*>(b);
-    if (tb->getItemId() == toolbarFactory->delete_element) {
-        editor->removeSelectedItem();
+    
+    if (tb != NULL) {
+        
+        if (tb->getItemId() == toolbarFactory->delete_element) {
+            editor->removeSelectedItem();
+        }
+        else if(tb->getItemId() == toolbarFactory->doc_new) {
+            editor->setRunning(false);
+            editor->cleanUp();
+            editor->newFile();
+            editor->setRunning(true);
+        }
+        else if(tb->getItemId() == toolbarFactory->doc_save) {
+            editor->saveFile();
+        }
+        else if (tb->getItemId() == toolbarFactory->doc_open) {
+            editor->setRunning(false);
+            editor->cleanUp();
+            editor->newFile();
+            editor->openFile();
+            editor->setRunning(true);
+        }
+        else if (tb->getItemId() == toolbarFactory->app_settings) {
+            openSettings();
+        }
+        else if (tb->getItemId() == toolbarFactory->app_undo) {
+            Project::getInstance()->getUndoManager()->undo();
+        }
+        else if (tb->getItemId() == toolbarFactory->app_redo) {
+            Project::getInstance()->getUndoManager()->redo();
+        }
     }
-    else if(tb->getItemId() == toolbarFactory->doc_new) {
-        editor->setRunning(false);
-        editor->cleanUp();
-        editor->newFile();
-        editor->setRunning(true);
-    }
-    else if(tb->getItemId() == toolbarFactory->doc_save) {
-        editor->saveFile();
-    }
-    else if (tb->getItemId() == toolbarFactory->doc_open) {
-        editor->setRunning(false);
-        editor->cleanUp();
-        editor->newFile();
-        editor->openFile();
-        editor->setRunning(true);
-    }
-    else if (tb->getItemId() == toolbarFactory->app_settings) {
-        openSettings();
-    }
-    else if (tb->getItemId() == toolbarFactory->app_undo) {
-        Project::getInstance()->getUndoManager()->undo();
-    }
-    else if (tb->getItemId() == toolbarFactory->app_redo) {
-        Project::getInstance()->getUndoManager()->redo();
-    }
+
 }
+
 
 void MainComponent::handleIncomingMidiMessage(juce::MidiInput *source, const juce::MidiMessage &message) {
     

@@ -52,6 +52,7 @@ ADSRModule::~ADSRModule()
 void ADSRModule::createProperties() {
     isMonoValue = new Value();
     isMonoListener = new IsMonoListener(*isMonoValue, this);
+    isMonoValue->setValue(mono);
 }
 
 
@@ -192,6 +193,7 @@ void ADSRModule::process() {
 
 void ADSRModule::setMono(bool value) {
     this->mono = value;
+    this->isMonoValue->setValue(value);
 }
 
 bool ADSRModule::isMono() {

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Synth>
+  <Modules>
+    <Module name="Random" index="72" x="207" y="88" isPrefab="1" prefabId="72">
+      <Pins>
+        <Pin type="2" direction="0" index="7201" x="0" y="10"/>
+        <Pin type="2" direction="0" index="7202" x="0" y="30"/>
+        <Pin type="0" direction="1" index="7203" x="110" y="10"/>
+        <Pin type="2" direction="1" index="7204" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="White noise" index="65" x="571" y="237" isPrefab="1" prefabId="65">
+      <Pins>
+        <Pin type="2" direction="0" index="6501" x="0" y="10"/>
+        <Pin type="0" direction="1" index="6502" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="LP Filter" index="68" x="765" y="215" isPrefab="1" prefabId="68">
+      <Pins>
+        <Pin type="2" direction="0" index="6801" x="0" y="10"/>
+        <Pin type="2" direction="0" index="6802" x="0" y="30"/>
+        <Pin type="0" direction="0" index="6803" x="0" y="50"/>
+        <Pin type="0" direction="1" index="6804" x="110" y="10"/>
+        <Pin type="2" direction="0" index="6805" x="0" y="70"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Audio out" index="66" x="941" y="142" isPrefab="1" prefabId="66">
+      <Pins>
+        <Pin type="0" direction="0" index="6601" x="0" y="10"/>
+        <Pin type="0" direction="0" index="6602" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Multiply value" index="57" x="397" y="171" isPrefab="1"
+            prefabId="57">
+      <Pins>
+        <Pin type="2" direction="0" index="5701" x="0" y="10"/>
+        <Pin type="2" direction="0" index="5702" x="0" y="30"/>
+        <Pin type="2" direction="1" index="5703" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Display value" index="58" x="599" y="21" isPrefab="1" prefabId="58">
+      <Pins>
+        <Pin type="2" direction="0" index="5801" x="0" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="167" x="31" y="100" isPrefab="1" prefabId="67"
+            value="10.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="267" x="45" y="189" isPrefab="1" prefabId="67"
+            value="3.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="367" x="393" y="63" isPrefab="1" prefabId="67"
+            value="10.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="69" x="272" y="302" isPrefab="1" prefabId="69"
+            minvalue="0.00000000000000000000" maxvalue="10000.00000000000000000000"
+            stepsize="10.00100040435791015625" value="440.04400634765625000000"
+            isController="0" controllerNum="1">
+      <Pins>
+        <Pin type="2" direction="1" index="6901" x="70" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections>
+    <Connection source="68" target="65" a="6803" b="6502"/>
+    <Connection source="66" target="68" a="6601" b="6804"/>
+    <Connection source="66" target="68" a="6602" b="6804"/>
+    <Connection source="57" target="72" a="5701" b="7204"/>
+    <Connection source="72" target="167" a="7201" b="6701"/>
+    <Connection source="68" target="57" a="6801" b="5703"/>
+    <Connection source="72" target="267" a="7202" b="6701"/>
+    <Connection source="367" target="68" a="6701" b="6802"/>
+    <Connection source="69" target="57" a="6901" b="5702"/>
+  </Connections>
+</Synth>

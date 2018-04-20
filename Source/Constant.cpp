@@ -30,6 +30,7 @@ Constant::Constant()
 void Constant::createProperties() {
     valueValue = new Value();
     valueListener = new ValueListener(*valueValue, this);
+    
 }
 
 Constant::~Constant()
@@ -56,6 +57,7 @@ float Constant::getValue() {
 
 void Constant::setValue(float value) {
     this->value = value;
+    valueValue->setValue(value);
     this->pins.at(0)->setValue(value);
     this->nameLabel->setText(name +" = "+String(value),juce::NotificationType::dontSendNotification);
 }

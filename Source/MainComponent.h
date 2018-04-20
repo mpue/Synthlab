@@ -11,10 +11,16 @@
 #include "SynthEditor.h"
 #include "PropertyView.h"
 #include "MainTabbedComponent.h"
+#include "ToolbarComboBox.h"
 #include <map>
 //==============================================================================
 
-class MainComponent   : public AudioAppComponent, public MenuBarModel, public KeyListener, public Button::Listener, public AudioProcessorPlayer
+class MainComponent   : public AudioAppComponent,
+                        public MenuBarModel,
+                        public KeyListener,
+                        public Button::Listener,
+
+                        public AudioProcessorPlayer
 {
 public:
     //==============================================================================
@@ -65,7 +71,8 @@ public:
             delete_element  = 4,
             app_settings    = 5,
             app_undo        = 6,
-            app_redo        = 7
+            app_redo        = 7,
+            app_layer       = 8
             
         };
         
@@ -82,7 +89,7 @@ public:
             ids.add (app_settings);
             ids.add (app_undo);
             ids.add (app_redo);
-
+            ids.add (app_layer);
         }
         
         void getDefaultItemSet (Array<int>& ids) override
@@ -97,12 +104,13 @@ public:
             ids.add (app_settings);
             ids.add (app_undo);
             ids.add (app_redo);
+            ids.add (app_layer);
         }
         
         ToolbarItemComponent* createItem (int itemId) override
         {
             
-            ToolbarButton* b;
+            ToolbarItemComponent* b;
             switch (itemId)
             {
                 case doc_new:
@@ -125,6 +133,9 @@ public:
                     return b;
                 case app_redo:
                     b = new ToolbarButton(itemId,"Redo",getImage(itemId), getImage(itemId));
+                    return b;
+                case app_layer:
+                    b = new ToolbarComboBox(itemId);
                     return b;
                 default:
                     break;
@@ -155,7 +166,7 @@ public:
         }
         
         int numItems() {
-            return 7;
+            return 8;
         }
         
     };
@@ -180,7 +191,7 @@ private:
 
     std::map<int,int> keyCodeMidiNote;
     
-    int currentOctave = 2;
+    int currentOctave = 1;
     DefaultToolbarItemFactory* toolbarFactory;
     Toolbar* toolbar = nullptr;
     
@@ -190,6 +201,8 @@ private:
     // default settings just in case
     float sampleRate = 44100;
     float buffersize = 512;
+    
+    bool keyStates[128] = { false };
     
     int layer = 0;
     

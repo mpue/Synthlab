@@ -141,6 +141,10 @@
         <FILE id="RO3JEM" name="WhiteNoise.h" compile="0" resource="0" file="Source/AudioEngine/WhiteNoise.h"/>
       </GROUP>
       <GROUP id="{F7A67158-9DD4-9E2C-0BDC-1B58ED967D9B}" name="Editor">
+        <FILE id="VXsCEb" name="ToolbarComboBox.cpp" compile="1" resource="0"
+              file="Source/ToolbarComboBox.cpp"/>
+        <FILE id="lExpGC" name="ToolbarComboBox.h" compile="0" resource="0"
+              file="Source/ToolbarComboBox.h"/>
         <FILE id="zDXqTh" name="AudioThumbnailComponent.cpp" compile="1" resource="0"
               file="Source/AudioThumbnailComponent.cpp"/>
         <FILE id="rtSeW2" name="AudioThumbnailComponent.h" compile="0" resource="0"
@@ -247,7 +251,7 @@
     <XCODE_MAC targetFolder="Builds/MacOSX" smallIcon="udjGbx" bigIcon="udjGbx">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;"/>
-        <CONFIGURATION isDebug="0" name="Release"/>
+        <CONFIGURATION isDebug="0" name="Release" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_core" path="../JUCE/modules"/>

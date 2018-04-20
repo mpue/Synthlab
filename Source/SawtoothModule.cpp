@@ -22,6 +22,8 @@ SawtoothModule::SawtoothModule(double sampleRate, int buffersize)
     for (int i = 0; i < 128;i++){
         oscillator[i] = nullptr;
     }
+
+    monoOscillator = new Sawtooth(sampleRate);
     
     setSize(120,140);
     nameLabel->setJustificationType (Justification::left);
@@ -39,6 +41,11 @@ SawtoothModule::~SawtoothModule()
         if (oscillator[i] != nullptr)
             delete oscillator[i];
     }
+    
+    delete monoOscillator;
+    
+    delete isMonoListener;
+    delete isMonoValue;
 }
 
 void SawtoothModule::configurePins() {
@@ -72,6 +79,8 @@ void SawtoothModule::configurePins() {
     addPin(Pin::Direction::IN,p3);
     addPin(Pin::Direction::OUT,p4);
     addPin(Pin::Direction::OUT,p5);
+    
+    createProperties();
 }
 
 void SawtoothModule::paint(juce::Graphics &g) {
@@ -98,6 +107,33 @@ void SawtoothModule::setAmplitude(float amplitude) {
     this->amplitude = amplitude;
 }
 
+void SawtoothModule::setMono(bool value) {
+    this->mono = value;
+    this->isMonoValue->setValue(value);
+}
+
+bool SawtoothModule::isMono() {
+    return mono;
+}
+
+juce::Array<PropertyComponent*>& SawtoothModule::getProperties() {
+    
+    properties = juce::Array<PropertyComponent*>();
+    isMonoProp = new BooleanPropertyComponent(*isMonoValue,"isMono","Mono");
+    
+    
+    properties.add(isMonoProp);
+    
+    return properties;
+}
+
+
+void SawtoothModule::createProperties() {
+    isMonoValue = new Value();
+    isMonoListener = new IsMonoListener(*isMonoValue, this);
+    isMonoValue->setValue(mono);
+}
+
 void SawtoothModule::process() {
     bool volumegate = false;
 
@@ -114,32 +150,46 @@ void SawtoothModule::process() {
     if (pins.at(2)->connections.size() == 1) {
         for (int i = 0; i < buffersize; i++) {
             float value = 0;
-            for (int j = 0; j < 128;j++){
+            
+            if (mono) {
+                this->monoOscillator->setFrequency((440 * pow(2.0,((pitch)-69.0)/12.0)));
+                this->monoOscillator->setVolume(pins.at(2)->connections.at(0)->getValue());
+                value = monoOscillator->process();
+                pins.at(4)->setValue(abs(value + 1));
+            }
+            else {
+                for (int j = 0; j < 128;j++){
 
-                if(pins.at(2)->connections.at(0)->dataEnabled[j]) {
-                    if (oscillator[j] ==  nullptr) {
-                        oscillator[j] = new Sawtooth(sampleRate);
-                        
-                        oscillator[j]->setFrequency((440 * pow(2.0,((j+1)-69.0)/12.0)) + pitch);
+                    if(pins.at(2)->connections.at(0)->dataEnabled[j]) {
+                        if (oscillator[j] ==  nullptr) {
+                            oscillator[j] = new Sawtooth(sampleRate);
+                            
+                            oscillator[j]->setFrequency((440 * pow(2.0,((j+1)-69.0)/12.0)) + pitch);
+                        }
+                        float volume = pins.at(2)->connections.at(0)->data[j];
+                    
+                        this->oscillator[j]->setVolume(volume);
                     }
-                    float volume = pins.at(2)->connections.at(0)->data[j];
-                
-                    this->oscillator[j]->setVolume(volume);
-                }
-                else {
-                    if (oscillator[j] != nullptr) {
-                         delete this->oscillator[j];
-                        this->oscillator[j] = nullptr;
+                    else {
+                        if (oscillator[j] != nullptr) {
+                             delete this->oscillator[j];
+                            this->oscillator[j] = nullptr;
+                        }
                     }
+                    if (oscillator[j] != nullptr)
+                        value += oscillator[j]->process();
                 }
-                if (oscillator[j] != nullptr)
-                    value += oscillator[j]->process();
             }
             if (pins.at(3)->getAudioBuffer() != nullptr && pins.at(3)->getAudioBuffer()->getNumChannels() > 0)
                 pins.at(3)->getAudioBuffer()->setSample(0,i ,value);
 
 
-            //pins.at(4)->setValue(abs(value + 1));
+            
+        }
+    }
+    else {
+        if (pins.at(3)->getAudioBuffer() != nullptr && pins.at(3)->getAudioBuffer()->getNumChannels() > 0) {
+            pins.at(3)->getAudioBuffer()->clear();
         }
     }
     

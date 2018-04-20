@@ -27,9 +27,12 @@ public:
     }
     
     static void destroy() {
+        
+
+        
         delete instance;
     }
-    
+
     UndoManager* getUndoManager() {
         return undoManager;
     }
@@ -37,6 +40,15 @@ public:
     AudioFormatManager* getFormatManager() {
         return manager;
     }
+    
+    StringArray& getRecentFiles() {
+        return recentFiles;
+    }
+
+    void loadRecentFileList();
+    void addRecentFile(String path);
+
+    
 #ifdef USE_PUSH
     ableton::Push2DisplayBridge*  getPush2Bridge() {
         return &bridge;
@@ -68,11 +80,14 @@ private:
     }
     
     ~Project() {
+
         delete undoManager;
         delete manager;
     }
+    
     static Project* instance;
     UndoManager* undoManager;
+    StringArray recentFiles;
     
 #ifdef USE_PUSH
     ableton::Push2DisplayBridge bridge;    /*!< The bridge allowing to use juce::graphics for push */

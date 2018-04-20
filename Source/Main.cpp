@@ -10,6 +10,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "MainComponent.h"
+#include "Project.h"
 
 //==============================================================================
 class SynthlabApplication  : public JUCEApplication
@@ -32,9 +33,7 @@ public:
 
     void shutdown() override
     {
-        // Add your application's shutdown code here..
 
-        
         mainWindow = nullptr; // (deletes our window)
     }
 

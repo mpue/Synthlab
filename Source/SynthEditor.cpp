@@ -197,6 +197,10 @@ void SynthEditor::mouseMove (const MouseEvent& e)
 
 void SynthEditor::mouseDown (const MouseEvent& e)
 {
+    if (locked) {
+        return;
+    }
+    
     //[UserCode_mouseDown] -- Add your code here...
 
     mouseDownX = e.getPosition().getX();
@@ -401,6 +405,18 @@ void SynthEditor::showContextMenu(Point<int> position) {
         m->addItem(2, "Save");
         m->addItem(3, "Load");
         m->addItem(4, "New");
+        if (locked) {
+            m->addItem(99, "Unlock");
+            for (int i = 0; i < root->getModules()->size(); i++) {
+                root->getModules()->at(i)->setInterceptsMouseClicks(false, true);
+            }
+        }
+        else {
+            for (int i = 0; i < root->getModules()->size(); i++) {
+                root->getModules()->at(i)->setInterceptsMouseClicks(true, true);
+            }
+             m->addItem(99, "Lock");
+        }
         
         PopupMenu* prefabMenu = new PopupMenu();
         
@@ -422,6 +438,17 @@ void SynthEditor::showContextMenu(Point<int> position) {
         }
         
         m->addSubMenu("Prefabs",*prefabMenu);
+        
+        PopupMenu recentFiles = PopupMenu();
+        
+        Project::getInstance()->loadRecentFileList();
+        StringArray recent = Project::getInstance()->getRecentFiles();
+        
+        for (int i = 0; i < recent.size();i++) {
+            recentFiles.addItem(i+1000,recent.getReference(i));
+        }
+        
+        m->addSubMenu("Recent files", recentFiles);
         
         const int result = m->show();
         
@@ -457,11 +484,25 @@ void SynthEditor::showContextMenu(Point<int> position) {
             newFile();
             setRunning(true);
         }
+        else if (result == 99) {
+            locked = !locked;
+        }
+        else if (result >= 1000) {
+            StringArray recent = Project::getInstance()->getRecentFiles();
+            String path = recent.getReference(result - 1000);
+            FileInputStream *fis = new FileInputStream(File(path));
+            String data = fis->readEntireStreamAsString();
+            setRunning(false);
+            cleanUp();
+            newFile();
+            loadFromString(data);
+            delete fis;
+            setRunning(true);
+        }
         else {
             AddModuleAction* am = new AddModuleAction(this,position,result);
             Project::getInstance()->getUndoManager()->beginNewTransaction();
             Project::getInstance()->getUndoManager()->perform(am);
-        
         }
         
         delete prefabMenu;
@@ -475,6 +516,10 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
 {
     //[UserCode_mouseDrag] -- Add your code here...
 
+    if (locked) {
+        return;
+    }
+    
     mouseX = e.getPosition().getX();
     mouseY = e.getPosition().getY();
     
@@ -788,6 +833,7 @@ void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Conn
             file.setProperty("decay",adsr->getDecay(), nullptr);
             file.setProperty("sustain", adsr->getSustain(), nullptr);
             file.setProperty("release", adsr->getRelease(), nullptr);
+            file.setProperty("mono", adsr->isMono(), nullptr);
         }
         
         Constant* c = nullptr;
@@ -801,6 +847,11 @@ void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Conn
              file.setProperty("samplePath", sm->getSamplePath(), nullptr);
         }
         
+        SawtoothModule* saw;
+        
+        if ((saw = dynamic_cast<SawtoothModule*>((*it))) != NULL) {
+            file.setProperty("mono", saw->isMono(), nullptr);
+        }
         
         ValueTree pins = ValueTree("Pins");
 
@@ -918,8 +969,10 @@ void SynthEditor::openSampleEditor(SamplerModule *sm) {
     launchOptions.content.setOwned(se);
     launchOptions.content->setSize(600, 580);
     launchOptions.dialogBackgroundColour = LookAndFeel::getDefaultLookAndFeel().findColour(ResizableWindow::backgroundColourId);
+    
     launchOptions.runModal();
 
+    
 }
 
 
@@ -928,7 +981,7 @@ void SynthEditor::openFile() {
     FileChooser chooser("Select file to open", File::nonexistent, "*");
 
     if (chooser.browseForFileToOpen()) {
-
+        
 #if JUCE_IOS
         URL url = chooser.getURLResult();
         InputStream* is = url.createInputStream(false);
@@ -939,6 +992,9 @@ void SynthEditor::openFile() {
 #else
         File file = chooser.getResult();
         ScopedPointer<XmlElement> xml = XmlDocument(file).getDocumentElement();
+        
+        Project::getInstance()->addRecentFile(file.getFullPathName());
+        
 #endif
    
         ValueTree v = ValueTree::fromXml(*xml.get());
@@ -1032,12 +1088,14 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
             adsr->setDecay(mod.getProperty("decay").toString().getFloatValue());
             adsr->setSustain(mod.getProperty("sustain").toString().getFloatValue());
             adsr->setRelease(mod.getProperty("release").toString().getFloatValue());
+            adsr->setMono(mod.getProperty("mono").toString().getIntValue() > 0);
         }
         
         Constant* c = nullptr;
         if ((c = dynamic_cast<Constant*>(m)) != NULL) {
-            addChangeListener(c);
+           
             c->setValue(mod.getProperty("value").toString().getFloatValue());
+            addChangeListener(c);
         }
         
         SamplerModule* sm;
@@ -1054,6 +1112,12 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
                 }
             }
  
+        }
+        
+        SawtoothModule* saw;
+        
+        if ((saw = dynamic_cast<SawtoothModule*>(m)) != NULL) {
+            saw->setMono(mod.getProperty("mono").toString().getIntValue() > 0);
         }
         
         // addAndMakeVisible(m);

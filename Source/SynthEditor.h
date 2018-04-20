@@ -209,6 +209,8 @@ private:
     
     Module::Layer currentLayer = Module::Layer::ALL;
     
+    bool locked = false;
+    
     //[/UserVariables]
 
     

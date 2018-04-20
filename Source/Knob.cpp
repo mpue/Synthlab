@@ -186,8 +186,8 @@ juce::Array<PropertyComponent*>& Knob::getProperties() {
     properties = juce::Array<PropertyComponent*>();
     
     valueProp = new SliderPropertyComponent(*valueValue,"Value",-65535,65535,0.1,1.0,true);
-    minValueProp = new SliderPropertyComponent(*minValue,"Minimum",0.001,10000,0.1,1.0,true);
-    maxValueProp = new SliderPropertyComponent(*maxValue,"Maximum",0.001,10000,0.1,1.0,true);
+    minValueProp = new SliderPropertyComponent(*minValue,"Minimum",-10000,10000,0.1,1.0,true);
+    maxValueProp = new SliderPropertyComponent(*maxValue,"Maximum",-10000,10000,0.1,1.0,true);
     stepsizeValueProp = new SliderPropertyComponent(*stepsizeValue,"Stepsize",0.001,10000,0.1,1.0,true);
     isControllerValueProp = new BooleanPropertyComponent(*isControllerValue,"isController","Is controller");
     controllerValueProp = new SliderPropertyComponent(*controllerValue,"Controller number",0,127,1,1.0,true);
