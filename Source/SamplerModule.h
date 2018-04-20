@@ -49,7 +49,7 @@ public:
     AudioSampleBuffer* getBuffer();
     
     void selectSample(int i);
-    int getCurrentSampler() {
+    int getCurrentSamplerIndex() {
         return currentSampler;
     }
     
@@ -59,6 +59,14 @@ public:
     
     bool isLoop() {
         return sampler[currentSampler]->isLoop();
+    }
+    
+    Sampler* getCurrentSampler() {
+        return sampler[currentSampler];
+    }
+    
+    Sampler* getSamplerAt(int samplerNum) {
+        return sampler[samplerNum];
     }
     
 private:

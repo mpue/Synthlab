@@ -159,15 +159,21 @@ void SamplePropertiesPanel::sliderValueChanged (Slider* sliderThatWasMoved)
     if (sliderThatWasMoved == sampleStartSlider)
     {
         //[UserSliderCode_sampleStartSlider] -- add your slider handling code here..
+        module->getCurrentSampler()->setStartPosition(sliderThatWasMoved->getValue());
+        thumb->setStartPosition(sliderThatWasMoved->getValue());
         //[/UserSliderCode_sampleStartSlider]
     }
     else if (sliderThatWasMoved == sampleEndSlider)
     {
         //[UserSliderCode_sampleEndSlider] -- add your slider handling code here..
+        module->getCurrentSampler()->setEndPosition(sliderThatWasMoved->getValue());
+        thumb->setEndPosition(sliderThatWasMoved->getValue());
         //[/UserSliderCode_sampleEndSlider]
     }
 
     //[UsersliderValueChanged_Post]
+    
+    thumb->repaint();
     //[/UsersliderValueChanged_Post]
 }
 
@@ -202,8 +208,8 @@ void SamplePropertiesPanel::openSample() {
 #else
         File file = chooser.getResult();
         FileInputStream* is = new FileInputStream(file);
-        module->setSamplePath(file.getFullPathName(),module->getCurrentSampler());
-        module->loadSample(is, module->getCurrentSampler());
+        module->setSamplePath(file.getFullPathName(),module->getCurrentSamplerIndex());
+        module->loadSample(is, module->getCurrentSamplerIndex());
         if (module->getBuffer() != nullptr) {
             thumb->setSampleBuffer(module->getBuffer());
         }
@@ -217,7 +223,20 @@ void SamplePropertiesPanel::openSample() {
 
 void SamplePropertiesPanel::updateValues() {
     std::function<void(void)> changeLambda =
-    [=]() {  loopToggleButton->setToggleState(module->isLoop(), juce::NotificationType::dontSendNotification); };
+    [=]() {
+        loopToggleButton->setToggleState(module->isLoop(), juce::NotificationType::dontSendNotification);
+        
+        long start = module->getCurrentSampler()->getStartPosition();
+        long end = module->getCurrentSampler()->getEndPosition();
+        
+        thumb->setStartPosition(start);
+        thumb->setEndPosition(end);
+        
+        sampleStartSlider->setRange(0, module->getCurrentSampler()->getEndPosition() - 1, juce::NotificationType::dontSendNotification);
+        sampleEndSlider->setRange(module->getCurrentSampler()->getStartPosition() + 1,module->getCurrentSampler()->getSampleLength(), juce::NotificationType::dontSendNotification);
+        sampleStartSlider->setValue(start);
+        sampleEndSlider->setValue(end);
+    };
     juce::MessageManager::callAsync(changeLambda);
     
 }

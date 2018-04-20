@@ -848,8 +848,13 @@ void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Conn
             for (int i = 0; i < 128; i++) {
                 if (sm->hasSampleAt(i)) {
                     ValueTree v = ValueTree("sample");
+                    v.setProperty("sampleStart",String(sm->getSamplerAt(i)->getStartPosition()),nullptr);
+                    v.setProperty("sampleEnd",String(sm->getSamplerAt(i)->getEndPosition()), nullptr);
+                    v.setProperty("sampleLength",String(sm->getSamplerAt(i)->getSampleLength()), nullptr);
+                    v.setProperty("loop",sm->getSamplerAt(i)->isLoop(), nullptr);
                     v.setProperty("samplePath", sm->getSamplePath(i),nullptr);
                     v.setProperty("note", i + 1 , nullptr);
+                    
                     file.addChild(v,-1,nullptr);
                 }
             }
@@ -1113,6 +1118,8 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
             
             for(int i = 0; i < mod.getNumChildren();i++) {
                 if (mod.getChild(i).hasProperty("samplePath")) {
+                    
+  
                     int note = mod.getChild(i).getProperty("note").toString().getIntValue();
                     String path = mod.getChild(i).getProperty("samplePath");
                     sm->setSamplePath(path, note - 1);
@@ -1122,6 +1129,14 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
                         sm->setSamplePath(file.getFullPathName(), note - 1);
                         sm->selectSample(note - 1);
                         sm->loadSample(is, note - 1);
+                        
+                        long start = mod.getChild(i).getProperty("sampleStart").toString().getLargeIntValue();
+                        sm->getSamplerAt(note - 1)->setStartPosition(start);
+                        long end = mod.getChild(i).getProperty("sampleEnd").toString().getLargeIntValue();
+                        sm->getSamplerAt(note - 1)->setEndPosition(end);
+                        long length = mod.getChild(i).getProperty("sampleLength").toString().getLargeIntValue();
+                        bool loop = mod.getChild(i).getProperty("loop").toString().getIntValue() > 0;
+                        sm->getSamplerAt(note - 1)->setLoop(loop);
                     }
                 }
             }

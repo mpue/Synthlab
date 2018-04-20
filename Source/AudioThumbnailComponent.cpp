@@ -45,6 +45,17 @@ void AudioThumbnailComponent::paint (Graphics& g)
         g.setColour(juce::Colours::orange);
         this->thumbnail->drawChannels(g, getBounds(), 0, this->buffer->getNumSamples() / sampleRate, 1);
     };
+    
+    g.setColour(juce::Colours::white);
+    
+    if (buffer != nullptr) {
+        int startx = (getWidth() / (float)buffer->getNumSamples()) * startPosition;
+        int endx = (getWidth() / (float)buffer->getNumSamples()) * endPosistion;
+        
+        g.drawLine(startx, 0, startx, getHeight());
+        g.drawLine(endx, 0, endx, getHeight());
+    }
+
 }
 
 void AudioThumbnailComponent::resized()
@@ -65,4 +76,19 @@ void AudioThumbnailComponent::setSampleBuffer(AudioSampleBuffer *buffer) {
     [=]() {  repaint(); };
     juce::MessageManager::callAsync(changeLambda);
 
+}
+
+void AudioThumbnailComponent::setStartPosition(int position) {
+    this->startPosition = position;
+    repaint();
+}
+
+void AudioThumbnailComponent::setEndPosition(int position) {
+    this->endPosistion = position;
+    repaint();
+}
+
+void AudioThumbnailComponent::setCurrentPosition(int position) {
+    this->currentPosition = position;
+    repaint();
 }

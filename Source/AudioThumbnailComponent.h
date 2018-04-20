@@ -26,7 +26,10 @@ public:
     void resized() override;
 
     void setSampleBuffer(AudioSampleBuffer* buffer);
-
+    void setStartPosition(int position);
+    void setEndPosition(int position);
+    void setCurrentPosition(int position);
+    
 private:
     
     AudioFormatManager* manager;
@@ -36,7 +39,9 @@ private:
     
     float sampleRate;
     int buffersize;
-
+    int startPosition;
+    int endPosistion;
+    int currentPosition;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioThumbnailComponent)
 };

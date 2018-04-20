@@ -45,7 +45,7 @@ public:
         return currentSample;
     }
     void reset(){
-        currentSample = 0;
+        currentSample = startPosition;
     }
     
     bool isDone() {

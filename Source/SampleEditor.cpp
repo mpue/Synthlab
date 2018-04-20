@@ -80,7 +80,7 @@ void SampleEditor::handleNoteOn(juce::MidiKeyboardState *source, int midiChannel
     sampleModule->selectSample(midiNoteNumber);
     propertiesPanel->updateValues();
     component->setSampleBuffer(sampleModule->getBuffer());
-    
+
 }
 
 void SampleEditor::handleNoteOff(juce::MidiKeyboardState *source, int midiChannel, int midiNoteNumber, float velocity) {

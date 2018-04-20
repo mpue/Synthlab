@@ -27,10 +27,17 @@ Sampler::~Sampler() {
 void Sampler::nextSample() {
     if (sampleLength > 0) {
         if (isLoop()) {
-            currentSample = (currentSample + 1) % sampleLength;
+            
+            if (currentSample < sampleLength - 1&& currentSample < endPosition) {
+                currentSample++;
+            }
+            else {
+                currentSample = startPosition;
+            }
+            // currentSample = (currentSample + 1) % sampleLength;
         }
         else {
-            if (currentSample < sampleLength - 1) {
+            if (currentSample < sampleLength - 1 && currentSample < endPosition) {
                 currentSample++;
             }
         }
