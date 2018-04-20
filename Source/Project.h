@@ -41,6 +41,14 @@ public:
         return manager;
     }
     
+    AudioDeviceManager* getDeviceManager() {
+        return deviceManager;
+    }
+    
+    void setDeviceManager(AudioDeviceManager* manager) {
+        this->deviceManager = manager;
+    }
+    
     StringArray& getRecentFiles() {
         return recentFiles;
     }
@@ -87,6 +95,7 @@ private:
     
     static Project* instance;
     UndoManager* undoManager;
+    AudioDeviceManager* deviceManager;
     StringArray recentFiles;
     
 #ifdef USE_PUSH

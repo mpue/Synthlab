@@ -844,7 +844,15 @@ void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Conn
         SamplerModule* sm;
         
         if ((sm = dynamic_cast<SamplerModule*>((*it))) != NULL) {
-             file.setProperty("samplePath", sm->getSamplePath(), nullptr);
+            
+            for (int i = 0; i < 128; i++) {
+                if (sm->hasSampleAt(i)) {
+                    ValueTree v = ValueTree("sample");
+                    v.setProperty("samplePath", sm->getSamplePath(i),nullptr);
+                    v.setProperty("note", i + 1 , nullptr);
+                    file.addChild(v,-1,nullptr);
+                }
+            }
         }
         
         SawtoothModule* saw;
@@ -960,6 +968,7 @@ void SynthEditor::openSampleEditor(SamplerModule *sm) {
     
     SampleEditor* se = new SampleEditor(bufferSize, _sampleRate, Project::getInstance()->getFormatManager(), sm);
     
+
     launchOptions.dialogTitle = ("Edit samples");
     launchOptions.escapeKeyTriggersCloseButton = true;
     launchOptions.resizable = false;
@@ -970,7 +979,7 @@ void SynthEditor::openSampleEditor(SamplerModule *sm) {
     launchOptions.content->setSize(600, 580);
     launchOptions.dialogBackgroundColour = LookAndFeel::getDefaultLookAndFeel().findColour(ResizableWindow::backgroundColourId);
     
-    launchOptions.runModal();
+    launchOptions.launchAsync();
 
     
 }
@@ -1102,13 +1111,18 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         
         if ((sm = dynamic_cast<SamplerModule*>(m)) != NULL) {
             
-            if (mod.hasProperty("samplePath")) {
-                sm->setSamplePath(mod.getProperty("samplePath").toString());
-                File file = File(sm->getSamplePath());
-                if (file.exists()) {
-                    FileInputStream* is = new FileInputStream(file);
-                    sm->setSamplePath(file.getFullPathName());
-                    sm->loadSample(is);
+            for(int i = 0; i < mod.getNumChildren();i++) {
+                if (mod.getChild(i).hasProperty("samplePath")) {
+                    int note = mod.getChild(i).getProperty("note").toString().getIntValue();
+                    String path = mod.getChild(i).getProperty("samplePath");
+                    sm->setSamplePath(path, note - 1);
+                    File file = File(path);
+                    if (file.exists()) {
+                        FileInputStream* is = new FileInputStream(file);
+                        sm->setSamplePath(file.getFullPathName(), note - 1);
+                        sm->selectSample(note - 1);
+                        sm->loadSample(is, note - 1);
+                    }
                 }
             }
  

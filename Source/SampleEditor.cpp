@@ -20,7 +20,16 @@ SampleEditor::SampleEditor (int buffersize, float sampleRate, AudioFormatManager
         component->setSampleBuffer(sampleModule->getBuffer());
     }
     state.addListener(this);
-
+    
+    AudioDeviceManager* deviceManager = Project::getInstance()->getDeviceManager();
+    
+    for (int i = 0; i < MidiInput::getDevices().size();i++) {
+        if (deviceManager->isMidiInputEnabled(MidiInput::getDevices().getReference(i))) {
+            deviceManager->addMidiInputCallback(MidiInput::getDevices().getReference(i),this);
+        }
+    }
+    
+    
 }
 
 SampleEditor::~SampleEditor()
@@ -29,11 +38,19 @@ SampleEditor::~SampleEditor()
     midiKeyboard = nullptr;
     component = nullptr;
 
+    AudioDeviceManager* deviceManager = Project::getInstance()->getDeviceManager();
+    
+    for (int i = 0; i < MidiInput::getDevices().size();i++) {
+        if (deviceManager->isMidiInputEnabled(MidiInput::getDevices().getReference(i))) {
+            deviceManager->removeMidiInputCallback(MidiInput::getDevices().getReference(i),this);
+        }
+    }
+    
 }
 
 
 void SampleEditor::mouseDoubleClick(const juce::MouseEvent &event) {
-    openSample(sampleModule);
+    openSample(sampleModule, sampleModule->getCurrentSampler());
 }
 
 void SampleEditor::paint (Graphics& g)
@@ -49,11 +66,18 @@ void SampleEditor::resized()
     component->setBounds (0, 0, proportionOfWidth (1.0000f), 200);
 }
 
+void SampleEditor::handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) {
+    if (message.isNoteOn()) {
+        handleNoteOn(&state, message.getChannel(), message.getNoteNumber(), message.getVelocity());
+    }
+    else if(message.isNoteOff()) {
+        handleNoteOff(&state, message.getChannel(), message.getNoteNumber(), message.getVelocity());
+    }
+}
+
 void SampleEditor::handleNoteOn(juce::MidiKeyboardState *source, int midiChannel, int midiNoteNumber, float velocity) {
     sampleModule->selectSample(midiNoteNumber);
-    if (sampleModule->getBuffer() != nullptr) {
-        component->setSampleBuffer(sampleModule->getBuffer());
-    }
+    component->setSampleBuffer(sampleModule->getBuffer());
     
 }
 
@@ -61,7 +85,7 @@ void SampleEditor::handleNoteOff(juce::MidiKeyboardState *source, int midiChanne
     
 }
 
-void SampleEditor::openSample(SamplerModule *sm) {
+void SampleEditor::openSample(SamplerModule *sm, int forSampler) {
     
     FileChooser chooser("Select file to open", File::nonexistent, "*");
     
@@ -79,8 +103,8 @@ void SampleEditor::openSample(SamplerModule *sm) {
 #else
         File file = chooser.getResult();
         FileInputStream* is = new FileInputStream(file);
-        sm->setSamplePath(file.getFullPathName());
-        sm->loadSample(is);
+        sm->setSamplePath(file.getFullPathName(),forSampler);
+        sm->loadSample(is, forSampler);
         if (sm->getBuffer() != nullptr) {
             component->setSampleBuffer(sm->getBuffer());
         }

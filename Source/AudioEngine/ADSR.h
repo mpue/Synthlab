@@ -71,6 +71,8 @@ protected:
     float decayBase;
     float releaseBase;
  
+    int velocity;
+    
     float calcCoef(float rate, float targetRatio);
     
 };
@@ -104,15 +106,17 @@ inline float ADSR::process() {
     }
 
     
-    return output;
+    return (output / 128) * velocity;
 }
 
 inline void ADSR::gate(int gate) {
     
     // cout << "ADSR gate " << gate << endl;
     
-	if (gate)
+    if (gate) {
+        velocity = gate;
 		state = env_attack;
+    }
 	else if (state != env_idle)
         state = env_release;
 }

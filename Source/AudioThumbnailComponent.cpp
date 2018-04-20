@@ -40,11 +40,10 @@ void AudioThumbnailComponent::paint (Graphics& g)
 
     g.setColour(juce::Colours::black);
     g.fillRect(getBounds());
-    g.setColour(juce::Colours::orange);
     
     if (this->thumbnail != nullptr && buffer != nullptr && buffer->getNumSamples() > 0){
+        g.setColour(juce::Colours::orange);
         this->thumbnail->drawChannels(g, getBounds(), 0, this->buffer->getNumSamples() / sampleRate, 1);
-        
     };
 }
 
@@ -55,20 +54,14 @@ void AudioThumbnailComponent::resized()
 
 void AudioThumbnailComponent::setSampleBuffer(AudioSampleBuffer *buffer) {
     
-
     this->buffer = buffer;
-    /*
-    if (this->buffer == nullptr) {
-        delete this->buffer;
-    }
-    this->buffer = new AudioSampleBuffer(2,_buffer->getNumSamples());
-    this->buffer->copyFrom(0,0, *_buffer,0,0,_buffer->getNumSamples());
-    this->buffer->copyFrom(1,0, *_buffer,1,0,_buffer->getNumSamples());
-     */
     this->thumbnail->reset(2, sampleRate);
-    this->thumbnail->addBlock(0, *buffer, 0, buffer->getNumSamples());
     
+    if (this->buffer != nullptr) {
+        this->thumbnail->addBlock(0, *buffer, 0, buffer->getNumSamples());
+    }
+    std::function<void(void)> changeLambda =
+    [=]() {  repaint(); };
+    juce::MessageManager::callAsync(changeLambda);
 
-    
-    repaint();
 }

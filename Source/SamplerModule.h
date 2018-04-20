@@ -37,16 +37,21 @@ public:
     
     virtual void timerCallback() override;
     virtual void eventReceived(Event *e) override;
-    void loadSample(InputStream* is);
-    void setSamplePath(String sample);
-    String getSamplePath();
+    void loadSample(InputStream* is, int sampler);
+    void setSamplePath(String sample, int sampler);
+    String getSamplePath(int i);
     void setPitch(float pitch);
     float getPitch();
     void updatePush2Display();
     
+    bool hasSampleAt(int i);
+    
     AudioSampleBuffer* getBuffer();
     
     void selectSample(int i);
+    int getCurrentSampler() {
+        return currentSampler;
+    }
     
 private:
     float samplePosX = 20;
@@ -58,7 +63,7 @@ private:
     int currentSample = 0;
     int currentEnvelope = -1;
     bool gate = false;
-    String samplePath;
+    String samplePaths[128];
     
     float bufferLeft [1024*1024] = {0};
     float bufferRight [1024*1024] = {0};
@@ -70,6 +75,8 @@ private:
     
     CatmullRomInterpolator* interpolatorLeft;
     CatmullRomInterpolator* interpolatorRight;
+    
+    
     
     int currentSampler = 0;
     

@@ -121,8 +121,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
                                       -0.1, -0.9,   // size must be between 50 pixels and 90% of the available space
                                       -0.8);
     
-    
-
+    Project::getInstance()->setDeviceManager(&deviceManager);
     
     initialized = true;
     running = true;

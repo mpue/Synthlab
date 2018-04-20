@@ -46,7 +46,11 @@ public:
     }
     void reset(){
         currentSample = 0;
-    } 
+    }
+    
+    bool isDone() {
+        return !loop && currentSample >= sampleLength - 1;
+    }
 private:
     
     AudioFormatManager* manager;

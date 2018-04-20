@@ -25,8 +25,19 @@ Sampler::~Sampler() {
 }
 
 void Sampler::nextSample() {
-    if (sampleLength > 0)
-        currentSample = (currentSample + 1) % sampleLength;
+    if (sampleLength > 0) {
+        if (isLoop()) {
+            currentSample = (currentSample + 1) % sampleLength;
+        }
+        else {
+            if (currentSample < sampleLength - 1) {
+                currentSample++;
+            }
+        }
+    }
+
+        
+    
 }
 
 void Sampler::play() {
@@ -36,7 +47,7 @@ void Sampler::stop() {
 }
 
 float Sampler::getCurrentSample(int channel){
-    if (sampleBuffer != nullptr && sampleLength > 0)
+    if (sampleBuffer != nullptr && sampleLength > 0 && !isDone())
         return sampleBuffer->getSample(channel, currentSample) * volume;
     
     return 0;

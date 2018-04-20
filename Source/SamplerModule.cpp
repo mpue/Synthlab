@@ -69,16 +69,12 @@ SamplerModule::~SamplerModule()
     
 }
 
-void SamplerModule::loadSample(juce::InputStream *is) {
+void SamplerModule::loadSample(juce::InputStream *is, int samplerIndex) {
     
-    sampler[currentSampler]->loadSample(is);
+    sampler[samplerIndex]->loadSample(is);
     this->thumbnail->reset(2, sampleRate);
-    thumbnail->addBlock(0, *sampler[currentSampler]->getSampleBuffer(), 0, sampler[currentSampler]->getSampleLength());
+    thumbnail->addBlock(0, *sampler[samplerIndex]->getSampleBuffer(), 0, sampler[samplerIndex]->getSampleLength());
     repaint();
-    
-    
-    // bufferLeft = new float[sampler[currentSampler]->getSampleLength()];
-    // bufferRight = new float[sampler[currentSampler]->getSampleLength()];
 }
 
 void SamplerModule::configurePins() {
@@ -193,7 +189,11 @@ void SamplerModule::process() {
                 if (sampler[i] != nullptr) {
                     valueL +=  sampler[i]->getCurrentSample(0);// bufferLeft[sampler[i]->getCurrentPosition()] * sampler[i]->getVolume(); // sampler->getSampleAt(0, currentSample);
                     valueR +=  sampler[i]->getCurrentSample(1);// bufferRight[sampler[i]->getCurrentPosition()]* sampler[i]->getVolume();// sampler->getSampleAt(1, currentSample);
-                    sampler[i]->nextSample();
+                 
+                    if (!sampler[i]->isDone())  {
+                        sampler[i]->nextSample();
+                    }
+                    
                 }
                     
             }
@@ -230,12 +230,12 @@ void SamplerModule::eventReceived(Event *e) {
     
 }
 
-void SamplerModule::setSamplePath(juce::String sample) {
-    this->samplePath = sample;
+void SamplerModule::setSamplePath(juce::String sample, int sampler) {
+    this->samplePaths[sampler] = sample;
 }
 
-String SamplerModule::getSamplePath() {
-    return samplePath;
+String SamplerModule::getSamplePath(int i) {
+    return samplePaths[i];
 }
 
 void SamplerModule::setPitch(float pitch) {
@@ -251,6 +251,10 @@ void SamplerModule::setSampleRate(float rate) {
 
 void SamplerModule::setBuffersize(int buffersize){
     this->buffersize = buffersize;
+}
+
+bool SamplerModule::hasSampleAt(int i) {
+    return (sampler[i] != nullptr && sampler[i]->getSampleLength() > 0);
 }
 
 AudioSampleBuffer* SamplerModule::getBuffer() {
