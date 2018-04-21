@@ -67,8 +67,6 @@
         <FILE id="wYnvwD" name="JuceToPush2DisplayBridge.cpp" compile="1" resource="0"
               file="Source/push2/JuceToPush2DisplayBridge.cpp"/>
       </GROUP>
-      <FILE id="LTbDuF" name="Project.cpp" compile="1" resource="0" file="Source/Project.cpp"/>
-      <FILE id="WcR5ED" name="Project.h" compile="0" resource="0" file="Source/Project.h"/>
       <GROUP id="{77AE62B9-7144-98DD-6972-2AE372C2CB32}" name="Actions">
         <FILE id="d4mKKq" name="AddConnectionAction.cpp" compile="1" resource="0"
               file="Source/Actions/AddConnectionAction.cpp"/>
@@ -79,8 +77,8 @@
         <FILE id="h8KNVV" name="AddModuleAction.h" compile="0" resource="0"
               file="Source/Actions/AddModuleAction.h"/>
       </GROUP>
-      <FILE id="UclOR0" name="AudioModule.h" compile="0" resource="0" file="Source/AudioModule.h"/>
       <GROUP id="{A79C9093-D329-37A0-AEE1-CF7BDC5C60DE}" name="AudioEngine">
+        <FILE id="UclOR0" name="AudioModule.h" compile="0" resource="0" file="Source/AudioModule.h"/>
         <FILE id="WWyH1B" name="ADSR.cpp" compile="1" resource="0" file="Source/AudioEngine/ADSR.cpp"/>
         <FILE id="Q1bcuf" name="ADSR.h" compile="0" resource="0" file="Source/AudioEngine/ADSR.h"/>
         <FILE id="LraLF9" name="BasicDelayLine.cpp" compile="1" resource="0"
@@ -141,24 +139,47 @@
         <FILE id="RO3JEM" name="WhiteNoise.h" compile="0" resource="0" file="Source/AudioEngine/WhiteNoise.h"/>
       </GROUP>
       <GROUP id="{F7A67158-9DD4-9E2C-0BDC-1B58ED967D9B}" name="Editor">
+        <FILE id="LTbDuF" name="Project.cpp" compile="1" resource="0" file="Source/Project.cpp"/>
+        <FILE id="WcR5ED" name="Project.h" compile="0" resource="0" file="Source/Project.h"/>
+        <FILE id="NKE8pj" name="SelectionModel.cpp" compile="1" resource="0"
+              file="Source/SelectionModel.cpp"/>
+        <FILE id="RViUJy" name="SelectionModel.h" compile="0" resource="0"
+              file="Source/SelectionModel.h"/>
         <GROUP id="{19B8F02D-4185-9D0D-F820-8F1C70EECC53}" name="Components">
+          <FILE id="JkR4sJ" name="MultiComponentDragger.h" compile="0" resource="0"
+                file="Source/MultiComponentDragger.h"/>
+          <FILE id="p4Fr6r" name="MainTabbedComponent.cpp" compile="1" resource="0"
+                file="Source/MainTabbedComponent.cpp"/>
+          <FILE id="dUs9k8" name="MainTabbedComponent.h" compile="0" resource="0"
+                file="Source/MainTabbedComponent.h"/>
+          <FILE id="oEHdkD" name="Connection.cpp" compile="1" resource="0" file="Source/Connection.cpp"/>
+          <FILE id="PoD2gS" name="Connection.h" compile="0" resource="0" file="Source/Connection.h"/>
+          <FILE id="forMne" name="Pin.cpp" compile="1" resource="0" file="Source/Pin.cpp"/>
+          <FILE id="NJudCk" name="Pin.h" compile="0" resource="0" file="Source/Pin.h"/>
+          <FILE id="j8BgnE" name="Module.cpp" compile="1" resource="0" file="Source/Module.cpp"/>
+          <FILE id="FdpOd5" name="Module.h" compile="0" resource="0" file="Source/Module.h"/>
+          <FILE id="SU8eIE" name="SynthEditor.cpp" compile="1" resource="0" file="Source/SynthEditor.cpp"/>
+          <FILE id="ZyXyBq" name="SynthEditor.h" compile="0" resource="0" file="Source/SynthEditor.h"/>
+          <FILE id="wdEhY6" name="PropertyView.cpp" compile="1" resource="0"
+                file="Source/PropertyView.cpp"/>
+          <FILE id="yeeY5O" name="PropertyView.h" compile="0" resource="0" file="Source/PropertyView.h"/>
+          <FILE id="VXsCEb" name="ToolbarComboBox.cpp" compile="1" resource="0"
+                file="Source/ToolbarComboBox.cpp"/>
+          <FILE id="lExpGC" name="ToolbarComboBox.h" compile="0" resource="0"
+                file="Source/ToolbarComboBox.h"/>
+          <FILE id="zDXqTh" name="AudioThumbnailComponent.cpp" compile="1" resource="0"
+                file="Source/AudioThumbnailComponent.cpp"/>
+          <FILE id="rtSeW2" name="AudioThumbnailComponent.h" compile="0" resource="0"
+                file="Source/AudioThumbnailComponent.h"/>
+          <FILE id="fWNKSv" name="SampleEditor.cpp" compile="1" resource="0"
+                file="Source/SampleEditor.cpp"/>
+          <FILE id="NDciKQ" name="SampleEditor.h" compile="0" resource="0" file="Source/SampleEditor.h"/>
           <FILE id="mkTk7I" name="ISampleEditor.h" compile="0" resource="0" file="Source/ISampleEditor.h"/>
           <FILE id="oWKCqJ" name="SamplePropertiesPanel.cpp" compile="1" resource="0"
                 file="Source/SamplePropertiesPanel.cpp"/>
           <FILE id="tQYIpN" name="SamplePropertiesPanel.h" compile="0" resource="0"
                 file="Source/SamplePropertiesPanel.h"/>
         </GROUP>
-        <FILE id="VXsCEb" name="ToolbarComboBox.cpp" compile="1" resource="0"
-              file="Source/ToolbarComboBox.cpp"/>
-        <FILE id="lExpGC" name="ToolbarComboBox.h" compile="0" resource="0"
-              file="Source/ToolbarComboBox.h"/>
-        <FILE id="zDXqTh" name="AudioThumbnailComponent.cpp" compile="1" resource="0"
-              file="Source/AudioThumbnailComponent.cpp"/>
-        <FILE id="rtSeW2" name="AudioThumbnailComponent.h" compile="0" resource="0"
-              file="Source/AudioThumbnailComponent.h"/>
-        <FILE id="fWNKSv" name="SampleEditor.cpp" compile="1" resource="0"
-              file="Source/SampleEditor.cpp"/>
-        <FILE id="NDciKQ" name="SampleEditor.h" compile="0" resource="0" file="Source/SampleEditor.h"/>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
           <FILE id="ltD2cO" name="AdderModule.cpp" compile="1" resource="0" file="Source/AdderModule.cpp"/>
           <FILE id="GhVXGb" name="AdderModule.h" compile="0" resource="0" file="Source/AdderModule.h"/>
@@ -230,24 +251,7 @@
           <FILE id="QEYQZu" name="SineModule.cpp" compile="1" resource="0" file="Source/SineModule.cpp"/>
           <FILE id="MtgQfK" name="SineModule.h" compile="0" resource="0" file="Source/SineModule.h"/>
         </GROUP>
-        <FILE id="j8BgnE" name="Module.cpp" compile="1" resource="0" file="Source/Module.cpp"/>
-        <FILE id="FdpOd5" name="Module.h" compile="0" resource="0" file="Source/Module.h"/>
-        <FILE id="SU8eIE" name="SynthEditor.cpp" compile="1" resource="0" file="Source/SynthEditor.cpp"/>
-        <FILE id="ZyXyBq" name="SynthEditor.h" compile="0" resource="0" file="Source/SynthEditor.h"/>
-        <FILE id="wdEhY6" name="PropertyView.cpp" compile="1" resource="0"
-              file="Source/PropertyView.cpp"/>
-        <FILE id="yeeY5O" name="PropertyView.h" compile="0" resource="0" file="Source/PropertyView.h"/>
-        <FILE id="oEHdkD" name="Connection.cpp" compile="1" resource="0" file="Source/Connection.cpp"/>
-        <FILE id="PoD2gS" name="Connection.h" compile="0" resource="0" file="Source/Connection.h"/>
-        <FILE id="forMne" name="Pin.cpp" compile="1" resource="0" file="Source/Pin.cpp"/>
-        <FILE id="NJudCk" name="Pin.h" compile="0" resource="0" file="Source/Pin.h"/>
       </GROUP>
-      <FILE id="p4Fr6r" name="MainTabbedComponent.cpp" compile="1" resource="0"
-            file="Source/MainTabbedComponent.cpp"/>
-      <FILE id="dUs9k8" name="MainTabbedComponent.h" compile="0" resource="0"
-            file="Source/MainTabbedComponent.h"/>
-      <FILE id="JkR4sJ" name="MultiComponentDragger.h" compile="0" resource="0"
-            file="Source/MultiComponentDragger.h"/>
       <FILE id="prQp1n" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
       <FILE id="SXYkCq" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
