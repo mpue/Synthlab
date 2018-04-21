@@ -63,7 +63,7 @@ void Constant::setValue(float value) {
 }
 
 void Constant::setEditing(bool editing) {
-    
+    /*
     if (editing) {
         if (!this->editing) {
             this->editing = true;
@@ -87,6 +87,7 @@ void Constant::setEditing(bool editing) {
             nameEditor->setWantsKeyboardFocus(false);
         }
     }
+     */
 
 }
 

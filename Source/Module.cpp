@@ -240,6 +240,7 @@ Module::Module(String name) : Module() {
 }
 
 void Module::setEditing(bool editing) {
+    /*
 	if (editing) {
 		nameLabel->setVisible(false);
 		nameEditor->setVisible(true);
@@ -257,6 +258,7 @@ void Module::setEditing(bool editing) {
         setInterceptsMouseClicks(false,false);
         nameEditor->setWantsKeyboardFocus(false);
 	}
+     */
 }
 
 void Module::addPin(Pin* p) {

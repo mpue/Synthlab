@@ -57,7 +57,7 @@ bool AddModuleAction::perform() {
     
     m->setSelected(true);
     m->savePosition();
-    editor->getSelectedModules()->push_back(m);
+    editor->getSelectionModel()->getSelectedModules()->push_back(m);
     editor->repaint();
     
     module = m;

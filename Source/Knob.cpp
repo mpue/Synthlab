@@ -118,12 +118,16 @@ void Knob::setValue(float value) {
 }
 
 void Knob::sliderValueChanged(juce::Slider *slider) {
-    setValue(slider->getValue());
+    this->value = slider->getValue();
+    this->valueValue->setValue(this->value);
+    this->nameLabel->setText(String(value),juce::NotificationType::dontSendNotification);
+    this->pins.at(0)->setValue(value);
 }
 
 void Knob::setStepSize(float stepsize) {
     this->stepsize = stepsize;
     this->slider->setRange(minimum,  maximum, stepsize);
+    this->stepsizeValue->setValue(stepsize);
 }
 
 float Knob::getStepsize() {
@@ -132,6 +136,7 @@ float Knob::getStepsize() {
 
 void Knob::setMinimum(float min) {
     this->minimum = min;
+    this->minValue->setValue(min);
     this->slider->setRange(minimum,  maximum, stepsize);
 }
 
@@ -141,6 +146,7 @@ float Knob::getMinimum() {
 
 void Knob::setMaximum(float max) {
     this->maximum = max;
+    this->maxValue->setValue(max);
     this->slider->setRange(minimum,  maximum, stepsize);
 }
 

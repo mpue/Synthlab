@@ -27,6 +27,7 @@
 #include "AudioOut.h"
 #include "AudioModule.h"
 #include "SampleEditor.h"
+#include "SelectionModel.h"
 #include <vector>
 
 class SamplerModule;
@@ -59,18 +60,12 @@ public:
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
 
-    enum EditorState {
-        NONE,
-        DRAGGING_SELECTION,
-        SELECT_ELEMENT,
-        MOVING_SELECTION,
-        DRAGGING_CONNECTION
-    };
+
     
-	void checkForPinSelection(const MouseEvent& e, Module* m);
+
 	void addConnection(const MouseEvent& e, Module* m);
     void deleteSelected(bool deleteAll);
-    bool PointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<int> pt, double epsilon);
+
     void setTab(TabbedComponent* t);
     
     void setModule(Module * m);
@@ -81,13 +76,12 @@ public:
     void openFile();
 
     void openSampleEditor(SamplerModule* sm);
-    void clearSelection();
+
     
     void saveStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections, ValueTree* v);
     void loadStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections,ValueTree* v);
 
-    Module* getSelectedModule();    
-    std::vector<Module*>* getSelectedModules();
+
     std::vector<AudioOut*>& getOutputChannels();
     void removeSelectedItem();
     
@@ -140,6 +134,10 @@ public:
          
     }
     
+    SelectionModel* getSelectionModel() const {
+        return selectionModel;
+    }
+    
     //[/UserMethods]
 
     void paint (Graphics& g) override;
@@ -160,6 +158,7 @@ private:
 
     bool isAltDown = false;
     bool isCtrlDown = false;
+    bool isLeftShiftDown = false;
     bool isLeftMouseDown = false;
 	bool isMovingModule = true;
 	bool isDraggingConnection = false;
@@ -193,10 +192,10 @@ private:
 
     Pin* startPin = nullptr;
 
-    EditorState state = EditorState::NONE;
+    SelectionModel::State state = SelectionModel::NONE;
     TabbedComponent* tab;
     Rectangle<int> selectionFrame = Rectangle<int>(0, 0, 0, 0);
-    std::vector<Module*>* selectedModules;
+
     std::vector<AudioOut*> outputChannels;
     
     static String defaultMidiInputName;
@@ -210,6 +209,10 @@ private:
     Module::Layer currentLayer = Module::Layer::ALL;
     
     bool locked = false;
+    
+    SelectionModel* selectionModel;
+    
+    bool dragHasStarted = false;
     
     //[/UserVariables]
 

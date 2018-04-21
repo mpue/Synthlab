@@ -114,10 +114,10 @@ void PropertyView::changeListenerCallback(juce::ChangeBroadcaster *source) {
     SynthEditor* editor = dynamic_cast<SynthEditor*>(source);
     if (editor != nullptr) {
         
-        if (editor->getSelectedModule() != nullptr) {
+        if (editor->getSelectionModel()->getSelectedModule() != nullptr) {
           
-            descriptionEditor->setText(editor->getSelectedModule()->getDescription());
-            propertyPanel->addProperties(editor->getSelectedModule()->getProperties());
+            descriptionEditor->setText(editor->getSelectionModel()->getSelectedModule()->getDescription());
+            propertyPanel->addProperties(editor->getSelectionModel()->getSelectedModule()->getProperties());
         }
         
     }
