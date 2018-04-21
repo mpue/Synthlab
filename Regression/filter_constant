@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Synth>
+  <Modules>
+    <Module name="LP Filter" index="68" x="500" y="219" isPrefab="1" prefabId="68">
+      <Pins>
+        <Pin type="2" direction="0" index="6801" x="0" y="10"/>
+        <Pin type="2" direction="0" index="6802" x="0" y="30"/>
+        <Pin type="0" direction="0" index="6803" x="0" y="50"/>
+        <Pin type="0" direction="1" index="6804" x="110" y="10"/>
+        <Pin type="2" direction="0" index="6805" x="0" y="70"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="White noise" index="65" x="240" y="226" isPrefab="1" prefabId="65">
+      <Pins>
+        <Pin type="2" direction="0" index="6501" x="0" y="10"/>
+        <Pin type="0" direction="1" index="6502" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Audio out" index="66" x="817" y="304" isPrefab="1" prefabId="66">
+      <Pins>
+        <Pin type="0" direction="0" index="6601" x="0" y="10"/>
+        <Pin type="0" direction="0" index="6602" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="F" index="67" x="355" y="163" isPrefab="1" prefabId="67"
+            value="1000.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections>
+    <Connection source="65" target="68" a="6502" b="6803"/>
+    <Connection source="68" target="66" a="6804" b="6601"/>
+    <Connection source="68" target="66" a="6804" b="6602"/>
+    <Connection source="67" target="68" a="6701" b="6801"/>
+  </Connections>
+</Synth>

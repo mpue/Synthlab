@@ -22,10 +22,12 @@ DisplayValueModule::DisplayValueModule()
     setName("Display value");
     editable = false;
     prefab = true;
+    startTimer(100);
 }
 
 DisplayValueModule::~DisplayValueModule()
 {
+    stopTimer();
 }
 
 void DisplayValueModule::configurePins() {

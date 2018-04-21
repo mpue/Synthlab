@@ -2,25 +2,9 @@
 
 <Synth>
   <Modules>
-    <Module name="" index="61" x="113" y="260" isPrefab="1" prefabId="61">
-      <Pins>
-        <Pin type="2" direction="1" index="6101" x="110" y="10"/>
-        <Pin type="1" direction="1" index="6102" x="110" y="30"/>
-      </Pins>
-      <Modules/>
-      <Connections/>
-    </Module>
-    <Module name="White noise" index="65" x="549" y="229" isPrefab="1" prefabId="65">
-      <Pins>
-        <Pin type="2" direction="0" index="6501" x="0" y="10"/>
-        <Pin type="0" direction="1" index="6502" x="110" y="10"/>
-      </Pins>
-      <Modules/>
-      <Connections/>
-    </Module>
-    <Module name="ADSR" index="70" x="297" y="297" isPrefab="1" prefabId="70"
-            attack="0.00000000000000000000" decay="0.00000000000000000000"
-            sustain="0.80000001192092895508" release="0.00000000000000000000"
+    <Module name="ADSR" index="70" x="378" y="309" isPrefab="1" prefabId="70"
+            attack="10.00000000000000000000" decay="10.00000000000000000000"
+            sustain="0.00000000000000000000" release="0.00000000000000000000"
             mono="1">
       <Pins>
         <Pin type="1" direction="0" index="7001" x="0" y="10"/>
@@ -33,19 +17,52 @@
       <Modules/>
       <Connections/>
     </Module>
-    <Module name="Audio out" index="66" x="803" y="314" isPrefab="1" prefabId="66">
+    <Module name="Display value" index="58" x="579" y="332" isPrefab="1"
+            prefabId="58">
       <Pins>
-        <Pin type="0" direction="0" index="6601" x="0" y="10"/>
-        <Pin type="0" direction="0" index="6602" x="0" y="30"/>
+        <Pin type="2" direction="0" index="5801" x="0" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="61" x="82" y="286" isPrefab="1" prefabId="61">
+      <Pins>
+        <Pin type="2" direction="1" index="6101" x="110" y="10"/>
+        <Pin type="1" direction="1" index="6102" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="D" index="67" x="228" y="350" isPrefab="1" prefabId="67"
+            value="10.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="S" index="167" x="239" y="391" isPrefab="1" prefabId="67"
+            value="0.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="A" index="267" x="228" y="253" isPrefab="1" prefabId="67"
+            value="10.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
       </Pins>
       <Modules/>
       <Connections/>
     </Module>
   </Modules>
   <Connections>
+    <Connection source="70" target="58" a="7006" b="5801"/>
     <Connection source="61" target="70" a="6102" b="7001"/>
-    <Connection source="70" target="65" a="7006" b="6501"/>
-    <Connection source="65" target="66" a="6502" b="6601"/>
-    <Connection source="65" target="66" a="6502" b="6602"/>
+    <Connection source="67" target="70" a="6701" b="7003"/>
+    <Connection source="167" target="70" a="6701" b="7004"/>
+    <Connection source="267" target="70" a="6701" b="7002"/>
   </Connections>
 </Synth>

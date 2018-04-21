@@ -17,7 +17,7 @@
 //==============================================================================
 /*
  */
-class DisplayValueModule    : public Module
+class DisplayValueModule    : public Module, public Timer
 {
 public:
     DisplayValueModule();
@@ -31,6 +31,10 @@ public:
     
     virtual String getCategory() override {
         return "Debug";
+    }
+    
+    void timerCallback() override {
+        repaint();
     }
     
 private:

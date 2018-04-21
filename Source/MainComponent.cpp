@@ -598,7 +598,9 @@ void MainComponent::processModule(Module* m) {
         
         
          for (int i = 0; i< m->getModules()->size();i++) {
-             processModule(m->getModules()->at(i));
+             if (m->getModules()->at(i) != nullptr) {
+                 processModule(m->getModules()->at(i));
+             }
          }
         
     }

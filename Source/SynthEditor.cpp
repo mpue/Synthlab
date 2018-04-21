@@ -334,6 +334,13 @@ void SynthEditor::showContextMenu(Point<int> position) {
                 root->getModules()->push_back(k);
                 selectionModel->clearSelection();
                 k->setSelected(true);
+                
+                if (module->getName().contains("Filter")) {
+                    k->setMinimum(100);
+                    k->setMaximum(15000);
+                    k->setStepSize(10);
+                }
+                
                 selectionModel->getSelectedModules()->push_back(k);
                 repaint();
             }

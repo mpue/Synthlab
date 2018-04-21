@@ -26,7 +26,8 @@ Knob::Knob()
     slider->setRange (0, 127, 1);
     slider->setSliderStyle (Slider::RotaryVerticalDrag);
     slider->setTextBoxStyle (Slider::NoTextBox, false, 80, 20);
-    // slider->setColour (Slider::rotarySliderOutlineColourId, Colour (0x66ffffff));
+    slider->setColour (Slider::rotarySliderOutlineColourId, juce::Colours::darkgrey);
+    slider->setColour(Slider::thumbColourId, juce::Colours::orange);
     slider->addListener (this);
     
     slider->setTopLeftPosition(getWidth() / 2 - slider->getWidth() / 2, getHeight() / 2 - slider->getHeight()/2);
@@ -35,13 +36,15 @@ Knob::Knob()
 
     setInterceptsMouseClicks(false,true);
     
+    createProperties();
+    
     editable = false;
     prefab = true;
-    stepsize = 1.0;
-    minimum = 0;
-    maximum = 127;
+    setStepSize(1);
+    setMinimum(0);
+    setMaximum(127);
     
-    createProperties();
+  
     
 }
 
@@ -192,8 +195,8 @@ juce::Array<PropertyComponent*>& Knob::getProperties() {
     properties = juce::Array<PropertyComponent*>();
     
     valueProp = new SliderPropertyComponent(*valueValue,"Value",-65535,65535,0.1,1.0,true);
-    minValueProp = new SliderPropertyComponent(*minValue,"Minimum",-10000,10000,0.1,1.0,true);
-    maxValueProp = new SliderPropertyComponent(*maxValue,"Maximum",-10000,10000,0.1,1.0,true);
+    minValueProp = new SliderPropertyComponent(*minValue,"Minimum",-10000,15000,0.1,1.0,true);
+    maxValueProp = new SliderPropertyComponent(*maxValue,"Maximum",-10000,15000,0.1,1.0,true);
     stepsizeValueProp = new SliderPropertyComponent(*stepsizeValue,"Stepsize",0.001,10000,0.1,1.0,true);
     isControllerValueProp = new BooleanPropertyComponent(*isControllerValue,"isController","Is controller");
     controllerValueProp = new SliderPropertyComponent(*controllerValue,"Controller number",0,127,1,1.0,true);
