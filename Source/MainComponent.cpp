@@ -15,6 +15,7 @@
 #include "PrefabFactory.h"
 #include "Project.h"
 #include "Knob.h"
+
 //==============================================================================
 MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
 {
@@ -86,7 +87,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     
     view = new Viewport();
     
-    addAndMakeVisible(view);
+    // addAndMakeVisible(view);
     
     view->setSize(500,200);
     view->setViewedComponent(editor);
@@ -96,6 +97,27 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     view->setMouseClickGrabsKeyboardFocus(false);
     
     tab->addTab("Main", juce::Colours::grey, view, false);
+    
+    mixer = new MixerPanel();
+    
+    
+    mixerView = new Viewport();
+    
+    // addAndMakeVisible(mixerView);
+    
+    mixerView->setSize(500,200);
+    mixerView->setViewedComponent(mixer);
+    mixerView->setScrollBarsShown(true,true);
+    mixerView->setScrollOnDragEnabled(false);
+    mixerView->setWantsKeyboardFocus(false);
+    mixerView->setMouseClickGrabsKeyboardFocus(false);
+    
+    mixer->addChannel("Out");
+    mixer->addChannel("In");
+    
+    tab->addTab("Mixer", juce::Colours::grey, mixerView, false);
+    
+    editor->setMixer(mixer);
     
     propertyView =  new PropertyView();
     addAndMakeVisible (propertyView);
@@ -125,6 +147,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     
     initialized = true;
     running = true;
+    startTimer(20);
 }
 
 MainComponent::~MainComponent()
@@ -144,6 +167,8 @@ MainComponent::~MainComponent()
     MenuBarModel::setMacMainMenu(nullptr);
 #endif
     delete editor;
+    delete mixer;
+    delete mixerView;
     delete tab;
     delete view;
     delete propertyView;
@@ -151,10 +176,24 @@ MainComponent::~MainComponent()
     delete toolbar;
     delete toolbarFactory;
 
+
     PrefabFactory::getInstance()->destroy();
     Project::getInstance()->destroy();
     // This shuts down the audio device and clears the audio source.
     shutdownAudio();
+
+}
+
+void MainComponent::timerCallback() {
+    if (mixer != nullptr && mixer->getChannels().size() > 1) {
+        mixer->getChannels().at(0)->setMagnitude(0,magnitudeLeft);
+        mixer->getChannels().at(1)->setMagnitude(0,magnitudeLeftIn);
+    }
+    if (mixer != nullptr && mixer->getChannels().size() > 1) {
+        
+        mixer->getChannels().at(0)->setMagnitude(1, magnitudeRight);
+        mixer->getChannels().at(1)->setMagnitude(1, magnitudeLeftIn);
+    }
 
 }
 
@@ -180,13 +219,21 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
     // Your audio-processing code goes here!
     int numSamples = bufferToFill.numSamples;
     float** outputChannelData = bufferToFill.buffer->getArrayOfWritePointers();
-
+    const float** inputChannelData = bufferToFill.buffer->getArrayOfReadPointers();
     
     // for (int i = 0; i < numSamples;i++)
     if (editor->getModule() != nullptr)
         processModule(editor->getModule());
     
     std::vector<AudioOut*> outputChannels = editor->getOutputChannels();
+    std::vector<AudioIn*> inputChannels = editor->getInputChannels();
+
+    if (inputChannels.size() > 0) {
+        inputChannels.at(0)->pins.at(0)->getAudioBuffer()->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, 0, bufferToFill.startSample, numSamples);
+        inputChannels.at(0)->pins.at(1)->getAudioBuffer()->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, 1, bufferToFill.startSample, numSamples);
+        magnitudeLeftIn = inputChannels.at(0)->pins.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+        magnitudeRightIn = inputChannels.at(0)->pins.at(1)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+    }
     
     // mute if there are no channels
     if (outputChannels.size() == 0) {
@@ -195,15 +242,17 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
             outputChannelData[1][j] = 0;
         }
     }
-    
     else {
+        
         
         // process all output pins of the connected module
         // outputChannels.at(0)->getPins().at(0)->process(inputChannelData[0], outputChannelData[0], numSamples);
         for (int j = 0;j < numSamples;j++) {
-            
+
             if (editor->channelIsValid(0)) {
                 const float* outL = outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+
+                
                 outputChannelData[0][j] = outL[j];
             }
             else {
@@ -212,6 +261,8 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
             
             if (editor->channelIsValid(1)) {
                 const float* outR = outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+                magnitudeLeft = outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+                magnitudeRight = outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
                 outputChannelData[1][j] = outR[j];
                 
             }
@@ -547,6 +598,7 @@ void MainComponent::sendControllerMessage(Module *module, int controller, float 
         }
     }
 }
+
 
 void MainComponent::audioDeviceIOCallback(const float **inputChannelData, int numInputChannels, float **outputChannelData, int numOutputChannels, int numSamples) {
     

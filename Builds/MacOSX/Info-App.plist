@@ -8,7 +8,7 @@
     <key>CFBundleIconFile</key>
     <string>Icon.icns</string>
     <key>CFBundleIdentifier</key>
-    <string>com.yourcompany.Synthlab</string>
+    <string>de.pueski.SynthlabX</string>
     <key>CFBundleName</key>
     <string>Synthlab</string>
     <key>CFBundleDisplayName</key>
@@ -18,9 +18,9 @@
     <key>CFBundleSignature</key>
     <string>????</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.0</string>
+    <string>1.0.1</string>
     <key>CFBundleVersion</key>
-    <string>1.0.0</string>
+    <string>1.0.1</string>
     <key>NSHumanReadableCopyright</key>
     <string></string>
     <key>NSHighResolutionCapable</key>

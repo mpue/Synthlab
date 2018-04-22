@@ -41,6 +41,9 @@ namespace BinaryData
     extern const char*   divider_png;
     const int            divider_pngSize = 3877;
 
+    extern const char*   Fader_png;
+    const int            Fader_pngSize = 19460;
+
     extern const char*   hp_png;
     const int            hp_pngSize = 2941;
 
@@ -83,6 +86,15 @@ namespace BinaryData
     extern const char*   redo_png;
     const int            redo_pngSize = 3944;
 
+    extern const char*   round_button_jpg;
+    const int            round_button_jpgSize = 12138;
+
+    extern const char*   round_button_png;
+    const int            round_button_pngSize = 18453;
+
+    extern const char*   round_button_pushed_png;
+    const int            round_button_pushed_pngSize = 18877;
+
     extern const char*   save_png;
     const int            save_pngSize = 3933;
 
@@ -114,7 +126,7 @@ namespace BinaryData
     extern const char* namedResourceList[];
 
     // Number of elements in the namedResourceList array.
-    const int namedResourceListSize = 34;
+    const int namedResourceListSize = 38;
 
     // If you provide the name of one of the binary resource variables above, this function will
     // return the corresponding data and its size (or a null pointer if the name isn't found).

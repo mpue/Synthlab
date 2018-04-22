@@ -11,6 +11,7 @@
 #define USE_PUSH
 
 #include "../JuceLibraryCode/JuceHeader.h"
+#include "CustomLookAndFeel.h"
 
 #ifdef USE_PUSH
 #include "push2/JuceToPush2DisplayBridge.h"
@@ -56,6 +57,9 @@ public:
     void loadRecentFileList();
     void addRecentFile(String path);
 
+    inline CustomLookAndFeel& getLookAndFeel() {
+        return lookAndFeel;
+    };
     
 #ifdef USE_PUSH
     ableton::Push2DisplayBridge*  getPush2Bridge() {
@@ -88,7 +92,6 @@ private:
     }
     
     ~Project() {
-
         delete undoManager;
         delete manager;
     }
@@ -97,6 +100,7 @@ private:
     UndoManager* undoManager;
     AudioDeviceManager* deviceManager;
     StringArray recentFiles;
+    CustomLookAndFeel lookAndFeel;
     
 #ifdef USE_PUSH
     ableton::Push2DisplayBridge bridge;    /*!< The bridge allowing to use juce::graphics for push */

@@ -93,6 +93,7 @@ private:
         prefabs[73] = Prefab("Stereo delay","FX");
         prefabs[74] = Prefab("HP filter","Filter");
         prefabs[75] = Prefab("Scope","Debug");
+        prefabs[76] = Prefab("Audio in","Input / Output");
         
         categories = new StringArray();
 

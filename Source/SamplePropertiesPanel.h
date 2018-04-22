@@ -50,7 +50,8 @@ public:
     void setThumbnail(AudioThumbnailComponent* thumbnail);
     void openSample();
     void updateValues();
-
+    void startRecording();
+    void stopRecording();
     //[/UserMethods]
 
     void paint (Graphics& g) override;
@@ -64,6 +65,7 @@ private:
     //[UserVariables]   -- You can add your own custom variables in this section.
     SamplerModule* module;
     AudioThumbnailComponent* thumb;
+    bool recording = false;
     //[/UserVariables]
 
     //==============================================================================
@@ -75,6 +77,7 @@ private:
     ScopedPointer<ToggleButton> loopToggleButton;
     ScopedPointer<Slider> pitchSlider;
     ScopedPointer<Label> pitchLabel;
+    ScopedPointer<TextButton> recordButton;
 
 
     //==============================================================================

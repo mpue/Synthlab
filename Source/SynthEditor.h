@@ -28,7 +28,9 @@
 #include "AudioModule.h"
 #include "SampleEditor.h"
 #include "SelectionModel.h"
+#include "AudioIn.h"
 #include <vector>
+#include "MixerPanel.h"
 
 class SamplerModule;
 class AddModuleAction;
@@ -77,11 +79,10 @@ public:
 
     void openSampleEditor(SamplerModule* sm);
 
-    
     void saveStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections, ValueTree* v);
     void loadStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections,ValueTree* v);
 
-
+    std::vector<AudioIn*>& getInputChannels();
     std::vector<AudioOut*>& getOutputChannels();
     void removeSelectedItem();
     
@@ -136,6 +137,10 @@ public:
     
     SelectionModel* getSelectionModel() const {
         return selectionModel;
+    }
+    
+    void setMixer(MixerPanel* mixer) {
+        this->mixer = mixer;
     }
     
     //[/UserMethods]
@@ -197,6 +202,7 @@ private:
     Rectangle<int> selectionFrame = Rectangle<int>(0, 0, 0, 0);
 
     std::vector<AudioOut*> outputChannels;
+    std::vector<AudioIn*> inputChannels;
     
     static String defaultMidiInputName;
     static String defaultMidiOutputName;
@@ -205,14 +211,14 @@ private:
     int bufferSize;
     double _sampleRate;
     bool running = false;
-    
+    bool locked = false;
+    bool dragHasStarted = false;
     Module::Layer currentLayer = Module::Layer::ALL;
     
-    bool locked = false;
-    
     SelectionModel* selectionModel;
+  
+    MixerPanel* mixer = nullptr;
     
-    bool dragHasStarted = false;
     
     //[/UserVariables]
 

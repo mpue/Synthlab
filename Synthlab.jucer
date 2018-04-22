@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.2.1">
+<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.2.1" bundleIdentifier="de.pueski.SynthlabX"
+              version="1.0.1" companyName="Pueski">
   <MAINGROUP id="CKGTaZ" name="Synthlab">
     <GROUP id="{9F92DD62-384A-EB91-F447-5583413CC3C4}" name="samples">
       <FILE id="hRXtES" name="boom.aif" compile="0" resource="1" file="samples/boom.aif"/>
@@ -20,6 +21,7 @@
       <FILE id="udjGbx" name="apicon.png" compile="0" resource="1" file="Images/apicon.png"/>
       <FILE id="Kxq8Ss" name="delete.png" compile="0" resource="1" file="Images/delete.png"/>
       <FILE id="rJlVP0" name="divider.png" compile="0" resource="1" file="Images/divider.png"/>
+      <FILE id="GoPlKq" name="Fader.png" compile="0" resource="1" file="Images/Fader.png"/>
       <FILE id="v1N5Vy" name="hp.png" compile="0" resource="1" file="Images/hp.png"/>
       <FILE id="MpStxg" name="inverter.png" compile="0" resource="1" file="Images/inverter.png"/>
       <FILE id="gJAegc" name="led_off.png" compile="1" resource="1" file="Images/led_off.png"/>
@@ -34,6 +36,12 @@
       <FILE id="oIx1Pf" name="pulse.png" compile="0" resource="1" file="Images/pulse.png"/>
       <FILE id="toz51A" name="random.png" compile="0" resource="1" file="Images/random.png"/>
       <FILE id="YTIJ1n" name="redo.png" compile="0" resource="1" file="Images/redo.png"/>
+      <FILE id="YwgURW" name="round_button.jpg" compile="0" resource="1"
+            file="Images/round_button.jpg"/>
+      <FILE id="FIpXhR" name="round_button.png" compile="0" resource="1"
+            file="Images/round_button.png"/>
+      <FILE id="vGbl3U" name="round_button_pushed.png" compile="0" resource="1"
+            file="Images/round_button_pushed.png"/>
       <FILE id="H4tzp2" name="save.png" compile="0" resource="1" file="Images/save.png"/>
       <FILE id="RZ5Zvp" name="saw.png" compile="0" resource="1" file="Images/saw.png"/>
       <FILE id="WPhORY" name="sawtooth.png" compile="1" resource="1" file="Images/sawtooth.png"/>
@@ -146,6 +154,16 @@
         <FILE id="RViUJy" name="SelectionModel.h" compile="0" resource="0"
               file="Source/SelectionModel.h"/>
         <GROUP id="{19B8F02D-4185-9D0D-F820-8F1C70EECC53}" name="Components">
+          <FILE id="lDdWbw" name="CustomLookAndFeel.cpp" compile="1" resource="0"
+                file="Source/CustomLookAndFeel.cpp"/>
+          <FILE id="UjwCM3" name="CustomLookAndFeel.h" compile="0" resource="0"
+                file="Source/CustomLookAndFeel.h"/>
+          <FILE id="rdMmYA" name="MasterChannelPanel.cpp" compile="1" resource="0"
+                file="Source/MasterChannelPanel.cpp"/>
+          <FILE id="fVK3Hy" name="MasterChannelPanel.h" compile="0" resource="0"
+                file="Source/MasterChannelPanel.h"/>
+          <FILE id="BU52xf" name="MixerPanel.cpp" compile="1" resource="0" file="Source/MixerPanel.cpp"/>
+          <FILE id="wrBYlv" name="MixerPanel.h" compile="0" resource="0" file="Source/MixerPanel.h"/>
           <FILE id="JkR4sJ" name="MultiComponentDragger.h" compile="0" resource="0"
                 file="Source/MultiComponentDragger.h"/>
           <FILE id="p4Fr6r" name="MainTabbedComponent.cpp" compile="1" resource="0"
@@ -189,6 +207,8 @@
                 file="Source/AddValueModule.h"/>
           <FILE id="k0jYkO" name="ADSRModule.cpp" compile="1" resource="0" file="Source/ADSRModule.cpp"/>
           <FILE id="Tg2QZR" name="ADSRModule.h" compile="0" resource="0" file="Source/ADSRModule.h"/>
+          <FILE id="I2KB5k" name="AudioIn.cpp" compile="1" resource="0" file="Source/AudioIn.cpp"/>
+          <FILE id="r5vcRg" name="AudioIn.h" compile="0" resource="0" file="Source/AudioIn.h"/>
           <FILE id="bl08fP" name="AudioOut.cpp" compile="1" resource="0" file="Source/AudioOut.cpp"/>
           <FILE id="tqfYhi" name="AudioOut.h" compile="0" resource="0" file="Source/AudioOut.h"/>
           <FILE id="qF57bh" name="Constant.cpp" compile="1" resource="0" file="Source/Constant.cpp"/>

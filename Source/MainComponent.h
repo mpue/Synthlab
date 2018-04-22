@@ -11,6 +11,8 @@
 #include "SynthEditor.h"
 #include "PropertyView.h"
 #include "MainTabbedComponent.h"
+#include "MasterChannelPanel.h"
+#include "MixerPanel.h"
 #include "ToolbarComboBox.h"
 #include <map>
 //==============================================================================
@@ -19,7 +21,7 @@ class MainComponent   : public AudioAppComponent,
                         public MenuBarModel,
                         public KeyListener,
                         public Button::Listener,
-
+                        public Timer,
                         public AudioProcessorPlayer
 {
 public:
@@ -171,6 +173,8 @@ public:
         
     };
     
+    void timerCallback() override;
+    
 private:
     //==============================================================================
 
@@ -181,6 +185,9 @@ private:
     PropertyView* propertyView = nullptr    ;
     Viewport* view = nullptr;
     MenuBarComponent* menu;
+    
+    Viewport* mixerView = nullptr;
+    MixerPanel* mixer = nullptr;
     
     virtual StringArray getMenuBarNames() override;
     virtual PopupMenu getMenuForIndex(int index, const String & menuName) override;
@@ -203,6 +210,12 @@ private:
     float buffersize = 512;
     
     bool keyStates[128] = { false };
+    
+    float magnitudeLeft = 0;
+    float magnitudeRight = 0;
+    
+    float magnitudeLeftIn = 0;
+    float magnitudeRightIn = 0;
     
     int layer = 0;
     

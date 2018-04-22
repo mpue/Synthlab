@@ -18,6 +18,7 @@ Sampler::Sampler(float sampleRate, int bufferSize) {
     this->manager = Project::getInstance()->getFormatManager();
     interpolatorLeft = new CatmullRomInterpolator();
     interpolatorRight = new CatmullRomInterpolator();
+    this->sampleBuffer = new AudioSampleBuffer(2,1024*1024);
 }
 
 Sampler::~Sampler() {
@@ -114,6 +115,7 @@ void Sampler::loadSample(InputStream* input) {
 
 void Sampler::setStartPosition(long start) {
     this->startPosition = start;
+    this->currentSample = startPosition;
 }
 
 long Sampler::getStartPosition() {
@@ -156,6 +158,10 @@ void Sampler::setPitch(float pitch) {
     }
     
     if (getSampleLength() > 0) {
+        if (this->tempBufferLeft == nullptr)
+            this->tempBufferLeft = new float[getSampleBuffer()->getNumSamples() * 2];
+        if (this->tempBufferRight == nullptr)
+            this->tempBufferRight = new float[getSampleBuffer()->getNumSamples() * 2];
         interpolatorLeft->process(pitch, getSampleBuffer()->getReadPointer(0),tempBufferLeft , getSampleBuffer()->getNumSamples());
         interpolatorLeft->process(pitch, getSampleBuffer()->getReadPointer(1),tempBufferRight, getSampleBuffer()->getNumSamples());
     }

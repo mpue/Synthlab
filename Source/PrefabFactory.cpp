@@ -30,6 +30,7 @@
 #include "PitchToFrequencyModule.h"
 #include "LabelModule.h"
 #include "SamplerModule.h"
+#include "AudioIn.h"
 
 PrefabFactory* PrefabFactory::instance = NULL;
 
@@ -78,6 +79,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Audio out") {
         m = new AudioOut();
+    }
+    else if (prefabs[id].getName() == "Audio in") {
+        m = new AudioIn();
     }
     else if (prefabs[id].getName() == "Constant") {
         m = new Constant();

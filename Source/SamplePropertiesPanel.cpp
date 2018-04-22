@@ -98,6 +98,12 @@ SamplePropertiesPanel::SamplePropertiesPanel ()
 
     pitchLabel->setBounds (496, 104, 56, 24);
 
+    addAndMakeVisible (recordButton = new TextButton ("recordButton"));
+    recordButton->setButtonText (TRANS("Record sample"));
+    recordButton->addListener (this);
+
+    recordButton->setBounds (176, 8, 150, 24);
+
 
     //[UserPreSize]
     //[/UserPreSize]
@@ -122,6 +128,7 @@ SamplePropertiesPanel::~SamplePropertiesPanel()
     loopToggleButton = nullptr;
     pitchSlider = nullptr;
     pitchLabel = nullptr;
+    recordButton = nullptr;
 
 
     //[Destructor]. You can add your own custom destruction code here..
@@ -165,6 +172,17 @@ void SamplePropertiesPanel::buttonClicked (Button* buttonThatWasClicked)
         //[UserButtonCode_loopToggleButton] -- add your button handler code here..
         module->setLoop(loopToggleButton->getToggleState());
         //[/UserButtonCode_loopToggleButton]
+    }
+    else if (buttonThatWasClicked == recordButton)
+    {
+        //[UserButtonCode_recordButton] -- add your button handler code here..
+        if (!recording) {
+            startRecording();
+        }
+        else {
+            stopRecording();
+        }
+        //[/UserButtonCode_recordButton]
     }
 
     //[UserbuttonClicked_Post]
@@ -268,6 +286,25 @@ void SamplePropertiesPanel::updateValues() {
 
 }
 
+void SamplePropertiesPanel::startRecording() {
+
+    if (!recording) {
+        recording = true;
+        recordButton->setButtonText("Stop recording");
+        module->startRecording();
+    }
+    
+}
+
+
+void SamplePropertiesPanel::stopRecording() {
+    if (recording) {
+        recording = false;
+        recordButton->setButtonText("Start recording");
+        module->stopRecording();
+    }
+}
+
 //[/MiscUserCode]
 
 
@@ -323,6 +360,9 @@ BEGIN_JUCER_METADATA
          edBkgCol="0" labelText="Pitch&#10;" editableSingleClick="0" editableDoubleClick="0"
          focusDiscardsChanges="0" fontname="Default font" fontsize="15.00000000000000000000"
          kerning="0.00000000000000000000" bold="0" italic="0" justification="33"/>
+  <TEXTBUTTON name="recordButton" id="c1019ef444e98335" memberName="recordButton"
+              virtualName="" explicitFocusOrder="0" pos="176 8 150 24" buttonText="Record sample"
+              connectedEdges="0" needsCallback="1" radioGroupId="0"/>
 </JUCER_COMPONENT>
 
 END_JUCER_METADATA

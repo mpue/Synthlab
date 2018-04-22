@@ -52,6 +52,10 @@ public:
         return !loop && currentSample >= sampleLength - 1;
     }
     
+    void setLoaded(bool loaded) {
+        this->loaded = loaded;
+    }
+    
     float getPitch();
     void setPitch(float pitch);
     

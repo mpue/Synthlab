@@ -69,6 +69,9 @@ public:
         return sampler[samplerNum];
     }
     
+    void startRecording();
+    void stopRecording();
+    
 private:
     float samplePosX = 20;
     float pushSamplePosX = 0;
@@ -87,7 +90,12 @@ private:
     virtual void setSampleRate(float rate) override;
     virtual void setBuffersize(int buffersize) override;
     
+    AudioSampleBuffer* recordingBuffer = nullptr;
+    
     int currentSampler = 0;
+    bool recording = false;
+    
+    int numRecordedSamples = 0;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SamplerModule)
 };

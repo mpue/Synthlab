@@ -23,6 +23,7 @@
 #include "MidiNote.h"
 #include "MidiOut.h"
 #include "AudioOut.h"
+#include "AudioIn.h"
 #include "SawtoothModule.h"
 #include "NoiseModule.h"
 #include "AdderModule.h"
@@ -735,6 +736,7 @@ void SynthEditor::cleanUp() {
     //deleteSelected(true);
     selectionModel->getSelectedModules()->clear();
     outputChannels.clear();
+    inputChannels.clear();
     Project::getInstance()->getUndoManager()->clearUndoHistory();
     
 }
@@ -1053,6 +1055,13 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
             outputChannels.push_back(out);
             addChangeListener(out);
+        }
+        
+        AudioIn* in;
+        
+        if ((in = dynamic_cast<AudioIn*>(m)) != NULL) {
+            inputChannels.push_back(in);
+            addChangeListener(in);
         }
         
         Knob* k;
@@ -1403,6 +1412,10 @@ void SynthEditor::setSamplerate(double rate) {
 
 void SynthEditor::setBufferSize(int buffersize) {
     this->bufferSize = buffersize;
+}
+
+std::vector<AudioIn*>& SynthEditor::getInputChannels() {
+    return inputChannels;
 }
 
 std::vector<AudioOut*>& SynthEditor::getOutputChannels() {

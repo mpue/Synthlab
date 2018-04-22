@@ -27,7 +27,8 @@ SamplerModule::SamplerModule(double sampleRate, int buffersize, AudioFormatManag
 
     cache = new AudioThumbnailCache(128);
     thumbnail = new AudioThumbnail(buffersize ,*manager,*cache);
-
+    recordingBuffer = new AudioSampleBuffer(2,1024*1024);
+    
     setSize(256,140);
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(18,2);
@@ -46,7 +47,8 @@ SamplerModule::~SamplerModule()
 
     delete thumbnail;
     delete cache;
-     
+    delete recordingBuffer;
+    
     for(int i = 0; i < 128;i++) {
         if (sampler[i] != nullptr) {
             delete sampler[i];
@@ -88,13 +90,27 @@ void SamplerModule::configurePins() {
     p5->direction = Pin::Direction::IN;
     p5->listeners.push_back(this);
     p5->setName("P");
+
+    
+    Pin* p6 = new Pin(Pin::Type::AUDIO);
+    p6->direction = Pin::Direction::IN;
+    p6->listeners.push_back(this);
+    p6->setName("L");
+    
+    
+    Pin* p7 = new Pin(Pin::Type::AUDIO);
+    p7->direction = Pin::Direction::IN;
+    p7->listeners.push_back(this);
+    p7->setName("R");
     
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::OUT,p2);
     addPin(Pin::Direction::OUT,p3);
     addPin(Pin::Direction::IN,p4);
     addPin(Pin::Direction::IN,p5);
-    
+    addPin(Pin::Direction::IN,p6);
+    addPin(Pin::Direction::IN,p7);
+
 }
 
 void SamplerModule::paint(juce::Graphics &g) {
@@ -165,9 +181,23 @@ void SamplerModule::process() {
             pins.at(1)->getAudioBuffer()->setSample(0,j ,valueL);
             pins.at(2)->getAudioBuffer()->setSample(0,j ,valueR);
         
+            if (recording) {
+                if (pins.at(5)->connections.size() == 1) {
+                    recordingBuffer->setSample(0,  currentSample,pins.at(5)->connections.at(0)->getAudioBuffer()->getReadPointer(0)[currentSample%buffersize]);
+                }
+                if (pins.at(6)->connections.size() == 1) {
+                    recordingBuffer->setSample(1,  currentSample,pins.at(6)->connections.at(0)->getAudioBuffer()->getReadPointer(0)[currentSample%buffersize]);
+                }
+                
+                currentSample = (currentSample + 1) % (1024*1024);
+                
+                numRecordedSamples++;
+            }
+            
         }
     }
-    
+
+
 }
 
 void SamplerModule::eventReceived(Event *e) {
@@ -238,6 +268,81 @@ void SamplerModule::selectSample(int i) {
 #ifdef USE_PUSH
     updatePush2Display();
 #endif
+}
+
+
+void SamplerModule::startRecording() {
+    
+    if (!recording) {
+        if (sampler[currentSampler] != nullptr) {
+            sampler[currentSampler]->getSampleBuffer()->clear();
+            recordingBuffer->clear();
+            recording = true;
+            currentSample = 0;
+            numRecordedSamples = 0;
+        }
+    
+    }
+    
+}
+
+
+void SamplerModule::stopRecording() {
+    if (recording) {
+        recording = false;
+        
+        Logger::writeToLog("Recorded "+String(numRecordedSamples)+" samples.");
+        
+
+        WavAudioFormat* wavFormat = new WavAudioFormat();
+        File outputFile = File::createTempFile(".wav");
+        
+        Logger::writeToLog("wrote tempfile "+outputFile.getFullPathName());
+            
+        FileOutputStream* outputTo = outputFile.createOutputStream();
+            
+        AudioFormatWriter* writer = wavFormat->createWriterFor(outputTo, sampleRate, 2, 16,NULL, 0);
+        writer->writeFromAudioSampleBuffer(*recordingBuffer, 0,numRecordedSamples);
+        delete writer;
+        delete wavFormat;
+
+        this->sampler[currentSampler]->loadSample(outputFile);
+        
+        if (sampler[currentSampler]->hasSample()) {
+            selectSample(currentSampler);
+            thumbnail->addBlock(0, *recordingBuffer, 0, numRecordedSamples);
+            std::function<void(void)> changeLambda =
+            [=]() {  repaint(); };
+            juce::MessageManager::callAsync(changeLambda);
+            
+        }
+        /*
+        if (sampler[currentSampler] != nullptr) {
+            sampler[currentSampler]->getSampleBuffer()->clear();
+            this->sampler[currentSampler]->getSampleBuffer()->copyFrom(0, 0, *this->recordingBuffer, 0, 0, numRecordedSamples);
+            this->sampler[currentSampler]->getSampleBuffer()->copyFrom(1, 0, *this->recordingBuffer, 1, 0, numRecordedSamples);
+            this->sampler[currentSampler]->setStartPosition(0);
+            this->sampler[currentSampler]->setSampleLength(numRecordedSamples);
+            this->sampler[currentSampler]->setEndPosition(numRecordedSamples);
+            this->sampler[currentSampler]->setLoaded(true);
+        
+            this->thumbnail->reset(2, sampleRate);
+            
+            numRecordedSamples = 0;
+            
+            if (sampler[currentSampler]->hasSample()) {
+                selectSample(currentSampler);
+                thumbnail->addBlock(0, *recordingBuffer, 0, numRecordedSamples);
+                std::function<void(void)> changeLambda =
+                [=]() {  repaint(); };
+                juce::MessageManager::callAsync(changeLambda);
+                
+            }
+        }
+         */
+            
+        
+    }
 }
 
 #ifdef USE_PUSH

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Synth>
+  <Modules>
+    <Module name="Sampler" index="53" x="297" y="284" isPrefab="1" prefabId="53">
+      <sample sampleStart="0" sampleEnd="11113" sampleLength="20045" loop="0"
+              samplePath="/Users/mpue/Documents/samples/Studio_Essentials-Breaks-Zenhiser/Studio Essentials - Breaks Part 2 - Zenhiser/SEB - Drums - 01 Kicks/003 SEB - Kick.wav"
+              note="61"/>
+      <sample sampleStart="0" sampleEnd="18900" sampleLength="18900" loop="0"
+              samplePath="/Users/mpue/Documents/samples/Studio_Essentials-Breaks-Zenhiser/Studio Essentials - Breaks Part 2 - Zenhiser/SEB - Drums - 03 Snares/023 SEB - Snare.wav"
+              note="63"/>
+      <sample sampleStart="109433" sampleEnd="119835" sampleLength="392715"
+              loop="1" samplePath="/Users/mpue/Documents/samples/Studio_Essentials-Breaks-Zenhiser/Studio Essentials - Breaks Part 2 - Zenhiser/SEB - FX/094 SEB - FX.wav"
+              note="65"/>
+      <sample sampleStart="0" sampleEnd="80182" sampleLength="80182" loop="0"
+              samplePath="/Users/mpue/Documents/samples/Studio_Essentials-Breaks-Zenhiser/Studio Essentials - Breaks Part 2 - Zenhiser/SEB - Drums - 02 Hi Hats/002 SEB - HiHat Op.wav"
+              note="66"/>
+      <sample sampleStart="0" sampleEnd="11812" sampleLength="11812" loop="0"
+              samplePath="/Users/mpue/Documents/samples/Studio_Essentials-Breaks-Zenhiser/Studio Essentials - Breaks Part 2 - Zenhiser/SEB - Drums - 02 Hi Hats/007 SEB - HiHat Cl.wav"
+              note="68"/>
+      <sample sampleStart="0" sampleEnd="0" sampleLength="315940" loop="0"
+              samplePath="/Users/mpue/Documents/samples/Studio_Essentials-Breaks-Zenhiser/Studio Essentials - Breaks Part 1 - Zenhiser/SEB - Drum Beats/036(b) SEB - Drum Beat 134bpm.wav"
+              note="70"/>
+      <Pins>
+        <Pin type="2" direction="0" index="5301" x="0" y="10"/>
+        <Pin type="0" direction="1" index="5302" x="246" y="10"/>
+        <Pin type="0" direction="1" index="5303" x="246" y="30"/>
+        <Pin type="1" direction="0" index="5304" x="0" y="30"/>
+        <Pin type="2" direction="0" index="5305" x="0" y="50"/>
+        <Pin type="0" direction="0" index="5306" x="0" y="70"/>
+        <Pin type="0" direction="0" index="5307" x="0" y="90"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Audio out" index="66" x="1031" y="272" isPrefab="1" prefabId="66">
+      <Pins>
+        <Pin type="0" direction="0" index="6601" x="0" y="10"/>
+        <Pin type="0" direction="0" index="6602" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="61" x="129" y="244" isPrefab="1" prefabId="61">
+      <Pins>
+        <Pin type="2" direction="1" index="6101" x="110" y="10"/>
+        <Pin type="1" direction="1" index="6102" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="ADSR" index="70" x="272" y="93" isPrefab="1" prefabId="70"
+            attack="0.00000000000000000000" decay="0.00000000000000000000"
+            sustain="0.80000001192092895508" release="5.00000000000000000000"
+            mono="0">
+      <Pins>
+        <Pin type="1" direction="0" index="7001" x="0" y="10"/>
+        <Pin type="2" direction="0" index="7002" x="0" y="30"/>
+        <Pin type="2" direction="0" index="7003" x="0" y="50"/>
+        <Pin type="2" direction="0" index="7004" x="0" y="70"/>
+        <Pin type="2" direction="0" index="7005" x="0" y="90"/>
+        <Pin type="2" direction="1" index="7006" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="67" x="102" y="142" isPrefab="1" prefabId="67"
+            value="5.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="167" x="193" y="508" isPrefab="1" prefabId="67"
+            value="1.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Scope" index="75" x="860" y="33" isPrefab="1" prefabId="75">
+      <Pins>
+        <Pin type="0" direction="0" index="7501" x="0" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="LP Filter" index="68" x="702" y="473" isPrefab="1" prefabId="68">
+      <Pins>
+        <Pin type="2" direction="0" index="6801" x="0" y="10"/>
+        <Pin type="2" direction="0" index="6802" x="0" y="30"/>
+        <Pin type="0" direction="0" index="6803" x="0" y="50"/>
+        <Pin type="0" direction="1" index="6804" x="110" y="10"/>
+        <Pin type="2" direction="0" index="6805" x="0" y="70"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="LP Filter" index="168" x="789" y="273" isPrefab="1" prefabId="68">
+      <Pins>
+        <Pin type="2" direction="0" index="6801" x="0" y="10"/>
+        <Pin type="2" direction="0" index="6802" x="0" y="30"/>
+        <Pin type="0" direction="0" index="6803" x="0" y="50"/>
+        <Pin type="0" direction="1" index="6804" x="110" y="10"/>
+        <Pin type="2" direction="0" index="6805" x="0" y="70"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="69" x="546" y="61" isPrefab="1" prefabId="69"
+            minvalue="10.00000000000000000000" maxvalue="10000.00000000000000000000"
+            stepsize="10.00100040435791015625" value="34.00000000000000000000"
+            isController="0" controllerNum="1">
+      <Pins>
+        <Pin type="2" direction="1" index="6901" x="70" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Audio in" index="76" x="29" y="438" isPrefab="1" prefabId="76">
+      <Pins>
+        <Pin type="0" direction="1" index="7601" x="110" y="10"/>
+        <Pin type="0" direction="1" index="7602" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections>
+    <Connection source="61" target="53" a="6102" b="5304"/>
+    <Connection source="53" target="70" a="5301" b="7006"/>
+    <Connection source="61" target="70" a="6102" b="7001"/>
+    <Connection source="70" target="67" a="7005" b="6701"/>
+    <Connection source="75" target="53" a="7501" b="5302"/>
+    <Connection source="66" target="168" a="6601" b="6804"/>
+    <Connection source="66" target="68" a="6602" b="6804"/>
+    <Connection source="168" target="53" a="6803" b="5302"/>
+    <Connection source="68" target="53" a="6803" b="5303"/>
+    <Connection source="168" target="69" a="6801" b="6901"/>
+    <Connection source="68" target="69" a="6801" b="6901"/>
+    <Connection source="76" target="53" a="7601" b="5306"/>
+    <Connection source="76" target="53" a="7602" b="5307"/>
+  </Connections>
+</Synth>
