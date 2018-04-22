@@ -56,6 +56,14 @@ public:
         this->loaded = loaded;
     }
     
+    void setDirty(bool dirty){
+        this->dirty = dirty;
+    }
+    
+    bool isDirty() {
+        return dirty;
+    }
+    
     float getPitch();
     void setPitch(float pitch);
     
@@ -78,6 +86,8 @@ private:
     
     bool loop = false;
     bool loaded = false;
+    
+    bool dirty = false;
     
     float pitch = 1;
     

@@ -18,9 +18,17 @@
       <sample sampleStart="0" sampleEnd="11812" sampleLength="11812" loop="0"
               samplePath="/Users/mpue/Documents/samples/Studio_Essentials-Breaks-Zenhiser/Studio Essentials - Breaks Part 2 - Zenhiser/SEB - Drums - 02 Hi Hats/007 SEB - HiHat Cl.wav"
               note="68"/>
-      <sample sampleStart="0" sampleEnd="0" sampleLength="315940" loop="0"
+      <sample sampleStart="0" sampleEnd="1" sampleLength="315940" loop="0"
               samplePath="/Users/mpue/Documents/samples/Studio_Essentials-Breaks-Zenhiser/Studio Essentials - Breaks Part 1 - Zenhiser/SEB - Drum Beats/036(b) SEB - Drum Beat 134bpm.wav"
               note="70"/>
+      <sample sampleStart="35192" sampleEnd="101120" sampleLength="101120"
+              loop="0" samplePath="/Users/mpue/.Synthlab/589960.wav" note="72"/>
+      <sample sampleStart="13139" sampleEnd="35584" sampleLength="35584" loop="0"
+              samplePath="/Users/mpue/.Synthlab/605091.wav" note="73"/>
+      <sample sampleStart="4129" sampleEnd="99389" sampleLength="103680" loop="1"
+              samplePath="/Users/mpue/.Synthlab/759373.wav" note="75"/>
+      <sample sampleStart="2676" sampleEnd="25856" sampleLength="25856" loop="1"
+              samplePath="/Users/mpue/.Synthlab/891902.wav" note="77"/>
       <Pins>
         <Pin type="2" direction="0" index="5301" x="0" y="10"/>
         <Pin type="0" direction="1" index="5302" x="246" y="10"/>
@@ -111,7 +119,7 @@
     </Module>
     <Module name="" index="69" x="546" y="61" isPrefab="1" prefabId="69"
             minvalue="10.00000000000000000000" maxvalue="10000.00000000000000000000"
-            stepsize="10.00100040435791015625" value="34.00000000000000000000"
+            stepsize="10.00100040435791015625" value="4790.47802734375000000000"
             isController="0" controllerNum="1">
       <Pins>
         <Pin type="2" direction="1" index="6901" x="70" y="10"/>
@@ -140,7 +148,7 @@
     <Connection source="68" target="53" a="6803" b="5303"/>
     <Connection source="168" target="69" a="6801" b="6901"/>
     <Connection source="68" target="69" a="6801" b="6901"/>
-    <Connection source="76" target="53" a="7601" b="5306"/>
-    <Connection source="76" target="53" a="7602" b="5307"/>
+    <Connection source="53" target="76" a="5306" b="7601"/>
+    <Connection source="53" target="76" a="5307" b="7601"/>
   </Connections>
 </Synth>

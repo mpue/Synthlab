@@ -248,7 +248,7 @@ AudioSampleBuffer* SamplerModule::getBuffer() {
 }
 
 void SamplerModule::selectSample(int i) {
-    
+
     currentSampler = i;
     
     if (sampler[currentSampler] == nullptr) {
@@ -293,11 +293,19 @@ void SamplerModule::stopRecording() {
         
         Logger::writeToLog("Recorded "+String(numRecordedSamples)+" samples.");
         
+        sampler[currentSampler]->setDirty(true);
 
         WavAudioFormat* wavFormat = new WavAudioFormat();
-        File outputFile = File::createTempFile(".wav");
+
+        String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
+        File appDir = File(userHome+"/.Synthlab");
         
-        Logger::writeToLog("wrote tempfile "+outputFile.getFullPathName());
+        File dataDir = File(appDir);
+        
+        File outputFile = File(dataDir.getFullPathName()+"/"+String(Time::getMillisecondCounter())+".wav");
+        setSamplePath(outputFile.getFullPathName(),currentSampler);
+        
+        Logger::writeToLog("wrote file "+outputFile.getFullPathName());
             
         FileOutputStream* outputTo = outputFile.createOutputStream();
             
