@@ -100,7 +100,7 @@ public:
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate);
     void showContextMenu(Point<int> position);
     bool channelIsValid(int channel);
-    bool auxChannelIsValid(int channel);
+    bool auxChannelIsValid(int channel, int subchannel);
     
     void loadFromString(String in);
     

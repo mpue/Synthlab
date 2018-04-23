@@ -283,67 +283,67 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
         // outputChannels.at(0)->getPins().at(0)->process(inputChannelData[0], outputChannelData[0], numSamples);
         for (int j = 0;j < numSamples;j++) {
 
-            if (editor->channelIsValid(0)) {
-                // outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->applyGain(channelVolume);
-                const float* outL = outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-               
-                float auxLeftOut = 0;
-                float auxRightOut = 0;
+            float auxLeftOut = 0;
+            
+            for (int k = 0; k < auxChannels.size();k++) {
                 
-                for (int k = 0; k < auxChannels.size();k++) {
+                if (editor->auxChannelIsValid(k,0)) {
+                    const float* auxL = auxChannels.at(k)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
                     
-                    if (editor->auxChannelIsValid(k)) {
-                        const float* auxL = auxChannels.at(k)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-                        
-                        Mixer::Channel* channel =  mixer->getChannel(Mixer::Channel::Type::OUT, k);
-                        float auxVolume = channel->mute ? 0 : channel->volume;
-                        double auxpan = channel->pan;
-                        
-                        float auxgainLeft = cos((M_PI*(auxpan + 1) / 4));
-                        
-                        auxLeftOut += auxL[k] * auxVolume * auxgainLeft;
+                    Mixer::Channel* channel =  mixer->getChannel(Mixer::Channel::Type::AUX, k);
+                    float auxVolume = channel->mute ? 0 : channel->volume;
+                    double auxpan = channel->pan;
+                    
+                    float auxgainLeft = cos((M_PI*(auxpan + 1) / 4));
+                    channel->magnitudeLeft = auxVolume * auxgainLeft * auxChannels.at(k)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
 
-                    }
-                    
+                    auxLeftOut += auxL[j] * auxVolume * auxgainLeft;
                     
                 }
                 
+                
+            }
+            
+            if (editor->channelIsValid(0)) {
+                // outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->applyGain(channelVolume);
+                const float* outL = outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+
                 channel->magnitudeLeft = channelVolume * gainLeft * outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
                 outputChannelData[0][j] = channelVolume * (outL[j] + auxLeftOut) * gainLeft;
             }
             else {
-                outputChannelData[0][j] = 0;
+                outputChannelData[0][j] = auxLeftOut;
+            }
+            
+            float auxRightOut = 0;
+            
+            for (int k = 0; k < auxChannels.size();k++) {
+                
+                if (editor->auxChannelIsValid(k,1)) {
+                    const float* auxR = auxChannels.at(k)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+                    
+                    Mixer::Channel* channel =  mixer->getChannel(Mixer::Channel::Type::AUX, k);
+                    float auxVolume = channel->mute ? 0 : channel->volume;
+                    double auxpan = channel->pan;
+                    
+                    float auxgainRight = sin((M_PI*(auxpan + 1) / 4));
+                    channel->magnitudeRight = auxVolume * auxgainRight * auxChannels.at(k)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+                    auxRightOut += auxR[j] * auxVolume * auxgainRight;
+                }
+                
+                
             }
             
             if (editor->channelIsValid(1)) {
                 // outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->applyGain(channelVolume);
                 const float* outR = outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-                
 
-                float auxRightOut = 0;
-                
-                for (int k = 0; k < auxChannels.size();k++) {
-                    
-                    if (editor->auxChannelIsValid(k)) {
-                        const float* auxR = auxChannels.at(k)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-                        
-                        Mixer::Channel* channel =  mixer->getChannel(Mixer::Channel::Type::OUT, k);
-                        float auxVolume = channel->mute ? 0 : channel->volume;
-                        double auxpan = channel->pan;
-                        
-                        float auxgainRight = sin((M_PI*(auxpan + 1) / 4));
-                        
-                        auxRightOut += auxR[k] * auxVolume * auxgainRight;
-                    }
-                    
-                    
-                }
                 channel->magnitudeRight  = channelVolume * gainRight * outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
                 outputChannelData[1][j] = channelVolume * (outR[j] + auxRightOut) * gainRight;
                 
             }
             else {
-                outputChannelData[1][j] = 0;
+                outputChannelData[1][j] = auxRightOut;
             }
         }
     }

@@ -1405,10 +1405,10 @@ bool SynthEditor::channelIsValid(int channel) {
     return false;
 }
 
-bool SynthEditor::auxChannelIsValid(int channel) {
-    if (auxChannels.at(0)->getPins().at(channel)->connections.size() == 1 &&
-        auxChannels.at(0)->getPins().at(channel)->connections.at(0) != nullptr &&
-        auxChannels.at(0)->getPins().at(channel)->connections.at(0)->getAudioBuffer() != nullptr) {
+bool SynthEditor::auxChannelIsValid(int channel, int subchannel) {
+    if (auxChannels.at(channel)->getPins().at(subchannel)->connections.size() == 1 &&
+        auxChannels.at(channel)->getPins().at(subchannel)->connections.at(0) != nullptr &&
+        auxChannels.at(channel)->getPins().at(subchannel)->connections.at(0)->getAudioBuffer() != nullptr) {
         return true;
     }
     return false;
