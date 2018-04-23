@@ -15,6 +15,7 @@
 #include "PrefabFactory.h"
 #include "Project.h"
 #include "Knob.h"
+#include "Mixer.h"
 
 //==============================================================================
 MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
@@ -84,7 +85,6 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     
     tab = new MainTabbedComponent();
     tab->setBounds(0,50,getWidth(),getHeight());
-    addAndMakeVisible (tab);
     
     view = new Viewport();
     
@@ -99,8 +99,9 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     
     tab->addTab("Main", juce::Colours::grey, view, false);
     
-    mixer = new MixerPanel();
-
+    mixerPanel = new MixerPanel();
+    mixer = new Mixer();
+    mixerPanel->setMixer(mixer);
     
     juce::BigInteger activeInputChannels = deviceManager.getCurrentAudioDevice()->getActiveInputChannels();
     juce::BigInteger activeOutputChannels = deviceManager.getCurrentAudioDevice()->getActiveOutputChannels();
@@ -113,30 +114,33 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     
     
     for (int i = 0; i < numActiveInputs;i+=2) {
-        mixer->addChannel(deviceManager.getCurrentAudioDevice()->getOutputChannelNames().getReference(i));
+        mixerPanel->addChannel(deviceManager.getCurrentAudioDevice()->getInputChannelNames().getReference(i), Mixer::Channel::Type::IN);
     }
     
     for (int i = 0; i < numActiveOutputs;i+=2) {
-        mixer->addChannel(deviceManager.getCurrentAudioDevice()->getInputChannelNames().getReference(i));
+        mixerPanel->addChannel(deviceManager.getCurrentAudioDevice()->getOutputChannelNames().getReference(i),Mixer::Channel::Type::OUT);
     }
     
+    for (int i = 0; i < 16;i++) {
+        mixerPanel->addChannel("Bus "+String(i+1),Mixer::Channel::Type::AUX);
+    }
+    
+    
     mixerView = new Viewport();
-
-    mixerView->setSize(500,200);
-    mixerView->setViewedComponent(mixer);
+    
+    // mixerView->setSize(500,200);
+    mixerView->setViewedComponent(mixerPanel);
     mixerView->setScrollBarsShown(true,true);
     mixerView->setScrollOnDragEnabled(false);
     mixerView->setWantsKeyboardFocus(false);
     mixerView->setMouseClickGrabsKeyboardFocus(false);
     
-    tab->addTab("Mixer", juce::Colours::grey, mixerView, false);
-    
-    editor->setMixer(mixer);
+    editor->setMixer(mixerPanel);
     
     propertyView =  new PropertyView();
     addAndMakeVisible (propertyView);
     addAndMakeVisible (resizerBar);
-    
+    addAndMakeVisible (tab);
     editor->setTab(tab);
 
     addKeyListener(this);
@@ -180,8 +184,9 @@ MainComponent::~MainComponent()
     MenuBarModel::setMacMainMenu(nullptr);
 #endif
     delete editor;
-    delete mixer;
+    delete mixerPanel;
     delete mixerView;
+    delete mixer;
     delete tab;
     delete view;
     delete propertyView;
@@ -197,17 +202,13 @@ MainComponent::~MainComponent()
 
 }
 
-void MainComponent::timerCallback() {
-    if (mixer != nullptr && mixer->getChannels().size() > 1) {
-        mixer->getChannels().at(0)->setMagnitude(0,magnitudeLeft);
-        mixer->getChannels().at(1)->setMagnitude(0,magnitudeLeftIn);
+void MainComponent::timerCallback(){
+    if (mixerPanel != nullptr) {
+        for (int i = 0; i < mixer->getChannels().size();i++) {
+            mixerPanel->getChannels().at(i)->setMagnitude(0,mixer->getChannels().at(i)->magnitudeLeft);
+            mixerPanel->getChannels().at(i)->setMagnitude(1,mixer->getChannels().at(i)->magnitudeRight);
+        }
     }
-    if (mixer != nullptr && mixer->getChannels().size() > 1) {
-        
-        mixer->getChannels().at(0)->setMagnitude(1, magnitudeRight);
-        mixer->getChannels().at(1)->setMagnitude(1, magnitudeLeftIn);
-    }
-
 }
 
 //==============================================================================
@@ -249,10 +250,13 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
     std::vector<AudioIn*> inputChannels = editor->getInputChannels();
 
     if (inputChannels.size() > 0) {
+        
+        Mixer::Channel* input =  mixer->getChannel(Mixer::Channel::Type::IN, 0);
+        
         inputChannels.at(0)->pins.at(0)->getAudioBuffer()->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, 0, bufferToFill.startSample, numSamples);
         inputChannels.at(0)->pins.at(1)->getAudioBuffer()->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, 1, bufferToFill.startSample, numSamples);
-        magnitudeLeftIn = inputChannels.at(0)->pins.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
-        magnitudeRightIn = inputChannels.at(0)->pins.at(1)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+        input->magnitudeLeft = inputChannels.at(0)->pins.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+        input->magnitudeRight = inputChannels.at(0)->pins.at(1)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
     }
     
     // mute if there are no channels
@@ -264,26 +268,29 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
     }
     else {
         
+        Mixer::Channel* channel =  mixer->getChannel(Mixer::Channel::Type::OUT, 0);
+        float channelVolume = channel->volume;
         
         // process all output pins of the connected module
         // outputChannels.at(0)->getPins().at(0)->process(inputChannelData[0], outputChannelData[0], numSamples);
         for (int j = 0;j < numSamples;j++) {
 
             if (editor->channelIsValid(0)) {
+                // outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->applyGain(channelVolume);
                 const float* outL = outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-
-                
-                outputChannelData[0][j] = outL[j];
+               
+                channel->magnitudeLeft = channelVolume * outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+                outputChannelData[0][j] = channelVolume * outL[j];
             }
             else {
                 outputChannelData[0][j] = 0;
             }
             
             if (editor->channelIsValid(1)) {
+                // outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->applyGain(channelVolume);
                 const float* outR = outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-                magnitudeLeft = outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
-                magnitudeRight = outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
-                outputChannelData[1][j] = outR[j];
+                channel->magnitudeRight  = channelVolume * outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+                outputChannelData[1][j] = channelVolume * outR[j];
                 
             }
             else {
@@ -348,6 +355,9 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String & menuName) {
         menu.addItem(5, "Settings", true, false, nullptr);
         menu.addItem(999, "Exit", true, false, nullptr);
     }
+    else if (index == 1) {
+        menu.addItem(11, "Show mixer", true, false, nullptr);
+    }
 
 
     
@@ -378,6 +388,10 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
     else if (menuItemID == 5) {
         openSettings();
     }
+    else if (menuItemID == 11) {
+        tab->addTab("Mixer", juce::Colours::grey, mixerView, false);
+
+    }
     else if (menuItemID == 999) {
         JUCEApplication::getInstance()->shutdown();
     }
@@ -385,7 +399,7 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 }
 
 StringArray MainComponent::getMenuBarNames() {
-    const char* const names[] = { "File", nullptr };
+    const char* const names[] = { "File", "View", nullptr };
     
     return StringArray(names);
     
@@ -423,10 +437,12 @@ void MainComponent::openSettings() {
     }
     
     File configFile = File(userHome+"/.Synthlab/config.xml");
-    config->writeToFile(configFile,"");
     
-    delete config;
-    
+    if (config != NULL) {
+        config->writeToFile(configFile,"");
+        delete config;
+    }
+
 }
 
 bool MainComponent::keyStateChanged(bool isKeyDown, juce::Component *originatingComponent) {

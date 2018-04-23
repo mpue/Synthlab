@@ -188,7 +188,8 @@ private:
     MenuBarComponent* menu;
     
     Viewport* mixerView = nullptr;
-    MixerPanel* mixer = nullptr;
+    MixerPanel* mixerPanel = nullptr;
+    Mixer* mixer = nullptr;
     
     virtual StringArray getMenuBarNames() override;
     virtual PopupMenu getMenuForIndex(int index, const String & menuName) override;

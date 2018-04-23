@@ -14,8 +14,7 @@
 //==============================================================================
 MainTabbedComponent::MainTabbedComponent() : juce::TabbedComponent(TabbedButtonBar::Orientation::TabsAtTop)
 {
-    // In your constructor, you should add any child components, and
-    // initialise any special settings that your component needs.
+
 
 }
 
@@ -27,7 +26,9 @@ MainTabbedComponent::MainTabbedComponent(TabbedButtonBar::Orientation orientatio
 void MainTabbedComponent::paint(juce::Graphics &g) {
     g.fillAll (Colour (0xff2e373c));
     g.setColour(Colours::grey);
-    g.drawRect(getBounds());
+    // g.drawRect(getBounds());
+    g.drawLine(getWidth(), 0, getWidth(), getHeight());
+    g.drawLine(0, getHeight(), getWidth(), getHeight());
 }
 
 void MainTabbedComponent::popupMenuClickOnTab(int tabIndex, const juce::String &tabName) {

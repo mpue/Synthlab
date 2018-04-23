@@ -22,6 +22,7 @@
 //[Headers]     -- You can add your own extra header files here --
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "MasterChannelPanel.h"
+#include "Mixer.h"
 
 //[/Headers]
 
@@ -48,8 +49,12 @@ public:
     //[UserMethods]     -- You can add your own custom methods in this section.
     void timerCallback() override;
     std::vector<MasterChannelPanel*> getChannels();
+
+    
     void changeListenerCallback (ChangeBroadcaster* source);
-    void addChannel(String name);
+    void addChannel(String name, Mixer::Channel::Type channeltype);
+    void setMixer(Mixer* mixer);
+    
     //[/UserMethods]
     
     void paint (Graphics& g) override;
@@ -59,6 +64,8 @@ public:
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
     std::vector<MasterChannelPanel*> channels;
+    Mixer* mixer;
+    Viewport* mixerView = nullptr;
     //[/UserVariables]
 
     //==============================================================================

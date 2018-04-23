@@ -54,9 +54,10 @@ MixerPanel::~MixerPanel()
     
     for (std::vector<MasterChannelPanel*>::iterator it = channels.begin();it != channels.end();) {
         (*it)->setLookAndFeel(nullptr);
+        (*it)->removeAllChangeListeners();
         delete (*it);
         it = channels.erase(it);
-        
+
     }
     //[/Destructor_pre]
 
@@ -79,6 +80,7 @@ void MixerPanel::resized()
     //[/UserPreResize]
 
     //[UserResized] Add your own custom resize handling here..
+    setBounds(0, 0, 90 * channels.size(),250);
     //[/UserResized]
 }
 
@@ -89,6 +91,7 @@ void MixerPanel::resized()
 std::vector<MasterChannelPanel*> MixerPanel::getChannels() {
     return channels;
 }
+
 
 void MixerPanel::timerCallback() {
     /*
@@ -102,16 +105,54 @@ void MixerPanel::timerCallback() {
 
 void MixerPanel::changeListenerCallback (ChangeBroadcaster* source) {
     
+    MasterChannelPanel* panel = nullptr;
+    
+    panel = dynamic_cast<MasterChannelPanel*>(source);
+    
+    if (panel != nullptr) {
+        
+    }
+    
 }
 
-void MixerPanel::addChannel(String name) {
+void MixerPanel::setMixer(Mixer *mixer) {
+    this->mixer = mixer;
+}
 
+void MixerPanel::addChannel(String name, Mixer::Channel::Type channeltype) {
+
+    int index = 0;
+    
+    switch (channeltype) {
+        case Mixer::Channel::IN:
+            index = mixer->getNumInputs();
+            break;
+        case Mixer::Channel::OUT:
+            index = mixer->getNumOutputs();
+            break;
+        case Mixer::Channel::AUX:
+            index = mixer->getNumAuxBusses();
+            break;
+        default:
+            
+            break;
+    }
+    
     MasterChannelPanel* panel = new MasterChannelPanel();
+    panel->setIndex(index);
     panel->setName (name);
+    panel->addChangeListener(this);
     panel->setBounds (90 * channels.size(),0, 90, 250);
+
+    Mixer::Channel* channel = new Mixer::Channel();
+    channel->index = panel->getIndex();
+    mixer->addChannel(channel);
+    channel->channelType = channeltype;
+    panel->setChannel(channel);
+    
     channels.push_back(panel);
     addAndMakeVisible(panel);
-    setBounds(0, 0, 90*channels.size(),250);
+    setBounds(0, 0, 90 * channels.size(),250);
     repaint();
 }
 //[/MiscUserCode]

@@ -23,6 +23,7 @@
 //[Headers]     -- You can add your own extra header files here --
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "CustomLookAndFeel.h"
+#include "Mixer.h"
 
 //[/Headers]
 
@@ -50,6 +51,8 @@ public:
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
 
+
+    
     enum MeterMode {
         RMS,
         MAGNITUDE
@@ -67,7 +70,12 @@ public:
     bool getSolo();
     double getVolume();
     double getPan();
-
+    int getIndex();
+    void setIndex(int index);
+    Mixer::Channel::Type getChannelType();
+    void setChannelType(Mixer::Channel::Type type);
+    void setChannel(Mixer::Channel* channel);
+    
     //[/UserMethods]
 
     void paint (Graphics& g) override;
@@ -97,6 +105,9 @@ private:
     double volume = 1.0f;
     double pan = 0.0f;
 
+    int index = 0;
+    Mixer::Channel* channel;
+    
     //[/UserVariables]
 
     //==============================================================================

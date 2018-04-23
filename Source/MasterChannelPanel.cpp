@@ -173,10 +173,11 @@ void MasterChannelPanel::paint (Graphics& g)
     //[UserPrePaint] Add your own custom painting code here..
     //[/UserPrePaint]
 
-    g.setColour (Colour (0xff434242));
+    g.setColour (Colour(0xff323e44));
+ 
     g.fillRect (0, 0, 90, 250);
+    g.setColour (juce::Colours::black);
 
-    g.setColour (Colour (0xff3f3f3f));
     g.drawRect (0, 0, 90, 250, 1);
 
     //[UserPaint] Add your own custom painting code here..
@@ -216,7 +217,8 @@ void MasterChannelPanel::sliderValueChanged (Slider* sliderThatWasMoved)
     {
         //[UserSliderCode_channelVolume] -- add your slider handling code here..
         volume = channelVolume->getValue();
-
+        channel->volume = volume;
+        sendChangeMessage();
         //[/UserSliderCode_channelVolume]
     }
     else if (sliderThatWasMoved == panSlider)
@@ -314,6 +316,19 @@ void MasterChannelPanel::setSolo(bool solo) {
     this->solo = solo;
     this->soloButton->setToggleState(solo, juce::NotificationType::dontSendNotification);
 }
+
+void MasterChannelPanel::setIndex(int index) {
+    this->index = index;
+}
+
+int MasterChannelPanel::getIndex() {
+    return index;
+}
+
+void MasterChannelPanel::setChannel(Mixer::Channel *channel) {
+    this->channel = channel;
+}
+
 
 //[/MiscUserCode]
 
