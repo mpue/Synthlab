@@ -45,11 +45,18 @@ PluginModule::~PluginModule()
     delete plugin;
 }
 
+void PluginModule::openPluginWindow() {
+    PluginManager::getInstance()->getPluginWindow(pluginName)->setVisible(true);
+}
+
 void PluginModule::selectPlugin(String name) {
     // PluginManager::getInstance()->addPlugin(name, Project::getInstance()->getDeviceManager());
     // plugin = PluginManager::getInstance()->getPlugin(name);
-    PluginManager::getInstance()->openPluginWindow(name, Project::getInstance()->getDeviceManager());
+    // PluginManager::getInstance()->openPluginWindow(name, Project::getInstance()->getDeviceManager());
+    PluginManager::getInstance()->addPlugin(name, Project::getInstance()->getDeviceManager());
     plugin = PluginManager::getInstance()->getPlugin(name);
+    plugin->prepareToPlay(sampleRate, buffersize);
+    //PluginManager::getInstance()->getPluginWindow(name)->setVisible(true);
 }
 
 void PluginModule::configurePins() {
@@ -100,10 +107,10 @@ void PluginModule::process() {
         
         if (plugin != nullptr) {
             audioBuffer->copyFrom(0,0, *pins.at(0)->connections.at(0)->getAudioBuffer(), 0, 0, buffersize);
-            audioBuffer->copyFrom(1,0, *pins.at(0)->connections.at(0)->getAudioBuffer(), 1, 0, buffersize);
+            audioBuffer->copyFrom(1,0, *pins.at(1)->connections.at(0)->getAudioBuffer(), 0, 0, buffersize);
             plugin->processBlock(*audioBuffer, midiBuffer);
-            pins.at(2)->getAudioBuffer()->copyFrom(0,0, *audioBuffer, 2, 0, buffersize);
-            pins.at(3)->getAudioBuffer()->copyFrom(0,0, *audioBuffer, 3, 0, buffersize);
+            pins.at(2)->getAudioBuffer()->copyFrom(0,0, *audioBuffer, 0, 0, buffersize);
+            pins.at(3)->getAudioBuffer()->copyFrom(0,0, *audioBuffer, 1, 0, buffersize);
         }
         
         /*

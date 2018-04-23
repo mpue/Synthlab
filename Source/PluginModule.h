@@ -32,6 +32,7 @@ public:
     }
     
     void selectPlugin(String name);
+    void openPluginWindow();
     
 private:
     
@@ -45,6 +46,7 @@ private:
     
     AudioPluginInstance* plugin;
     
+    String pluginName;
     AudioBuffer<float>* audioBuffer;
     MidiBuffer midiBuffer;
     

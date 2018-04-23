@@ -227,7 +227,7 @@ std::vector<String> PluginManager::getAvailablePlugins() {
 }
 
 void PluginManager::openPluginWindow(juce::String name, AudioDeviceManager* manager) {
-    addPlugin(name,manager);
-    AudioPluginInstance* plugin = getPlugin(name);
-    getPluginWindow(name)->setVisible(true);
+    // addPlugin(name,manager);
+    // AudioPluginInstance* plugin = getPlugin(name);
+    // getPluginWindow(name)->setVisible(true);
 }
