@@ -237,7 +237,7 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
     if (!running) {
         return;
     }
-    // Your audio-processing code goes here!
+
     int numSamples = bufferToFill.numSamples;
     float** outputChannelData = bufferToFill.buffer->getArrayOfWritePointers();
     const float** inputChannelData = bufferToFill.buffer->getArrayOfReadPointers();
@@ -250,14 +250,14 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
     std::vector<AudioIn*> inputChannels = editor->getInputChannels();
     std::vector<AuxOut*> auxChannels = editor->getAuxChannels();
 
-    if (inputChannels.size() > 0) {
+    for (int k = 0; k < inputChannels.size();k++) {
         
-        Mixer::Channel* input =  mixer->getChannel(Mixer::Channel::Type::IN, 0);
+        Mixer::Channel* input =  mixer->getChannel(Mixer::Channel::Type::IN, k);
         
-        inputChannels.at(0)->pins.at(0)->getAudioBuffer()->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, 0, bufferToFill.startSample, numSamples);
-        inputChannels.at(0)->pins.at(1)->getAudioBuffer()->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, 1, bufferToFill.startSample, numSamples);
-        input->magnitudeLeft = inputChannels.at(0)->pins.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
-        input->magnitudeRight = inputChannels.at(0)->pins.at(1)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+        inputChannels.at(k)->pins.at(0)->getAudioBuffer()->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, k, bufferToFill.startSample, numSamples);
+        inputChannels.at(k)->pins.at(1)->getAudioBuffer()->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, k+1, bufferToFill.startSample, numSamples);
+        input->magnitudeLeft = inputChannels.at(k)->pins.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+        input->magnitudeRight = inputChannels.at(k)->pins.at(1)->getAudioBuffer()->getMagnitude(1, 0, numSamples);
     }
     
  

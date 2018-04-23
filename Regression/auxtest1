@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Synth>
+  <Modules>
+    <Module name="Sawtooth" index="64" x="510" y="288" isPrefab="1" prefabId="64"
+            mono="0">
+      <Pins>
+        <Pin type="2" direction="0" index="6401" x="0" y="10"/>
+        <Pin type="2" direction="0" index="6402" x="0" y="30"/>
+        <Pin type="2" direction="0" index="6403" x="0" y="50"/>
+        <Pin type="0" direction="1" index="6404" x="110" y="10"/>
+        <Pin type="2" direction="1" index="6405" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Audio out" index="66" x="947" y="182" isPrefab="1" prefabId="66">
+      <Pins>
+        <Pin type="0" direction="0" index="6601" x="0" y="10"/>
+        <Pin type="0" direction="0" index="6602" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="ADSR" index="70" x="299" y="253" isPrefab="1" prefabId="70"
+            attack="0.00000000000000000000" decay="0.00000000000000000000"
+            sustain="0.80000001192092895508" release="0.00000000000000000000"
+            mono="0">
+      <Pins>
+        <Pin type="1" direction="0" index="7001" x="0" y="10"/>
+        <Pin type="2" direction="0" index="7002" x="0" y="30"/>
+        <Pin type="2" direction="0" index="7003" x="0" y="50"/>
+        <Pin type="2" direction="0" index="7004" x="0" y="70"/>
+        <Pin type="2" direction="0" index="7005" x="0" y="90"/>
+        <Pin type="2" direction="1" index="7006" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="61" x="151" y="247" isPrefab="1" prefabId="61">
+      <Pins>
+        <Pin type="2" direction="1" index="6101" x="110" y="10"/>
+        <Pin type="1" direction="1" index="6102" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Aux out" index="76" x="757" y="118" isPrefab="1" prefabId="76">
+      <Pins>
+        <Pin type="0" direction="0" index="7601" x="0" y="10"/>
+        <Pin type="0" direction="0" index="7602" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Sawtooth" index="164" x="530" y="532" isPrefab="1" prefabId="64"
+            mono="0">
+      <Pins>
+        <Pin type="2" direction="0" index="6401" x="0" y="10"/>
+        <Pin type="2" direction="0" index="6402" x="0" y="30"/>
+        <Pin type="2" direction="0" index="6403" x="0" y="50"/>
+        <Pin type="0" direction="1" index="6404" x="110" y="10"/>
+        <Pin type="2" direction="1" index="6405" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Aux out" index="176" x="861" y="406" isPrefab="1" prefabId="76">
+      <Pins>
+        <Pin type="0" direction="0" index="7601" x="0" y="10"/>
+        <Pin type="0" direction="0" index="7602" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections>
+    <Connection source="64" target="70" a="6403" b="7006"/>
+    <Connection source="61" target="70" a="6102" b="7001"/>
+    <Connection source="64" target="76" a="6404" b="7602"/>
+    <Connection source="64" target="76" a="6404" b="7601"/>
+    <Connection source="70" target="164" a="7006" b="6403"/>
+    <Connection source="164" target="176" a="6404" b="7601"/>
+    <Connection source="164" target="176" a="6404" b="7602"/>
+  </Connections>
+</Synth>
