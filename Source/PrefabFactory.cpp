@@ -32,6 +32,7 @@
 #include "SamplerModule.h"
 #include "AudioIn.h"
 #include "AuxOut.h"
+#include "DistortionModule.h"
 
 PrefabFactory* PrefabFactory::instance = NULL;
 
@@ -116,6 +117,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Sampler") {
         m = new SamplerModule(sampleRate,bufferSize,Project::getInstance()->getFormatManager());
+    }
+    else if (prefabs[id].getName() == "Distortion") {
+        m = new DistortionModule(sampleRate,bufferSize);
     }
     
     m->setIndex(id + 100 * prefabs[id].getNumInstances());

@@ -1,9 +1,9 @@
 #include "Distortion.h"
 
 Distortion::Distortion() {
-    controls.mode = 1;
-    controls.drive = 0.0f;
-    controls.mix = 0.0f;
+    controls.mode = 2;
+    controls.drive = 1.0f;
+    controls.mix = 1.0f;
 }
 
 Distortion::~Distortion() {}
