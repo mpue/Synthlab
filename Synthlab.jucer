@@ -53,6 +53,11 @@
       <FILE id="EJ4uon" name="whitenoise.png" compile="0" resource="1" file="Images/whitenoise.png"/>
     </GROUP>
     <GROUP id="{CA20D122-1EA5-3A93-F1F8-F6EE53DA457E}" name="Source">
+      <GROUP id="{729787F7-9D73-8EF3-1B85-5A2642C72184}" name="Plugins">
+        <FILE id="c8waHE" name="PluginManager.cpp" compile="1" resource="0"
+              file="Source/Plugins/PluginManager.cpp"/>
+        <FILE id="toYp5l" name="PluginManager.h" compile="0" resource="0" file="Source/Plugins/PluginManager.h"/>
+      </GROUP>
       <GROUP id="{25E57A0B-EABB-9D56-553D-4A1B4F47539A}" name="libusb">
         <FILE id="zCHFkf" name="config_msvc.h" compile="0" resource="0" file="Source/libusb/config_msvc.h"/>
         <FILE id="aegT04" name="config_xcode.h" compile="0" resource="0" file="Source/libusb/config_xcode.h"/>
@@ -86,6 +91,10 @@
               file="Source/Actions/AddModuleAction.h"/>
       </GROUP>
       <GROUP id="{A79C9093-D329-37A0-AEE1-CF7BDC5C60DE}" name="AudioEngine">
+        <FILE id="CzCxcs" name="AuxOut.cpp" compile="1" resource="0" file="Source/AuxOut.cpp"/>
+        <FILE id="bvlaqP" name="AuxOut.h" compile="0" resource="0" file="Source/AuxOut.h"/>
+        <FILE id="JS0IMS" name="Mixer.cpp" compile="1" resource="0" file="Source/Mixer.cpp"/>
+        <FILE id="VzKB75" name="Mixer.h" compile="0" resource="0" file="Source/Mixer.h"/>
         <FILE id="UclOR0" name="AudioModule.h" compile="0" resource="0" file="Source/AudioModule.h"/>
         <FILE id="WWyH1B" name="ADSR.cpp" compile="1" resource="0" file="Source/AudioEngine/ADSR.cpp"/>
         <FILE id="Q1bcuf" name="ADSR.h" compile="0" resource="0" file="Source/AudioEngine/ADSR.h"/>
@@ -219,6 +228,10 @@
                 file="Source/DisplayValueModule.cpp"/>
           <FILE id="END9pf" name="DisplayValueModule.h" compile="0" resource="0"
                 file="Source/DisplayValueModule.h"/>
+          <FILE id="uotf7W" name="DistortionModule.cpp" compile="1" resource="0"
+                file="Source/DistortionModule.cpp"/>
+          <FILE id="mX1tFT" name="DistortionModule.h" compile="0" resource="0"
+                file="Source/DistortionModule.h"/>
           <FILE id="WDvbAA" name="HPFilterModule.cpp" compile="1" resource="0"
                 file="Source/HPFilterModule.cpp"/>
           <FILE id="HQnBbd" name="HPFilterModule.h" compile="0" resource="0"
@@ -255,6 +268,9 @@
                 file="Source/PitchToFrequencyModule.cpp"/>
           <FILE id="d3DGg4" name="PitchToFrequencyModule.h" compile="0" resource="0"
                 file="Source/PitchToFrequencyModule.h"/>
+          <FILE id="kA0rbb" name="PluginModule.cpp" compile="1" resource="0"
+                file="Source/PluginModule.cpp"/>
+          <FILE id="xcsllL" name="PluginModule.h" compile="0" resource="0" file="Source/PluginModule.h"/>
           <FILE id="kZfRvk" name="PrefabFactory.cpp" compile="1" resource="0"
                 file="Source/PrefabFactory.cpp"/>
           <FILE id="JNR4eo" name="PrefabFactory.h" compile="0" resource="0" file="Source/PrefabFactory.h"/>
@@ -363,5 +379,5 @@
     <MODULE id="juce_opengl" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
     <MODULE id="juce_video" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
   </MODULES>
-  <JUCEOPTIONS/>
+  <JUCEOPTIONS JUCE_PLUGINHOST_AU="1"/>
 </JUCERPROJECT>

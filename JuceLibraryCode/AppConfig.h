@@ -139,7 +139,7 @@
 #endif
 
 #ifndef    JUCE_PLUGINHOST_AU
- //#define JUCE_PLUGINHOST_AU 0
+ #define   JUCE_PLUGINHOST_AU 1
 #endif
 
 //==============================================================================

@@ -40,7 +40,7 @@
 #include "LabelModule.h"
 #include "SamplerModule.h"
 #include "OneShotTimer.h"
-
+#include "PluginModule.h"
 
 class SampleEditor;
 //[/Headers]
@@ -655,6 +655,7 @@ void SynthEditor::mouseDoubleClick (const MouseEvent& e)
                 if (sm != NULL) {
                     openSampleEditor(sm);
                 }
+                           
             }
             else {
                 if (m->isSelected() && m->isEditable()) {

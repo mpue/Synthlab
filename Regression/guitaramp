@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Synth>
+  <Modules>
+    <Module name="Sawtooth" index="64" x="335" y="230" isPrefab="1" prefabId="64"
+            mono="0">
+      <Pins>
+        <Pin type="2" direction="0" index="6401" x="0" y="10"/>
+        <Pin type="2" direction="0" index="6402" x="0" y="30"/>
+        <Pin type="2" direction="0" index="6403" x="0" y="50"/>
+        <Pin type="0" direction="1" index="6404" x="110" y="10"/>
+        <Pin type="2" direction="1" index="6405" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Audio out" index="66" x="685" y="329" isPrefab="1" prefabId="66">
+      <Pins>
+        <Pin type="0" direction="0" index="6601" x="0" y="10"/>
+        <Pin type="0" direction="0" index="6602" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Distortion" index="78" x="477" y="391" isPrefab="1" prefabId="78">
+      <Pins>
+        <Pin type="0" direction="0" index="7801" x="0" y="10"/>
+        <Pin type="0" direction="1" index="7802" x="110" y="10"/>
+        <Pin type="2" direction="0" index="7803" x="0" y="30"/>
+        <Pin type="2" direction="0" index="7804" x="0" y="50"/>
+        <Pin type="2" direction="0" index="7805" x="0" y="70"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="61" x="37" y="219" isPrefab="1" prefabId="61">
+      <Pins>
+        <Pin type="2" direction="1" index="6101" x="110" y="10"/>
+        <Pin type="1" direction="1" index="6102" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Aux out" index="77" x="903" y="127" isPrefab="1" prefabId="77">
+      <Pins>
+        <Pin type="0" direction="0" index="7701" x="0" y="10"/>
+        <Pin type="0" direction="0" index="7702" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="ADSR" index="70" x="188" y="184" isPrefab="1" prefabId="70"
+            attack="0.00000000000000000000" decay="0.00000000000000000000"
+            sustain="0.80000001192092895508" release="0.00000000000000000000"
+            mono="0">
+      <Pins>
+        <Pin type="1" direction="0" index="7001" x="0" y="10"/>
+        <Pin type="2" direction="0" index="7002" x="0" y="30"/>
+        <Pin type="2" direction="0" index="7003" x="0" y="50"/>
+        <Pin type="2" direction="0" index="7004" x="0" y="70"/>
+        <Pin type="2" direction="0" index="7005" x="0" y="90"/>
+        <Pin type="2" direction="1" index="7006" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="69" x="321" y="483" isPrefab="1" prefabId="69"
+            minvalue="0.00000000000000000000" maxvalue="127.00000000000000000000"
+            stepsize="1.00100004673004150391" value="15.01500034332275390625"
+            isController="0" controllerNum="1">
+      <Pins>
+        <Pin type="2" direction="1" index="6901" x="70" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Stereo delay" index="73" x="684" y="159" isPrefab="1" prefabId="73">
+      <Pins>
+        <Pin type="0" direction="0" index="7301" x="0" y="10"/>
+        <Pin type="0" direction="0" index="7302" x="0" y="30"/>
+        <Pin type="0" direction="1" index="7303" x="110" y="10"/>
+        <Pin type="0" direction="1" index="7304" x="110" y="30"/>
+        <Pin type="2" direction="0" index="7305" x="0" y="50"/>
+        <Pin type="2" direction="0" index="7306" x="0" y="70"/>
+        <Pin type="2" direction="0" index="7307" x="0" y="90"/>
+        <Pin type="2" direction="0" index="7308" x="0" y="110"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Audio in" index="76" x="85" y="448" isPrefab="1" prefabId="76">
+      <Pins>
+        <Pin type="0" direction="1" index="7601" x="110" y="10"/>
+        <Pin type="0" direction="1" index="7602" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Type" index="67" x="327" y="449" isPrefab="1" prefabId="67"
+            value="1.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="TL" index="167" x="534" y="199" isPrefab="1" prefabId="67"
+            value="1.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="TR" index="267" x="534" y="222" isPrefab="1" prefabId="67"
+            value="5.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="6701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections>
+    <Connection source="66" target="78" a="6601" b="7802"/>
+    <Connection source="66" target="78" a="6602" b="7802"/>
+    <Connection source="61" target="70" a="6102" b="7001"/>
+    <Connection source="64" target="70" a="6403" b="7006"/>
+    <Connection source="78" target="69" a="7803" b="6901"/>
+    <Connection source="73" target="78" a="7301" b="7802"/>
+    <Connection source="73" target="78" a="7302" b="7802"/>
+    <Connection source="77" target="73" a="7701" b="7303"/>
+    <Connection source="77" target="73" a="7702" b="7304"/>
+    <Connection source="78" target="76" a="7801" b="7602"/>
+    <Connection source="67" target="78" a="6701" b="7805"/>
+    <Connection source="167" target="73" a="6701" b="7305"/>
+    <Connection source="267" target="73" a="6701" b="7306"/>
+  </Connections>
+</Synth>

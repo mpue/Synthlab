@@ -6,6 +6,7 @@
   ==============================================================================
 */
 
+#include "Plugins/PluginManager.h"
 #include "MainComponent.h"
 #include "SynthEditor.h"
 #include "PropertyView.h"
@@ -16,6 +17,7 @@
 #include "Project.h"
 #include "Knob.h"
 #include "Mixer.h"
+#include "PluginModule.h"
 
 //==============================================================================
 MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
@@ -161,6 +163,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
                                       -0.8);
     
     Project::getInstance()->setDeviceManager(&deviceManager);
+    PluginManager::getInstance();
     
     initialized = true;
     running = true;
@@ -406,7 +409,12 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String & menuName) {
     }
     else if (index == 1) {
         menu.addItem(11, "Show mixer", true, false, nullptr);
+        menu.addItem(12, "Manage plugins", true, false, nullptr);
     }
+    else if (index == 2) {
+        return *PluginManager::getInstance()->buildPluginMenu();
+    }
+    
 
 
     
@@ -441,6 +449,23 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
         tab->addTab("Mixer", juce::Colours::grey, mixerView, false);
 
     }
+    else if (menuItemID == 12) {
+        PluginManager::getInstance()->scanPlugins();
+        
+    }
+    else if (menuItemID > 100){
+        String pluginName = PluginManager::getInstance()->getAvailablePlugins().at(menuItemID - 100);
+        
+        if (editor->getSelectionModel()->getSelectedModule() != nullptr) {
+            PluginModule *pm = dynamic_cast<PluginModule*>(editor->getSelectionModel()->getSelectedModule());
+            
+            if (pm != NULL) {
+                pm->selectPlugin(pluginName);
+            }
+        }
+        
+        // PluginManager::getInstance()->openPluginWindow(pluginName, &deviceManager);
+    }
     else if (menuItemID == 999) {
         JUCEApplication::getInstance()->shutdown();
     }
@@ -448,7 +473,7 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 }
 
 StringArray MainComponent::getMenuBarNames() {
-    const char* const names[] = { "File", "View", nullptr };
+    const char* const names[] = { "File", "View","Plugins", nullptr };
     
     return StringArray(names);
     
