@@ -24,11 +24,14 @@
 #include "MultiComponentDragger.h"
 #include "Module.h"
 #include "Connection.h"
+#include "AudioIn.h"
 #include "AudioOut.h"
+#include "AuxOut.h"
 #include "AudioModule.h"
 #include "SampleEditor.h"
 #include "SelectionModel.h"
-#include "AudioIn.h"
+
+
 #include <vector>
 #include "MixerPanel.h"
 
@@ -84,6 +87,8 @@ public:
 
     std::vector<AudioIn*>& getInputChannels();
     std::vector<AudioOut*>& getOutputChannels();
+    std::vector<AuxOut*>& getAuxChannels();
+    
     void removeSelectedItem();
     
     void setSamplerate(double rate);
@@ -95,6 +100,7 @@ public:
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate);
     void showContextMenu(Point<int> position);
     bool channelIsValid(int channel);
+    bool auxChannelIsValid(int channel);
     
     void loadFromString(String in);
     
@@ -203,6 +209,7 @@ private:
 
     std::vector<AudioOut*> outputChannels;
     std::vector<AudioIn*> inputChannels;
+    std::vector<AuxOut*> auxChannels;
     
     static String defaultMidiInputName;
     static String defaultMidiOutputName;

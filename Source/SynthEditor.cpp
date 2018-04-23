@@ -24,6 +24,7 @@
 #include "MidiOut.h"
 #include "AudioOut.h"
 #include "AudioIn.h"
+#include "AuxOut.h"
 #include "SawtoothModule.h"
 #include "NoiseModule.h"
 #include "AdderModule.h"
@@ -737,6 +738,7 @@ void SynthEditor::cleanUp() {
     selectionModel->getSelectedModules()->clear();
     outputChannels.clear();
     inputChannels.clear();
+    auxChannels.clear();
     Project::getInstance()->getUndoManager()->clearUndoHistory();
     
 }
@@ -1062,6 +1064,13 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         if ((in = dynamic_cast<AudioIn*>(m)) != NULL) {
             inputChannels.push_back(in);
             addChangeListener(in);
+        }
+        
+        AuxOut* aux;
+        
+        if ((aux = dynamic_cast<AuxOut*>(m)) != NULL) {
+            auxChannels.push_back(aux);
+            addChangeListener(aux);
         }
         
         Knob* k;
@@ -1396,6 +1405,15 @@ bool SynthEditor::channelIsValid(int channel) {
     return false;
 }
 
+bool SynthEditor::auxChannelIsValid(int channel) {
+    if (auxChannels.at(0)->getPins().at(channel)->connections.size() == 1 &&
+        auxChannels.at(0)->getPins().at(channel)->connections.at(0) != nullptr &&
+        auxChannels.at(0)->getPins().at(channel)->connections.at(0)->getAudioBuffer() != nullptr) {
+        return true;
+    }
+    return false;
+}
+
 void SynthEditor::prepareToPlay(int samplesPerBlockExpected, double sampleRate) {
     this->_sampleRate = sampleRate;
     this->bufferSize = samplesPerBlockExpected;
@@ -1420,6 +1438,10 @@ std::vector<AudioIn*>& SynthEditor::getInputChannels() {
 
 std::vector<AudioOut*>& SynthEditor::getOutputChannels() {
     return outputChannels;
+}
+
+std::vector<AuxOut*>& SynthEditor::getAuxChannels() {
+    return auxChannels;
 }
 
 //[/MiscUserCode]

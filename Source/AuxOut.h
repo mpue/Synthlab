@@ -1,14 +1,39 @@
-//
-//  AuxOut.hpp
-//  Synthlab - App
-//
-//  Created by Matthias Pueski on 23.04.18.
-//  Copyright © 2018 Pueski. All rights reserved.
-//
+/*
+ ==============================================================================
+ 
+ MidiGate.h
+ Created: 4 Apr 2018 3:48:23pm
+ Author:  Matthias Pueski
+ 
+ ==============================================================================
+ */
 
-#ifndef AuxOut_hpp
-#define AuxOut_hpp
+#pragma once
 
-#include <stdio.h>
+#include "../JuceLibraryCode/JuceHeader.h"
+#include "Module.h"
 
-#endif /* AuxOut_hpp */
+//==============================================================================
+/*
+ */
+class AuxOut    : public Module
+{
+public:
+    AuxOut();
+    ~AuxOut();
+    
+    void paint (Graphics& g) override;
+    void setDeviceManager(AudioDeviceManager* manager);
+    virtual void process() override;
+    
+    virtual void configurePins() override;
+    
+    virtual String getCategory() override {
+        return "Input / Output";
+    }
+    
+private:
+    AudioDeviceManager* deviceManager;
+    
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AuxOut)
+};

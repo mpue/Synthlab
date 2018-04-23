@@ -31,6 +31,7 @@
 #include "LabelModule.h"
 #include "SamplerModule.h"
 #include "AudioIn.h"
+#include "AuxOut.h"
 
 PrefabFactory* PrefabFactory::instance = NULL;
 
@@ -79,6 +80,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Audio out") {
         m = new AudioOut();
+    }
+    else if (prefabs[id].getName() == "Aux out") {
+        m = new AuxOut();
     }
     else if (prefabs[id].getName() == "Audio in") {
         m = new AudioIn();

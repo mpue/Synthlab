@@ -72,6 +72,7 @@
 		BDBFD24C5E355502B093185F /* ADSRModule.cpp in Sources */ = {isa = PBXBuildFile; fileRef = F0165060678F6A3873BF01E1 /* ADSRModule.cpp */; };
 		BEA585BAD9EDEE207813F413 /* include_juce_gui_basics.mm in Sources */ = {isa = PBXBuildFile; fileRef = BA18D328D991929B669D28AF /* include_juce_gui_basics.mm */; };
 		BF028BE1208DEA520052C2CB /* Mixer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF028BDF208DEA520052C2CB /* Mixer.cpp */; };
+		BF68DD57208E13AA001E342B /* AuxOut.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF68DD55208E13AA001E342B /* AuxOut.cpp */; };
 		BFA4A4C561E43EAB06806307 /* LowPassFilter.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 35CBFAFE765B78DE0914BE1F /* LowPassFilter.cpp */; };
 		BFEB0816A6987D9F4E06E042 /* DelayModule.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 22E68C90F24E56FBAA85A82E /* DelayModule.cpp */; };
 		C006E21FE19AA62864FDA711 /* Distortion.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4E3444DE1F7D9CEF873609E3 /* Distortion.cpp */; };
@@ -290,6 +291,8 @@
 		BE40A0A31212E2AF93888F26 /* AudioModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = AudioModule.h; path = ../../Source/AudioModule.h; sourceTree = SOURCE_ROOT; };
 		BF028BDF208DEA520052C2CB /* Mixer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = Mixer.cpp; path = ../../Source/Mixer.cpp; sourceTree = "<group>"; };
 		BF028BE0208DEA520052C2CB /* Mixer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Mixer.h; path = ../../Source/Mixer.h; sourceTree = "<group>"; };
+		BF68DD55208E13AA001E342B /* AuxOut.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = AuxOut.cpp; path = ../../Source/AuxOut.cpp; sourceTree = "<group>"; };
+		BF68DD56208E13AA001E342B /* AuxOut.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = AuxOut.h; path = ../../Source/AuxOut.h; sourceTree = "<group>"; };
 		BFEBFE82382FF126CA9331EA /* juce_graphics */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_graphics; path = ../../../JUCE/modules/juce_graphics; sourceTree = SOURCE_ROOT; };
 		C18B1090B554E6CC6C0B41A9 /* CustomLookAndFeel.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = CustomLookAndFeel.cpp; path = ../../Source/CustomLookAndFeel.cpp; sourceTree = SOURCE_ROOT; };
 		C1F39054C7AEED8DF396814D /* Distortion.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Distortion.h; path = ../../Source/AudioEngine/Distortion.h; sourceTree = SOURCE_ROOT; };
@@ -470,6 +473,8 @@
 				F8BF45F4BCD0F524B1715674 /* AudioIn.h */,
 				CB091B2D7B112ECAC8EC94B0 /* AudioOut.cpp */,
 				FC61A9C53A05D086BC82D9A3 /* AudioOut.h */,
+				BF68DD55208E13AA001E342B /* AuxOut.cpp */,
+				BF68DD56208E13AA001E342B /* AuxOut.h */,
 				8FA139B57C8919E3DD6B2B3D /* Constant.cpp */,
 				2A51EE815C46F8FBC8AE3EED /* Constant.h */,
 				22E68C90F24E56FBAA85A82E /* DelayModule.cpp */,
@@ -913,6 +918,7 @@
 				3CF04BF51E34EA2A0CDDBE0B /* Constant.cpp in Sources */,
 				BFEB0816A6987D9F4E06E042 /* DelayModule.cpp in Sources */,
 				EA936B1E43EB21F9ECC7E9E3 /* DisplayValueModule.cpp in Sources */,
+				BF68DD57208E13AA001E342B /* AuxOut.cpp in Sources */,
 				8C38EB38A6AD450EFFDE80BE /* HPFilterModule.cpp in Sources */,
 				D28F68F82FC56F4AF5C6FE94 /* InverterModule.cpp in Sources */,
 				109F2B42C000FCEABA80FB02 /* Knob.cpp in Sources */,

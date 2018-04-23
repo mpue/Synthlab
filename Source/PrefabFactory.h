@@ -94,6 +94,7 @@ private:
         prefabs[74] = Prefab("HP filter","Filter");
         prefabs[75] = Prefab("Scope","Debug");
         prefabs[76] = Prefab("Audio in","Input / Output");
+        prefabs[76] = Prefab("Aux out","Input / Output");
         
         categories = new StringArray();
 

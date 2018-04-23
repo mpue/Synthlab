@@ -9,6 +9,7 @@
 #include "../Module.h"
 #include "../AudioOut.h"
 #include "../AudioIn.h"
+#include "../AuxOut.h"
 #include "../PrefabFactory.h"
 
 AddModuleAction::AddModuleAction(SynthEditor* editor, Point<int> position, int moduleId) {
@@ -66,6 +67,14 @@ bool AddModuleAction::perform() {
     AudioOut* out;
     if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
         editor->getOutputChannels().push_back(out);
+        if (!editor->isRunning()) {
+            editor->setRunning(true);
+        }
+    }
+    
+    AuxOut* aux;
+    if ((aux = dynamic_cast<AuxOut*>(m)) != NULL) {
+        editor->getAuxChannels().push_back(aux);
         if (!editor->isRunning()) {
             editor->setRunning(true);
         }
