@@ -84,6 +84,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     
     tab = new MainTabbedComponent();
     tab->setBounds(0,50,getWidth(),getHeight());
+    addAndMakeVisible (tab);
     
     view = new Viewport();
     
@@ -99,18 +100,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     tab->addTab("Main", juce::Colours::grey, view, false);
     
     mixer = new MixerPanel();
-    
-    
-    mixerView = new Viewport();
-    
-    // addAndMakeVisible(mixerView);
-    
-    mixerView->setSize(500,200);
-    mixerView->setViewedComponent(mixer);
-    mixerView->setScrollBarsShown(true,true);
-    mixerView->setScrollOnDragEnabled(false);
-    mixerView->setWantsKeyboardFocus(false);
-    mixerView->setMouseClickGrabsKeyboardFocus(false);
+
     
     juce::BigInteger activeInputChannels = deviceManager.getCurrentAudioDevice()->getActiveInputChannels();
     juce::BigInteger activeOutputChannels = deviceManager.getCurrentAudioDevice()->getActiveOutputChannels();
@@ -122,13 +112,22 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     int numActiveOutputs = getNumActiveChannels(activeOutputChannels.toInteger());
     
     
-    for (int i = 0; i < numActiveOutputs / 2;i++) {
-        mixer->addChannel("Out "+String(i+1));
+    for (int i = 0; i < numActiveInputs;i+=2) {
+        mixer->addChannel(deviceManager.getCurrentAudioDevice()->getOutputChannelNames().getReference(i));
     }
     
-    for (int i = 0; i < numActiveInputs / 2;i++) {
-        mixer->addChannel("In "+String(i+1));
+    for (int i = 0; i < numActiveOutputs;i+=2) {
+        mixer->addChannel(deviceManager.getCurrentAudioDevice()->getInputChannelNames().getReference(i));
     }
+    
+    mixerView = new Viewport();
+
+    mixerView->setSize(500,200);
+    mixerView->setViewedComponent(mixer);
+    mixerView->setScrollBarsShown(true,true);
+    mixerView->setScrollOnDragEnabled(false);
+    mixerView->setWantsKeyboardFocus(false);
+    mixerView->setMouseClickGrabsKeyboardFocus(false);
     
     tab->addTab("Mixer", juce::Colours::grey, mixerView, false);
     
@@ -137,7 +136,6 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     propertyView =  new PropertyView();
     addAndMakeVisible (propertyView);
     addAndMakeVisible (resizerBar);
-    addAndMakeVisible (tab);
     
     editor->setTab(tab);
 
@@ -154,7 +152,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     stretchableManager.setItemLayout (1,            // for the resize bar
                                       5, 5, 5);     // hard limit to 5 pixels
     
-    stretchableManager.setItemLayout (2,            // for the imagePreview
+    stretchableManager.setItemLayout (2,            // for the main editor
                                       -0.1, -0.9,   // size must be between 50 pixels and 90% of the available space
                                       -0.8);
     

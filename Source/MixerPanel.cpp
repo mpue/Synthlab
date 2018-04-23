@@ -111,6 +111,7 @@ void MixerPanel::addChannel(String name) {
     panel->setBounds (90 * channels.size(),0, 90, 250);
     channels.push_back(panel);
     addAndMakeVisible(panel);
+    setBounds(0, 0, 90*channels.size(),250);
     repaint();
 }
 //[/MiscUserCode]
