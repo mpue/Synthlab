@@ -225,6 +225,7 @@ void MasterChannelPanel::sliderValueChanged (Slider* sliderThatWasMoved)
     {
         //[UserSliderCode_panSlider] -- add your slider handling code here..
         pan = panSlider->getValue();
+        channel->pan = pan;
     
     }
     else if (sliderThatWasMoved == vuSliderR)
@@ -246,11 +247,13 @@ void MasterChannelPanel::buttonClicked (Button* buttonThatWasClicked)
     if (buttonThatWasClicked == muteButton)
     {
         //[UserButtonCode_muteButton] -- add your button handler code here..
+        channel->mute = muteButton->getToggleState();
         //[/UserButtonCode_muteButton]
     }
     else if (buttonThatWasClicked == soloButton)
     {
         //[UserButtonCode_soloButton] -- add your button handler code here..
+        channel->solo = soloButton->getToggleState();
         //[/UserButtonCode_soloButton]
     }
 

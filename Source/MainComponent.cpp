@@ -269,7 +269,12 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
     else {
         
         Mixer::Channel* channel =  mixer->getChannel(Mixer::Channel::Type::OUT, 0);
-        float channelVolume = channel->volume;
+        float channelVolume = channel->mute ? 0 : channel->volume;
+        double pan = channel->pan;
+        
+        float gainLeft = cos((M_PI*(pan + 1) / 4));
+        float gainRight = sin((M_PI*(pan + 1) / 4));
+
         
         // process all output pins of the connected module
         // outputChannels.at(0)->getPins().at(0)->process(inputChannelData[0], outputChannelData[0], numSamples);
@@ -279,8 +284,8 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
                 // outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->applyGain(channelVolume);
                 const float* outL = outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
                
-                channel->magnitudeLeft = channelVolume * outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
-                outputChannelData[0][j] = channelVolume * outL[j];
+                channel->magnitudeLeft = channelVolume * gainLeft * outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+                outputChannelData[0][j] = channelVolume * outL[j] * gainLeft;
             }
             else {
                 outputChannelData[0][j] = 0;
@@ -289,8 +294,8 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
             if (editor->channelIsValid(1)) {
                 // outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->applyGain(channelVolume);
                 const float* outR = outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-                channel->magnitudeRight  = channelVolume * outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
-                outputChannelData[1][j] = channelVolume * outR[j];
+                channel->magnitudeRight  = channelVolume * gainRight * outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+                outputChannelData[1][j] = channelVolume * outR[j] * gainRight;
                 
             }
             else {
