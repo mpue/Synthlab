@@ -51,6 +51,13 @@ MixerPanel::MixerPanel ()
 MixerPanel::~MixerPanel()
 {
     //[Destructor_pre]. You can add your own custom destruction code here..
+    
+    for (std::vector<MasterChannelPanel*>::iterator it = channels.begin();it != channels.end();) {
+        (*it)->setLookAndFeel(nullptr);
+        delete (*it);
+        it = channels.erase(it);
+        
+    }
     //[/Destructor_pre]
 
     //[/Destructor]

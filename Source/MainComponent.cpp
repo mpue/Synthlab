@@ -112,8 +112,23 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     mixerView->setWantsKeyboardFocus(false);
     mixerView->setMouseClickGrabsKeyboardFocus(false);
     
-    mixer->addChannel("Out");
-    mixer->addChannel("In");
+    juce::BigInteger activeInputChannels = deviceManager.getCurrentAudioDevice()->getActiveInputChannels();
+    juce::BigInteger activeOutputChannels = deviceManager.getCurrentAudioDevice()->getActiveOutputChannels();
+    
+    int numInputChannels = deviceManager.getCurrentAudioDevice()->getInputChannelNames().size();
+    int numOutputChannels = deviceManager.getCurrentAudioDevice()->getOutputChannelNames().size();
+    
+    int numActiveInputs = getNumActiveChannels(activeInputChannels.toInteger());
+    int numActiveOutputs = getNumActiveChannels(activeOutputChannels.toInteger());
+    
+    
+    for (int i = 0; i < numActiveOutputs / 2;i++) {
+        mixer->addChannel("Out "+String(i+1));
+    }
+    
+    for (int i = 0; i < numActiveInputs / 2;i++) {
+        mixer->addChannel("In "+String(i+1));
+    }
     
     tab->addTab("Mixer", juce::Colours::grey, mixerView, false);
     
@@ -210,6 +225,13 @@ void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRat
     }
     
 }
+
+int MainComponent::getNumActiveChannels(int i) {
+    i = i - ((i >> 1) & 0x55555555);
+    i = (i & 0x33333333) + ((i >> 2) & 0x33333333);
+    return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
+}
+
 
 void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill)
 {

@@ -57,7 +57,7 @@ public:
     void loadRecentFileList();
     void addRecentFile(String path);
 
-    inline CustomLookAndFeel& getLookAndFeel() {
+    inline CustomLookAndFeel* getLookAndFeel() {
         return lookAndFeel;
     };
     
@@ -73,6 +73,7 @@ private:
         undoManager = new UndoManager();
         manager = new AudioFormatManager();
         manager->registerBasicFormats();
+        lookAndFeel = new CustomLookAndFeel();
 #ifdef USE_PUSH
         
         // First we initialise the low level push2 object
@@ -94,13 +95,14 @@ private:
     ~Project() {
         delete undoManager;
         delete manager;
+        delete lookAndFeel;
     }
     
     static Project* instance;
     UndoManager* undoManager;
     AudioDeviceManager* deviceManager;
     StringArray recentFiles;
-    CustomLookAndFeel lookAndFeel;
+    CustomLookAndFeel* lookAndFeel;
     
 #ifdef USE_PUSH
     ableton::Push2DisplayBridge bridge;    /*!< The bridge allowing to use juce::graphics for push */

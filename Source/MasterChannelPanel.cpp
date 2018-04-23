@@ -122,17 +122,15 @@ MasterChannelPanel::MasterChannelPanel ()
 
     setSize (90, 250);
 
-
     //[Constructor] You can add your own custom stuff here..
 
     channelVolume->setValue(1.0);
 
     link = false;
-
     
-    channelVolume->setLookAndFeel(&Project::getInstance()->getLookAndFeel());
-    vuSliderL->setLookAndFeel(&Project::getInstance()->getLookAndFeel());
-    vuSliderR->setLookAndFeel(&Project::getInstance()->getLookAndFeel());
+    channelVolume->setLookAndFeel(Project::getInstance()->getLookAndFeel());
+    vuSliderL->setLookAndFeel(Project::getInstance()->getLookAndFeel());
+    vuSliderR->setLookAndFeel(Project::getInstance()->getLookAndFeel());
 
 	// constrainer.setRaster(getWidth());
 	// constrainer.setTolerance(1);

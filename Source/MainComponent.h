@@ -51,6 +51,7 @@ public:
                                 float** outputChannelData,
                                 int numOutputChannels,
                                 int numSamples) override;
+    int getNumActiveChannels(int i);
     
     class DefaultToolbarItemFactory   : public ToolbarItemFactory
     {
