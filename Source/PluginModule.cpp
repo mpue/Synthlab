@@ -42,11 +42,14 @@ PluginModule::~PluginModule()
 {
     delete bufferLeft;
     delete bufferRight;
-    delete plugin;
+    delete audioBuffer;
 }
 
 void PluginModule::openPluginWindow() {
-    PluginManager::getInstance()->getPluginWindow(pluginName)->setVisible(true);
+    win = PluginManager::getInstance()->getPluginWindow(pluginName);
+    if (win != nullptr) {
+        win->setVisible(true);
+    }
 }
 
 void PluginModule::selectPlugin(String name) {
@@ -56,6 +59,7 @@ void PluginModule::selectPlugin(String name) {
     PluginManager::getInstance()->addPlugin(name, Project::getInstance()->getDeviceManager());
     plugin = PluginManager::getInstance()->getPlugin(name);
     plugin->prepareToPlay(sampleRate, buffersize);
+    pluginName = name;
     //PluginManager::getInstance()->getPluginWindow(name)->setVisible(true);
 }
 

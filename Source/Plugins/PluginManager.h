@@ -39,7 +39,7 @@ public:
             setAlwaysOnTop(true);
             setResizable (true, true);
             centreWithSize(editor->getWidth(),editor->getHeight()+25);
-            setVisible (true);
+            //setVisible (true);
             
         }
         
@@ -64,6 +64,7 @@ public:
     PopupMenu* buildPluginMenu();
     long getNextPluginId();
     std::vector<String> getAvailablePlugins();
+    void releasePlugin(String name);
     
     int getNumActiveChannels(int i) {
         i = i - ((i >> 1) & 0x55555555);
@@ -81,7 +82,12 @@ private:
 
     PluginManager();
     
-    ~PluginManager() {
+    ~PluginManager(){
+        for(std::map<String, AudioPluginInstance*>::iterator itr = pluginMap.begin(); itr != pluginMap.end(); itr++)
+        {
+            releasePlugin((*itr).first);
+        }
+        delete apfm;
     }
     
     std::map<String,AudioPluginInstance*> pluginMap;

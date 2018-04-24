@@ -655,7 +655,11 @@ void SynthEditor::mouseDoubleClick (const MouseEvent& e)
                 if (sm != NULL) {
                     openSampleEditor(sm);
                 }
-                           
+                PluginModule *pm = dynamic_cast<PluginModule*>(m);
+                
+                if (pm != NULL) {
+                    pm->openPluginWindow();
+                }
             }
             else {
                 if (m->isSelected() && m->isEditable()) {

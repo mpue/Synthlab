@@ -198,6 +198,8 @@ private:
     StretchableLayoutManager stretchableManager;
     StretchableLayoutResizerBar resizerBar;
 
+    PopupMenu* pluginMenu = nullptr;
+    
     std::map<int,int> keyCodeMidiNote;
     
     int currentOctave = 1;

@@ -174,6 +174,10 @@ MainComponent::~MainComponent()
 {
     running = false;
     
+    if (pluginMenu != nullptr) {
+        delete pluginMenu;
+    }
+    
     editor->removeAllChangeListeners();
     
     for (int i = 0; i < MidiInput::getDevices().size();i++) {
@@ -412,10 +416,11 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String & menuName) {
         menu.addItem(12, "Manage plugins", true, false, nullptr);
     }
     else if (index == 2) {
-        return *PluginManager::getInstance()->buildPluginMenu();
+        if (pluginMenu == nullptr) {
+            pluginMenu = PluginManager::getInstance()->buildPluginMenu();
+        }
+        return *pluginMenu;
     }
-    
-
 
     
     return menu;

@@ -45,6 +45,7 @@ private:
     float* bufferRight;
     
     AudioPluginInstance* plugin;
+    PluginManager::PluginWindow* win = nullptr;
     
     String pluginName;
     AudioBuffer<float>* audioBuffer;

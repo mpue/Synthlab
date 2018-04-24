@@ -11,6 +11,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "MainComponent.h"
 #include "Project.h"
+#include "Plugins/PluginManager.h"
 
 //==============================================================================
 class SynthlabApplication  : public JUCEApplication
@@ -33,7 +34,7 @@ public:
 
     void shutdown() override
     {
-
+        PluginManager::getInstance()->destroy();
         mainWindow = nullptr; // (deletes our window)
     }
 

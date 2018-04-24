@@ -226,6 +226,20 @@ std::vector<String> PluginManager::getAvailablePlugins() {
     return availableInstruments;
 }
 
+void PluginManager::releasePlugin(String name) {
+    delete pluginWindowMap[name];
+    if (pluginMap[name] != nullptr) {
+        
+        if (pluginMap[name]->getActiveEditor() != nullptr) {
+            delete pluginMap[name]->getActiveEditor();
+        }
+
+        pluginMap[name]->releaseResources();
+        delete pluginMap[name] ;
+        
+    }
+}
+
 void PluginManager::openPluginWindow(juce::String name, AudioDeviceManager* manager) {
     // addPlugin(name,manager);
     // AudioPluginInstance* plugin = getPlugin(name);
