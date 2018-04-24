@@ -177,11 +177,11 @@ PopupMenu* PluginManager::buildPluginMenu() {
             PluginDescription pd;
             pd.loadFromXml(*xml.get());
             
-            if (pd.isInstrument) {
-                if (!manufacturers.contains(pd.manufacturerName)) {
-                    manufacturers.add(pd.manufacturerName);
-                }
+
+            if (!manufacturers.contains(pd.manufacturerName)) {
+                manufacturers.add(pd.manufacturerName);
             }
+
             
         }
         iter = nullptr;
@@ -204,11 +204,11 @@ PopupMenu* PluginManager::buildPluginMenu() {
             PluginDescription pd;
             pd.loadFromXml(*xml.get());
             
-            if (!pd.isInstrument) {
-                availableInstruments.push_back(pd.name);
-                menuMap[pd.manufacturerName.toStdString()].addItem(index, pd.name, true, false,nullptr);
-                index++;
-            }
+
+            availableInstruments.push_back(pd.name);
+            menuMap[pd.manufacturerName.toStdString()].addItem(index, pd.name, true, false,nullptr);
+            index++;
+            
             
         }
         iter = nullptr;

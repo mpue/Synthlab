@@ -85,11 +85,16 @@ void PluginModule::configurePins() {
     p4->listeners.push_back(this);
     p4->setName("R");
     
+    Pin* p5 = new Pin(Pin::Type::EVENT);
+    p5->direction = Pin::Direction::IN;
+    p5->listeners.push_back(this);
+    p5->setName("G");
+    
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::IN,p2);
     addPin(Pin::Direction::OUT,p3);
     addPin(Pin::Direction::OUT,p4);
-
+    addPin(Pin::Direction::IN,p5);
 }
 
 void PluginModule::paint(juce::Graphics &g) {
@@ -123,9 +128,29 @@ void PluginModule::process() {
             pins.at(3)->getAudioBuffer()->setSample(0, i,bufferRight[i]);
         }
          */
-        
+        currentSample = (currentSample+1) % buffersize;
     }
 
     
+}
+
+void PluginModule::eventReceived(Event *e) {
+    
+    if (e->getType() == Event::Type::GATE) {
+    
+        float velocity = (1.0/127) * e->getValue();
+        
+        if (e->getValue() > 0) {
+    
+            MidiMessage* m = new MidiMessage(MidiMessage::noteOn((int)1, (int)e->getNote(), velocity));
+            m->setTimeStamp(Time::getMillisecondCounter());
+            midiBuffer.addEvent(*m, currentSample);
+        }
+        else {
+            MidiMessage* m = new MidiMessage(MidiMessage::noteOff((int)1, (int)e->getNote(), velocity));
+            m->setTimeStamp(Time::getMillisecondCounter());
+            midiBuffer.addEvent(*m, currentSample);
+        }
+    }
 }
 

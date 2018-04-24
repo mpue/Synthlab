@@ -33,7 +33,7 @@ public:
     
     void selectPlugin(String name);
     void openPluginWindow();
-    
+    void eventReceived(Event *e) override;
 private:
     
     Image* image;
