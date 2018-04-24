@@ -88,7 +88,7 @@ private:
             String name = itr->first;
             
             if (pluginMap[name] != nullptr) {
-                // delete editorWindowMap[name];
+        
                 delete pluginWindowMap[name];
                 pluginMap[name]->releaseResources();
                 delete itr->second;
