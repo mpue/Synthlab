@@ -25,9 +25,7 @@ PluginModule::PluginModule(double sampleRate, int buffersize)
     nameLabel->setTopLeftPosition(18,2);
     
     setName("Plugin");
-    
-    
-    
+
     editable = false;
     prefab = true;
     
@@ -35,7 +33,7 @@ PluginModule::PluginModule(double sampleRate, int buffersize)
     bufferRight = new float[buffersize];
     
     audioBuffer = new AudioBuffer<float>(4,buffersize);
-    
+    createProperties();
 }
 
 PluginModule::~PluginModule()
@@ -43,6 +41,8 @@ PluginModule::~PluginModule()
     delete bufferLeft;
     delete bufferRight;
     delete audioBuffer;
+    delete pluginValue;
+    delete pluginListener;
 }
 
 void PluginModule::openPluginWindow() {
@@ -60,7 +60,12 @@ void PluginModule::selectPlugin(String name) {
     plugin = PluginManager::getInstance()->getPlugin(name);
     plugin->prepareToPlay(sampleRate, buffersize);
     pluginName = name;
+    pluginValue->setValue(pluginName);
     //PluginManager::getInstance()->getPluginWindow(name)->setVisible(true);
+}
+
+String PluginModule::getPluginName() {
+    return pluginName;
 }
 
 void PluginModule::configurePins() {
@@ -154,3 +159,23 @@ void PluginModule::eventReceived(Event *e) {
     }
 }
 
+void PluginModule::createProperties() {
+
+    pluginValue = new Value();
+    pluginListener = new PluginValueListener(*pluginValue, this);
+
+}
+
+juce::Array<PropertyComponent*>& PluginModule::getProperties() {
+    
+    Array<var> values = Array<var>();
+    
+    for (int i = 0; i < PluginManager::getInstance()->getPlugins().size();i++) {
+        values.add(PluginManager::getInstance()->getPlugins().getReference(i));
+    }
+    
+    pluginProp = new ChoicePropertyComponent(*pluginValue,"Plugin",PluginManager::getInstance()->getPlugins(),values);
+    properties = juce::Array<PropertyComponent*>();
+    properties.add(pluginProp);
+    return properties;
+}

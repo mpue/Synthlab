@@ -65,6 +65,7 @@ public:
     long getNextPluginId();
     std::vector<String> getAvailablePlugins();
     void releasePlugin(String name);
+    StringArray& getPlugins();
     
     int getNumActiveChannels(int i) {
         i = i - ((i >> 1) & 0x55555555);
@@ -88,11 +89,14 @@ private:
             releasePlugin((*itr).first);
         }
         delete apfm;
+        if (plugins != nullptr) {
+            delete plugins;
+        }
     }
     
     std::map<String,AudioPluginInstance*> pluginMap;
     std::map<String,PluginWindow*> pluginWindowMap;
-
+    StringArray* plugins = nullptr;
     
     static PluginManager* instance;
     AudioPluginFormatManager* apfm;

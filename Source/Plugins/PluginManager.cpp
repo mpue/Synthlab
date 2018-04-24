@@ -226,6 +226,20 @@ std::vector<String> PluginManager::getAvailablePlugins() {
     return availableInstruments;
 }
 
+StringArray& PluginManager::getPlugins() {
+    
+    if (plugins == nullptr) {
+        plugins = new StringArray();
+    
+        for (int i = 0; i < availableInstruments.size();i++) {
+            plugins->add(availableInstruments.at(i));
+        }
+        
+        plugins->sort(true);
+    }
+    return* plugins;
+}
+
 void PluginManager::releasePlugin(String name) {
     delete pluginWindowMap[name];
     if (pluginMap[name] != nullptr) {

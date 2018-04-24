@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Synth>
+  <Modules>
+    <Module name="Plugin" index="79" x="359" y="226" isPrefab="1" prefabId="79"
+            plugin="V-Station">
+      <Pins>
+        <Pin type="0" direction="0" index="7901" x="0" y="10"/>
+        <Pin type="0" direction="0" index="7902" x="0" y="30"/>
+        <Pin type="0" direction="1" index="7903" x="110" y="10"/>
+        <Pin type="0" direction="1" index="7904" x="110" y="30"/>
+        <Pin type="1" direction="0" index="7905" x="0" y="50"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections/>
+</Synth>

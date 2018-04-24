@@ -848,6 +848,12 @@ void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Conn
             file.setProperty("mono", saw->isMono(), nullptr);
         }
         
+        PluginModule* pm ;
+        
+        if ((pm = dynamic_cast<PluginModule*>((*it))) != NULL) {
+            file.setProperty("plugin", pm->getPluginName(), nullptr);
+        }
+        
         ValueTree pins = ValueTree("Pins");
 
         for (std::vector<Pin*>::iterator it2 =  (*it)->pins.begin(); it2 != (*it)->pins.end(); ++it2) {
@@ -1143,6 +1149,12 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         
         if ((saw = dynamic_cast<SawtoothModule*>(m)) != NULL) {
             saw->setMono(mod.getProperty("mono").toString().getIntValue() > 0);
+        }
+        
+        PluginModule* pm ;
+        
+        if ((pm = dynamic_cast<PluginModule*>(m)) != NULL) {
+            pm->selectPlugin(mod.getProperty("plugin").toString());
         }
         
         // addAndMakeVisible(m);

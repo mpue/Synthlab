@@ -32,9 +32,26 @@ public:
     }
     
     void selectPlugin(String name);
+    String getPluginName();
     void openPluginWindow();
     void eventReceived(Event *e) override;
+    
+    virtual juce::Array<PropertyComponent*>& getProperties() override;
+    virtual void createProperties() override;
+    
 private:
+    
+    struct PluginValueListener : Value::Listener
+    {
+        PluginValueListener (Value& v, PluginModule* m) : m(m), value (v){ value.addListener (this); }
+        ~PluginValueListener()  {}  // no need to remove the listener
+        
+        void valueChanged (Value& value) override {
+            m->selectPlugin(value.getValue().toString());
+        }
+        PluginModule* m;
+        Value value;
+    };
     
     Image* image;
     
@@ -50,6 +67,11 @@ private:
     String pluginName;
     AudioBuffer<float>* audioBuffer;
     MidiBuffer midiBuffer;
+    
+    Value* pluginValue;
+    PropertyComponent* pluginProp;
+    PluginValueListener* pluginListener;
+
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginModule)
 };
