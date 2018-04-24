@@ -34,12 +34,9 @@ public:
 
     void shutdown() override
     {
+
         mainWindow = nullptr; // (deletes our window)
-        for (int i = 0; i < Desktop::getInstance().getNumComponents();i++) {
-            if (Desktop::getInstance().getComponent(i) != nullptr) {
-                delete Desktop::getInstance().getComponent(i);
-            }
-        }
+        
         PluginManager::getInstance()->destroy();
     }
 

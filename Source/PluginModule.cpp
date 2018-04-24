@@ -53,6 +53,9 @@ void PluginModule::openPluginWindow() {
 }
 
 void PluginModule::selectPlugin(String name) {
+    if (name == pluginName) {
+        return;
+    }
     // PluginManager::getInstance()->addPlugin(name, Project::getInstance()->getDeviceManager());
     // plugin = PluginManager::getInstance()->getPlugin(name);
     // PluginManager::getInstance()->openPluginWindow(name, Project::getInstance()->getDeviceManager());

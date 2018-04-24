@@ -140,10 +140,17 @@ void PluginManager::addPlugin(String name, AudioDeviceManager* deviceManager) {
     
     // configureBusLayout(plugin, deviceManager,component);
     
-    pluginMap[name] = plugin;
     
-    PluginWindow* win = new PluginWindow(name,editor);
-    pluginWindowMap[name] = win;
+    if ( pluginMap.find(name) == pluginMap.end() ) {
+        editorWindowMap[name] = editor;
+        pluginMap[name] = plugin;
+
+    }
+    if (pluginWindowMap.find(name) == pluginWindowMap.end()) {
+        PluginWindow* win = new PluginWindow(name,editor);
+        pluginWindowMap[name] = win;
+    }
+
     
 }
 
@@ -161,17 +168,7 @@ long PluginManager::getNextPluginId() {
     return pluginMap.size() + 10;
 }
 
-void PluginManager::cleanup() {
-    
-    for(std::map<String, PluginWindow*>::iterator itr = pluginWindowMap.begin(); itr != pluginWindowMap.end(); itr++)
-    {
-        if (itr->second->isVisible()) {
-            itr->second->setVisible(false);
-        }
-        delete (itr->second);
-    }
-    
-}
+
 
 PopupMenu* PluginManager::buildPluginMenu() {
     
@@ -263,25 +260,6 @@ StringArray& PluginManager::getPlugins() {
     return* plugins;
 }
 
-void PluginManager::releasePlugin(String name) {
-
-    if (pluginMap[name] != nullptr) {
-        /*
-        if (pluginWindowMap[name] != nullptr) {
-            delete pluginWindowMap[name];
-        }
-         */
-        if (pluginMap[name]->getActiveEditor() != nullptr) {
-            pluginMap[name]->getActiveEditor()->setVisible(false);
-            delete pluginMap[name]->getActiveEditor();
-        }
-        // pluginWindowMap[name]->setVisible(false);
-        
-        pluginMap[name]->releaseResources();
-        delete pluginMap[name] ;
-        
-    }
-}
 
 void PluginManager::openPluginWindow(juce::String name, AudioDeviceManager* manager) {
     // addPlugin(name,manager);

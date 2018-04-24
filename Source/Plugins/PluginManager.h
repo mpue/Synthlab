@@ -44,7 +44,7 @@ public:
         }
         
         ~PluginWindow() {
-            // plugin = nullptr;
+            delete plugin;
         }
         
         void closeButtonPressed() override
@@ -53,7 +53,7 @@ public:
         }
         
     private:
-        ScopedPointer<AudioProcessorEditor> plugin;
+            AudioProcessorEditor* plugin;
     };
     
     void scanPlugins();
@@ -64,7 +64,6 @@ public:
     PopupMenu* buildPluginMenu();
     long getNextPluginId();
     std::vector<String> getAvailablePlugins();
-    void releasePlugin(String name);
     StringArray& getPlugins();
     
     int getNumActiveChannels(int i) {
@@ -73,7 +72,6 @@ public:
         return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
     }
     
-    void cleanup();
     void updatePluginList();
     void openPluginWindow(String name, AudioDeviceManager* manager);
     
@@ -86,9 +84,17 @@ private:
     ~PluginManager(){
         for(std::map<String, AudioPluginInstance*>::iterator itr = pluginMap.begin(); itr != pluginMap.end(); itr++)
         {
-            releasePlugin((*itr).first);
+      
+            String name = itr->first;
+            
+            if (pluginMap[name] != nullptr) {
+                // delete editorWindowMap[name];
+                delete pluginWindowMap[name];
+                pluginMap[name]->releaseResources();
+                delete itr->second;
+            }
+            
         }
-        
         
         if (plugins != nullptr) {
             delete plugins;
@@ -102,6 +108,7 @@ private:
     
     std::map<String,AudioPluginInstance*> pluginMap;
     std::map<String,PluginWindow*> pluginWindowMap;
+    std::map<String,AudioProcessorEditor*> editorWindowMap;
     StringArray* plugins = nullptr;
     KnownPluginList* pluginList = nullptr;
     static PluginManager* instance;
