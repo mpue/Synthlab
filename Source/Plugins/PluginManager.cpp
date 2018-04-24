@@ -45,7 +45,7 @@ void PluginManager::scanPlugins() {
     launchOptions.componentToCentreAround = nullptr;
     launchOptions.content.setOwned(pluginListComponent);
     launchOptions.content->setSize(600, 580);
-    launchOptions.runModal();
+    launchOptions.launchAsync();
     
     File pluginDir = File(userHome+"/.Synthlab/plugins");
     
@@ -60,6 +60,7 @@ void PluginManager::scanPlugins() {
         xml = nullptr;
     }
     
+    delete pluginListComponent;
     delete props;
 
 }
@@ -109,7 +110,6 @@ void PluginManager::updatePluginList() {
     File presetPath = File(userHome+"/.Synthlab/plugins/");
     
     pluginList = new KnownPluginList();
-    
     
     ScopedPointer<DirectoryIterator> iter = new DirectoryIterator(presetPath, false);
     
@@ -175,7 +175,7 @@ void PluginManager::cleanup() {
 
 PopupMenu* PluginManager::buildPluginMenu() {
     
-    PopupMenu* menu = new PopupMenu();
+    PopupMenu *menu = new PopupMenu();
     
     String appDataPath = File::getSpecialLocation(File::userApplicationDataDirectory).getFullPathName();
     String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
@@ -266,13 +266,17 @@ StringArray& PluginManager::getPlugins() {
 void PluginManager::releasePlugin(String name) {
 
     if (pluginMap[name] != nullptr) {
-        
+        /*
+        if (pluginWindowMap[name] != nullptr) {
+            delete pluginWindowMap[name];
+        }
+         */
         if (pluginMap[name]->getActiveEditor() != nullptr) {
             pluginMap[name]->getActiveEditor()->setVisible(false);
             delete pluginMap[name]->getActiveEditor();
         }
-        pluginWindowMap[name]->setVisible(false);
-        delete pluginWindowMap[name];
+        // pluginWindowMap[name]->setVisible(false);
+        
         pluginMap[name]->releaseResources();
         delete pluginMap[name] ;
         

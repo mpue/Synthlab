@@ -14,6 +14,7 @@
 #include "MasterChannelPanel.h"
 #include "MixerPanel.h"
 #include "ToolbarComboBox.h"
+#include "EditorComponent.h"
 #include <map>
 //==============================================================================
 
@@ -187,9 +188,12 @@ private:
     Viewport* view = nullptr;
     MenuBarComponent* menu;
     
-    Viewport* mixerView = nullptr;
+
     MixerPanel* mixerPanel = nullptr;
     Mixer* mixer = nullptr;
+    PopupMenu* pluginMenu = nullptr;
+    
+    EditorComponent* editorView = nullptr;
     
     virtual StringArray getMenuBarNames() override;
     virtual PopupMenu getMenuForIndex(int index, const String & menuName) override;
@@ -197,8 +201,6 @@ private:
     
     StretchableLayoutManager stretchableManager;
     StretchableLayoutResizerBar resizerBar;
-
-    PopupMenu* pluginMenu = nullptr;
     
     std::map<int,int> keyCodeMidiNote;
     

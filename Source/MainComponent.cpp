@@ -44,6 +44,9 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
         deviceManager.initialise(2,2, xml, true);
     }
     
+    Project::getInstance()->setDeviceManager(&deviceManager);
+    PluginManager::getInstance();
+    
     toolbar = new Toolbar();
     toolbar->setBounds(0,0,  getWidth(), 50);
     
@@ -82,67 +85,16 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
         }
     }
     
-    editor = new SynthEditor(sampleRate,buffersize);
-    // editor->loadFromString(BinaryData::delaytest6);
-    
-    tab = new MainTabbedComponent();
-    tab->setBounds(0,50,getWidth(),getHeight());
-    
-    view = new Viewport();
-    
-    // addAndMakeVisible(view);
-    
-    view->setSize(500,200);
-    view->setViewedComponent(editor);
-    view->setScrollBarsShown(true,true);
-    view->setScrollOnDragEnabled(false);
-    view->setWantsKeyboardFocus(false);
-    view->setMouseClickGrabsKeyboardFocus(false);
-    
-    tab->addTab("Main", juce::Colours::grey, view, false);
-    
-    mixerPanel = new MixerPanel();
-    mixer = new Mixer();
-    mixerPanel->setMixer(mixer);
-    
-    juce::BigInteger activeInputChannels = deviceManager.getCurrentAudioDevice()->getActiveInputChannels();
-    juce::BigInteger activeOutputChannels = deviceManager.getCurrentAudioDevice()->getActiveOutputChannels();
-    
-    int numInputChannels = deviceManager.getCurrentAudioDevice()->getInputChannelNames().size();
-    int numOutputChannels = deviceManager.getCurrentAudioDevice()->getOutputChannelNames().size();
-    
-    int numActiveInputs = getNumActiveChannels(activeInputChannels.toInteger());
-    int numActiveOutputs = getNumActiveChannels(activeOutputChannels.toInteger());
-    
-    
-    for (int i = 0; i < numActiveInputs;i+=2) {
-        mixerPanel->addChannel(deviceManager.getCurrentAudioDevice()->getInputChannelNames().getReference(i), Mixer::Channel::Type::IN);
-    }
-    
-    for (int i = 0; i < numActiveOutputs;i+=2) {
-        mixerPanel->addChannel(deviceManager.getCurrentAudioDevice()->getOutputChannelNames().getReference(i),Mixer::Channel::Type::OUT);
-    }
-    
-    for (int i = 0; i < 16;i++) {
-        mixerPanel->addChannel("Bus "+String(i+1),Mixer::Channel::Type::AUX);
-    }
-    
-    
-    mixerView = new Viewport();
-    
-    // mixerView->setSize(500,200);
-    mixerView->setViewedComponent(mixerPanel);
-    mixerView->setScrollBarsShown(true,true);
-    mixerView->setScrollOnDragEnabled(false);
-    mixerView->setWantsKeyboardFocus(false);
-    mixerView->setMouseClickGrabsKeyboardFocus(false);
-    
-    editor->setMixer(mixerPanel);
+    editorView = new EditorComponent(sampleRate, buffersize);
+    editor = editorView->getEditor();
+    mixer = editorView->getMixer();
+    mixerPanel = editorView->getMixerPanel();
     
     propertyView =  new PropertyView();
+    
     addAndMakeVisible (propertyView);
     addAndMakeVisible (resizerBar);
-    addAndMakeVisible (tab);
+    addAndMakeVisible(editorView);
     editor->setTab(tab);
 
     addKeyListener(this);
@@ -162,8 +114,8 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
                                       -0.1, -0.9,   // size must be between 50 pixels and 90% of the available space
                                       -0.8);
     
-    Project::getInstance()->setDeviceManager(&deviceManager);
-    PluginManager::getInstance();
+    
+    pluginMenu = PluginManager::getInstance()->buildPluginMenu();
     
     initialized = true;
     running = true;
@@ -174,10 +126,6 @@ MainComponent::~MainComponent()
 {
     running = false;
     
-    if (pluginMenu != nullptr) {
-        delete pluginMenu;
-    }
-    
     editor->removeAllChangeListeners();
     
     for (int i = 0; i < MidiInput::getDevices().size();i++) {
@@ -185,29 +133,32 @@ MainComponent::~MainComponent()
             deviceManager.removeMidiInputCallback(MidiInput::getDevices().getReference(i),this);
         }
     }
-	
 
 #if JUCE_MAC
     MenuBarModel::setMacMainMenu(nullptr);
 #endif
-    delete editor;
-    delete mixerPanel;
-    delete mixerView;
-    delete mixer;
+
     delete tab;
     delete view;
     delete propertyView;
     delete menu;
     delete toolbar;
     delete toolbarFactory;
-
+    delete editorView;
+    delete pluginMenu;
 
     PrefabFactory::getInstance()->destroy();
     Project::getInstance()->destroy();
+    
+
+    
     // This shuts down the audio device and clears the audio source.
     shutdownAudio();
+    
 
 }
+
+
 
 void MainComponent::timerCallback(){
     if (mixerPanel != nullptr) {
@@ -388,7 +339,7 @@ void MainComponent::resized()
         toolbar->setSize(getLocalBounds().getWidth() , 50);
     
     // make a list of two of our child components that we want to reposition
-    Component* comps[] = { propertyView, &resizerBar, tab };
+    Component* comps[] = { propertyView, &resizerBar, editorView };
     
     // this will position the 3 components, one above the other, to fit
     // vertically into the rectangle provided.
@@ -397,7 +348,7 @@ void MainComponent::resized()
                                          false, true);
     
     if (propertyView != nullptr && propertyView->getParentComponent() != NULL)
-        propertyView->setSize(r.getWidth()-tab->getWidth(), propertyView->getHeight());
+        propertyView->setSize(r.getWidth()-editorView->getWidth(), propertyView->getHeight());
 }
 
 PopupMenu MainComponent::getMenuForIndex(int index, const String & menuName) {
@@ -416,10 +367,9 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String & menuName) {
         menu.addItem(12, "Manage plugins", true, false, nullptr);
     }
     else if (index == 2) {
-        if (pluginMenu == nullptr) {
-            pluginMenu = PluginManager::getInstance()->buildPluginMenu();
-        }
-        return *pluginMenu;
+        
+        if (pluginMenu != nullptr)
+            return *pluginMenu;
     }
 
     
@@ -449,10 +399,6 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
     }
     else if (menuItemID == 5) {
         openSettings();
-    }
-    else if (menuItemID == 11) {
-        tab->addTab("Mixer", juce::Colours::grey, mixerView, false);
-
     }
     else if (menuItemID == 12) {
         PluginManager::getInstance()->scanPlugins();

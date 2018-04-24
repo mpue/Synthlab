@@ -88,14 +88,16 @@ private:
         {
             releasePlugin((*itr).first);
         }
-        delete apfm;
+        
+        
         if (plugins != nullptr) {
             delete plugins;
         }
         if (pluginList != nullptr) {
             pluginList->clear();
-            delete pluginList;
+            // delete pluginList;
         }
+        delete apfm;
     }
     
     std::map<String,AudioPluginInstance*> pluginMap;
