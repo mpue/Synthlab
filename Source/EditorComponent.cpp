@@ -49,7 +49,8 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize) : resizerBar 
     mixerView->setMouseClickGrabsKeyboardFocus(false);
     
     editor->setMixer(mixerPanel);
-
+    editor->addChangeListener(this);
+    
     bottomTab->addTab("Mixer", Colours::darkgrey, mixerView, false);
     
     addAndMakeVisible(topTab);
@@ -66,6 +67,8 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize) : resizerBar 
     stretchableManager.setItemLayout (2,            // for the main editor
                                       -0.1, -0.9,   // size must be between 50 pixels and 90% of the available space
                                       -0.3);
+
+    Project::getInstance()->setSupplemental(this->bottomTab);
 }
 
 EditorComponent::~EditorComponent()
@@ -142,4 +145,8 @@ void EditorComponent::initChannels() {
     for (int i = 0; i < 16;i++) {
         mixerPanel->addChannel("Bus "+String(i+1),Mixer::Channel::Type::AUX);
     }
+}
+
+void EditorComponent::changeListenerCallback(juce::ChangeBroadcaster *source) {
+    
 }

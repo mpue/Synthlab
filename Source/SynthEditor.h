@@ -65,9 +65,6 @@ public:
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
 
-
-    
-
 	void addConnection(const MouseEvent& e, Module* m);
     void deleteSelected(bool deleteAll);
 

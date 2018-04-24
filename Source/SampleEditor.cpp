@@ -55,7 +55,7 @@ SampleEditor::~SampleEditor()
 void SampleEditor::paint (Graphics& g)
 {
 
-    g.fillAll (Colour (0xff323e44));
+    g.fillAll (Colours::darkgrey);
 
 }
 

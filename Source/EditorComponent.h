@@ -20,7 +20,7 @@
 //==============================================================================
 /*
 */
-class EditorComponent    : public Component
+class EditorComponent    : public Component, public ChangeListener
 {
 public:
     EditorComponent(float sampleRate, int bufferSize);
@@ -33,6 +33,7 @@ public:
     MixerPanel* getMixerPanel();
     Mixer* getMixer();
     
+    virtual void changeListenerCallback (ChangeBroadcaster* source) override;
 private:
 
     void initChannels();

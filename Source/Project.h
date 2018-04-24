@@ -12,6 +12,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "CustomLookAndFeel.h"
+#include "MainTabbedComponent.h"
 
 #ifdef USE_PUSH
 #include "push2/JuceToPush2DisplayBridge.h"
@@ -56,6 +57,14 @@ public:
 
     void loadRecentFileList();
     void addRecentFile(String path);
+    
+    void setSupplemental(MainTabbedComponent* component) {
+        this->supplementalTab = component;
+    }
+    
+    MainTabbedComponent* getSupplemental(){
+        return supplementalTab;
+    }
 
     inline CustomLookAndFeel* getLookAndFeel() {
         return lookAndFeel;
@@ -103,6 +112,8 @@ private:
     AudioDeviceManager* deviceManager;
     StringArray recentFiles;
     CustomLookAndFeel* lookAndFeel;
+    
+    MainTabbedComponent* supplementalTab;
     
 #ifdef USE_PUSH
     ableton::Push2DisplayBridge bridge;    /*!< The bridge allowing to use juce::graphics for push */

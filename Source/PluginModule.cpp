@@ -32,7 +32,7 @@ PluginModule::PluginModule(double sampleRate, int buffersize)
     bufferLeft = new float[buffersize];
     bufferRight = new float[buffersize];
     
-    audioBuffer = new AudioBuffer<float>(4,buffersize);
+    audioBuffer = new AudioBuffer<float>(2,buffersize);
     createProperties();
 }
 

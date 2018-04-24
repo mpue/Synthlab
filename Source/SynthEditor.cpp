@@ -957,24 +957,12 @@ void SynthEditor::saveFile() {
 }
 
 void SynthEditor::openSampleEditor(SamplerModule *sm) {
-    DialogWindow::LaunchOptions launchOptions;
+    
+    // DialogWindow::LaunchOptions launchOptions;
     
     SampleEditor* se = new SampleEditor(bufferSize, _sampleRate, Project::getInstance()->getFormatManager(), sm);
-    
+    Project::getInstance()->getSupplemental()->addTab("Sample editor", Colours::darkgrey, se, true);
 
-    launchOptions.dialogTitle = ("Edit samples");
-    launchOptions.escapeKeyTriggersCloseButton = true;
-    launchOptions.resizable = true;
-    launchOptions.useNativeTitleBar = false;
-    launchOptions.useBottomRightCornerResizer = true;
-    launchOptions.componentToCentreAround = nullptr;
-    launchOptions.content.setOwned(se);
-    launchOptions.content->setSize(1000, 400);
-    launchOptions.dialogBackgroundColour = LookAndFeel::getDefaultLookAndFeel().findColour(ResizableWindow::backgroundColourId);
-    
-    launchOptions.launchAsync();
-
-    
 }
 
 
