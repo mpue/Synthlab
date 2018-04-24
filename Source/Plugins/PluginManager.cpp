@@ -264,13 +264,15 @@ StringArray& PluginManager::getPlugins() {
 }
 
 void PluginManager::releasePlugin(String name) {
-    delete pluginWindowMap[name];
+
     if (pluginMap[name] != nullptr) {
         
         if (pluginMap[name]->getActiveEditor() != nullptr) {
+            pluginMap[name]->getActiveEditor()->setVisible(false);
             delete pluginMap[name]->getActiveEditor();
         }
-
+        pluginWindowMap[name]->setVisible(false);
+        delete pluginWindowMap[name];
         pluginMap[name]->releaseResources();
         delete pluginMap[name] ;
         
