@@ -74,7 +74,7 @@ public:
     }
     
     void cleanup();
-    
+    void updatePluginList();
     void openPluginWindow(String name, AudioDeviceManager* manager);
     
 private:
@@ -92,12 +92,16 @@ private:
         if (plugins != nullptr) {
             delete plugins;
         }
+        if (pluginList != nullptr) {
+            pluginList->clear();
+            delete pluginList;
+        }
     }
     
     std::map<String,AudioPluginInstance*> pluginMap;
     std::map<String,PluginWindow*> pluginWindowMap;
     StringArray* plugins = nullptr;
-    
+    KnownPluginList* pluginList = nullptr;
     static PluginManager* instance;
     AudioPluginFormatManager* apfm;
 };

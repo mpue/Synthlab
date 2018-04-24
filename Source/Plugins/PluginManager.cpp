@@ -17,10 +17,10 @@ PluginManager::PluginManager() {
 
 void PluginManager::scanPlugins() {
     
-    AudioPluginFormatManager* apfm = new AudioPluginFormatManager();
-    apfm->addDefaultFormats();
-    
-    KnownPluginList *pluginList = new KnownPluginList();
+    if (pluginList == nullptr) {
+        updatePluginList();
+    }
+
     PropertiesFile::Options options;
     
     String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
@@ -54,8 +54,13 @@ void PluginManager::scanPlugins() {
     }
     
     for (int i = 0; i < pluginList->getNumTypes();i++) {
-        pluginList->getType(i)->createXml()->writeToFile(File(userHome+"/.Synthlab/plugins/"+pluginList->getType(i)->name),"");
+        ScopedPointer<XmlElement> xml = pluginList->getType(i)->createXml();
+        
+        xml->writeToFile(File(userHome+"/.Synthlab/plugins/"+pluginList->getType(i)->name),"");
+        xml = nullptr;
     }
+    
+    delete props;
 
 }
 
@@ -98,10 +103,28 @@ void PluginManager::configureBusLayout(AudioPluginInstance* plugin, AudioDeviceM
     Logger::getCurrentLogger()->writeToLog("Active input channels "+String(numActiveHostInputs));
 }
 
+void PluginManager::updatePluginList() {
+    
+    String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
+    File presetPath = File(userHome+"/.Synthlab/plugins/");
+    
+    pluginList = new KnownPluginList();
+    
+    
+    ScopedPointer<DirectoryIterator> iter = new DirectoryIterator(presetPath, false);
+    
+    while(iter->next()) {
+        ScopedPointer<XmlElement> xml = XmlDocument(iter->getFile()).getDocumentElement();
+        PluginDescription pd = PluginDescription();
+        pd.loadFromXml(*xml);
+        pluginList->addType(pd);
+        xml = nullptr;
+    }
+    iter = nullptr;
+}
 
 void PluginManager::addPlugin(String name, AudioDeviceManager* deviceManager) {
     
-
     String error = String("Error");
     PluginDescription pd;
     
@@ -174,14 +197,14 @@ PopupMenu* PluginManager::buildPluginMenu() {
         
         while(iter->next()) {
             ScopedPointer<XmlElement> xml = XmlDocument(iter->getFile()).getDocumentElement();
-            PluginDescription pd;
-            pd.loadFromXml(*xml.get());
+            PluginDescription pd = PluginDescription();
+            pd.loadFromXml(*xml);
             
 
             if (!manufacturers.contains(pd.manufacturerName)) {
                 manufacturers.add(pd.manufacturerName);
             }
-
+            xml = nullptr;
             
         }
         iter = nullptr;
