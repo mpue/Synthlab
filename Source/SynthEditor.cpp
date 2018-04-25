@@ -42,6 +42,8 @@
 #include "OneShotTimer.h"
 #include "PluginModule.h"
 #include "AudioManager.h"
+#include "StepSequencerModule.h"
+#include "SequenceEditor.h"
 
 class SampleEditor;
 //[/Headers]
@@ -654,16 +656,25 @@ void SynthEditor::mouseDoubleClick (const MouseEvent& e)
             Module* m = root->getModules()->at(i);
 
             if (m->isPrefab() && m->getBounds().contains(e.getPosition())) {
+                
                 SamplerModule*sm = dynamic_cast<SamplerModule*>(m);
                 
                 if (sm != NULL) {
                     openSampleEditor(sm);
                 }
+                
                 PluginModule *pm = dynamic_cast<PluginModule*>(m);
                 
                 if (pm != NULL) {
                     pm->openPluginWindow();
                 }
+                
+                StepSequencerModule *ssm = dynamic_cast<StepSequencerModule*>(m);
+                
+                if (ssm != NULL) {
+                    openStepSequencer(ssm);
+                }
+            
             }
             else {
                 if (m->isSelected() && m->isEditable()) {
@@ -962,15 +973,19 @@ void SynthEditor::saveFile() {
 }
 
 void SynthEditor::openSampleEditor(SamplerModule *sm) {
-    
-    // DialogWindow::LaunchOptions launchOptions;
-    
     SampleEditor* se = new SampleEditor(bufferSize, _sampleRate, AudioManager::getInstance()->getFormatManager(), sm);
     Project::getInstance()->getSupplemental()->addTab("Sample editor", Colours::darkgrey, se, true);
-
+    Project::getInstance()->getSupplemental()->setCurrentTabIndex(Project::getInstance()->getSupplemental()->getNumTabs() - 1);
 }
 
-
+void SynthEditor::openStepSequencer(StepSequencerModule *ssm) {
+    SequenceEditor* se = new SequenceEditor(ssm);
+    Viewport* vp = new Viewport();
+    vp->setViewedComponent(se);
+    Project::getInstance()->getSupplemental()->addTab("Step sequencer", Colours::darkgrey, vp, true);
+    Project::getInstance()->getSupplemental()->setCurrentTabIndex(Project::getInstance()->getSupplemental()->getNumTabs() - 1);
+   
+}
 
 void SynthEditor::openFile() {
     FileChooser chooser("Select file to open", File::nonexistent, "*");

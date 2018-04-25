@@ -34,6 +34,7 @@
 #include "AuxOut.h"
 #include "DistortionModule.h"
 #include "PluginModule.h"
+#include "StepSequencerModule.h"
 
 PrefabFactory* PrefabFactory::instance = NULL;
 
@@ -124,6 +125,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Plugin") {
         m = new PluginModule(sampleRate,bufferSize);
+    }
+    else if (prefabs[id].getName() == "Step sequencer") {
+        m = new StepSequencerModule(sampleRate,bufferSize);
     }
     
     m->setIndex(id + 100 * prefabs[id].getNumInstances());

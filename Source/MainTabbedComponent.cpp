@@ -10,7 +10,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "MainTabbedComponent.h"
-
+#include "CloseableTabButton.h"
 //==============================================================================
 MainTabbedComponent::MainTabbedComponent() : juce::TabbedComponent(TabbedButtonBar::Orientation::TabsAtTop)
 {
@@ -52,4 +52,20 @@ void MainTabbedComponent::popupMenuClickOnTab(int tabIndex, const juce::String &
     }
     delete m;
  
+}
+
+void MainTabbedComponent::buttonClicked(juce::Button * button) {
+    TabbedComponent::removeTab(button->getName().getIntValue());
+}
+
+TabBarButton* MainTabbedComponent::createTabButton(const juce::String &tabName, int tabIndex)
+{
+    TabBarButton* tb = new TabBarButton(tabName,getTabbedButtonBar());
+    
+    TextButton* closeButton = new TextButton("x");
+    closeButton->setName(String(tabIndex));
+    closeButton->addListener(this);
+    closeButton->setBounds(0,0,30,20);
+    tb->setExtraComponent(closeButton, juce::TabBarButton::ExtraComponentPlacement::afterText);
+    return tb;
 }

@@ -30,7 +30,7 @@
 #include "AudioModule.h"
 #include "SampleEditor.h"
 #include "SelectionModel.h"
-
+#include "StepSequencerModule.h"
 
 #include <vector>
 #include "MixerPanel.h"
@@ -78,7 +78,8 @@ public:
     void openFile();
 
     void openSampleEditor(SamplerModule* sm);
-
+    void openStepSequencer(StepSequencerModule* ssm);
+    
     void saveStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections, ValueTree* v);
     void loadStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections,ValueTree* v);
 
