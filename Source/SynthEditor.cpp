@@ -116,14 +116,10 @@ SynthEditor::~SynthEditor()
 {
     //[Destructor_pre]. You can add your own custom destruction code here..
     //[/Destructor_pre]
-
-
-
     //[Destructor]. You can add your own custom destruction code here..
 
     cleanUp();
 
-    
     if (isRoot)
         delete root;
     
@@ -158,19 +154,26 @@ void SynthEditor::paint (Graphics& g)
             Connection* c = root->getConnections()->at(i);
             
             if (c->source != NULL && c->target != NULL) {
+                
                 int x1 = c->source->getX() + c->a->x;
                 int y1 = c->source->getY() + c->a->y + 5;
                 int x2 = c->target->getX() + c->b->x;
                 int y2 = c->target->getY() + c->b->y + 5;
-                
+                /*
+                Point<int> p1 = Point<int>(x1,y1);
+                Point<int> p2 = Point<int>(x2,y2);
+                c->setPoints(p1,p2);
+                c->resized();
+                */
                 if (c->selected) {
                     g.setColour(juce::Colours::cyan);
                 }
                 else {
-                    g.setColour(juce::Colours::white);
+                    g.setColour(juce::Colours::lightgrey);
                 }
                 
                 g.drawLine(x1,y1,x2,y2);
+                // c->paint(g);
             }
             
         }
@@ -853,6 +856,7 @@ void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Conn
         
         if ((pm = dynamic_cast<PluginModule*>((*it))) != NULL) {
             file.setProperty("plugin", pm->getPluginName(), nullptr);
+            file.setProperty("currentProgram", pm->getCurrentProgram(), nullptr);
         }
         
         ValueTree pins = ValueTree("Pins");
@@ -1152,6 +1156,7 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         
         if ((pm = dynamic_cast<PluginModule*>(m)) != NULL) {
             pm->selectPlugin(mod.getProperty("plugin").toString());
+            pm->setCurrentProgram(mod.getProperty("currentProgram").toString().getIntValue());
         }
         
         // addAndMakeVisible(m);
@@ -1328,6 +1333,7 @@ void SynthEditor::removeModule(Module* module) {
         for (std::vector<Connection*>::iterator it = cons->begin(); it != cons->end(); ) {
             if ((*it)->source->getIndex() == module->getIndex() ||
                 (*it)->target->getIndex() == module->getIndex() ) {
+                delete (*it);
                 it = cons->erase(it);
             }
             else {
@@ -1358,7 +1364,10 @@ void SynthEditor::deleteSelected(bool deleteAll) {
         std::vector<Connection*>* cons = root->getConnections();
         cons->erase(std::remove_if(cons->begin(), cons->end(), [](Connection* c){
             if (c->selected){
-                delete c;
+                
+                
+                
+                ;
                 return true;
             }
             return false;

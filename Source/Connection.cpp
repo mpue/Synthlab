@@ -12,6 +12,7 @@
 
 Connection::Connection()
 {
+    linePath = new Path();
 }
 
 Connection::Connection(Module* source, Pin* a, Module* target, Pin* b) {
@@ -33,6 +34,29 @@ Connection::~Connection()
     for (std::vector<Pin*>::iterator it = b->connections.begin(); it != b->connections.end();it++) {
         (*it)->invalidate();
     }
+    
+    linePath = nullptr;
      
 }
+void Connection::resized() {
+    
+    linePath->clear();
+    linePath->startNewSubPath (p1.x, p1.y);
+    linePath->cubicTo (p1.x, p1.y + (p2.y - p1.y) * 0.43f,
+                       p2.x, p1.y + (p2.y - p1.y) * 0.56f,
+                       p2.x, p2.y);
+    
+    PathStrokeType wideStroke (2.0f);
+    wideStroke.createStrokedPath (*linePath, *linePath);
+    
+}
 
+void Connection::paint(Graphics& g) {
+    g.fillPath(*linePath);
+}
+
+void Connection::setPoints(Point<int> &p1, Point<int> &p2) {
+    this->p1 = p1;
+    this->p2 = p2;
+}
+     

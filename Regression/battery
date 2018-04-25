@@ -3,7 +3,7 @@
 <Synth>
   <Modules>
     <Module name="Plugin" index="79" x="381" y="101" isPrefab="1" prefabId="79"
-            plugin="Battery 4">
+            plugin="Battery 4" currentProgram="0">
       <Pins>
         <Pin type="0" direction="0" index="7901" x="0" y="10"/>
         <Pin type="0" direction="0" index="7902" x="0" y="30"/>
@@ -40,10 +40,10 @@
     </Module>
   </Modules>
   <Connections>
-    <Connection source="76" target="79" a="7601" b="7901"/>
-    <Connection source="76" target="79" a="7602" b="7902"/>
-    <Connection source="79" target="66" a="7903" b="6601"/>
-    <Connection source="79" target="66" a="7904" b="6602"/>
+    <Connection source="79" target="76" a="7901" b="7601"/>
+    <Connection source="79" target="76" a="7902" b="7602"/>
+    <Connection source="66" target="79" a="6601" b="7903"/>
+    <Connection source="66" target="79" a="6602" b="7904"/>
     <Connection source="61" target="79" a="6102" b="7905"/>
   </Connections>
 </Synth>

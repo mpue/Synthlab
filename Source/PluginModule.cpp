@@ -107,7 +107,7 @@ void PluginModule::configurePins() {
 
 void PluginModule::paint(juce::Graphics &g) {
     Module::paint(g);
-    // g.drawImageAt(ImageCache::getFromMemory(BinaryData::lp_png, BinaryData::lp_pngSize),25,40);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::plugin_png, BinaryData::plugin_pngSize),25,40);
 }
 
 
@@ -181,4 +181,20 @@ juce::Array<PropertyComponent*>& PluginModule::getProperties() {
     properties = juce::Array<PropertyComponent*>();
     properties.add(pluginProp);
     return properties;
+}
+
+int PluginModule::getCurrentProgram() {
+    if (plugin != nullptr) {
+        currentProgram = plugin->getCurrentProgram();
+    }
+    return currentProgram;
+}
+
+void PluginModule::setCurrentProgram(int program) {
+    currentProgram = program;
+    
+    if (plugin != nullptr) {
+        plugin->setCurrentProgram(currentProgram);
+    }
+    
 }

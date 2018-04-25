@@ -33,6 +33,7 @@
       <FILE id="HjBjyS" name="new.png" compile="0" resource="1" file="Images/new.png"/>
       <FILE id="trqee2" name="note.png" compile="0" resource="1" file="Images/note.png"/>
       <FILE id="WJV4UZ" name="open.png" compile="0" resource="1" file="Images/open.png"/>
+      <FILE id="xHNzRT" name="plugin.png" compile="0" resource="1" file="Images/plugin.png"/>
       <FILE id="oIx1Pf" name="pulse.png" compile="0" resource="1" file="Images/pulse.png"/>
       <FILE id="toz51A" name="random.png" compile="0" resource="1" file="Images/random.png"/>
       <FILE id="YTIJ1n" name="redo.png" compile="0" resource="1" file="Images/redo.png"/>
@@ -156,6 +157,9 @@
         <FILE id="RO3JEM" name="WhiteNoise.h" compile="0" resource="0" file="Source/AudioEngine/WhiteNoise.h"/>
       </GROUP>
       <GROUP id="{F7A67158-9DD4-9E2C-0BDC-1B58ED967D9B}" name="Editor">
+        <FILE id="NWNJTZ" name="AudioManager.h" compile="0" resource="0" file="Source/AudioManager.h"/>
+        <FILE id="W9vONN" name="AudioManager.cpp" compile="1" resource="0"
+              file="Source/AudioManager.cpp"/>
         <FILE id="LTbDuF" name="Project.cpp" compile="1" resource="0" file="Source/Project.cpp"/>
         <FILE id="WcR5ED" name="Project.h" compile="0" resource="0" file="Source/Project.h"/>
         <FILE id="NKE8pj" name="SelectionModel.cpp" compile="1" resource="0"

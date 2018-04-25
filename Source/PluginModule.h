@@ -31,6 +31,9 @@ public:
         return "FX";
     }
     
+    void setCurrentProgram(int program);
+    int getCurrentProgram();
+    
     void selectPlugin(String name);
     String getPluginName();
     void openPluginWindow();
@@ -54,6 +57,8 @@ private:
     };
     
     Image* image;
+    
+    int currentProgram = 0;
     
     int currentSample = 0;
     float* buffer;
