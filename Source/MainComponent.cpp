@@ -7,6 +7,7 @@
 */
 
 #include "Plugins/PluginManager.h"
+#include "AudioManager.h"
 #include "MainComponent.h"
 #include "SynthEditor.h"
 #include "PropertyView.h"
@@ -44,7 +45,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
         deviceManager.initialise(2,2, xml, true);
     }
     
-    Project::getInstance()->setDeviceManager(&deviceManager);
+    AudioManager::getInstance()->setDeviceManager(&deviceManager);
     PluginManager::getInstance();
     
     toolbar = new Toolbar();
@@ -150,15 +151,9 @@ MainComponent::~MainComponent()
     PrefabFactory::getInstance()->destroy();
     Project::getInstance()->destroy();
     
-
-    
     // This shuts down the audio device and clears the audio source.
     shutdownAudio();
-    
-
 }
-
-
 
 void MainComponent::timerCallback(){
     if (mixerPanel != nullptr) {
@@ -208,20 +203,21 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
     std::vector<AudioIn*> inputChannels = editor->getInputChannels();
     std::vector<AuxOut*> auxChannels = editor->getAuxChannels();
 
-    for (int k = 0; k < inputChannels.size();k++) {
+    for (int k = 0; k < mixer->getNumInputs();k++) {
         
         Mixer::Channel* input =  mixer->getChannel(Mixer::Channel::Type::IN, k);
         
-        inputChannels.at(k)->pins.at(0)->getAudioBuffer()->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, k, bufferToFill.startSample, numSamples);
-        inputChannels.at(k)->pins.at(1)->getAudioBuffer()->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, k+1, bufferToFill.startSample, numSamples);
-        input->magnitudeLeft = inputChannels.at(k)->pins.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
-        input->magnitudeRight = inputChannels.at(k)->pins.at(1)->getAudioBuffer()->getMagnitude(1, 0, numSamples);
+        if (input != nullptr) {
+            inputChannels.at(k)->pins.at(0)->getAudioBuffer()->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, k, bufferToFill.startSample, numSamples);
+            inputChannels.at(k)->pins.at(1)->getAudioBuffer()->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, k+1, bufferToFill.startSample, numSamples);
+            input->magnitudeLeft = inputChannels.at(k)->pins.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+            input->magnitudeRight = inputChannels.at(k)->pins.at(1)->getAudioBuffer()->getMagnitude(1, 0, numSamples);
+        }
+ 
     }
     
- 
-    
     // mute if there are no channels
-    if (outputChannels.size() == 0) {
+    if (mixer->getNumOutputs() ==  0) {
         for (int j = 0;j < numSamples;j++) {
             outputChannelData[0][j] = 0;
             outputChannelData[1][j] = 0;
@@ -236,12 +232,13 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
         float gainLeft = cos((M_PI*(pan + 1) / 4));
         float gainRight = sin((M_PI*(pan + 1) / 4));
 
-        
         // process all output pins of the connected module
-        // outputChannels.at(0)->getPins().at(0)->process(inputChannelData[0], outputChannelData[0], numSamples);
+
         for (int j = 0;j < numSamples;j++) {
 
             float auxLeftOut = 0;
+            
+            // merge the output of the AUX busses
             
             for (int k = 0; k < auxChannels.size();k++) {
                 
@@ -306,28 +303,16 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
         }
     }
     
-    // For more details, see the help for AudioProcessor::getNextAudioBlock()
-
-    // Right now we are not producing any data, in which case we need to clear the buffer
-    // (to prevent the output of random noise)
-    // bufferToFill.clearActiveBufferRegion();
 }
 
 void MainComponent::releaseResources()
 {
-    // This will be called when the audio device stops, or when it is being
-    // restarted due to a setting change.
-
-    // For more details, see the help for AudioProcessor::releaseResources()
 }
 
 //==============================================================================
 void MainComponent::paint (Graphics& g)
 {
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));
-
-    // You can add your drawing code here!
 }
 
 void MainComponent::resized()
@@ -415,7 +400,6 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
             }
         }
         
-        // PluginManager::getInstance()->openPluginWindow(pluginName, &deviceManager);
     }
     else if (menuItemID == 999) {
         JUCEApplication::getInstance()->shutdown();

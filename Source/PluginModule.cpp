@@ -11,7 +11,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "PluginModule.h"
 #include "Connection.h"
-#include "Project.h"
+#include "AudioManager.h"
 #include "Plugins/PluginManager.h"
 
 //==============================================================================
@@ -59,7 +59,7 @@ void PluginModule::selectPlugin(String name) {
     // PluginManager::getInstance()->addPlugin(name, Project::getInstance()->getDeviceManager());
     // plugin = PluginManager::getInstance()->getPlugin(name);
     // PluginManager::getInstance()->openPluginWindow(name, Project::getInstance()->getDeviceManager());
-    PluginManager::getInstance()->addPlugin(name, Project::getInstance()->getDeviceManager());
+    PluginManager::getInstance()->addPlugin(name, AudioManager::getInstance()->getDeviceManager());
     plugin = PluginManager::getInstance()->getPlugin(name);
     plugin->prepareToPlay(sampleRate, buffersize);
     pluginName = name;

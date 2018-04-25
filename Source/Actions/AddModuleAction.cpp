@@ -11,6 +11,7 @@
 #include "../AudioIn.h"
 #include "../AuxOut.h"
 #include "../PrefabFactory.h"
+#include "../AudioManager.h"
 
 AddModuleAction::AddModuleAction(SynthEditor* editor, Point<int> position, int moduleId) {
     this->editor = editor;
@@ -64,9 +65,14 @@ bool AddModuleAction::perform() {
     
     module = m;
     
+    AudioManager* p = AudioManager::getInstance();
+    
     AudioOut* out;
     if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
         editor->getOutputChannels().push_back(out);
+        String channelName = p->getOutputChannelNames().getReference(editor->getOutputChannels().size() - 1);
+        editor->addChannel(channelName, Mixer::Channel::Type::OUT);
+        
         if (!editor->isRunning()) {
             editor->setRunning(true);
         }
@@ -75,6 +81,8 @@ bool AddModuleAction::perform() {
     AuxOut* aux;
     if ((aux = dynamic_cast<AuxOut*>(m)) != NULL) {
         editor->getAuxChannels().push_back(aux);
+        String channelName = "Aux "+ String(editor->getAuxChannels().size());
+        editor->addChannel(channelName, Mixer::Channel::Type::AUX);
         if (!editor->isRunning()) {
             editor->setRunning(true);
         }
@@ -83,6 +91,8 @@ bool AddModuleAction::perform() {
     AudioIn* in;
     if ((in = dynamic_cast<AudioIn*>(m)) != NULL) {
         editor->getInputChannels().push_back(in);
+        String channelName = p->getInputChannelNames().getReference(editor->getInputChannels().size() - 1);
+        editor->addChannel(channelName, Mixer::Channel::Type::IN);
         if (!editor->isRunning()) {
             editor->setRunning(true);
         }

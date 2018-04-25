@@ -9,13 +9,13 @@
 */
 
 #include "Sampler.h"
-#include "Project.h"
+#include "AudioManager.h"
 
 
 Sampler::Sampler(float sampleRate, int bufferSize) {
     this->sampleRate = sampleRate;
     this->bufferSize = bufferSize;
-    this->manager = Project::getInstance()->getFormatManager();
+    this->manager = AudioManager::getInstance()->getFormatManager();
     interpolatorLeft = new CatmullRomInterpolator();
     interpolatorRight = new CatmullRomInterpolator();
     this->sampleBuffer = new AudioSampleBuffer(2,1024*1024);

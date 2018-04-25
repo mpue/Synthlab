@@ -39,8 +39,6 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize) : resizerBar 
     mixer = new Mixer();
     mixerPanel->setMixer(mixer);
     
-    initChannels();
-    
     mixerView = new Viewport();
     mixerView->setViewedComponent(mixerPanel);
     mixerView->setScrollBarsShown(true,true);
@@ -118,33 +116,6 @@ MixerPanel* EditorComponent::getMixerPanel() {
 
 SynthEditor* EditorComponent::getEditor() {
     return editor;
-}
-
-void EditorComponent::initChannels() {
-
-    AudioDeviceManager* deviceManager = Project::getInstance()->getDeviceManager();
-    
-    juce::BigInteger activeInputChannels = deviceManager->getCurrentAudioDevice()->getActiveInputChannels();
-    juce::BigInteger activeOutputChannels = deviceManager->getCurrentAudioDevice()->getActiveOutputChannels();
-    
-    int numInputChannels = deviceManager->getCurrentAudioDevice()->getInputChannelNames().size();
-    int numOutputChannels = deviceManager->getCurrentAudioDevice()->getOutputChannelNames().size();
-    
-    int numActiveInputs = getNumActiveChannels(activeInputChannels.toInteger());
-    int numActiveOutputs = getNumActiveChannels(activeOutputChannels.toInteger());
-    
-    
-    for (int i = 0; i < numActiveInputs;i+=2) {
-        mixerPanel->addChannel(deviceManager->getCurrentAudioDevice()->getInputChannelNames().getReference(i), Mixer::Channel::Type::IN);
-    }
-    
-    for (int i = 0; i < numActiveOutputs;i+=2) {
-        mixerPanel->addChannel(deviceManager->getCurrentAudioDevice()->getOutputChannelNames().getReference(i),Mixer::Channel::Type::OUT);
-    }
-    
-    for (int i = 0; i < 16;i++) {
-        mixerPanel->addChannel("Bus "+String(i+1),Mixer::Channel::Type::AUX);
-    }
 }
 
 void EditorComponent::changeListenerCallback(juce::ChangeBroadcaster *source) {

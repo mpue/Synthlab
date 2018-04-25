@@ -1,5 +1,5 @@
 
-#include "Project.h"
+#include "AudioManager.h"
 #include "SampleEditor.h"
 #include "push2/JuceToPush2DisplayBridge.h"
 
@@ -22,7 +22,7 @@ SampleEditor::SampleEditor (int buffersize, float sampleRate, AudioFormatManager
     }
     state.addListener(this);
     
-    AudioDeviceManager* deviceManager = Project::getInstance()->getDeviceManager();
+    AudioDeviceManager* deviceManager = AudioManager::getInstance()->getDeviceManager();
     
     for (int i = 0; i < MidiInput::getDevices().size();i++) {
         if (deviceManager->isMidiInputEnabled(MidiInput::getDevices().getReference(i))) {
@@ -42,7 +42,7 @@ SampleEditor::~SampleEditor()
     delete component;
     propertiesPanel = nullptr;
 
-    AudioDeviceManager* deviceManager = Project::getInstance()->getDeviceManager();
+    AudioDeviceManager* deviceManager = AudioManager::getInstance()->getDeviceManager();
     
     for (int i = 0; i < MidiInput::getDevices().size();i++) {
         if (deviceManager->isMidiInputEnabled(MidiInput::getDevices().getReference(i))) {

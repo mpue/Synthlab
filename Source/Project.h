@@ -29,26 +29,11 @@ public:
     }
     
     static void destroy() {
-        
-
-        
         delete instance;
     }
 
     UndoManager* getUndoManager() {
         return undoManager;
-    }
-    
-    AudioFormatManager* getFormatManager() {
-        return manager;
-    }
-    
-    AudioDeviceManager* getDeviceManager() {
-        return deviceManager;
-    }
-    
-    void setDeviceManager(AudioDeviceManager* manager) {
-        this->deviceManager = manager;
     }
     
     StringArray& getRecentFiles() {
@@ -80,8 +65,6 @@ private:
     
     Project() {
         undoManager = new UndoManager();
-        manager = new AudioFormatManager();
-        manager->registerBasicFormats();
         lookAndFeel = new CustomLookAndFeel();
 #ifdef USE_PUSH
         
@@ -103,13 +86,12 @@ private:
     
     ~Project() {
         delete undoManager;
-        delete manager;
         delete lookAndFeel;
     }
     
     static Project* instance;
     UndoManager* undoManager;
-    AudioDeviceManager* deviceManager;
+
     StringArray recentFiles;
     CustomLookAndFeel* lookAndFeel;
     
@@ -119,7 +101,7 @@ private:
     ableton::Push2DisplayBridge bridge;    /*!< The bridge allowing to use juce::graphics for push */
     ableton::Push2Display push2Display;
 #endif
-    AudioFormatManager* manager;
+    
 };
 
 #endif /* Project_hp*/

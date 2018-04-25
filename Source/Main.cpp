@@ -11,6 +11,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "MainComponent.h"
 #include "Project.h"
+#include "AudioManager.h"
 #include "Plugins/PluginManager.h"
 
 //==============================================================================
@@ -38,6 +39,7 @@ public:
         mainWindow = nullptr; // (deletes our window)
         
         PluginManager::getInstance()->destroy();
+        AudioManager::getInstance()->destroy();
     }
 
     //==============================================================================

@@ -209,7 +209,7 @@ private:
     Toolbar* toolbar = nullptr;
     
     bool initialized = false;
-    bool running = false;
+    volatile bool running = false;
     
     // default settings just in case
     float sampleRate = 44100;

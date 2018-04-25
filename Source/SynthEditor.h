@@ -146,6 +146,12 @@ public:
         this->mixer = mixer;
     }
     
+    MixerPanel* getMixer() {
+        return mixer;
+    }
+    
+    void addChannel(String name, Mixer::Channel::Type channeltype);
+    
     //[/UserMethods]
 
     void paint (Graphics& g) override;

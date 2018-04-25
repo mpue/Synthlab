@@ -41,6 +41,7 @@
 #include "SamplerModule.h"
 #include "OneShotTimer.h"
 #include "PluginModule.h"
+#include "AudioManager.h"
 
 class SampleEditor;
 //[/Headers]
@@ -960,7 +961,7 @@ void SynthEditor::openSampleEditor(SamplerModule *sm) {
     
     // DialogWindow::LaunchOptions launchOptions;
     
-    SampleEditor* se = new SampleEditor(bufferSize, _sampleRate, Project::getInstance()->getFormatManager(), sm);
+    SampleEditor* se = new SampleEditor(bufferSize, _sampleRate, AudioManager::getInstance()->getFormatManager(), sm);
     Project::getInstance()->getSupplemental()->addTab("Sample editor", Colours::darkgrey, se, true);
 
 }
@@ -1051,10 +1052,14 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
 
         modules->push_back(m);
         
+        AudioManager* am = AudioManager::getInstance();
+        
         AudioOut* out;
         
         if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
             outputChannels.push_back(out);
+            String channelName = am->getOutputChannelNames().getReference(getOutputChannels().size() - 1);
+            addChannel(channelName, Mixer::Channel::Type::OUT);
             addChangeListener(out);
         }
         
@@ -1062,6 +1067,8 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         
         if ((in = dynamic_cast<AudioIn*>(m)) != NULL) {
             inputChannels.push_back(in);
+            String channelName = am->getInputChannelNames().getReference(getInputChannels().size() - 1);
+            addChannel(channelName, Mixer::Channel::Type::IN);
             addChangeListener(in);
         }
         
@@ -1069,6 +1076,8 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         
         if ((aux = dynamic_cast<AuxOut*>(m)) != NULL) {
             auxChannels.push_back(aux);
+            String channelName = "Aux "+ String(getAuxChannels().size());
+            addChannel(channelName, Mixer::Channel::Type::AUX);
             addChangeListener(aux);
         }
         
@@ -1447,6 +1456,10 @@ std::vector<AudioOut*>& SynthEditor::getOutputChannels() {
 
 std::vector<AuxOut*>& SynthEditor::getAuxChannels() {
     return auxChannels;
+}
+
+void SynthEditor::addChannel(juce::String name, Mixer::Channel::Type channeltype) {
+    mixer->addChannel(name, channeltype);
 }
 
 //[/MiscUserCode]

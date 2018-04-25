@@ -5,7 +5,7 @@
 //  Created by Matthias Pueski on 10.04.18.
 //
 
-#include "Project.h"
+#include "AudioManager.h"
 #include "PrefabFactory.h"
 #include "MidiGate.h"
 #include "MidiOut.h"
@@ -117,7 +117,7 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
         m = new OscilloscopeModule(sampleRate,bufferSize);
     }
     else if (prefabs[id].getName() == "Sampler") {
-        m = new SamplerModule(sampleRate,bufferSize,Project::getInstance()->getFormatManager());
+        m = new SamplerModule(sampleRate,bufferSize,AudioManager::getInstance()->getFormatManager());
     }
     else if (prefabs[id].getName() == "Distortion") {
         m = new DistortionModule(sampleRate,bufferSize);

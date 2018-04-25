@@ -10,7 +10,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "AudioThumbnailComponent.h"
-#include "Project.h"
+#include "AudioManager.h"
 
 //==============================================================================
 AudioThumbnailComponent::AudioThumbnailComponent(int buffersize, float sampleRate)
@@ -19,7 +19,7 @@ AudioThumbnailComponent::AudioThumbnailComponent(int buffersize, float sampleRat
     
     this->sampleRate = sampleRate;
     this->buffersize = buffersize;
-    this->manager = Project::getInstance()->getFormatManager();
+    this->manager = AudioManager::getInstance()->getFormatManager();
     this->cache = new AudioThumbnailCache(1);
     this->thumbnail = new AudioThumbnail(16, *manager, *cache);
     setBounds(0,0,600,200);
