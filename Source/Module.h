@@ -171,7 +171,7 @@ protected:
     
     //[/UserVariables]
 
-    
+
     
     //==============================================================================
     ScopedPointer<TextEditor> nameEditor;

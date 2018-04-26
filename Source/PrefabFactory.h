@@ -62,6 +62,7 @@ public:
     Module* getPrefab(int id, float sampleRate, int bufferSize);
     std::map<int,Prefab> getPrefabNames() {return prefabs;};
     StringArray* getCategories() { return categories;};
+    int getNumInstances(int id);
     void reset();
 private:
     static PrefabFactory* instance;
@@ -96,7 +97,7 @@ private:
         prefabs[76] = Prefab("Audio in","Input / Output");
         prefabs[77] = Prefab("Aux out","Input / Output");
         prefabs[78] = Prefab("Distortion","FX");
-        prefabs[79] = Prefab("Plugin","FX");
+        prefabs[79] = Prefab("Plugin","FX");    
         prefabs[80] = Prefab("Step sequencer","MIDI");
         
         categories = new StringArray();
