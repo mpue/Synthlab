@@ -50,7 +50,7 @@ public:
     void timerCallback() override;
     std::vector<MasterChannelPanel*> getChannels();
 
-    
+    void removeAllChannels();
     void changeListenerCallback (ChangeBroadcaster* source);
     void addChannel(String name, Mixer::Channel::Type channeltype);
     void setMixer(Mixer* mixer);

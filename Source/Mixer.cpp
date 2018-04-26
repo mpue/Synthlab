@@ -14,10 +14,7 @@ Mixer::Mixer() {
 }
 
 Mixer::~Mixer() {
-    for (std::vector<Channel*>::iterator it = channels.begin();it != channels.end();) {
-        delete (*it);
-        it = channels.erase(it);
-    }
+    removeAllChannels();
 }
 
 void Mixer::addChannel(Mixer::Channel *channel) {
@@ -75,4 +72,14 @@ Mixer::Channel* Mixer::getChannel(Mixer::Channel::Type type, int index) {
         }
     }
     return nullptr;
+}
+
+void Mixer::removeAllChannels() {
+   
+    
+    for (std::vector<Channel*>::iterator it = channels.begin();it != channels.end();) {
+        delete (*it);
+        it = channels.erase(it);
+    }
+    
 }

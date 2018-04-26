@@ -164,7 +164,7 @@ void SawtoothModule::process() {
                         if (oscillator[j] ==  nullptr) {
                             oscillator[j] = new Sawtooth(sampleRate);
                             
-                            oscillator[j]->setFrequency((440 * pow(2.0,((j+1)-69.0)/12.0)) + pitch);
+                            oscillator[j]->setFrequency((440 * pow(2.0,((j+1+pitch)-69.0)/12.0)));
                         }
                         float volume = pins.at(2)->connections.at(0)->data[j];
                     

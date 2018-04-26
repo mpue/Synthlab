@@ -203,6 +203,7 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
     std::vector<AudioIn*> inputChannels = editor->getInputChannels();
     std::vector<AuxOut*> auxChannels = editor->getAuxChannels();
 
+    
     for (int k = 0; k < mixer->getNumInputs();k++) {
         
         Mixer::Channel* input =  mixer->getChannel(Mixer::Channel::Type::IN, k);
@@ -366,13 +367,12 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
     if (menuItemID == 1) {
         editor->setRunning(false);
         editor->cleanUp();
+        editor->getMixer()->removeAllChannels();
         editor->newFile();
         editor->setRunning(true);
     }
     else if (menuItemID == 2) {
         editor->setRunning(false);
-        editor->cleanUp();
-        editor->newFile();
         editor->openFile();
         editor->setRunning(true);
     }
@@ -530,8 +530,6 @@ void MainComponent::buttonClicked (Button* b)
         }
         else if (tb->getItemId() == toolbarFactory->doc_open) {
             editor->setRunning(false);
-            editor->cleanUp();
-            editor->newFile();
             editor->openFile();
             editor->setRunning(true);
         }
@@ -689,7 +687,7 @@ void MainComponent::audioDeviceIOCallback(const float **inputChannelData, int nu
 
 void MainComponent::processModule(Module* m) {
     
-    if (m != nullptr) {
+    if (m != nullptr && running) {
         
         m->process();
         

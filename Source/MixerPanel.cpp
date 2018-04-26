@@ -155,6 +155,18 @@ void MixerPanel::addChannel(String name, Mixer::Channel::Type channeltype) {
     setBounds(0, 0, 90 * channels.size(),250);
     repaint();
 }
+
+void MixerPanel::removeAllChannels() {
+    mixer->removeAllChannels();
+    for (std::vector<MasterChannelPanel*>::iterator it = channels.begin();it != channels.end();) {
+        (*it)->setLookAndFeel(nullptr);
+        (*it)->removeAllChangeListeners();
+        delete (*it);
+        it = channels.erase(it);
+        
+    }
+}
+
 //[/MiscUserCode]
 
 

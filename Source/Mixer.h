@@ -41,8 +41,11 @@ public:
     
     std::vector<Channel*>& getChannels();
     void addChannel(Channel* channel);
+    void removeAllChannels();
     
     Channel* getChannel(Mixer::Channel::Type type, int index);
+    
+    
     
     int getNumOutputs();
     int getNumInputs();

@@ -448,14 +448,13 @@ void SynthEditor::showContextMenu(Point<int> position) {
         }
         else if (result == 3) {
             setRunning(false);
-            cleanUp();
-            newFile();
             openFile();
             setRunning(true);
         }
         else if (result == 4) {
             setRunning(false);
             cleanUp();
+            mixer->removeAllChannels();
             newFile();
             setRunning(true);
         }
@@ -469,6 +468,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
             String data = fis->readEntireStreamAsString();
             setRunning(false);
             cleanUp();
+            mixer->removeAllChannels();
             newFile();
             loadFromString(data);
             delete fis;
@@ -991,6 +991,10 @@ void SynthEditor::openFile() {
     FileChooser chooser("Select file to open", File::nonexistent, "*");
 
     if (chooser.browseForFileToOpen()) {
+            
+        cleanUp();
+        mixer->removeAllChannels();
+        newFile();
         
 #if JUCE_IOS
         URL url = chooser.getURLResult();
