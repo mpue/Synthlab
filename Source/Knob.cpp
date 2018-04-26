@@ -112,8 +112,11 @@ void Knob::setValue(float value) {
     
     std::function<void(void)> changeLambda =
     [=]() {
-        this->nameLabel->setText(String(value),juce::NotificationType::dontSendNotification);
-        this->slider->setValue(value, juce::NotificationType::dontSendNotification);
+        
+        if (getParentComponent() != NULL) {
+            this->nameLabel->setText(String(value),juce::NotificationType::dontSendNotification);
+            this->slider->setValue(value, juce::NotificationType::dontSendNotification);
+        }
     };
     juce::MessageManager::callAsync(changeLambda);
     

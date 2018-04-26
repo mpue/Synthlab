@@ -54,6 +54,10 @@ public:
                                 int numSamples) override;
     int getNumActiveChannels(int i);
     
+    SynthEditor* getEditor() {
+        return editor;
+    }
+    
     class DefaultToolbarItemFactory   : public ToolbarItemFactory
     {
     public:

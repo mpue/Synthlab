@@ -30,7 +30,16 @@ public:
     {
         // This method is where you should put your application's initialisation code..
 
-        mainWindow = new MainWindow (getApplicationName());
+        Logger::writeToLog(commandLine);
+        
+        if (commandLine.contains("runTests")) {
+            UnitTestRunner runner;
+            runner.runAllTests();
+        }
+        else {
+           mainWindow = new MainWindow (getApplicationName());
+        }
+        
     }
 
     void shutdown() override
