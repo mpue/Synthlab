@@ -73,7 +73,7 @@ private:
     Sawtooth* oscillator[128];
     int currentSample = 0;
     bool mono;
-    
+
     Pin* gatePin = nullptr;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SawtoothModule)

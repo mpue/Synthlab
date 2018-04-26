@@ -23,7 +23,7 @@ SawtoothModule::SawtoothModule(double sampleRate, int buffersize)
         oscillator[i] = nullptr;
     }
 
-    monoOscillator = new Sawtooth(sampleRate);
+    monoOscillator = new Sawtooth(sampleRate, buffersize);
     
     setSize(120,140);
     nameLabel->setJustificationType (Justification::left);
@@ -33,10 +33,12 @@ SawtoothModule::SawtoothModule(double sampleRate, int buffersize)
 
     editable = false;
     prefab = true;
+
 }
 
 SawtoothModule::~SawtoothModule()
 {
+
     for (int i = 0; i < 128;i++){
         if (oscillator[i] != nullptr)
             delete oscillator[i];
@@ -46,6 +48,7 @@ SawtoothModule::~SawtoothModule()
     
     delete isMonoListener;
     delete isMonoValue;
+  
 }
 
 void SawtoothModule::configurePins() {
@@ -138,7 +141,7 @@ void SawtoothModule::createProperties() {
 
 void SawtoothModule::process() {
     bool volumegate = false;
-
+    
     
     
     if (pins.at(0)->connections.size() ==  1) {
@@ -163,20 +166,21 @@ void SawtoothModule::process() {
             }
             else {
                 for (int j = 0; j < 128;j++){
-
+                    
                     if(gatePin->dataEnabled[j]) {
                         if (oscillator[j] ==  nullptr) {
-                            oscillator[j] = new Sawtooth(sampleRate);
+                            oscillator[j] = new Sawtooth(sampleRate, buffersize);
                             
                             oscillator[j]->setFrequency((440 * pow(2.0,((j+1+pitch)-69.0)/12.0)));
                         }
                         float volume = gatePin->data[j];
-                    
+                        
                         this->oscillator[j]->setVolume(volume);
                     }
                     else {
                         if (oscillator[j] != nullptr) {
-                             delete this->oscillator[j];
+
+                            delete this->oscillator[j];
                             this->oscillator[j] = nullptr;
                         }
                     }
@@ -186,8 +190,8 @@ void SawtoothModule::process() {
             }
             if (out != nullptr && out->getNumChannels() > 0)
                 out->setSample(0,i ,value);
-
-
+            
+            
             
         }
     }
@@ -196,5 +200,6 @@ void SawtoothModule::process() {
             out->clear();
         }
     }
-    
+
+
 }

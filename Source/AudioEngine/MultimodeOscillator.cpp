@@ -10,13 +10,13 @@
 
 
 
-MultimodeOscillator::MultimodeOscillator(float sampleRate) : Oszillator(sampleRate) {
+MultimodeOscillator::MultimodeOscillator(float sampleRate,int buffersize) : Oszillator(sampleRate) {
     this->volume = 1.0f;
     this->frequency = 440.0f;
     this->fine = 0.0f;
     
     this->sine = new Sine(sampleRate);
-    this->saw = new Sawtooth(sampleRate);
+    this->saw = new Sawtooth(sampleRate, buffersize);
     this->pulse = new Pulse(sampleRate);
     this->noise = new WhiteNoise(sampleRate);
     this->mode = OscMode::SAW;

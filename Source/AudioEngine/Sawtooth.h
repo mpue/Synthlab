@@ -23,7 +23,7 @@ public:
     virtual void setFine(float fine) override;
     virtual float getFine() const override;
     
-    Sawtooth(float sampleRate);
+    Sawtooth(float sampleRate, int buffersize);
     float fine;
     virtual void setFrequency(double frequency) override;
     virtual void reset() override;

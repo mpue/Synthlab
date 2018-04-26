@@ -17,7 +17,7 @@
 
 using namespace std;
 
-Sawtooth::Sawtooth(float sampleRate) : Oszillator(sampleRate) {
+Sawtooth::Sawtooth(float sampleRate, int buffersize) : Oszillator(sampleRate) {
     this->volume = 1.0f;
     this->frequency = 440.0f;
     this->fine = 0.0f;

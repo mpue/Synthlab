@@ -22,7 +22,7 @@ class MultimodeOscillator : public Oszillator, public Modulator, public ModTarge
     
     
 public:
-    MultimodeOscillator(float sampleRate);
+    MultimodeOscillator(float sampleRate, int buffersize);
     ~MultimodeOscillator();
     virtual float process() override;
     virtual void setFine(float fine) override;
