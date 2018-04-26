@@ -120,6 +120,25 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     
     initialized = true;
     running = true;
+    
+    cpuLoadLabel = new Label("0%");
+    cpuLoadLabel->setText("0%",juce::NotificationType::dontSendNotification);
+    toolbar->addAndMakeVisible(cpuLoadLabel);
+    
+    loadSlider = new Slider();
+    
+    loadSlider->setRange (0, 100, 1);
+    loadSlider->setSliderStyle (Slider::LinearHorizontal);
+    loadSlider->setTextBoxStyle (Slider::NoTextBox, false, 80, 20);
+    loadSlider->setColour (Slider::backgroundColourId, Colour (0xff313131));
+    loadSlider->setColour (Slider::thumbColourId, Colours::chartreuse);
+    loadSlider->setColour (Slider::trackColourId, Colour (0xff434242));
+    loadSlider->setColour (Slider::rotarySliderOutlineColourId, Colour (0x66ffffff));
+    loadSlider->setColour (Slider::textBoxBackgroundColourId, Colour (0x00ffffff));
+    loadSlider->setLookAndFeel(Project::getInstance()->getLookAndFeel());
+    
+    addAndMakeVisible(loadSlider);
+    
     startTimer(20);
 }
 
@@ -147,6 +166,8 @@ MainComponent::~MainComponent()
     delete toolbarFactory;
     delete editorView;
     delete pluginMenu;
+    delete cpuLoadLabel;
+    delete loadSlider;
 
     PrefabFactory::getInstance()->destroy();
     Project::getInstance()->destroy();
@@ -156,12 +177,28 @@ MainComponent::~MainComponent()
 }
 
 void MainComponent::timerCallback(){
+   
     if (mixerPanel != nullptr) {
         for (int i = 0; i < mixer->getChannels().size();i++) {
             mixerPanel->getChannels().at(i)->setMagnitude(0,mixer->getChannels().at(i)->magnitudeLeft);
             mixerPanel->getChannels().at(i)->setMagnitude(1,mixer->getChannels().at(i)->magnitudeRight);
         }
     }
+    
+    currentMeasure = (currentMeasure +1) % 10;
+    
+    loads[currentMeasure] = cpuLoad;
+    
+    if (currentMeasure == 0) {
+        for (int i = 0; i < 10;i++) {
+            cpuLoad += loads[i];
+        }
+        cpuLoad /= 10;
+        loadSlider->setValue(cpuLoad);
+        cpuLoadLabel->setText(String(cpuLoad)+"%", juce::NotificationType::dontSendNotification);
+    }
+    
+
 }
 
 //==============================================================================
@@ -191,6 +228,11 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
         return;
     }
 
+    lastTime = Time::getMillisecondCounterHiRes() - currentTime;
+    currentTime = Time::getMillisecondCounterHiRes();
+
+    long startTime = currentTime;
+    
     int numSamples = bufferToFill.numSamples;
     float** outputChannelData = bufferToFill.buffer->getArrayOfWritePointers();
     const float** inputChannelData = bufferToFill.buffer->getArrayOfReadPointers();
@@ -235,6 +277,7 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
 
         // process all output pins of the connected module
 
+
         for (int j = 0;j < numSamples;j++) {
 
             float auxLeftOut = 0;
@@ -263,8 +306,6 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
             if (editor->channelIsValid(0)) {
                 // outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->applyGain(channelVolume);
                 const float* outL = outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-
-                channel->magnitudeLeft = channelVolume * gainLeft * outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
                 outputChannelData[0][j] = channelVolume * (outL[j] + auxLeftOut) * gainLeft;
             }
             else {
@@ -294,7 +335,7 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
                 // outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->applyGain(channelVolume);
                 const float* outR = outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
 
-                channel->magnitudeRight  = channelVolume * gainRight * outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+               
                 outputChannelData[1][j] = channelVolume * (outR[j] + auxRightOut) * gainRight;
                 
             }
@@ -302,7 +343,15 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
                 outputChannelData[1][j] = auxRightOut;
             }
         }
+        
+        if (editor->channelIsValid(0))
+            channel->magnitudeLeft = channelVolume * gainLeft * outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+        if (editor->channelIsValid(1))
+            channel->magnitudeRight  = channelVolume * gainRight * outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
     }
+    
+    long duration = Time::getMillisecondCounterHiRes() - startTime;
+    cpuLoad = ((float)duration / (float)lastTime) * 100 ;
     
 }
 
@@ -335,6 +384,10 @@ void MainComponent::resized()
     
     if (propertyView != nullptr && propertyView->getParentComponent() != NULL)
         propertyView->setSize(r.getWidth()-editorView->getWidth(), propertyView->getHeight());
+    if (getParentComponent() != nullptr) {
+        cpuLoadLabel->setBounds(getParentComponent()->getWidth() - 50,0,50,20);
+        loadSlider->setBounds(getParentComponent()->getWidth() - 150, 10, 100, 5);
+    }
 }
 
 PopupMenu MainComponent::getMenuForIndex(int index, const String & menuName) {

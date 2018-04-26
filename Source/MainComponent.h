@@ -191,7 +191,9 @@ private:
     PropertyView* propertyView = nullptr    ;
     Viewport* view = nullptr;
     MenuBarComponent* menu;
-    
+
+    Label* cpuLoadLabel = nullptr;
+    Slider* loadSlider = nullptr;
 
     MixerPanel* mixerPanel = nullptr;
     Mixer* mixer = nullptr;
@@ -227,7 +229,13 @@ private:
     float magnitudeLeftIn = 0;
     float magnitudeRightIn = 0;
     
+    long currentTime = 0;
+    long lastTime = 0;
+    
     int layer = 0;
+    int cpuLoad = 0;
+    int loads[10] = {0};
+    int currentMeasure = 0;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

@@ -81,6 +81,8 @@ void SawtoothModule::configurePins() {
     addPin(Pin::Direction::OUT,p5);
     
     createProperties();
+    out = pins.at(3)->getAudioBuffer();
+
 }
 
 void SawtoothModule::paint(juce::Graphics &g) {
@@ -138,6 +140,7 @@ void SawtoothModule::process() {
     bool volumegate = false;
 
     
+    
     if (pins.at(0)->connections.size() ==  1) {
         this->setPitch(pins.at(0)->connections.at(0)->getValue());
     }
@@ -146,6 +149,7 @@ void SawtoothModule::process() {
     }
     if (pins.at(2)->connections.size() ==  1) {
         volumegate = true;
+        gatePin = pins.at(2)->connections.at(0);
     }
     if (pins.at(2)->connections.size() == 1) {
         for (int i = 0; i < buffersize; i++) {
@@ -160,13 +164,13 @@ void SawtoothModule::process() {
             else {
                 for (int j = 0; j < 128;j++){
 
-                    if(pins.at(2)->connections.at(0)->dataEnabled[j]) {
+                    if(gatePin->dataEnabled[j]) {
                         if (oscillator[j] ==  nullptr) {
                             oscillator[j] = new Sawtooth(sampleRate);
                             
                             oscillator[j]->setFrequency((440 * pow(2.0,((j+1+pitch)-69.0)/12.0)));
                         }
-                        float volume = pins.at(2)->connections.at(0)->data[j];
+                        float volume = gatePin->data[j];
                     
                         this->oscillator[j]->setVolume(volume);
                     }
@@ -180,16 +184,16 @@ void SawtoothModule::process() {
                         value += oscillator[j]->process();
                 }
             }
-            if (pins.at(3)->getAudioBuffer() != nullptr && pins.at(3)->getAudioBuffer()->getNumChannels() > 0)
-                pins.at(3)->getAudioBuffer()->setSample(0,i ,value);
+            if (out != nullptr && out->getNumChannels() > 0)
+                out->setSample(0,i ,value);
 
 
             
         }
     }
     else {
-        if (pins.at(3)->getAudioBuffer() != nullptr && pins.at(3)->getAudioBuffer()->getNumChannels() > 0) {
-            pins.at(3)->getAudioBuffer()->clear();
+        if (out != nullptr && out->getNumChannels() > 0) {
+            out->clear();
         }
     }
     

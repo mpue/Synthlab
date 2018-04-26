@@ -63,6 +63,8 @@ private:
     PropertyComponent* isMonoProp;
     IsMonoListener* isMonoListener;
     
+    AudioSampleBuffer* out = nullptr;
+    float frequencies[128] = {0};
     int pitch = 0;
     float amplitude;
     float fine = 0;
@@ -71,6 +73,8 @@ private:
     Sawtooth* oscillator[128];
     int currentSample = 0;
     bool mono;
+    
+    Pin* gatePin = nullptr;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SawtoothModule)
 };
