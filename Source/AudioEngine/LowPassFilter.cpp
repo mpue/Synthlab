@@ -36,6 +36,10 @@ void LowPassFilter::coefficients(float sampleRate, float frequency, float resona
         frequency = sampleRate / 2;
     }
     
+    if (frequency == 0) {
+        frequency = 0.1;
+    }
+    
     IIRCoefficients ic1  = IIRCoefficients::makeLowPass (sampleRate, frequency, resonance);
     filter1->setCoefficients(ic1);
     filter2->setCoefficients(ic1);

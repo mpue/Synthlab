@@ -29,6 +29,9 @@ public:
     }
     
     static void destroy() {
+        
+
+        
         delete instance;
     }
 
@@ -54,6 +57,10 @@ public:
     inline CustomLookAndFeel* getLookAndFeel() {
         return lookAndFeel;
     };
+    
+    std::vector<DialogWindow*>& getOpenWindows() {
+        return openWindows;
+    }
     
 #ifdef USE_PUSH
     ableton::Push2DisplayBridge*  getPush2Bridge() {
@@ -81,21 +88,32 @@ private:
         const auto width = ableton::Push2DisplayBitmap::kWidth;
         
         Rectangle<int> pushBounds = Rectangle<int>(0,0,width,height);
+        
+
 #endif
     }
     
     ~Project() {
+        
+        // cleanup existing and opened windows
+        
+        for (std::vector<DialogWindow*>::iterator it = openWindows.begin();it != openWindows.end();) {
+            if ((*it) != nullptr) {
+                (*it)->setVisible(false);
+                delete (*it);
+            }
+            it = openWindows.erase(it);
+        }
         delete undoManager;
         delete lookAndFeel;
     }
     
     static Project* instance;
     UndoManager* undoManager;
-
     StringArray recentFiles;
     CustomLookAndFeel* lookAndFeel;
-    
     MainTabbedComponent* supplementalTab;
+    std::vector<DialogWindow*> openWindows;
     
 #ifdef USE_PUSH
     ableton::Push2DisplayBridge bridge;    /*!< The bridge allowing to use juce::graphics for push */

@@ -57,6 +57,8 @@ void Project::addRecentFile(juce::String path) {
     
 }
 
+
+
 void Project::loadRecentFileList() {
     
     String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();

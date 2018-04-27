@@ -42,10 +42,13 @@ void Connection::resized() {
     
     linePath->clear();
     linePath->startNewSubPath (p1.x, p1.y);
-    linePath->cubicTo (p1.x, p1.y + (p2.y - p1.y) * 0.43f,
-                       p2.x, p1.y + (p2.y - p1.y) * 0.56f,
-                       p2.x, p2.y);
-    
+
+    linePath->cubicTo (p1.x , p1.y ,
+                       p1.x + (p2.x - p1.x) * 0.3f, p1.y ,
+                       p1.x + (p2.x - p1.x) * 0.5f, p1.y + (p2.y - p1.y) * 0.5f);
+    linePath->cubicTo ( p1.x + (p2.x - p1.x) * 0.5f, p1.y + (p2.y - p1.y) * 0.5f,
+                       p2.x - (p2.x - p1.x) * 0.3, p2.y ,
+                       p2.x,p2.y  );
     PathStrokeType wideStroke (2.0f);
     wideStroke.createStrokedPath (*linePath, *linePath);
     

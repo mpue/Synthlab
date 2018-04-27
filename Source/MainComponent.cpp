@@ -481,7 +481,7 @@ void MainComponent::openSettings() {
     launchOptions.content.setOwned(selector);
     launchOptions.content->setSize(600, 580);
     launchOptions.dialogBackgroundColour = LookAndFeel::getDefaultLookAndFeel().findColour(ResizableWindow::backgroundColourId);
-    launchOptions.runModal();
+    Project::getInstance()->getOpenWindows().push_back(launchOptions.launchAsync());
     
     AudioDeviceManager::AudioDeviceSetup setup;
     deviceManager.getAudioDeviceSetup(setup);

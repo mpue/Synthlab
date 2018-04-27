@@ -161,12 +161,14 @@ void SynthEditor::paint (Graphics& g)
                 int y1 = c->source->getY() + c->a->y + 5;
                 int x2 = c->target->getX() + c->b->x;
                 int y2 = c->target->getY() + c->b->y + 5;
+                
                 /*
                 Point<int> p1 = Point<int>(x1,y1);
                 Point<int> p2 = Point<int>(x2,y2);
                 c->setPoints(p1,p2);
                 c->resized();
                 */
+                
                 if (c->selected) {
                     g.setColour(juce::Colours::cyan);
                 }

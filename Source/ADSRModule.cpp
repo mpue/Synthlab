@@ -1,7 +1,12 @@
 /*
   ==============================================================================
 
-    SawtoothModule
+    ADSR Module
+ 
+    This module contains the logic for the adsr envelope module,
+    it can be used as a modulation source in momophonic mode or as ADSR envelope
+    for the oscillator modules.
+ 
     Created: 4 Apr 2018 3:48:23pm
     Author:  Matthias Pueski
 
@@ -20,6 +25,7 @@ ADSRModule::ADSRModule(double sampleRate, int buffersize)
     this->buffersize = buffersize;
 
     setSize(120,140);
+    
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(18,2);
     
@@ -58,36 +64,41 @@ void ADSRModule::createProperties() {
 
 void ADSRModule::configurePins() {
     
+    // gate pin triggered from the gate module
     Pin* p1 = new Pin(Pin::Type::EVENT);
     p1->direction = Pin::Direction::IN;
     p1->listeners.push_back(this);
     p1->setName("G");
     
+    // Attack in
     Pin* p2 = new Pin(Pin::Type::VALUE);
     p2->direction = Pin::Direction::IN;
     p2->listeners.push_back(this);
     p2->setName("A");
     
+    // Decay time
     Pin* p3 = new Pin(Pin::Type::VALUE);
     p3->direction = Pin::Direction::IN;
     p3->listeners.push_back(this);
     p3->setName("D");
     
+    // Sustain level
     Pin* p4 = new Pin(Pin::Type::VALUE);
     p4->direction = Pin::Direction::IN;
     p4->listeners.push_back(this);
     p4->setName("S");
     
+    // Release time
     Pin* p5 = new Pin(Pin::Type::VALUE);
     p5->direction = Pin::Direction::IN;
     p5->listeners.push_back(this);
     p5->setName("R");
     
+    // Envelope output
     Pin* p6= new Pin(Pin::Type::VALUE);
     p6->direction = Pin::Direction::OUT;
     p6->listeners.push_back(this);
     p6->setName("Out");
-    
     
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::IN,p2);
@@ -208,10 +219,16 @@ bool ADSRModule::isMono() {
 void ADSRModule::eventReceived(Event *e) {
     
     if (e->getType() == Event::Type::GATE) {
+        
+        // trigger event  changes state of the envelopes
+        
         if (e->getValue() > 0) {
+        
+            // monophonic envelope is for modfulation purposes
             if (mono) {
                 this->envelope->gate(e->getValue());
             }
+            // in polyphonic mode we need an envelope for each voice of the oscillator module
             else {
                 this->gate[e->getNote()] = true;
                 pins.at(5)->dataEnabled[e->getNote()] = true;
@@ -240,7 +257,6 @@ juce::Array<PropertyComponent*>& ADSRModule::getProperties() {
     
     properties = juce::Array<PropertyComponent*>();
     isMonoProp = new BooleanPropertyComponent(*isMonoValue,"isMono","Mono");
-    
     
     properties.add(isMonoProp);
     

@@ -130,7 +130,7 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
         m = new StepSequencerModule(sampleRate,bufferSize);
     }
     
-    m->setIndex(id + pow(10,prefabs[id].getNumInstances()));
+    m->setIndex(id + pow(10,prefabs[id].getNumInstances() + 1));
     m->setId(id);
     prefabs[id].addInstance();
     m->configurePins();

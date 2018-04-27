@@ -7,6 +7,7 @@
 //
 
 #include "PluginManager.h"
+#include "../Project.h"
 
 PluginManager* PluginManager::instance = NULL;
 
@@ -45,7 +46,7 @@ void PluginManager::scanPlugins() {
     launchOptions.componentToCentreAround = nullptr;
     launchOptions.content.setOwned(pluginListComponent);
     launchOptions.content->setSize(600, 580);
-    launchOptions.launchAsync();
+    Project::getInstance()->getOpenWindows().push_back(launchOptions.launchAsync());
     
     File pluginDir = File(userHome+"/.Synthlab/plugins");
     

@@ -22,6 +22,9 @@ DelayModule::DelayModule(double sampleRate, int buffersize)
     delay = new StereoDelay();
     delay->setEnabled(true);
     
+    delay->setFeedback(StereoDelay::Channel::LEFT, 0);
+    delay->setFeedback(StereoDelay::Channel::RIGHT, 0);
+    
     setSize(120,140);
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(18,2);

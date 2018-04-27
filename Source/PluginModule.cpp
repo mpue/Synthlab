@@ -117,8 +117,8 @@ void PluginModule::process() {
         const float* inL = pins.at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
         const float* inR = pins.at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
         
-        for (int i = 0; i < buffersize;i++){
-            bufferLeft[i] = inL[i];
+        
+        for (int i = 0; i < buffersize;i++){            bufferLeft[i] = inL[i];
             bufferRight[i] = inR[i];
         }
         
