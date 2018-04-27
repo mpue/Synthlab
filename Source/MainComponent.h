@@ -25,7 +25,8 @@ class MainComponent   : public AudioAppComponent,
                         public KeyListener,
                         public Button::Listener,
                         public Timer,
-                        public AudioProcessorPlayer
+                        public AudioProcessorPlayer,
+                        public DragAndDropContainer
 {
 public:
     //==============================================================================
@@ -60,6 +61,17 @@ public:
         return editor;
     }
     
+    void mouseDrag (const MouseEvent& event) override {
+        
+        var description;
+        
+        if (moduleBrowser != nullptr)
+            startDragging(description, moduleBrowser->getTable());
+    }
+    
+    virtual void dragOperationStarted (const DragAndDropTarget::SourceDetails& details) override {
+        setDragImageForIndex(0,Image());
+    }
 
     
     void timerCallback() override;

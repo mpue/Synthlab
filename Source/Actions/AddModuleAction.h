@@ -9,6 +9,7 @@
 #define AddModuleAction_h
 
 #include "../JuceLibraryCode/JuceHeader.h"
+#include "../Module.h"
 #include "../SynthEditor.h"
 
 class AddModuleAction : public UndoableAction {

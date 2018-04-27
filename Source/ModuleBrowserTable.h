@@ -13,6 +13,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "PrefabFactory.h"
 #include <map>
+#include <vector>
 
 //==============================================================================
 /*
@@ -23,27 +24,54 @@ public:
     ModuleBrowserTable()
     {
         table = new TableListBox();
-        setSize(580,400);
-        table->getHeader().addColumn("Module", 1, getWidth());
-        table->setSize(getWidth(), getHeight());
+        // setSize(580,400);
+        table->getHeader().addColumn("", 1,80);
+        table->getHeader().addColumn("", 2,320);
+        table->setRowHeight(64);
         table->setModel(this);
+        table->setMultipleSelectionEnabled(false);
         addAndMakeVisible(table);
         resized();
         
         std::map<int,PrefabFactory::Prefab> _prefabs = PrefabFactory::getInstance()->getPrefabNames();
         
+        filteredPrefabs = new std::vector<PrefabFactory::Prefab>();
+        
         for (std::map<int,PrefabFactory::Prefab>::iterator it  = _prefabs.begin();it != _prefabs.end();++it) {
-            prefabs.add((*it).second.getName());
+            (*it).second.setId((*it).first);
+            prefabs.push_back((*it).second);
+            filteredPrefabs->push_back((*it).second);
         }
+        table->addMouseListener(this,true);
+        
+        
     }
 
     ~ModuleBrowserTable()
     {
         delete table;
     }
+    
+    var getDragSourceDescription (const SparseSet<int>& currentlySelectedRows) override {
+        return (prefabs.at(table->getSelectedRow()).getId());
+    }
 
+    
+    void update(){
+        table->updateContent();
+    }
+
+    std::vector<PrefabFactory::Prefab>& getPrefabs() {
+        return prefabs;
+    }
+
+    std::vector<PrefabFactory::Prefab>* getFilteredPrefabs() {
+        return filteredPrefabs;
+    }
+    
     int getNumRows() override {
-        return prefabs.size();
+        if (filteredPrefabs != nullptr)
+            return filteredPrefabs->size();
     }
     void paintCell (Graphics& g,
                     int rowNumber,
@@ -55,10 +83,20 @@ public:
         
         String text = "";
         
-        if (columnId == 1) {
-            text = prefabs.getReference(rowNumber);
+        if (columnId == 2) {
+            text = filteredPrefabs->at(rowNumber).getName();
+            
+            if (rowIsSelected) {
+                g.setColour(juce::Colours::white);
+            }
+            
+            g.drawText(text, 0,0, width,height, juce::Justification::centredLeft);
         }
-        g.drawText(text, 0,0, width,height, juce::Justification::centredLeft);
+        else if (columnId == 1) {
+            g.drawImageAt(PrefabFactory::getInstance()->getImage(filteredPrefabs->at(rowNumber).getId()), 0,0);
+        }
+        
+
     }
     
     void paintRowBackground (Graphics& g,
@@ -69,14 +107,18 @@ public:
             g.setColour(juce::Colours::grey);
         }
         else {
-            g.setColour(juce::Colours::lightgrey);
+            g.setColour(juce::Colours::darkgrey);
         }
+        if (rowIsSelected) {
+            g.setColour(juce::Colours::orange);
+        }
+        
         g.fillRect(0,0,width,height);
     }
     
     void paint (Graphics& g) override
     {
-        g.fillAll (Colour (0xff323e44));
+        // g.fillAll (Colour (0xff323e44));
     }
 
     void resized() override
@@ -84,7 +126,7 @@ public:
         if (getParentComponent() != nullptr) {
             setSize(getParentWidth(), getParentHeight());
             if (table != nullptr)
-                table->setSize(getWidth(), getHeight());
+                table->setSize(getWidth() - 12 , getHeight() - 90);
 
         }
 
@@ -92,8 +134,8 @@ public:
 
 private:
     TableListBox* table = nullptr;
-    
-    StringArray prefabs;
+    std::vector<PrefabFactory::Prefab> prefabs;
+    std::vector<PrefabFactory::Prefab>* filteredPrefabs = nullptr;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ModuleBrowserTable)
 };

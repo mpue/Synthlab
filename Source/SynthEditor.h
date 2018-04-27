@@ -31,12 +31,13 @@
 #include "SampleEditor.h"
 #include "SelectionModel.h"
 #include "StepSequencerModule.h"
-
+#include "PrefabFactory.h"
 #include <vector>
 #include "MixerPanel.h"
+#include "Project.h"
 
 class SamplerModule;
-class AddModuleAction;
+
 //[/Headers]
 
 
@@ -52,7 +53,8 @@ class AddModuleAction;
 class SynthEditor  : public Component,
                      public ChangeBroadcaster,
                      public AudioModule,
-                     public Timer 
+                     public Timer,
+                     public DragAndDropTarget
          
 
 {
@@ -77,6 +79,12 @@ public:
     void saveFile();
     void openFile();
 
+    void itemDropped (const SourceDetails& dragSourceDetails) override;
+    
+    bool isInterestedInDragSource (const SourceDetails& dragSourceDetails) override {
+        return true;
+    }
+    
     void openSampleEditor(SamplerModule* sm);
     void openStepSequencer(StepSequencerModule* ssm);
     

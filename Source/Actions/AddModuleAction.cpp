@@ -46,6 +46,10 @@ bool AddModuleAction::undo() {
 
 bool AddModuleAction::perform() {
     
+    if (moduleId < 1) {
+        return false;
+    }
+    
     Module* m = module;
     
     if (m == nullptr) {

@@ -39,8 +39,12 @@
 PrefabFactory* PrefabFactory::instance = NULL;
 
 Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
-
+    
     Module* m = nullptr;
+    
+    if (id == 0) {
+        return m;
+    }
     
     if (prefabs[id].getName() == "Add signal") {
         m = new AdderModule(bufferSize);

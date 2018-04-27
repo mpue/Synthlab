@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.3.1" bundleIdentifier="de.pueski.SynthlabX"
+<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.2.1" bundleIdentifier="de.pueski.SynthlabX"
               version="1.0.1" companyName="Pueski">
   <MAINGROUP id="CKGTaZ" name="Synthlab">
     <GROUP id="{9F92DD62-384A-EB91-F447-5583413CC3C4}" name="samples">
@@ -29,6 +29,7 @@
       <FILE id="HGa4kr" name="lp.png" compile="0" resource="1" file="Images/lp.png"/>
       <FILE id="wjQQld" name="midiin.png" compile="0" resource="1" file="Images/midiin.png"/>
       <FILE id="E9iJPb" name="midiout.png" compile="0" resource="1" file="Images/midiout.png"/>
+      <FILE id="BIK1yM" name="module.png" compile="0" resource="1" file="Images/module.png"/>
       <FILE id="OhXgK2" name="multiplier.png" compile="0" resource="1" file="Images/multiplier.png"/>
       <FILE id="HjBjyS" name="new.png" compile="0" resource="1" file="Images/new.png"/>
       <FILE id="trqee2" name="note.png" compile="0" resource="1" file="Images/note.png"/>

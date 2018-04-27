@@ -30,6 +30,14 @@ public:
         String getCategory() {
             return category;
         }
+        int getId() {
+            return prefabId;
+        }
+        
+        void setId(int prefabId) {
+            this->prefabId = prefabId;
+        }
+        
         Image* getIcon() {
             return &icon;
         }
@@ -54,6 +62,7 @@ public:
         String name;
         String category;
         Image icon;
+        int prefabId;
     };
     
     static PrefabFactory* getInstance() {
@@ -67,6 +76,11 @@ public:
         delete instance;
     }
     
+    
+    Image getImage(int prefabId) {
+        return prefabImages[prefabId];
+    }
+    
     PopupMenu createPrefabMenu();
     Module* getPrefab(int id, float sampleRate, int bufferSize);
     std::map<int,Prefab> getPrefabNames() {return prefabs;};
@@ -77,6 +91,8 @@ private:
     static PrefabFactory* instance;
     
     std::map<int,Prefab> prefabs;
+    std::map<int,Image> prefabImages;
+    
     StringArray* categories;
     
     PrefabFactory() {
@@ -110,6 +126,35 @@ private:
         prefabs[79] = Prefab("Plugin","FX");    
         prefabs[80] = Prefab("Step sequencer","MIDI");
         
+        prefabImages[53] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[54] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[55] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[56] = ImageCache::getFromMemory(BinaryData::inverter_png, BinaryData::inverter_pngSize);
+        prefabImages[57] = ImageCache::getFromMemory(BinaryData::multiplier_png, BinaryData::multiplier_pngSize);
+        prefabImages[58] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[59] = ImageCache::getFromMemory(BinaryData::adder_png, BinaryData::adder_pngSize);
+        prefabImages[60] = ImageCache::getFromMemory(BinaryData::adder_png, BinaryData::adder_pngSize);
+        prefabImages[61] = ImageCache::getFromMemory(BinaryData::midiin_png, BinaryData::midiin_pngSize);
+        prefabImages[62] = ImageCache::getFromMemory(BinaryData::midiout_png, BinaryData::midiout_pngSize);
+        prefabImages[63] = ImageCache::getFromMemory(BinaryData::note_png, BinaryData::note_pngSize);
+        prefabImages[64] = ImageCache::getFromMemory(BinaryData::saw_png, BinaryData::saw_pngSize);
+        prefabImages[65] = ImageCache::getFromMemory(BinaryData::whitenoise_png, BinaryData::whitenoise_pngSize);
+        prefabImages[66] = ImageCache::getFromMemory(BinaryData::speaker_png, BinaryData::speaker_pngSize);
+        prefabImages[67] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[68] = ImageCache::getFromMemory(BinaryData::lp_png, BinaryData::lp_pngSize);
+        prefabImages[69] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[70] = ImageCache::getFromMemory(BinaryData::adsr_png, BinaryData::adder_pngSize);
+        prefabImages[71] = ImageCache::getFromMemory(BinaryData::sine_png, BinaryData::sine_pngSize);
+        prefabImages[72] = ImageCache::getFromMemory(BinaryData::random_png, BinaryData::random_pngSize);
+        prefabImages[73] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[74] = ImageCache::getFromMemory(BinaryData::hp_png, BinaryData::hp_pngSize);
+        prefabImages[75] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[76] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[77] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[78] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[79] = ImageCache::getFromMemory(BinaryData::plugin_png, BinaryData::plugin_pngSize);
+        prefabImages[80] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        
         
         categories = new StringArray();
 
@@ -123,11 +168,13 @@ private:
         categories->add("Debug");
         
     };
+    
     ~PrefabFactory() {
         categories->clear();
         delete categories;
     };
 
+    
     
     int numPrefabInstances = 0;
 };

@@ -139,6 +139,8 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     
     addAndMakeVisible(loadSlider);
     
+    addMouseListener(this, true);
+    
     startTimer(20);
 }
 
