@@ -4,28 +4,10 @@
 <dict>
 	<key>SchemeUserState</key>
 	<dict>
-		<key>SynthLab UnitTest.xcscheme</key>
-		<dict>
-			<key>orderHint</key>
-			<integer>1</integer>
-		</dict>
 		<key>Synthlab - App.xcscheme</key>
 		<dict>
 			<key>orderHint</key>
 			<integer>0</integer>
-		</dict>
-	</dict>
-	<key>SuppressBuildableAutocreation</key>
-	<dict>
-		<key>287A5735C8681ECA1CE81002</key>
-		<dict>
-			<key>primary</key>
-			<true/>
-		</dict>
-		<key>85D600BD47C6559E1CA3CE45</key>
-		<dict>
-			<key>primary</key>
-			<true/>
 		</dict>
 	</dict>
 </dict>

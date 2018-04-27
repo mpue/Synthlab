@@ -22,12 +22,20 @@ public:
         Prefab(String name, String category){
             this->name = name;
             this->category = category;
+            this->icon = icon;
         };
         String getName() {
             return name;
         }
         String getCategory() {
             return category;
+        }
+        Image* getIcon() {
+            return &icon;
+        }
+        
+        void setIcon(Image& icon) {
+            this->icon = icon;
         }
         
         int getNumInstances() {
@@ -45,6 +53,7 @@ public:
         int numInstances = 0;
         String name;
         String category;
+        Image icon;
     };
     
     static PrefabFactory* getInstance() {
@@ -87,6 +96,7 @@ private:
         prefabs[66] = Prefab("Audio out","Input / Output");
         prefabs[67] = Prefab("Constant","Math");
         prefabs[68] = Prefab("LP filter","Filter");
+        // prefabs[68].setIcon(ImageCache::getFromMemory(BinaryData::lp_png, BinaryData::lp_pngSize));
         prefabs[69] = Prefab("Knob","Controls");
         prefabs[70] = Prefab("ADSR","Input / Output");
         prefabs[71] = Prefab("Sine","Sound sources");
@@ -99,6 +109,7 @@ private:
         prefabs[78] = Prefab("Distortion","FX");
         prefabs[79] = Prefab("Plugin","FX");    
         prefabs[80] = Prefab("Step sequencer","MIDI");
+        
         
         categories = new StringArray();
 

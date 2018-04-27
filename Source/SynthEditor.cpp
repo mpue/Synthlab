@@ -406,7 +406,14 @@ void SynthEditor::showContextMenu(Point<int> position) {
             
             for (std::map<int,PrefabFactory::Prefab>::iterator it  = prefabs.begin();it != prefabs.end();++it) {
                 if ((*it).second.getCategory() == categories->getReference(i)) {
-                    category.addItem((*it).first,(*it).second.getName(), true);
+                    if ((*it).second.getIcon() != nullptr) {
+                        // int itemResultID, const String& itemText, bool isActive, bool isTicked, const Image& iconToUs
+                        category.addItem((*it).first,(*it).second.getName(), true,false,*(*it).second.getIcon());
+                    }
+                    else {
+                        category.addItem((*it).first,(*it).second.getName(), true);
+                    }
+                 
                 }
                 
             }

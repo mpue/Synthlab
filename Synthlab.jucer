@@ -54,6 +54,22 @@
       <FILE id="EJ4uon" name="whitenoise.png" compile="0" resource="1" file="Images/whitenoise.png"/>
     </GROUP>
     <GROUP id="{CA20D122-1EA5-3A93-F1F8-F6EE53DA457E}" name="Source">
+      <GROUP id="{FB7BC6C4-6B07-639E-1335-421CB2A3BBB4}" name="MidiRecorder">
+        <FILE id="TPjNlE" name="Logger.h" compile="0" resource="0" file="Source/MidiRecorder/Logger.h"/>
+        <FILE id="CiitqG" name="MidiEventEditor.cpp" compile="1" resource="0"
+              file="Source/MidiRecorder/MidiEventEditor.cpp"/>
+        <FILE id="phhkeL" name="MidiEventEditor.h" compile="0" resource="0"
+              file="Source/MidiRecorder/MidiEventEditor.h"/>
+        <FILE id="gvLjDX" name="MidiRecorder.cpp" compile="1" resource="0"
+              file="Source/MidiRecorder/MidiRecorder.cpp"/>
+        <FILE id="tmBcff" name="MidiRecorder.h" compile="0" resource="0" file="Source/MidiRecorder/MidiRecorder.h"/>
+        <FILE id="XIT0LH" name="MidiRecorderPanel.cpp" compile="1" resource="0"
+              file="Source/MidiRecorder/MidiRecorderPanel.cpp"/>
+        <FILE id="FTtB79" name="MidiRecorderPanel.h" compile="0" resource="0"
+              file="Source/MidiRecorder/MidiRecorderPanel.h"/>
+        <FILE id="CcVLQT" name="RecordListener.h" compile="0" resource="0"
+              file="Source/MidiRecorder/RecordListener.h"/>
+      </GROUP>
       <GROUP id="{445DA53D-0AFD-01A4-6CC5-F19463380EB0}" name="tests">
         <FILE id="CVYORy" name="LoadSynthTest.cpp" compile="1" resource="0"
               file="Source/tests/LoadSynthTest.cpp"/>
@@ -174,6 +190,11 @@
         <FILE id="RViUJy" name="SelectionModel.h" compile="0" resource="0"
               file="Source/SelectionModel.h"/>
         <GROUP id="{19B8F02D-4185-9D0D-F820-8F1C70EECC53}" name="Components">
+          <FILE id="trA2aH" name="ModuleBrowserTable.h" compile="0" resource="0"
+                file="Source/ModuleBrowserTable.h"/>
+          <FILE id="nQjy8U" name="ModuleBrowser.cpp" compile="1" resource="0"
+                file="Source/ModuleBrowser.cpp"/>
+          <FILE id="SFKCnc" name="ModuleBrowser.h" compile="0" resource="0" file="Source/ModuleBrowser.h"/>
           <FILE id="q9OyvC" name="CloseableTabButton.cpp" compile="1" resource="0"
                 file="Source/CloseableTabButton.cpp"/>
           <FILE id="VsuuDg" name="CloseableTabButton.h" compile="0" resource="0"

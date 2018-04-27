@@ -45,8 +45,8 @@ public:
     void shutdown() override
     {
 
+        mainWindow->setLookAndFeel(nullptr);
         mainWindow = nullptr; // (deletes our window)
-        
         PluginManager::getInstance()->destroy();
         AudioManager::getInstance()->destroy();
     }
@@ -79,6 +79,8 @@ public:
                                                                           .findColour (ResizableWindow::backgroundColourId),
                                                     DocumentWindow::allButtons)
         {
+            //Project::getInstance()->getLookAndFeel()->setColourScheme(LookAndFeel_V4::getMidnightColourScheme());
+            // setLookAndFeel(Project::getInstance()->getLookAndFeel());
             setUsingNativeTitleBar (false);
             setContentOwned (new MainComponent(), true);
             setResizable (true, true);

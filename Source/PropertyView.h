@@ -56,7 +56,7 @@ private:
 
     PropertyPanel* propertyPanel = nullptr;
     ScopedPointer<TextEditor> descriptionEditor;
-
+    
     //[/UserVariables]
 
     //==============================================================================

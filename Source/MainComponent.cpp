@@ -19,6 +19,7 @@
 #include "Knob.h"
 #include "Mixer.h"
 #include "PluginModule.h"
+#include "ModuleBrowser.h"
 
 //==============================================================================
 MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
@@ -60,7 +61,6 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
         toolbar->getItemComponent(i)->addListener(this);
         
         ToolbarComboBox* tcb = dynamic_cast<ToolbarComboBox*>(toolbar->getItemComponent(i));
-        
         
         if (tcb != NULL) {
             tcb->getComboBox().onChange = [tcb,this]() {
@@ -168,6 +168,10 @@ MainComponent::~MainComponent()
     delete pluginMenu;
     delete cpuLoadLabel;
     delete loadSlider;
+    
+    if(moduleBrowser != nullptr) {
+        delete moduleBrowser;
+    }
 
     PrefabFactory::getInstance()->destroy();
     Project::getInstance()->destroy();
@@ -594,6 +598,33 @@ void MainComponent::buttonClicked (Button* b)
         }
         else if (tb->getItemId() == toolbarFactory->app_redo) {
             Project::getInstance()->getUndoManager()->redo();
+        }
+        else if (tb->getItemId() == toolbarFactory->mod_sources) {
+            
+            if (moduleBrowser == nullptr) {
+                moduleBrowser = new ModuleBrowser();
+                addChildComponent(moduleBrowser);
+            }
+    
+            if (!moduleBrowser->isVisible()) {
+                moduleBrowser->setTopLeftPosition(b->getX(), b->getY() + b->getHeight());
+                moduleBrowser->setVisible(true);
+                moduleBrowser->toFront(true);
+            }
+            else {
+                moduleBrowser->setVisible(false);
+            }
+    
+
+            
+            /*
+            PopupMenu pm = PopupMenu();
+            
+            p->add
+            pm.addItem(100, "Sawtooth", true, true, ImageCache::getFromMemory(BinaryData::saw_png, BinaryData::saw_pngSize));
+            pm.showAt(b);
+             */
+
         }
     }
 

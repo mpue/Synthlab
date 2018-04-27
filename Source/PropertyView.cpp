@@ -57,7 +57,7 @@ PropertyView::PropertyView ()
     descriptionEditor->setMultiLine(true);
     descriptionEditor->setReadOnly(true);
     descriptionEditor->setJustification(juce::Justification::horizontallyJustified);
-    
+
     tabbedComponent->addTab("Description",juce::Colours::grey, descriptionEditor, false);
 
 
@@ -115,7 +115,6 @@ void PropertyView::changeListenerCallback(juce::ChangeBroadcaster *source) {
     if (editor != nullptr) {
         
         if (editor->getSelectionModel()->getSelectedModule() != nullptr) {
-          
             descriptionEditor->setText(editor->getSelectionModel()->getSelectedModule()->getDescription());
             propertyPanel->addProperties(editor->getSelectionModel()->getSelectedModule()->getProperties());
         }
