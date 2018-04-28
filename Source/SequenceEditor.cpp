@@ -305,8 +305,10 @@ bool SequenceEditor::keyPressed (const KeyPress& key)
         }
     }
 
+
     sendConfig();
     repaint();
+    content->repaint();
 
     return true;  // Return true if your handler uses this key event, or false to allow it to be passed-on.
     //[/UserCode_keyPressed]

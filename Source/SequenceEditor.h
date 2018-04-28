@@ -60,19 +60,19 @@ public:
                     
                     int velocity = grid[x][y].getVelocity();
                     
-                    if (grid[x][y].isEnabled()) {
-  
-                        g.setColour(juce::Colour::fromRGB(velocity*2,165,0));
-                    }
-                    else {
-                        g.setColour(juce::Colours::lightgrey);
-                    }
+
                     
                     if (currentStep == x) {
                          g.setColour(juce::Colours::orange);
                     }
                     else {
-                         g.setColour(juce::Colours::darkgrey);
+                        if (grid[x][y].isEnabled()) {
+                            
+                            g.setColour(juce::Colour::fromRGB(velocity*2,165,0));
+                        }
+                        else {
+                            g.setColour(juce::Colours::darkgrey);
+                        }
                     }
                     
                     g.fillRect(x*cellSize+2, y*cellSize+2,cellSize-4 ,cellSize-4);
