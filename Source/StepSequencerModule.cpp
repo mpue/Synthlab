@@ -41,6 +41,13 @@ void StepSequencerModule::configurePins() {
     addPin(Pin::Direction::OUT,p1);
 }
 
+SequenceEditor* StepSequencerModule::getEditor() {
+    if (editor == nullptr) {
+        editor = new SequenceEditor();
+    }
+    return editor;
+}
+
 void StepSequencerModule::paint(juce::Graphics &g) {
     Module::paint(g);
     // g.drawImageAt(ImageCache::getFromMemory(BinaryData::StepSequencer_png, BinaryData::StepSequencer_pngSize),25,40);

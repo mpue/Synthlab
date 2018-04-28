@@ -17,6 +17,8 @@
   ==============================================================================
 */
 
+
+
 //[Headers] You can add your own extra header files here...
 
 #include <iomanip>
@@ -24,36 +26,45 @@
 
 #include "SequenceEditor.h"
 
-
+const String SequenceEditor::notes[128] = {"C","C#", "D", "D#", "E", "F", "F#", "G", "G#" , "A" ,"A#", "B"};
+int SequenceEditor::selectedCol = 0;
+int SequenceEditor::selectedRow = 0;
+bool SequenceEditor::optionPressed = false;
+bool SequenceEditor::showVelocity = false;
+Cell SequenceEditor::grid[32][6];
+int SequenceEditor::currentStep = 0;
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 //[/MiscUserDefs]
 
 //==============================================================================
-SequenceEditor::SequenceEditor (StepSequencerModule* ssm)
+SequenceEditor::SequenceEditor ()
 {
     //[Constructor_pre] You can add your own custom stuff here..
-    
-    this->ssm = ssm;
     //[/Constructor_pre]
 
-    addAndMakeVisible (receiveButton = new TextButton ("receive"));
-    receiveButton->setButtonText (TRANS("Receive"));
-    receiveButton->addListener (this);
+    addAndMakeVisible (playButton = new TextButton ("Play"));
+    playButton->setButtonText (TRANS("Play"));
+    playButton->addListener (this);
 
-    receiveButton->setBounds (0, 240, 150, 24);
+    playButton->setBounds (10, 10, 150, 24);
 
-    addAndMakeVisible (sendButton = new TextButton ("send"));
-    sendButton->setButtonText (TRANS("Send"));
-    sendButton->addListener (this);
+    addAndMakeVisible (recordButton = new TextButton ("Record"));
+    recordButton->setButtonText (TRANS("Record"));
+    recordButton->addListener (this);
 
-    sendButton->setBounds (160, 240, 150, 24);
+    recordButton->setBounds (170, 10, 150, 24);
 
 
     //[UserPreSize]
     //[/UserPreSize]
 
-    setSize (1, 768);
+    setSize (800, 768);
 
+    content = new SequencePanel();
+    
+    
+    view = new Viewport();
+    view->setViewedComponent(content);
 
     //[Constructor] You can add your own custom stuff here..
 
@@ -72,9 +83,12 @@ SequenceEditor::SequenceEditor (StepSequencerModule* ssm)
 
     selectedCol = 0;
     selectedRow = 0;
+    addAndMakeVisible(view);
 
-
-
+    setWantsKeyboardFocus(true);
+    setInterceptsMouseClicks(true,true);
+    addMouseListener(content, true);
+    
     //[/Constructor]
 }
 
@@ -83,9 +97,9 @@ SequenceEditor::~SequenceEditor()
     //[Destructor_pre]. You can add your own custom destruction code here..
     //[/Destructor_pre]
 
-    receiveButton = nullptr;
-    sendButton = nullptr;
-
+    playButton = nullptr;
+    recordButton = nullptr;
+    delete view;
 
     //[Destructor]. You can add your own custom destruction code here..
     //[/Destructor]
@@ -97,46 +111,11 @@ void SequenceEditor::paint (Graphics& g)
     //[UserPrePaint] Add your own custom painting code here..
     //[/UserPrePaint]
 
-    g.fillAll (Colour (0xff323e44));
-
-    //[UserPaint] Add your own custom painting code here..
-
-    g.setColour(juce::Colours::green);
-    g.fillRect(selectedCol * cellSize, selectedRow*cellSize,cellSize, cellSize);
-
-
-    for (int x = 0; x < gridWidth;x++) {
-        for (int y = 0; y < gridHeight; y++) {
-
-            int velocity = grid[x][y].getVelocity();
-
-            if (grid[x][y].isEnabled()) {
-                g.setColour(juce::Colour::fromRGB(velocity*2,165,0));
-            }
-            else {
-                g.setColour(juce::Colours::blue);
-            }
-            g.fillRect(x*cellSize+2, y*cellSize+2,cellSize-4 ,cellSize-4);
-
-            g.setColour(juce::Colours::white);
-
-            int octave = grid[x][y].getNote() / 12;
-
-            if (showVelocity) {
-
-                g.drawText(String(velocity),x*cellSize+1, y*cellSize+1, cellSize,cellSize,Justification::centred);
-            }
-            else {
-                g.drawText(notes[grid[x][y].getNote() % 12]+String(octave),x*cellSize+1, y*cellSize+1, cellSize,cellSize,Justification::centred);
-            }
-
-
-        }
-
-
-
+    if (content != nullptr && view != nullptr) {
+        view->setTopLeftPosition(0,50);
+        view->setSize(getWidth(), cellSize * 7);
+        content->setSize(cellSize*32, cellSize * 6);
     }
-
     //[/UserPaint]
 }
 
@@ -154,19 +133,19 @@ void SequenceEditor::buttonClicked (Button* buttonThatWasClicked)
     //[UserbuttonClicked_Pre]
     //[/UserbuttonClicked_Pre]
 
-    if (buttonThatWasClicked == receiveButton)
+    if (buttonThatWasClicked == playButton)
     {
         //[UserButtonCode_receiveButton] -- add your button handler code here..
 
-
+        startTimer(((float)60 / tempo) * (float)1000 / (float)4);
 
         //[/UserButtonCode_receiveButton]
     }
-    else if (buttonThatWasClicked == sendButton)
+    else if (buttonThatWasClicked == recordButton)
     {
         //[UserButtonCode_sendButton] -- add your button handler code here..
 
-        sendConfig();
+        stopTimer();
 
         //[/UserButtonCode_sendButton]
     }
@@ -439,7 +418,8 @@ void SequenceEditor::handlePartialSysexMessage (MidiInput* source,
 
 
 void SequenceEditor::timerCallback() {
-
+    currentStep = (currentStep + 1) % 32;
+    content->repaint();
 }
 
 //[/MiscUserCode]

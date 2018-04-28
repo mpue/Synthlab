@@ -1,40 +1,9 @@
-/*
-  ==============================================================================
-
-  This is an automatically generated GUI class created by the Projucer!
-
-  Be careful when adding custom code to these files, as only the code within
-  the "//[xyz]" and "//[/xyz]" sections will be retained when the file is loaded
-  and re-saved.
-
-  Created with Projucer version: 5.2.1
-
-  ------------------------------------------------------------------------------
-
-  The Projucer is part of the JUCE library.
-  Copyright (c) 2017 - ROLI Ltd.
-
-  ==============================================================================
-*/
-
 #pragma once
 
-//[Headers]     -- You can add your own extra header files here --
+
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Cell.h"
-#include "StepSequencerModule.h"
-//[/Headers]
 
-
-
-//==============================================================================
-/**
-                                                                    //[Comments]
-    An auto-generated component, created by the Projucer.
-
-    Describe your class and how it works here!
-                                                                    //[/Comments]
-*/
 class SequenceEditor  : public Component,
                         public MouseListener,
                         public AudioProcessorPlayer,
@@ -43,7 +12,7 @@ class SequenceEditor  : public Component,
 {
 public:
     //==============================================================================
-    SequenceEditor (StepSequencerModule* ssm);
+    SequenceEditor ();
     ~SequenceEditor();
 
     //==============================================================================
@@ -72,42 +41,101 @@ public:
     bool keyPressed (const KeyPress& key) override;
     void modifierKeysChanged (const ModifierKeys& modifiers) override;
 
-
+    struct SequencePanel : public Component {
+        
+        friend class SequenceEditor;
+        
+        void paint (Graphics& g) override {
+            
+            g.fillAll (Colour (0xff323e44));
+            
+            //[UserPaint] Add your own custom painting code here..
+            
+            g.setColour(juce::Colours::green);
+            g.fillRect(selectedCol * cellSize, selectedRow*cellSize,cellSize, cellSize);
+            
+            
+            for (int x = 0; x < gridWidth;x++) {
+                for (int y = 0; y < gridHeight; y++) {
+                    
+                    int velocity = grid[x][y].getVelocity();
+                    
+                    if (grid[x][y].isEnabled()) {
+  
+                        g.setColour(juce::Colour::fromRGB(velocity*2,165,0));
+                    }
+                    else {
+                        g.setColour(juce::Colours::lightgrey);
+                    }
+                    
+                    if (currentStep == x) {
+                         g.setColour(juce::Colours::orange);
+                    }
+                    else {
+                         g.setColour(juce::Colours::darkgrey);
+                    }
+                    
+                    g.fillRect(x*cellSize+2, y*cellSize+2,cellSize-4 ,cellSize-4);
+                    
+                    g.setColour(juce::Colours::white);
+                    
+                    int octave = grid[x][y].getNote() / 12;
+                    
+                    if (showVelocity) {
+                        
+                        g.drawText(String(velocity),x*cellSize+1, y*cellSize+1, cellSize,cellSize,Justification::centred);
+                    }
+                    else {
+                        g.drawText(notes[grid[x][y].getNote() % 12]+String(octave),x*cellSize+1, y*cellSize+1, cellSize,cellSize,Justification::centred);
+                    }
+                    
+                    
+                }
+                
+                
+                
+            }
+        }
+    };
 
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
 
-    Cell grid[64][6];
+    static Cell grid[32][6];
 
     int mouseX;
     int mouseY;
 
-    int selectedCol;
-    int selectedRow;
+    static int selectedCol;
+    static int selectedRow;
 
-    const int gridWidth = 64;
-    const int gridHeight = 6;
-    const int cellSize = 32;
+    const static int gridWidth = 32;
+    const static int gridHeight = 6;
+    const static int cellSize = 32;
 
-    const String notes[127] = {"C","C#", "D", "D#", "E", "F", "F#", "G", "G#" , "A" ,"A#", "B"};
+    static const String notes[128];
+    
+    static int currentStep;
 
-    bool showVelocity = false;
-    bool optionPressed = false;
+    static bool showVelocity;
+    static bool optionPressed;
 
+    float tempo = 120;
+    
     AudioDeviceManager* deviceManager;
-    StepSequencerModule* ssm;
+
 
     //[/UserVariables]
 
     //==============================================================================
-    ScopedPointer<TextButton> receiveButton;
-    ScopedPointer<TextButton> sendButton;
-
+    ScopedPointer<TextButton> playButton;
+    ScopedPointer<TextButton> recordButton;
+    Viewport* view = nullptr;
+    SequencePanel* content = nullptr;
     
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SequenceEditor)
 };
 
-//[EndFile] You can add extra defines here...
-//[/EndFile]
+

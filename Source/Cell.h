@@ -30,6 +30,7 @@ public:
     bool isEnabled();
     
     
+    
 private:
     int note;
     int velocity;

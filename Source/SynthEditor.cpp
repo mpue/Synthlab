@@ -1004,10 +1004,8 @@ void SynthEditor::openSampleEditor(SamplerModule *sm) {
 }
 
 void SynthEditor::openStepSequencer(StepSequencerModule *ssm) {
-    SequenceEditor* se = new SequenceEditor(ssm);
-    Viewport* vp = new Viewport();
-    vp->setViewedComponent(se);
-    Project::getInstance()->getSupplemental()->addTab("Step sequencer", Colours::darkgrey, vp, true);
+    SequenceEditor* se = ssm->getEditor();
+    Project::getInstance()->getSupplemental()->addTab("Step sequencer", Colours::darkgrey, se, true);
     Project::getInstance()->getSupplemental()->setCurrentTabIndex(Project::getInstance()->getSupplemental()->getNumTabs() - 1);
    
 }
