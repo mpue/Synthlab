@@ -200,6 +200,11 @@ void MainComponent::timerCallback(){
             cpuLoad += loads[i];
         }
         cpuLoad /= 10;
+        
+        if (cpuLoad < 0) {
+            cpuLoad = 0;
+        }
+        
         loadSlider->setValue(cpuLoad);
         cpuLoadLabel->setText(String(cpuLoad)+"%", juce::NotificationType::dontSendNotification);
     }
@@ -581,6 +586,7 @@ void MainComponent::buttonClicked (Button* b)
         else if(tb->getItemId() == toolbarFactory->doc_new) {
             editor->setRunning(false);
             editor->cleanUp();
+            editor->getMixer()->removeAllChannels();
             editor->newFile();
             editor->setRunning(true);
         }
