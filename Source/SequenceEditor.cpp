@@ -37,11 +37,13 @@ int SequenceEditor::currentStep = 0;
 //[/MiscUserDefs]
 
 //==============================================================================
-SequenceEditor::SequenceEditor ()
+SequenceEditor::SequenceEditor (Pin* output)
 {
     //[Constructor_pre] You can add your own custom stuff here..
     //[/Constructor_pre]
 
+    this->output = output;
+    
     addAndMakeVisible (playButton = new TextButton ("Play"));
     playButton->setButtonText (TRANS("Play"));
     playButton->addListener (this);
@@ -422,6 +424,40 @@ void SequenceEditor::handlePartialSysexMessage (MidiInput* source,
 void SequenceEditor::timerCallback() {
     currentStep = (currentStep + 1) % 32;
     content->repaint();
+    
+    for (int y = 0; y < 6;y++) {
+    
+        Event* e = new Event("gate on",Event::Type::GATE);
+        
+        e->setValue(grid[currentStep][y].getVelocity());
+        e->setNote(grid[currentStep][y].getNote());
+        
+        if (output != nullptr) {
+            
+            for (int i = 0; i < output->connections.size();i++) {
+                output->connections.at(i)->sendEvent(new Event(e));
+            }
+        }
+        
+        e = new Event("gate off",Event::Type::GATE);
+        e->setValue(0);
+        
+        
+        if (currentStep > 0) {
+            e->setNote(grid[currentStep - 1][y].getNote());
+        }
+        else {
+            e->setNote(grid[31][y].getNote());
+        }
+        
+        if (output != nullptr) {
+            
+            for (int i = 0; i < output->connections.size();i++) {
+                output->connections.at(i)->sendEvent(new Event(e));
+            }
+        }
+    }
+    
 }
 
 //[/MiscUserCode]

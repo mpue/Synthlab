@@ -49,7 +49,7 @@ void StepSequencerModule::configurePins() {
 
 SequenceEditor* StepSequencerModule::getEditor() {
     if (editor == nullptr) {
-        editor = new SequenceEditor();
+        editor = new SequenceEditor(pins.at(1));
     }
     return editor;
 }

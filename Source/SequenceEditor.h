@@ -3,6 +3,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Cell.h"
+#include "Pin.h"
 
 class SequenceEditor  : public Component,
                         public MouseListener,
@@ -12,7 +13,7 @@ class SequenceEditor  : public Component,
 {
 public:
     //==============================================================================
-    SequenceEditor ();
+    SequenceEditor (Pin* output);
     ~SequenceEditor();
 
     //==============================================================================
@@ -124,6 +125,7 @@ private:
     
     AudioDeviceManager* deviceManager;
 
+    Pin* output = nullptr;
 
     //[/UserVariables]
 
