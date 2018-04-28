@@ -99,8 +99,10 @@ private:
         
         for (std::vector<DialogWindow*>::iterator it = openWindows.begin();it != openWindows.end();) {
             if ((*it) != nullptr) {
-                (*it)->setVisible(false);
-                delete (*it);
+                if ((*it)->isVisible()) {
+                    (*it)->setVisible(false);
+                    delete (*it);
+                }
             }
             it = openWindows.erase(it);
         }

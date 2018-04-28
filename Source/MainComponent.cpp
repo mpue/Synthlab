@@ -492,29 +492,39 @@ void MainComponent::openSettings() {
     launchOptions.content.setOwned(selector);
     launchOptions.content->setSize(600, 580);
     launchOptions.dialogBackgroundColour = LookAndFeel::getDefaultLookAndFeel().findColour(ResizableWindow::backgroundColourId);
-    Project::getInstance()->getOpenWindows().push_back(launchOptions.launchAsync());
+    DialogWindow* window = launchOptions.launchAsync();
     
-    AudioDeviceManager::AudioDeviceSetup setup;
-    deviceManager.getAudioDeviceSetup(setup);
+    std::function<void(int)> lambda =
+    [=](int result) {
+        AudioDeviceManager::AudioDeviceSetup setup;
+        deviceManager.getAudioDeviceSetup(setup);
+        
+        deviceManager.restartLastAudioDevice();
+        
+        XmlElement* config = deviceManager.createStateXml();
+        
+        String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
+        
+        File appDir = File(userHome+"/.Synthlab");
+        
+        if (!appDir.exists()) {
+            appDir.createDirectory();
+        }
+        
+        File configFile = File(userHome+"/.Synthlab/config.xml");
+        
+        if (config != NULL) {
+            config->writeToFile(configFile,"");
+            delete config;
+        }
+    };
     
-    deviceManager.restartLastAudioDevice();
+    ModalComponentManager::Callback* callback = ModalCallbackFunction::create(lambda);
+    ModalComponentManager::getInstance()->attachCallback(window, callback);
     
-    XmlElement* config = deviceManager.createStateXml();
+    Project::getInstance()->getOpenWindows().push_back(window);
     
-    String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
-    
-    File appDir = File(userHome+"/.Synthlab");
-    
-    if (!appDir.exists()) {
-        appDir.createDirectory();
-    }
-    
-    File configFile = File(userHome+"/.Synthlab/config.xml");
-    
-    if (config != NULL) {
-        config->writeToFile(configFile,"");
-        delete config;
-    }
+
 
 }
 
@@ -622,16 +632,6 @@ void MainComponent::buttonClicked (Button* b)
             else {
                 moduleBrowser->setVisible(false);
             }
-    
-
-            
-            /*
-            PopupMenu pm = PopupMenu();
-            
-            p->add
-            pm.addItem(100, "Sawtooth", true, true, ImageCache::getFromMemory(BinaryData::saw_png, BinaryData::saw_pngSize));
-            pm.showAt(b);
-             */
 
         }
     }
@@ -732,49 +732,6 @@ void MainComponent::sendControllerMessage(Module *module, int controller, float 
             sendControllerMessage(module->getModules()->at(i),controller, value);
         }
     }
-}
-
-
-void MainComponent::audioDeviceIOCallback(const float **inputChannelData, int numInputChannels, float **outputChannelData, int numOutputChannels, int numSamples) {
-    
-    for (int i = 0; i < numSamples;i++)
-        processModule(editor->getModule());
-    
-    std::vector<AudioOut*> outputChannels = editor->getOutputChannels();
-    
-    // mute if there are no channels
-    if (outputChannels.size() == 0) {
-        for (int j = 0;j < numSamples;j++) {
-            outputChannelData[0][j] = 0;
-            outputChannelData[1][j] = 0;
-        }
-    }
-    
-    else {
-        
-        // process all output pins of the connected module
-        // outputChannels.at(0)->getPins().at(0)->process(inputChannelData[0], outputChannelData[0], numSamples);
-        for (int j = 0;j < numSamples;j++) {
-            
-            if (editor->channelIsValid(0)) {
-                const float* outL = outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-                outputChannelData[0][j] = outL[j];
-            }
-            else {
-                outputChannelData[0][j] = 0;
-            }
-            
-            if (editor->channelIsValid(1)) {
-                const float* outR = outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-                outputChannelData[1][j] = outR[j];
-                
-            }
-            else {
-                outputChannelData[1][j] = 0;
-            }
-        }
-    }
-    
 }
 
 void MainComponent::processModule(Module* m) {

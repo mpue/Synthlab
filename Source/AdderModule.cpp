@@ -65,7 +65,7 @@ void AdderModule::process() {
             const float* in1 = pins.at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
             const float* in2 = pins.at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
             for (int i = 0; i < buffersize;i++) {
-                out[i] = in1[i] * in2[i];
+                out[i] = in1[i] + in2[i];
             }
             
         }

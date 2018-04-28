@@ -50,11 +50,6 @@ public:
     void sendNoteMessage(Module* module, int note);
     void sendControllerMessage(Module* module, int controller, float value);
     void processModule(Module* m);
-    void audioDeviceIOCallback (const float** inputChannelData,
-                                int numInputChannels,
-                                float** outputChannelData,
-                                int numOutputChannels,
-                                int numSamples) override;
     int getNumActiveChannels(int i);
     
     SynthEditor* getEditor() {
