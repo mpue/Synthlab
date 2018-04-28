@@ -11,9 +11,22 @@
 #include "CloseableTabButton.h"
 
 CloseableTabButton::CloseableTabButton(const String& name, TabbedButtonBar& ownerBar): juce::TabBarButton(name, ownerBar) {
-    TextButton* tb = new TextButton();
-    tb->setButtonText("x");
-    TabBarButton::setExtraComponent(tb, juce::TabBarButton::ExtraComponentPlacement::afterText);
+    ImageButton* ib = new ImageButton();
+
+    ib->setImages (false,
+               false,
+               true,
+               ImageCache::getFromMemory(BinaryData::close_png, BinaryData::close_pngSize),
+               1.0,
+               Colours::white,
+               ImageCache::getFromMemory(BinaryData::close_png, BinaryData::close_pngSize),
+               1.0,
+               Colours::orange,
+               ImageCache::getFromMemory(BinaryData::close_png, BinaryData::close_pngSize),
+               1.0,
+               Colours::orange);
+    
+    TabBarButton::setExtraComponent(ib, juce::TabBarButton::ExtraComponentPlacement::afterText);
 }
 
 CloseableTabButton::~CloseableTabButton() {

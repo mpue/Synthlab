@@ -186,7 +186,7 @@ private:
 	bool isMovingModule = true;
 	bool isDraggingConnection = false;
 
-    Module* root;
+    Module* root = nullptr;
     
     bool isRoot = true;;
 

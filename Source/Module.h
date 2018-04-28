@@ -161,8 +161,8 @@ protected:
 	long index;
     bool editable = true;
     bool prefab = false;
-    std::vector<Module*>* modules;
-    std::vector<Connection*>* connections;
+    std::vector<Module*>* modules = nullptr;
+    std::vector<Connection*>* connections = nullptr;
     Pin* selectedPin = nullptr;
     Point<int> savedPosition;
     
