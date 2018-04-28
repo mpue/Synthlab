@@ -46,9 +46,9 @@ public:
     void createKeyMap();
     void buttonClicked (Button*) override;
     void handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) override;
-    void sendGateMessage(Module* module, int velocity,int note,bool on);
-    void sendNoteMessage(Module* module, int note);
-    void sendControllerMessage(Module* module, int controller, float value);
+    void sendGateMessage(Module* module, int channel, int velocity,int note,bool on);
+    void sendNoteMessage(Module* module, int channel, int note);
+    void sendControllerMessage(Module* module, int channel, int controller, float value);
     void processModule(Module* m);
     int getNumActiveChannels(int i);
     

@@ -532,8 +532,8 @@ bool MainComponent::keyStateChanged(bool isKeyDown, juce::Component *originating
     for (std::map<int, int>::iterator it = keyCodeMidiNote.begin();it != keyCodeMidiNote.end();it++) {
         if (KeyPress::isKeyCurrentlyDown((*it).first)) {
             if (!keyStates[(*it).second]) {
-                sendNoteMessage(editor->getModule(), (*it).second + 12 * currentOctave);
-                sendGateMessage(editor->getModule(), 64,(*it).second + 12 * currentOctave, true);
+                sendNoteMessage(editor->getModule(),1, (*it).second + 12 * currentOctave);
+                sendGateMessage(editor->getModule(),1, 64,(*it).second + 12 * currentOctave, true);
                 keyStates[(*it).second] = true;
             }
 
@@ -541,7 +541,7 @@ bool MainComponent::keyStateChanged(bool isKeyDown, juce::Component *originating
         else {
             keyStates[(*it).second] = false;
             if (!isKeyDown)
-                sendGateMessage(editor->getModule(), 0,(*it).second + 12 * currentOctave, false);
+                sendGateMessage(editor->getModule(), 0,1,(*it).second + 12 * currentOctave, false);
         }
     }
     return true;
@@ -644,57 +644,62 @@ void MainComponent::handleIncomingMidiMessage(juce::MidiInput *source, const juc
     
     if (message.isNoteOn()) {
         for (int i = 0; i < editor->getModule()->getModules()->size();i++) {
-            sendNoteMessage(editor->getModule()->getModules()->at(i), message.getNoteNumber());
-            sendGateMessage(editor->getModule()->getModules()->at(i), message.getVelocity(),message.getNoteNumber(),true);
+            sendNoteMessage(editor->getModule()->getModules()->at(i), message.getChannel(),message.getNoteNumber());
+            sendGateMessage(editor->getModule()->getModules()->at(i), message.getChannel(),message.getVelocity(),message.getNoteNumber(),true);
             
         }
     }
     else if (message.isNoteOff()) {
         for (int i = 0; i < editor->getModule()->getModules()->size();i++) {
-            sendGateMessage(editor->getModule()->getModules()->at(i), message.getVelocity(),message.getNoteNumber(),false);
+            sendGateMessage(editor->getModule()->getModules()->at(i), message.getChannel(),message.getVelocity(),message.getNoteNumber(),false);
         }
     }
     else if(message.isController()) {
         for (int i = 0; i < editor->getModule()->getModules()->size();i++) {
-            sendControllerMessage(editor->getModule()->getModules()->at(i), message.getControllerNumber(),message.getControllerValue());
+            sendControllerMessage(editor->getModule()->getModules()->at(i), message.getChannel(),message.getControllerNumber(),message.getControllerValue());
         }
     }
     
     // deviceManager.getDefaultMidiOutput()->sendMessageNow(message);
 }
 
-void MainComponent::sendGateMessage(Module *module,int velocity,int note,  bool on) {
+void MainComponent::sendGateMessage(Module *module,int channel, int velocity,int note,  bool on) {
     
     
     MidiGate* gate;
     
     if ((gate = dynamic_cast<MidiGate*>(module)) != NULL) {
-        if (on) {
-            if (velocity > 0)
-                gate->gateOn(velocity,note);
-        }
-        else {
-            gate->gateOff(note);
-        }
-    }
-    
-    for (int i = 0; i< module->getModules()->size();i++) {
-        
-        if ((gate = dynamic_cast<MidiGate*>(module->getModules()->at(i)))!= NULL) {
+        if (gate->getChannel() == channel) {
             if (on) {
-                gate->gateOn(velocity,note);
+                if (velocity > 0)
+                    gate->gateOn(velocity,note);
             }
             else {
                 gate->gateOff(note);
             }
-            
-            sendGateMessage(module->getModules()->at(i),velocity,note,on);
         }
+
     }
     
+    for (int i = 0; i< module->getModules()->size();i++) {
+
+        if ((gate = dynamic_cast<MidiGate*>(module->getModules()->at(i)))!= NULL) {
+            if (gate->getChannel() == channel) {
+                if (on) {
+                    gate->gateOn(velocity,note);
+                }
+                else {
+                    gate->gateOff(note);
+                }
+                
+                sendGateMessage(module->getModules()->at(i), channel,velocity,note,on);
+            }
+        }
+    }
+
 }
 
-void MainComponent::sendNoteMessage(Module *module, int note) {
+void MainComponent::sendNoteMessage(Module *module, int channel, int note) {
     
     MidiNote* midiNote;
     
@@ -706,12 +711,12 @@ void MainComponent::sendNoteMessage(Module *module, int note) {
     for (int i = 0; i< module->getModules()->size();i++) {
         
         if ((midiNote = dynamic_cast<MidiNote*>(module->getModules()->at(i)))!= NULL) {
-            sendNoteMessage(module->getModules()->at(i), note);
+            sendNoteMessage(module->getModules()->at(i),channel, note);
         }
     }
 }
 
-void MainComponent::sendControllerMessage(Module *module, int controller, float value) {
+void MainComponent::sendControllerMessage(Module *module, int channel, int controller, float value) {
     
     Knob* k;
     
@@ -729,7 +734,7 @@ void MainComponent::sendControllerMessage(Module *module, int controller, float 
     for (int i = 0; i< module->getModules()->size();i++) {
         
         if ((k = dynamic_cast<Knob*>(module->getModules()->at(i)))!= NULL) {
-            sendControllerMessage(module->getModules()->at(i),controller, value);
+            sendControllerMessage(module->getModules()->at(i), channel, controller, value);
         }
     }
 }

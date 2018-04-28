@@ -33,8 +33,31 @@ public:
         return "MIDI";
     }
     
+    void setChannel(int channel);
+    int getChannel();
+    
+    virtual juce::Array<PropertyComponent*>& getProperties() override;
+    virtual void createProperties() override;
     
 private:
+    
+    struct ChannelListener : Value::Listener
+    {
+        ChannelListener (Value& v, MidiGate* g) : g(g),  value (v) { value.addListener (this); }
+        ~ChannelListener()  {}  // no need to remove the listener
+        
+        void valueChanged (Value& value) override {
+            g->setChannel(value.toString().getIntValue());
+        }
+        MidiGate* g;
+        Value value;
+    };
+    
+    Value* channelValue;
+    PropertyComponent* channelProp;
+    ChannelListener* channelListener;
+
+    int channel = 1;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MidiGate)
 };

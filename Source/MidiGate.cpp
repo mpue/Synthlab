@@ -23,12 +23,14 @@ MidiGate::MidiGate()
     editable = false;
     prefab = true;
     
+    createProperties();
 }
 
 MidiGate::~MidiGate()
 {
-    
- 
+    delete channelValue;
+    delete channelListener;
+    // delete channelProp;
 }
 
 void MidiGate::configurePins() {
@@ -53,6 +55,7 @@ void MidiGate::paint(juce::Graphics &g) {
 }
 
 void MidiGate::gateOn(int velocity, int note) {
+    
     pins.at(0)->setValue(velocity);
     pins.at(0)->setNote(note);
     
@@ -80,3 +83,27 @@ void MidiGate::gateOff(int note) {
     
     delete e;
 }
+
+void MidiGate::createProperties() {
+    channelValue = new Value();
+    channelListener = new ChannelListener(*channelValue, this);
+}
+
+juce::Array<PropertyComponent*>& MidiGate::getProperties() {
+    
+    properties = juce::Array<PropertyComponent*>();
+    
+    channelProp = new SliderPropertyComponent(*channelValue,"channel",1,16,1,1,true);
+    properties.add(channelProp);
+    return properties;
+}
+
+int MidiGate::getChannel() {
+    return channel;
+}
+
+void MidiGate::setChannel(int channel) {
+    this->channel = channel;
+    this->channelValue->setValue(channel);
+}
+

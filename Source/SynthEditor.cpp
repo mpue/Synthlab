@@ -852,8 +852,15 @@ void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Conn
         }
         
         Constant* c = nullptr;
+        
         if ((c = dynamic_cast<Constant*>((*it))) != NULL) {
             file.setProperty("value", c->getValue(), nullptr);
+        }
+        
+        MidiGate* gate = nullptr;
+        
+        if ((gate = dynamic_cast<MidiGate*>((*it))) != NULL) {
+            file.setProperty("channel",gate->getChannel() , nullptr);
         }
         
         SamplerModule* sm;
@@ -1132,6 +1139,15 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
             k->setValue(mod.getProperty("value").toString().getFloatValue());
             k->setIsMidicontroller(mod.getProperty("isController").toString().getIntValue() > 0);
             k->setController(mod.getProperty("controllerNum").toString().getIntValue());
+        }
+        
+        
+        MidiGate* gate;
+        
+        if ((gate = dynamic_cast<MidiGate*>(m)) != NULL) {
+           
+            gate->setChannel(mod.getProperty("channel").toString().getIntValue());
+            addChangeListener(gate);
         }
         
         ADSRModule* adsr;
