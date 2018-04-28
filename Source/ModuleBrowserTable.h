@@ -53,7 +53,7 @@ public:
     }
     
     var getDragSourceDescription (const SparseSet<int>& currentlySelectedRows) override {
-        return (prefabs.at(table->getSelectedRow()).getId());
+        return (filteredPrefabs->at(table->getSelectedRow()).getId());
     }
 
     

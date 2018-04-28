@@ -89,7 +89,8 @@ void ModuleBrowser::textEditorTextChanged (TextEditor& t) {
     filteredPrefabs->clear();
     
     for (int i = 0; i < prefabs.size();i++) {
-        if (prefabs.at(i).getName().contains(t.getText())) {
+        if (prefabs.at(i).getName().toLowerCase().contains(t.getText().toLowerCase()) ||
+            prefabs.at(i).getCategory().toLowerCase().contains(t.getText().toLowerCase())) {
             filteredPrefabs->push_back(prefabs.at(i));
         }
     }
