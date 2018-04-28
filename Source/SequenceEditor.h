@@ -12,12 +12,10 @@ class SequenceEditor  : public Component,
                         public Button::Listener
 {
 public:
-    //==============================================================================
+
     SequenceEditor (Pin* output);
     ~SequenceEditor();
 
-    //==============================================================================
-    //[UserMethods]     -- You can add your own custom methods in this section.
     void handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) override;
     virtual void handlePartialSysexMessage (MidiInput* source,
                                             const uint8* messageData,
@@ -29,9 +27,6 @@ public:
     void sendConfig();
 
     void timerCallback() override;
-
-    //[/UserMethods]
-
     void paint (Graphics& g) override;
     void resized() override;
     void buttonClicked (Button* buttonThatWasClicked) override;
@@ -50,18 +45,13 @@ public:
             
             g.fillAll (Colour (0xff323e44));
             
-            //[UserPaint] Add your own custom painting code here..
-            
             g.setColour(juce::Colours::green);
             g.fillRect(selectedCol * cellSize, selectedRow*cellSize,cellSize, cellSize);
-            
             
             for (int x = 0; x < gridWidth;x++) {
                 for (int y = 0; y < gridHeight; y++) {
                     
                     int velocity = grid[x][y].getVelocity();
-                    
-
                     
                     if (currentStep == x) {
                          g.setColour(juce::Colours::orange);
@@ -89,18 +79,12 @@ public:
                     else {
                         g.drawText(notes[grid[x][y].getNote() % 12]+String(octave),x*cellSize+1, y*cellSize+1, cellSize,cellSize,Justification::centred);
                     }
-                    
-                    
                 }
-                
-                
-                
             }
         }
     };
 
 private:
-    //[UserVariables]   -- You can add your own custom variables in this section.
 
     static Cell grid[32][6];
 
@@ -127,16 +111,11 @@ private:
 
     Pin* output = nullptr;
 
-    //[/UserVariables]
-
-    //==============================================================================
     ScopedPointer<TextButton> playButton;
     ScopedPointer<TextButton> recordButton;
     Viewport* view = nullptr;
     SequencePanel* content = nullptr;
-    
 
-    //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SequenceEditor)
 };
 
