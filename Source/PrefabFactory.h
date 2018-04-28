@@ -112,7 +112,6 @@ private:
         prefabs[66] = Prefab("Audio out","Input / Output");
         prefabs[67] = Prefab("Constant","Math");
         prefabs[68] = Prefab("LP filter","Filter");
-        // prefabs[68].setIcon(ImageCache::getFromMemory(BinaryData::lp_png, BinaryData::lp_pngSize));
         prefabs[69] = Prefab("Knob","Controls");
         prefabs[70] = Prefab("ADSR","Input / Output");
         prefabs[71] = Prefab("Sine","Sound sources");
@@ -126,12 +125,12 @@ private:
         prefabs[79] = Prefab("Plugin","FX");    
         prefabs[80] = Prefab("Step sequencer","MIDI");
         
-        prefabImages[53] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[53] = ImageCache::getFromMemory(BinaryData::sampler_png, BinaryData::sampler_pngSize);
         prefabImages[54] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
-        prefabImages[55] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[55] = ImageCache::getFromMemory(BinaryData::p2f_png, BinaryData::p2f_pngSize);
         prefabImages[56] = ImageCache::getFromMemory(BinaryData::inverter_png, BinaryData::inverter_pngSize);
         prefabImages[57] = ImageCache::getFromMemory(BinaryData::multiplier_png, BinaryData::multiplier_pngSize);
-        prefabImages[58] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[58] = ImageCache::getFromMemory(BinaryData::display_png, BinaryData::display_pngSize);
         prefabImages[59] = ImageCache::getFromMemory(BinaryData::adder_png, BinaryData::adder_pngSize);
         prefabImages[60] = ImageCache::getFromMemory(BinaryData::adder_png, BinaryData::adder_pngSize);
         prefabImages[61] = ImageCache::getFromMemory(BinaryData::midiin_png, BinaryData::midiin_pngSize);
@@ -146,14 +145,14 @@ private:
         prefabImages[70] = ImageCache::getFromMemory(BinaryData::adsr_png, BinaryData::adder_pngSize);
         prefabImages[71] = ImageCache::getFromMemory(BinaryData::sine_png, BinaryData::sine_pngSize);
         prefabImages[72] = ImageCache::getFromMemory(BinaryData::random_png, BinaryData::random_pngSize);
-        prefabImages[73] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[73] = ImageCache::getFromMemory(BinaryData::stereodelay_png, BinaryData::stereodelay_pngSize);
         prefabImages[74] = ImageCache::getFromMemory(BinaryData::hp_png, BinaryData::hp_pngSize);
-        prefabImages[75] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
-        prefabImages[76] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
-        prefabImages[77] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[75] = ImageCache::getFromMemory(BinaryData::scope_png, BinaryData::scope_pngSize);
+        prefabImages[76] = ImageCache::getFromMemory(BinaryData::micro_png, BinaryData::micro_pngSize);
+        prefabImages[77] = ImageCache::getFromMemory(BinaryData::aux_png, BinaryData::aux_pngSize);
         prefabImages[78] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[79] = ImageCache::getFromMemory(BinaryData::plugin_png, BinaryData::plugin_pngSize);
-        prefabImages[80] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[80] = ImageCache::getFromMemory(BinaryData::sequence_png, BinaryData::sequence_pngSize);
         
         
         categories = new StringArray();

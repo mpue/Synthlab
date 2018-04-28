@@ -19,7 +19,9 @@
       <FILE id="DbUq4B" name="adder.png" compile="0" resource="1" file="Images/adder.png"/>
       <FILE id="LYnUGD" name="adsr.png" compile="0" resource="1" file="Images/adsr.png"/>
       <FILE id="udjGbx" name="apicon.png" compile="0" resource="1" file="Images/apicon.png"/>
+      <FILE id="aKEzla" name="aux.png" compile="0" resource="1" file="Images/aux.png"/>
       <FILE id="Kxq8Ss" name="delete.png" compile="0" resource="1" file="Images/delete.png"/>
+      <FILE id="pb7t0i" name="display.png" compile="0" resource="1" file="Images/display.png"/>
       <FILE id="rJlVP0" name="divider.png" compile="0" resource="1" file="Images/divider.png"/>
       <FILE id="GoPlKq" name="Fader.png" compile="0" resource="1" file="Images/Fader.png"/>
       <FILE id="v1N5Vy" name="hp.png" compile="0" resource="1" file="Images/hp.png"/>
@@ -27,6 +29,7 @@
       <FILE id="gJAegc" name="led_off.png" compile="1" resource="1" file="Images/led_off.png"/>
       <FILE id="xTBQB1" name="led_on.png" compile="1" resource="1" file="Images/led_on.png"/>
       <FILE id="HGa4kr" name="lp.png" compile="0" resource="1" file="Images/lp.png"/>
+      <FILE id="floa7Y" name="micro.png" compile="0" resource="1" file="Images/micro.png"/>
       <FILE id="wjQQld" name="midiin.png" compile="0" resource="1" file="Images/midiin.png"/>
       <FILE id="E9iJPb" name="midiout.png" compile="0" resource="1" file="Images/midiout.png"/>
       <FILE id="BIK1yM" name="module.png" compile="0" resource="1" file="Images/module.png"/>
@@ -34,6 +37,7 @@
       <FILE id="HjBjyS" name="new.png" compile="0" resource="1" file="Images/new.png"/>
       <FILE id="trqee2" name="note.png" compile="0" resource="1" file="Images/note.png"/>
       <FILE id="WJV4UZ" name="open.png" compile="0" resource="1" file="Images/open.png"/>
+      <FILE id="JmpZMp" name="p2f.png" compile="0" resource="1" file="Images/p2f.png"/>
       <FILE id="xHNzRT" name="plugin.png" compile="0" resource="1" file="Images/plugin.png"/>
       <FILE id="oIx1Pf" name="pulse.png" compile="0" resource="1" file="Images/pulse.png"/>
       <FILE id="toz51A" name="random.png" compile="0" resource="1" file="Images/random.png"/>
@@ -44,12 +48,16 @@
             file="Images/round_button.png"/>
       <FILE id="vGbl3U" name="round_button_pushed.png" compile="0" resource="1"
             file="Images/round_button_pushed.png"/>
+      <FILE id="LzvDGx" name="sampler.png" compile="0" resource="1" file="Images/sampler.png"/>
       <FILE id="H4tzp2" name="save.png" compile="0" resource="1" file="Images/save.png"/>
       <FILE id="RZ5Zvp" name="saw.png" compile="0" resource="1" file="Images/saw.png"/>
       <FILE id="WPhORY" name="sawtooth.png" compile="1" resource="1" file="Images/sawtooth.png"/>
+      <FILE id="YzCpU0" name="scope.png" compile="0" resource="1" file="Images/scope.png"/>
+      <FILE id="KRpZvz" name="sequence.png" compile="0" resource="1" file="Images/sequence.png"/>
       <FILE id="hyumdp" name="settings.png" compile="0" resource="1" file="Images/settings.png"/>
       <FILE id="q1YVvz" name="sine.png" compile="0" resource="1" file="Images/sine.png"/>
       <FILE id="Grgqb1" name="speaker.png" compile="0" resource="1" file="Images/speaker.png"/>
+      <FILE id="e6TDlD" name="stereodelay.png" compile="0" resource="1" file="Images/stereodelay.png"/>
       <FILE id="LlFYc6" name="tri.png" compile="0" resource="1" file="Images/tri.png"/>
       <FILE id="ogxnye" name="undo.png" compile="0" resource="1" file="Images/undo.png"/>
       <FILE id="EJ4uon" name="whitenoise.png" compile="0" resource="1" file="Images/whitenoise.png"/>

@@ -98,7 +98,7 @@ void DelayModule::configurePins() {
 
 void DelayModule::paint(juce::Graphics &g) {
     Module::paint(g);
-    // g.drawImageAt(ImageCache::getFromMemory(BinaryData::lp_png, BinaryData::lp_pngSize),25,40);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::stereodelay_png, BinaryData::stereodelay_pngSize),25,40);
 }
 
 

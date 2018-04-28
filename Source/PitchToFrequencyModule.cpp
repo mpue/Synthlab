@@ -13,10 +13,10 @@
 
 PitchToFrequencyModule::PitchToFrequencyModule()
 {
-    setSize(120,30);
+    setSize(120,80);
     nameLabel->setJustificationType (Justification::centred);
     nameLabel->setTopLeftPosition(2,2);
-    
+    nameLabel->setText("P2F", juce::NotificationType::dontSendNotification);
     editable = false;
     prefab = true;
 }
@@ -39,6 +39,7 @@ void PitchToFrequencyModule::configurePins(){
 
 void PitchToFrequencyModule::paint(juce::Graphics &g) {
     Module::paint(g);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::p2f_png, BinaryData::p2f_pngSize),25,40);
 }
 
 void PitchToFrequencyModule::process() {

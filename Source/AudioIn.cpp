@@ -47,7 +47,7 @@ void AudioIn::configurePins() {
 
 void AudioIn::paint(juce::Graphics &g) {
     Module::paint(g);
-    g.drawImageAt(ImageCache::getFromMemory(BinaryData::speaker_png, BinaryData::speaker_pngSize),25,40);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::micro_png, BinaryData::micro_pngSize),25,40);
 }
 
 void AudioIn::process() {

@@ -24,6 +24,7 @@ StepSequencerModule::StepSequencerModule(float sampleRate, int bufferSize)
     prefab = true;
     this->buffersize = bufferSize;
     this->sampleRate = sampleRate;
+    
 }
 
 StepSequencerModule::~StepSequencerModule()
@@ -45,6 +46,8 @@ void StepSequencerModule::configurePins() {
     
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::OUT,p2);
+    
+    editor = new SequenceEditor(pins.at(1));
 }
 
 SequenceEditor* StepSequencerModule::getEditor() {
@@ -56,7 +59,7 @@ SequenceEditor* StepSequencerModule::getEditor() {
 
 void StepSequencerModule::paint(juce::Graphics &g) {
     Module::paint(g);
-    // g.drawImageAt(ImageCache::getFromMemory(BinaryData::StepSequencer_png, BinaryData::StepSequencer_pngSize),25,40);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::sequence_png, BinaryData::sequence_pngSize),25,40);
 }
 
 void StepSequencerModule::process() {

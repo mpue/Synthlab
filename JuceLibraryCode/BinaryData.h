@@ -35,8 +35,14 @@ namespace BinaryData
     extern const char*   apicon_png;
     const int            apicon_pngSize = 213234;
 
+    extern const char*   aux_png;
+    const int            aux_pngSize = 4961;
+
     extern const char*   delete_png;
     const int            delete_pngSize = 3508;
+
+    extern const char*   display_png;
+    const int            display_pngSize = 5154;
 
     extern const char*   divider_png;
     const int            divider_pngSize = 3877;
@@ -59,6 +65,9 @@ namespace BinaryData
     extern const char*   lp_png;
     const int            lp_pngSize = 2979;
 
+    extern const char*   micro_png;
+    const int            micro_pngSize = 4670;
+
     extern const char*   midiin_png;
     const int            midiin_pngSize = 4633;
 
@@ -79,6 +88,9 @@ namespace BinaryData
 
     extern const char*   open_png;
     const int            open_pngSize = 3879;
+
+    extern const char*   p2f_png;
+    const int            p2f_pngSize = 3817;
 
     extern const char*   plugin_png;
     const int            plugin_pngSize = 20569;
@@ -101,6 +113,9 @@ namespace BinaryData
     extern const char*   round_button_pushed_png;
     const int            round_button_pushed_pngSize = 18877;
 
+    extern const char*   sampler_png;
+    const int            sampler_pngSize = 5753;
+
     extern const char*   save_png;
     const int            save_pngSize = 3933;
 
@@ -110,6 +125,12 @@ namespace BinaryData
     extern const char*   sawtooth_png;
     const int            sawtooth_pngSize = 5130;
 
+    extern const char*   scope_png;
+    const int            scope_pngSize = 5391;
+
+    extern const char*   sequence_png;
+    const int            sequence_pngSize = 3792;
+
     extern const char*   settings_png;
     const int            settings_pngSize = 4632;
 
@@ -118,6 +139,9 @@ namespace BinaryData
 
     extern const char*   speaker_png;
     const int            speaker_pngSize = 4111;
+
+    extern const char*   stereodelay_png;
+    const int            stereodelay_pngSize = 4796;
 
     extern const char*   tri_png;
     const int            tri_pngSize = 2335;
@@ -132,7 +156,7 @@ namespace BinaryData
     extern const char* namedResourceList[];
 
     // Number of elements in the namedResourceList array.
-    const int namedResourceListSize = 40;
+    const int namedResourceListSize = 48;
 
     // If you provide the name of one of the binary resource variables above, this function will
     // return the corresponding data and its size (or a null pointer if the name isn't found).

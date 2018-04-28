@@ -99,7 +99,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     editor->setTab(tab);
 
     addKeyListener(this);
-    resized();
+
     
     editor->addChangeListener(propertyView);
     

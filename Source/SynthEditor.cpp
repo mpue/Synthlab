@@ -157,18 +157,6 @@ void SynthEditor::paint (Graphics& g)
             
             if (c->source != NULL && c->target != NULL) {
                 
-                int x1 = c->source->getX() + c->a->x;
-                int y1 = c->source->getY() + c->a->y + 5;
-                int x2 = c->target->getX() + c->b->x;
-                int y2 = c->target->getY() + c->b->y + 5;
-                
-                /*
-                Point<int> p1 = Point<int>(x1,y1);
-                Point<int> p2 = Point<int>(x2,y2);
-                c->setPoints(p1,p2);
-                c->resized();
-                */
-                
                 if (c->selected) {
                     g.setColour(juce::Colours::cyan);
                 }
@@ -176,8 +164,8 @@ void SynthEditor::paint (Graphics& g)
                     g.setColour(juce::Colours::lightgrey);
                 }
                 
-                g.drawLine(x1,y1,x2,y2);
-                // c->paint(g);
+                // g.drawLine(x1,y1,x2,y2);
+                c->paint(g);
             }
             
         }
@@ -194,6 +182,29 @@ void SynthEditor::resized()
 
     //[UserResized] Add your own custom resize handling here..
     setSize(getParentWidth()*1.5, getParentHeight()*1.5);
+    
+    if (root != nullptr && root->getConnections() != nullptr) {
+        for (int i = 0; i < root->getConnections()->size(); i++) {
+            Connection* c = root->getConnections()->at(i);
+            
+            if (c->source != NULL && c->target != NULL) {
+                
+                int x1 = c->source->getX() + c->a->x;
+                int y1 = c->source->getY() + c->a->y + 5;
+                int x2 = c->target->getX() + c->b->x;
+                int y2 = c->target->getY() + c->b->y + 5;
+                
+                
+                Point<int> p1 = Point<int>(x1,y1);
+                Point<int> p2 = Point<int>(x2,y2);
+                c->setPoints(p1,p2);
+                c->resized();
+            }
+            
+        }
+    }
+    
+
     //[/UserResized]
 }
 
@@ -609,7 +620,7 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
 
     
 	repaint();
-
+    resized();
     //[/UserCode_mouseDrag]
 }
 
@@ -944,7 +955,7 @@ void SynthEditor::loadFromString(juce::String in){
     }
     
     xml = nullptr;
-   
+    resized();
     setRunning(true);
 }
 
