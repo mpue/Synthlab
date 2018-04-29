@@ -71,7 +71,7 @@ bool AddConnectionAction::perform() {
             else {
                 if (a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT) {
                     a->connections.push_back(b);
-                    Connection* c = new Connection(source, a, target, b);
+                    c = new Connection(source, a, target, b);
                     root->getConnections()->push_back(c);
                 }
                 else if (a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN) {
@@ -81,13 +81,12 @@ bool AddConnectionAction::perform() {
                     root->getConnections()->push_back(c);
                 }
             }
-            
-            
+    
         }
         
     }
     
-    editor->repaint();
+    
     
     return true;
 }

@@ -20,6 +20,7 @@ Connection::Connection(Module* source, Pin* a, Module* target, Pin* b) {
 	this->target = target;
 	this->a = a;
 	this->b = b;
+    linePath = new Path();
 }
 
 Connection::~Connection()
@@ -55,7 +56,8 @@ void Connection::resized() {
 }
 
 void Connection::paint(Graphics& g) {
-    g.fillPath(*linePath);
+    if (linePath != nullptr)
+        g.fillPath(*linePath);
 }
 
 void Connection::setPoints(Point<int> &p1, Point<int> &p2) {

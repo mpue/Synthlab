@@ -28,15 +28,12 @@ void LowPassFilter::coefficients(float sampleRate, float frequency, float resona
     this->frequency = frequency;
     this->resonance = resonance;
     
-    if (frequency == 0) {
-        frequency = 1;
-    }
     
     if (frequency > sampleRate / 2) {
         frequency = sampleRate / 2;
     }
     
-    if (frequency == 0) {
+    if (frequency <= 0) {
         frequency = 0.1;
     }
     

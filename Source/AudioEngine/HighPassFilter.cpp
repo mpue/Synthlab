@@ -28,6 +28,10 @@ void HighPassFilter::coefficients(float sampleRate, float frequency, float reson
     this->frequency = frequency / 10;
     this->resonance = resonance;
     
+    if (frequency >= sampleRate / 2) {
+        frequency = sampleRate / 2;
+    }
+    
     IIRCoefficients ic1  = IIRCoefficients::makeHighPass (sampleRate, frequency / 10, resonance);
     filter1->setCoefficients(ic1);
     filter2->setCoefficients(ic1);

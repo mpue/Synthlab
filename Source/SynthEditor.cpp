@@ -1464,6 +1464,7 @@ void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
     AddConnectionAction* ac = new AddConnectionAction(this,source);
     Project::getInstance()->getUndoManager()->beginNewTransaction();
     Project::getInstance()->getUndoManager()->perform(ac);
+    repaint();
 }
 
 void SynthEditor::setModule(Module *m) {

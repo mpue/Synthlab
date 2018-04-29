@@ -49,10 +49,11 @@ public:
 
     ~ModuleBrowserTable()
     {
+        delete filteredPrefabs;
         delete table;
     }
     
-    var getDragSourceDescription (const SparseSet<int>& currentlySelectedRows) override {
+    var getDragSourceDescription (const SparseSet<int>& currentlySelectedRows) override{
         return (filteredPrefabs->at(table->getSelectedRow()).getId());
     }
 
@@ -72,6 +73,7 @@ public:
     int getNumRows() override {
         if (filteredPrefabs != nullptr)
             return filteredPrefabs->size();
+        return 0;
     }
     void paintCell (Graphics& g,
                     int rowNumber,
