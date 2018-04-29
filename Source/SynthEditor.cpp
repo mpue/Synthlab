@@ -921,11 +921,23 @@ void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Conn
             file.setProperty("mono", saw->isMono(), nullptr);
         }
         
-        PluginModule* pm ;
+        PluginModule* pm;
         
         if ((pm = dynamic_cast<PluginModule*>((*it))) != NULL) {
             file.setProperty("plugin", pm->getPluginName(), nullptr);
             file.setProperty("currentProgram", pm->getCurrentProgram(), nullptr);
+        }
+        
+        StepSequencerModule* ssm;
+        
+        if ((ssm = dynamic_cast<StepSequencerModule*>((*it))) != NULL) {
+            MemoryOutputStream* mos = new MemoryOutputStream();
+            uint8* config = ssm->getEditor()->getConfiguration();
+            Base64::convertToBase64(*mos,config , ssm->getEditor()->getConfigLength());
+            mos->flush();
+            file.setProperty("config", mos->toString(), nullptr);
+            delete mos;
+            delete config;
         }
         
         ValueTree pins = ValueTree("Pins");
@@ -1243,8 +1255,17 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
             pm->setCurrentProgram(mod.getProperty("currentProgram").toString().getIntValue());
         }
         
-        // addAndMakeVisible(m);
-
+        StepSequencerModule* ssm;
+        
+        if ((ssm = dynamic_cast<StepSequencerModule*>(m)) != NULL) {
+            MemoryOutputStream* mos = new MemoryOutputStream();
+            String dataString = mod.getProperty("config").toString();
+            Base64::convertFromBase64(*mos, dataString);
+            ssm->getEditor()->setConfiguration((uint8*)mos->getData());
+            delete mos;
+        }
+        
+        
         loadStructure(m->getModules(),m->getConnections(),&mod);
     }
 

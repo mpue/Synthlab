@@ -9,6 +9,9 @@ bool SequenceEditor::showVelocity = false;
 Cell SequenceEditor::grid[32][6];
 int SequenceEditor::currentStep = 0;
 
+int SequenceEditor::gridWidth = 32;
+int SequenceEditor::gridHeight = 6;
+
 SequenceEditor::SequenceEditor (Pin* output)
 {
     this->output = output;
@@ -25,6 +28,19 @@ SequenceEditor::SequenceEditor (Pin* output)
 
     recordButton->setBounds (170, 10, 150, 24);
 
+    addAndMakeVisible (clearButton = new TextButton ("Clear"));
+    clearButton->setButtonText (TRANS("Clear"));
+    clearButton->addListener (this);
+    
+    clearButton->setBounds (330, 10, 150, 24);
+    
+    addAndMakeVisible (lengthSlider = new Slider ("lengthSlider"));
+    lengthSlider->setRange (1, 64, 1);
+    lengthSlider->setSliderStyle (Slider::LinearHorizontal);
+    lengthSlider->setTextBoxStyle (Slider::TextBoxLeft, false, 80, 20);
+    lengthSlider->addListener (this);
+    lengthSlider->setBounds (500, 10, 150, 24);
+    
     setSize (800, 768);
 
     content = new SequencePanel();
@@ -59,6 +75,8 @@ SequenceEditor::~SequenceEditor()
 {
     playButton = nullptr;
     recordButton = nullptr;
+    clearButton = nullptr;
+    lengthSlider = nullptr;
     delete view;
 }
 
@@ -88,8 +106,16 @@ void SequenceEditor::buttonClicked (Button* buttonThatWasClicked)
     {
         stopTimer();
     }
+    else if(buttonThatWasClicked == clearButton) {
+        clearSequence();
+    }
+}
 
-
+void SequenceEditor::sliderValueChanged(juce::Slider *slider) {
+    if (slider == lengthSlider) {
+        gridWidth = slider->getValue();
+        repaint();
+    }
 }
 
 void SequenceEditor::mouseMove (const MouseEvent& e)
@@ -253,6 +279,19 @@ void SequenceEditor::setDeviceManager(juce::AudioDeviceManager *manager) {
     this->deviceManager = manager;
 }
 
+void SequenceEditor::clearSequence() {
+    for (int x = 0; x < gridWidth;x++) {
+        for (int y = 0; y < gridHeight;y++) {
+            grid[x][y].setLength(0);
+            grid[x][y].setEnabled(false);
+            grid[x][y].setNote(36 );
+            grid[x][y].setVelocity(64);
+            
+        }
+    }
+    repaint();
+}
+
 void SequenceEditor::sendConfig() {
 }
 
@@ -337,41 +376,105 @@ void SequenceEditor::handlePartialSysexMessage (MidiInput* source,
 
 
 void SequenceEditor::timerCallback() {
-    currentStep = (currentStep + 1) % 32;
+    currentStep = (currentStep + 1) % gridWidth;
     content->repaint();
     
-    for (int y = 0; y < 6;y++) {
-    
-        Event* e = new Event("gate on",Event::Type::GATE);
+    for (int y = 0; y < gridHeight;y++) {
         
-        e->setValue(grid[currentStep][y].getVelocity());
-        e->setNote(grid[currentStep][y].getNote());
-        
-        if (output != nullptr) {
+        if (grid[currentStep][y].isEnabled()) {
+            Event* e = new Event("gate on",Event::Type::GATE);
             
-            for (int i = 0; i < output->connections.size();i++) {
-                output->connections.at(i)->sendEvent(new Event(e));
+            e->setValue(grid[currentStep][y].getVelocity());
+            e->setNote(grid[currentStep][y].getNote());
+            
+            if (output != nullptr) {
+                
+                for (int i = 0; i < output->connections.size();i++) {
+                    output->connections.at(i)->sendEvent(new Event(e));
+                }
+            }
+            
+            e = new Event("gate off",Event::Type::GATE);
+            e->setValue(0);
+            
+            
+            if (currentStep > 0) {
+                e->setNote(grid[currentStep - 1][y].getNote());
+            }
+            else {
+                e->setNote(grid[gridWidth - 1][y].getNote());
+            }
+            
+            if (output != nullptr) {
+                
+                for (int i = 0; i < output->connections.size();i++) {
+                    output->connections.at(i)->sendEvent(new Event(e));
+                }
             }
         }
-        
-        e = new Event("gate off",Event::Type::GATE);
-        e->setValue(0);
-        
-        
-        if (currentStep > 0) {
-            e->setNote(grid[currentStep - 1][y].getNote());
-        }
-        else {
-            e->setNote(grid[31][y].getNote());
-        }
-        
-        if (output != nullptr) {
-            
-            for (int i = 0; i < output->connections.size();i++) {
-                output->connections.at(i)->sendEvent(new Event(e));
-            }
-        }
+
     }
     
 }
 
+uint8* SequenceEditor::getConfiguration() {
+    
+    uint8* data = new uint8[gridWidth*gridHeight*3+2];
+    
+    // store the dimensions of the sequence in the first two bytes
+    
+    data[0] = gridWidth;
+    data[1] = gridHeight;
+    
+    int index = 2;
+    
+    // now serialize the grid each note is a triple containing length, note and velocity
+    // if the note id not enabled we assume that the length is zero.
+    
+    for (int x = 0; x < gridWidth;x++) {
+        for (int y = 0; y < gridHeight;y++) {
+            
+            if (grid[x][y].isEnabled())
+                data[index] = 1;
+            else
+                data[index] = 0;
+            
+            data[index+1] = grid[x][y].getNote();
+            data[index+2] = grid[x][y].getVelocity();
+            index += 3;
+            
+        }
+    }
+
+    return data;
+}
+
+void SequenceEditor::setConfiguration(uint8* data) {
+    
+    // sequence size is stored in the first two bytes
+    
+    uint8 gridWidth = data[0];
+    uint8 gridHeight = data[1];
+    
+    int index = 2;
+    
+    for (int x = 0; x < gridWidth;x++) {
+        for (int y = 0; y < gridHeight;y++) {
+            grid[x][y].setEnabled(data[index] > 0);
+            grid[x][y].setLength(data[index]);
+            grid[x][y].setNote(data[index+1]);
+            grid[x][y].setVelocity(data[index+2]);
+            index += 3;
+            
+        }
+    }
+    
+    this->gridWidth = gridWidth;
+    this->gridHeight = gridHeight;
+    lengthSlider->setValue(gridWidth,juce::NotificationType::dontSendNotification);
+    repaint();
+}
+
+int SequenceEditor::getConfigLength() {
+    return gridWidth*gridHeight*3+2;
+}

@@ -9,7 +9,8 @@ class SequenceEditor  : public Component,
                         public MouseListener,
                         public AudioProcessorPlayer,
                         public Timer,
-                        public Button::Listener
+                        public Button::Listener,
+                        public Slider::Listener
 {
 public:
 
@@ -25,7 +26,7 @@ public:
     uint8_t decodeSysex(uint8_t *sysex, uint8_t *data, uint8_t len);
 
     void sendConfig();
-
+    int getConfigLength();
     void timerCallback() override;
     void paint (Graphics& g) override;
     void resized() override;
@@ -36,7 +37,10 @@ public:
     void mouseUp (const MouseEvent& e) override;
     bool keyPressed (const KeyPress& key) override;
     void modifierKeysChanged (const ModifierKeys& modifiers) override;
-
+    void clearSequence();
+    void sliderValueChanged (Slider* slider) override;
+    uint8* getConfiguration();
+    void setConfiguration(uint8* data);
     struct SequencePanel : public Component {
         
         friend class SequenceEditor;
@@ -94,8 +98,8 @@ private:
     static int selectedCol;
     static int selectedRow;
 
-    const static int gridWidth = 32;
-    const static int gridHeight = 6;
+    static int gridWidth;
+    static int gridHeight;
     const static int cellSize = 32;
 
     static const String notes[128];
@@ -113,6 +117,9 @@ private:
 
     ScopedPointer<TextButton> playButton;
     ScopedPointer<TextButton> recordButton;
+    ScopedPointer<TextButton> clearButton;
+    ScopedPointer<Slider> lengthSlider;
+    
     Viewport* view = nullptr;
     SequencePanel* content = nullptr;
 
