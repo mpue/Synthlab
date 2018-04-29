@@ -215,6 +215,8 @@ private:
 
     Pin* startPin = nullptr;
 
+    void drawCurrentConnection();
+    
     SelectionModel::State state = SelectionModel::NONE;
     TabbedComponent* tab;
     Rectangle<int> selectionFrame = Rectangle<int>(0, 0, 0, 0);
@@ -238,6 +240,10 @@ private:
   
     MixerPanel* mixer = nullptr;
     
+    
+    Path* linePath = nullptr;
+    Point<int> p1;
+    Point<int> p2;
     
     //[/UserVariables]
 

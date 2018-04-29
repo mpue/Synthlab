@@ -39,6 +39,11 @@ Connection::~Connection()
     linePath = nullptr;
      
 }
+
+Path* Connection::getPath() {
+    return linePath;
+}
+
 void Connection::resized() {
     
     linePath->clear();

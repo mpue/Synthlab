@@ -109,7 +109,7 @@ SynthEditor::SynthEditor (double sampleRate, int buffersize)
 
     addChildComponent(root);
     
-    
+    linePath = new Path();
 
     //[/Constructor]
 }
@@ -125,6 +125,7 @@ SynthEditor::~SynthEditor()
     if (isRoot)
         delete root;
     
+    delete linePath;
 
     //[/Destructor]
 }
@@ -144,7 +145,9 @@ void SynthEditor::paint (Graphics& g)
 	if (isLeftMouseDown) {
 
         if (state == SelectionModel::State::DRAGGING_CONNECTION) {
-			g.drawLine(lineStartX, lineStartY, lineStopX, lineStopY);
+			// g.drawLine(lineStartX, lineStartY, lineStopX, lineStopY);
+            drawCurrentConnection();
+            g.fillPath(*linePath);
 		}
         else if (state == SelectionModel::State::DRAGGING_SELECTION) {
             g.drawRect(selectionFrame);
@@ -165,6 +168,7 @@ void SynthEditor::paint (Graphics& g)
                 }
                 
                 // g.drawLine(x1,y1,x2,y2);
+                c->toFront(false);
                 c->paint(g);
             }
             
@@ -206,6 +210,24 @@ void SynthEditor::resized()
     
 
     //[/UserResized]
+}
+
+void SynthEditor::drawCurrentConnection() {
+    p1.x = lineStartX;
+    p1.y = lineStartY;
+    p2.x = lineStopX;
+    p2.y = lineStopY;
+    linePath->clear();
+    linePath->startNewSubPath (p1.x, p1.y);
+    
+    linePath->cubicTo (p1.x , p1.y ,
+                       p1.x + (p2.x - p1.x) * 0.3f, p1.y ,
+                       p1.x + (p2.x - p1.x) * 0.5f, p1.y + (p2.y - p1.y) * 0.5f);
+    linePath->cubicTo ( p1.x + (p2.x - p1.x) * 0.5f, p1.y + (p2.y - p1.y) * 0.5f,
+                       p2.x - (p2.x - p1.x) * 0.3, p2.y ,
+                       p2.x,p2.y  );
+    PathStrokeType wideStroke (2.0f);
+    wideStroke.createStrokedPath (*linePath, *linePath);
 }
 
 void SynthEditor::mouseMove (const MouseEvent& e)
@@ -1464,6 +1486,7 @@ void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
     AddConnectionAction* ac = new AddConnectionAction(this,source);
     Project::getInstance()->getUndoManager()->beginNewTransaction();
     Project::getInstance()->getUndoManager()->perform(ac);
+    resized();
     repaint();
 }
 

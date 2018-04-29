@@ -37,6 +37,7 @@ public:
     
 private:
     bool isPointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<int> pt, double epsilon);
+
     std::vector<Module*>* selectedModules;
     Module* root;
 };

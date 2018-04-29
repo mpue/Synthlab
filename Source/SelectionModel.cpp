@@ -115,6 +115,7 @@ void SelectionModel::select(Point<int> pos) {
 
 bool SelectionModel::isPointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<int> pt, double epsilon = 0.001)
 {
+    
     if (pt.x - std::max(pt1.x, pt2.x) > epsilon ||
         std::min(pt1.x, pt2.x) - pt.x > epsilon ||
         pt.y - std::max(pt1.y, pt2.y) > epsilon ||
@@ -137,12 +138,16 @@ void SelectionModel::checkForConnection(Point<int> pos) {
         Connection* c = root->getConnections()->at(i);
         
         if (c->source != NULL && c->target != NULL)  {
+            /*
             int x1 = c->source->getX() + c->a->x;
             int y1 = c->source->getY() + c->a->y + 5;
             int x2 = c->target->getX() + c->b->x;
             int y2 = c->target->getY() + c->b->y + 5;
             
             if (isPointOnLineSegment(Point<int>(x1, y1), Point<int>(x2, y2), pos, 5)) {
+            */
+            if(c->getPath()->contains(pos.x,pos.y) ){
+                
                 c->selected = true;
             }
             else {
