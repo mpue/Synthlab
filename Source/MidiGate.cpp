@@ -103,6 +103,9 @@ int MidiGate::getChannel() {
 }
 
 void MidiGate::setChannel(int channel) {
+    if (channel < 1) {
+        channel = 1;
+    }
     this->channel = channel;
     this->channelValue->setValue(channel);
 }

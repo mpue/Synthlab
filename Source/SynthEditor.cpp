@@ -1184,11 +1184,9 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
             k->setController(mod.getProperty("controllerNum").toString().getIntValue());
         }
         
-        
         MidiGate* gate;
         
         if ((gate = dynamic_cast<MidiGate*>(m)) != NULL) {
-           
             gate->setChannel(mod.getProperty("channel").toString().getIntValue());
             addChangeListener(gate);
         }
