@@ -21,7 +21,7 @@
 
 //[Headers]     -- You can add your own extra header files here --
 #include "../JuceLibraryCode/JuceHeader.h"
-#include "SamplerModule.h"
+#include "SampleEditor.h"
 #include "AudioThumbnailComponent.h"
 //[/Headers]
 
@@ -35,54 +35,7 @@
     Describe your class and how it works here!
                                                                     //[/Comments]
 */
-class SamplePropertiesPanel  : public Component,
-                               public Button::Listener,
-                               public Slider::Listener
-{
-public:
-    //==============================================================================
-    SamplePropertiesPanel ();
-    ~SamplePropertiesPanel();
 
-    //==============================================================================
-    //[UserMethods]     -- You can add your own custom methods in this section.
-    void setModule(SamplerModule* module);
-    void setThumbnail(AudioThumbnailComponent* thumbnail);
-    void openSample();
-    void updateValues();
-    void startRecording();
-    void stopRecording();
-    //[/UserMethods]
-
-    void paint (Graphics& g) override;
-    void resized() override;
-    void buttonClicked (Button* buttonThatWasClicked) override;
-    void sliderValueChanged (Slider* sliderThatWasMoved) override;
-
-
-
-private:
-    //[UserVariables]   -- You can add your own custom variables in this section.
-    SamplerModule* module;
-    AudioThumbnailComponent* thumb;
-    bool recording = false;
-    //[/UserVariables]
-
-    //==============================================================================
-    ScopedPointer<TextButton> loadSampleButton;
-    ScopedPointer<Slider> sampleStartSlider;
-    ScopedPointer<Label> startLabel;
-    ScopedPointer<Label> endLabel;
-    ScopedPointer<Slider> sampleEndSlider;
-    ScopedPointer<ToggleButton> loopToggleButton;
-    ScopedPointer<Slider> pitchSlider;
-    ScopedPointer<Label> pitchLabel;
-    ScopedPointer<TextButton> recordButton;
-
-
-    //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SamplePropertiesPanel)
-};
 
 //[EndFile] You can add extra defines here...
 //[/EndFile]

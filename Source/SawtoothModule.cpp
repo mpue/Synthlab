@@ -192,7 +192,7 @@ void SawtoothModule::process() {
                 out->setSample(0,i ,value);
             
             
-            
+                
         }
     }
     else {

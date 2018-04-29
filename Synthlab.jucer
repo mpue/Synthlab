@@ -42,6 +42,9 @@
       <FILE id="xHNzRT" name="plugin.png" compile="0" resource="1" file="Images/plugin.png"/>
       <FILE id="oIx1Pf" name="pulse.png" compile="0" resource="1" file="Images/pulse.png"/>
       <FILE id="toz51A" name="random.png" compile="0" resource="1" file="Images/random.png"/>
+      <FILE id="hdy6gJ" name="record.png" compile="0" resource="1" file="Images/record.png"/>
+      <FILE id="BXDkQh" name="record_active.png" compile="0" resource="1"
+            file="Images/record_active.png"/>
       <FILE id="YTIJ1n" name="redo.png" compile="0" resource="1" file="Images/redo.png"/>
       <FILE id="YwgURW" name="round_button.jpg" compile="0" resource="1"
             file="Images/round_button.jpg"/>
@@ -59,6 +62,7 @@
       <FILE id="q1YVvz" name="sine.png" compile="0" resource="1" file="Images/sine.png"/>
       <FILE id="Grgqb1" name="speaker.png" compile="0" resource="1" file="Images/speaker.png"/>
       <FILE id="e6TDlD" name="stereodelay.png" compile="0" resource="1" file="Images/stereodelay.png"/>
+      <FILE id="oa95Wx" name="stop.png" compile="0" resource="1" file="Images/stop.png"/>
       <FILE id="LlFYc6" name="tri.png" compile="0" resource="1" file="Images/tri.png"/>
       <FILE id="ogxnye" name="undo.png" compile="0" resource="1" file="Images/undo.png"/>
       <FILE id="EJ4uon" name="whitenoise.png" compile="0" resource="1" file="Images/whitenoise.png"/>

@@ -21,7 +21,7 @@
 //[/Headers]
 
 #include "SamplePropertiesPanel.h"
-
+#include "AudioManager.h"
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 //[/MiscUserDefs]
@@ -104,6 +104,24 @@ SamplePropertiesPanel::SamplePropertiesPanel ()
 
     recordButton->setBounds (176, 8, 150, 24);
 
+    addAndMakeVisible (recordActiveButton = new ImageButton ("new button"));
+
+    recordActiveButton->setImages (false, true, true,
+                                   ImageCache::getFromMemory (BinaryData::record_png, BinaryData::record_pngSize), 1.000f, Colour (0x00000000),
+                                   ImageCache::getFromMemory (BinaryData::record_png, BinaryData::record_pngSize), 1.000f, Colour (0x00000000),
+                                   ImageCache::getFromMemory (BinaryData::record_active_png, BinaryData::record_active_pngSize), 1.000f, Colour (0x00000000));
+    recordActiveButton->setBounds (544, 8, 31, 32);
+
+    addAndMakeVisible (timeLabel = new Label ("timeLabel",
+                                              TRANS("0:00")));
+    timeLabel->setFont (Font (15.00f, Font::plain).withTypefaceStyle ("Regular"));
+    timeLabel->setJustificationType (Justification::centredLeft);
+    timeLabel->setEditable (false, false, false);
+    timeLabel->setColour (TextEditor::textColourId, Colours::black);
+    timeLabel->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
+
+    timeLabel->setBounds (352, 8, 39, 24);
+
 
     //[UserPreSize]
     //[/UserPreSize]
@@ -129,6 +147,8 @@ SamplePropertiesPanel::~SamplePropertiesPanel()
     pitchSlider = nullptr;
     pitchLabel = nullptr;
     recordButton = nullptr;
+    recordActiveButton = nullptr;
+    timeLabel = nullptr;
 
 
     //[Destructor]. You can add your own custom destruction code here..
@@ -225,9 +245,35 @@ void SamplePropertiesPanel::sliderValueChanged (Slider* sliderThatWasMoved)
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 
+void SamplePropertiesPanel::timerCallback() {
+    recordActiveButton->setToggleState(!recordActiveButton->getToggleState(), juce::NotificationType::dontSendNotification);
+    updateRecordingTime();
+    seconds++;
+    AudioDeviceManager* deviceManager = AudioManager::getInstance()->getDeviceManager();
+    deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0xb0,86,seconds%2));
+}
+
+void SamplePropertiesPanel::updateRecordingTime() {
+    
+    String time;
+    
+    int _minutes = seconds / 60;
+    int _seconds = seconds % 60;
+    
+    time = String(_minutes)+":";
+    
+    if (seconds < 10) {
+        time += "0";
+    }
+    
+    time += String(seconds);
+    
+    timeLabel->setText(time, juce::NotificationType::dontSendNotification);
+    
+}
+
 void SamplePropertiesPanel::setModule(SamplerModule *module) {
     this->module = module;
-
 }
 
 void SamplePropertiesPanel::setThumbnail(AudioThumbnailComponent* thumbnail) {
@@ -289,19 +335,33 @@ void SamplePropertiesPanel::updateValues() {
 void SamplePropertiesPanel::startRecording() {
 
     if (!recording) {
+        seconds = 0;
         recording = true;
-        recordButton->setButtonText("Stop recording");
+        
+        std::function<void(void)> changeLambda =
+        [=]() {
+            recordButton->setButtonText("Stop recording");
+        };
+        juce::MessageManager::callAsync(changeLambda);
+       
         module->startRecording();
+        startTimer(1000);
     }
-    
+
 }
 
 
 void SamplePropertiesPanel::stopRecording() {
     if (recording) {
         recording = false;
-        recordButton->setButtonText("Start recording");
+        std::function<void(void)> changeLambda =
+        [=]() {
+            recordButton->setButtonText("Start recording");
+        };
+        juce::MessageManager::callAsync(changeLambda);
+        
         module->stopRecording();
+        stopTimer();
     }
 }
 
@@ -318,9 +378,9 @@ void SamplePropertiesPanel::stopRecording() {
 BEGIN_JUCER_METADATA
 
 <JUCER_COMPONENT documentType="Component" className="SamplePropertiesPanel" componentName=""
-                 parentClasses="public Component" constructorParams="" variableInitialisers=""
-                 snapPixels="8" snapActive="1" snapShown="1" overlayOpacity="0.330"
-                 fixedSize="0" initialWidth="600" initialHeight="400">
+                 parentClasses="public Component, public Timer" constructorParams=""
+                 variableInitialisers="" snapPixels="8" snapActive="1" snapShown="1"
+                 overlayOpacity="0.330" fixedSize="0" initialWidth="600" initialHeight="400">
   <BACKGROUND backgroundColour="ff323e44"/>
   <TEXTBUTTON name="loadSampleButton" id="a16960d6fb35b217" memberName="loadSampleButton"
               virtualName="" explicitFocusOrder="0" pos="8 8 150 24" buttonText="Load sample"
@@ -363,6 +423,18 @@ BEGIN_JUCER_METADATA
   <TEXTBUTTON name="recordButton" id="c1019ef444e98335" memberName="recordButton"
               virtualName="" explicitFocusOrder="0" pos="176 8 150 24" buttonText="Record sample"
               connectedEdges="0" needsCallback="1" radioGroupId="0"/>
+  <IMAGEBUTTON name="new button" id="a1de772e193a4195" memberName="recordActiveButton"
+               virtualName="" explicitFocusOrder="0" pos="544 8 31 32" buttonText="new button"
+               connectedEdges="0" needsCallback="0" radioGroupId="0" keepProportions="1"
+               resourceNormal="BinaryData::record_png" opacityNormal="1.00000000000000000000"
+               colourNormal="0" resourceOver="BinaryData::record_png" opacityOver="1.00000000000000000000"
+               colourOver="0" resourceDown="BinaryData::record_active_png" opacityDown="1.00000000000000000000"
+               colourDown="0"/>
+  <LABEL name="timeLabel" id="8bffb752580f6d6f" memberName="timeLabel"
+         virtualName="" explicitFocusOrder="0" pos="352 8 39 24" edTextCol="ff000000"
+         edBkgCol="0" labelText="0:00" editableSingleClick="0" editableDoubleClick="0"
+         focusDiscardsChanges="0" fontname="Default font" fontsize="15.00000000000000000000"
+         kerning="0.00000000000000000000" bold="0" italic="0" justification="33"/>
 </JUCER_COMPONENT>
 
 END_JUCER_METADATA

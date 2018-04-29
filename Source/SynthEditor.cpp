@@ -1031,8 +1031,8 @@ void SynthEditor::saveFile() {
 }
 
 void SynthEditor::openSampleEditor(SamplerModule *sm) {
-    SampleEditor* se = new SampleEditor(bufferSize, _sampleRate, AudioManager::getInstance()->getFormatManager(), sm);
-    Project::getInstance()->getSupplemental()->addTab("Sample editor", Colours::darkgrey, se, true);
+   
+    Project::getInstance()->getSupplemental()->addTab("Sample editor", Colours::darkgrey, sm->getEditor(), true);
     Project::getInstance()->getSupplemental()->setCurrentTabIndex(Project::getInstance()->getSupplemental()->getNumTabs() - 1);
 }
 

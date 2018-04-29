@@ -76,19 +76,43 @@ private:
 #ifdef USE_PUSH
         
         // First we initialise the low level push2 object
-        // First we initialise the low level push2 object
         NBase::Result result = push2Display.Init();
-        // RETURN_IF_FAILED_MESSAGE(result, "Failed to init push2");
+        
+        /*
+        if (result.Failed()){
+            Logger::writeToLog("Failed to initialize Push2");
+        }
         
         // Then we initialise the juce to push bridge
+        */
         result = bridge.Init(push2Display);
-        // RETURN_IF_FAILED_MESSAGE(result, "Failed to init bridge");
+        /*
+        if (result.Failed()) {
+             Logger::writeToLog("Failed to initialize Push display");
+        }
+        else {
+         
+            auto& g = Project::getInstance()->getPush2Bridge()->GetGraphic();
+            // Clear previous frame
+            g.fillAll(juce::Colour(0xff000000));
+            
+            // Create a path for the animated wave
+            const auto height = ableton::Push2DisplayBitmap::kHeight;
+            const auto width = ableton::Push2DisplayBitmap::kWidth;
+            
+            g.setFont(18);
+             String message = "Welcome to Synthlab";
+            Rectangle<int> rect = Rectangle<int>(width / 2 - g.getCurrentFont().getStringWidth(message) / 2, height / 2);
+            g.drawText(message, rect, juce::Justification::centred);
+        
+        }
+        
         
         const auto height = ableton::Push2DisplayBitmap::kHeight;
         const auto width = ableton::Push2DisplayBitmap::kWidth;
         
         Rectangle<int> pushBounds = Rectangle<int>(0,0,width,height);
-        
+        */
 
 #endif
     }

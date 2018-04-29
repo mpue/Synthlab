@@ -164,6 +164,16 @@ bool SequenceEditor::keyPressed (const KeyPress& key)
 {
 
     if (key.getKeyCode() == KeyPress::spaceKey) {
+        if (!running) {
+            startTimer(((float)60 / tempo) * (float)1000 / (float)4);
+            running = true;
+        }
+        else {
+            stopTimer();
+            running = false;
+        }
+    }
+    if (key.getKeyCode() == KeyPress::returnKey) {
         grid[selectedCol][selectedRow].setEnabled(!grid[selectedCol][selectedRow].isEnabled());
     }
 

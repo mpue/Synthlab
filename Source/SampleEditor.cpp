@@ -77,6 +77,9 @@ void SampleEditor::handleIncomingMidiMessage (MidiInput* source, const MidiMessa
 }
 
 void SampleEditor::handleNoteOn(juce::MidiKeyboardState *source, int midiChannel, int midiNoteNumber, float velocity) {
+    if (midiNoteNumber < 8) {
+        return;
+    }
     sampleModule->selectSample(midiNoteNumber);
     propertiesPanel->updateValues();
     component->setSampleBuffer(sampleModule->getBuffer());

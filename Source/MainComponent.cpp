@@ -642,14 +642,14 @@ void MainComponent::buttonClicked (Button* b)
 void MainComponent::handleIncomingMidiMessage(juce::MidiInput *source, const juce::MidiMessage &message) {
     
     
-    if (message.isNoteOn()) {
+    if (message.isNoteOn() && message.getNoteNumber() > 7) {
         for (int i = 0; i < editor->getModule()->getModules()->size();i++) {
             sendNoteMessage(editor->getModule()->getModules()->at(i), message.getChannel(),message.getNoteNumber());
             sendGateMessage(editor->getModule()->getModules()->at(i), message.getChannel(),message.getVelocity(),message.getNoteNumber(),true);
             
         }
     }
-    else if (message.isNoteOff()) {
+    else if (message.isNoteOff() && message.getNoteNumber() > 7) {
         for (int i = 0; i < editor->getModule()->getModules()->size();i++) {
             sendGateMessage(editor->getModule()->getModules()->at(i), message.getChannel(),message.getVelocity(),message.getNoteNumber(),false);
         }
@@ -731,6 +731,53 @@ void MainComponent::sendControllerMessage(Module *module, int channel, int contr
         }
         
     }
+#ifdef USE_PUSH
+    SamplerModule* sm = nullptr;
+    
+    if ((sm = dynamic_cast<SamplerModule*>(module)) != NULL) { 
+        
+        if (controller == 86 && value > 0) {
+            if (sm->isRecording()) {
+                sm->stopRecording();
+            }
+            else {
+                sm->startRecording();
+            }
+                
+        }
+        else if (controller == 71) {
+            // turn controller left
+            if ((int)value & (1 << 6)) {
+                long start = sm->getCurrentSampler()->getStartPosition();
+                
+                if (start - value < 0) {
+                   sm->getCurrentSampler()->setStartPosition(0);
+                }
+                else {
+                    sm->getCurrentSampler()->setStartPosition(start - value);
+                }
+                
+                
+            }
+            else {
+                long start = sm->getCurrentSampler()->getStartPosition();
+                long end = sm->getCurrentSampler()->getSampleLength();
+                
+                if (sm->getCurrentSampler()->getStartPosition() + value * 100 >= end) {
+                    sm->getCurrentSampler()->setStartPosition(end-2);
+                }
+                else {
+                    sm->getCurrentSampler()->setStartPosition(start + value * 100);
+                }
+            }
+            sm->updatePush2Display();
+            
+        }
+
+        
+    }
+    #endif
+    
     for (int i = 0; i< module->getModules()->size();i++) {
         
         if ((k = dynamic_cast<Knob*>(module->getModules()->at(i)))!= NULL) {

@@ -10,6 +10,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "MidiOut.h"
+#include "AudioManager.h"
 
 //==============================================================================
 MidiOut::MidiOut()
@@ -25,6 +26,8 @@ MidiOut::MidiOut()
     
     editable = false;
     prefab = true;
+    this->deviceManager = AudioManager::getInstance()->getDeviceManager();
+    deviceManager->setDefaultMidiOutput("Ableton Push 2 Live Port");
 }
 
 MidiOut::~MidiOut()
@@ -85,6 +88,14 @@ void MidiOut::setDeviceManager(juce::AudioDeviceManager* manager) {
 
 void MidiOut::eventReceived(Event *e) {
     
+    if (e->getType() == Event::Type::GATE) {
+        
+        float velocity = e->getValue()/127.0;
+        //deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage::noteOn(1,e->getNote(), velocity));
+        
+    }
+    
+    /*
     if (raw == nullptr) {
         raw = new RawEvent();
     }
@@ -117,5 +128,5 @@ void MidiOut::eventReceived(Event *e) {
         raw = nullptr;
     }
 
-    
+    */
 }

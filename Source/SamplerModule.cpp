@@ -8,10 +8,11 @@
   ==============================================================================
 */
 
-#include "SamplerModule.h"
+#include "SampleEditor.h"
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Connection.h"
 #include "Project.h"
+#include "AudioManager.h"
 
 #ifdef USE_PUSH
 #include "push2/JuceToPush2DisplayBridge.h"
@@ -40,6 +41,8 @@ SamplerModule::SamplerModule(double sampleRate, int buffersize, AudioFormatManag
     
     selectSample(64);
     this->manager = manager;
+    
+     editor = new SampleEditor(this->buffersize, this->sampleRate, AudioManager::getInstance()->getFormatManager(), this);
 }
 
 SamplerModule::~SamplerModule()
@@ -63,6 +66,8 @@ void SamplerModule::loadSample(juce::InputStream *is, int samplerIndex) {
     this->thumbnail->reset(2, sampleRate);
     thumbnail->addBlock(0, *sampler[samplerIndex]->getSampleBuffer(), 0, sampler[samplerIndex]->getSampleLength());
     repaint();
+    
+
 }
 
 void SamplerModule::configurePins() {
@@ -202,6 +207,8 @@ void SamplerModule::process() {
 
 void SamplerModule::eventReceived(Event *e) {
     
+    
+    
     if (e->getType() == Event::Type::GATE) {
         if (e->getValue() > 0) {
             selectSample(e->getNote());
@@ -249,6 +256,7 @@ AudioSampleBuffer* SamplerModule::getBuffer() {
 
 void SamplerModule::selectSample(int i) {
 
+    
     currentSampler = i;
     
     if (sampler[currentSampler] == nullptr) {
@@ -265,6 +273,8 @@ void SamplerModule::selectSample(int i) {
     [=]() {  repaint(); };
     juce::MessageManager::callAsync(changeLambda);
 
+    
+    
 #ifdef USE_PUSH
     updatePush2Display();
 #endif
@@ -281,6 +291,7 @@ void SamplerModule::startRecording() {
             currentSample = 0;
             numRecordedSamples = 0;
         }
+        editor->getPanel()->startRecording();
     
     }
     
@@ -316,45 +327,36 @@ void SamplerModule::stopRecording() {
 
         this->sampler[currentSampler]->loadSample(outputFile);
         
+        
         if (sampler[currentSampler]->hasSample()) {
             selectSample(currentSampler);
+            AudioDeviceManager* deviceManager = AudioManager::getInstance()->getDeviceManager();
+            deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0xb0,86,1));
+            for (int i = 0; i < 128;i++) {
+                deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0x90,i,0));
+                if (sampler[i] != nullptr && sampler[i]->hasSample()) {
+                    
+                    deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0x90,i,0x7e));
+                }
+            }
             thumbnail->addBlock(0, *recordingBuffer, 0, numRecordedSamples);
             std::function<void(void)> changeLambda =
             [=]() {  repaint(); };
             juce::MessageManager::callAsync(changeLambda);
             
         }
-        /*
-        if (sampler[currentSampler] != nullptr) {
-            sampler[currentSampler]->getSampleBuffer()->clear();
-            this->sampler[currentSampler]->getSampleBuffer()->copyFrom(0, 0, *this->recordingBuffer, 0, 0, numRecordedSamples);
-            this->sampler[currentSampler]->getSampleBuffer()->copyFrom(1, 0, *this->recordingBuffer, 1, 0, numRecordedSamples);
-            this->sampler[currentSampler]->setStartPosition(0);
-            this->sampler[currentSampler]->setSampleLength(numRecordedSamples);
-            this->sampler[currentSampler]->setEndPosition(numRecordedSamples);
-            this->sampler[currentSampler]->setLoaded(true);
+        editor->getPanel()->stopRecording();
+       
         
-            this->thumbnail->reset(2, sampleRate);
-            
-            numRecordedSamples = 0;
-            
-            if (sampler[currentSampler]->hasSample()) {
-                selectSample(currentSampler);
-                thumbnail->addBlock(0, *recordingBuffer, 0, numRecordedSamples);
-                std::function<void(void)> changeLambda =
-                [=]() {  repaint(); };
-                juce::MessageManager::callAsync(changeLambda);
-                
-            }
-        }
-         */
-            
         
     }
 }
 
 #ifdef USE_PUSH
 void SamplerModule::updatePush2Display() {
+
+    
+    pushSamplePosX = ((float)ableton::Push2DisplayBitmap::kWidth / sampler[currentSampler]->getSampleLength())* sampler[currentSampler]->getStartPosition();
     auto& g = Project::getInstance()->getPush2Bridge()->GetGraphic();
     
     // Clear previous frame

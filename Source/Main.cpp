@@ -49,6 +49,8 @@ public:
         mainWindow = nullptr; // (deletes our window)
         PluginManager::getInstance()->destroy();
         AudioManager::getInstance()->destroy();
+        
+
     }
 
     //==============================================================================
