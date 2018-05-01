@@ -3,6 +3,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "AudioThumbnailComponent.h"
 #include "SamplerModule.h"
+#include "AudioManager.h"
 
 class SamplerModule;
 
@@ -152,6 +153,20 @@ public:
 #endif
         
         return sampler[currentSampler];
+    }
+    
+    void updatePush2Pads() {
+
+        AudioDeviceManager* deviceManager = AudioManager::getInstance()->getDeviceManager();
+        deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0xb0,86,1));
+        for (int i = 0; i < 128;i++) {
+            deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0x90,i,0));
+            if (sampler[i] != nullptr && sampler[i]->hasSample()) {
+                
+                deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0x90,i,0x7e));
+            }
+        }
+
     }
     
     Sampler* getSamplerAt(int samplerNum) {

@@ -75,6 +75,7 @@ void ExtendedFileBrowser::mouseDown(const juce::MouseEvent &event) {
             if (!f->isDirectory()) {
     
                 if (f->getFileExtension().toLowerCase().contains("wav")) {
+                     Project::getInstance()->getDefaultSampler()->stop();
                     Project::getInstance()->getDefaultSampler()->loadSample(*f);
                     Project::getInstance()->getDefaultSampler()->play();
                 }

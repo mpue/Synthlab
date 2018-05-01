@@ -19,6 +19,9 @@ Sampler::Sampler(float sampleRate, int bufferSize) {
     interpolatorLeft = new CatmullRomInterpolator();
     interpolatorRight = new CatmullRomInterpolator();
     this->sampleBuffer = new AudioSampleBuffer(2,4096*1024);
+    this->samplerEnvelope = new ADSR();
+    this->samplerEnvelope->setAttackRate(0.1 * sampleRate);
+    this->samplerEnvelope->setReleaseRate(0.3 * sampleRate);
 }
 
 Sampler::~Sampler() {
@@ -29,6 +32,9 @@ Sampler::~Sampler() {
         delete this->tempBufferLeft;
     if (tempBufferRight != nullptr)
         delete this->tempBufferRight;
+    
+    delete this->samplerEnvelope;
+    
 }
 
 void Sampler::nextSample() {
@@ -54,16 +60,15 @@ void Sampler::nextSample() {
         }
     }
 
-        
-    
 }
 
 void Sampler::play() {
-
+    samplerEnvelope->gate(127);
     playing = true;
 }
 
 void Sampler::stop() {
+    samplerEnvelope->gate(0);
     playing = false;
 }
 

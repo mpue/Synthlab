@@ -10,11 +10,11 @@
 
 #pragma once
 
-
 #include "../JuceLibraryCode/JuceHeader.h"
+#include "ADSR.h"
+
 class Sampler  {
- 
-    
+
 public:
     
     Sampler(float sampleRate, int bufferSize);
@@ -65,10 +65,16 @@ public:
     }
     
     float getPitch();
+
+    
     void setPitch(float pitch);
     
     bool isPlaying() {
         return playing;
+    }
+
+    float getOutput(int channel) {
+        return getCurrentSample(channel) * samplerEnvelope->process();
     }
     
 private:
@@ -102,4 +108,6 @@ private:
     
     CatmullRomInterpolator* interpolatorLeft;
     CatmullRomInterpolator* interpolatorRight;
+    
+    ADSR* samplerEnvelope = nullptr;
 };

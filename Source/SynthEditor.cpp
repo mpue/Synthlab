@@ -978,6 +978,10 @@ void SynthEditor::saveFile() {
 void SynthEditor::openSampleEditor(SamplerModule *sm) {
     Project::getInstance()->getSupplemental()->addTab("Sample editor", Colours::darkgrey, sm->getEditor(), true);
     Project::getInstance()->getSupplemental()->setCurrentTabIndex(Project::getInstance()->getSupplemental()->getNumTabs() - 1);
+#ifdef USE_PUSH
+    sm->updatePush2Pads();
+    sm->updatePush2Display();
+#endif
 }
 
 void SynthEditor::openStepSequencer(StepSequencerModule *ssm) {
@@ -1275,7 +1279,7 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
                         connections->push_back(c);
                     }
                 }
-                
+                break;
             }
             
         }

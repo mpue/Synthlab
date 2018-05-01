@@ -280,8 +280,8 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
     if (defaultSampler != nullptr && defaultSampler->isPlaying()) {
         for (int j = 0;j < numSamples;j++) {
         
-            outputChannelData[0][j] += defaultSampler->getCurrentSample(0);
-            outputChannelData[1][j] += defaultSampler->getCurrentSample(1);
+            outputChannelData[0][j] += defaultSampler->getOutput(0);
+            outputChannelData[1][j] += defaultSampler->getOutput(1);
             defaultSampler->nextSample();
         }
     }

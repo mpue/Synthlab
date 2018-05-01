@@ -17,6 +17,7 @@
 #include "EditorComponent.h"
 #include "DefaultToolbarItemFactory.h"
 #include "ModuleBrowser.h"
+#include "AudioEngine/ADSR.h"
 #include <map>
 //==============================================================================
 
@@ -124,6 +125,7 @@ private:
     bool isOptionPressed = false;
     
     Sampler* defaultSampler = nullptr;
+
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };
