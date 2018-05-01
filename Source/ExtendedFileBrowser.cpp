@@ -24,6 +24,7 @@ ExtendedFileBrowser::ExtendedFileBrowser(const File& initialFileOrDirectory,cons
     addAndMakeVisible(view);
     
     sampler = Project::getInstance()->getDefaultSampler();
+    table->addMouseListener(this, true);
     
     model->update();
 

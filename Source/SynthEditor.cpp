@@ -531,8 +531,6 @@ void SynthEditor::showContextMenu(Point<int> position) {
 
 
 void SynthEditor::itemDropped (const SourceDetails& dragSourceDetails)  {
-    
-    Logger::writeToLog(dragSourceDetails.description);
     AddModuleAction* am = new AddModuleAction(this,dragSourceDetails.localPosition,dragSourceDetails.description.toString().getIntValue());
     Project::getInstance()->getUndoManager()->beginNewTransaction();
     Project::getInstance()->getUndoManager()->perform(am);

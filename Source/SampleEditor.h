@@ -26,14 +26,15 @@ public:
     void stopRecording();
     void timerCallback() override;
     void updateRecordingTime();
+    void updateThumb();
+
     //[/UserMethods]
     
     void paint (Graphics& g) override;
     void resized() override;
     void buttonClicked (Button* buttonThatWasClicked) override;
     void sliderValueChanged (Slider* sliderThatWasMoved) override;
-    
-    
+
     
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
@@ -61,7 +62,7 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SamplePropertiesPanel)
 };
 
-class SampleEditor  : public Component, public MidiKeyboardStateListener, public MidiInputCallback
+class SampleEditor  : public Component, public MidiKeyboardStateListener, public MidiInputCallback, public DragAndDropTarget
 {
 public:
 
@@ -73,6 +74,9 @@ public:
 
     virtual void handleNoteOff (MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override;
     virtual void handleNoteOn (MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override;
+    
+    bool isInterestedInDragSource (const SourceDetails& dragSourceDetails) override;
+    virtual void itemDropped (const SourceDetails& dragSourceDetails) override;
     
     void handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) override;
     

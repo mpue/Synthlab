@@ -50,7 +50,7 @@ private:
 
 };
 
-class ExtendedFileBrowser : public Component, public DragAndDropContainer, public ChangeListener, public Timer{
+class ExtendedFileBrowser : public Component,  public ChangeListener, public Timer{
     
     
 public:
@@ -66,6 +66,11 @@ public:
     TableListBox* getTable() {
         return table;
     };
+    
+    FileBrowserModel* getModel() {
+        return model;
+    }
+    
     virtual void timerCallback() override;
     
 private:

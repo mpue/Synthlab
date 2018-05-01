@@ -25,10 +25,6 @@ ModuleBrowser::ModuleBrowser ()
     searchText->setTextToShowWhenEmpty("Type your text here." , Colours::white);
     searchText->setText (TRANS(""));
 
-    addAndMakeVisible (searchButton = new TextButton ("searchButton"));
-    searchButton->setButtonText (TRANS("Search"));
-    searchButton->addListener (this);
-
     addAndMakeVisible (table = new ModuleBrowserTable());
     table->setName ("new component");
 
@@ -39,7 +35,6 @@ ModuleBrowser::ModuleBrowser ()
     shadower->setOwner(this);
 
     searchText->addListener(this);
-    
 
 }
 
@@ -47,7 +42,6 @@ ModuleBrowser::~ModuleBrowser()
 {
     label = nullptr;
     searchText = nullptr;
-    searchButton = nullptr;
 
     delete shadower;
     delete shadow;
@@ -68,17 +62,7 @@ void ModuleBrowser::paint (Graphics& g)
 void ModuleBrowser::resized()
 {
     searchText->setBounds (16, 48, proportionOfWidth (0.8000f), 24);
-    searchButton->setBounds (proportionOfWidth (0.9792f) - proportionOfWidth (0.1304f), 48, proportionOfWidth (0.1304f), 24);
     table->setBounds (5, 80, proportionOfWidth (0.85f), proportionOfHeight (0.5f));
-}
-
-void ModuleBrowser::buttonClicked (Button* buttonThatWasClicked)
-{
-
-    if (buttonThatWasClicked == searchButton)
-    {
-    }
-
 }
 
 void ModuleBrowser::textEditorTextChanged (TextEditor& t) {

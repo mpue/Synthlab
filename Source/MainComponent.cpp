@@ -222,11 +222,16 @@ void MainComponent::mouseDrag (const MouseEvent& event) {
     
     var description;
     
+    /*
     if (moduleBrowser != nullptr && moduleBrowser->isVisible())
         startDragging(description, moduleBrowser->getTable());
     else {
-        propertyView->getBrowser()->startDragging(description,propertyView->getBrowser()->getTable());
+   
+     
     }
+     */
+    
+     startDragging(description,propertyView->getBrowser());
     
 }
 void MainComponent::dragOperationStarted (const DragAndDropTarget::SourceDetails& details)  {

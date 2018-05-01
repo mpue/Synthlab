@@ -253,6 +253,10 @@ void SamplePropertiesPanel::timerCallback() {
     deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0xb0,86,seconds%2));
 }
 
+void SamplePropertiesPanel::updateThumb() {
+    thumb->repaint();
+}
+
 void SamplePropertiesPanel::updateRecordingTime() {
     
     String time;

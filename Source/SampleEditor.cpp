@@ -81,7 +81,7 @@ void SampleEditor::handleNoteOn(juce::MidiKeyboardState *source, int midiChannel
         return;
     }
     sampleModule->selectSample(midiNoteNumber);
-    propertiesPanel->updateValues();
+    
     component->setSampleBuffer(sampleModule->getBuffer());
 
 }
@@ -90,3 +90,18 @@ void SampleEditor::handleNoteOff(juce::MidiKeyboardState *source, int midiChanne
     
 }
 
+bool SampleEditor::isInterestedInDragSource (const SourceDetails& dragSourceDetails) {
+    return true;
+}
+
+void SampleEditor::itemDropped (const SourceDetails& dragSourceDetails) {
+    Logger::writeToLog(dragSourceDetails.description);
+    File* sample = new File(dragSourceDetails.description);
+    if (sample != nullptr && sample->exists()) {
+        sampleModule->getCurrentSampler()->loadSample(*sample);
+        delete sample;
+    }
+    propertiesPanel->updateValues();
+    propertiesPanel->updateThumb(); 
+
+}
