@@ -18,7 +18,7 @@ Sampler::Sampler(float sampleRate, int bufferSize) {
     this->manager = AudioManager::getInstance()->getFormatManager();
     interpolatorLeft = new CatmullRomInterpolator();
     interpolatorRight = new CatmullRomInterpolator();
-    this->sampleBuffer = new AudioSampleBuffer(2,1024*1024);
+    this->sampleBuffer = new AudioSampleBuffer(2,4096*1024);
 }
 
 Sampler::~Sampler() {
@@ -80,7 +80,10 @@ float Sampler::getCurrentSample(int channel){
             }
         }
         else {
-            return sampleBuffer->getSample(channel, currentSample) * volume;
+            if (currentSample < sampleBuffer->getNumSamples())
+                return sampleBuffer->getSample(channel, currentSample) * volume;
+            else
+                return 0;
         }
 
     }
@@ -102,6 +105,7 @@ void Sampler::loadSample(File file) {
     sampleLength = reader->lengthInSamples;
     endPosition = sampleLength;
     startPosition = 0;
+    currentSample = 0;
     loaded = true;
 }
 

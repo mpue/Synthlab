@@ -26,12 +26,15 @@ ExtendedFileBrowser::ExtendedFileBrowser(const File& initialFileOrDirectory,cons
     sampler = Project::getInstance()->getDefaultSampler();
     table->addMouseListener(this, true);
     
+    loadState();
+    
     model->update();
 
     repaint();
 }
 
 ExtendedFileBrowser::~ExtendedFileBrowser() {
+    saveState();
     delete table;
     delete view;
 }
@@ -56,7 +59,8 @@ void ExtendedFileBrowser::resized() {
     if (getParentComponent() != nullptr) {
         setSize(getParentWidth(), getParentHeight());
         view->setSize(getWidth(), getHeight());
-        table->setSize(getWidth(), getHeight());
+        table->setSize(getWidth()-4, getHeight()-4);
+        
     }
 }
 
@@ -65,6 +69,20 @@ void ExtendedFileBrowser::changeListenerCallback (ChangeBroadcaster* source) {
 }
 
 void ExtendedFileBrowser::mouseDown(const juce::MouseEvent &event) {
+    if (table->getSelectedRow() > 0) {
+        File* f = new File(model->getDirectoryList()->getFile(table->getSelectedRow()));
+        if (f->exists()) {
+            if (!f->isDirectory()) {
+    
+                if (f->getFileExtension().toLowerCase().contains("wav")) {
+                    Project::getInstance()->getDefaultSampler()->loadSample(*f);
+                    Project::getInstance()->getDefaultSampler()->play();
+                }
+            }
+            
+        }
+        delete f;
+    }
 
 }
 
@@ -76,13 +94,6 @@ void ExtendedFileBrowser::mouseDoubleClick(const juce::MouseEvent &event) {
             if (f->isDirectory()) {
                 model->setCurrentDir(f);
             }
-            else {
-                if (f->getFileExtension().toLowerCase().contains("wav")) {
-                     Project::getInstance()->getDefaultSampler()->loadSample(*f);
-                     Project::getInstance()->getDefaultSampler()->play();
-                }
-            }
-                
         }
         delete f;
     }
@@ -179,4 +190,63 @@ DirectoryContentsList* FileBrowserModel::getDirectoryList() {
     return directoryList;
 }
 
+void ExtendedFileBrowser::saveState(){
+    String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
+    File appDir = File(userHome+"/.Synthlab");
+    
+    if (!appDir.exists()) {
+        appDir.createDirectory();
+    }
+    
+    File configFile = File(userHome+"/.Synthlab/state.xml");
+    
+    if (!configFile.exists()) {
+        configFile.create();
+    }
+    else {
+        configFile.deleteFile();
+        configFile = File(userHome+"/.Synthlab/state.xml");
+    }
+    
+    ValueTree* v = new ValueTree("SavedState");
+    
+    ValueTree child = ValueTree("File");
+    child.setProperty("lastDirectory", model->getCurrentDir(), nullptr);
+    v->addChild(child, -1, nullptr);
+    
+    OutputStream* os = configFile.createOutputStream();
+    
+    XmlElement* xml = v->createXml();
+    
+    xml->writeToStream(*os, "");
+    
+    delete os;
+    delete xml;
+    delete v;
+}
 
+void ExtendedFileBrowser::loadState() {
+    String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
+    
+    File appDir = File(userHome+"/.Synthlab");
+    
+    if (!appDir.exists()) {
+        appDir.createDirectory();
+    }
+    
+    File configFile = File(userHome+"/.Synthlab/state.xml");
+    
+    if (configFile.exists()) {
+        ScopedPointer<XmlElement> xml = XmlDocument(configFile).getDocumentElement();
+        ValueTree v = ValueTree::fromXml(*xml.get());
+        
+        for (int i = 0 ;i < v.getNumChildren();i++) {
+            String path = v.getChild(i).getProperty("lastDirectory");
+            File* file = new File(path);
+            model->setCurrentDir(file);
+            delete file;
+            break;
+        }
+        xml = nullptr;
+    }
+}

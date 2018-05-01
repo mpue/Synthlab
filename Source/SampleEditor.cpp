@@ -99,8 +99,10 @@ void SampleEditor::itemDropped (const SourceDetails& dragSourceDetails) {
     File* sample = new File(dragSourceDetails.description);
     if (sample != nullptr && sample->exists()) {
         sampleModule->getCurrentSampler()->loadSample(*sample);
+        sampleModule->setSamplePath(sample->getFullPathName(), sampleModule->getCurrentSamplerIndex());
         delete sample;
     }
+    sampleModule->selectSample(sampleModule->getCurrentSamplerIndex());
     propertiesPanel->updateValues();
     propertiesPanel->updateThumb(); 
 

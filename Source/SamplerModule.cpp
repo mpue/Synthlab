@@ -330,6 +330,7 @@ void SamplerModule::stopRecording() {
         
         if (sampler[currentSampler]->hasSample()) {
             selectSample(currentSampler);
+#ifdef USE_PUSH
             AudioDeviceManager* deviceManager = AudioManager::getInstance()->getDeviceManager();
             deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0xb0,86,1));
             for (int i = 0; i < 128;i++) {
@@ -339,6 +340,7 @@ void SamplerModule::stopRecording() {
                     deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0x90,i,0x7e));
                 }
             }
+#endif
             thumbnail->addBlock(0, *recordingBuffer, 0, numRecordedSamples);
             std::function<void(void)> changeLambda =
             [=]() {  repaint(); };

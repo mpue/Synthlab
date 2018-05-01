@@ -249,8 +249,10 @@ void SamplePropertiesPanel::timerCallback() {
     recordActiveButton->setToggleState(!recordActiveButton->getToggleState(), juce::NotificationType::dontSendNotification);
     updateRecordingTime();
     seconds++;
+#ifdef USE_PUSH
     AudioDeviceManager* deviceManager = AudioManager::getInstance()->getDeviceManager();
     deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0xb0,86,seconds%2));
+#endif
 }
 
 void SamplePropertiesPanel::updateThumb() {

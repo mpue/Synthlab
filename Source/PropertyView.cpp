@@ -58,7 +58,7 @@ PropertyView::PropertyView () : TimeSliceThread("PropertyWatcher")
     descriptionEditor->setReadOnly(true);
     descriptionEditor->setJustification(juce::Justification::horizontallyJustified);
 
-    filter = new WildcardFileFilter("*.wav","*","*");
+    filter = new WildcardFileFilter("*.wav;*.aif;*.aiff;*.mp3","*","*");
     directoryContents = new DirectoryContentsList(filter,*this);
     directoryContents->setIgnoresHiddenFiles(false);
     File initialDir = File::getSpecialLocation(File::SpecialLocationType::userHomeDirectory).getFullPathName()+"/Documents/samples";

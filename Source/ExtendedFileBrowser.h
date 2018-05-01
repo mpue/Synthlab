@@ -63,6 +63,10 @@ public:
     void paint (Graphics& g) override;
     void resized() override;
     virtual void changeListenerCallback (ChangeBroadcaster* source) override;
+    
+    void saveState();
+    void loadState();
+    
     TableListBox* getTable() {
         return table;
     };
