@@ -17,7 +17,7 @@ class Pulse : public Oszillator , public Modulator {
     
     
 public:
-    Pulse(float sampleRate);
+    Pulse(float sampleRate, int buffersize);
     virtual float process() override;
     virtual void setFine(float fine) override;
     virtual float getFine() const override;

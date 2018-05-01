@@ -17,7 +17,7 @@ class Sine : public Oszillator , public Modulator {
     
     
 public:
-    Sine(float sampleRate);
+    Sine(float sampleRate, int buffersize);
     virtual float process() override;
     virtual void setFine(float fine) override;
     virtual float getFine() const override;

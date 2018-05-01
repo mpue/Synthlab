@@ -100,6 +100,7 @@
 		BD80D2F92008B9A1F9DB2381 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A9DDC5DF99AD3F6FC8B4897F /* QuartzCore.framework */; };
 		BD9185A83B5894D1A5DE7C37 /* WhiteNoise.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 66B8705B33BBE12D5AA7848C /* WhiteNoise.cpp */; };
 		BF7012A1209703A800B15376 /* ExtendedFileBrowser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF70129F209703A800B15376 /* ExtendedFileBrowser.cpp */; };
+		BFEE15EA2098ADBE003B589E /* DuplicateModuleAction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BFEE15E82098ADBE003B589E /* DuplicateModuleAction.cpp */; };
 		C36B70271D740A3EF48F8B8A /* AddModuleAction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0291EDFAFEAB6698433932F9 /* AddModuleAction.cpp */; };
 		CBEA434534EB2E3C41C5E340 /* RecentFilesMenuTemplate.nib in Resources */ = {isa = PBXBuildFile; fileRef = E73245E169DBF0CEA72B7D07 /* RecentFilesMenuTemplate.nib */; };
 		D14CA5C8B847BC3D333FED61 /* Push2-Usb-Communicator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 29D5E50C6456C13D62EDBE34 /* Push2-Usb-Communicator.cpp */; };
@@ -346,6 +347,10 @@
 		BB5E1F00ECB9E156C39BB64D /* LPFilterModule.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = LPFilterModule.cpp; path = ../../Source/LPFilterModule.cpp; sourceTree = SOURCE_ROOT; };
 		BF70129F209703A800B15376 /* ExtendedFileBrowser.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ExtendedFileBrowser.cpp; path = ../../Source/ExtendedFileBrowser.cpp; sourceTree = "<group>"; };
 		BF7012A0209703A800B15376 /* ExtendedFileBrowser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ExtendedFileBrowser.h; path = ../../Source/ExtendedFileBrowser.h; sourceTree = "<group>"; };
+		BFEE15E82098ADBE003B589E /* DuplicateModuleAction.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = DuplicateModuleAction.cpp; path = ../../Source/Actions/DuplicateModuleAction.cpp; sourceTree = "<group>"; };
+		BFEE15E92098ADBE003B589E /* DuplicateModuleAction.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = DuplicateModuleAction.h; path = ../../Source/Actions/DuplicateModuleAction.h; sourceTree = "<group>"; };
+		BFEE15EC2098BA45003B589E /* OscillatorModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = OscillatorModule.h; path = ../../Source/OscillatorModule.h; sourceTree = "<group>"; };
+		BFEE15F02098CBD2003B589E /* Monophonic.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Monophonic.h; path = ../../Source/Monophonic.h; sourceTree = "<group>"; };
 		C095C7A8849025B7BD6E168A /* Connection.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = Connection.h; path = ../../Source/Connection.h; sourceTree = SOURCE_ROOT; };
 		C101584F69D3184EF00BE4E2 /* open.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = open.png; path = ../../Images/open.png; sourceTree = SOURCE_ROOT; };
 		C18C63030A2AF0AD5A897642 /* juce_audio_basics */ = {isa = PBXFileReference; lastKnownFileType = folder; name = juce_audio_basics; path = ../../../JUCE/modules/juce_audio_basics; sourceTree = SOURCE_ROOT; };
@@ -533,6 +538,7 @@
 				7B9D1E817AE633215BBDD6A1 /* SineModule.h */,
 				2E09D8A15629ABF2B611AD03 /* StepSequencerModule.cpp */,
 				5209C5A5824F82E3D3CE1D22 /* StepSequencerModule.h */,
+				BFEE15EC2098BA45003B589E /* OscillatorModule.h */,
 			);
 			name = Prefabs;
 			sourceTree = "<group>";
@@ -805,6 +811,7 @@
 				614709333BFA4F91F86E3348 /* Voice.h */,
 				66B8705B33BBE12D5AA7848C /* WhiteNoise.cpp */,
 				1D32658ABC66A6358BB0B468 /* WhiteNoise.h */,
+				BFEE15F02098CBD2003B589E /* Monophonic.h */,
 			);
 			name = AudioEngine;
 			sourceTree = "<group>";
@@ -836,6 +843,8 @@
 				30D870811819992B116B8298 /* AddConnectionAction.h */,
 				0291EDFAFEAB6698433932F9 /* AddModuleAction.cpp */,
 				0B1BEDE99275164A0E40E270 /* AddModuleAction.h */,
+				BFEE15E82098ADBE003B589E /* DuplicateModuleAction.cpp */,
+				BFEE15E92098ADBE003B589E /* DuplicateModuleAction.h */,
 			);
 			name = Actions;
 			sourceTree = "<group>";
@@ -1055,6 +1064,7 @@
 				04F327BC2D1F6A56E40D09D9 /* ModuleBrowser.cpp in Sources */,
 				6874ADF56A9E37536D62CCF8 /* CloseableTabButton.cpp in Sources */,
 				66D49A2C165A84E1F0B5F26F /* Cell.cpp in Sources */,
+				BFEE15EA2098ADBE003B589E /* DuplicateModuleAction.cpp in Sources */,
 				312B4B2FAAA1192D4DCF286A /* SequenceEditor.cpp in Sources */,
 				D459C33927B1700CDCD796E6 /* EditorComponent.cpp in Sources */,
 				043486EB151DA4A464C1E9CF /* CustomLookAndFeel.cpp in Sources */,

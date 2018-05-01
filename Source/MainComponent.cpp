@@ -148,6 +148,8 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     // a global sampler object which allows us to play audio at any place like for preview for example
     defaultSampler = new Sampler(sampleRate, buffersize);
     Project::getInstance()->setDefaultSampler(defaultSampler);
+    
+    setWantsKeyboardFocus(true);
 }
 
 MainComponent::~MainComponent()
@@ -208,6 +210,9 @@ void MainComponent::timerCallback(){
         cpuLoad /= 10;
         
         if (cpuLoad < 0) {
+            cpuLoad = 0;
+        }
+        if (cpuLoad == NAN) {
             cpuLoad = 0;
         }
         
@@ -463,6 +468,9 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String & menuName) {
         if (pluginMenu != nullptr)
             return *pluginMenu;
     }
+    else if (index == 3) {
+        menu.addItem(31, "Duplicate", true, false, nullptr);
+    }
 
     
     return menu;
@@ -495,6 +503,11 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
         PluginManager::getInstance()->scanPlugins();
         
     }
+    
+    else if (menuItemID == 31) {
+        editor->duplicateSelected();
+        
+    }
     else if (menuItemID > 100){
         String pluginName = PluginManager::getInstance()->getAvailablePlugins().at(menuItemID - 100);
         
@@ -514,7 +527,7 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 }
 
 StringArray MainComponent::getMenuBarNames() {
-    const char* const names[] = { "File", "View","Plugins", nullptr };
+    const char* const names[] = { "File", "View","Plugins", "Edit", nullptr };
     
     return StringArray(names);
     
@@ -571,6 +584,7 @@ void MainComponent::openSettings() {
 }
 
 bool MainComponent::keyStateChanged(bool isKeyDown, juce::Component *originatingComponent) {
+    
     for (std::map<int, int>::iterator it = keyCodeMidiNote.begin();it != keyCodeMidiNote.end();it++) {
         if (KeyPress::isKeyCurrentlyDown((*it).first)) {
             if (!keyStates[(*it).second]) {
@@ -589,6 +603,10 @@ bool MainComponent::keyStateChanged(bool isKeyDown, juce::Component *originating
     return true;
 }
 
+void MainComponent::modifierKeysChanged(const juce::ModifierKeys &modifiers) {
+    isOptionPressed = modifiers.isAltDown();
+}
+
 bool MainComponent::keyPressed(const juce::KeyPress &key, juce::Component *originatingComponent) {
     if (key.getTextCharacter() == 'y') {
         if (currentOctave > 0) {
@@ -605,6 +623,11 @@ bool MainComponent::keyPressed(const juce::KeyPress &key, juce::Component *origi
         editor->setCurrentLayer(layer);
         editor->repaint();
     }
+    if (key.getTextCharacter() == 'd' && isOptionPressed) {
+        editor->duplicateSelected();
+        editor->repaint();
+    }
+    
     return true;
 }
 

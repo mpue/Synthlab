@@ -381,8 +381,11 @@ void SequenceEditor::timerCallback() {
     
     for (int y = 0; y < gridHeight;y++) {
         
+        Event* e = nullptr;
+        
         if (grid[currentStep][y].isEnabled()) {
-            Event* e = new Event("gate on",Event::Type::GATE);
+            
+            e = new Event("gate on",Event::Type::GATE);
             
             e->setValue(grid[currentStep][y].getVelocity());
             e->setNote(grid[currentStep][y].getNote());
@@ -393,23 +396,22 @@ void SequenceEditor::timerCallback() {
                     output->connections.at(i)->sendEvent(new Event(e));
                 }
             }
+        }
+        e = new Event("gate off",Event::Type::GATE);
+        e->setValue(0);
+        
+        
+        if (currentStep > 0) {
+            e->setNote(grid[currentStep - 1][y].getNote());
+        }
+        else {
+            e->setNote(grid[gridWidth - 1][y].getNote());
+        }
+        
+        if (output != nullptr) {
             
-            e = new Event("gate off",Event::Type::GATE);
-            e->setValue(0);
-            
-            
-            if (currentStep > 0) {
-                e->setNote(grid[currentStep - 1][y].getNote());
-            }
-            else {
-                e->setNote(grid[gridWidth - 1][y].getNote());
-            }
-            
-            if (output != nullptr) {
-                
-                for (int i = 0; i < output->connections.size();i++) {
-                    output->connections.at(i)->sendEvent(new Event(e));
-                }
+            for (int i = 0; i < output->connections.size();i++) {
+                output->connections.at(i)->sendEvent(new Event(e));
             }
         }
 

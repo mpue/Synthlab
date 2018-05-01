@@ -15,10 +15,10 @@ MultimodeOscillator::MultimodeOscillator(float sampleRate,int buffersize) : Oszi
     this->frequency = 440.0f;
     this->fine = 0.0f;
     
-    this->sine = new Sine(sampleRate);
+    this->sine = new Sine(sampleRate, buffersize);
     this->saw = new Sawtooth(sampleRate, buffersize);
-    this->pulse = new Pulse(sampleRate);
-    this->noise = new WhiteNoise(sampleRate);
+    this->pulse = new Pulse(sampleRate, buffersize);
+    this->noise = new WhiteNoise(sampleRate, buffersize);
     this->mode = OscMode::SAW;
     this->modulator = NULL;
 }

@@ -19,7 +19,7 @@ NoiseModule::NoiseModule(double sampleRate, int buffersize)
     this->sampleRate = sampleRate;
     this->buffersize = buffersize;
     
-    oscillator = new WhiteNoise(sampleRate);
+    oscillator = new WhiteNoise(sampleRate, buffersize);
     
     oscillator->setVolume(0.5f);
     

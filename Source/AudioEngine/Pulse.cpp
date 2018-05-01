@@ -15,7 +15,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 
-Pulse::Pulse(float sampleRate) : Oszillator(sampleRate) {
+Pulse::Pulse(float sampleRate, int buffersize) : Oszillator(sampleRate) {
     this->volume = 1.0f;
     this->frequency = 440.0f;
     this->fine = 0.0f;

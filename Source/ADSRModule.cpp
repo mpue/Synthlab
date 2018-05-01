@@ -224,7 +224,7 @@ void ADSRModule::eventReceived(Event *e) {
         
         if (e->getValue() > 0) {
         
-            // monophonic envelope is for modfulation purposes
+            // monophonic envelope is for modulation purposes
             if (mono) {
                 this->envelope->gate(e->getValue());
             }

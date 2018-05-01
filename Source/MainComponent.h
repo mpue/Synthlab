@@ -43,8 +43,11 @@ public:
     void resized() override;
     bool keyStateChanged (bool isKeyDown, Component* originatingComponent) override;
     bool keyPressed (const KeyPress& key, Component* originatingComponent) override;
+    void modifierKeysChanged (const ModifierKeys& modifiers) override;
     void createKeyMap();
     void buttonClicked (Button*) override;
+    
+    
     void handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) override;
     void sendGateMessage(Module* module, int channel, int velocity,int note,bool on);
     void sendNoteMessage(Module* module, int channel, int note);
@@ -117,6 +120,8 @@ private:
     int loads[10] = {0};
     int currentMeasure = 0;
     int currentSample = 0;
+    
+    bool isOptionPressed = false;
     
     Sampler* defaultSampler = nullptr;
     

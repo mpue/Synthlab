@@ -1,22 +1,3 @@
-/*
-  ==============================================================================
-
-  This is an automatically generated GUI class created by the Projucer!
-
-  Be careful when adding custom code to these files, as only the code within
-  the "//[xyz]" and "//[/xyz]" sections will be retained when the file is loaded
-  and re-saved.
-
-  Created with Projucer version: 5.2.1
-
-  ------------------------------------------------------------------------------
-
-  The Projucer is part of the JUCE library.
-  Copyright (c) 2017 - ROLI Ltd.
-
-  ==============================================================================
-*/
-
 #pragma once
 
 //[Headers]     -- You can add your own extra header files here --
@@ -38,131 +19,58 @@
 
 class SamplerModule;
 
-//[/Headers]
-
-
-
-//==============================================================================
-/**
-                                                                    //[Comments]
-    An auto-generated component, created by the Projucer.
-
-    Describe your class and how it works here!
-                                                                    //[/Comments]
-*/
 class SynthEditor  : public Component,
                      public ChangeBroadcaster,
                      public AudioModule,
                      public Timer,
-                     public DragAndDropTarget
-         
-
-{
+                     public DragAndDropTarget {
 public:
-    //==============================================================================
+
     SynthEditor (double sampleRate, int buffersize );
     SynthEditor ();
     ~SynthEditor();
 
-    //==============================================================================
-    //[UserMethods]     -- You can add your own custom methods in this section.
-
-	void addConnection(const MouseEvent& e, Module* m);
-    void deleteSelected(bool deleteAll);
-
-    void setTab(TabbedComponent* t);
+    // load and save
     
-    void setModule(Module * m);
-    Module* getModule();
     void cleanUp();
     void newFile();
     void saveFile();
     void openFile();
-
-    void itemDropped (const SourceDetails& dragSourceDetails) override;
-    
-    bool isInterestedInDragSource (const SourceDetails& dragSourceDetails) override {
-        return true;
-    }
-    
     void openSampleEditor(SamplerModule* sm);
     void openStepSequencer(StepSequencerModule* ssm);
-    
+    void loadFromString(String in);
     void saveStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections, ValueTree* v);
     void loadStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections,ValueTree* v);
 
-    std::vector<AudioIn*>& getInputChannels();
-    std::vector<AudioOut*>& getOutputChannels();
-    std::vector<AuxOut*>& getAuxChannels();
-    
-    void removeSelectedItem();
-    
-    void setSamplerate(double rate);
-    void setBufferSize(int buffersize);
+    // audio processing
 
-    bool connectionExists(std::vector<Connection*> connections, Connection* c);
-    void removeModule(Module* module);
-    
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate);
     void showContextMenu(Point<int> position);
     bool channelIsValid(int channel);
     bool auxChannelIsValid(int channel, int subchannel);
-    
-    void loadFromString(String in);
-    
-    virtual float getSampleRate() override {
-        return _sampleRate;
-    }
-    
-    virtual float getBufferSize() override{
-        return bufferSize;
-    }
-    
-    bool isRunning() {
-        return running;
-        //stopTimer();
-    }
-    
-    void setRunning(bool running) {
-        this->running = running;
-        // startTimer(100);
-    }
-    
-    void timerCallback() override {
-        repaint();
-    }
-    
-    void setCurrentLayer(int layer) {
-        
-        currentLayer = static_cast<Module::Layer>(layer);
-        
-        for (int i = 0;i < root->getModules()->size();i++) {
-            if (currentLayer == Module::Layer::ALL || root->getModules()->at(i)->getLayer() == currentLayer) {
-                root->getModules()->at(i)->setVisible(true);
-            }
-            else {
-                root->getModules()->at(i)->setVisible(false);
-            }
-        }
-         
-    }
-    
-    SelectionModel* getSelectionModel() const {
-        return selectionModel;
-    }
-    
-    void setMixer(MixerPanel* mixer) {
-        this->mixer = mixer;
-    }
-    
-    MixerPanel* getMixer() {
-        return mixer;
-    }
-    
-    void addChannel(String name, Mixer::Channel::Type channeltype);
-    
-    //[/UserMethods]
+    bool isRunning();
+    void setRunning(bool running);
+    void timerCallback() override;
 
+    // editing
+
+    void addChannel(String name, Mixer::Channel::Type channeltype);
+    void addConnection(const MouseEvent& e, Module* m);
+    void deleteSelected(bool deleteAll);
+    bool connectionExists(std::vector<Connection*> connections, Connection* c);
+    void removeModule(Module* module);
+    SelectionModel* getSelectionModel() const;
+    void removeSelectedItem();
+    void setCurrentLayer(int layer);
+    void duplicateSelected();
+    
+    // drag and drop
+    
+    void itemDropped (const SourceDetails& dragSourceDetails) override;
+    bool isInterestedInDragSource (const SourceDetails& dragSourceDetails) override;
+    
+    // component methods
+    
     void paint (Graphics& g) override;
     void resized() override;
     void mouseMove (const MouseEvent& e) override;
@@ -173,8 +81,24 @@ public:
     bool keyPressed (const KeyPress& key) override;
     bool keyStateChanged (bool isKeyDown) override;
     void modifierKeysChanged (const ModifierKeys& modifiers) override;
+
+    // member access
     
+    void setTab(TabbedComponent* t);
+    void setModule(Module * m);
+    Module* getModule();
+    void setMixer(MixerPanel* mixer);
+    MixerPanel* getMixer();
+
+    std::vector<AudioIn*>& getInputChannels();
+    std::vector<AudioOut*>& getOutputChannels();
+    std::vector<AuxOut*>& getAuxChannels();
     
+    void setSamplerate(double rate);
+    virtual float getSampleRate() override;
+    
+    void setBufferSize(int buffersize);
+    virtual float getBufferSize() override;
     
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.

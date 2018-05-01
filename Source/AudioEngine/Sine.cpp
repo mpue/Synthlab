@@ -13,7 +13,7 @@
 #include <math.h>
 #include <iostream>
 
-Sine::Sine(float sampleRate) : Oszillator(sampleRate) {
+Sine::Sine(float sampleRate, int buffersize) : Oszillator(sampleRate) {
     this->volume = 1.0f;
     this->frequency = 440.0f;
     this->fine = 0.0f;

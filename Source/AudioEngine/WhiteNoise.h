@@ -19,7 +19,7 @@ class WhiteNoise : public Oszillator, public Modulator {
     
 public:
     
-    WhiteNoise(double sampleRate);
+    WhiteNoise(double sampleRate, int buffersize);
     ~WhiteNoise();
     
     virtual float process() override;

@@ -10,7 +10,7 @@
 
 #include "WhiteNoise.h"
 
-WhiteNoise::WhiteNoise(double sampleRate) : Oszillator(sampleRate) {
+WhiteNoise::WhiteNoise(double sampleRate,  int buffersize) : Oszillator(sampleRate) {
     this->volume = 1.0f;
     random = new Random();
     this->fine = 0.0f;

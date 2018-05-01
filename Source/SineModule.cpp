@@ -118,7 +118,7 @@ void SineModule::process() {
                 
                 if(pins.at(2)->connections.at(0)->dataEnabled[j]) {
                     if (oscillator[j] ==  nullptr) {
-                        oscillator[j] = new Sine(sampleRate);
+                        oscillator[j] = new Sine(sampleRate, buffersize);
                         
                         oscillator[j]->setFrequency((440 * pow(2.0,((j+1)-69.0)/12.0)) + pitch);
                     }

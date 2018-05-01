@@ -1,23 +1,4 @@
-/*
-  ==============================================================================
 
-  This is an automatically generated GUI class created by the Projucer!
-
-  Be careful when adding custom code to these files, as only the code within
-  the "//[xyz]" and "//[/xyz]" sections will be retained when the file is loaded
-  and re-saved.
-
-  Created with Projucer version: 5.2.1
-
-  ------------------------------------------------------------------------------
-
-  The Projucer is part of the JUCE library.
-  Copyright (c) 2017 - ROLI Ltd.
-
-  ==============================================================================
-*/
-
-//[Headers] You can add your own extra header files here...
 #include "SynthEditor.h"
 #include "MidiGate.h"
 #include "MidiNote.h"
@@ -36,6 +17,7 @@
 #include <string.h>
 #include "Actions/AddModuleAction.h"
 #include "Actions/AddConnectionAction.h"
+#include "Actions/DuplicateModuleAction.h"
 #include "Project.h"
 #include "LabelModule.h"
 #include "SamplerModule.h"
@@ -44,60 +26,40 @@
 #include "AudioManager.h"
 #include "StepSequencerModule.h"
 #include "SequenceEditor.h"
+#include "OscillatorModule.h"
+#include "AudioEngine/Pulse.h"
+#include "AudioEngine/Sine.h"
 
 class SampleEditor;
-//[/Headers]
 
-//[MiscUserDefs] You can add your own user definitions and misc code here...
 String SynthEditor::defaultMidiOutputName = "Express 128 Port 7";
 String SynthEditor::defaultMidiInputName = "Express 128 Port 7";
-//[/MiscUserDefs]
+
 
 SynthEditor::SynthEditor(){
-    //[Constructor_pre] You can add your own custom stuff here..
-    //[/Constructor_pre]
-    
-    
-    //[UserPreSize]
-    //[/UserPreSize]
     
     setSize (1280, 800);
-    
-    
-    //[Constructor] You can add your own custom stuff here..
     
     root = new Module("Root");
     
     selectionModel = new SelectionModel(root);
     
     setRepaintsOnMouseActivity(true);
-    setMouseClickGrabsKeyboardFocus(true);
-    setWantsKeyboardFocus(true);
+    // setMouseClickGrabsKeyboardFocus(true);
+    //setWantsKeyboardFocus(true);
     
     addChildComponent(root);
-    
-    
-    
-    //[/Constructor]
 }
 
-//==============================================================================
+
 SynthEditor::SynthEditor (double sampleRate, int buffersize)
 {
     Logger::writeToLog("Creating SynthEditor with sample rate "+String(sampleRate)+" kHz and buffer size of "+String(buffersize)+" bytes.");
     
-    //[Constructor_pre] You can add your own custom stuff here..
     this->bufferSize  = buffersize;
     this->_sampleRate = sampleRate;
-    //[/Constructor_pre]
-
-    //[UserPreSize]
-    //[/UserPreSize]
 
     setSize (1280, 800);
-
-
-    //[Constructor] You can add your own custom stuff here..
 
     root = new Module("Root");
 
@@ -110,35 +72,22 @@ SynthEditor::SynthEditor (double sampleRate, int buffersize)
     addChildComponent(root);
     
     linePath = new Path();
-
-    //[/Constructor]
 }
 
 SynthEditor::~SynthEditor()
 {
-    //[Destructor_pre]. You can add your own custom destruction code here..
-    //[/Destructor_pre]
-    //[Destructor]. You can add your own custom destruction code here..
-
     cleanUp();
 
     if (isRoot)
         delete root;
     
     delete linePath;
-
-    //[/Destructor]
 }
 
-//==============================================================================
 void SynthEditor::paint (Graphics& g)
 {
-    //[UserPrePaint] Add your own custom painting code here..
-    //[/UserPrePaint]
-
     g.fillAll (Colour (0xff323e44));
 
-    //[UserPaint] Add your own custom painting code here..
 
     g.setColour(juce::Colours::white);
 
@@ -176,15 +125,10 @@ void SynthEditor::paint (Graphics& g)
 
     }
 
-    //[/UserPaint]
 }
 
 void SynthEditor::resized()
 {
-    //[UserPreResize] Add your own custom resize code here..
-    //[/UserPreResize]
-
-    //[UserResized] Add your own custom resize handling here..
     setSize(getParentWidth()*1.5, getParentHeight()*1.5);
     
     if (root != nullptr && root->getConnections() != nullptr) {
@@ -198,18 +142,13 @@ void SynthEditor::resized()
                 int x2 = c->target->getX() + c->b->x;
                 int y2 = c->target->getY() + c->b->y + 5;
                 
-                
                 Point<int> p1 = Point<int>(x1,y1);
                 Point<int> p2 = Point<int>(x2,y2);
                 c->setPoints(p1,p2);
                 c->resized();
             }
-            
         }
     }
-    
-
-    //[/UserResized]
 }
 
 void SynthEditor::drawCurrentConnection() {
@@ -232,13 +171,10 @@ void SynthEditor::drawCurrentConnection() {
 
 void SynthEditor::mouseMove (const MouseEvent& e)
 {
-    //[UserCode_mouseMove] -- Add your code here...
-
 	mouseX = e.getPosition().getX();
 	mouseY = e.getPosition().getY();
 
     selectionModel->checkForConnection(e.getPosition());
-    //[/UserCode_mouseMove]
 }
 
 void SynthEditor::mouseDown (const MouseEvent& e)
@@ -246,9 +182,6 @@ void SynthEditor::mouseDown (const MouseEvent& e)
     if (locked) {
         return;
     }
-
-    
-    //[UserCode_mouseDown] -- Add your code here...
 
     mouseDownX = e.getPosition().getX();
     mouseDownY = e.getPosition().getY();
@@ -292,7 +225,6 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 
     sendChangeMessage();
 
-    //[/UserCode_mouseDown]
 }
 
 void SynthEditor::showContextMenu(Point<int> position) {
@@ -322,15 +254,11 @@ void SynthEditor::showContextMenu(Point<int> position) {
                 m->addItem(2, "Add output");
             }
             else {
-                
                 if ((k = dynamic_cast<Knob*>(module)) != NULL) {
                     m->addItem(3, "MIDI learn");
                 }
-                
             }
       
-            
-            
             const int result = m->show();
             
             if (result == 0)
@@ -529,7 +457,6 @@ void SynthEditor::showContextMenu(Point<int> position) {
 
 }
 
-
 void SynthEditor::itemDropped (const SourceDetails& dragSourceDetails)  {
     AddModuleAction* am = new AddModuleAction(this,dragSourceDetails.localPosition,dragSourceDetails.description.toString().getIntValue());
     Project::getInstance()->getUndoManager()->beginNewTransaction();
@@ -538,13 +465,10 @@ void SynthEditor::itemDropped (const SourceDetails& dragSourceDetails)  {
 
 void SynthEditor::mouseDrag (const MouseEvent& e)
 {
-    //[UserCode_mouseDrag] -- Add your code here...
     
     if (locked) {
         return;
     }
-    
-
     
     mouseX = e.getPosition().getX();
     mouseY = e.getPosition().getY();
@@ -552,9 +476,7 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
     dragDistanceX = e.getDistanceFromDragStartX();
     dragDistanceY = e.getDistanceFromDragStartY();
     
-    // if (e.getDistanceFromDragStart() > 2) {
-        dragHasStarted = true;
-    // }
+    dragHasStarted = true;
     
     if (state != SelectionModel::State::DRAGGING_SELECTION) {
         for (int i = 0; i < root->getModules()->size(); i++) {
@@ -576,9 +498,6 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
         }
     }
     
-	//lineStartX = e.getMouseDownPosition().x;
-	//lineStartY = e.getMouseDownPosition().y;
-
 	lineStopX = lineStartX + e.getDistanceFromDragStartX();
 	lineStopY = lineStartY + e.getDistanceFromDragStartY();
 
@@ -641,12 +560,10 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
     
 	repaint();
     resized();
-    //[/UserCode_mouseDrag]
 }
 
 void SynthEditor::mouseUp (const MouseEvent& e)
 {
-    //[UserCode_mouseUp] -- Add your code here...
 	if (e.mods.isLeftButtonDown()) {
 		isLeftMouseDown = false;
         
@@ -655,9 +572,6 @@ void SynthEditor::mouseUp (const MouseEvent& e)
         
 	}
 
-
-
-    
     for (int i = 0; i < root->getModules()->size(); i++) {
 
         Module* m = root->getModules()->at(i);
@@ -670,24 +584,16 @@ void SynthEditor::mouseUp (const MouseEvent& e)
         }
     }
     
-    
-    
 	lineStopX = 0;
 	lineStopY = 0;
-    
-    // startPin = nullptr;
     
     state = SelectionModel::State::NONE;
 
     dragHasStarted = false;
-    
-    //[/UserCode_mouseUp]
 }
 
 void SynthEditor::mouseDoubleClick (const MouseEvent& e)
 {
-    //[UserCode_mouseDoubleClick] -- Add your code here...
-
     if (isAltDown) {
         for (int i = 0; i < root->getModules()->size(); i++) {
 
@@ -732,10 +638,7 @@ void SynthEditor::mouseDoubleClick (const MouseEvent& e)
                     tab->addTab(m->getName(), juce::Colours::grey,editor, true);
                 }
             }
-            
-
         }
-
     }
     
     if (selectionModel->getSelectedModules()->size() == 0) {
@@ -745,10 +648,57 @@ void SynthEditor::mouseDoubleClick (const MouseEvent& e)
     //[/UserCode_mouseDoubleClick]
 }
 
+float SynthEditor::getSampleRate() {
+    return _sampleRate;
+}
+
+float SynthEditor::getBufferSize() {
+    return bufferSize;
+}
+
+bool SynthEditor::isRunning() {
+    return running;
+    //stopTimer();
+}
+
+void SynthEditor::setRunning(bool running) {
+    this->running = running;
+    // startTimer(100);
+}
+
+void SynthEditor::timerCallback(){
+    repaint();
+}
+
+void SynthEditor::setCurrentLayer(int layer) {
+    
+    currentLayer = static_cast<Module::Layer>(layer);
+    
+    for (int i = 0;i < root->getModules()->size();i++) {
+        if (currentLayer == Module::Layer::ALL || root->getModules()->at(i)->getLayer() == currentLayer) {
+            root->getModules()->at(i)->setVisible(true);
+        }
+        else {
+            root->getModules()->at(i)->setVisible(false);
+        }
+    }
+    
+}
+
+SelectionModel* SynthEditor::getSelectionModel() const {
+    return selectionModel;
+}
+
+void SynthEditor::setMixer(MixerPanel* mixer) {
+    this->mixer = mixer;
+}
+
+MixerPanel* SynthEditor::getMixer() {
+    return mixer;
+}
+
 bool SynthEditor::keyPressed (const KeyPress& key)
 {
-    //[UserCode_keyPressed] -- Add your code here...
-
     if (key.getKeyCode() == KeyPress::deleteKey || key.getKeyCode() == KeyPress::backspaceKey) {
         removeSelectedItem();
     }
@@ -760,31 +710,20 @@ bool SynthEditor::keyPressed (const KeyPress& key)
     }
     
     repaint();
-    
-
-    return true;  // Return true if your handler uses this key event, or false to allow it to be passed-on.
-    //[/UserCode_keyPressed]
+    return true;
 }
 
 bool SynthEditor::keyStateChanged (bool isKeyDown)
 {
-    //[UserCode_keyStateChanged] -- Add your code here...
-    return false;  // Return true if your handler uses this key event, or false to allow it to be passed-on.
-    //[/UserCode_keyStateChanged]
+    return false;
 }
 
 void SynthEditor::modifierKeysChanged (const ModifierKeys& modifiers)
 {
-    //[UserCode_modifierKeysChanged] -- Add your code here...
     isAltDown = modifiers.isAltDown();
     isCtrlDown = modifiers.isCtrlDown() ||  modifiers.isCommandDown();
     isLeftShiftDown = modifiers.isShiftDown();
-    //[/UserCode_modifierKeysChanged]
 }
-
-
-
-//[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 
 void SynthEditor::cleanUp() {
     for(std::vector<Module*>::iterator it = root->getModules()->begin();it != root->getModules()->end();it++) {
@@ -811,7 +750,6 @@ void SynthEditor::cleanUp() {
     Project::getInstance()->getUndoManager()->clearUndoHistory();
     
 }
-
 
 
 void SynthEditor::removeSelectedItem() {
@@ -913,10 +851,10 @@ void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Conn
             }
         }
         
-        SawtoothModule* saw;
+        Monophonic* monophonic;
         
-        if ((saw = dynamic_cast<SawtoothModule*>((*it))) != NULL) {
-            file.setProperty("mono", saw->isMono(), nullptr);
+        if ((monophonic = dynamic_cast<Monophonic*>((*it))) != NULL) {
+            file.setProperty("mono", monophonic->isMono(), nullptr);
         }
         
         PluginModule* pm;
@@ -969,7 +907,6 @@ void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Conn
 
     v->addChild(mods, -1, nullptr);
     v->addChild(cons, -1, nullptr);
-
 
 }
 
@@ -1036,12 +973,9 @@ void SynthEditor::saveFile() {
         
     }
 #endif
-    
-
 }
 
 void SynthEditor::openSampleEditor(SamplerModule *sm) {
-   
     Project::getInstance()->getSupplemental()->addTab("Sample editor", Colours::darkgrey, sm->getEditor(), true);
     Project::getInstance()->getSupplemental()->setCurrentTabIndex(Project::getInstance()->getSupplemental()->getNumTabs() - 1);
 }
@@ -1050,7 +984,6 @@ void SynthEditor::openStepSequencer(StepSequencerModule *ssm) {
     SequenceEditor* se = ssm->getEditor();
     Project::getInstance()->getSupplemental()->addTab("Step sequencer", Colours::darkgrey, se, true);
     Project::getInstance()->getSupplemental()->setCurrentTabIndex(Project::getInstance()->getSupplemental()->getNumTabs() - 1);
-   
 }
 
 void SynthEditor::openFile() {
@@ -1074,9 +1007,7 @@ void SynthEditor::openFile() {
         ScopedPointer<XmlElement> xml = XmlDocument(file).getDocumentElement();
         
         Project::getInstance()->addRecentFile(file.getFullPathName());
-        
 #endif
-   
         ValueTree v = ValueTree::fromXml(*xml.get());
 
         setRunning(false);
@@ -1087,7 +1018,6 @@ void SynthEditor::openFile() {
         }
 
         xml = nullptr;
-        
         setRunning(true);
     }
 }
@@ -1135,7 +1065,6 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
                 m->setIndex(mod.getProperty("index").toString().getLargeIntValue());
             }
         }
-
         
         m->setTopLeftPosition(mod.getProperty("x").toString().getIntValue(), mod.getProperty("y").toString().getIntValue());
 
@@ -1238,10 +1167,10 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
  
         }
         
-        SawtoothModule* saw;
+        Monophonic* monophonic;
         
-        if ((saw = dynamic_cast<SawtoothModule*>(m)) != NULL) {
-            saw->setMono(mod.getProperty("mono").toString().getIntValue() > 0);
+        if ((monophonic = dynamic_cast<Monophonic*>(m)) != NULL) {
+            monophonic->setMono(mod.getProperty("mono").toString().getIntValue() > 0);
         }
         
         PluginModule* pm ;
@@ -1465,10 +1394,6 @@ void SynthEditor::deleteSelected(bool deleteAll) {
         std::vector<Connection*>* cons = root->getConnections();
         cons->erase(std::remove_if(cons->begin(), cons->end(), [](Connection* c){
             if (c->selected){
-                
-                
-                
-                ;
                 return true;
             }
             return false;
@@ -1494,9 +1419,7 @@ void SynthEditor::deleteSelected(bool deleteAll) {
         }),mods->end());
     }
 
-    
     sendChangeMessage();
- 
 }
 
 void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
@@ -1550,6 +1473,10 @@ void SynthEditor::prepareToPlay(int samplesPerBlockExpected, double sampleRate) 
    
 }
 
+bool SynthEditor::isInterestedInDragSource (const SourceDetails& dragSourceDetails) {
+    return true;
+}
+
 void SynthEditor::setSamplerate(double rate) {
     this->_sampleRate = rate;
 }
@@ -1574,39 +1501,14 @@ void SynthEditor::addChannel(juce::String name, Mixer::Channel::Type channeltype
     mixer->addChannel(name, channeltype);
 }
 
-//[/MiscUserCode]
+void SynthEditor::duplicateSelected() {
+    Module* m = selectionModel->getSelectedModule();
+    if (m != nullptr) {
+        Point<int> pos = m->getPosition();
+        pos.addXY(10, m->getBounds().getY() + 10);
+        AddModuleAction* am = new AddModuleAction(this,pos,m->getId());
+        Project::getInstance()->getUndoManager()->beginNewTransaction();
+        Project::getInstance()->getUndoManager()->perform(am);
+    }
+}
 
-
-//==============================================================================
-#if 0
-/*  -- Projucer information section --
-
-    This is where the Projucer stores the metadata that describe this GUI layout, so
-    make changes in here at your peril!
-
-BEGIN_JUCER_METADATA
-
-<JUCER_COMPONENT documentType="Component" className="SynthEditor" componentName=""
-                 parentClasses="public Component, public ChangeBroadcaster" constructorParams=""
-                 variableInitialisers="" snapPixels="8" snapActive="1" snapShown="1"
-                 overlayOpacity="0.330" fixedSize="0" initialWidth="1280" initialHeight="800">
-  <METHODS>
-    <METHOD name="mouseDrag (const MouseEvent&amp; e)"/>
-    <METHOD name="mouseDown (const MouseEvent&amp; e)"/>
-    <METHOD name="mouseUp (const MouseEvent&amp; e)"/>
-    <METHOD name="keyPressed (const KeyPress&amp; key)"/>
-    <METHOD name="modifierKeysChanged (const ModifierKeys&amp; modifiers)"/>
-    <METHOD name="mouseMove (const MouseEvent&amp; e)"/>
-    <METHOD name="keyStateChanged (bool isKeyDown)"/>
-    <METHOD name="mouseDoubleClick (const MouseEvent&amp; e)"/>
-  </METHODS>
-  <BACKGROUND backgroundColour="ff323e44"/>
-</JUCER_COMPONENT>
-
-END_JUCER_METADATA
-*/
-#endif
-
-
-//[EndFile] You can add extra defines here...
-//[/EndFile]

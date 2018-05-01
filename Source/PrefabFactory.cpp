@@ -35,6 +35,8 @@
 #include "DistortionModule.h"
 #include "PluginModule.h"
 #include "StepSequencerModule.h"
+#include "OscillatorModule.h"
+#include "AudioEngine/Pulse.h"
 
 PrefabFactory* PrefabFactory::instance = NULL;
 
@@ -74,16 +76,27 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
         m->setName("Note");
     }
     else if (prefabs[id].getName() == "Sawtooth") {
-        m = new SawtoothModule(sampleRate, bufferSize);
+        Image* img = new Image(prefabImages[id]);
+        m = new OscillatorModule<Sawtooth>(sampleRate,bufferSize, img);// SawtoothModule(sampleRate, bufferSize);
+        m->setName("Sawtooth");
     }
     else if (prefabs[id].getName() == "Sine") {
-        m = new SineModule(sampleRate, bufferSize);
+        Image* img = new Image(prefabImages[id]);
+        m = new OscillatorModule<Sine>(sampleRate,bufferSize, img);// SawtoothModule(sampleRate, bufferSize);
+        m->setName("Sine");
+    }
+    else if (prefabs[id].getName() == "Pulse") {
+        Image* img = new Image(prefabImages[id]);
+        m = new OscillatorModule<Pulse>(sampleRate,bufferSize, img);// SawtoothModule(sampleRate, bufferSize);
+        m->setName("Pulse");
     }
     else if (prefabs[id].getName() == "Random") {
         m = new RandomModule(sampleRate, bufferSize);
     }
     else if (prefabs[id].getName() == "White noise") {
-        m = new NoiseModule(sampleRate, bufferSize);
+        Image* img = new Image(prefabImages[id]);
+        m = new OscillatorModule<WhiteNoise>(sampleRate,bufferSize, img);// SawtoothModule(sampleRate, bufferSize);
+        m->setName("Noise");
     }
     else if (prefabs[id].getName() == "Audio out") {
         m = new AudioOut();
