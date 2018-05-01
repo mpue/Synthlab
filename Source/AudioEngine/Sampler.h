@@ -67,6 +67,10 @@ public:
     float getPitch();
     void setPitch(float pitch);
     
+    bool isPlaying() {
+        return playing;
+    }
+    
 private:
     
     AudioFormatManager* manager;
@@ -86,6 +90,8 @@ private:
     
     bool loop = false;
     bool loaded = false;
+    
+    bool playing = false;
     
     bool dirty = false;
     

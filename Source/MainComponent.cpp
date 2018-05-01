@@ -93,6 +93,8 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     
     propertyView =  new PropertyView();
     
+    addMouseListener(this, true);
+    
     addAndMakeVisible (propertyView);
     addAndMakeVisible (resizerBar);
     addAndMakeVisible(editorView);
@@ -139,9 +141,13 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     
     addAndMakeVisible(loadSlider);
     
-    addMouseListener(this, true);
-    
+    Project::getInstance()->setMain(this);
+    addMouseListener(propertyView->getBrowser(), false);
     startTimer(20);
+    
+    // a global sampler object which allows us to play audio at any place like for preview for example
+    defaultSampler = new Sampler(sampleRate, buffersize);
+    Project::getInstance()->setDefaultSampler(defaultSampler);
 }
 
 MainComponent::~MainComponent()
@@ -212,6 +218,21 @@ void MainComponent::timerCallback(){
 
 }
 
+void MainComponent::mouseDrag (const MouseEvent& event) {
+    
+    var description;
+    
+    if (moduleBrowser != nullptr && moduleBrowser->isVisible())
+        startDragging(description, moduleBrowser->getTable());
+    else {
+        propertyView->getBrowser()->startDragging(description,propertyView->getBrowser()->getTable());
+    }
+    
+}
+void MainComponent::dragOperationStarted (const DragAndDropTarget::SourceDetails& details)  {
+    setDragImageForIndex(0,Image());
+}
+
 //==============================================================================
 void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRate)
 {
@@ -235,9 +256,7 @@ int MainComponent::getNumActiveChannels(int i) {
 
 void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill)
 {
-    if (!running) {
-        return;
-    }
+
 
     lastTime = Time::getMillisecondCounterHiRes() - currentTime;
     currentTime = Time::getMillisecondCounterHiRes();
@@ -247,6 +266,19 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
     int numSamples = bufferToFill.numSamples;
     float** outputChannelData = bufferToFill.buffer->getArrayOfWritePointers();
     const float** inputChannelData = bufferToFill.buffer->getArrayOfReadPointers();
+    
+    if (defaultSampler != nullptr && defaultSampler->isPlaying()) {
+        for (int j = 0;j < numSamples;j++) {
+        
+            outputChannelData[0][j] += defaultSampler->getCurrentSample(0);
+            outputChannelData[1][j] += defaultSampler->getCurrentSample(1);
+            defaultSampler->nextSample();
+        }
+    }
+    
+    if (!running) {
+        return;
+    }
     
     // for (int i = 0; i < numSamples;i++)
     if (editor->getModule() != nullptr)
@@ -271,11 +303,16 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
     }
     
     // mute if there are no channels
-    if (mixer->getNumOutputs() ==  0) {
-        for (int j = 0;j < numSamples;j++) {
-            outputChannelData[0][j] = 0;
-            outputChannelData[1][j] = 0;
-        }
+    if (mixer->getNumOutputs() ==  0 ) {
+        
+       if (defaultSampler != nullptr && defaultSampler->isPlaying()) {
+       }
+       else {
+           for (int j = 0;j < numSamples;j++) {
+               outputChannelData[0][j] = 0;
+               outputChannelData[1][j] = 0;
+           }
+       }
     }
     else {
         
@@ -317,7 +354,7 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
             if (editor->channelIsValid(0)) {
                 // outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->applyGain(channelVolume);
                 const float* outL = outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-                outputChannelData[0][j] = channelVolume * (outL[j] + auxLeftOut) * gainLeft;
+                outputChannelData[0][j] += channelVolume * (outL[j] + auxLeftOut) * gainLeft;
             }
             else {
                 outputChannelData[0][j] = auxLeftOut;
@@ -345,16 +382,15 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
             if (editor->channelIsValid(1)) {
                 // outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->applyGain(channelVolume);
                 const float* outR = outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-
-               
-                outputChannelData[1][j] = channelVolume * (outR[j] + auxRightOut) * gainRight;
-                
+                outputChannelData[1][j] += channelVolume * (outR[j] + auxRightOut) * gainRight;
             }
             else {
                 outputChannelData[1][j] = auxRightOut;
             }
         }
         
+
+
         if (editor->channelIsValid(0))
             channel->magnitudeLeft = channelVolume * gainLeft * outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
         if (editor->channelIsValid(1))
@@ -364,6 +400,7 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
     long duration = Time::getMillisecondCounterHiRes() - startTime;
     cpuLoad = ((float)duration / (float)lastTime) * 100 ;
     
+    currentSample = (currentSample + 1) % numSamples;
 }
 
 void MainComponent::releaseResources()

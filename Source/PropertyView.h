@@ -22,6 +22,7 @@
 //[Headers]     -- You can add your own extra header files here --
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "MainTabbedComponent.h"
+#include "ExtendedFileBrowser.h"
 
 //[/Headers]
 
@@ -34,7 +35,9 @@
                                                                     //[/Comments]
 */
 class PropertyView  : public Component,
-                      public ChangeListener
+                      public ChangeListener,
+                      public TimeSliceThread,
+                      public TimeSliceClient
 {
 public:
     //==============================================================================
@@ -45,7 +48,8 @@ public:
     //[UserMethods]     -- You can add your own custom methods in this section.
 
     void changeListenerCallback (ChangeBroadcaster* source) override;
-
+    virtual int useTimeSlice() override;
+    ExtendedFileBrowser* getBrowser();
     //[/UserMethods]
 
     void paint (Graphics& g) override;
@@ -56,7 +60,9 @@ private:
 
     PropertyPanel* propertyPanel = nullptr;
     ScopedPointer<TextEditor> descriptionEditor;
-    
+    DirectoryContentsList* directoryContents = nullptr;
+    WildcardFileFilter* filter = nullptr;
+    ExtendedFileBrowser* browser = nullptr;
     //[/UserVariables]
 
     //==============================================================================

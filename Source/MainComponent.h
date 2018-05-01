@@ -56,19 +56,8 @@ public:
         return editor;
     }
     
-    void mouseDrag (const MouseEvent& event) override {
-        
-        var description;
-        
-        if (moduleBrowser != nullptr)
-            startDragging(description, moduleBrowser->getTable());
-    }
-    
-    virtual void dragOperationStarted (const DragAndDropTarget::SourceDetails& details) override {
-        setDragImageForIndex(0,Image());
-    }
-
-    
+    void mouseDrag (const MouseEvent& event) override;
+    virtual void dragOperationStarted (const DragAndDropTarget::SourceDetails& details) override;
     void timerCallback() override;
     
 private:
@@ -127,6 +116,9 @@ private:
     int cpuLoad = 0;
     int loads[10] = {0};
     int currentMeasure = 0;
+    int currentSample = 0;
+    
+    Sampler* defaultSampler = nullptr;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

@@ -13,6 +13,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "CustomLookAndFeel.h"
 #include "MainTabbedComponent.h"
+#include "AudioEngine/Sampler.h"
 
 #ifdef USE_PUSH
 #include "push2/JuceToPush2DisplayBridge.h"
@@ -60,6 +61,22 @@ public:
     
     std::vector<DialogWindow*>& getOpenWindows() {
         return openWindows;
+    }
+    
+    void setDefaultSampler(Sampler* sampler) {
+        this->defaultSampler = sampler;
+    }
+    
+    Sampler* getDefaultSampler() {
+        return this->defaultSampler;
+    }
+    
+    Component* getMain() {
+        return main;
+    }
+    
+    void setMain(Component* c) {
+        main = c;
     }
     
 #ifdef USE_PUSH
@@ -140,6 +157,8 @@ private:
     CustomLookAndFeel* lookAndFeel;
     MainTabbedComponent* supplementalTab;
     std::vector<DialogWindow*> openWindows;
+    Component* main = nullptr;
+    Sampler* defaultSampler = nullptr;
     
 #ifdef USE_PUSH
     ableton::Push2DisplayBridge bridge;    /*!< The bridge allowing to use juce::graphics for push */

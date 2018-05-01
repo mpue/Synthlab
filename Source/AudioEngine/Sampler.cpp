@@ -47,6 +47,10 @@ void Sampler::nextSample() {
             if (currentSample < sampleLength - 1 && currentSample < endPosition) {
                 currentSample++;
             }
+            else {
+                playing = false;
+                currentSample = 0;
+            }
         }
     }
 
@@ -55,9 +59,12 @@ void Sampler::nextSample() {
 }
 
 void Sampler::play() {
+
+    playing = true;
 }
 
 void Sampler::stop() {
+    playing = false;
 }
 
 float Sampler::getCurrentSample(int channel){

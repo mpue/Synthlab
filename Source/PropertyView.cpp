@@ -28,7 +28,7 @@
 //[/MiscUserDefs]
 
 //==============================================================================
-PropertyView::PropertyView ()
+PropertyView::PropertyView () : TimeSliceThread("PropertyWatcher")
 {
     //[Constructor_pre] You can add your own custom stuff here..
     //[/Constructor_pre]
@@ -46,8 +46,8 @@ PropertyView::PropertyView ()
     //[/UserPreSize]
 
     setSize (600, 400);
-
-
+    addTimeSliceClient(this);
+    
     //[Constructor] You can add your own custom stuff here..
     setSize(getParentWidth(), getParentHeight());
 
@@ -58,8 +58,19 @@ PropertyView::PropertyView ()
     descriptionEditor->setReadOnly(true);
     descriptionEditor->setJustification(juce::Justification::horizontallyJustified);
 
+    filter = new WildcardFileFilter("*.wav","*","*");
+    directoryContents = new DirectoryContentsList(filter,*this);
+    directoryContents->setIgnoresHiddenFiles(false);
+    File initialDir = File::getSpecialLocation(File::SpecialLocationType::userHomeDirectory).getFullPathName()+"/Documents/samples";
+    FileBrowserModel* model = new FileBrowserModel(directoryContents, initialDir);
+    browser  = new ExtendedFileBrowser(File::getSpecialLocation(File::userHomeDirectory),filter,model);
+    directoryContents->addChangeListener(browser);
+    tabbedComponent->addTab("Browser",juce::Colours::grey, browser, false);
     tabbedComponent->addTab("Description",juce::Colours::grey, descriptionEditor, false);
-
+    addMouseListener(browser, true);
+    
+    startThread();
+    
 
     //[/Constructor]
 }
@@ -74,8 +85,9 @@ PropertyView::~PropertyView()
     // descriptionEditor = nullptr;
 
     //[Destructor]. You can add your own custom destruction code here..
-
-
+    removeTimeSliceClient(this);
+    delete browser;
+    stopThread(100);
     //[/Destructor]
 }
 
@@ -121,6 +133,14 @@ void PropertyView::changeListenerCallback(juce::ChangeBroadcaster *source) {
         
     }
 
+}
+
+int PropertyView::useTimeSlice() {
+    return 1000;
+}
+
+ExtendedFileBrowser* PropertyView::getBrowser() {
+    return browser;
 }
 
 //[/MiscUserCode]
