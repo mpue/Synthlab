@@ -35,7 +35,7 @@ float Pulse::process() {
     
     phase += step;
     
-    this->value = (float)(sin(phase) * this->volume);
+    this->value = (float)(sin(phase));
     
     if (value < 0) {
         value = -1;
@@ -44,7 +44,7 @@ float Pulse::process() {
         value = 1;
     }
 
-    return this->value;
+    return this->value * volume;
 }
 
 void Pulse::setFrequency(double frequency) {
