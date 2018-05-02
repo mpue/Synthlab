@@ -154,7 +154,8 @@ public:
         
         return sampler[currentSampler];
     }
-    
+
+#ifdef USE_PUSH
     void updatePush2Pads() {
 
         AudioDeviceManager* deviceManager = AudioManager::getInstance()->getDeviceManager();
@@ -168,7 +169,7 @@ public:
         }
 
     }
-    
+#endif
     Sampler* getSamplerAt(int samplerNum) {
         return sampler[samplerNum];
     }

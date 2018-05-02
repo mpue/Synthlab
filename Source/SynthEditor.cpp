@@ -753,6 +753,7 @@ void SynthEditor::cleanUp() {
 
 
 void SynthEditor::removeSelectedItem() {
+    running = false;
     std::vector<Connection*>* cons = root->getConnections();
     cons->erase(std::remove_if(cons->begin(), cons->end(), [](Connection* c){
         if (c->selected){
@@ -776,6 +777,7 @@ void SynthEditor::removeSelectedItem() {
         }
     }
     selectionModel->clearSelection();
+    running = true;
 }
 
 void SynthEditor::newFile() {
@@ -1082,7 +1084,8 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
             outputChannels.push_back(out);
             String channelName = am->getOutputChannelNames().getReference(getOutputChannels().size() - 1);
-            addChannel(channelName, Mixer::Channel::Type::OUT);
+            int channelIndex = addChannel(channelName, Mixer::Channel::Type::OUT);
+            out->setChannelIndex(channelIndex);
             addChangeListener(out);
         }
         
@@ -1091,7 +1094,8 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         if ((in = dynamic_cast<AudioIn*>(m)) != NULL) {
             inputChannels.push_back(in);
             String channelName = am->getInputChannelNames().getReference(getInputChannels().size() - 1);
-            addChannel(channelName, Mixer::Channel::Type::IN);
+            int channelIndex = addChannel(channelName, Mixer::Channel::Type::IN);
+            in->setChannelIndex(channelIndex);
             addChangeListener(in);
         }
         
@@ -1100,7 +1104,8 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         if ((aux = dynamic_cast<AuxOut*>(m)) != NULL) {
             auxChannels.push_back(aux);
             String channelName = "Aux "+ String(getAuxChannels().size());
-            addChannel(channelName, Mixer::Channel::Type::AUX);
+            int channelIndex = addChannel(channelName, Mixer::Channel::Type::AUX);
+            aux->setChannelIndex(channelIndex);
             addChangeListener(aux);
         }
         
@@ -1311,6 +1316,51 @@ void SynthEditor::setTab(juce::TabbedComponent *t) {
 }
 
 void SynthEditor::removeModule(Module* module) {
+
+    
+    AudioOut* out = nullptr;
+    
+    if ((out = dynamic_cast<AudioOut*>(module)) != nullptr){
+        mixer->removeChannel(out->getChannelIndex());
+        for(std::vector<AudioOut*>::iterator it = outputChannels.begin();it != outputChannels.end();) {
+            if ((*it)->getChannelIndex() == out->getChannelIndex()) {
+                it = outputChannels.erase(it);
+            }
+            else {
+                ++it;
+            }
+        }
+    }
+
+    
+    AudioIn* in = nullptr;
+    
+    if ((in = dynamic_cast<AudioIn*>(module)) != nullptr){
+        mixer->removeChannel(in->getChannelIndex());
+        for(std::vector<AudioIn*>::iterator it = inputChannels.begin();it != inputChannels.end();) {
+            if ((*it)->getChannelIndex() == in->getChannelIndex()) {
+                it = inputChannels.erase(it);
+            }
+            else {
+                ++it;
+            }
+        }
+    }
+    
+    AuxOut* aux = nullptr;
+    
+    if ((aux = dynamic_cast<AuxOut*>(module)) != nullptr){
+        mixer->removeChannel(aux->getChannelIndex());
+        for(std::vector<AuxOut*>::iterator it = auxChannels.begin();it != auxChannels.end();) {
+            if ((*it)->getChannelIndex() == aux->getChannelIndex()) {
+                it = auxChannels.erase(it);
+            }
+            else {
+                ++it;
+            }
+        }
+    }
+    
     vector<long> pinsToBeRemoved;
     
     removeChangeListener(module);
@@ -1503,8 +1553,9 @@ std::vector<AuxOut*>& SynthEditor::getAuxChannels() {
     return auxChannels;
 }
 
-void SynthEditor::addChannel(juce::String name, Mixer::Channel::Type channeltype) {
-    mixer->addChannel(name, channeltype);
+int SynthEditor::addChannel(juce::String name, Mixer::Channel::Type channeltype) {
+    return mixer->addChannel(name, channeltype);
+    
 }
 
 void SynthEditor::duplicateSelected() {

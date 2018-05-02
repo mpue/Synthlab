@@ -54,3 +54,10 @@ void AudioOut::process() {
     
 }
 
+void AudioOut::setChannelIndex(int index) {
+    this->channelIndex = index;
+}
+
+int AudioOut::getChannelIndex() {
+    return channelIndex;
+}

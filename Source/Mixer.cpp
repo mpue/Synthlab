@@ -66,12 +66,32 @@ int Mixer::getNumAuxBusses() {
 }
 
 Mixer::Channel* Mixer::getChannel(Mixer::Channel::Type type, int index) {
+    
+    int channelNum = 0;
+    
     for (int i = 0; i < channels.size();i++) {
-        if (channels.at(i)->channelType == type && channels.at(i)->index == index) {
-            return channels.at(i);
+        if (channels.at(i)->channelType == type) {
+            if( channelNum == index) {
+                return channels.at(i);
+            }
+            channelNum++;
         }
+       
     }
     return nullptr;
+}
+
+void  Mixer::removeChannel(int index) {
+    for (std::vector<Channel*>::iterator it = channels.begin();it != channels.end();) {
+        if ((*it)->index == index) {
+            delete (*it);
+            it = channels.erase(it);
+        }
+        else {
+            ++it;
+        }
+
+    }
 }
 
 void Mixer::removeAllChannels() {

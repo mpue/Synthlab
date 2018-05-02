@@ -31,9 +31,12 @@ public:
     virtual String getCategory() override {
         return "Input / Output";
     }
+    // this is needed to associate the channel with the mixer
+    int getChannelIndex();
+    void setChannelIndex(int index);
     
 private:
     AudioDeviceManager* deviceManager;
-    
+    int channelIndex;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AuxOut)
 };

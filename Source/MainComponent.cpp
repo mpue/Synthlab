@@ -179,6 +179,11 @@ MainComponent::~MainComponent()
     delete cpuLoadLabel;
     delete loadSlider;
     
+    
+    if (defaultSampler != nullptr) {
+        delete defaultSampler;
+    }
+    
     if(moduleBrowser != nullptr) {
         delete moduleBrowser;
     }
@@ -266,8 +271,6 @@ int MainComponent::getNumActiveChannels(int i) {
 
 void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill)
 {
-
-
     lastTime = Time::getMillisecondCounterHiRes() - currentTime;
     currentTime = Time::getMillisecondCounterHiRes();
 
@@ -279,7 +282,6 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
     
     if (defaultSampler != nullptr && defaultSampler->isPlaying()) {
         for (int j = 0;j < numSamples;j++) {
-        
             outputChannelData[0][j] += defaultSampler->getOutput(0);
             outputChannelData[1][j] += defaultSampler->getOutput(1);
             defaultSampler->nextSample();
@@ -290,14 +292,12 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
         return;
     }
     
-    // for (int i = 0; i < numSamples;i++)
     if (editor->getModule() != nullptr)
         processModule(editor->getModule());
     
     std::vector<AudioOut*> outputChannels = editor->getOutputChannels();
     std::vector<AudioIn*> inputChannels = editor->getInputChannels();
     std::vector<AuxOut*> auxChannels = editor->getAuxChannels();
-
     
     for (int k = 0; k < mixer->getNumInputs();k++) {
         
@@ -326,15 +326,14 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
     }
     else {
         
-        Mixer::Channel* channel =  mixer->getChannel(Mixer::Channel::Type::OUT, 0);
-        float channelVolume = channel->mute ? 0 : channel->volume;
-        double pan = channel->pan;
+        Mixer::Channel* outputChannel =  mixer->getChannel(Mixer::Channel::Type::OUT, 0);
+        float channelVolume = outputChannel->mute ? 0 : outputChannel->volume;
+        double pan = outputChannel->pan;
         
         float gainLeft = cos((M_PI*(pan + 1) / 4));
         float gainRight = sin((M_PI*(pan + 1) / 4));
 
         // process all output pins of the connected module
-
 
         for (int j = 0;j < numSamples;j++) {
 
@@ -357,7 +356,6 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
                     auxLeftOut += auxL[j] * auxVolume * auxgainLeft;
                     
                 }
-                
                 
             }
             
@@ -386,7 +384,6 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
                     auxRightOut += auxR[j] * auxVolume * auxgainRight;
                 }
                 
-                
             }
             
             if (editor->channelIsValid(1)) {
@@ -398,13 +395,11 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
                 outputChannelData[1][j] = auxRightOut;
             }
         }
-        
-
 
         if (editor->channelIsValid(0))
-            channel->magnitudeLeft = channelVolume * gainLeft * outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+            outputChannel->magnitudeLeft = channelVolume * gainLeft * outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
         if (editor->channelIsValid(1))
-            channel->magnitudeRight  = channelVolume * gainRight * outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+            outputChannel->magnitudeRight  = channelVolume * gainRight * outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
     }
     
     long duration = Time::getMillisecondCounterHiRes() - startTime;

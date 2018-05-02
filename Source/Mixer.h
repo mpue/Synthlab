@@ -41,6 +41,7 @@ public:
     
     std::vector<Channel*>& getChannels();
     void addChannel(Channel* channel);
+    void removeChannel(int index);
     void removeAllChannels();
     
     Channel* getChannel(Mixer::Channel::Type type, int index);

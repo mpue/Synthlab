@@ -119,25 +119,10 @@ void MixerPanel::setMixer(Mixer *mixer) {
     this->mixer = mixer;
 }
 
-void MixerPanel::addChannel(String name, Mixer::Channel::Type channeltype) {
+int MixerPanel::addChannel(String name, Mixer::Channel::Type channeltype) {
 
-    int index = 0;
-    
-    switch (channeltype) {
-        case Mixer::Channel::IN:
-            index = mixer->getNumInputs();
-            break;
-        case Mixer::Channel::OUT:
-            index = mixer->getNumOutputs();
-            break;
-        case Mixer::Channel::AUX:
-            index = mixer->getNumAuxBusses();
-            break;
-        default:
-            
-            break;
-    }
-    
+    int index = getNextFreeChannelIndex();
+
     MasterChannelPanel* panel = new MasterChannelPanel();
     panel->setIndex(index);
     panel->setName (name);
@@ -154,6 +139,37 @@ void MixerPanel::addChannel(String name, Mixer::Channel::Type channeltype) {
     addAndMakeVisible(panel);
     setBounds(0, 0, 90 * channels.size(),250);
     repaint();
+    
+    return index;
+}
+
+int MixerPanel::getNextFreeChannelIndex() {
+    int index = 0;
+    
+    for (int i = 0; i < channels.size();i++) {
+        if (channels.at(i)->getIndex() > index) {
+            index = channels.at(i)->getIndex();
+        }
+    }
+    index++;
+    return index;
+}
+
+void MixerPanel::removeChannel(int index) {
+    for (std::vector<MasterChannelPanel*>::iterator it = channels.begin();it != channels.end();) {
+        if((*it)->getIndex() == index) {
+            (*it)->setLookAndFeel(nullptr);
+            (*it)->removeAllChangeListeners();
+            delete (*it);
+            it = channels.erase(it);
+            mixer->removeChannel(index);
+        }
+        else {
+            ++it;
+        }
+
+        
+    }
 }
 
 void MixerPanel::removeAllChannels() {

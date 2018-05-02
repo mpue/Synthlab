@@ -54,3 +54,10 @@ void AuxOut::process() {
     
 }
 
+void AuxOut::setChannelIndex(int index) {
+    this->channelIndex = index;
+}
+
+int AuxOut::getChannelIndex() {
+    return channelIndex;
+}

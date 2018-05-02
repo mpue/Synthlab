@@ -88,6 +88,8 @@ PropertyView::~PropertyView()
     removeTimeSliceClient(this);
     delete browser;
     stopThread(100);
+    delete directoryContents;
+    delete filter;
     //[/Destructor]
 }
 

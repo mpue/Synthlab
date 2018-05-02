@@ -16,8 +16,8 @@ Sampler::Sampler(float sampleRate, int bufferSize) {
     this->sampleRate = sampleRate;
     this->bufferSize = bufferSize;
     this->manager = AudioManager::getInstance()->getFormatManager();
-    interpolatorLeft = new CatmullRomInterpolator();
-    interpolatorRight = new CatmullRomInterpolator();
+    this->interpolatorLeft = new CatmullRomInterpolator();
+    this->interpolatorRight = new CatmullRomInterpolator();
     this->sampleBuffer = new AudioSampleBuffer(2,4096*1024);
     this->samplerEnvelope = new ADSR();
     this->samplerEnvelope->setAttackRate(0.1 * sampleRate);
@@ -33,7 +33,9 @@ Sampler::~Sampler() {
     if (tempBufferRight != nullptr)
         delete this->tempBufferRight;
     
-    delete this->samplerEnvelope;
+    delete samplerEnvelope;
+    delete interpolatorLeft;
+    delete interpolatorRight;
     
 }
 

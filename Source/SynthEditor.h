@@ -54,7 +54,7 @@ public:
 
     // editing
 
-    void addChannel(String name, Mixer::Channel::Type channeltype);
+    int addChannel(String name, Mixer::Channel::Type channeltype);
     void addConnection(const MouseEvent& e, Module* m);
     void deleteSelected(bool deleteAll);
     bool connectionExists(std::vector<Connection*> connections, Connection* c);

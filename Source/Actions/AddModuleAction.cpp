@@ -75,8 +75,8 @@ bool AddModuleAction::perform() {
     if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
         editor->getOutputChannels().push_back(out);
         String channelName = p->getOutputChannelNames().getReference(editor->getOutputChannels().size() - 1);
-        editor->addChannel(channelName, Mixer::Channel::Type::OUT);
-        
+        int channelIndex = editor->addChannel(channelName, Mixer::Channel::Type::OUT);
+        out->setChannelIndex(channelIndex);
         if (!editor->isRunning()) {
             editor->setRunning(true);
         }
@@ -86,7 +86,8 @@ bool AddModuleAction::perform() {
     if ((aux = dynamic_cast<AuxOut*>(m)) != NULL) {
         editor->getAuxChannels().push_back(aux);
         String channelName = "Aux "+ String(editor->getAuxChannels().size());
-        editor->addChannel(channelName, Mixer::Channel::Type::AUX);
+        int channelIndex = editor->addChannel(channelName, Mixer::Channel::Type::AUX);
+        aux->setChannelIndex(channelIndex);
         if (!editor->isRunning()) {
             editor->setRunning(true);
         }
@@ -96,7 +97,8 @@ bool AddModuleAction::perform() {
     if ((in = dynamic_cast<AudioIn*>(m)) != NULL) {
         editor->getInputChannels().push_back(in);
         String channelName = p->getInputChannelNames().getReference(editor->getInputChannels().size() - 1);
-        editor->addChannel(channelName, Mixer::Channel::Type::IN);
+        int channelIndex = editor->addChannel(channelName, Mixer::Channel::Type::IN);
+        in->setChannelIndex(channelIndex);
         if (!editor->isRunning()) {
             editor->setRunning(true);
         }

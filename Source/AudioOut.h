@@ -26,6 +26,10 @@ public:
     void setDeviceManager(AudioDeviceManager* manager);
     virtual void process() override;
 
+    // this is needed to associate the channel with the mixer
+    int getChannelIndex();
+    void setChannelIndex(int index);
+    
     virtual void configurePins() override;
     
     virtual String getCategory() override {
@@ -34,6 +38,7 @@ public:
     
 private:
     AudioDeviceManager* deviceManager;
+    int channelIndex;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioOut)
 };

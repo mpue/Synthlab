@@ -52,8 +52,11 @@ public:
 
     void removeAllChannels();
     void changeListenerCallback (ChangeBroadcaster* source);
-    void addChannel(String name, Mixer::Channel::Type channeltype);
+    int addChannel(String name, Mixer::Channel::Type channeltype);
+    void removeChannel(int index);
     void setMixer(Mixer* mixer);
+    
+    int getNextFreeChannelIndex();
     
     //[/UserMethods]
     

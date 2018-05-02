@@ -54,4 +54,13 @@ void AudioIn::process() {
     
 }
 
+void AudioIn::setChannelIndex(int index) {
+    this->channelIndex = index;
+}
+
+int AudioIn::getChannelIndex() {
+    return channelIndex;
+}
+
+
 
