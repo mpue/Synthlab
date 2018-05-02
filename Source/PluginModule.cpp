@@ -198,3 +198,22 @@ void PluginModule::setCurrentProgram(int program) {
     }
     
 }
+
+void PluginModule::setPluginState(juce::String state) {
+    MemoryOutputStream* mos = new MemoryOutputStream();
+    Base64::convertFromBase64(*mos, state);
+    if (plugin != nullptr) {
+        plugin->setStateInformation(mos->getData(), mos->getDataSize());
+    }
+}
+
+String PluginModule::getPluginState() {
+    if (plugin != nullptr) {
+        MemoryBlock mb = MemoryBlock(65536,true);
+        plugin->getStateInformation(mb);
+        void* data = mb.getData();
+        return Base64::toBase64(data , mb.getSize());
+        
+    }
+    return "";
+}

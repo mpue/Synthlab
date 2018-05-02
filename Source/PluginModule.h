@@ -42,6 +42,9 @@ public:
     virtual juce::Array<PropertyComponent*>& getProperties() override;
     virtual void createProperties() override;
     
+    String getPluginState();
+    void setPluginState(String state);
+    
 private:
     
     struct PluginValueListener : Value::Listener
@@ -55,7 +58,7 @@ private:
         PluginModule* m;
         Value value;
     };
-    
+        
     Image* image;
     
     int currentProgram = 0;

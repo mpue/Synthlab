@@ -862,6 +862,7 @@ void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Conn
         if ((pm = dynamic_cast<PluginModule*>((*it))) != NULL) {
             file.setProperty("plugin", pm->getPluginName(), nullptr);
             file.setProperty("currentProgram", pm->getCurrentProgram(), nullptr);
+            file.setProperty("state", pm->getPluginState() ,nullptr);
         }
         
         StepSequencerModule* ssm;
@@ -1182,6 +1183,7 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         if ((pm = dynamic_cast<PluginModule*>(m)) != NULL) {
             pm->selectPlugin(mod.getProperty("plugin").toString());
             pm->setCurrentProgram(mod.getProperty("currentProgram").toString().getIntValue());
+            pm->setPluginState(mod.getProperty("state").toString());
         }
         
         StepSequencerModule* ssm;
