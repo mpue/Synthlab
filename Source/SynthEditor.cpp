@@ -36,6 +36,8 @@ String SynthEditor::defaultMidiOutputName = "Express 128 Port 7";
 String SynthEditor::defaultMidiInputName = "Express 128 Port 7";
 
 
+#define USE_PUSH
+
 SynthEditor::SynthEditor(){
     
     setSize (1280, 800);
