@@ -37,6 +37,7 @@
 #include "StepSequencerModule.h"
 #include "OscillatorModule.h"
 #include "AudioEngine/Pulse.h"
+#include "MixerModule.h"
 
 PrefabFactory* PrefabFactory::instance = NULL;
 
@@ -145,6 +146,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Step sequencer") {
         m = new StepSequencerModule(sampleRate,bufferSize);
+    }
+    else if (prefabs[id].getName() == "Mixer") {
+        m = new MixerModule(sampleRate,bufferSize);
     }
     
     m->setIndex(id + pow(10,prefabs[id].getNumInstances() + 1));

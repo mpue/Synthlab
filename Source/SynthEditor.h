@@ -165,7 +165,7 @@ private:
     MixerPanel* mixer = nullptr;
     
     
-    Path* linePath = nullptr;
+    Path linePath;
     Point<int> p1;
     Point<int> p2;
     

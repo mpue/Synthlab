@@ -61,7 +61,7 @@ void MainTabbedComponent::buttonClicked(juce::Button * button) {
 TabBarButton* MainTabbedComponent::createTabButton(const juce::String &tabName, int tabIndex)
 {
     TabBarButton* tb = new TabBarButton(tabName,getTabbedButtonBar());
-    
+    tb->setName(String(tabIndex));
     ImageButton* ib = new ImageButton();
     ib->setName(String(tabIndex));
     ib->setSize(16,16);
@@ -77,7 +77,6 @@ TabBarButton* MainTabbedComponent::createTabButton(const juce::String &tabName, 
                    ImageCache::getFromMemory(BinaryData::close_png, BinaryData::close_pngSize),
                    1.0,
                    Colours::orange);
-    
     tb->setExtraComponent(ib, juce::TabBarButton::ExtraComponentPlacement::afterText);
     return tb;
 }

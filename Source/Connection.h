@@ -28,9 +28,9 @@ public:
 	Pin* b;
 	bool selected = false;
     void setPoints(Point<int>& p1, Point<int>& p2);
-    Path* getPath();
+    Path& getPath();
 private:
-    ScopedPointer<Path> linePath = nullptr;
+    Path linePath;
     Point<int> p1;
     Point<int> p2;
 };

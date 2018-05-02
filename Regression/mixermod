@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Synth>
+  <Modules>
+    <Module name="Mixer" index="92" x="354" y="147" isPrefab="1" prefabId="82">
+      <Pins>
+        <Pin type="0" direction="0" index="9201" x="0" y="10"/>
+        <Pin type="2" direction="0" index="9202" x="0" y="30"/>
+        <Pin type="0" direction="0" index="9203" x="0" y="50"/>
+        <Pin type="2" direction="0" index="9204" x="0" y="70"/>
+        <Pin type="0" direction="0" index="9205" x="0" y="90"/>
+        <Pin type="2" direction="0" index="9206" x="0" y="110"/>
+        <Pin type="0" direction="1" index="9207" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Audio out" index="76" x="542" y="179" isPrefab="1" prefabId="66">
+      <Pins>
+        <Pin type="0" direction="0" index="7601" x="0" y="10"/>
+        <Pin type="0" direction="0" index="7602" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Noise" index="75" x="132" y="124" isPrefab="1" prefabId="65"
+            mono="0">
+      <Pins>
+        <Pin type="2" direction="0" index="7501" x="0" y="10"/>
+        <Pin type="2" direction="0" index="7502" x="0" y="30"/>
+        <Pin type="2" direction="0" index="7503" x="0" y="50"/>
+        <Pin type="0" direction="1" index="7504" x="110" y="10"/>
+        <Pin type="2" direction="1" index="7505" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="A" index="77" x="-18" y="163" isPrefab="1" prefabId="67"
+            value="1.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="7701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="A1" index="167" x="213" y="72" isPrefab="1" prefabId="67"
+            value="1.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="16701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections>
+    <Connection source="92" target="76" a="9207" b="7601"/>
+    <Connection source="92" target="76" a="9207" b="7602"/>
+    <Connection source="77" target="75" a="7701" b="7503"/>
+    <Connection source="167" target="92" a="16701" b="9202"/>
+    <Connection source="75" target="92" a="7504" b="9201"/>
+  </Connections>
+</Synth>

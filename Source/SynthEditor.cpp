@@ -71,7 +71,7 @@ SynthEditor::SynthEditor (double sampleRate, int buffersize)
 
     addChildComponent(root);
     
-    linePath = new Path();
+    linePath = Path();
 }
 
 SynthEditor::~SynthEditor()
@@ -80,8 +80,7 @@ SynthEditor::~SynthEditor()
 
     if (isRoot)
         delete root;
-    
-    delete linePath;
+
 }
 
 void SynthEditor::paint (Graphics& g)
@@ -96,7 +95,7 @@ void SynthEditor::paint (Graphics& g)
         if (state == SelectionModel::State::DRAGGING_CONNECTION) {
 			// g.drawLine(lineStartX, lineStartY, lineStopX, lineStopY);
             drawCurrentConnection();
-            g.fillPath(*linePath);
+            g.fillPath(linePath);
 		}
         else if (state == SelectionModel::State::DRAGGING_SELECTION) {
             g.drawRect(selectionFrame);
@@ -156,17 +155,17 @@ void SynthEditor::drawCurrentConnection() {
     p1.y = lineStartY;
     p2.x = lineStopX;
     p2.y = lineStopY;
-    linePath->clear();
-    linePath->startNewSubPath (p1.x, p1.y);
+    linePath.clear();
+    linePath.startNewSubPath (p1.x, p1.y);
     
-    linePath->cubicTo (p1.x , p1.y ,
+    linePath.cubicTo (p1.x , p1.y ,
                        p1.x + (p2.x - p1.x) * 0.3f, p1.y ,
                        p1.x + (p2.x - p1.x) * 0.5f, p1.y + (p2.y - p1.y) * 0.5f);
-    linePath->cubicTo ( p1.x + (p2.x - p1.x) * 0.5f, p1.y + (p2.y - p1.y) * 0.5f,
+    linePath.cubicTo ( p1.x + (p2.x - p1.x) * 0.5f, p1.y + (p2.y - p1.y) * 0.5f,
                        p2.x - (p2.x - p1.x) * 0.3, p2.y ,
                        p2.x,p2.y  );
     PathStrokeType wideStroke (2.0f);
-    wideStroke.createStrokedPath (*linePath, *linePath);
+    wideStroke.createStrokedPath (linePath, linePath);
 }
 
 void SynthEditor::mouseMove (const MouseEvent& e)

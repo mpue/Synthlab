@@ -72,7 +72,8 @@ Module::Module ()
 
     connections = new std::vector<Connection*>();
     modules = new std::vector<Module*>();
-
+    pins.reserve(16);
+    
     createProperties();
     
     //[/Constructor]

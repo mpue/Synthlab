@@ -70,7 +70,7 @@ private:
     int pitch = 0;
     float amplitude;
     float fine = 0;
-    Image* image;
+    Image* image = nullptr;
     T* monoOscillator;
     T* oscillator[128];
     int currentSample = 0;
@@ -126,7 +126,9 @@ template<typename T> OscillatorModule<T>::~OscillatorModule()
     }
     
     delete monoOscillator;
-    
+    if (image != nullptr) {
+        delete image;
+    }
     delete isMonoListener;
     delete isMonoValue;
     

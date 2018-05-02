@@ -100,6 +100,7 @@
 		BD80D2F92008B9A1F9DB2381 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A9DDC5DF99AD3F6FC8B4897F /* QuartzCore.framework */; };
 		BD9185A83B5894D1A5DE7C37 /* WhiteNoise.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 66B8705B33BBE12D5AA7848C /* WhiteNoise.cpp */; };
 		BF7012A1209703A800B15376 /* ExtendedFileBrowser.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF70129F209703A800B15376 /* ExtendedFileBrowser.cpp */; };
+		BF9A88182099CDC600C53640 /* MixerModule.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BF9A88162099CDC600C53640 /* MixerModule.cpp */; };
 		BFEE15EA2098ADBE003B589E /* DuplicateModuleAction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = BFEE15E82098ADBE003B589E /* DuplicateModuleAction.cpp */; };
 		C36B70271D740A3EF48F8B8A /* AddModuleAction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0291EDFAFEAB6698433932F9 /* AddModuleAction.cpp */; };
 		CBEA434534EB2E3C41C5E340 /* RecentFilesMenuTemplate.nib in Resources */ = {isa = PBXBuildFile; fileRef = E73245E169DBF0CEA72B7D07 /* RecentFilesMenuTemplate.nib */; };
@@ -347,6 +348,8 @@
 		BB5E1F00ECB9E156C39BB64D /* LPFilterModule.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = LPFilterModule.cpp; path = ../../Source/LPFilterModule.cpp; sourceTree = SOURCE_ROOT; };
 		BF70129F209703A800B15376 /* ExtendedFileBrowser.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = ExtendedFileBrowser.cpp; path = ../../Source/ExtendedFileBrowser.cpp; sourceTree = "<group>"; };
 		BF7012A0209703A800B15376 /* ExtendedFileBrowser.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = ExtendedFileBrowser.h; path = ../../Source/ExtendedFileBrowser.h; sourceTree = "<group>"; };
+		BF9A88162099CDC600C53640 /* MixerModule.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = MixerModule.cpp; path = ../../Source/MixerModule.cpp; sourceTree = "<group>"; };
+		BF9A88172099CDC600C53640 /* MixerModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = MixerModule.h; path = ../../Source/MixerModule.h; sourceTree = "<group>"; };
 		BFEE15E82098ADBE003B589E /* DuplicateModuleAction.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = DuplicateModuleAction.cpp; path = ../../Source/Actions/DuplicateModuleAction.cpp; sourceTree = "<group>"; };
 		BFEE15E92098ADBE003B589E /* DuplicateModuleAction.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = DuplicateModuleAction.h; path = ../../Source/Actions/DuplicateModuleAction.h; sourceTree = "<group>"; };
 		BFEE15EC2098BA45003B589E /* OscillatorModule.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = OscillatorModule.h; path = ../../Source/OscillatorModule.h; sourceTree = "<group>"; };
@@ -539,6 +542,8 @@
 				2E09D8A15629ABF2B611AD03 /* StepSequencerModule.cpp */,
 				5209C5A5824F82E3D3CE1D22 /* StepSequencerModule.h */,
 				BFEE15EC2098BA45003B589E /* OscillatorModule.h */,
+				BF9A88162099CDC600C53640 /* MixerModule.cpp */,
+				BF9A88172099CDC600C53640 /* MixerModule.h */,
 			);
 			name = Prefabs;
 			sourceTree = "<group>";
@@ -1097,6 +1102,7 @@
 				947AC7F5745D3FD2C6AB79CD /* MidiGate.cpp in Sources */,
 				EBAD32982F0236FE51257BA6 /* MidiNote.cpp in Sources */,
 				29892D3D71BC4C3B3DAD6582 /* MidiOut.cpp in Sources */,
+				BF9A88182099CDC600C53640 /* MixerModule.cpp in Sources */,
 				E1BCD01A5CECB50577529DFE /* MultiplyModule.cpp in Sources */,
 				D5CB3BAC106865D81B1A51C6 /* NoiseModule.cpp in Sources */,
 				27B91919E4E261BBCA706978 /* OscilloscopeModule.cpp in Sources */,
