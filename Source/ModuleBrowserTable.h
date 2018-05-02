@@ -72,7 +72,7 @@ public:
     
     int getNumRows() override {
         if (filteredPrefabs != nullptr)
-            return filteredPrefabs->size();
+            return static_cast<int>(filteredPrefabs->size());
         return 0;
     }
     void paintCell (Graphics& g,

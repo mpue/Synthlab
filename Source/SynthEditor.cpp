@@ -1082,7 +1082,7 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         
         if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
             outputChannels.push_back(out);
-            String channelName = am->getOutputChannelNames().getReference(getOutputChannels().size() - 1);
+            String channelName = am->getOutputChannelNames().getReference(static_cast<int>(getOutputChannels().size()) - 1);
             int channelIndex = addChannel(channelName, Mixer::Channel::Type::OUT);
             out->setChannelIndex(channelIndex);
             addChangeListener(out);
@@ -1092,7 +1092,7 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         
         if ((in = dynamic_cast<AudioIn*>(m)) != NULL) {
             inputChannels.push_back(in);
-            String channelName = am->getInputChannelNames().getReference(getInputChannels().size() - 1);
+            String channelName = am->getInputChannelNames().getReference(static_cast<int>(getInputChannels().size()) - 1);
             int channelIndex = addChannel(channelName, Mixer::Channel::Type::IN);
             in->setChannelIndex(channelIndex);
             addChangeListener(in);
@@ -1167,9 +1167,10 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
                         sm->getSamplerAt(note - 1)->setStartPosition(start);
                         long end = mod.getChild(i).getProperty("sampleEnd").toString().getLargeIntValue();
                         sm->getSamplerAt(note - 1)->setEndPosition(end);
-                        long length = mod.getChild(i).getProperty("sampleLength").toString().getLargeIntValue();
+                        // long length = mod.getChild(i).getProperty("sampleLength").toString().getLargeIntValue();
                         bool loop = mod.getChild(i).getProperty("loop").toString().getIntValue() > 0;
                         sm->getSamplerAt(note - 1)->setLoop(loop);
+                        
                     }
                 }
             }

@@ -432,7 +432,7 @@ void Module::setSampleRate(float rate) {
     this->sampleRate = rate;
 }
 
-void Module::setBuffersize(int buffersize) {
+void Module::setBuffersize(int buffersize){
     this->buffersize = buffersize;
 }
 

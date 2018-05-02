@@ -38,7 +38,7 @@ void CustomLookAndFeel::drawLinearSlider (Graphics& g, int x, int y, int width, 
     }
     else if (style == Slider::SliderStyle::LinearBar) {
         
-        float to  = (sliderPos / maxSliderPos) * width;
+        // float to  = (sliderPos / maxSliderPos) * width;
         //float to = width;
         
         g.setGradientFill(gradientHorizontal);

@@ -312,6 +312,7 @@ uint8_t SequenceEditor::decodeSysex(uint8_t *sysex, uint8_t *data, uint8_t len) 
 
 void SequenceEditor::handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) {
 
+    /*
     if(message.isSysEx()) {
 
         Logger::writeToLog("received message with size "+ String(message.getSysExDataSize()));
@@ -329,7 +330,7 @@ void SequenceEditor::handleIncomingMidiMessage (MidiInput* source, const MidiMes
 
         uint8_t* data = new uint8_t[2048];
 
-        int len = decodeSysex(sysex,data+3,message.getSysExDataSize()-3);
+        // int len = decodeSysex(sysex,data+3,message.getSysExDataSize()-3);
 
         /// Logger::writeToLog("unpacked message with size "+ String(len));
 
@@ -353,8 +354,8 @@ void SequenceEditor::handleIncomingMidiMessage (MidiInput* source, const MidiMes
         delete fos;
 
     }
-
-    else {
+     */
+    if (message.isNoteOn() || message.isNoteOff()) {
         Logger::writeToLog("received message "+message.getDescription());
         if (message.isNoteOn()) {
             grid[selectedCol][selectedRow].setNote(message.getNoteNumber());

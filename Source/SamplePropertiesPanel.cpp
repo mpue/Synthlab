@@ -264,7 +264,7 @@ void SamplePropertiesPanel::updateRecordingTime() {
     String time;
     
     int _minutes = seconds / 60;
-    int _seconds = seconds % 60;
+    // int _seconds = seconds % 60;
     
     time = String(_minutes)+":";
     
@@ -325,8 +325,8 @@ void SamplePropertiesPanel::updateValues() {
         long start = module->getCurrentSampler()->getStartPosition();
         long end = module->getCurrentSampler()->getEndPosition();
 
-        thumb->setStartPosition(start);
-        thumb->setEndPosition(end);
+        thumb->setStartPosition(static_cast<int>(start));
+        thumb->setEndPosition(static_cast<int>(end));
 
         sampleStartSlider->setRange(0, module->getCurrentSampler()->getEndPosition() - 1, juce::NotificationType::dontSendNotification);
         sampleEndSlider->setRange(module->getCurrentSampler()->getStartPosition() + 1,module->getCurrentSampler()->getSampleLength(), juce::NotificationType::dontSendNotification);

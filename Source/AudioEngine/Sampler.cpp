@@ -88,7 +88,7 @@ float Sampler::getCurrentSample(int channel){
         }
         else {
             if (currentSample < sampleBuffer->getNumSamples())
-                return sampleBuffer->getSample(channel, currentSample) * volume;
+                return sampleBuffer->getSample(channel, static_cast<int>(currentSample)) * volume;
             else
                 return 0;
         }
@@ -99,16 +99,16 @@ float Sampler::getCurrentSample(int channel){
 }
 
 float Sampler::getSampleAt(int channel, long pos){
-    return sampleBuffer->getSample(channel, pos) * volume;
+    return sampleBuffer->getSample(channel, static_cast<int>(pos)) * volume;
 }
 
 void Sampler::loadSample(File file) {
     AudioFormatReader* reader = manager->createReaderFor(file);
     ScopedPointer<AudioFormatReaderSource> afr = new AudioFormatReaderSource(reader, true);
-    sampleBuffer = new AudioSampleBuffer(2, reader->lengthInSamples);
+    sampleBuffer = new AudioSampleBuffer(2, static_cast<int>(reader->lengthInSamples));
     this->tempBufferLeft = new float[reader->lengthInSamples * 2];
     this->tempBufferRight = new float[reader->lengthInSamples * 2];
-    reader->read(sampleBuffer, 0, reader->lengthInSamples, 0, true, true);
+    reader->read(sampleBuffer, 0, static_cast<int>(reader->lengthInSamples), 0, true, true);
     sampleLength = reader->lengthInSamples;
     endPosition = sampleLength;
     startPosition = 0;
@@ -119,11 +119,11 @@ void Sampler::loadSample(File file) {
 void Sampler::loadSample(InputStream* input) {
     AudioFormatReader* reader = manager->createReaderFor(input);
     ScopedPointer<AudioFormatReaderSource> afr = new AudioFormatReaderSource(reader, true);
-    sampleBuffer = new AudioSampleBuffer(2, reader->lengthInSamples);
+    sampleBuffer = new AudioSampleBuffer(2, static_cast<int>(reader->lengthInSamples));
     this->tempBufferLeft = new float[reader->lengthInSamples * 2];
     this->tempBufferRight = new float[reader->lengthInSamples * 2];
     
-    reader->read(sampleBuffer, 0, reader->lengthInSamples, 0, true, true);
+    reader->read(sampleBuffer, 0, static_cast<int>(reader->lengthInSamples), 0, true, true);
     sampleLength = reader->lengthInSamples;
     endPosition = sampleLength;
     startPosition = 0;

@@ -51,7 +51,7 @@ public:
     std::vector<MasterChannelPanel*> getChannels();
 
     void removeAllChannels();
-    void changeListenerCallback (ChangeBroadcaster* source);
+    void changeListenerCallback (ChangeBroadcaster* source)  override;
     int addChannel(String name, Mixer::Channel::Type channeltype);
     void removeChannel(int index);
     void setMixer(Mixer* mixer);

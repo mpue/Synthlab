@@ -64,7 +64,7 @@ void SamplerModule::loadSample(juce::InputStream *is, int samplerIndex) {
     
     sampler[samplerIndex]->loadSample(is);
     this->thumbnail->reset(2, sampleRate);
-    thumbnail->addBlock(0, *sampler[samplerIndex]->getSampleBuffer(), 0, sampler[samplerIndex]->getSampleLength());
+    thumbnail->addBlock(0, *sampler[samplerIndex]->getSampleBuffer(), 0, static_cast<int>(sampler[samplerIndex]->getSampleLength()));
     repaint();
     
 
@@ -267,7 +267,7 @@ void SamplerModule::selectSample(int i) {
     
     this->thumbnail->reset(2, sampleRate);
     if (sampler[currentSampler]->hasSample()) {
-        thumbnail->addBlock(0, *sampler[currentSampler]->getSampleBuffer(), 0, sampler[currentSampler]->getSampleLength());
+        thumbnail->addBlock(0, *sampler[currentSampler]->getSampleBuffer(), 0, static_cast<int>(sampler[currentSampler]->getSampleLength()));
     }
     std::function<void(void)> changeLambda =
     [=]() {  repaint(); };

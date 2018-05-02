@@ -6,7 +6,6 @@
 #include "Pin.h"
 
 class SequenceEditor  : public Component,
-                        public MouseListener,
                         public AudioProcessorPlayer,
                         public Timer,
                         public Button::Listener,

@@ -74,7 +74,7 @@ bool DuplicateModuleAction::perform() {
     AudioOut* out;
     if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
         editor->getOutputChannels().push_back(out);
-        String channelName = p->getOutputChannelNames().getReference(editor->getOutputChannels().size() - 1);
+        String channelName = p->getOutputChannelNames().getReference(static_cast<int>(editor->getOutputChannels().size()) - 1);
         editor->addChannel(channelName, Mixer::Channel::Type::OUT);
         
         if (!editor->isRunning()) {
@@ -95,7 +95,7 @@ bool DuplicateModuleAction::perform() {
     AudioIn* in;
     if ((in = dynamic_cast<AudioIn*>(m)) != NULL) {
         editor->getInputChannels().push_back(in);
-        String channelName = p->getInputChannelNames().getReference(editor->getInputChannels().size() - 1);
+        String channelName = p->getInputChannelNames().getReference(static_cast<int>(editor->getInputChannels().size()) - 1);
         editor->addChannel(channelName, Mixer::Channel::Type::IN);
         if (!editor->isRunning()) {
             editor->setRunning(true);

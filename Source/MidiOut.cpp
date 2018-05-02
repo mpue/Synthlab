@@ -90,7 +90,7 @@ void MidiOut::eventReceived(Event *e) {
     
     if (e->getType() == Event::Type::GATE) {
         
-        float velocity = e->getValue()/127.0;
+        // float velocity = e->getValue()/127.0;
         //deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage::noteOn(1,e->getNote(), velocity));
         
     }

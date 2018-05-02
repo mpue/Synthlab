@@ -98,6 +98,7 @@ int MidiEventEditor::getNumRows() {
     if (recorder != nullptr) {
         return (int)recorder->getMessages().size();
     }
+    return 0;
 }
 
 void MidiEventEditor::paintCell(juce::Graphics &g, int rowNumber, int columnId, int width, int height, bool rowIsSelected) {

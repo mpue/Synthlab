@@ -80,7 +80,7 @@ void MixerPanel::resized()
     //[/UserPreResize]
 
     //[UserResized] Add your own custom resize handling here..
-    setBounds(0, 0, 90 * channels.size(),250);
+    setBounds(0, 0, 90 * static_cast<int>(channels.size()),250);
     //[/UserResized]
 }
 
@@ -127,7 +127,7 @@ int MixerPanel::addChannel(String name, Mixer::Channel::Type channeltype) {
     panel->setIndex(index);
     panel->setName (name);
     panel->addChangeListener(this);
-    panel->setBounds (90 * channels.size(),0, 90, 250);
+    panel->setBounds (90 * static_cast<int>(channels.size()),0, 90, 250);
 
     Mixer::Channel* channel = new Mixer::Channel();
     channel->index = panel->getIndex();
@@ -137,7 +137,7 @@ int MixerPanel::addChannel(String name, Mixer::Channel::Type channeltype) {
     
     channels.push_back(panel);
     addAndMakeVisible(panel);
-    setBounds(0, 0, 90 * channels.size(),250);
+    setBounds(0, 0, 90 * static_cast<int>(channels.size()),250);
     repaint();
     
     return index;

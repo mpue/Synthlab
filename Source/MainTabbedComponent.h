@@ -23,7 +23,7 @@ public:
     void paint (Graphics& g) override;
     void popupMenuClickOnTab (int tabIndex, const String& tabName) override;
     TabBarButton* createTabButton (const String& tabName, int tabIndex) override;
-    void buttonClicked (Button*);
+    void buttonClicked (Button*) override;
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainTabbedComponent)
 };

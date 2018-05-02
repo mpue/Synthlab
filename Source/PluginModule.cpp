@@ -203,7 +203,7 @@ void PluginModule::setPluginState(juce::String state) {
     MemoryOutputStream* mos = new MemoryOutputStream();
     Base64::convertFromBase64(*mos, state);
     if (plugin != nullptr) {
-        plugin->setStateInformation(mos->getData(), mos->getDataSize());
+        plugin->setStateInformation(mos->getData(), static_cast<int>(mos->getDataSize()));
     }
 }
 

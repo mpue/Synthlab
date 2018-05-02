@@ -13,6 +13,7 @@
 namespace MidiTools {
     class Logger {
     public:
+        virtual ~Logger() {};
         virtual void log(String message) = 0;
 
     };

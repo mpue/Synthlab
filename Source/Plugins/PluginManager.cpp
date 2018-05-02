@@ -79,9 +79,10 @@ void PluginManager::configureBusLayout(AudioPluginInstance* plugin, AudioDeviceM
     juce::BigInteger activeInputChannels = deviceManager->getCurrentAudioDevice()->getActiveInputChannels();
     juce::BigInteger activeOutputChannels = deviceManager->getCurrentAudioDevice()->getActiveOutputChannels();
     
+    /*
     int numInputChannels = deviceManager->getCurrentAudioDevice()->getInputChannelNames().size();
     int numOutputChannels = deviceManager->getCurrentAudioDevice()->getOutputChannelNames().size();
-    
+    */
     
     int numActiveHostInputs = getNumActiveChannels(activeInputChannels.toInteger());
     int numActiveHostOutputs = getNumActiveChannels(activeOutputChannels.toInteger());
