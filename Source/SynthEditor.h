@@ -38,6 +38,7 @@ public:
     void openFile();
     void openSampleEditor(SamplerModule* sm);
     void openStepSequencer(StepSequencerModule* ssm);
+    void openEditor(Module* m);
     void loadFromString(String in);
     void saveStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections, ValueTree* v);
     void loadStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections,ValueTree* v);
@@ -59,7 +60,7 @@ public:
     void deleteSelected(bool deleteAll);
     bool connectionExists(std::vector<Connection*> connections, Connection* c);
     void removeModule(Module* module);
-    SelectionModel* getSelectionModel() const;
+    SelectionModel& getSelectionModel();
     void removeSelectedItem();
     void setCurrentLayer(int layer);
     void duplicateSelected();
@@ -142,7 +143,7 @@ private:
     void drawCurrentConnection();
     
     SelectionModel::State state = SelectionModel::NONE;
-    TabbedComponent* tab;
+    TabbedComponent* tab = nullptr;
     Rectangle<int> selectionFrame = Rectangle<int>(0, 0, 0, 0);
 
     std::vector<AudioOut*> outputChannels;
@@ -160,7 +161,7 @@ private:
     bool dragHasStarted = false;
     Module::Layer currentLayer = Module::Layer::ALL;
     
-    SelectionModel* selectionModel;
+    SelectionModel selectionModel;
   
     MixerPanel* mixer = nullptr;
     
@@ -170,6 +171,8 @@ private:
     Point<int> p1;
     Point<int> p2;
     
+    std::vector<Viewport*> openViews;
+                         
     //[/UserVariables]
 
     

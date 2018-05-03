@@ -48,7 +48,7 @@ Module::Module ()
     nameEditor->setBounds (0, 0, 120, 24);
 
     addAndMakeVisible (nameLabel = new Label ("nameLabel",
-                                              TRANS("unnamed")));
+                                              getName()));
     nameLabel->setFont (Font (15.00f, Font::plain).withTypefaceStyle ("Regular"));
     nameLabel->setJustificationType (Justification::centredTop);
     nameLabel->setEditable (false, false, false);
@@ -112,15 +112,15 @@ Module::~Module()
     }
     
     
-/*
-    for (std::vector<Connection*>::iterator it = connections.begin(); it != connections.end(); ++it) {
-        delete *it;
-    }
-    for (std::vector<Module*>::iterator it = modules.begin(); it != modules.end(); ++it) {
-        delete *it;
-    }
- */
 
+    for (std::vector<Connection*>::iterator it = connections->begin(); it != connections->end(); ) {
+        delete *it;
+        it = connections->erase(it);
+    }
+    for (std::vector<Module*>::iterator it = modules->begin(); it != modules->end();) {
+        delete *it;
+        it = modules->erase(it);
+    }
 
     connections->clear();
     modules->clear();
@@ -426,6 +426,16 @@ void Module::changeListenerCallback (ChangeBroadcaster* source) {
 
 void Module::process() {
 
+    // if we have a terminal pin, just copy the value from the proxy to the output pin
+    for (int i = 0; i < pins.size();i++){
+        if (pins.at(i)->connections.size() == 1) {
+            if (pins.at(i)->type == Pin::Type::VALUE && pins.at(i)->getTerminal() != nullptr) {
+                pins.at(i)->getTerminal()->setValue(pins.at(i)->connections.at(0)->getValue());
+            }
+        }
+
+    }
+    
 }
 
 void Module::setSampleRate(float rate) {

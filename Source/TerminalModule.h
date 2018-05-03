@@ -9,6 +9,7 @@
 #pragma once
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Module.h"
+#include "Pin.h"
 
 //==============================================================================
 /*
@@ -16,52 +17,31 @@
 class TerminalModule    : public Module
 {
 public:
-    TerminalModule();
-    ~TerminalModule();
+    
+    typedef enum TDirection {
+        IN,
+        OUT
+    } Direction;
+    
+    TerminalModule(TerminalModule::Direction dir);
     
     void paint (Graphics& g) override;
-    
-    void setValue(float value);
-    float getValue();
+
     virtual void configurePins() override;
-    
-    virtual void setName(String name)  {
-        //Module::setName(name);
-        Component::setName(name);
-        this->name = name;
-    }
-    
-    virtual String getName()  {
-        return name;
-    }
-    
     virtual String getCategory() override {
         return "Input / Output";
     }
     
-    struct ValueListener : Value::Listener
-    {
-        ValueListener (Value& v, TerminalModule* c) : c(c),  value (v) { value.addListener (this); }
-        ~ValueListener()  {}  // no need to remove the listener
-        
-        void valueChanged (Value& value) override {
-            c->setValue(value.toString().getFloatValue());
-        }
-        TerminalModule* c;
-        Value value;
-    };
-    
-    virtual juce::Array<PropertyComponent*>& getProperties() override;
-    virtual void createProperties() override;
+    void setDirection(Direction dir);
+    TerminalModule::Direction getDirection();
     
 private:
-    
-    Value* valueValue;
-    PropertyComponent* valueProp;
-    ValueListener* valueListener;
-    
-    float value = 0;
+    Direction direction;
     String name;
     bool editing = false;
+    Pin* pin = nullptr;
+    
+    std::vector<Pin*> proxies;
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TerminalModule)
 };

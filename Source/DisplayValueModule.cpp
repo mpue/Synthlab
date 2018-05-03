@@ -46,8 +46,8 @@ void DisplayValueModule::paint(juce::Graphics &g) {
 
 void DisplayValueModule::process() {
     
-    if (pins.at(0)->connections.size() > 0) {
-        value = pins.at(0)->connections.at(0)->getValue();
+    if (getPins().at(0)->connections.size() > 0) {
+        value = getPins().at(0)->connections.at(0)->getValue();
     }
     
 }

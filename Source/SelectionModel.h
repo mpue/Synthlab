@@ -23,7 +23,7 @@ public:
         DRAGGING_CONNECTION
     };
     
-    SelectionModel(Module* root);
+    SelectionModel();
     ~SelectionModel();
     
     Module* getSelectedModule();
@@ -34,6 +34,8 @@ public:
     State checkForHitAndSelect(Point<int> pos);
     void checkForConnection(Point<int> pos);
     void select(Point<int> pos);
+    void setRoot(Module* root);
+    
     
 private:
     bool isPointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<int> pt, double epsilon);

@@ -13,37 +13,42 @@
 
 
 //==============================================================================
-TerminalModule::TerminalModule()
+TerminalModule::TerminalModule(Direction dir) : Module("T"), direction(dir)
 {
-    
+    setName("T");
     setSize(120,30);
     nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(2,2);
+    
+    if (direction == TerminalModule::Direction::IN) {
+        nameLabel->setTopLeftPosition(2,2);
+    }
+    else {
+        nameLabel->setTopRightPosition(20, 2);
+    }
     
     editable = false;
     prefab = true;
     
-    createProperties();
     
 }
 
-void TerminalModule::createProperties() {
-    valueValue = new Value();
-    valueListener = new ValueListener(*valueValue, this);
-    
-}
-
-TerminalModule::~TerminalModule()
-{
-    delete valueValue;
-    delete valueListener;
-}
 
 void TerminalModule::configurePins(){
+    
     Pin* p1 = new Pin(Pin::Type::VALUE);
-    p1->direction = Pin::Direction::OUT;
-    p1->setName("V");
-    addPin(Pin::Direction::OUT,p1);
+    
+    if (direction == TerminalModule::Direction::IN) {
+        p1->direction = Pin::Direction::OUT;
+        p1->setName("Out");
+        addPin(Pin::Direction::OUT,p1);
+    }
+    else {
+        p1->direction = Pin::Direction::IN;
+        p1->setName("In");
+        addPin(Pin::Direction::IN,p1);
+    }
+    
+    
     
 }
 
@@ -51,26 +56,11 @@ void TerminalModule::paint(juce::Graphics &g) {
     Module::paint(g);
 }
 
-float TerminalModule::getValue() {
-    return value;
+TerminalModule::Direction TerminalModule::getDirection() {
+    return direction;
 }
 
-void TerminalModule::setValue(float value) {
-    this->value = value;
-    valueValue->setValue(value);
-    this->pins.at(0)->setValue(value);
-    this->nameLabel->setText(name +" = "+String(value),juce::NotificationType::dontSendNotification);
+void TerminalModule::setDirection(TerminalModule::Direction dir) {
+    this->direction = dir;
 }
-
-
-juce::Array<PropertyComponent*>& TerminalModule::getProperties() {
-    
-    properties = juce::Array<PropertyComponent*>();
-    valueProp = new SliderPropertyComponent(*valueValue,"Value",-65535,65535,0.1,1.0,true);
-    
-    properties.add(valueProp);
-    
-    return properties;
-}
-
 

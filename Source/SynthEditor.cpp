@@ -44,7 +44,7 @@ SynthEditor::SynthEditor(){
 
     root = new Module("Root");
     
-    selectionModel = new SelectionModel(root);
+    selectionModel = SelectionModel();
     
     setRepaintsOnMouseActivity(true);
     // setMouseClickGrabsKeyboardFocus(true);
@@ -65,7 +65,7 @@ SynthEditor::SynthEditor (double sampleRate, int buffersize)
 
     root = new Module("Root");
 
-    selectionModel = new SelectionModel(root);
+    selectionModel.setRoot(root);
     
 	setRepaintsOnMouseActivity(true);
 	setMouseClickGrabsKeyboardFocus(true);
@@ -81,6 +81,16 @@ SynthEditor::~SynthEditor()
     if (isRoot && deleteModuleWhenRemoved) {
         cleanUp();
         delete root;
+    }
+    
+    if (tab != nullptr) {
+        tab->clearTabs();
+        delete tab;
+    }
+
+    
+    for (int i = 0; i < openViews.size();i++) {
+        delete openViews.at(i);
     }
 
 }
@@ -130,6 +140,10 @@ void SynthEditor::paint (Graphics& g)
 
 void SynthEditor::resized()
 {
+    if (getParentComponent() == nullptr) {
+        return;
+    }
+    
     setSize(getParentWidth()*1.5, getParentHeight()*1.5);
     
     if (root != nullptr && root->getConnections() != nullptr) {
@@ -175,7 +189,7 @@ void SynthEditor::mouseMove (const MouseEvent& e)
 	mouseX = e.getPosition().getX();
 	mouseY = e.getPosition().getY();
 
-    selectionModel->checkForConnection(e.getPosition());
+    selectionModel.checkForConnection(e.getPosition());
 }
 
 void SynthEditor::mouseDown (const MouseEvent& e)
@@ -193,30 +207,30 @@ void SynthEditor::mouseDown (const MouseEvent& e)
     }
     
     if (!isLeftShiftDown) {
-        selectionModel->clearSelection();
+        selectionModel.clearSelection();
     }
 
-    selectionModel->select(e.getPosition());
+    selectionModel.select(e.getPosition());
     
-    selectionModel->deselectAllPins();
+    selectionModel.deselectAllPins();
 
-    selectionModel->checkForConnection(e.getPosition());
+    selectionModel.checkForConnection(e.getPosition());
     
     // has HitModule ?
 
-    state = selectionModel->checkForHitAndSelect(e.getPosition());
+    state = selectionModel.checkForHitAndSelect(e.getPosition());
     
     if (state == SelectionModel::State::NONE) {
-        selectionModel->clearSelection();
+        selectionModel.clearSelection();
         state = SelectionModel::State::DRAGGING_SELECTION;
     }
     else {
-        selectionModel->checkForPinSelection(e.getPosition());
+        selectionModel.checkForPinSelection(e.getPosition());
     }
     
     // has any connection been clicked?
     
-    selectionModel->checkForConnection(e.getPosition());
+    selectionModel.checkForConnection(e.getPosition());
 	
 	if (e.mods.isRightButtonDown()) {
         showContextMenu(e.getPosition());
@@ -233,8 +247,8 @@ void SynthEditor::showContextMenu(Point<int> position) {
     
     Module* module = nullptr;
 
-    if (selectionModel->getSelectedModule() != nullptr) {
-        module = selectionModel->getSelectedModule();
+    if (selectionModel.getSelectedModule() != nullptr) {
+        module = selectionModel.getSelectedModule();
     }
 
     if (module != nullptr) {
@@ -304,7 +318,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
                 con->target = module;
                 root->getConnections()->push_back(con);
                 root->getModules()->push_back(k);
-                selectionModel->clearSelection();
+                selectionModel.clearSelection();
                 k->setSelected(true);
                 
                 if (module->getName().contains("Filter")) {
@@ -318,7 +332,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
                     k->setStepSize(0.01);
                 }
                 
-                selectionModel->getSelectedModules()->push_back(k);
+                selectionModel.getSelectedModules()->push_back(k);
                 repaint();
                 resized();
             }
@@ -524,14 +538,14 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
                     repaint();
                 }
             }
-            selectionModel->checkForPinSelection(e.getPosition());
+            selectionModel.checkForPinSelection(e.getPosition());
         }
     }
     else {
         for (int i = 0; i < root->getModules()->size(); i++) {
             Module* m = root->getModules()->at(i);
             if (!m->isSelected()) {
-                selectionModel->checkForPinSelection(e.getPosition());
+                selectionModel.checkForPinSelection(e.getPosition());
             }
         }
     }
@@ -557,7 +571,7 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
                     m->setSelected(true);
                     m->savePosition();
                     
-                    selectionModel->getSelectedModules()->push_back(m);
+                    selectionModel.getSelectedModules()->push_back(m);
                 }
 
             }
@@ -575,7 +589,7 @@ void SynthEditor::mouseUp (const MouseEvent& e)
 		isLeftMouseDown = false;
         
         if (!dragHasStarted)
-            selectionModel->clearSelection();
+            selectionModel.clearSelection();
         
 	}
 
@@ -640,16 +654,13 @@ void SynthEditor::mouseDoubleClick (const MouseEvent& e)
             }
             else {
                 if (m->isSelected() && m->isEditable()) {
-                    SynthEditor* editor = new SynthEditor(_sampleRate, bufferSize);
-                    editor->setModule(m, false);
-                    tab->addTab(m->getName(), juce::Colours::grey,editor, true);
-                    tab->setCurrentTabIndex(tab->getNumTabs() - 1);
+                    openEditor(m);
                 }
             }
         }
     }
     
-    if (selectionModel->getSelectedModules()->size() == 0) {
+    if (selectionModel.getSelectedModules()->size() == 0) {
         showContextMenu(e.getPosition());
     }
 
@@ -693,7 +704,7 @@ void SynthEditor::setCurrentLayer(int layer) {
     
 }
 
-SelectionModel* SynthEditor::getSelectionModel() const {
+SelectionModel& SynthEditor::getSelectionModel() {
     return selectionModel;
 }
 
@@ -713,7 +724,7 @@ bool SynthEditor::keyPressed (const KeyPress& key)
     if(key.getKeyCode() == 65 && isCtrlDown) {
         for (int i = 0; i < root->getModules()->size();i++) {
             root->getModules()->at(i)->setSelected(true);
-            selectionModel->getSelectedModules()->push_back(root->getModules()->at(i));
+            selectionModel.getSelectedModules()->push_back(root->getModules()->at(i));
         }
     }
     
@@ -738,6 +749,10 @@ void SynthEditor::cleanUp() {
         removeModule((*it));
     }
     for(std::vector<Module*>::iterator it = root->getModules()->begin();it != root->getModules()->end();) {
+        for(std::vector<Connection*>::iterator it2 = (*it)->getConnections()->begin();it2 != (*it)->getConnections()->end();) {
+            delete *it2;
+            it2 = (*it)->getConnections()->erase(it2);
+        }
         delete *it;
         it = root->getModules()->erase(it);
     }
@@ -751,7 +766,7 @@ void SynthEditor::cleanUp() {
     delete root;
     root = nullptr;
     //deleteSelected(true);
-    selectionModel->getSelectedModules()->clear();
+    selectionModel.getSelectedModules()->clear();
     outputChannels.clear();
     inputChannels.clear();
     auxChannels.clear();
@@ -784,14 +799,14 @@ void SynthEditor::removeSelectedItem() {
             ++it;
         }
     }
-    selectionModel->clearSelection();
+    selectionModel.clearSelection();
     running = true;
 }
 
 void SynthEditor::newFile() {
     root = new Module("Root");
-    delete selectionModel;
-    selectionModel = new SelectionModel(root);
+    selectionModel = SelectionModel();
+    selectionModel.setRoot(root);
     repaint();
 }
 
@@ -984,6 +999,23 @@ void SynthEditor::saveFile() {
         
     }
 #endif
+}
+
+void SynthEditor::openEditor(Module *m) {
+    SynthEditor* editor = new SynthEditor(_sampleRate, bufferSize);
+    
+    Viewport* editorView = new Viewport();
+    
+    editorView->setSize(500,200);
+    editorView->setViewedComponent(editor);
+    editorView->setScrollBarsShown(true,true);
+    editorView->setScrollOnDragEnabled(false);
+    editorView->setWantsKeyboardFocus(false);
+    editorView->setMouseClickGrabsKeyboardFocus(false);
+    editor->setModule(m, false);
+    tab->addTab(m->getName(), Colours::darkgrey, editorView, false);
+    openViews.push_back(editorView);
+    tab->setCurrentTabIndex(tab->getNumTabs() - 1);
 }
 
 void SynthEditor::openSampleEditor(SamplerModule *sm) {
@@ -1445,9 +1477,9 @@ void SynthEditor::removeModule(Module* module) {
 void SynthEditor::deleteSelected(bool deleteAll) {
     
     if(!deleteAll) {
-        for (int i = 0; i < selectionModel->getSelectedModules()->size();i++) {
+        for (int i = 0; i < selectionModel.getSelectedModules()->size();i++) {
             
-            removeModule(selectionModel->getSelectedModules()->at(i));
+            removeModule(selectionModel.getSelectedModules()->at(i));
         }
     }
     
@@ -1498,7 +1530,14 @@ void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
 }
 
 void SynthEditor::setModule(Module *m, bool deleteWhenRemoved) {
+    
+    if (root != nullptr) {
+        delete root;
+    }
+    
     this->root = m;
+
+    selectionModel.setRoot(m);
     isRoot = false;
     this->deleteModuleWhenRemoved = deleteWhenRemoved;
     for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
@@ -1570,7 +1609,7 @@ int SynthEditor::addChannel(juce::String name, Mixer::Channel::Type channeltype)
 }
 
 void SynthEditor::duplicateSelected() {
-    Module* m = selectionModel->getSelectedModule();
+    Module* m = selectionModel.getSelectedModule();
     if (m != nullptr) {
         Point<int> pos = m->getPosition();
         pos.addXY(10, m->getBounds().getY() + 10);

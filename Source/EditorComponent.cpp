@@ -76,9 +76,8 @@ EditorComponent::~EditorComponent()
     delete mixerView;
     delete editor;
     delete editorView;
-    delete topTab;
-    delete bottomTab;
-
+    // delete topTab;
+    // delete bottomTab;
 }
 
 void EditorComponent::paint (Graphics& g)

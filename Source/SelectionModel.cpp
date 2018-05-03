@@ -8,13 +8,13 @@
 #include "SelectionModel.h"
 #include "Connection.h"
 
-SelectionModel::SelectionModel(Module* root) {
+SelectionModel::SelectionModel() {
     selectedModules = new std::vector<Module*>();
-    this->root = root;
 }
 
 SelectionModel::~SelectionModel() {
-    
+    selectedModules->clear();
+    delete selectedModules;
 }
 
 void SelectionModel::clearSelection() {
@@ -156,4 +156,8 @@ void SelectionModel::checkForConnection(Point<int> pos) {
         }
         
     }
+}
+
+void SelectionModel::setRoot(Module *root) {
+    this->root = root;
 }

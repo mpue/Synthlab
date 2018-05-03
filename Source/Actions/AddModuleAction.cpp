@@ -12,6 +12,7 @@
 #include "../AuxOut.h"
 #include "../PrefabFactory.h"
 #include "../AudioManager.h"
+#include "../TerminalModule.h"
 
 AddModuleAction::AddModuleAction(SynthEditor* editor, Point<int> position, int moduleId) {
     this->editor = editor;
@@ -64,7 +65,7 @@ bool AddModuleAction::perform() {
     
     m->setSelected(true);
     m->savePosition();
-    editor->getSelectionModel()->getSelectedModules()->push_back(m);
+    editor->getSelectionModel().getSelectedModules()->push_back(m);
     editor->repaint();
     
     module = m;
@@ -102,6 +103,23 @@ bool AddModuleAction::perform() {
         if (!editor->isRunning()) {
             editor->setRunning(true);
         }
+    }
+    
+    TerminalModule* t;
+    if ((t = dynamic_cast<TerminalModule*>(m)) != NULL) {
+        Pin* p = new Pin(Pin::Type::VALUE);
+        t->getPins().at(0)->setTerminal(p);
+        
+        if (t->getDirection() == TerminalModule::Direction::IN) {
+            editor->getModule()->addPin(Pin::Direction::IN, p);
+        }
+        else {
+            editor->getModule()->addPin(Pin::Direction::OUT, p);
+        }
+        
+        
+        editor->getModule()->repaint();
+        
     }
     
     return true;

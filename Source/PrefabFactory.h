@@ -126,6 +126,8 @@ private:
         prefabs[80] = Prefab("Step sequencer","MIDI");
         prefabs[81] = Prefab("Pulse","Sound sources");
         prefabs[82] = Prefab("Mixer","Audio");
+        prefabs[83] = Prefab("Terminal In","Input / Output");
+        prefabs[84] = Prefab("Terminal Out","Input / Output");
         
         prefabImages[53] = ImageCache::getFromMemory(BinaryData::sampler_png, BinaryData::sampler_pngSize);
         prefabImages[54] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
@@ -157,6 +159,8 @@ private:
         prefabImages[80] = ImageCache::getFromMemory(BinaryData::sequence_png, BinaryData::sequence_pngSize);
         prefabImages[81] = ImageCache::getFromMemory(BinaryData::pulse_png, BinaryData::pulse_pngSize);
         prefabImages[82] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[83] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[84] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         
         categories = new StringArray();
 

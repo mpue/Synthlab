@@ -506,8 +506,8 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
     else if (menuItemID > 100){
         String pluginName = PluginManager::getInstance()->getAvailablePlugins().at(menuItemID - 100);
         
-        if (editor->getSelectionModel()->getSelectedModule() != nullptr) {
-            PluginModule *pm = dynamic_cast<PluginModule*>(editor->getSelectionModel()->getSelectedModule());
+        if (editor->getSelectionModel().getSelectedModule() != nullptr) {
+            PluginModule *pm = dynamic_cast<PluginModule*>(editor->getSelectionModel().getSelectedModule());
             
             if (pm != NULL) {
                 pm->selectPlugin(pluginName);

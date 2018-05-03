@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Synth>
+  <Modules>
+    <Module name="Macro" index="1525342899942" x="152" y="143" isPrefab="0"
+            prefabId="0">
+      <Pins>
+        <Pin type="2" direction="0" index="152534289994201" x="0" y="10"/>
+        <Pin type="2" direction="0" index="152534289994202" x="0" y="30"/>
+      </Pins>
+      <Modules>
+        <Module name="T" index="93" x="219" y="164" isPrefab="1" prefabId="83">
+          <Pins>
+            <Pin type="2" direction="1" index="9301" x="110" y="10"/>
+          </Pins>
+          <Modules/>
+          <Connections/>
+        </Module>
+        <Module name="T" index="183" x="231" y="268" isPrefab="1" prefabId="83">
+          <Pins>
+            <Pin type="2" direction="1" index="18301" x="110" y="10"/>
+          </Pins>
+          <Modules/>
+          <Connections/>
+        </Module>
+      </Modules>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections/>
+</Synth>

@@ -60,6 +60,14 @@ public:
     int getNote();
     void setNote(int note);
     
+    void setTerminal(Pin* p) {
+        this->terminal = p;
+    }
+    
+    Pin* getTerminal() {
+        return terminal;
+    }
+    
     void invalidate() {
         delete audioBuffer;
         audioBuffer = nullptr;
@@ -75,6 +83,7 @@ private:
     bool selected = false;
     String name;
     int note = 0;
+    Pin* terminal = nullptr;
 
     AudioSampleBuffer* audioBuffer = nullptr;
 };

@@ -52,7 +52,7 @@ class Module  : public Component,
 public:
     //==============================================================================
     Module ();
-    ~Module();
+    virtual ~Module();
 
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
@@ -86,7 +86,7 @@ public:
 
     std::vector<Connection*>* getConnections();
     std::vector<Module*>* getModules();
-    std::vector<Pin*>& getPins();
+    virtual std::vector<Pin*>& getPins();
 
     void setConnections(std::vector<Connection*>* connections);
     void textEditorReturnKeyPressed(juce::TextEditor &) override;

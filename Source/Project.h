@@ -147,6 +147,11 @@ private:
             }
             it = openWindows.erase(it);
         }
+        if (supplementalTab != nullptr) {
+            supplementalTab->clearTabs();
+            delete supplementalTab;
+        }
+
         delete undoManager;
         delete lookAndFeel;
     }
@@ -155,7 +160,7 @@ private:
     UndoManager* undoManager;
     StringArray recentFiles;
     CustomLookAndFeel* lookAndFeel;
-    MainTabbedComponent* supplementalTab;
+    MainTabbedComponent* supplementalTab = nullptr;
     std::vector<DialogWindow*> openWindows;
     Component* main = nullptr;
     Sampler* defaultSampler = nullptr;

@@ -60,12 +60,24 @@ void Pin::setSelected(bool selected) {
 }
 
 float Pin::getValue() {
+    if (terminal != nullptr) {
+        if (terminal->connections.size() == 1) {
+            return terminal->connections.at(0)->getValue();
+        }
+        
+    }
     return value;
 }
 
 
 void Pin::setValue(float value) {
-    this->value = value;
+    
+    if (terminal != nullptr) {
+        terminal->setValue(value);
+    }
+    else {
+        this->value = value;
+    }
 }
 
 
@@ -79,21 +91,7 @@ AudioSampleBuffer* Pin::getAudioBuffer() {
 
 void Pin::process(const float *in, float *out, int numSamples) {
     
-    if (type == Pin::Type::AUDIO) {
-        
-        if (direction == Pin::Direction::IN ) {
-            for (int j = 0; j < connections.size();j++) {
-               // audioBuffer->copyFrom(0, 0, *connections.at(j)->getAudioBuffer(), 0, 0, numSamples);
-            }
-        }
-        /*
-        if (direction == Pin::Direction::OUT ) {
-            memcpy(out, audioBuffer->getReadPointer(0), numSamples);
-        }
-         */
-        
 
-    }
 }
 
 bool Pin::hasConnection(Pin *target) {
