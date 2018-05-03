@@ -241,12 +241,11 @@ void ExtendedFileBrowser::loadState() {
         ScopedPointer<XmlElement> xml = XmlDocument(configFile).getDocumentElement();
         ValueTree v = ValueTree::fromXml(*xml.get());
         
-        for (int i = 0 ;i < v.getNumChildren();i++) {
-            String path = v.getChild(i).getProperty("lastDirectory");
+        if (v.getNumChildren() > 0) {
+            String path = v.getChild(0).getProperty("lastDirectory");
             File* file = new File(path);
             model->setCurrentDir(file);
             delete file;
-            break;
         }
         xml = nullptr;
     }
