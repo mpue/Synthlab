@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.2.1" bundleIdentifier="de.pueski.SynthlabX"
+<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.3.1" bundleIdentifier="de.pueski.SynthlabX"
               version="1.0.1" companyName="Pueski">
   <MAINGROUP id="CKGTaZ" name="Synthlab">
     <GROUP id="{9F92DD62-384A-EB91-F447-5583413CC3C4}" name="samples">
@@ -88,6 +88,7 @@
         <FILE id="CVYORy" name="LoadSynthTest.cpp" compile="1" resource="0"
               file="Source/tests/LoadSynthTest.cpp"/>
         <FILE id="Uq3fg2" name="LoadSynthTest.h" compile="0" resource="0" file="Source/tests/LoadSynthTest.h"/>
+        <FILE id="ePeZ8d" name="ModuleTest.cpp" compile="1" resource="0" file="Source/tests/ModuleTest.cpp"/>
         <FILE id="PkTd81" name="StartUpTest.cpp" compile="1" resource="0" file="Source/tests/StartUpTest.cpp"/>
         <FILE id="f68qh3" name="StartUpTest.h" compile="0" resource="0" file="Source/tests/StartUpTest.h"/>
       </GROUP>
