@@ -66,7 +66,7 @@ void SamplerModule::loadSample(juce::InputStream *is, int samplerIndex) {
     this->thumbnail->reset(2, sampleRate);
     thumbnail->addBlock(0, *sampler[samplerIndex]->getSampleBuffer(), 0, static_cast<int>(sampler[samplerIndex]->getSampleLength()));
     repaint();
-    
+    delete is;
 
 }
 

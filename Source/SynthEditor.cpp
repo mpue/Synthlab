@@ -41,7 +41,7 @@ String SynthEditor::defaultMidiInputName = "Express 128 Port 7";
 SynthEditor::SynthEditor(){
     
     setSize (1280, 800);
-    
+
     root = new Module("Root");
     
     selectionModel = new SelectionModel(root);
@@ -312,9 +312,15 @@ void SynthEditor::showContextMenu(Point<int> position) {
                     k->setMaximum(15000);
                     k->setStepSize(10);
                 }
+                if (module->getName().contains("Mixer")){
+                    k->setMinimum(0);
+                    k->setMaximum(1);
+                    k->setStepSize(0.01);
+                }
                 
                 selectionModel->getSelectedModules()->push_back(k);
                 repaint();
+                resized();
             }
             else if (result == 2) {
                 Constant* c = dynamic_cast<Constant*>(PrefabFactory::getInstance()->getPrefab(67, _sampleRate, bufferSize));
@@ -333,7 +339,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
                 root->getConnections()->push_back(con);
                 root->getModules()->push_back(c);
                 repaint();
-                
+                resized();
             }
         }
         
@@ -437,12 +443,12 @@ void SynthEditor::showContextMenu(Point<int> position) {
             String path = recent.getReference(result - 1000);
             FileInputStream *fis = new FileInputStream(File(path));
             String data = fis->readEntireStreamAsString();
+            delete fis;
             setRunning(false);
             cleanUp();
             mixer->removeAllChannels();
             newFile();
             loadFromString(data);
-            delete fis;
             setRunning(true);
         }
         else {
@@ -1025,6 +1031,8 @@ void SynthEditor::openFile() {
             addAndMakeVisible((*it));
         }
 
+        resized();
+        
         xml = nullptr;
         setRunning(true);
     }

@@ -205,6 +205,7 @@ void PluginModule::setPluginState(juce::String state) {
     if (plugin != nullptr) {
         plugin->setStateInformation(mos->getData(), static_cast<int>(mos->getDataSize()));
     }
+    delete mos;
 }
 
 String PluginModule::getPluginState() {
