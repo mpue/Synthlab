@@ -81,13 +81,14 @@ void SampleEditor::handleNoteOn(juce::MidiKeyboardState *source, int midiChannel
         return;
     }
     sampleModule->selectSample(midiNoteNumber);
-    
+    // state.noteOn(midiChannel, midiNoteNumber,(1.0/127.0) * velocity);
     component->setSampleBuffer(sampleModule->getBuffer());
 
 }
 
 void SampleEditor::handleNoteOff(juce::MidiKeyboardState *source, int midiChannel, int midiNoteNumber, float velocity) {
-    
+    //state.noteOff(midiChannel, midiNoteNumber, (1.0/127.0) * velocity);
+
 }
 
 bool SampleEditor::isInterestedInDragSource (const SourceDetails& dragSourceDetails) {

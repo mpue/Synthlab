@@ -33,6 +33,8 @@ public:
     MixerPanel* getMixerPanel();
     Mixer* getMixer();
     
+    MainTabbedComponent* getEditorTab();
+    
     virtual void changeListenerCallback (ChangeBroadcaster* source) override;
 private:
     

@@ -251,7 +251,9 @@ void SamplePropertiesPanel::timerCallback() {
     seconds++;
 #ifdef USE_PUSH
     AudioDeviceManager* deviceManager = AudioManager::getInstance()->getDeviceManager();
-    deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0xb0,86,seconds%2));
+    if(deviceManager->getDefaultMidiOutput() != nullptr) {
+        deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0xb0,86,seconds%2));
+    }
 #endif
 }
 

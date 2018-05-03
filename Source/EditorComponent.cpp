@@ -118,6 +118,10 @@ SynthEditor* EditorComponent::getEditor() {
     return editor;
 }
 
+MainTabbedComponent* EditorComponent::getEditorTab() {
+    return topTab;
+}
+
 void EditorComponent::changeListenerCallback(juce::ChangeBroadcaster *source) {
     
 }

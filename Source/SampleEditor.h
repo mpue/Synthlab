@@ -160,12 +160,15 @@ public:
     void updatePush2Pads() {
 
         AudioDeviceManager* deviceManager = AudioManager::getInstance()->getDeviceManager();
-        deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0xb0,86,1));
-        for (int i = 0; i < 128;i++) {
-            deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0x90,i,0));
-            if (sampler[i] != nullptr && sampler[i]->hasSample()) {
-                
-                deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0x90,i,0x7e));
+        
+        if (deviceManager->getDefaultMidiOutput() != nullptr) {
+            deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0xb0,86,1));
+            for (int i = 0; i < 128;i++) {
+                deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0x90,i,0));
+                if (sampler[i] != nullptr && sampler[i]->hasSample()) {
+                    
+                    deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0x90,i,0x7e));
+                }
             }
         }
 

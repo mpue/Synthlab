@@ -66,7 +66,6 @@ void SamplerModule::loadSample(juce::InputStream *is, int samplerIndex) {
     this->thumbnail->reset(2, sampleRate);
     thumbnail->addBlock(0, *sampler[samplerIndex]->getSampleBuffer(), 0, static_cast<int>(sampler[samplerIndex]->getSampleLength()));
     repaint();
-    delete is;
 
 }
 
@@ -332,14 +331,18 @@ void SamplerModule::stopRecording() {
             selectSample(currentSampler);
 #ifdef USE_PUSH
             AudioDeviceManager* deviceManager = AudioManager::getInstance()->getDeviceManager();
-            deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0xb0,86,1));
-            for (int i = 0; i < 128;i++) {
-                deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0x90,i,0));
-                if (sampler[i] != nullptr && sampler[i]->hasSample()) {
-                    
-                    deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0x90,i,0x7e));
+            
+            if (deviceManager->getDefaultMidiOutput() != nullptr) {
+                deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0xb0,86,1));
+                for (int i = 0; i < 128;i++) {
+                    deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0x90,i,0));
+                    if (sampler[i] != nullptr && sampler[i]->hasSample()) {
+                        
+                        deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0x90,i,0x7e));
+                    }
                 }
             }
+
 #endif
             thumbnail->addBlock(0, *recordingBuffer, 0, numRecordedSamples);
             std::function<void(void)> changeLambda =

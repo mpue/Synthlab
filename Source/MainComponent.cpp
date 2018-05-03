@@ -98,7 +98,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     addAndMakeVisible (propertyView);
     addAndMakeVisible (resizerBar);
     addAndMakeVisible(editorView);
-    editor->setTab(tab);
+    editor->setTab(editorView->getEditorTab());
 
     addKeyListener(this);
 

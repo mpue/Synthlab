@@ -78,10 +78,10 @@ SynthEditor::SynthEditor (double sampleRate, int buffersize)
 
 SynthEditor::~SynthEditor()
 {
-    cleanUp();
-
-    if (isRoot)
+    if (isRoot && deleteModuleWhenRemoved) {
+        cleanUp();
         delete root;
+    }
 
 }
 
@@ -641,8 +641,9 @@ void SynthEditor::mouseDoubleClick (const MouseEvent& e)
             else {
                 if (m->isSelected() && m->isEditable()) {
                     SynthEditor* editor = new SynthEditor(_sampleRate, bufferSize);
-                    editor->setModule(m);
+                    editor->setModule(m, false);
                     tab->addTab(m->getName(), juce::Colours::grey,editor, true);
+                    tab->setCurrentTabIndex(tab->getNumTabs() - 1);
                 }
             }
         }
@@ -1496,10 +1497,10 @@ void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
     repaint();
 }
 
-void SynthEditor::setModule(Module *m) {
+void SynthEditor::setModule(Module *m, bool deleteWhenRemoved) {
     this->root = m;
     isRoot = false;
-
+    this->deleteModuleWhenRemoved = deleteWhenRemoved;
     for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
         addAndMakeVisible((*it));
     }
