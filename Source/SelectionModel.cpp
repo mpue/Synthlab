@@ -38,13 +38,9 @@ void SelectionModel::checkForPinSelection(Point<int> position) {
                 m->repaint();
                 break;
             }
-            
-            
         }
     }
-    
-   
-    
+
 }
 
 Module* SelectionModel::getSelectedModule() {

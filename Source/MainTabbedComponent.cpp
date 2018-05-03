@@ -12,14 +12,13 @@
 #include "MainTabbedComponent.h"
 #include "CloseableTabButton.h"
 //==============================================================================
-MainTabbedComponent::MainTabbedComponent() : juce::TabbedComponent(TabbedButtonBar::Orientation::TabsAtTop)
+MainTabbedComponent::MainTabbedComponent() : juce::TabbedComponent(TabbedButtonBar::Orientation::TabsAtTop) , Button::Listener()
 {
-
-
+    
 }
 
 MainTabbedComponent::MainTabbedComponent(TabbedButtonBar::Orientation orientation) : juce::TabbedComponent(TabbedButtonBar::Orientation::TabsAtTop){
-    
+
 }
 
 
@@ -62,6 +61,7 @@ TabBarButton* MainTabbedComponent::createTabButton(const juce::String &tabName, 
 {
     TabBarButton* tb = new TabBarButton(tabName,getTabbedButtonBar());
     tb->setName(String(tabIndex));
+
     ImageButton* ib = new ImageButton();
     ib->setName(String(tabIndex));
     ib->setSize(16,16);
@@ -78,5 +78,6 @@ TabBarButton* MainTabbedComponent::createTabButton(const juce::String &tabName, 
                    1.0,
                    Colours::orange);
     tb->setExtraComponent(ib, juce::TabBarButton::ExtraComponentPlacement::afterText);
+    ib->addListener(this);
     return tb;
 }

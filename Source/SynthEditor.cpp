@@ -200,7 +200,6 @@ void SynthEditor::mouseDown (const MouseEvent& e)
     mouseDownY = e.getPosition().getY();
 
 	if (e.mods.isLeftButtonDown()) {
-
 		isLeftMouseDown = true;
     }
     
@@ -209,9 +208,7 @@ void SynthEditor::mouseDown (const MouseEvent& e)
     }
 
     selectionModel.select(e.getPosition());
-    
     selectionModel.deselectAllPins();
-
     selectionModel.checkForConnection(e.getPosition());
     
     // has HitModule ?
