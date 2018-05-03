@@ -14,6 +14,7 @@
 #include "CustomLookAndFeel.h"
 #include "MainTabbedComponent.h"
 #include "AudioEngine/Sampler.h"
+#include "PropertyView.h"
 
 #ifdef USE_PUSH
 #include "push2/JuceToPush2DisplayBridge.h"
@@ -77,6 +78,14 @@ public:
     
     void setMain(Component* c) {
         main = c;
+    }
+    
+    void setPropertyView(PropertyView* view) {
+        this->propertyView = view;
+    }
+    
+    PropertyView* getPropertyView() {
+        return propertyView;
     }
     
 #ifdef USE_PUSH
@@ -156,6 +165,7 @@ private:
         delete lookAndFeel;
     }
     
+    PropertyView* propertyView = nullptr;
     static Project* instance;
     UndoManager* undoManager;
     StringArray recentFiles;

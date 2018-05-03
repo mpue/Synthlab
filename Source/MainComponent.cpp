@@ -93,6 +93,8 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     
     propertyView =  new PropertyView();
     
+    Project::getInstance()->setPropertyView(propertyView);
+    
     addMouseListener(this, true);
     
     addAndMakeVisible (propertyView);
@@ -102,7 +104,6 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
 
     addKeyListener(this);
 
-    
     editor->addChangeListener(propertyView);
     
     // we have to set up our StretchableLayoutManager so it know the limits and preferred sizes of it's contents

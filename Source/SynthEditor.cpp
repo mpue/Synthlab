@@ -89,7 +89,6 @@ SynthEditor::~SynthEditor()
         delete tab;
     }
 
-    
     for (int i = 0; i < openViews.size();i++) {
         delete openViews.at(i);
     }
@@ -99,8 +98,6 @@ SynthEditor::~SynthEditor()
 void SynthEditor::paint (Graphics& g)
 {
     g.fillAll (Colour (0xff323e44));
-
-
     g.setColour(juce::Colours::white);
 
 	if (isLeftMouseDown) {
@@ -772,6 +769,7 @@ void SynthEditor::cleanUp() {
     inputChannels.clear();
     auxChannels.clear();
     Project::getInstance()->getUndoManager()->clearUndoHistory();
+    removeAllChangeListeners();
     
 }
 
@@ -1003,10 +1001,9 @@ void SynthEditor::saveFile() {
 }
 
 void SynthEditor::openEditor(Module *m) {
+    
     SynthEditor* editor = new SynthEditor(_sampleRate, bufferSize);
-    
     Viewport* editorView = new Viewport();
-    
     editorView->setSize(500,200);
     editorView->setViewedComponent(editor);
     editorView->setScrollBarsShown(true,true);
@@ -1014,9 +1011,11 @@ void SynthEditor::openEditor(Module *m) {
     editorView->setWantsKeyboardFocus(false);
     editorView->setMouseClickGrabsKeyboardFocus(false);
     editor->setModule(m, false);
+    editor->addChangeListener(Project::getInstance()->getPropertyView());
     tab->addTab(m->getName(), Colours::darkgrey, editorView, false);
     openViews.push_back(editorView);
     tab->setCurrentTabIndex(tab->getNumTabs() - 1);
+    editor->resized();
 }
 
 void SynthEditor::openSampleEditor(SamplerModule *sm) {
@@ -1200,10 +1199,6 @@ Module* SynthEditor::loadModule(ValueTree& mod) {
         if (label != nullptr) {
             label->setName(mod.getProperty("name"));
         }
-        
-
-            
-        
     }
     else {
         m = new Module(mod.getProperty("name"));
@@ -1498,7 +1493,6 @@ void SynthEditor::removeModule(Module* module) {
     }
     
     // remove dangling connections from other modules
-    
     
     std::vector<Connection*>* cons = root->getConnections();
    
