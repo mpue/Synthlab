@@ -20,8 +20,8 @@
 //[Headers] You can add your own extra header files here...
 #include "Module.h"
 #include "AudioModule.h"
+#include "Connection.h"
 
-class Connection;
 //[/Headers]
 
 #include "Module.h"
