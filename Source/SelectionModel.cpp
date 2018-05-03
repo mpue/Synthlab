@@ -9,12 +9,10 @@
 #include "Connection.h"
 
 SelectionModel::SelectionModel() {
-    selectedModules = new std::vector<Module*>();
 }
 
 SelectionModel::~SelectionModel() {
-    selectedModules->clear();
-    delete selectedModules;
+    selectedModules.clear();
 }
 
 void SelectionModel::clearSelection() {
@@ -24,7 +22,7 @@ void SelectionModel::clearSelection() {
         root->getModules()->at(i)->setEditing(false);
     }
     
-    getSelectedModules()->clear();
+    getSelectedModules().clear();
 }
 
 void SelectionModel::checkForPinSelection(Point<int> position) {
@@ -60,7 +58,7 @@ Module* SelectionModel::getSelectedModule() {
     return nullptr;
 }
 
-std::vector<Module*>* SelectionModel::getSelectedModules() {
+std::vector<Module*>& SelectionModel::getSelectedModules() {
     return selectedModules;
 }
 
@@ -82,7 +80,7 @@ SelectionModel::State SelectionModel::checkForHitAndSelect(Point<int> pos) {
         if (root->getModules()->at(i)->getBounds().contains(pos)) {
    
                 root->getModules()->at(i)->setSelected(true);
-                getSelectedModules()->push_back(root->getModules()->at(i));
+                getSelectedModules().push_back(root->getModules()->at(i));
                 root->getModules()->at(i)->savePosition();
                 hit = true;
                 break;
@@ -105,7 +103,7 @@ void SelectionModel::select(Point<int> pos) {
         if (root->getModules()->at(i)->getBounds().contains(pos)) {
             
             root->getModules()->at(i)->setSelected(true);
-            getSelectedModules()->push_back(root->getModules()->at(i));
+            getSelectedModules().push_back(root->getModules()->at(i));
             root->getModules()->at(i)->savePosition();
             break;
             

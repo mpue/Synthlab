@@ -27,7 +27,7 @@ public:
     ~SelectionModel();
     
     Module* getSelectedModule();
-    std::vector<Module*>* getSelectedModules();
+    std::vector<Module*>& getSelectedModules();
     void clearSelection();
     void checkForPinSelection(Point<int> position);
     void deselectAllPins();
@@ -40,7 +40,7 @@ public:
 private:
     bool isPointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<int> pt, double epsilon);
 
-    std::vector<Module*>* selectedModules;
+    std::vector<Module*> selectedModules;
     Module* root;
 };
 

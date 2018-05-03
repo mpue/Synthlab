@@ -64,7 +64,7 @@ bool DuplicateModuleAction::perform() {
     
     m->setSelected(true);
     m->savePosition();
-    editor->getSelectionModel().getSelectedModules()->push_back(m);
+    editor->getSelectionModel().getSelectedModules().push_back(m);
     editor->repaint();
     
     module = m;

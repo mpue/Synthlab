@@ -26,6 +26,7 @@
 #include "AudioManager.h"
 #include "StepSequencerModule.h"
 #include "SequenceEditor.h"
+#include "TerminalModule.h"
 #include "OscillatorModule.h"
 #include "AudioEngine/Pulse.h"
 #include "AudioEngine/Sine.h"
@@ -332,7 +333,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
                     k->setStepSize(0.01);
                 }
                 
-                selectionModel.getSelectedModules()->push_back(k);
+                selectionModel.getSelectedModules().push_back(k);
                 repaint();
                 resized();
             }
@@ -571,7 +572,7 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
                     m->setSelected(true);
                     m->savePosition();
                     
-                    selectionModel.getSelectedModules()->push_back(m);
+                    selectionModel.getSelectedModules().push_back(m);
                 }
 
             }
@@ -660,7 +661,7 @@ void SynthEditor::mouseDoubleClick (const MouseEvent& e)
         }
     }
     
-    if (selectionModel.getSelectedModules()->size() == 0) {
+    if (selectionModel.getSelectedModules().size() == 0) {
         showContextMenu(e.getPosition());
     }
 
@@ -724,7 +725,7 @@ bool SynthEditor::keyPressed (const KeyPress& key)
     if(key.getKeyCode() == 65 && isCtrlDown) {
         for (int i = 0; i < root->getModules()->size();i++) {
             root->getModules()->at(i)->setSelected(true);
-            selectionModel.getSelectedModules()->push_back(root->getModules()->at(i));
+            selectionModel.getSelectedModules().push_back(root->getModules()->at(i));
         }
     }
     
@@ -766,7 +767,7 @@ void SynthEditor::cleanUp() {
     delete root;
     root = nullptr;
     //deleteSelected(true);
-    selectionModel.getSelectedModules()->clear();
+    selectionModel.getSelectedModules().clear();
     outputChannels.clear();
     inputChannels.clear();
     auxChannels.clear();
@@ -1076,183 +1077,33 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
 
     for (int i = 0; i < mods.getNumChildren();i++) {
         ValueTree mod = mods.getChild(i);
-
-        Module* m = nullptr;
-        
-        if (mod.getProperty("isPrefab").toString().getIntValue() == 1) {
-            m = PrefabFactory::getInstance()->getPrefab(mod.getProperty("prefabId").toString().getIntValue(), _sampleRate, bufferSize);
-            addChangeListener(m);
-            
-            LabelModule* label = dynamic_cast<LabelModule*>(m);
-            if (label != nullptr) {
-                label->setName(mod.getProperty("name"));
-            }
-        }
-        else {
-            m = new Module(mod.getProperty("name"));
-            addChangeListener(m);
-            ValueTree pins = mod.getChildWithName("Pins");
-            
-            for (int j = 0; j < pins.getNumChildren();j++) {
-                ValueTree pin = pins.getChild(j);
-                Pin* p = new Pin(Pin::Type::AUDIO);
-                
-                int type = pin.getProperty("type").toString().getIntValue();
-                int direction = pin.getProperty("direction").toString().getIntValue();
-                long index = pin.getProperty("index").toString().getLargeIntValue();
-                int x = pin.getProperty("x").toString().getIntValue();
-                int y = pin.getProperty("y").toString().getIntValue();
-                
-                Pin::Direction dir = static_cast<Pin::Direction>(direction);
-                p->direction = dir;
-                Pin::Type t = static_cast<Pin::Type>(type);
-                p->type = t;
-                p->index = index;
-                p->x = x;
-                p->y = y;
-                m->addPin(p);
-                m->setIndex(mod.getProperty("index").toString().getLargeIntValue());
-            }
-        }
-        
-        m->setTopLeftPosition(mod.getProperty("x").toString().getIntValue(), mod.getProperty("y").toString().getIntValue());
-
+        Module* m = loadModule(mod);
         modules->push_back(m);
         
-        AudioManager* am = AudioManager::getInstance();
-        
-        AudioOut* out;
-        
-        if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
-            outputChannels.push_back(out);
-            String channelName = am->getOutputChannelNames().getReference(static_cast<int>(getOutputChannels().size()) - 1);
-            int channelIndex = addChannel(channelName, Mixer::Channel::Type::OUT);
-            out->setChannelIndex(channelIndex);
-            addChangeListener(out);
-        }
-        
-        AudioIn* in;
-        
-        if ((in = dynamic_cast<AudioIn*>(m)) != NULL) {
-            inputChannels.push_back(in);
-            String channelName = am->getInputChannelNames().getReference(static_cast<int>(getInputChannels().size()) - 1);
-            int channelIndex = addChannel(channelName, Mixer::Channel::Type::IN);
-            in->setChannelIndex(channelIndex);
-            addChangeListener(in);
-        }
-        
-        AuxOut* aux;
-        
-        if ((aux = dynamic_cast<AuxOut*>(m)) != NULL) {
-            auxChannels.push_back(aux);
-            String channelName = "Aux "+ String(getAuxChannels().size());
-            int channelIndex = addChannel(channelName, Mixer::Channel::Type::AUX);
-            aux->setChannelIndex(channelIndex);
-            addChangeListener(aux);
-        }
-        
-        Knob* k;
-        
-        if ((k = dynamic_cast<Knob*>(m)) != NULL) {
-            addChangeListener(k);
-            k->setMaximum(mod.getProperty("maxvalue").toString().getFloatValue());
-            k->setMinimum(mod.getProperty("minvalue").toString().getFloatValue());
-            k->setStepSize(mod.getProperty("stepsize").toString().getFloatValue());
-            k->setValue(mod.getProperty("value").toString().getFloatValue());
-            k->setIsMidicontroller(mod.getProperty("isController").toString().getIntValue() > 0);
-            k->setController(mod.getProperty("controllerNum").toString().getIntValue());
-        }
-        
-        MidiGate* gate;
-        
-        if ((gate = dynamic_cast<MidiGate*>(m)) != NULL) {
-            gate->setChannel(mod.getProperty("channel").toString().getIntValue());
-            addChangeListener(gate);
-        }
-        
-        ADSRModule* adsr;
-        
-        if ((adsr = dynamic_cast<ADSRModule*>(m)) != NULL) {
-            addChangeListener(adsr);
-            adsr->setAttack(mod.getProperty("attack").toString().getFloatValue());
-            adsr->setDecay(mod.getProperty("decay").toString().getFloatValue());
-            adsr->setSustain(mod.getProperty("sustain").toString().getFloatValue());
-            adsr->setRelease(mod.getProperty("release").toString().getFloatValue());
-            adsr->setMono(mod.getProperty("mono").toString().getIntValue() > 0);
-        }
-        
-        Constant* c = nullptr;
-        if ((c = dynamic_cast<Constant*>(m)) != NULL) {
-           
-            c->setValue(mod.getProperty("value").toString().getFloatValue());
-            addChangeListener(c);
-        }
-        
-        SamplerModule* sm;
-        
-        if ((sm = dynamic_cast<SamplerModule*>(m)) != NULL) {
-            
-            for(int i = 0; i < mod.getNumChildren();i++) {
-                if (mod.getChild(i).hasProperty("samplePath")) {
-                    
-  
-                    int note = mod.getChild(i).getProperty("note").toString().getIntValue();
-                    String path = mod.getChild(i).getProperty("samplePath");
-                    sm->setSamplePath(path, note - 1);
-                    File file = File(path);
-                    if (file.exists()) {
-                        FileInputStream* is = new FileInputStream(file);
-                        sm->setSamplePath(file.getFullPathName(), note - 1);
-                        sm->selectSample(note - 1);
-                        sm->loadSample(is, note - 1);
-                        
-                        long start = mod.getChild(i).getProperty("sampleStart").toString().getLargeIntValue();
-                        sm->getSamplerAt(note - 1)->setStartPosition(start);
-                        long end = mod.getChild(i).getProperty("sampleEnd").toString().getLargeIntValue();
-                        sm->getSamplerAt(note - 1)->setEndPosition(end);
-                        // long length = mod.getChild(i).getProperty("sampleLength").toString().getLargeIntValue();
-                        bool loop = mod.getChild(i).getProperty("loop").toString().getIntValue() > 0;
-                        sm->getSamplerAt(note - 1)->setLoop(loop);
-                        
-                    }
-                }
-            }
- 
-        }
-        
-        Monophonic* monophonic;
-        
-        if ((monophonic = dynamic_cast<Monophonic*>(m)) != NULL) {
-            monophonic->setMono(mod.getProperty("mono").toString().getIntValue() > 0);
-        }
-        
-        PluginModule* pm ;
-        
-        if ((pm = dynamic_cast<PluginModule*>(m)) != NULL) {
-            pm->selectPlugin(mod.getProperty("plugin").toString());
-            pm->setCurrentProgram(mod.getProperty("currentProgram").toString().getIntValue());
-            pm->setPluginState(mod.getProperty("state").toString());
-        }
-        
-        StepSequencerModule* ssm;
-        
-        if ((ssm = dynamic_cast<StepSequencerModule*>(m)) != NULL) {
-            MemoryOutputStream* mos = new MemoryOutputStream();
-            String dataString = mod.getProperty("config").toString();
-            Base64::convertFromBase64(*mos, dataString);
-            ssm->getEditor()->setConfiguration((uint8*)mos->getData());
-            delete mos;
-        }
-        
-        
         loadStructure(m->getModules(),m->getConnections(),&mod);
+        ValueTree childCons = mod.getChildWithName("Connections");
+        Logger::writeToLog("Module "+ m->getName() +" has "+String(childCons.getNumChildren())+ " connections.");
+        if (childCons.getNumChildren() > 0)
+            loadConnections(childCons, m->getModules(),m->getConnections());
+        TerminalModule* t;
+        
+        if ((t = dynamic_cast<TerminalModule*>(m)) != nullptr) {
+            t->setIndex(mod.getProperty("index").toString().getLargeIntValue());
+        }
+        connectTerminals(m);
     }
 
     ValueTree cons = v->getChildWithName("Connections");
+    
+    loadConnections(cons, modules, connections);
+    repaint();
 
+}
+
+void SynthEditor::loadConnections(juce::ValueTree &cons, std::vector<Module *>* modules, std::vector<Connection*>* connections) {
     for (int i = 0; i < cons.getNumChildren();i++) {
         ValueTree con = cons.getChild(i);
-
+        
         Connection* c = new Connection();
         long sourceIndex = con.getProperty("source").toString().getLargeIntValue();
         long targetIndex = con.getProperty("target").toString().getLargeIntValue();
@@ -1333,11 +1184,204 @@ void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Conn
             }
             
         }
+    }
+}
 
-        repaint();
+Module* SynthEditor::loadModule(ValueTree& mod) {
+    
+    Module* m = nullptr;
+    
+    if (mod.getProperty("isPrefab").toString().getIntValue() == 1) {
+        m = PrefabFactory::getInstance()->getPrefab(mod.getProperty("prefabId").toString().getIntValue(), _sampleRate, bufferSize);
+        addChangeListener(m);
+        
+        LabelModule* label = dynamic_cast<LabelModule*>(m);
+        
+        if (label != nullptr) {
+            label->setName(mod.getProperty("name"));
+        }
+        
+
+            
         
     }
+    else {
+        m = new Module(mod.getProperty("name"));
+        m->setIndex(mod.getProperty("index").toString().getLargeIntValue());
+        addChangeListener(m);
+        ValueTree pins = mod.getChildWithName("Pins");
+        
+        for (int j = 0; j < pins.getNumChildren();j++) {
+            ValueTree pin = pins.getChild(j);
+            Pin* p = new Pin(Pin::Type::AUDIO);
+            
+            int type = pin.getProperty("type").toString().getIntValue();
+            int direction = pin.getProperty("direction").toString().getIntValue();
+            long index = pin.getProperty("index").toString().getLargeIntValue();
+            int x = pin.getProperty("x").toString().getIntValue();
+            int y = pin.getProperty("y").toString().getIntValue();
+            
+            Pin::Direction dir = static_cast<Pin::Direction>(direction);
+            p->direction = dir;
+            Pin::Type t = static_cast<Pin::Type>(type);
+            p->type = t;
+            p->index = index;
+            p->x = x;
+            p->y = y;
+            m->addPin(p);
+           
+        }
+        
+    }
+    
+    m->setTopLeftPosition(mod.getProperty("x").toString().getIntValue(), mod.getProperty("y").toString().getIntValue());
+    
+    AudioManager* am = AudioManager::getInstance();
+    
+    AudioOut* out;
+    
+    if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
+        outputChannels.push_back(out);
+        String channelName = am->getOutputChannelNames().getReference(static_cast<int>(getOutputChannels().size()) - 1);
+        int channelIndex = addChannel(channelName, Mixer::Channel::Type::OUT);
+        out->setChannelIndex(channelIndex);
+        addChangeListener(out);
+    }
+    
+    AudioIn* in;
+    
+    if ((in = dynamic_cast<AudioIn*>(m)) != NULL) {
+        inputChannels.push_back(in);
+        String channelName = am->getInputChannelNames().getReference(static_cast<int>(getInputChannels().size()) - 1);
+        int channelIndex = addChannel(channelName, Mixer::Channel::Type::IN);
+        in->setChannelIndex(channelIndex);
+        addChangeListener(in);
+    }
+    
+    AuxOut* aux;
+    
+    if ((aux = dynamic_cast<AuxOut*>(m)) != NULL) {
+        auxChannels.push_back(aux);
+        String channelName = "Aux "+ String(getAuxChannels().size());
+        int channelIndex = addChannel(channelName, Mixer::Channel::Type::AUX);
+        aux->setChannelIndex(channelIndex);
+        addChangeListener(aux);
+    }
+    
+    Knob* k;
+    
+    if ((k = dynamic_cast<Knob*>(m)) != NULL) {
+        addChangeListener(k);
+        k->setMaximum(mod.getProperty("maxvalue").toString().getFloatValue());
+        k->setMinimum(mod.getProperty("minvalue").toString().getFloatValue());
+        k->setStepSize(mod.getProperty("stepsize").toString().getFloatValue());
+        k->setValue(mod.getProperty("value").toString().getFloatValue());
+        k->setIsMidicontroller(mod.getProperty("isController").toString().getIntValue() > 0);
+        k->setController(mod.getProperty("controllerNum").toString().getIntValue());
+    }
+    
+    MidiGate* gate;
+    
+    if ((gate = dynamic_cast<MidiGate*>(m)) != NULL) {
+        gate->setChannel(mod.getProperty("channel").toString().getIntValue());
+        addChangeListener(gate);
+    }
+    
+    ADSRModule* adsr;
+    
+    if ((adsr = dynamic_cast<ADSRModule*>(m)) != NULL) {
+        addChangeListener(adsr);
+        adsr->setAttack(mod.getProperty("attack").toString().getFloatValue());
+        adsr->setDecay(mod.getProperty("decay").toString().getFloatValue());
+        adsr->setSustain(mod.getProperty("sustain").toString().getFloatValue());
+        adsr->setRelease(mod.getProperty("release").toString().getFloatValue());
+        adsr->setMono(mod.getProperty("mono").toString().getIntValue() > 0);
+    }
+    
+    Constant* c = nullptr;
+    if ((c = dynamic_cast<Constant*>(m)) != NULL) {
+        
+        c->setValue(mod.getProperty("value").toString().getFloatValue());
+        addChangeListener(c);
+    }
+    
+    SamplerModule* sm;
+    
+    if ((sm = dynamic_cast<SamplerModule*>(m)) != NULL) {
+        
+        for(int i = 0; i < mod.getNumChildren();i++) {
+            if (mod.getChild(i).hasProperty("samplePath")) {
+                
+                
+                int note = mod.getChild(i).getProperty("note").toString().getIntValue();
+                String path = mod.getChild(i).getProperty("samplePath");
+                sm->setSamplePath(path, note - 1);
+                File file = File(path);
+                if (file.exists()) {
+                    FileInputStream* is = new FileInputStream(file);
+                    sm->setSamplePath(file.getFullPathName(), note - 1);
+                    sm->selectSample(note - 1);
+                    sm->loadSample(is, note - 1);
+                    
+                    long start = mod.getChild(i).getProperty("sampleStart").toString().getLargeIntValue();
+                    sm->getSamplerAt(note - 1)->setStartPosition(start);
+                    long end = mod.getChild(i).getProperty("sampleEnd").toString().getLargeIntValue();
+                    sm->getSamplerAt(note - 1)->setEndPosition(end);
+                    // long length = mod.getChild(i).getProperty("sampleLength").toString().getLargeIntValue();
+                    bool loop = mod.getChild(i).getProperty("loop").toString().getIntValue() > 0;
+                    sm->getSamplerAt(note - 1)->setLoop(loop);
+                    
+                }
+            }
+        }
+        
+    }
+    
+    Monophonic* monophonic;
+    
+    if ((monophonic = dynamic_cast<Monophonic*>(m)) != NULL) {
+        monophonic->setMono(mod.getProperty("mono").toString().getIntValue() > 0);
+    }
+    
+    PluginModule* pm ;
+    
+    if ((pm = dynamic_cast<PluginModule*>(m)) != NULL) {
+        pm->selectPlugin(mod.getProperty("plugin").toString());
+        pm->setCurrentProgram(mod.getProperty("currentProgram").toString().getIntValue());
+        pm->setPluginState(mod.getProperty("state").toString());
+    }
+    
+    StepSequencerModule* ssm;
+    
+    if ((ssm = dynamic_cast<StepSequencerModule*>(m)) != NULL) {
+        MemoryOutputStream* mos = new MemoryOutputStream();
+        String dataString = mod.getProperty("config").toString();
+        Base64::convertFromBase64(*mos, dataString);
+        ssm->getEditor()->setConfiguration((uint8*)mos->getData());
+        delete mos;
+    }
+    
+    return m;
+}
 
+void SynthEditor::connectTerminals(Module* m) {
+    for (int i = 0; i < m->getModules()->size(); i++) {
+        
+        Module* module = m->getModules()->at(i);
+        
+        TerminalModule* t;
+
+        if ((t = dynamic_cast<TerminalModule*>(module)) != NULL) {
+   
+            for (int j = 0; j < m->getPins().size();j++) {
+                if (m->getPins().at(j)->index == t->getIndex()) {
+                    Logger::writeToLog("Found terminal "+ String(t->getIndex()));
+                    t->getPins().at(0)->setTerminal(m->getPins().at(j));
+                }
+            }
+            
+        }
+    }
 }
 
 bool SynthEditor::connectionExists(std::vector<Connection*> connections,Connection *c) {
@@ -1477,9 +1521,9 @@ void SynthEditor::removeModule(Module* module) {
 void SynthEditor::deleteSelected(bool deleteAll) {
     
     if(!deleteAll) {
-        for (int i = 0; i < selectionModel.getSelectedModules()->size();i++) {
+        for (int i = 0; i < selectionModel.getSelectedModules().size();i++) {
             
-            removeModule(selectionModel.getSelectedModules()->at(i));
+            removeModule(selectionModel.getSelectedModules().at(i));
         }
     }
     

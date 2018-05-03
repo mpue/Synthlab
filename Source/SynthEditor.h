@@ -42,7 +42,10 @@ public:
     void loadFromString(String in);
     void saveStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections, ValueTree* v);
     void loadStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections,ValueTree* v);
-
+    void connectTerminals(Module* m);
+    Module* loadModule(ValueTree& v);
+    void loadConnections(ValueTree& v, std::vector<Module *>* modules, std::vector<Connection*>* connections);
+                         
     // audio processing
 
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate);

@@ -65,7 +65,7 @@ bool AddModuleAction::perform() {
     
     m->setSelected(true);
     m->savePosition();
-    editor->getSelectionModel().getSelectedModules()->push_back(m);
+    editor->getSelectionModel().getSelectedModules().push_back(m);
     editor->repaint();
     
     module = m;
@@ -109,14 +109,14 @@ bool AddModuleAction::perform() {
     if ((t = dynamic_cast<TerminalModule*>(m)) != NULL) {
         Pin* p = new Pin(Pin::Type::VALUE);
         t->getPins().at(0)->setTerminal(p);
-        
+       
         if (t->getDirection() == TerminalModule::Direction::IN) {
             editor->getModule()->addPin(Pin::Direction::IN, p);
         }
         else {
             editor->getModule()->addPin(Pin::Direction::OUT, p);
         }
-        
+        t->setIndex(p->index);
         
         editor->getModule()->repaint();
         
