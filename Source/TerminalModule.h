@@ -41,8 +41,8 @@ public:
     
     virtual void setName(String name) override;
     
-    void setType(Type& type);
-    Type& getType();
+    void setType(Type type);
+    Type getType();
     
     void setDirection(Direction dir);
     TerminalModule::Direction getDirection();
@@ -101,7 +101,7 @@ private:
     String name;
     bool editing = false;
     Pin* pin = nullptr;
-    Type& type;
+    Type type;
     
     std::vector<Pin*> proxies;
     

@@ -53,7 +53,7 @@ public:
         expect(mc->getEditor()->getModule()->getModules()->size() == 3);
         
         delete mc;
-        JUCEApplication::getInstance()->quit();
+        JUCEApplication::getInstance()->shutdown();
     }
     
 };

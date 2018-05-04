@@ -13,9 +13,10 @@
 
 
 //==============================================================================
-TerminalModule::TerminalModule(Direction dir, Type type) : Module("T"), direction(dir), type(type)
+TerminalModule::TerminalModule(Direction dir, Type type) : Module("T"), direction(dir)
 {
-    setName("T");
+
+
     setSize(120,30);
     nameLabel->setJustificationType (Justification::left);
     
@@ -30,7 +31,8 @@ TerminalModule::TerminalModule(Direction dir, Type type) : Module("T"), directio
     prefab = true;
     
     createProperties();
-    
+    setType(type);
+    setName("T");
 }
 
 TerminalModule::~TerminalModule() {
@@ -42,6 +44,7 @@ TerminalModule::~TerminalModule() {
 
 void TerminalModule::setName(juce::String name) {
     Module::setName(name);
+    nameValue->setValue(name);
     sendChangeMessage();
 }
 
@@ -74,11 +77,12 @@ void TerminalModule::setDirection(TerminalModule::Direction dir) {
     this->direction = dir;
 }
 
-void TerminalModule::setType(TerminalModule::Type& type) {
+void TerminalModule::setType(TerminalModule::Type type) {
     this->type = type;
+    this->typeValue->setValue(type);
 }
 
-TerminalModule::Type& TerminalModule::getType() {
+TerminalModule::Type TerminalModule::getType() {
     return type;
 }
 

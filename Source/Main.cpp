@@ -44,8 +44,8 @@ public:
 
     void shutdown() override
     {
-
-        mainWindow->setLookAndFeel(nullptr);
+        if (mainWindow != nullptr)
+            mainWindow->setLookAndFeel(nullptr);
         mainWindow = nullptr; // (deletes our window)
         PluginManager::getInstance()->destroy();
         AudioManager::getInstance()->destroy();
@@ -113,7 +113,7 @@ public:
     };
 
 private:
-    ScopedPointer<MainWindow> mainWindow;
+    ScopedPointer<MainWindow> mainWindow = nullptr;
 };
 
 //==============================================================================
