@@ -182,10 +182,10 @@ void Module::paint (Graphics& g)
         }
         else {
             
-            if(pins.at(i)->type == Pin::Type::AUDIO) {
+            if(pins.at(i)->getType() == Pin::Type::AUDIO) {
                 g.setColour(juce::Colours::orange);
             }
-            else if (pins.at(i)->type == Pin::Type::VALUE) {
+            else if (pins.at(i)->getType() == Pin::Type::VALUE) {
                  g.setColour(juce::Colours::yellow);
             }
             else {
@@ -432,7 +432,7 @@ void Module::process() {
     // if we have a terminal pin, just copy the value from the proxy to the output pin
     for (int i = 0; i < pins.size();i++){
         if (pins.at(i)->connections.size() == 1) {
-            if (pins.at(i)->type == Pin::Type::VALUE && pins.at(i)->getTerminal() != nullptr) {
+            if (pins.at(i)->getType() == Pin::Type::VALUE && pins.at(i)->getTerminal() != nullptr) {
                 pins.at(i)->getTerminal()->setValue(pins.at(i)->connections.at(0)->getValue());
             }
         }

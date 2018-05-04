@@ -78,13 +78,13 @@ void TerminalModule::setDirection(TerminalModule::Direction dir) {
 }
 
 void TerminalModule::setType(TerminalModule::Type type) {
-    this->type = type;
+    Terminal::setType(type);
     this->typeValue->setValue(type);
+    if (this->pins.size() > 0)
+        this->pins.at(0)->setType(type);
+    sendChangeMessage();
 }
 
-TerminalModule::Type TerminalModule::getType() {
-    return type;
-}
 
 void TerminalModule::createProperties() {
     nameValue = new Value();

@@ -12,10 +12,10 @@
 #include <stdio.h>
 #include <string.h>
 
-Pin::Pin(Pin::Type type) {
+Pin::Pin(Terminal::Type type) {
     name = "";
     this->type = type;
-    if (type == Pin::Type::AUDIO) {
+    if (type == Terminal::Type::AUDIO) {
         audioBuffer = new AudioSampleBuffer(2,1024);
     }
 }
@@ -117,6 +117,12 @@ void Pin::changeListenerCallback(juce::ChangeBroadcaster *source) {
     
     if ((c = dynamic_cast<Component*>(source)) != nullptr) {
         setName(c->getName());
+    }
+    
+    Terminal* t = nullptr;
+    
+    if ((t = dynamic_cast<Terminal*>(source)) != nullptr) {
+        setType(t->getType());
     }
     
 }

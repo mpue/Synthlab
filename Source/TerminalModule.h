@@ -10,24 +10,14 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Module.h"
 #include "Pin.h"
+#include "Terminal.h"
 
 //==============================================================================
 /*
  */
-class TerminalModule    : public Module
+class TerminalModule    : public Module, public Terminal
 {
 public:
-    
-    typedef enum TDirection {
-        IN,
-        OUT
-    } Direction;
-    
-    typedef enum TType {
-        AUDIO,
-        EVENT,
-        VALUE
-    } Type;
     
     TerminalModule(TerminalModule::Direction dir, TerminalModule::Type type);
     ~TerminalModule();
@@ -41,8 +31,6 @@ public:
     
     virtual void setName(String name) override;
     
-    void setType(Type type);
-    Type getType();
     
     void setDirection(Direction dir);
     TerminalModule::Direction getDirection();
@@ -50,6 +38,8 @@ public:
     virtual juce::Array<PropertyComponent*>& getProperties() override;
     virtual void createProperties() override;
 
+    virtual void setType(Terminal::Type type) override;
+    
 private:
     
     struct NameListener : Value::Listener
@@ -102,7 +92,6 @@ private:
     String name;
     bool editing = false;
     Pin* pin = nullptr;
-    Type type;
     
     std::vector<Pin*> proxies;
     

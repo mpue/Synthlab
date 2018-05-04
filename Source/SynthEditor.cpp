@@ -879,6 +879,13 @@ void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Conn
             file.setProperty("mono", monophonic->isMono(), nullptr);
         }
         
+        TerminalModule* t;
+        
+        
+        if ((t = dynamic_cast<TerminalModule*>((*it))) != NULL) {
+            file.setProperty("type", t->getType(), nullptr);
+        }
+        
         PluginModule* pm;
         
         if ((pm = dynamic_cast<PluginModule*>((*it))) != NULL) {
@@ -903,7 +910,7 @@ void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Conn
 
         for (std::vector<Pin*>::iterator it2 =  (*it)->pins.begin(); it2 != (*it)->pins.end(); ++it2) {
             ValueTree pin = ValueTree("Pin");
-            pin.setProperty("type", (*it2)->type, nullptr);
+            pin.setProperty("type", (*it2)->getType(), nullptr);
             pin.setProperty("direction", (*it2)->direction, nullptr);
             pin.setProperty("index", String(((*it2)->index)), nullptr);
             pin.setProperty("x", (*it2)->x, nullptr);
@@ -1138,8 +1145,8 @@ void SynthEditor::loadConnections(juce::ValueTree &cons, std::vector<Module *>* 
                 
                 // EVENTS: in listens at out
                 // OTHER: in gets its values from out
-                if ((a->type != Pin::Type::EVENT && a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT)
-                    || (a->type == Pin::Type::EVENT && a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN)) {
+                if ((a->getType() != Pin::Type::EVENT && a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT)
+                    || (a->getType() == Pin::Type::EVENT && a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN)) {
                     
                     if (!a->hasConnection(b)) {
                         
@@ -1160,8 +1167,8 @@ void SynthEditor::loadConnections(juce::ValueTree &cons, std::vector<Module *>* 
                     }
                     
                 }
-                else if ((a->type != Pin::Type::EVENT && a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN)
-                         || (a->type == Pin::Type::EVENT && a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT)) {
+                else if ((a->getType() != Pin::Type::EVENT && a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN)
+                         || (a->getType() == Pin::Type::EVENT && a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT)) {
                     if (!b->hasConnection(a)) {
                         b->connections.push_back(a);
                         Logger::writeToLog("Conencting pin "+ String(b->index)+ " to pin "  +String(a->index));
@@ -1218,7 +1225,7 @@ Module* SynthEditor::loadModule(ValueTree& mod) {
             Pin::Direction dir = static_cast<Pin::Direction>(direction);
             p->direction = dir;
             Pin::Type t = static_cast<Pin::Type>(type);
-            p->type = t;
+            p->setType(t);
             p->index = index;
             p->x = x;
             p->y = y;
@@ -1337,6 +1344,12 @@ Module* SynthEditor::loadModule(ValueTree& mod) {
         monophonic->setMono(mod.getProperty("mono").toString().getIntValue() > 0);
     }
     
+    TerminalModule* t;
+    
+    if ((t = dynamic_cast<TerminalModule*>(m)) != NULL) {
+        t->setType(static_cast<Terminal::Type>(mod.getProperty("type").toString().getIntValue()));
+    }
+    
     PluginModule* pm ;
     
     if ((pm = dynamic_cast<PluginModule*>(m)) != NULL) {
@@ -1371,6 +1384,7 @@ void SynthEditor::connectTerminals(Module* m) {
                 if (m->getPins().at(j)->index == t->getIndex()) {
                     Logger::writeToLog("Found terminal "+ String(t->getIndex()));
                     t->getPins().at(0)->setTerminal(m->getPins().at(j));
+                    t->getPins().at(0)->setType(m->getPins().at(j)->getType());
                     t->addChangeListener(m->getPins().at(j));
                 }
             }

@@ -50,10 +50,10 @@ bool AddConnectionAction::perform() {
     
     if (source != nullptr && target != nullptr && a != nullptr && b != nullptr) {
         
-        if (a->type == b->type) {
+        if (a->getType() == b->getType()) {
             
             // for event based pins the direction is from source to target
-            if (a->type == Pin::Type::EVENT ) {
+            if (a->getType() == Pin::Type::EVENT ) {
                 if (a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT) {
                     
                     b->connections.push_back(a);

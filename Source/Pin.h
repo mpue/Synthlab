@@ -14,32 +14,24 @@
 #include "AudioEngine/EventListener.h"
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "AudioEngine/AudioProcessorModule.h"
+#include "Terminal.h"
 
-class Pin : public ChangeBroadcaster, public AudioProcessorModule, public ChangeListener {
+class Pin : public ChangeBroadcaster,
+            public AudioProcessorModule,
+            public Terminal,
+            public ChangeListener {
 
 
 public:
-
-    enum Direction{
-        IN,
-        OUT
-    };
     
-    enum Type {
-        AUDIO,
-        EVENT,
-        VALUE
-    };
-    
-    Pin(Type type);
+    Pin(Terminal::Type type);
     ~Pin();
     
     int x;
     long index;
     int y;
 
-	Direction direction;
-    Type type;
+    Terminal::Direction direction;
     
     void setSelected(bool selected);
     bool isSelected();
