@@ -121,18 +121,18 @@ void PropertyView::resized()
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 
-void PropertyView::changeListenerCallback(juce::ChangeBroadcaster *source) {
+void PropertyView::selectionChanged(Component* c) {
 
     propertyPanel->clear();
     
-    SynthEditor* editor = dynamic_cast<SynthEditor*>(source);
-    if (editor != nullptr) {
+    if (c != nullptr) {
         
-        if (editor->getSelectionModel().getSelectedModule() != nullptr) {
-            descriptionEditor->setText(editor->getSelectionModel().getSelectedModule()->getDescription());
-            propertyPanel->addProperties(editor->getSelectionModel().getSelectedModule()->getProperties());
+        Module* m = dynamic_cast<Module*>(c);
+    
+        if (m != nullptr) {
+            descriptionEditor->setText(m->getDescription());
+            propertyPanel->addProperties(m->getProperties());
         }
-        
     }
 
 }

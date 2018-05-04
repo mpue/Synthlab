@@ -16,6 +16,7 @@
 #include <vector>
 #include "MixerPanel.h"
 #include "Project.h"
+#include "EditorListener.h"
 
 class SamplerModule;
 
@@ -98,15 +99,22 @@ public:
     std::vector<AudioOut*>& getOutputChannels();
     std::vector<AuxOut*>& getAuxChannels();
     
+                         
+                         
     void setSamplerate(double rate);
     virtual float getSampleRate() override;
     
     void setBufferSize(int buffersize);
     virtual float getBufferSize() override;
     
+    void addEditorListener(EditorListener* listener);
+                         
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
 
+    void notifyListeners();
+                         
+                         
     bool isAltDown = false;
     bool isCtrlDown = false;
     bool isLeftShiftDown = false;
@@ -156,6 +164,8 @@ private:
     static String defaultMidiInputName;
     static String defaultMidiOutputName;
     
+                         
+                         
     int currentSample = 0;
     int bufferSize;
     double _sampleRate;
@@ -175,7 +185,7 @@ private:
     Point<int> p2;
     
     std::vector<Viewport*> openViews;
-                         
+    std::vector<EditorListener*> listener;
     //[/UserVariables]
 
     

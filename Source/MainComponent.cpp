@@ -92,7 +92,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     mixerPanel = editorView->getMixerPanel();
     
     propertyView =  new PropertyView();
-    editor->addChangeListener(propertyView);
+    editor->addEditorListener(propertyView);
     
     Project::getInstance()->setPropertyView(propertyView);
     

@@ -40,6 +40,7 @@ TerminalModule::~TerminalModule() {
     delete typeListener;
     delete nameValue;
     delete typeValue;
+    removeAllChangeListeners();
 }
 
 void TerminalModule::setName(juce::String name) {

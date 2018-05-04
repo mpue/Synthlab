@@ -86,15 +86,14 @@ SynthEditor::~SynthEditor()
             tab->clearTabs();
             delete tab;
         }
-        removeAllChangeListeners();
+        
     }
-    
-
 
     for (int i = 0; i < openViews.size();i++) {
         delete openViews.at(i);
     }
 
+    listener.clear();
 }
 
 void SynthEditor::paint (Graphics& g)
@@ -236,7 +235,7 @@ void SynthEditor::mouseDown (const MouseEvent& e)
     repaint();
 
     sendChangeMessage();
-
+    notifyListeners();
 }
 
 void SynthEditor::showContextMenu(Point<int> position) {
@@ -768,7 +767,7 @@ void SynthEditor::cleanUp() {
     inputChannels.clear();
     auxChannels.clear();
     Project::getInstance()->getUndoManager()->clearUndoHistory();
-   
+    removeAllChangeListeners();
     
 }
 
@@ -1018,7 +1017,7 @@ void SynthEditor::openEditor(Module *m) {
     editorView->setMouseClickGrabsKeyboardFocus(false);
     editor->setModule(m, false);
     editor->setTab(tab);
-    editor->addChangeListener(Project::getInstance()->getPropertyView());
+    editor->addEditorListener(Project::getInstance()->getPropertyView());
     tab->addTab(m->getName(), Colours::darkgrey, editorView, false);
     openViews.push_back(editorView);
     tab->setCurrentTabIndex(tab->getNumTabs() - 1);
@@ -1570,7 +1569,7 @@ void SynthEditor::deleteSelected(bool deleteAll) {
             return selected;
         }),mods->end());
     }
-
+    notifyListeners();
     sendChangeMessage();
 }
 
@@ -1672,3 +1671,12 @@ void SynthEditor::duplicateSelected() {
     }
 }
 
+void SynthEditor::addEditorListener(EditorListener *listener) {
+    this->listener.push_back(listener);
+}
+
+void SynthEditor::notifyListeners() {
+    for (int i = 0;i < listener.size();i++) {
+        listener.at(i)->selectionChanged(this->selectionModel.getSelectedModule());
+    }
+}

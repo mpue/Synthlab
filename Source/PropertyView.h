@@ -23,6 +23,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "MainTabbedComponent.h"
 #include "ExtendedFileBrowser.h"
+#include "EditorListener.h"
 
 //[/Headers]
 
@@ -35,9 +36,9 @@
                                                                     //[/Comments]
 */
 class PropertyView  : public Component,
-                      public ChangeListener,
                       public TimeSliceThread,
-                      public TimeSliceClient
+                      public TimeSliceClient,
+                      public EditorListener
 {
 public:
     //==============================================================================
@@ -47,7 +48,6 @@ public:
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
 
-    void changeListenerCallback (ChangeBroadcaster* source) override;
     virtual int useTimeSlice() override;
     ExtendedFileBrowser* getBrowser();
     //[/UserMethods]
@@ -55,6 +55,7 @@ public:
     void paint (Graphics& g) override;
     void resized() override;
 
+    virtual void selectionChanged(Component* m) override;
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
 
