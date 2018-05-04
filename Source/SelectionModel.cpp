@@ -25,7 +25,7 @@ void SelectionModel::clearSelection() {
     getSelectedModules().clear();
 }
 
-void SelectionModel::checkForPinSelection(Point<int> position) {
+void SelectionModel::checkForPinSelection(juce::Point<int> position) {
     
     for (int i = 0; i < root->getModules()->size();i++) {
     
@@ -68,7 +68,7 @@ void SelectionModel::deselectAllPins(){
         }
     }
 }
-SelectionModel::State SelectionModel::checkForHitAndSelect(Point<int> pos) {
+SelectionModel::State SelectionModel::checkForHitAndSelect(juce::Point<int> pos) {
     
     bool hit = false;
     
@@ -94,7 +94,7 @@ SelectionModel::State SelectionModel::checkForHitAndSelect(Point<int> pos) {
     return NONE;
 }
 
-void SelectionModel::select(Point<int> pos) {
+void SelectionModel::select(juce::Point<int> pos) {
     for (int i = 0; i < root->getModules()->size(); i++) {
         if (root->getModules()->at(i)->getBounds().contains(pos)) {
             
@@ -107,7 +107,7 @@ void SelectionModel::select(Point<int> pos) {
     }
 }
 
-bool SelectionModel::isPointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<int> pt, double epsilon = 0.001)
+bool SelectionModel::isPointOnLineSegment(juce::Point<int> pt1, juce::Point<int> pt2, juce::Point<int> pt, double epsilon = 0.001)
 {
     
     if (pt.x - std::max(pt1.x, pt2.x) > epsilon ||
@@ -127,7 +127,7 @@ bool SelectionModel::isPointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<
     return abs(pt.x - x) < epsilon ||abs(pt.y - y) < epsilon;
 }
 
-void SelectionModel::checkForConnection(Point<int> pos) {
+void SelectionModel::checkForConnection(juce::Point<int> pos) {
     for (int i = 0; i < root->getConnections()->size(); i++) {
         Connection* c = root->getConnections()->at(i);
         

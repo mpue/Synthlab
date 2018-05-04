@@ -26,11 +26,11 @@ public:
         delete instance;
     }
     
-    class PluginWindow    : public DocumentWindow
+    class PluginWindow    : public juce::DocumentWindow
     {
     public:
-        PluginWindow (juce::String name, AudioProcessorEditor* editor)  : DocumentWindow (name,
-                                                                                    Colours::lightgrey,
+        PluginWindow (juce::String name, juce::AudioProcessorEditor* editor)  : DocumentWindow (name,
+                                                                                    juce::Colours::lightgrey,
                                                                                     DocumentWindow::allButtons)
         {
             setUsingNativeTitleBar(true);
@@ -53,18 +53,18 @@ public:
         }
         
     private:
-            AudioProcessorEditor* plugin;
+            juce::AudioProcessorEditor* plugin;
     };
     
     void scanPlugins();
-    void addPlugin(juce::String name,AudioDeviceManager* deviceManager);
-    void configureBusLayout(AudioPluginInstance* plugin ,AudioDeviceManager* deviceManager, AudioAppComponent* component);
-    AudioPluginInstance* getPlugin(juce::String name);
+    void addPlugin(juce::String name,juce::AudioDeviceManager* deviceManager);
+    void configureBusLayout(juce::AudioPluginInstance* plugin ,juce::AudioDeviceManager* deviceManager, juce::AudioAppComponent* component);
+    juce::AudioPluginInstance* getPlugin(juce::String name);
     PluginWindow* getPluginWindow(juce::String name);
-    PopupMenu* buildPluginMenu();
+    juce::PopupMenu* buildPluginMenu();
     long getNextPluginId();
     std::vector<juce::String> getAvailablePlugins();
-    StringArray& getPlugins();
+    juce::StringArray& getPlugins();
     
     int getNumActiveChannels(int i) {
         i = i - ((i >> 1) & 0x55555555);
@@ -73,7 +73,7 @@ public:
     }
     
     void updatePluginList();
-    void openPluginWindow(juce::String name, AudioDeviceManager* manager);
+    void openPluginWindow(juce::String name, juce::AudioDeviceManager* manager);
     
 private:
     
@@ -82,7 +82,7 @@ private:
     PluginManager();
     
     ~PluginManager(){
-        for(std::map<juce::String, AudioPluginInstance*>::iterator itr = pluginMap.begin(); itr != pluginMap.end(); itr++)
+        for(std::map<juce::String, juce::AudioPluginInstance*>::iterator itr = pluginMap.begin(); itr != pluginMap.end(); itr++)
         {
       
             juce::String name = itr->first;
@@ -106,13 +106,13 @@ private:
         delete apfm;
     }
     
-    std::map<juce::String,AudioPluginInstance*> pluginMap;
+    std::map<juce::String,juce::AudioPluginInstance*> pluginMap;
     std::map<juce::String,PluginWindow*> pluginWindowMap;
-    std::map<juce::String,AudioProcessorEditor*> editorWindowMap;
-    StringArray* plugins = nullptr;
-    KnownPluginList* pluginList = nullptr;
+    std::map<juce::String,juce::AudioProcessorEditor*> editorWindowMap;
+    juce::StringArray* plugins = nullptr;
+    juce::KnownPluginList* pluginList = nullptr;
     static PluginManager* instance;
-    AudioPluginFormatManager* apfm;
+    juce::AudioPluginFormatManager* apfm;
 };
 
 #endif /* PluginManager_h */

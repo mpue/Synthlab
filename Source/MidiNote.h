@@ -22,14 +22,14 @@ public:
     MidiNote();
     ~MidiNote();
 
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
 
     void note(int note);
 
     virtual void configurePins() override;
     
     
-    virtual String getCategory() override {
+    virtual juce::String getCategory() override {
         return "MIDI";
     }
     

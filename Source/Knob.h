@@ -16,7 +16,7 @@
 //==============================================================================
 /*
 */
-class Knob    : public Module, Slider::Listener
+class Knob    : public Module, juce::Slider::Listener
 {
 public:
     Knob();
@@ -27,8 +27,8 @@ public:
     void setValue(float value);
     float getValue();
     virtual void configurePins() override;
-    void sliderValueChanged (Slider* slider) override;
-    virtual String getCategory() override {
+    void sliderValueChanged (juce::Slider* slider) override;
+    virtual juce::String getCategory() override {
         return "Controls";
     }
     
@@ -52,7 +52,7 @@ public:
     
     virtual void setSelected(bool selected) override;
     
-    virtual juce::Array<PropertyComponent*>& getProperties() override;
+    virtual juce::Array<juce::PropertyComponent*>& getProperties() override;
     virtual void createProperties() override;
     
     float map(float x, float in_min, float in_max, float out_min, float out_max)
@@ -67,80 +67,80 @@ public:
     
 private:
     
-    struct ValueListener : Value::Listener
+    struct ValueListener : juce::Value::Listener
     {
-        ValueListener (Value& v, Knob* k) : k(k),  value (v) { value.addListener (this); }
+        ValueListener (juce::Value& v, Knob* k) : k(k),  value (v) { value.addListener (this); }
         ~ValueListener()  {}  // no need to remove the listener
         
-        void valueChanged (Value& value) override {
+        void valueChanged (juce::Value& value) override {
             k->setValue(value.toString().getFloatValue());
         }
         Knob* k;
-        Value value;
+        juce::Value value;
     };
     
-    struct MaxValueListener : Value::Listener
+    struct MaxValueListener : juce::Value::Listener
     {
-        MaxValueListener (Value& v, Knob* k) : k(k), value (v) { value.addListener (this); }
+        MaxValueListener (juce::Value& v, Knob* k) : k(k), value (v) { value.addListener (this); }
         ~MaxValueListener()  {}  // no need to remove the listener
         
-        void valueChanged (Value& value) override {
+        void valueChanged (juce::Value& value) override {
             k->setMaximum(value.toString().getFloatValue());
         }
         Knob* k;
-        Value value;
+        juce::Value value;
     };
     
-    struct MinValueListener : Value::Listener
+    struct MinValueListener : juce::Value::Listener
     {
-        MinValueListener (Value& v, Knob* k) : k(k), value (v){ value.addListener (this); }
+        MinValueListener (juce::Value& v, Knob* k) : k(k), value (v){ value.addListener (this); }
         ~MinValueListener()  {}  // no need to remove the listener
         
-        void valueChanged (Value& value) override {
+        void valueChanged (juce::Value& value) override {
             k->setMinimum(value.toString().getFloatValue());
         }
         Knob* k;
-        Value value;
+        juce::Value value;
     };
     
-    struct StepsizeValueListener : Value::Listener
+    struct StepsizeValueListener : juce::Value::Listener
     {
-        StepsizeValueListener (Value& v, Knob* k) : k(k), value (v){ value.addListener (this); }
+        StepsizeValueListener (juce::Value& v, Knob* k) : k(k), value (v){ value.addListener (this); }
         ~StepsizeValueListener()  {}  // no need to remove the listener
         
-        void valueChanged (Value& value) override {
+        void valueChanged (juce::Value& value) override {
             k->setStepSize(value.toString().getFloatValue());
         }
         Knob* k;
-        Value value;
+        juce::Value value;
     };
     
-    struct IsControllerValueListener : Value::Listener
+    struct IsControllerValueListener : juce::Value::Listener
     {
-        IsControllerValueListener (Value& v, Knob* k) : k(k), value (v){ value.addListener (this); }
+        IsControllerValueListener (juce::Value& v, Knob* k) : k(k), value (v){ value.addListener (this); }
         ~IsControllerValueListener()  {}  // no need to remove the listener
         
-        void valueChanged (Value& value) override {
+        void valueChanged (juce::Value& value) override {
             k->setIsMidicontroller(value.toString().getIntValue() > 0);
         }
         Knob* k;
-        Value value;
+        juce::Value value;
     };
     
-    struct ControllerValueListener : Value::Listener
+    struct ControllerValueListener : juce::Value::Listener
     {
-        ControllerValueListener (Value& v, Knob* k) : k(k), value (v){ value.addListener (this); }
+        ControllerValueListener (juce::Value& v, Knob* k) : k(k), value (v){ value.addListener (this); }
         ~ControllerValueListener()  {}  // no need to remove the listener
         
-        void valueChanged (Value& value) override {
+        void valueChanged (juce::Value& value) override {
             k->setController(value.toString().getIntValue());
         }
         Knob* k;
-        Value value;
+        juce::Value value;
     };
     
     float value;
-    Slider* slider;
+    juce::Slider* slider;
     bool isController = false;
     int controllerNum = 1;
     bool learning = false;
@@ -149,19 +149,19 @@ private:
     float maximum = 127;
     float stepsize = 1;
 
-    Value* valueValue;
-    Value* minValue;
-    Value* maxValue;
-    Value* stepsizeValue;
-    Value* isControllerValue;
-    Value* controllerValue;
+    juce::Value* valueValue;
+    juce::Value* minValue;
+    juce::Value* maxValue;
+    juce::Value* stepsizeValue;
+    juce::Value* isControllerValue;
+    juce::Value* controllerValue;
     
-    PropertyComponent* valueProp;
-    PropertyComponent* minValueProp;
-    PropertyComponent* maxValueProp;
-    PropertyComponent* stepsizeValueProp;
-    PropertyComponent* isControllerValueProp;
-    PropertyComponent* controllerValueProp;
+    juce::PropertyComponent* valueProp;
+    juce::PropertyComponent* minValueProp;
+    juce::PropertyComponent* maxValueProp;
+    juce::PropertyComponent* stepsizeValueProp;
+    juce::PropertyComponent* isControllerValueProp;
+    juce::PropertyComponent* controllerValueProp;
     
     ValueListener* valueListener;
     MinValueListener* minValueListener;

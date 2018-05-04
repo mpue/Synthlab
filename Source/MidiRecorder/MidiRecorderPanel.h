@@ -40,7 +40,7 @@
 class MidiRecorderPanel  : public juce::Component,
                            public MidiTools::Logger,
                            public RecordListener,
-                           public Button::Listener
+                           public juce::Button::Listener
 {
 public:
     //==============================================================================
@@ -50,16 +50,16 @@ public:
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
     MidiRecorder* getRecorder();
-    TextEditor* getTextEditor();
+    juce::TextEditor* getTextEditor();
     void log(juce::String message) override;
-    void setDeviceManager(AudioDeviceManager* manager);
+    void setDeviceManager(juce::AudioDeviceManager* manager);
     void changedState(StateChange* change) override;
-    void incomingMessage(MidiMessage* message) override;
+    void incomingMessage(juce::MidiMessage* message) override;
     //[/UserMethods]
 
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
     void resized() override;
-    void buttonClicked (Button* buttonThatWasClicked) override;
+    void buttonClicked (juce::Button* buttonThatWasClicked) override;
 
     // Binary resources:
     static const char* led_off_png;
@@ -75,13 +75,13 @@ private:
     //[/UserVariables]
 
     //==============================================================================
-    ScopedPointer<TextButton> recordButton;
-    ScopedPointer<TextButton> playButton;
-    ScopedPointer<TextEditor> textEditor;
-    ScopedPointer<TextButton> clearButton;
-    ScopedPointer<ImageButton> midiButton;
-    ScopedPointer<TextButton> saveButton;
-    ScopedPointer<TextButton> editButton;
+    juce::ScopedPointer<juce::TextButton> recordButton;
+    juce::ScopedPointer<juce::TextButton> playButton;
+    juce::ScopedPointer<juce::TextEditor> textEditor;
+    juce::ScopedPointer<juce::TextButton> clearButton;
+    juce::ScopedPointer<juce::ImageButton> midiButton;
+    juce::ScopedPointer<juce::TextButton> saveButton;
+    juce::ScopedPointer<juce::TextButton> editButton;
 
 
     //==============================================================================

@@ -21,14 +21,14 @@ class LabelModule    : public Module
 {
 public:
     LabelModule();
-    LabelModule(String name);
+    LabelModule(juce::String name);
     ~LabelModule();
     
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
 
     virtual void configurePins() override;
     virtual void setSelected(bool selected) override;
-    virtual String getCategory() override {
+    virtual juce::String getCategory() override {
         return "Controls";
     }
     

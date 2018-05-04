@@ -14,6 +14,11 @@
 #include "Mixer.h"
 #include "Project.h"
 
+using juce::Viewport;
+using juce::Colours;
+using juce::Graphics;
+using juce::ResizableWindow;
+
 //==============================================================================
 EditorComponent::EditorComponent(float sampleRate, int bufferSize) : resizerBar (&stretchableManager, 1, false)
 {

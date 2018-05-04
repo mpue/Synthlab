@@ -8,10 +8,10 @@
 
 class SamplerModule;
 
-class SamplePropertiesPanel  : public Component,
-public Timer,
-public Button::Listener,
-public Slider::Listener
+class SamplePropertiesPanel  : public juce::Component,
+public juce::Timer,
+public juce::Button::Listener,
+public juce::Slider::Listener
 {
 public:
     //==============================================================================
@@ -32,10 +32,10 @@ public:
 
     //[/UserMethods]
     
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
     void resized() override;
-    void buttonClicked (Button* buttonThatWasClicked) override;
-    void sliderValueChanged (Slider* sliderThatWasMoved) override;
+    void buttonClicked (juce::Button* buttonThatWasClicked) override;
+    void sliderValueChanged (juce::Slider* sliderThatWasMoved) override;
 
     
 private:
@@ -47,88 +47,88 @@ private:
     //[/UserVariables]
     
     //==============================================================================
-    ScopedPointer<TextButton> loadSampleButton;
-    ScopedPointer<Slider> sampleStartSlider;
-    ScopedPointer<Label> startLabel;
-    ScopedPointer<Label> endLabel;
-    ScopedPointer<Slider> sampleEndSlider;
-    ScopedPointer<ToggleButton> loopToggleButton;
-    ScopedPointer<Slider> pitchSlider;
-    ScopedPointer<Label> pitchLabel;
-    ScopedPointer<TextButton> recordButton;
-    ScopedPointer<ImageButton> recordActiveButton;
-    ScopedPointer<Label> timeLabel;
+    juce::ScopedPointer<juce::TextButton> loadSampleButton;
+    juce::ScopedPointer<juce::Slider> sampleStartSlider;
+    juce::ScopedPointer<juce::Label> startLabel;
+    juce::ScopedPointer<juce::Label> endLabel;
+    juce::ScopedPointer<juce::Slider> sampleEndSlider;
+    juce::ScopedPointer<juce::ToggleButton> loopToggleButton;
+    juce::ScopedPointer<juce::Slider> pitchSlider;
+    juce::ScopedPointer<juce::Label> pitchLabel;
+    juce::ScopedPointer<juce::TextButton> recordButton;
+    juce::ScopedPointer<juce::ImageButton> recordActiveButton;
+    juce::ScopedPointer<juce::Label> timeLabel;
     
     
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SamplePropertiesPanel)
 };
 
-class SampleEditor  : public Component, public MidiKeyboardStateListener, public MidiInputCallback, public DragAndDropTarget
+class SampleEditor  : public juce::Component, public juce::MidiKeyboardStateListener, public juce::MidiInputCallback, public juce::DragAndDropTarget
 {
 public:
 
-    SampleEditor (int buffersize, float sampleRate, AudioFormatManager* manager, SamplerModule* module);
+    SampleEditor (int buffersize, float sampleRate, juce::AudioFormatManager* manager, SamplerModule* module);
     ~SampleEditor();
 
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
     void resized() override;
 
-    virtual void handleNoteOff (MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override;
-    virtual void handleNoteOn (MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override;
+    virtual void handleNoteOff (juce::MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override;
+    virtual void handleNoteOn (juce::MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override;
     
     bool isInterestedInDragSource (const SourceDetails& dragSourceDetails) override;
     virtual void itemDropped (const SourceDetails& dragSourceDetails) override;
     
-    void handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) override;
+    void handleIncomingMidiMessage (juce::MidiInput* source, const juce::MidiMessage& message) override;
     
     SamplePropertiesPanel* getPanel() {
         return propertiesPanel;
     }
     
 private:
-    MidiKeyboardState state;
-    MidiKeyboardComponent::Orientation orientation = MidiKeyboardComponent::Orientation::horizontalKeyboard;
+    juce::MidiKeyboardState state;
+    juce::MidiKeyboardComponent::Orientation orientation = juce::MidiKeyboardComponent::Orientation::horizontalKeyboard;
 
     int buffersize;
 
-    ScopedPointer<MidiKeyboardComponent> midiKeyboard;
+    juce::ScopedPointer<juce::MidiKeyboardComponent> midiKeyboard;
     AudioThumbnailComponent* component;
-    ScopedPointer<SamplePropertiesPanel> propertiesPanel;
+    juce::ScopedPointer<SamplePropertiesPanel> propertiesPanel;
     
     SamplerModule* sampleModule;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SampleEditor)
 };
 
-class SamplerModule : public Module, public Timer
+class SamplerModule : public Module, public juce::Timer
 {
 public:
-    SamplerModule(double sampleRate, int buffersize, AudioFormatManager* manager);
+    SamplerModule(double sampleRate, int buffersize, juce::AudioFormatManager* manager);
     ~SamplerModule();
     
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
     
     void setAmplitude(float amplitude);
     void process() override;
     
     virtual void configurePins() override;
-    virtual String getCategory() override {
+    virtual juce::String getCategory() override {
         return "Sound sources";
     }
     
     virtual void timerCallback() override;
     virtual void eventReceived(Event *e) override;
-    void loadSample(InputStream* is, int sampler);
-    void setSamplePath(String sample, int sampler);
-    String getSamplePath(int i);
+    void loadSample(juce::InputStream* is, int sampler);
+    void setSamplePath(juce::String sample, int sampler);
+    juce::String getSamplePath(int i);
     void setPitch(float pitch, int samplerIndex);
     float getPitch(int samplerIndex);
     void updatePush2Display();
     
     bool hasSampleAt(int i);
     
-    AudioSampleBuffer* getBuffer();
+    juce::AudioSampleBuffer* getBuffer();
     
 
     
@@ -159,15 +159,15 @@ public:
 #ifdef USE_PUSH
     void updatePush2Pads() {
 
-        AudioDeviceManager* deviceManager = AudioManager::getInstance()->getDeviceManager();
+        juce::AudioDeviceManager* deviceManager = AudioManager::getInstance()->getDeviceManager();
         
         if (deviceManager->getDefaultMidiOutput() != nullptr) {
-            deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0xb0,86,1));
+            deviceManager->getDefaultMidiOutput()->sendMessageNow(juce::MidiMessage(0xb0,86,1));
             for (int i = 0; i < 128;i++) {
-                deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0x90,i,0));
+                deviceManager->getDefaultMidiOutput()->sendMessageNow(juce::MidiMessage(0x90,i,0));
                 if (sampler[i] != nullptr && sampler[i]->hasSample()) {
                     
-                    deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0x90,i,0x7e));
+                    deviceManager->getDefaultMidiOutput()->sendMessageNow(juce::MidiMessage(0x90,i,0x7e));
                 }
             }
         }
@@ -191,14 +191,14 @@ public:
 private:
     float samplePosX = 20;
     float pushSamplePosX = 0;
-    AudioFormatManager* manager;
-    AudioThumbnailCache* cache = nullptr;
-    AudioThumbnail* thumbnail = nullptr;
+    juce::AudioFormatManager* manager;
+    juce::AudioThumbnailCache* cache = nullptr;
+    juce::AudioThumbnail* thumbnail = nullptr;
     Sampler* sampler[128] = { nullptr };
     int currentSample = 0;
     int currentEnvelope = -1;
     bool gate = false;
-    String samplePaths[128];
+    juce::String samplePaths[128];
     
     float bufferLeft [1024*1024] = {0};
     float bufferRight [1024*1024] = {0};
@@ -206,7 +206,7 @@ private:
     virtual void setSampleRate(float rate) override;
     virtual void setBuffersize(int buffersize) override;
     
-    AudioSampleBuffer* recordingBuffer = nullptr;
+    juce::AudioSampleBuffer* recordingBuffer = nullptr;
     SampleEditor* editor = nullptr;
     int currentSampler = 0;
     bool recording = false;

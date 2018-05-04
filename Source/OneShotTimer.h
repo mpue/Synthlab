@@ -12,7 +12,7 @@
 
 typedef void(*Callback) (void);
 
-class OneShotTimer : public Timer {
+class OneShotTimer : public juce::Timer {
     
 public:
     

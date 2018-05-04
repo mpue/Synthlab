@@ -22,20 +22,20 @@ public:
     AudioThumbnailComponent(int buffersize, float sampleRate);
     ~AudioThumbnailComponent();
 
-    void paint (Graphics&) override;
+    void paint (juce::Graphics&) override;
     void resized() override;
 
-    void setSampleBuffer(AudioSampleBuffer* buffer);
+    void setSampleBuffer(juce::AudioSampleBuffer* buffer);
     void setStartPosition(int position);
     void setEndPosition(int position);
     void setCurrentPosition(int position);
     
 private:
     
-    AudioFormatManager* manager;
-    AudioThumbnailCache* cache;
-    AudioThumbnail* thumbnail = nullptr;
-    AudioSampleBuffer* buffer = nullptr;
+    juce::AudioFormatManager* manager;
+    juce::AudioThumbnailCache* cache;
+    juce::AudioThumbnail* thumbnail = nullptr;
+    juce::AudioSampleBuffer* buffer = nullptr;
     
     float sampleRate;
     int buffersize;

@@ -21,13 +21,13 @@
 #include <map>
 //==============================================================================
 
-class MainComponent   : public AudioAppComponent,
-                        public MenuBarModel,
-                        public KeyListener,
-                        public Button::Listener,
-                        public Timer,
-                        public AudioProcessorPlayer,
-                        public DragAndDropContainer
+class MainComponent   : public juce::AudioAppComponent,
+                        public juce::MenuBarModel,
+                        public juce::KeyListener,
+                        public juce::Button::Listener,
+                        public juce::Timer,
+                        public juce::AudioProcessorPlayer,
+                        public juce::DragAndDropContainer
 {
 public:
     //==============================================================================
@@ -36,20 +36,20 @@ public:
 
     //==============================================================================
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate) override;
-    void getNextAudioBlock (const AudioSourceChannelInfo& bufferToFill) override;
+    void getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill) override;
     void releaseResources() override;
     
     //==============================================================================
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
     void resized() override;
-    bool keyStateChanged (bool isKeyDown, Component* originatingComponent) override;
-    bool keyPressed (const KeyPress& key, Component* originatingComponent) override;
-    void modifierKeysChanged (const ModifierKeys& modifiers) override;
+    bool keyStateChanged (bool isKeyDown, juce::Component* originatingComponent) override;
+    bool keyPressed (const juce::KeyPress& key, juce::Component* originatingComponent) override;
+    void modifierKeysChanged (const juce::ModifierKeys& modifiers) override;
     void createKeyMap();
-    void buttonClicked (Button*) override;
+    void buttonClicked (juce::Button*) override;
     
     
-    void handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) override;
+    void handleIncomingMidiMessage (juce::MidiInput* source, const juce::MidiMessage& message) override;
     void sendGateMessage(Module* module, int channel, int velocity,int note,bool on);
     void sendNoteMessage(Module* module, int channel, int note);
     void sendControllerMessage(Module* module, int channel, int controller, float value);
@@ -60,8 +60,8 @@ public:
         return editor;
     }
     
-    void mouseDrag (const MouseEvent& event) override;
-    virtual void dragOperationStarted (const DragAndDropTarget::SourceDetails& details) override;
+    void mouseDrag (const juce::MouseEvent& event) override;
+    virtual void dragOperationStarted (const juce::DragAndDropTarget::SourceDetails& details) override;
     void timerCallback() override;
     
 private:
@@ -72,31 +72,31 @@ private:
 	SynthEditor* editor = nullptr;
     MainTabbedComponent* tab = nullptr;
     PropertyView* propertyView = nullptr    ;
-    Viewport* view = nullptr;
-    MenuBarComponent* menu;
+    juce::Viewport* view = nullptr;
+    juce::MenuBarComponent* menu;
     ModuleBrowser* moduleBrowser = nullptr;
 
-    Label* cpuLoadLabel = nullptr;
-    Slider* loadSlider = nullptr;
+    juce::Label* cpuLoadLabel = nullptr;
+    juce::Slider* loadSlider = nullptr;
 
     MixerPanel* mixerPanel = nullptr;
     Mixer* mixer = nullptr;
-    PopupMenu* pluginMenu = nullptr;
+    juce::PopupMenu* pluginMenu = nullptr;
     
     EditorComponent* editorView = nullptr;
     
-    virtual StringArray getMenuBarNames() override;
-    virtual PopupMenu getMenuForIndex(int index, const String & menuName) override;
+    virtual juce::StringArray getMenuBarNames() override;
+    virtual juce::PopupMenu getMenuForIndex(int index, const juce::String & menuName) override;
     virtual void menuItemSelected(int menuItemID, int topLevelMenuIndex) override;
     
-    StretchableLayoutManager stretchableManager;
-    StretchableLayoutResizerBar resizerBar;
+    juce::StretchableLayoutManager stretchableManager;
+    juce::StretchableLayoutResizerBar resizerBar;
     
     std::map<int,int> keyCodeMidiNote;
     
     int currentOctave = 1;
     DefaultToolbarItemFactory* toolbarFactory;
-    Toolbar* toolbar = nullptr;
+    juce::Toolbar* toolbar = nullptr;
     
     bool initialized = false;
     volatile bool running = false;

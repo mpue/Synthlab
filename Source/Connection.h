@@ -17,7 +17,7 @@ class Module;
 class Connection : public juce::Component
 {
 public:
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
     void resized() override;
 	Connection();
 	Connection(Module* source, Pin* output,	Module* target, Pin* input);
@@ -27,11 +27,11 @@ public:
 	Module* target = nullptr;
 	Pin* b;
 	bool selected = false;
-    void setPoints(Point<int>& p1, Point<int>& p2);
-    Path& getPath();
+    void setPoints(juce::Point<int>& p1, juce::Point<int>& p2);
+    juce::Path& getPath();
 private:
-    Path linePath;
-    Point<int> p1;
-    Point<int> p2;
+    juce::Path linePath;
+    juce::Point<int> p1;
+    juce::Point<int> p2;
 };
 

@@ -3,8 +3,8 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "ModuleBrowserTable.h"
 
-class ModuleBrowser  : public Component,
-                       public TextEditor::Listener
+class ModuleBrowser  : public juce::Component,
+                       public juce::TextEditor::Listener
 
 {
 public:
@@ -12,9 +12,9 @@ public:
     ModuleBrowser ();
     ~ModuleBrowser();
 
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
     void resized() override;
-    void textEditorTextChanged (TextEditor&) override;
+    void textEditorTextChanged (juce::TextEditor&) override;
     
     ModuleBrowserTable* getTable() {
         return table;
@@ -23,12 +23,12 @@ public:
     
 private:
 
-    DropShadow* shadow = nullptr;
-    DropShadower* shadower = nullptr;
+    juce::DropShadow* shadow = nullptr;
+    juce::DropShadower* shadower = nullptr;
     ModuleBrowserTable* table = nullptr;
 
-    ScopedPointer<Label> label;
-    ScopedPointer<TextEditor> searchText;
+    juce::ScopedPointer<juce::Label> label;
+    juce::ScopedPointer<juce::TextEditor> searchText;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ModuleBrowser)
 };

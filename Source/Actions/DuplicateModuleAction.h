@@ -12,10 +12,10 @@
 #include "../Module.h"
 #include "../SynthEditor.h"
 
-class DuplicateModuleAction : public UndoableAction {
+class DuplicateModuleAction : public juce::UndoableAction {
     
 public:
-    DuplicateModuleAction(SynthEditor* editor, Point<int> position, Module* original);
+    DuplicateModuleAction(SynthEditor* editor, juce::Point<int> position, Module* original);
     ~DuplicateModuleAction(){};
     
     virtual bool perform() override;
@@ -24,7 +24,7 @@ public:
 private:
     
     SynthEditor* editor;
-    Point<int> position;
+    juce::Point<int> position;
     int moduleId;
     Module* module = nullptr;
     

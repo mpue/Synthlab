@@ -29,7 +29,7 @@ public:
     void reset();
     
 private:
-    ScopedPointer<Reverb> reverb;
+    juce::ScopedPointer<juce::Reverb> reverb;
     
     JUCE_LEAK_DETECTOR(StereoReverb);
     

@@ -5,48 +5,48 @@
 #include "Cell.h"
 #include "Pin.h"
 
-class SequenceEditor  : public Component,
-                        public AudioProcessorPlayer,
-                        public Timer,
-                        public Button::Listener,
-                        public Slider::Listener
+class SequenceEditor  : public juce::Component,
+                        public juce::AudioProcessorPlayer,
+                        public juce::Timer,
+                        public juce::Button::Listener,
+                        public juce::Slider::Listener
 {
 public:
 
     SequenceEditor (Pin* output);
     ~SequenceEditor();
 
-    void handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) override;
-    virtual void handlePartialSysexMessage (MidiInput* source,
-                                            const uint8* messageData,
+    void handleIncomingMidiMessage (juce::MidiInput* source, const juce::MidiMessage& message) override;
+    virtual void handlePartialSysexMessage (juce::MidiInput* source,
+                                            const juce::uint8* messageData,
                                             int numBytesSoFar,
                                             double timestamp) override;
-    void setDeviceManager(AudioDeviceManager* manager);
+    void setDeviceManager(juce::AudioDeviceManager* manager);
     uint8_t decodeSysex(uint8_t *sysex, uint8_t *data, uint8_t len);
 
     void sendConfig();
     int getConfigLength();
     void timerCallback() override;
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
     void resized() override;
-    void buttonClicked (Button* buttonThatWasClicked) override;
-    void mouseMove (const MouseEvent& e) override;
-    void mouseDown (const MouseEvent& e) override;
-    void mouseDrag (const MouseEvent& e) override;
-    void mouseUp (const MouseEvent& e) override;
-    bool keyPressed (const KeyPress& key) override;
-    void modifierKeysChanged (const ModifierKeys& modifiers) override;
+    void buttonClicked (juce::Button* buttonThatWasClicked) override;
+    void mouseMove (const juce::MouseEvent& e) override;
+    void mouseDown (const juce::MouseEvent& e) override;
+    void mouseDrag (const juce::MouseEvent& e) override;
+    void mouseUp (const juce::MouseEvent& e) override;
+    bool keyPressed (const juce::KeyPress& key) override;
+    void modifierKeysChanged (const juce::ModifierKeys& modifiers) override;
     void clearSequence();
-    void sliderValueChanged (Slider* slider) override;
-    uint8* getConfiguration();
-    void setConfiguration(uint8* data);
-    struct SequencePanel : public Component {
+    void sliderValueChanged (juce::Slider* slider) override;
+    juce::uint8* getConfiguration();
+    void setConfiguration(juce::uint8* data);
+    struct SequencePanel : public juce::Component {
         
         friend class SequenceEditor;
         
-        void paint (Graphics& g) override {
+        void paint (juce::Graphics& g) override {
             
-            g.fillAll (Colour (0xff323e44));
+            g.fillAll (juce::Colour (0xff323e44));
             
             g.setColour(juce::Colours::green);
             g.fillRect(selectedCol * cellSize, selectedRow*cellSize,cellSize, cellSize);
@@ -77,10 +77,10 @@ public:
                     
                     if (showVelocity) {
                         
-                        g.drawText(String(velocity),x*cellSize+1, y*cellSize+1, cellSize,cellSize,Justification::centred);
+                        g.drawText(juce::String(velocity),x*cellSize+1, y*cellSize+1, cellSize,cellSize,juce::Justification::centred);
                     }
                     else {
-                        g.drawText(notes[grid[x][y].getNote() % 12]+String(octave),x*cellSize+1, y*cellSize+1, cellSize,cellSize,Justification::centred);
+                        g.drawText(notes[grid[x][y].getNote() % 12]+juce::String(octave),x*cellSize+1, y*cellSize+1, cellSize,cellSize,juce::Justification::centred);
                     }
                 }
             }
@@ -101,7 +101,7 @@ private:
     static int gridHeight;
     const static int cellSize = 32;
 
-    static const String notes[128];
+    static const juce::String notes[128];
     
     static int currentStep;
 
@@ -110,16 +110,16 @@ private:
 
     float tempo = 120;
     
-    AudioDeviceManager* deviceManager;
+    juce::AudioDeviceManager* deviceManager;
 
     Pin* output = nullptr;
 
-    ScopedPointer<TextButton> playButton;
-    ScopedPointer<TextButton> recordButton;
-    ScopedPointer<TextButton> clearButton;
-    ScopedPointer<Slider> lengthSlider;
+    juce::ScopedPointer<juce::TextButton> playButton;
+    juce::ScopedPointer<juce::TextButton> recordButton;
+    juce::ScopedPointer<juce::TextButton> clearButton;
+    juce::ScopedPointer<juce::Slider> lengthSlider;
     
-    Viewport* view = nullptr;
+    juce::Viewport* view = nullptr;
     SequencePanel* content = nullptr;
 
     bool running = false;

@@ -28,15 +28,15 @@ public:
     }
 
     
-    AudioFormatManager* getFormatManager() {
+    juce::AudioFormatManager* getFormatManager() {
         return manager;
     }
     
-    AudioDeviceManager* getDeviceManager() {
+    juce::AudioDeviceManager* getDeviceManager() {
         return deviceManager;
     }
     
-    void setDeviceManager(AudioDeviceManager* manager){
+    void setDeviceManager(juce::AudioDeviceManager* manager){
         this->deviceManager = manager;
     }
 
@@ -73,11 +73,11 @@ public:
         numActiveOutputs = getNumActiveChannels(activeOutputChannels.toInteger());
     }
     
-    StringArray getInputChannelNames() {
+    juce::StringArray getInputChannelNames() {
         return deviceManager->getCurrentAudioDevice()->getInputChannelNames();
     }
     
-    StringArray getOutputChannelNames() {
+    juce::StringArray getOutputChannelNames() {
         return deviceManager->getCurrentAudioDevice()->getOutputChannelNames();
     }
     
@@ -86,7 +86,7 @@ private:
     
     AudioManager() {
 
-        manager = new AudioFormatManager();
+        manager = new juce::AudioFormatManager();
         manager->registerBasicFormats();
    }
     
@@ -100,7 +100,7 @@ private:
     
     
     static AudioManager* instance;
-    AudioDeviceManager* deviceManager;
+    juce::AudioDeviceManager* deviceManager;
     
     int numInputChannels = 0;
     int numOutputChannels = 0;
@@ -108,7 +108,7 @@ private:
     int numActiveInputs = 0;
     int numActiveOutputs = 0;
     
-    AudioFormatManager* manager;
+    juce::AudioFormatManager* manager;
 };
 
 #endif /* Project_hp*/

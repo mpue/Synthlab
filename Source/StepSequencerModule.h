@@ -24,11 +24,11 @@ public:
     ~StepSequencerModule();
     
     
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
     virtual void process() override;
     virtual void configurePins() override;
     void eventReceived(Event *e) override;
-    virtual String getCategory() override {
+    virtual juce::String getCategory() override {
         return "MIDI";
     }
     

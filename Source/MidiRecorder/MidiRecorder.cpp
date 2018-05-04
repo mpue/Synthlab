@@ -10,6 +10,12 @@
 
 #include "MidiRecorder.h"
 #include <vector>
+
+using juce::MidiMessage;
+using juce::Time;
+using juce::MidiFile;
+using juce::MidiMessageSequence;
+
 MidiRecorder::MidiRecorder(MidiTools::Logger* logger) {
     this->logger = logger;
 

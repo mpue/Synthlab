@@ -23,6 +23,9 @@
 
 #include "MixerPanel.h"
 
+using juce::Graphics;
+using juce::ChangeBroadcaster;
+using juce::String;
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 //[/MiscUserDefs]

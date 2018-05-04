@@ -24,8 +24,21 @@
 
 #include "MasterChannelPanel.h"
 
-
 //[MiscUserDefs] You can add your own user definitions and misc code here...
+using juce::Slider;
+using juce::Colours;
+using juce::Colour;
+using juce::Label;
+using juce::Font;
+using juce::TextEditor;
+using juce::Justification;
+using juce::ImageButton;
+using juce::ImageCache;
+using juce::Graphics;
+using juce::Button;
+using juce::MouseEvent;
+using juce::Image;
+using juce::String;
 //[/MiscUserDefs]
 
 //==============================================================================

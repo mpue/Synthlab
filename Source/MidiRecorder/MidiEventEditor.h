@@ -35,8 +35,7 @@
     Describe your class and how it works here!
                                                                     //[/Comments]
 */
-class MidiEventEditor  : public juce::Component,
-                         public TableListBoxModel
+class MidiEventEditor  : public juce::Component, public juce::TableListBoxModel
 {
 public:
     //==============================================================================
@@ -47,13 +46,13 @@ public:
     //[UserMethods]     -- You can add your own custom methods in this section.
 
     int getNumRows() override;
-    void paintCell (Graphics&,
+    void paintCell (juce::Graphics&,
                     int rowNumber,
                     int columnId,
                     int width, int height,
                     bool rowIsSelected) override;
 
-    void paintRowBackground (Graphics&,
+    void paintRowBackground (juce::Graphics&,
                              int rowNumber,
                              int width, int height,
                              bool rowIsSelected) override;
@@ -65,19 +64,19 @@ public:
     
     //[/UserMethods]
 
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
     void resized() override;
 
 
 
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
-    TableListBox* table;
+    juce::TableListBox* table;
     MidiRecorder* recorder = nullptr;
     //[/UserVariables]
 
     //==============================================================================
-    ScopedPointer<Viewport> component;
+    juce::ScopedPointer<juce::Viewport> component;
 
 
     //==============================================================================

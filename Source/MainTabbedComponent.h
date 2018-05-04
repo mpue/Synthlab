@@ -15,18 +15,18 @@
 //==============================================================================
 /*
 */
-class MainTabbedComponent    : public TabbedComponent, public Button::Listener
+class MainTabbedComponent    : public juce::TabbedComponent, public juce::Button::Listener
 {
 public:
     MainTabbedComponent();
-    MainTabbedComponent(TabbedButtonBar::Orientation orientation);
-    void paint (Graphics& g) override;
-    void popupMenuClickOnTab (int tabIndex, const String& tabName) override;
-    TabBarButton* createTabButton (const String& tabName, int tabIndex) override;
-    virtual void buttonClicked (Button*) override;
-    void addTab (const String& tabName,
-                 Colour tabBackgroundColour,
-                 Component* contentComponent,
+    MainTabbedComponent(juce::TabbedButtonBar::Orientation orientation);
+    void paint (juce::Graphics& g) override;
+    void popupMenuClickOnTab (int tabIndex, const juce::String& tabName) override;
+    juce::TabBarButton* createTabButton (const juce::String& tabName, int tabIndex) override;
+    virtual void buttonClicked (juce::Button*) override;
+    void addTab (const juce::String& tabName,
+                 juce::Colour tabBackgroundColour,
+                 juce::Component* contentComponent,
                  bool deleteComponentWhenNotNeeded);
 ;
     

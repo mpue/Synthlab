@@ -32,7 +32,7 @@ public:
     float fine;
     
 private:
-    ScopedPointer<Random> random;
+    juce::ScopedPointer<juce::Random> random;
     
 };
 

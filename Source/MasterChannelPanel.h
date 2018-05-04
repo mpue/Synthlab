@@ -37,11 +37,11 @@
     Describe your class and how it works here!
                                                                     //[/Comments]
 */
-class MasterChannelPanel  : public Component,
-                            public ChangeListener,
-                            public ChangeBroadcaster,
-                            public Slider::Listener,
-                            public Button::Listener
+class MasterChannelPanel  : public juce::Component,
+                            public juce::ChangeListener,
+                            public juce::ChangeBroadcaster,
+                            public juce::Slider::Listener,
+                            public juce::Button::Listener
 {
 public:
     //==============================================================================
@@ -58,11 +58,11 @@ public:
         MAGNITUDE
     };
 
-    void mouseDown (const MouseEvent& e) override;
-    void mouseDrag (const MouseEvent& e) override;
+    void mouseDown (const juce::MouseEvent& e) override;
+    void mouseDrag (const juce::MouseEvent& e) override;
 
-    virtual void changeListenerCallback(ChangeBroadcaster * source) override;
-    void setName(String name);
+    virtual void changeListenerCallback(juce::ChangeBroadcaster * source) override;
+    void setName(juce::String name);
     void setMagnitude(int channel, float magnitude);
     void setMute(bool mute);
     void setSolo(bool solo);
@@ -78,10 +78,10 @@ public:
     
     //[/UserMethods]
 
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
     void resized() override;
-    void sliderValueChanged (Slider* sliderThatWasMoved) override;
-    void buttonClicked (Button* buttonThatWasClicked) override;
+    void sliderValueChanged (juce::Slider* sliderThatWasMoved) override;
+    void buttonClicked (juce::Button* buttonThatWasClicked) override;
 
     // Binary resources:
     static const char* peaks_png;
@@ -111,15 +111,15 @@ private:
     //[/UserVariables]
 
     //==============================================================================
-    ScopedPointer<Slider> vuSliderL;
-    ScopedPointer<Slider> channelVolume;
-    ScopedPointer<Slider> panSlider;
-    ScopedPointer<Label> nameLabel;
-    ScopedPointer<ImageButton> muteButton;
-    ScopedPointer<ImageButton> soloButton;
-    ScopedPointer<Label> M;
-    ScopedPointer<Label> S;
-    ScopedPointer<Slider> vuSliderR;
+    juce::ScopedPointer<juce::Slider> vuSliderL;
+    juce::ScopedPointer<juce::Slider> channelVolume;
+    juce::ScopedPointer<juce::Slider> panSlider;
+    juce::ScopedPointer<juce::Label> nameLabel;
+    juce::ScopedPointer<juce::ImageButton> muteButton;
+    juce::ScopedPointer<juce::ImageButton> soloButton;
+    juce::ScopedPointer<juce::Label> M;
+    juce::ScopedPointer<juce::Label> S;
+    juce::ScopedPointer<juce::Slider> vuSliderR;
 
 
     //==============================================================================

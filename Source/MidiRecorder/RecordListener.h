@@ -29,7 +29,7 @@ public:
         State newState;
     } StateChange;
     
-    virtual void incomingMessage(MidiMessage* message) = 0;
+    virtual void incomingMessage(juce::MidiMessage* message) = 0;
     
     virtual void changedState(StateChange* change) = 0;
 

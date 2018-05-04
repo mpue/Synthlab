@@ -10,7 +10,7 @@
 
 #include "Random.h"
 
-
+using juce::Time;
 
 Synthlab::Random::Random(float sampleRate, int bufferSize) : Oszillator(sampleRate) {
     this->buffersize = bufferSize;

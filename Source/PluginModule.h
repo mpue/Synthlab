@@ -23,43 +23,43 @@ public:
     PluginModule(double sampleRate, int buffersize);
     ~PluginModule();
     
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
     
     void process() override;
     virtual void configurePins() override;
-    virtual String getCategory() override {
+    virtual juce::String getCategory() override {
         return "FX";
     }
     
     void setCurrentProgram(int program);
     int getCurrentProgram();
     
-    void selectPlugin(String name);
-    String getPluginName();
+    void selectPlugin(juce::String name);
+    juce::String getPluginName();
     void openPluginWindow();
     void eventReceived(Event *e) override;
     
-    virtual juce::Array<PropertyComponent*>& getProperties() override;
+    virtual juce::Array<juce::PropertyComponent*>& getProperties() override;
     virtual void createProperties() override;
     
-    String getPluginState();
-    void setPluginState(String state);
+    juce::String getPluginState();
+    void setPluginState(juce::String state);
     
 private:
     
-    struct PluginValueListener : Value::Listener
+    struct PluginValueListener : juce::Value::Listener
     {
-        PluginValueListener (Value& v, PluginModule* m) : m(m), value (v){ value.addListener (this); }
+        PluginValueListener (juce::Value& v, PluginModule* m) : m(m), value (v){ value.addListener (this); }
         ~PluginValueListener()  {}  // no need to remove the listener
         
-        void valueChanged (Value& value) override {
+        void valueChanged (juce::Value& value) override {
             m->selectPlugin(value.getValue().toString());
         }
         PluginModule* m;
-        Value value;
+        juce::Value value;
     };
         
-    Image* image;
+    juce::Image* image;
     
     int currentProgram = 0;
     
@@ -69,15 +69,15 @@ private:
     float* bufferLeft;
     float* bufferRight;
     
-    AudioPluginInstance* plugin;
+    juce::AudioPluginInstance* plugin;
     PluginManager::PluginWindow* win = nullptr;
     
-    String pluginName;
-    AudioBuffer<float>* audioBuffer;
-    MidiBuffer midiBuffer;
+    juce::String pluginName;
+    juce::AudioBuffer<float>* audioBuffer;
+    juce::MidiBuffer midiBuffer;
     
-    Value* pluginValue;
-    PropertyComponent* pluginProp;
+    juce::Value* pluginValue;
+    juce::PropertyComponent* pluginProp;
     PluginValueListener* pluginListener;
 
     

@@ -18,12 +18,12 @@
 //==============================================================================
 /*
 */
-class ModuleBrowserTable    : public Component, public TableListBoxModel
+class ModuleBrowserTable    : public juce::Component, public juce::TableListBoxModel
 {
 public:
     ModuleBrowserTable()
     {
-        table = new TableListBox();
+        table = new juce::TableListBox();
         // setSize(580,400);
         table->getHeader().addColumn("", 1,80);
         table->getHeader().addColumn("", 2,320);
@@ -53,7 +53,7 @@ public:
         delete table;
     }
     
-    var getDragSourceDescription (const SparseSet<int>& currentlySelectedRows) override{
+    juce::var getDragSourceDescription (const juce::SparseSet<int>& currentlySelectedRows) override{
         return (filteredPrefabs->at(table->getSelectedRow()).getId());
     }
 
@@ -75,7 +75,7 @@ public:
             return static_cast<int>(filteredPrefabs->size());
         return 0;
     }
-    void paintCell (Graphics& g,
+    void paintCell (juce::Graphics& g,
                     int rowNumber,
                     int columnId,
                     int width, int height,
@@ -83,7 +83,7 @@ public:
         
         g.setColour(juce::Colours::black);
         
-        String text = "";
+        juce::String text = "";
         
         if (columnId == 2) {
             text = filteredPrefabs->at(rowNumber).getName();
@@ -101,7 +101,7 @@ public:
 
     }
     
-    void paintRowBackground (Graphics& g,
+    void paintRowBackground (juce::Graphics& g,
                              int rowNumber,
                              int width, int height,
                              bool rowIsSelected) override {
@@ -118,7 +118,7 @@ public:
         g.fillRect(0,0,width,height);
     }
     
-    void paint (Graphics& g) override
+    void paint (juce::Graphics& g) override
     {
         // g.fillAll (Colour (0xff323e44));
     }
@@ -135,7 +135,7 @@ public:
     }
 
 private:
-    TableListBox* table = nullptr;
+    juce::TableListBox* table = nullptr;
     std::vector<PrefabFactory::Prefab> prefabs;
     std::vector<PrefabFactory::Prefab>* filteredPrefabs = nullptr;
     

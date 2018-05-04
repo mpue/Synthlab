@@ -16,11 +16,11 @@
 //==============================================================================
 /*
 */
-class ToolbarComboBox : public ToolbarItemComponent
+class ToolbarComboBox : public juce::ToolbarItemComponent
 {
 public:
     ToolbarComboBox (const int toolbarItemId)
-    : ToolbarItemComponent (toolbarItemId, "Custom Toolbar Item", false),
+    : juce::ToolbarItemComponent (toolbarItemId, "Custom Toolbar Item", false),
     comboBox ("layers")
     {
         addAndMakeVisible (comboBox);
@@ -34,7 +34,7 @@ public:
         comboBox.setEditableText (false);
     }
     
-    ComboBox& getComboBox() {
+    juce::ComboBox& getComboBox() {
         return comboBox;
     }
     
@@ -50,20 +50,20 @@ public:
         return true;
     }
     
-    void paintButtonArea (Graphics&, int, int, bool, bool) override
+    void paintButtonArea (juce::Graphics&, int, int, bool, bool) override
     {
     }
     
-    void contentAreaChanged (const Rectangle<int>& newArea) override
+    void contentAreaChanged (const juce::Rectangle<int>& newArea) override
     {
         comboBox.setSize (newArea.getWidth() - 2,
-                          jmin (newArea.getHeight() - 2, 22));
+                          juce::jmin (newArea.getHeight() - 2, 22));
         
         comboBox.setCentrePosition (newArea.getCentreX(), newArea.getCentreY());
     }
     
 private:
-    ComboBox comboBox;
+    juce::ComboBox comboBox;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ToolbarComboBox)
 };

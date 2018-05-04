@@ -12,6 +12,11 @@
 #include "AudioThumbnailComponent.h"
 #include "AudioManager.h"
 
+using juce::AudioThumbnailCache;
+using juce::AudioThumbnail;
+using juce::Graphics;
+using juce::AudioSampleBuffer;
+
 //==============================================================================
 AudioThumbnailComponent::AudioThumbnailComponent(int buffersize, float sampleRate)
 {

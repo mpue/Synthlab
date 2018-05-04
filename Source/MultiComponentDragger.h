@@ -41,7 +41,7 @@ public:
     virtual ~MultiComponentDragger() {}
 
     void setConstrainBoundsToParent(bool shouldConstrainToParentSize,
-                                    BorderSize<int> amountPermittedOffscreen_)
+                                    juce::BorderSize<int> amountPermittedOffscreen_)
     {
         constrainToParent = shouldConstrainToParentSize;
         amountPermittedOffscreen = amountPermittedOffscreen_;
@@ -60,7 +60,7 @@ public:
     /**
      * Adds a specified component as being selected.
      */
-    void setSelected(Component * component, bool shouldNowBeSelected)
+    void setSelected(juce::Component * component, bool shouldNowBeSelected)
     {
         /* Asserts here? This class is only designed to work for components that have a common parent. */
         // jassert(selectedComponents.size() == 0 || component->getParentComponent() == selectedComponents[0]->getParentComponent());
@@ -75,7 +75,7 @@ public:
     }
 
     /** Toggles the selected status of a particular component. */
-    void toggleSelection(Component * component)
+    void toggleSelection(juce::Component * component)
     {
         setSelected(component, ! isSelected(component));
     }
@@ -96,7 +96,7 @@ public:
     /**
      Find out if a component is marked as selected.
      */
-    bool isSelected(Component * component) const
+    bool isSelected(juce::Component * component) const
     {
         return std::find(selectedComponents.begin(),
                          selectedComponents.end(),
@@ -106,7 +106,7 @@ public:
     /** 
      Call this from your components mouseDown event.
      */
-    void handleMouseDown (Component* component, const MouseEvent & e)
+    void handleMouseDown (juce::Component* component, const juce::MouseEvent & e)
     {
         jassert (component != nullptr);
 
@@ -134,7 +134,7 @@ public:
     /**
      Call this from your components mouseUp event.
      */
-    void handleMouseUp (Component* component, const MouseEvent & e)
+    void handleMouseUp (juce::Component* component, const juce::MouseEvent & e)
     {
         if (didStartDragging)
             didStartDragging = false;
@@ -150,7 +150,7 @@ public:
     /**
      Call this from your components mouseDrag event.
      */
-    void handleMouseDrag (const MouseEvent& e)
+    void handleMouseDrag (const juce::MouseEvent& e)
     {
 
         jassert (e.mods.isAnyMouseButtonDown()); // The event has to be a drag event!
@@ -161,7 +161,7 @@ public:
 
         didStartDragging = true;
 
-        Point<int> delta = e.getEventRelativeTo (componentBeingDragged).getPosition() - mouseDownWithinTarget;
+        juce::Point<int> delta = e.getEventRelativeTo (componentBeingDragged).getPosition() - mouseDownWithinTarget;
         
         if (constrainToParent)
         {
@@ -197,7 +197,7 @@ public:
         {
             if (comp != nullptr)
             {
-                Rectangle<int> bounds (comp->getBounds());
+                juce::Rectangle<int> bounds (comp->getBounds());
 
                 bounds += delta;
 
@@ -249,12 +249,12 @@ public:
     
 private:
     
-    Rectangle<int> getAreaOfSelectedComponents()
+    juce::Rectangle<int> getAreaOfSelectedComponents()
     {
         if (selectedComponents.size() == 0)
-            return Rectangle<int>(0, 0, 0, 0);
+            return juce::Rectangle<int>(0, 0, 0, 0);
         
-        Rectangle<int> a = selectedComponents[0]->getBounds();
+        juce::Rectangle<int> a = selectedComponents[0]->getBounds();
         
         for (auto comp: selectedComponents)
             if (comp)
@@ -264,7 +264,7 @@ private:
     }
 
 
-    void applyDirectionConstraints(const MouseEvent &e, Point<int> &delta)
+    void applyDirectionConstraints(const juce::MouseEvent &e, juce::Point<int> &delta)
     {
         if (shiftConstrainsDirection && e.mods.isShiftDown())
         {
@@ -305,7 +305,7 @@ private:
         }
     }
 
-    void removeSelectedComponent(Component * component)
+    void removeSelectedComponent(juce::Component * component)
     {
         selectedComponents.erase(std::remove(selectedComponents.begin(),
                                              selectedComponents.end(),
@@ -327,13 +327,13 @@ private:
     bool didJustSelect {false};
     bool didStartDragging {false};
 
-    Point<int> mouseDownWithinTarget;
-    Point<int> totalDragDelta;
+    juce::Point<int> mouseDownWithinTarget;
+    juce::Point<int> totalDragDelta;
 
-    std::vector<WeakReference<Component>> selectedComponents;
-    Component * componentBeingDragged { nullptr };
+    std::vector<juce::WeakReference<juce::Component>> selectedComponents;
+    juce::Component * componentBeingDragged { nullptr };
     
-    BorderSize<int> amountPermittedOffscreen;
+    juce::BorderSize<int> amountPermittedOffscreen;
    
     int raster = 1;
     int tolerance = 4;

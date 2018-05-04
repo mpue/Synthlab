@@ -31,7 +31,7 @@ public:
         float magnitudeRight = 0;
         bool mute = false;
         bool solo = false;
-        String name;
+        juce::String name;
         Type channelType;
         int index;
     };

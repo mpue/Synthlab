@@ -10,6 +10,8 @@
 
 #include "StereoReverb.h"
 
+using juce::Reverb;
+
 StereoReverb::StereoReverb() {
     this->reverb = new Reverb();
 }

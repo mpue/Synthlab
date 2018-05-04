@@ -13,7 +13,9 @@
 #include "../PrefabFactory.h"
 #include "../AudioManager.h"
 
-DuplicateModuleAction::DuplicateModuleAction(SynthEditor* editor, Point<int> position, Module* original) {
+using juce::String;
+
+DuplicateModuleAction::DuplicateModuleAction(SynthEditor* editor, juce::Point<int> position, Module* original) {
     this->editor = editor;
     this->position = position;
     this->moduleId = original->getId();

@@ -23,8 +23,8 @@ public:
     void play();
     void stop();
     float getSampleAt(int channel, long position);
-    void loadSample(File file);
-    void loadSample(InputStream* input);
+    void loadSample(juce::File file);
+    void loadSample(juce::InputStream* input);
     void setStartPosition(long start);
     long getStartPosition();
     void setEndPosition(long end);
@@ -37,7 +37,7 @@ public:
     float getVolume() {
         return volume;
     }
-    AudioSampleBuffer* getSampleBuffer();
+    juce::AudioSampleBuffer* getSampleBuffer();
     bool hasSample();
     void nextSample();
     float getCurrentSample(int channel);
@@ -79,14 +79,14 @@ public:
     
 private:
     
-    AudioFormatManager* manager;
+    juce::AudioFormatManager* manager;
     
     float sampleRate;
     int bufferSize;
     
     float volume = 0.5;
     
-    AudioSampleBuffer *sampleBuffer = nullptr;
+    juce::AudioSampleBuffer *sampleBuffer = nullptr;
     
     long currentSample = 0;
     
@@ -106,8 +106,8 @@ private:
     float* tempBufferLeft = nullptr;
     float* tempBufferRight = nullptr;
     
-    CatmullRomInterpolator* interpolatorLeft;
-    CatmullRomInterpolator* interpolatorRight;
+    juce::CatmullRomInterpolator* interpolatorLeft;
+    juce::CatmullRomInterpolator* interpolatorRight;
     
     ADSR* samplerEnvelope = nullptr;
 };

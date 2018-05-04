@@ -12,6 +12,8 @@
 #include "AuxOut.h"
 #include "Connection.h"
 
+using juce::Justification;
+using juce::ImageCache;
 
 //==============================================================================
 AuxOut::AuxOut()

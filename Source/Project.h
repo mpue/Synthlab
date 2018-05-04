@@ -37,16 +37,16 @@ public:
         delete instance;
     }
 
-    UndoManager* getUndoManager() {
+    juce::UndoManager* getUndoManager() {
         return undoManager;
     }
     
-    StringArray& getRecentFiles() {
+    juce::StringArray& getRecentFiles() {
         return recentFiles;
     }
 
     void loadRecentFileList();
-    void addRecentFile(String path);
+    void addRecentFile(juce::String path);
     
     void setSupplemental(MainTabbedComponent* component) {
         this->supplementalTab = component;
@@ -60,7 +60,7 @@ public:
         return lookAndFeel;
     };
     
-    std::vector<DialogWindow*>& getOpenWindows() {
+    std::vector<juce::DialogWindow*>& getOpenWindows() {
         return openWindows;
     }
     
@@ -97,7 +97,7 @@ public:
 private:
     
     Project() {
-        undoManager = new UndoManager();
+        undoManager = new juce::UndoManager();
         lookAndFeel = new CustomLookAndFeel();
 #ifdef USE_PUSH
         
@@ -147,7 +147,7 @@ private:
         
         // cleanup existing and opened windows
         
-        for (std::vector<DialogWindow*>::iterator it = openWindows.begin();it != openWindows.end();) {
+        for (std::vector<juce::DialogWindow*>::iterator it = openWindows.begin();it != openWindows.end();) {
             if ((*it) != nullptr) {
                 if ((*it)->isVisible()){
                     (*it)->setVisible(false);
@@ -167,11 +167,11 @@ private:
     
     PropertyView* propertyView = nullptr;
     static Project* instance;
-    UndoManager* undoManager;
-    StringArray recentFiles;
+    juce::UndoManager* undoManager;
+    juce::StringArray recentFiles;
     CustomLookAndFeel* lookAndFeel;
     MainTabbedComponent* supplementalTab = nullptr;
-    std::vector<DialogWindow*> openWindows;
+    std::vector<juce::DialogWindow*> openWindows;
     juce::Component* main = nullptr;
     Sampler* defaultSampler = nullptr;
     

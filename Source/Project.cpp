@@ -7,6 +7,14 @@
 
 #include "Project.h"
 
+using juce::String;
+using juce::File;
+using juce::ValueTree;
+using juce::ScopedPointer;
+using juce::XmlElement;
+using juce::XmlDocument;
+using juce::OutputStream;
+
 Project* Project::instance = NULL;
 
 void Project::addRecentFile(juce::String path) {

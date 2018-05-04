@@ -22,6 +22,10 @@
 
 #include "MidiEventEditor.h"
 
+using juce::Viewport;
+using juce::TableListBox;
+using juce::Graphics;
+using juce::Colour;
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 //[/MiscUserDefs]

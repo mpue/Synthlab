@@ -22,10 +22,10 @@ public:
     
     Event();
     Event(Event* e);
-    Event(String name, Type type);
+    Event(juce::String name, Type type);
     ~Event();
     
-  String getName();
+  juce::String getName();
     Type getType();
     int getValue();
     void setValue(int value);
@@ -36,7 +36,7 @@ public:
 private:
     
     Type type;
-    String name;
+    juce::String name;
     int number = 1;
     int value = 0;
     int note = 0;

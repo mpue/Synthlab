@@ -11,6 +11,13 @@
 #include "Sampler.h"
 #include "AudioManager.h"
 
+using juce::CatmullRomInterpolator;
+using juce::AudioSampleBuffer;
+using juce::File;
+using juce::AudioFormatReader;
+using juce::ScopedPointer;
+using juce::AudioFormatReaderSource;
+using juce::InputStream;
 
 Sampler::Sampler(float sampleRate, int bufferSize) {
     this->sampleRate = sampleRate;

@@ -24,20 +24,20 @@ public:
     NoiseModule(double sampleRate, int buffersize);
     ~NoiseModule();
 
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
 
     void setAmplitude(float amplitude);
     void process() override;
     
     virtual void configurePins() override;
-    virtual String getCategory() override {
+    virtual juce::String getCategory() override {
         return "Sound sources";
     }
     
 private:
     
 
-    Image* image;
+    juce::Image* image;
     WhiteNoise* oscillator;
     int currentSample = 0;
     

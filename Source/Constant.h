@@ -22,52 +22,52 @@ public:
     Constant();
     ~Constant();
 
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
 
     void setValue(float value);
     float getValue();
     virtual void configurePins() override;
 
-    virtual void setName(String name) override {
+    virtual void setName(juce::String name) override {
         //Module::setName(name);
-        Component::setName(name);
+        juce::Component::setName(name);
         this->name = name;
-        this->nameLabel->setText(name +" = "+String(value),juce::NotificationType::dontSendNotification);
+        this->nameLabel->setText(name +" = "+juce::String(value),juce::NotificationType::dontSendNotification);
     }
     
     virtual void setEditing(bool editing) override;
     
-    virtual String getName()  {
+    virtual juce::String getName()  {
         return name;
     }
     
-    virtual String getCategory() override {
+    virtual juce::String getCategory() override {
         return "Math";
     }
     
-    struct ValueListener : Value::Listener
+    struct ValueListener : juce::Value::Listener
     {
-        ValueListener (Value& v, Constant* c) : c(c),  value (v) { value.addListener (this); }
+        ValueListener (juce::Value& v, Constant* c) : c(c),  value (v) { value.addListener (this); }
         ~ValueListener()  {}  // no need to remove the listener
         
-        void valueChanged (Value& value) override {
+        void valueChanged (juce::Value& value) override {
             c->setValue(value.toString().getFloatValue());
         }
         Constant* c;
-        Value value;
+        juce::Value value;
     };
     
-    virtual juce::Array<PropertyComponent*>& getProperties() override;
+    virtual juce::Array<juce::PropertyComponent*>& getProperties() override;
     virtual void createProperties() override;
     
 private:
     
-    Value* valueValue;
-    PropertyComponent* valueProp;
+    juce::Value* valueValue;
+    juce::PropertyComponent* valueProp;
     ValueListener* valueListener;
     
     float value = 0;
-    String name;
+    juce::String name;
     bool editing = false;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Constant)
 };

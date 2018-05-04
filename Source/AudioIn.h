@@ -22,13 +22,13 @@ public:
     AudioIn();
     ~AudioIn();
     
-    void paint (Graphics& g) override;
-    void setDeviceManager(AudioDeviceManager* manager);
+    void paint (juce::Graphics& g) override;
+    void setDeviceManager(juce::AudioDeviceManager* manager);
     virtual void process() override;
     
     virtual void configurePins() override;
     
-    virtual String getCategory() override {
+    virtual juce::String getCategory() override {
         return "Input / Output";
     }
     
@@ -38,7 +38,7 @@ public:
     
     
 private:
-    AudioDeviceManager* deviceManager;
+    juce::AudioDeviceManager* deviceManager;
     int channelIndex;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioIn)
 };
