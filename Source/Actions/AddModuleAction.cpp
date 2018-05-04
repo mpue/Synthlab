@@ -109,7 +109,8 @@ bool AddModuleAction::perform() {
     if ((t = dynamic_cast<TerminalModule*>(m)) != NULL) {
         Pin* p = new Pin(Pin::Type::VALUE);
         t->getPins().at(0)->setTerminal(p);
-       
+        p->setName(t->getName());
+        t->addChangeListener(p);
         if (t->getDirection() == TerminalModule::Direction::IN) {
             editor->getModule()->addPin(Pin::Direction::IN, p);
         }

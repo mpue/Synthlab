@@ -82,12 +82,13 @@ SynthEditor::~SynthEditor()
     if (isRoot && deleteModuleWhenRemoved) {
         cleanUp();
         delete root;
+        if (tab != nullptr) {
+            tab->clearTabs();
+            delete tab;
+        }
     }
     
-    if (tab != nullptr) {
-        tab->clearTabs();
-        delete tab;
-    }
+
 
     for (int i = 0; i < openViews.size();i++) {
         delete openViews.at(i);
@@ -1008,6 +1009,7 @@ void SynthEditor::openEditor(Module *m) {
     editorView->setWantsKeyboardFocus(false);
     editorView->setMouseClickGrabsKeyboardFocus(false);
     editor->setModule(m, false);
+    editor->setTab(tab);
     editor->addChangeListener(Project::getInstance()->getPropertyView());
     tab->addTab(m->getName(), Colours::darkgrey, editorView, false);
     openViews.push_back(editorView);
@@ -1369,6 +1371,7 @@ void SynthEditor::connectTerminals(Module* m) {
                 if (m->getPins().at(j)->index == t->getIndex()) {
                     Logger::writeToLog("Found terminal "+ String(t->getIndex()));
                     t->getPins().at(0)->setTerminal(m->getPins().at(j));
+                    t->addChangeListener(m->getPins().at(j));
                 }
             }
             

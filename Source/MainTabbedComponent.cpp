@@ -48,6 +48,9 @@ void MainTabbedComponent::popupMenuClickOnTab(int tabIndex, const juce::String &
     }
     else if (result == 1) {
         TabbedComponent::removeTab(tabIndex);
+        if (getNumTabs() > 0) {
+            setCurrentTabIndex(getNumTabs() - 1);
+        }
     }
     delete m;
  
@@ -55,6 +58,9 @@ void MainTabbedComponent::popupMenuClickOnTab(int tabIndex, const juce::String &
 
 void MainTabbedComponent::buttonClicked(juce::Button * button) {
     TabbedComponent::removeTab(button->getName().getIntValue());
+    if (getNumTabs() > 0) {
+        setCurrentTabIndex(getNumTabs() - 1);
+    }
 }
 
 TabBarButton* MainTabbedComponent::createTabButton(const juce::String &tabName, int tabIndex)
@@ -80,4 +86,12 @@ TabBarButton* MainTabbedComponent::createTabButton(const juce::String &tabName, 
     tb->setExtraComponent(ib, juce::TabBarButton::ExtraComponentPlacement::afterText);
     ib->addListener(this);
     return tb;
+}
+
+
+void MainTabbedComponent::addTab (const String& tabName,
+             Colour tabBackgroundColour,
+             Component* contentComponent,
+             bool deleteComponentWhenNotNeeded) {
+    TabbedComponent::addTab(tabName, tabBackgroundColour, contentComponent, deleteComponentWhenNotNeeded);
 }

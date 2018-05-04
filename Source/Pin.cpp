@@ -110,3 +110,13 @@ void Pin::setNote(int note) {
 int Pin::getNote() {
     return note;
 }
+
+void Pin::changeListenerCallback(juce::ChangeBroadcaster *source) {
+    
+    Component* c = nullptr;
+    
+    if ((c = dynamic_cast<Component*>(source)) != nullptr) {
+        setName(c->getName());
+    }
+    
+}

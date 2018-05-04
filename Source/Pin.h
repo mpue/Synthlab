@@ -15,7 +15,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "AudioEngine/AudioProcessorModule.h"
 
-class Pin : public ChangeBroadcaster, public AudioProcessorModule {
+class Pin : public ChangeBroadcaster, public AudioProcessorModule, public ChangeListener {
 
 
 public:
@@ -78,7 +78,7 @@ public:
     bool hasConnection(Pin* target);
     
     virtual void process(const float *in, float *out,int numSamples) override;
-    
+    void changeListenerCallback (ChangeBroadcaster* source) override;
 private:
     bool selected = false;
     String name;

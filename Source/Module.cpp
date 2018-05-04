@@ -87,6 +87,7 @@ void Module::createProperties() {
 Module::~Module()
 {
     //[Destructor_pre]. You can add your own custom destruction code here..
+    removeAllChangeListeners();
     delete nameListener;
     delete nameValue;
     //[/Destructor_pre]
@@ -127,6 +128,8 @@ Module::~Module()
     
     delete connections;
     delete modules;
+    
+
 
     //[/Destructor]
 }

@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Synth>
+  <Modules>
+    <Module name="Maths" index="1525382331475" x="390" y="85" isPrefab="0"
+            prefabId="0">
+      <Pins>
+        <Pin type="2" direction="0" index="152538233147501" x="0" y="10"/>
+        <Pin type="2" direction="0" index="152538233147502" x="0" y="30"/>
+        <Pin type="2" direction="0" index="152538233147503" x="0" y="50"/>
+        <Pin type="2" direction="1" index="152538233147504" x="110" y="10"/>
+      </Pins>
+      <Modules>
+        <Module name="A" index="152538233147501" x="194" y="144" isPrefab="1"
+                prefabId="83">
+          <Pins>
+            <Pin type="2" direction="1" index="9301" x="110" y="10"/>
+          </Pins>
+          <Modules/>
+          <Connections/>
+        </Module>
+        <Module name="B" index="152538233147502" x="197" y="234" isPrefab="1"
+                prefabId="83">
+          <Pins>
+            <Pin type="2" direction="1" index="18301" x="110" y="10"/>
+          </Pins>
+          <Modules/>
+          <Connections/>
+        </Module>
+        <Module name="C" index="152538233147503" x="196" y="340" isPrefab="1"
+                prefabId="83">
+          <Pins>
+            <Pin type="2" direction="1" index="108301" x="110" y="10"/>
+          </Pins>
+          <Modules/>
+          <Connections/>
+        </Module>
+        <Module name="Add value" index="69" x="458" y="152" isPrefab="1" prefabId="59">
+          <Pins>
+            <Pin type="2" direction="0" index="6901" x="0" y="10"/>
+            <Pin type="2" direction="0" index="6902" x="0" y="30"/>
+            <Pin type="2" direction="1" index="6903" x="110" y="10"/>
+          </Pins>
+          <Modules/>
+          <Connections/>
+        </Module>
+        <Module name="Add value" index="159" x="674" y="273" isPrefab="1" prefabId="59">
+          <Pins>
+            <Pin type="2" direction="0" index="15901" x="0" y="10"/>
+            <Pin type="2" direction="0" index="15902" x="0" y="30"/>
+            <Pin type="2" direction="1" index="15903" x="110" y="10"/>
+          </Pins>
+          <Modules/>
+          <Connections/>
+        </Module>
+        <Module name="T" index="152538233147504" x="945" y="241" isPrefab="1"
+                prefabId="84">
+          <Pins>
+            <Pin type="2" direction="0" index="9401" x="0" y="10"/>
+          </Pins>
+          <Modules/>
+          <Connections/>
+        </Module>
+      </Modules>
+      <Connections>
+        <Connection source="152538233147501" target="69" a="9301" b="6901"/>
+        <Connection source="152538233147502" target="69" a="18301" b="6902"/>
+        <Connection source="152538233147503" target="159" a="108301" b="15902"/>
+        <Connection source="69" target="159" a="6903" b="15901"/>
+        <Connection source="159" target="152538233147504" a="15903" b="9401"/>
+      </Connections>
+    </Module>
+    <Module name="" index="77" x="240" y="87" isPrefab="1" prefabId="67"
+            value="1.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="7701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="167" x="239" y="123" isPrefab="1" prefabId="67"
+            value="1.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="16701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="1067" x="240" y="162" isPrefab="1" prefabId="67"
+            value="1.00000000000000000000">
+      <Pins>
+        <Pin type="2" direction="1" index="106701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Display value" index="68" x="598" y="123" isPrefab="1"
+            prefabId="58">
+      <Pins>
+        <Pin type="2" direction="0" index="6801" x="0" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections>
+    <Connection source="77" target="1525382331475" a="7701" b="152538233147501"/>
+    <Connection source="167" target="1525382331475" a="16701" b="152538233147502"/>
+    <Connection source="1067" target="1525382331475" a="106701" b="152538233147503"/>
+    <Connection source="1525382331475" target="68" a="152538233147504" b="6801"/>
+  </Connections>
+</Synth>

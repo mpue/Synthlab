@@ -152,10 +152,10 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
         m = new MixerModule(sampleRate,bufferSize);
     }
     else if (prefabs[id].getName() == "Terminal In") {
-        m = new TerminalModule(TerminalModule::Direction::IN);
+        m = new TerminalModule(TerminalModule::Direction::IN, TerminalModule::Type::VALUE);
     }
     else if (prefabs[id].getName() == "Terminal Out") {
-        m = new TerminalModule(TerminalModule::Direction::OUT);
+        m = new TerminalModule(TerminalModule::Direction::OUT, TerminalModule::Type::VALUE);
     }
     
     m->setIndex(id + pow(10,prefabs[id].getNumInstances() + 1));

@@ -91,7 +91,7 @@ public:
     void setConnections(std::vector<Connection*>* connections);
     void textEditorReturnKeyPressed(juce::TextEditor &) override;
     void setModules(std::vector<Module*>* modules);
-    void setName(String name) ;
+    virtual void setName(String name);
 
     bool isEditable() { return editable;}
     bool isPrefab() { return prefab;};

@@ -13,7 +13,7 @@
 
 
 //==============================================================================
-TerminalModule::TerminalModule(Direction dir) : Module("T"), direction(dir)
+TerminalModule::TerminalModule(Direction dir, Type type) : Module("T"), direction(dir), type(type)
 {
     setName("T");
     setSize(120,30);
@@ -29,9 +29,21 @@ TerminalModule::TerminalModule(Direction dir) : Module("T"), direction(dir)
     editable = false;
     prefab = true;
     
+    createProperties();
     
 }
 
+TerminalModule::~TerminalModule() {
+    delete nameListener;
+    delete typeListener;
+    delete nameValue;
+    delete typeValue;
+}
+
+void TerminalModule::setName(juce::String name) {
+    Module::setName(name);
+    sendChangeMessage();
+}
 
 void TerminalModule::configurePins(){
     
@@ -47,9 +59,7 @@ void TerminalModule::configurePins(){
         p1->setName("In");
         addPin(Pin::Direction::IN,p1);
     }
-    
-    
-    
+
 }
 
 void TerminalModule::paint(juce::Graphics &g) {
@@ -64,3 +74,41 @@ void TerminalModule::setDirection(TerminalModule::Direction dir) {
     this->direction = dir;
 }
 
+void TerminalModule::setType(TerminalModule::Type& type) {
+    this->type = type;
+}
+
+TerminalModule::Type& TerminalModule::getType() {
+    return type;
+}
+
+void TerminalModule::createProperties() {
+    nameValue = new Value();
+    nameListener = new NameListener(*nameValue, this);
+    
+    typeValue = new Value();
+    typeListener = new TypeListener(*typeValue, this);
+}
+
+juce::Array<PropertyComponent*>& TerminalModule::getProperties() {
+    nameProp = new TextPropertyComponent(*nameValue,"Name",16, false,true);
+    
+    Array<var> values = Array<var>();
+    
+    values.add(Type::AUDIO);
+    values.add(Type::EVENT);
+    values.add(Type::VALUE);
+
+    StringArray types = StringArray();
+    types.add("Audio");
+    types.add("Event");
+    types.add("Value");
+    
+    
+    typeProp = new ChoicePropertyComponent(*typeValue,"Type",types,values);
+
+    properties = juce::Array<PropertyComponent*>();
+    properties.add(nameProp);
+    properties.add(typeProp);
+    return properties;
+}

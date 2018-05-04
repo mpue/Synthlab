@@ -24,6 +24,12 @@ public:
     void popupMenuClickOnTab (int tabIndex, const String& tabName) override;
     TabBarButton* createTabButton (const String& tabName, int tabIndex) override;
     virtual void buttonClicked (Button*) override;
+    void addTab (const String& tabName,
+                 Colour tabBackgroundColour,
+                 Component* contentComponent,
+                 bool deleteComponentWhenNotNeeded);
+;
+    
 private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainTabbedComponent)
 };
