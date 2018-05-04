@@ -96,8 +96,19 @@ bool DuplicateModuleAction::perform() {
             }
         }
         else {
+            
+            m = new Module();
+            
+            ValueTree v = ValueTree("Module");
+            editor->saveStructure(m->getModules(), m->getConnections(), &v);
+            
+            
 
+            
+            
         }
+        
+        
         
     }
     
@@ -118,3 +129,7 @@ bool DuplicateModuleAction::perform() {
     return true;
 }
 
+
+void DuplicateModuleAction::updateIndices(juce::ValueTree &v) {
+    
+}

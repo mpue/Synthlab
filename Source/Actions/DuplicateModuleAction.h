@@ -21,6 +21,8 @@ public:
     virtual bool perform() override;
     virtual bool undo() override;
     
+    void updateIndices(ValueTree &v);
+    
 private:
     
     SynthEditor* editor;

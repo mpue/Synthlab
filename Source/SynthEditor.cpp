@@ -947,7 +947,7 @@ void SynthEditor::loadFromString(juce::String in){
     ValueTree v = ValueTree::fromXml(*xml.get());
     
     setRunning(false);
-    loadStructure(root->getModules(),root->getConnections(), &v);
+    loadStructure(root->getModules(),root->getConnections(), &v, this);
     
     for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
         addAndMakeVisible((*it));
@@ -1064,7 +1064,7 @@ void SynthEditor::openFile() {
         ValueTree v = ValueTree::fromXml(*xml.get());
 
         setRunning(false);
-        loadStructure(root->getModules(),root->getConnections(), &v);
+        loadStructure(root->getModules(),root->getConnections(), &v, this);
 
         for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
             addAndMakeVisible((*it));
@@ -1077,15 +1077,15 @@ void SynthEditor::openFile() {
     }
 }
 
-void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Connection*>* connections,juce::ValueTree *v) {
+void SynthEditor::loadStructure(std::vector<Module *>* modules, std::vector<Connection*>* connections,juce::ValueTree *v, ChangeBroadcaster* broadcaster) {
     ValueTree mods = v->getChildWithName("Modules");
 
     for (int i = 0; i < mods.getNumChildren();i++) {
         ValueTree mod = mods.getChild(i);
-        Module* m = loadModule(mod);
+        Module* m = loadModule(mod,broadcaster);
         modules->push_back(m);
         
-        loadStructure(m->getModules(),m->getConnections(),&mod);
+        loadStructure(m->getModules(),m->getConnections(),&mod, broadcaster);
         ValueTree childCons = mod.getChildWithName("Connections");
         Logger::writeToLog("Module "+ m->getName() +" has "+String(childCons.getNumChildren())+ " connections.");
         if (childCons.getNumChildren() > 0)
@@ -1192,13 +1192,13 @@ void SynthEditor::loadConnections(juce::ValueTree &cons, std::vector<Module *>* 
     }
 }
 
-Module* SynthEditor::loadModule(ValueTree& mod) {
+Module* SynthEditor::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) {
     
     Module* m = nullptr;
     
     if (mod.getProperty("isPrefab").toString().getIntValue() == 1) {
         m = PrefabFactory::getInstance()->getPrefab(mod.getProperty("prefabId").toString().getIntValue(), _sampleRate, bufferSize);
-        addChangeListener(m);
+        broadcaster->addChangeListener(m);
         
         LabelModule* label = dynamic_cast<LabelModule*>(m);
         
@@ -1209,7 +1209,7 @@ Module* SynthEditor::loadModule(ValueTree& mod) {
     else {
         m = new Module(mod.getProperty("name"));
         m->setIndex(mod.getProperty("index").toString().getLargeIntValue());
-        addChangeListener(m);
+        broadcaster->addChangeListener(m);
         ValueTree pins = mod.getChildWithName("Pins");
         
         for (int j = 0; j < pins.getNumChildren();j++) {
@@ -1237,6 +1237,34 @@ Module* SynthEditor::loadModule(ValueTree& mod) {
     
     m->setTopLeftPosition(mod.getProperty("x").toString().getIntValue(), mod.getProperty("y").toString().getIntValue());
     
+    configureModule(m,mod, broadcaster);
+    
+    return m;
+}
+
+void SynthEditor::connectTerminals(Module* m) {
+    for (int i = 0; i < m->getModules()->size(); i++) {
+        
+        Module* module = m->getModules()->at(i);
+        
+        TerminalModule* t;
+
+        if ((t = dynamic_cast<TerminalModule*>(module)) != NULL) {
+   
+            for (int j = 0; j < m->getPins().size();j++) {
+                if (m->getPins().at(j)->index == t->getIndex()) {
+                    Logger::writeToLog("Found terminal "+ String(t->getIndex()));
+                    t->getPins().at(0)->setTerminal(m->getPins().at(j));
+                    t->getPins().at(0)->setType(m->getPins().at(j)->getType());
+                    t->addChangeListener(m->getPins().at(j));
+                }
+            }
+            
+        }
+    }
+}
+
+void SynthEditor::configureModule(Module *m, ValueTree& mod, ChangeBroadcaster* broadcaster) {
     AudioManager* am = AudioManager::getInstance();
     
     AudioOut* out;
@@ -1246,7 +1274,6 @@ Module* SynthEditor::loadModule(ValueTree& mod) {
         String channelName = am->getOutputChannelNames().getReference(static_cast<int>(getOutputChannels().size()) - 1);
         int channelIndex = addChannel(channelName, Mixer::Channel::Type::OUT);
         out->setChannelIndex(channelIndex);
-        addChangeListener(out);
     }
     
     AudioIn* in;
@@ -1256,7 +1283,6 @@ Module* SynthEditor::loadModule(ValueTree& mod) {
         String channelName = am->getInputChannelNames().getReference(static_cast<int>(getInputChannels().size()) - 1);
         int channelIndex = addChannel(channelName, Mixer::Channel::Type::IN);
         in->setChannelIndex(channelIndex);
-        addChangeListener(in);
     }
     
     AuxOut* aux;
@@ -1266,7 +1292,6 @@ Module* SynthEditor::loadModule(ValueTree& mod) {
         String channelName = "Aux "+ String(getAuxChannels().size());
         int channelIndex = addChannel(channelName, Mixer::Channel::Type::AUX);
         aux->setChannelIndex(channelIndex);
-        addChangeListener(aux);
     }
     
     Knob* k;
@@ -1285,7 +1310,6 @@ Module* SynthEditor::loadModule(ValueTree& mod) {
     
     if ((gate = dynamic_cast<MidiGate*>(m)) != NULL) {
         gate->setChannel(mod.getProperty("channel").toString().getIntValue());
-        addChangeListener(gate);
     }
     
     ADSRModule* adsr;
@@ -1301,9 +1325,7 @@ Module* SynthEditor::loadModule(ValueTree& mod) {
     
     Constant* c = nullptr;
     if ((c = dynamic_cast<Constant*>(m)) != NULL) {
-        
         c->setValue(mod.getProperty("value").toString().getFloatValue());
-        addChangeListener(c);
     }
     
     SamplerModule* sm;
@@ -1312,7 +1334,6 @@ Module* SynthEditor::loadModule(ValueTree& mod) {
         
         for(int i = 0; i < mod.getNumChildren();i++) {
             if (mod.getChild(i).hasProperty("samplePath")) {
-                
                 
                 int note = mod.getChild(i).getProperty("note").toString().getIntValue();
                 String path = mod.getChild(i).getProperty("samplePath");
@@ -1368,29 +1389,7 @@ Module* SynthEditor::loadModule(ValueTree& mod) {
         delete mos;
     }
     
-    return m;
-}
-
-void SynthEditor::connectTerminals(Module* m) {
-    for (int i = 0; i < m->getModules()->size(); i++) {
-        
-        Module* module = m->getModules()->at(i);
-        
-        TerminalModule* t;
-
-        if ((t = dynamic_cast<TerminalModule*>(module)) != NULL) {
-   
-            for (int j = 0; j < m->getPins().size();j++) {
-                if (m->getPins().at(j)->index == t->getIndex()) {
-                    Logger::writeToLog("Found terminal "+ String(t->getIndex()));
-                    t->getPins().at(0)->setTerminal(m->getPins().at(j));
-                    t->getPins().at(0)->setType(m->getPins().at(j)->getType());
-                    t->addChangeListener(m->getPins().at(j));
-                }
-            }
-            
-        }
-    }
+    broadcaster->addChangeListener(m);
 }
 
 bool SynthEditor::connectionExists(std::vector<Connection*> connections,Connection *c) {
