@@ -54,12 +54,12 @@ void TerminalModule::configurePins(){
     
     if (direction == TerminalModule::Direction::IN) {
         p1->direction = Pin::Direction::OUT;
-        p1->setName("Out");
+        p1->setName("In");
         addPin(Pin::Direction::OUT,p1);
     }
     else {
         p1->direction = Pin::Direction::IN;
-        p1->setName("In");
+        p1->setName("Out");
         addPin(Pin::Direction::IN,p1);
     }
 
@@ -86,7 +86,36 @@ void TerminalModule::setType(TerminalModule::Type type) {
 }
 
 void TerminalModule::process() {
-    
+    for (int i = 0; i < buffersize;i++) {
+        if (getType() == Terminal::Type::AUDIO){
+            if (direction == Terminal::Direction::OUT){
+                if (getPins().at(0)->getTerminal() != nullptr) {
+                    if (getPins().at(0)->getConnections().size() == 1) {
+                        const float* source = getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
+                        float* target = getPins().at(0)->getTerminal()->getAudioBuffer()->getWritePointer(0);
+                        target[i] = source[i];
+                    }
+                }
+            }
+            
+            else {
+                if (getPins().at(0)->getTerminal() != nullptr) {
+                    
+                    float* target = getPins().at(0)->getAudioBuffer()->getWritePointer(0);
+                    
+                    if (getPins().at(0)->getTerminal()->getConnections().size() == 1) {
+                        const float* source = getPins().at(0)->getTerminal()->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
+                        target[i] = source[i];
+                    }
+                    else {
+                        target[i] = 0;
+                    }
+                }
+            }
+            
+        }
+    }
+
 }
 
 
