@@ -17,6 +17,7 @@ DuplicateModuleAction::DuplicateModuleAction(SynthEditor* editor, Point<int> pos
     this->editor = editor;
     this->position = position;
     this->moduleId = original->getId();
+    this->module = original;
 }
 
 bool DuplicateModuleAction::undo() {
@@ -50,11 +51,54 @@ bool DuplicateModuleAction::perform() {
         return false;
     }
     
-    Module* m = module;
+    Module* m = nullptr;
     
-    if (m == nullptr) {
-        m = PrefabFactory::getInstance()->getPrefab(moduleId, editor->getSampleRate(), editor->getBufferSize());
+    if (module != nullptr) {
+        
+        if (module->isPrefab()) {
+            m = PrefabFactory::getInstance()->getPrefab(moduleId, editor->getSampleRate(), editor->getBufferSize());
+        
+            module = m;
+            
+            AudioManager* p = AudioManager::getInstance();
+            
+            AudioOut* out;
+            if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
+                editor->getOutputChannels().push_back(out);
+                String channelName = p->getOutputChannelNames().getReference(static_cast<int>(editor->getOutputChannels().size()) - 1);
+                editor->addChannel(channelName, Mixer::Channel::Type::OUT);
+                
+                if (!editor->isRunning()) {
+                    editor->setRunning(true);
+                }
+            }
+            
+            AuxOut* aux;
+            if ((aux = dynamic_cast<AuxOut*>(m)) != NULL) {
+                editor->getAuxChannels().push_back(aux);
+                String channelName = "Aux "+ String(editor->getAuxChannels().size());
+                editor->addChannel(channelName, Mixer::Channel::Type::AUX);
+                if (!editor->isRunning()) {
+                    editor->setRunning(true);
+                }
+            }
+            
+            AudioIn* in;
+            if ((in = dynamic_cast<AudioIn*>(m)) != NULL) {
+                editor->getInputChannels().push_back(in);
+                String channelName = p->getInputChannelNames().getReference(static_cast<int>(editor->getInputChannels().size()) - 1);
+                editor->addChannel(channelName, Mixer::Channel::Type::IN);
+                if (!editor->isRunning()) {
+                    editor->setRunning(true);
+                }
+            }
+        }
+        else {
+
+        }
+        
     }
+    
     
     editor->addChangeListener(m);
     m->setTopLeftPosition(position);
@@ -67,40 +111,7 @@ bool DuplicateModuleAction::perform() {
     editor->getSelectionModel().getSelectedModules().push_back(m);
     editor->repaint();
     
-    module = m;
-    
-    AudioManager* p = AudioManager::getInstance();
-    
-    AudioOut* out;
-    if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
-        editor->getOutputChannels().push_back(out);
-        String channelName = p->getOutputChannelNames().getReference(static_cast<int>(editor->getOutputChannels().size()) - 1);
-        editor->addChannel(channelName, Mixer::Channel::Type::OUT);
-        
-        if (!editor->isRunning()) {
-            editor->setRunning(true);
-        }
-    }
-    
-    AuxOut* aux;
-    if ((aux = dynamic_cast<AuxOut*>(m)) != NULL) {
-        editor->getAuxChannels().push_back(aux);
-        String channelName = "Aux "+ String(editor->getAuxChannels().size());
-        editor->addChannel(channelName, Mixer::Channel::Type::AUX);
-        if (!editor->isRunning()) {
-            editor->setRunning(true);
-        }
-    }
-    
-    AudioIn* in;
-    if ((in = dynamic_cast<AudioIn*>(m)) != NULL) {
-        editor->getInputChannels().push_back(in);
-        String channelName = p->getInputChannelNames().getReference(static_cast<int>(editor->getInputChannels().size()) - 1);
-        editor->addChannel(channelName, Mixer::Channel::Type::IN);
-        if (!editor->isRunning()) {
-            editor->setRunning(true);
-        }
-    }
+
     
     return true;
 }
