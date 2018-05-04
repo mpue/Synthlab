@@ -56,13 +56,13 @@ bool AddConnectionAction::perform() {
             if (a->getType() == Pin::Type::EVENT ) {
                 if (a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT) {
                     
-                    b->connections.push_back(a);
+                    b->getConnections().push_back(a);
                     c = new Connection(source, a, target, b);
                     root->getConnections()->push_back(c);
                     
                 }
                 else if (a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN) {
-                    a->connections.push_back(b);
+                    a->getConnections().push_back(b);
                     c = new Connection(source, a, target, b);
                     root->getConnections()->push_back(c);
                 }
@@ -70,12 +70,12 @@ bool AddConnectionAction::perform() {
             // in all other cases its the opposite direction
             else {
                 if (a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT) {
-                    a->connections.push_back(b);
+                    a->getConnections().push_back(b);
                     c = new Connection(source, a, target, b);
                     root->getConnections()->push_back(c);
                 }
                 else if (a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN) {
-                    b->connections.push_back(a);
+                    b->getConnections().push_back(a);
                     
                     c = new Connection(source, a, target, b);
                     root->getConnections()->push_back(c);
@@ -94,18 +94,18 @@ bool AddConnectionAction::perform() {
 
 bool AddConnectionAction::undo() {
     
-    for (std::vector<Pin*>::iterator ita = a->connections.begin();ita != a->connections.end();) {
+    for (std::vector<Pin*>::iterator ita = a->getConnections().begin();ita != a->getConnections().end();) {
         if ((*ita) == b) {
-            ita = a->connections.erase(ita);
+            ita = a->getConnections().erase(ita);
         }
         else {
             ++ita;
         }
     }
     
-    for (std::vector<Pin*>::iterator itb = b->connections.begin();itb != b->connections.end();) {
+    for (std::vector<Pin*>::iterator itb = b->getConnections().begin();itb != b->getConnections().end();) {
         if ((*itb) == a) {
-            itb = b->connections.erase(itb);
+            itb = b->getConnections().erase(itb);
         }
         else {
             ++itb;

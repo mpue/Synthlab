@@ -83,8 +83,8 @@ void DistortionModule::paint(juce::Graphics &g) {
 
 void DistortionModule::process() {
     
-    if (pins.at(0)->connections.size() == 1 ) {
-        const float* in = pins.at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+    if (pins.at(0)->getConnections().size() == 1 ) {
+        const float* in = pins.at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
         
         for (int i = 0; i < buffersize;i++){
             buffer[i] = distortion->processSample(in[i]);
@@ -92,14 +92,14 @@ void DistortionModule::process() {
         }
     }
     
-    if (pins.at(2)->connections.size() ==  1) {
-        distortion->controls.drive = pins.at(2)->connections.at(0)->getValue();
+    if (pins.at(2)->getConnections().size() ==  1) {
+        distortion->controls.drive = pins.at(2)->getConnections().at(0)->getValue();
     }
-    if (pins.at(3)->connections.size() ==  1) {
-        distortion->controls.mix = pins.at(3)->connections.at(0)->getValue();
+    if (pins.at(3)->getConnections().size() ==  1) {
+        distortion->controls.mix = pins.at(3)->getConnections().at(0)->getValue();
     }
-    if (pins.at(4)->connections.size() ==  1) {
-        distortion->controls.mode = pins.at(4)->connections.at(0)->getValue();
+    if (pins.at(4)->getConnections().size() ==  1) {
+        distortion->controls.mode = pins.at(4)->getConnections().at(0)->getValue();
     }
 
 }

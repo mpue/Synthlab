@@ -80,8 +80,8 @@ void HPFilterModule::paint(juce::Graphics &g) {
 
 void HPFilterModule::process() {
     
-    if (pins.at(2)->connections.size() == 1 && pins.at(2)->connections.at(0)->getAudioBuffer() != nullptr && pins.at(3)->getAudioBuffer() != nullptr) {
-        const float* in = pins.at(2)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+    if (pins.at(2)->getConnections().size() == 1 && pins.at(2)->getConnections().at(0)->getAudioBuffer() != nullptr && pins.at(3)->getAudioBuffer() != nullptr) {
+        const float* in = pins.at(2)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
         float* out = pins.at(3)->getAudioBuffer()->getWritePointer(0);
         filter->process(const_cast<float*>(in),out,buffersize);
         for (int i = 0; i < buffersize;i++) {
@@ -94,25 +94,25 @@ void HPFilterModule::process() {
         }
     }
     
-    if (pins.at(0)->connections.size() ==  1) {
+    if (pins.at(0)->getConnections().size() ==  1) {
         
-        if (this->frequency != pins.at(0)->connections.at(0)->getValue()) {
-            this->frequency =  pins.at(0)->connections.at(0)->getValue();
+        if (this->frequency != pins.at(0)->getConnections().at(0)->getValue()) {
+            this->frequency =  pins.at(0)->getConnections().at(0)->getValue();
             filter->coefficients(sampleRate, frequency, resonance);
         }
         
     }
-    if (pins.at(1)->connections.size() ==  1) {
+    if (pins.at(1)->getConnections().size() ==  1) {
         
-        if (this->resonance != pins.at(1)->connections.at(0)->getValue()) {
-            this->resonance =  pins.at(1)->connections.at(0)->getValue();
+        if (this->resonance != pins.at(1)->getConnections().at(0)->getValue()) {
+            this->resonance =  pins.at(1)->getConnections().at(0)->getValue();
             filter->coefficients(sampleRate, frequency, resonance);
         }
     }
-    if (pins.at(4)->connections.size() ==  1) {
+    if (pins.at(4)->getConnections().size() ==  1) {
         
-        if (this->mod != pins.at(4)->connections.at(0)->getValue()) {
-            this->mod =  pins.at(4)->connections.at(0)->getValue();
+        if (this->mod != pins.at(4)->getConnections().at(0)->getValue()) {
+            this->mod =  pins.at(4)->getConnections().at(0)->getValue();
             if (this->mod < 0.1)
                 this->mod = 0.1;
             filter->coefficients(sampleRate, frequency * mod, resonance);

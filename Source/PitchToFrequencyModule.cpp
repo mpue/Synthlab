@@ -44,8 +44,8 @@ void PitchToFrequencyModule::paint(juce::Graphics &g) {
 
 void PitchToFrequencyModule::process() {
     
-    if (pins.at(0)->connections.size() == 1) {
-        int value = pins.at(0)->connections.at(0)->getValue();
+    if (pins.at(0)->getConnections().size() == 1) {
+        int value = pins.at(0)->getConnections().at(0)->getValue();
         pins.at(1)->setValue((440 * pow(2.0,(value-69.0)/12.0)));
     }
     

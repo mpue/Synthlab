@@ -53,8 +53,8 @@ void InverterModule::process() {
     
     float a = 1;
     
-    if (pins.at(0)->connections.size() > 0) {
-        a = pins.at(0)->connections.at(0)->getValue();
+    if (pins.at(0)->getConnections().size() > 0) {
+        a = pins.at(0)->getConnections().at(0)->getValue();
     }
         
     float b = 1.0f / a;

@@ -73,12 +73,12 @@ void MixerModule::process() {
     for (int j = 0; j < buffersize;j++) {
         pOut[j] = 0;
         for (int i = 0; i < pins.size();i++) {
-            if (pins.at(i)->getType() == Pin::Type::AUDIO && pins.at(i)->direction == Pin::Direction::IN && pins.at(i)->connections.size() == 1) {
+            if (pins.at(i)->getType() == Pin::Type::AUDIO && pins.at(i)->direction == Pin::Direction::IN && pins.at(i)->getConnections().size() == 1) {
                 
-                const float *in = pins.at(i)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+                const float *in = pins.at(i)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
                 float value = 0;
-                if  (pins.at(i+1)->connections.size() == 1) {
-                    value = pins.at(i+1)->connections.at(0)->getValue();
+                if  (pins.at(i+1)->getConnections().size() == 1) {
+                    value = pins.at(i+1)->getConnections().at(0)->getValue();
                     pOut[j] += in[j] * value;
                 }
                 

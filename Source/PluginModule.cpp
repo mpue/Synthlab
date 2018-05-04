@@ -113,9 +113,9 @@ void PluginModule::paint(juce::Graphics &g) {
 
 void PluginModule::process() {
     
-    if (pins.at(0)->connections.size() == 1 && pins.at(1)->connections.size() == 1) {
-        const float* inL = pins.at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-        const float* inR = pins.at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+    if (pins.at(0)->getConnections().size() == 1 && pins.at(1)->getConnections().size() == 1) {
+        const float* inL = pins.at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
+        const float* inR = pins.at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
         
         
         for (int i = 0; i < buffersize;i++){            bufferLeft[i] = inL[i];
@@ -123,8 +123,8 @@ void PluginModule::process() {
         }
         
         if (plugin != nullptr) {
-            audioBuffer->copyFrom(0,0, *pins.at(0)->connections.at(0)->getAudioBuffer(), 0, 0, buffersize);
-            audioBuffer->copyFrom(1,0, *pins.at(1)->connections.at(0)->getAudioBuffer(), 0, 0, buffersize);
+            audioBuffer->copyFrom(0,0, *pins.at(0)->getConnections().at(0)->getAudioBuffer(), 0, 0, buffersize);
+            audioBuffer->copyFrom(1,0, *pins.at(1)->getConnections().at(0)->getAudioBuffer(), 0, 0, buffersize);
             plugin->processBlock(*audioBuffer, midiBuffer);
             pins.at(2)->getAudioBuffer()->copyFrom(0,0, *audioBuffer, 0, 0, buffersize);
             pins.at(3)->getAudioBuffer()->copyFrom(0,0, *audioBuffer, 1, 0, buffersize);

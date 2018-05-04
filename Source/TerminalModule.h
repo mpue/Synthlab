@@ -31,6 +31,7 @@ public:
     
     virtual void setName(String name) override;
     
+    virtual void process() override;
     
     void setDirection(Direction dir);
     TerminalModule::Direction getDirection();

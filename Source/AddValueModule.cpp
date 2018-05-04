@@ -58,11 +58,11 @@ void AddValueModule::process() {
     float b = 0;
     float c = 0;
     
-    if (pins.at(0)->connections.size() > 0) {
-        a = pins.at(0)->connections.at(0)->getValue();
+    if (pins.at(0)->getConnections().size() > 0) {
+        a = pins.at(0)->getConnections().at(0)->getValue();
     }
-    if (pins.at(1)->connections.size() > 0) {
-        b = pins.at(1)->connections.at(0)->getValue();
+    if (pins.at(1)->getConnections().size() > 0) {
+        b = pins.at(1)->getConnections().at(0)->getValue();
     }
     
     c = a + b;

@@ -79,11 +79,11 @@ void RandomModule::paint(juce::Graphics &g) {
 
 void RandomModule::process() {
     
-    if (pins.at(0)->connections.size() ==  1) {
-        this->oscillator->setFrequency(pins.at(0)->connections.at(0)->getValue());
+    if (pins.at(0)->getConnections().size() ==  1) {
+        this->oscillator->setFrequency(pins.at(0)->getConnections().at(0)->getValue());
     }
-    if (pins.at(1)->connections.size() ==  1) {
-        this->setAmplitude(abs(pins.at(1)->connections.at(0)->getValue()));
+    if (pins.at(1)->getConnections().size() ==  1) {
+        this->setAmplitude(abs(pins.at(1)->getConnections().at(0)->getValue()));
     }
     for (int i = 0; i < buffersize; i++) {
         float value = oscillator->process();

@@ -149,14 +149,14 @@ void SamplerModule::timerCallback() {
 
 void SamplerModule::process() {
     
-    if (pins.at(4)->connections.size() == 1) {
-        setPitch(pins.at(4)->connections.at(0)->getValue(),getCurrentSamplerIndex());
+    if (pins.at(4)->getConnections().size() == 1) {
+        setPitch(pins.at(4)->getConnections().at(0)->getValue(),getCurrentSamplerIndex());
     }
     
-    if (pins.at(0)->connections.size() == 1) {
+    if (pins.at(0)->getConnections().size() == 1) {
         for (int i = 0; i < 128; i++) {
             if (sampler[i] != nullptr) {
-                sampler[i]->setVolume(pins.at(0)->connections.at(0)->data[i]);
+                sampler[i]->setVolume(pins.at(0)->getConnections().at(0)->data[i]);
             }
         }
         
@@ -186,11 +186,11 @@ void SamplerModule::process() {
             pins.at(2)->getAudioBuffer()->setSample(0,j ,valueR);
         
             if (recording) {
-                if (pins.at(5)->connections.size() == 1) {
-                    recordingBuffer->setSample(0,  currentSample,pins.at(5)->connections.at(0)->getAudioBuffer()->getReadPointer(0)[currentSample%buffersize]);
+                if (pins.at(5)->getConnections().size() == 1) {
+                    recordingBuffer->setSample(0,  currentSample,pins.at(5)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0)[currentSample%buffersize]);
                 }
-                if (pins.at(6)->connections.size() == 1) {
-                    recordingBuffer->setSample(1,  currentSample,pins.at(6)->connections.at(0)->getAudioBuffer()->getReadPointer(0)[currentSample%buffersize]);
+                if (pins.at(6)->getConnections().size() == 1) {
+                    recordingBuffer->setSample(1,  currentSample,pins.at(6)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0)[currentSample%buffersize]);
                 }
                 
                 currentSample = (currentSample + 1) % (1024*1024);

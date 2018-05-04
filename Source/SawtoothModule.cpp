@@ -144,23 +144,23 @@ void SawtoothModule::process() {
     
     
     
-    if (pins.at(0)->connections.size() ==  1) {
-        this->setPitch(pins.at(0)->connections.at(0)->getValue());
+    if (pins.at(0)->getConnections().size() ==  1) {
+        this->setPitch(pins.at(0)->getConnections().at(0)->getValue());
     }
-    if (pins.at(1)->connections.size() ==  1) {
-        this->setFine(pins.at(1)->connections.at(0)->getValue());
+    if (pins.at(1)->getConnections().size() ==  1) {
+        this->setFine(pins.at(1)->getConnections().at(0)->getValue());
     }
-    if (pins.at(2)->connections.size() ==  1) {
+    if (pins.at(2)->getConnections().size() ==  1) {
         volumegate = true;
-        gatePin = pins.at(2)->connections.at(0);
+        gatePin = pins.at(2)->getConnections().at(0);
     }
-    if (pins.at(2)->connections.size() == 1) {
+    if (pins.at(2)->getConnections().size() == 1) {
         for (int i = 0; i < buffersize; i++) {
             float value = 0;
             
             if (mono) {
                 this->monoOscillator->setFrequency((440 * pow(2.0,((pitch)-69.0)/12.0)));
-                this->monoOscillator->setVolume(pins.at(2)->connections.at(0)->getValue());
+                this->monoOscillator->setVolume(pins.at(2)->getConnections().at(0)->getValue());
                 value = monoOscillator->process();
                 pins.at(4)->setValue(abs(value + 1));
             }

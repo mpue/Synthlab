@@ -25,14 +25,14 @@ Connection::Connection(Module* source, Pin* a, Module* target, Pin* b) {
 
 Connection::~Connection()
 {
-    a->connections.clear();
-    b->connections.clear();
+    a->getConnections().clear();
+    b->getConnections().clear();
     
     
-    for (std::vector<Pin*>::iterator it = a->connections.begin(); it != a->connections.end();it++) {
+    for (std::vector<Pin*>::iterator it = a->getConnections().begin(); it != a->getConnections().end();it++) {
         (*it)->invalidate();
     }
-    for (std::vector<Pin*>::iterator it = b->connections.begin(); it != b->connections.end();it++) {
+    for (std::vector<Pin*>::iterator it = b->getConnections().begin(); it != b->getConnections().end();it++) {
         (*it)->invalidate();
     }
      

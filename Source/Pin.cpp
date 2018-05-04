@@ -15,9 +15,9 @@
 Pin::Pin(Terminal::Type type) {
     name = "";
     this->type = type;
-    if (type == Terminal::Type::AUDIO) {
+    // if (type == Terminal::Type::AUDIO) {
         audioBuffer = new AudioSampleBuffer(2,1024);
-    }
+   //  }
 }
 
 Pin::~Pin() {
@@ -80,6 +80,9 @@ void Pin::setValue(float value) {
     }
 }
 
+std::vector<Pin*>& Pin::getConnections() {
+    return connections;
+}
 
 bool Pin::isSelected() {
     return this->selected;
@@ -89,14 +92,19 @@ AudioSampleBuffer* Pin::getAudioBuffer() {
     return audioBuffer;
 }
 
+
+void Pin::setAudioBuffer(AudioSampleBuffer* buffer) {
+    this->audioBuffer = buffer;
+}
+
 void Pin::process(const float *in, float *out, int numSamples) {
     
 
 }
 
 bool Pin::hasConnection(Pin *target) {
-    for (int i = 0; i < connections.size();i++) {
-        if (connections.at(i)->index == target->index) {
+    for (int i = 0; i < getConnections().size();i++) {
+        if (getConnections().at(i)->index == target->index) {
             return true;
         }
     }

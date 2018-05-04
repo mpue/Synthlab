@@ -67,8 +67,8 @@ void NoiseModule::setAmplitude(float amplitude) {
 
 void NoiseModule::process() {
     
-    if (pins.at(0)->connections.size() ==  1) {
-        this->oscillator->setVolume(pins.at(0)->connections.at(0)->getValue());
+    if (pins.at(0)->getConnections().size() ==  1) {
+        this->oscillator->setVolume(pins.at(0)->getConnections().at(0)->getValue());
     }
     for (int i = 0; i < buffersize; i++) {
         float value = oscillator->process();

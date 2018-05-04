@@ -92,6 +92,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     mixerPanel = editorView->getMixerPanel();
     
     propertyView =  new PropertyView();
+    editor->addChangeListener(propertyView);
     
     Project::getInstance()->setPropertyView(propertyView);
     
@@ -104,7 +105,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
 
     addKeyListener(this);
 
-    editor->addChangeListener(propertyView);
+    
     
     // we have to set up our StretchableLayoutManager so it know the limits and preferred sizes of it's contents
     stretchableManager.setItemLayout (0,            // for the properties
@@ -345,14 +346,14 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
             for (int k = 0; k < auxChannels.size();k++) {
                 
                 if (editor->auxChannelIsValid(k,0)) {
-                    const float* auxL = auxChannels.at(k)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+                    const float* auxL = auxChannels.at(k)->getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
                     
                     Mixer::Channel* channel =  mixer->getChannel(Mixer::Channel::Type::AUX, k);
                     float auxVolume = channel->mute ? 0 : channel->volume;
                     double auxpan = channel->pan;
                     
                     float auxgainLeft = cos((M_PI*(auxpan + 1) / 4));
-                    channel->magnitudeLeft = auxVolume * auxgainLeft * auxChannels.at(k)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+                    channel->magnitudeLeft = auxVolume * auxgainLeft * auxChannels.at(k)->getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
 
                     auxLeftOut += auxL[j] * auxVolume * auxgainLeft;
                     
@@ -362,7 +363,7 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
             
             if (editor->channelIsValid(0)) {
                 // outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->applyGain(channelVolume);
-                const float* outL = outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+                const float* outL = outputChannels.at(0)->getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
                 outputChannelData[0][j] += channelVolume * (outL[j] + auxLeftOut) * gainLeft;
             }
             else {
@@ -374,14 +375,14 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
             for (int k = 0; k < auxChannels.size();k++) {
                 
                 if (editor->auxChannelIsValid(k,1)) {
-                    const float* auxR = auxChannels.at(k)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+                    const float* auxR = auxChannels.at(k)->getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
                     
                     Mixer::Channel* channel =  mixer->getChannel(Mixer::Channel::Type::AUX, k);
                     float auxVolume = channel->mute ? 0 : channel->volume;
                     double auxpan = channel->pan;
                     
                     float auxgainRight = sin((M_PI*(auxpan + 1) / 4));
-                    channel->magnitudeRight = auxVolume * auxgainRight * auxChannels.at(k)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+                    channel->magnitudeRight = auxVolume * auxgainRight * auxChannels.at(k)->getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
                     auxRightOut += auxR[j] * auxVolume * auxgainRight;
                 }
                 
@@ -389,7 +390,7 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
             
             if (editor->channelIsValid(1)) {
                 // outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->applyGain(channelVolume);
-                const float* outR = outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+                const float* outR = outputChannels.at(0)->getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
                 outputChannelData[1][j] += channelVolume * (outR[j] + auxRightOut) * gainRight;
             }
             else {
@@ -398,9 +399,9 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
         }
 
         if (editor->channelIsValid(0))
-            outputChannel->magnitudeLeft = channelVolume * gainLeft * outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+            outputChannel->magnitudeLeft = channelVolume * gainLeft * outputChannels.at(0)->getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
         if (editor->channelIsValid(1))
-            outputChannel->magnitudeRight  = channelVolume * gainRight * outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+            outputChannel->magnitudeRight  = channelVolume * gainRight * outputChannels.at(0)->getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
     }
     
     long duration = Time::getMillisecondCounterHiRes() - startTime;

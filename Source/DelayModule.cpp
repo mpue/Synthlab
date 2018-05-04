@@ -104,9 +104,9 @@ void DelayModule::paint(juce::Graphics &g) {
 
 void DelayModule::process() {
     
-    if (pins.at(0)->connections.size() == 1 && pins.at(1)->connections.size() == 1) {
-        const float* inL = pins.at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
-        const float* inR = pins.at(1)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+    if (pins.at(0)->getConnections().size() == 1 && pins.at(1)->getConnections().size() == 1) {
+        const float* inL = pins.at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
+        const float* inR = pins.at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
         
         for (int i = 0; i < buffersize;i++){
             bufferLeft[i] = inL[i];
@@ -121,27 +121,27 @@ void DelayModule::process() {
         }
         
     }
-    if (pins.at(4)->connections.size() ==  1) {
-        if (delayL != pins.at(4)->connections.at(0)->getValue()) {
-            delay->setDelay(StereoDelay::Channel::LEFT,pins.at(4)->connections.at(0)->getValue());
+    if (pins.at(4)->getConnections().size() ==  1) {
+        if (delayL != pins.at(4)->getConnections().at(0)->getValue()) {
+            delay->setDelay(StereoDelay::Channel::LEFT,pins.at(4)->getConnections().at(0)->getValue());
         }
         
     }
-    if (pins.at(5)->connections.size() ==  1) {
-        if (delayR != pins.at(5)->connections.at(0)->getValue()) {
-            delay->setDelay(StereoDelay::Channel::RIGHT,pins.at(5)->connections.at(0)->getValue());
+    if (pins.at(5)->getConnections().size() ==  1) {
+        if (delayR != pins.at(5)->getConnections().at(0)->getValue()) {
+            delay->setDelay(StereoDelay::Channel::RIGHT,pins.at(5)->getConnections().at(0)->getValue());
         }
     }
-    if (pins.at(6)->connections.size() ==  1) {
-        if (feedback != pins.at(6)->connections.at(0)->getValue()) {
-            delay->setFeedback(StereoDelay::Channel::LEFT,pins.at(6)->connections.at(0)->getValue());
-            delay->setFeedback(StereoDelay::Channel::RIGHT,pins.at(6)->connections.at(0)->getValue());
+    if (pins.at(6)->getConnections().size() ==  1) {
+        if (feedback != pins.at(6)->getConnections().at(0)->getValue()) {
+            delay->setFeedback(StereoDelay::Channel::LEFT,pins.at(6)->getConnections().at(0)->getValue());
+            delay->setFeedback(StereoDelay::Channel::RIGHT,pins.at(6)->getConnections().at(0)->getValue());
         }
     }
-    if (pins.at(7)->connections.size() ==  1) {
-        if (mix != pins.at(7)->connections.at(0)->getValue()) {
-            delay->setMix(StereoDelay::Channel::LEFT,pins.at(7)->connections.at(0)->getValue());
-            delay->setMix(StereoDelay::Channel::RIGHT,pins.at(7)->connections.at(0)->getValue());
+    if (pins.at(7)->getConnections().size() ==  1) {
+        if (mix != pins.at(7)->getConnections().at(0)->getValue()) {
+            delay->setMix(StereoDelay::Channel::LEFT,pins.at(7)->getConnections().at(0)->getValue());
+            delay->setMix(StereoDelay::Channel::RIGHT,pins.at(7)->getConnections().at(0)->getValue());
         }
     }
     

@@ -86,6 +86,7 @@ SynthEditor::~SynthEditor()
             tab->clearTabs();
             delete tab;
         }
+        removeAllChangeListeners();
     }
     
 
@@ -305,7 +306,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
                 k->setName(module->getPins().at(pinIndex)->getName());
                 Point<int> pos = module->getPinPosition(pinIndex);
                 k->setTopLeftPosition(pos.getX() - 150, mouseY - k->getHeight() / 2);
-                module->pins.at(pinIndex)->connections.push_back(k->getPins().at(0));
+                module->pins.at(pinIndex)->getConnections().push_back(k->getPins().at(0));
                 addAndMakeVisible(k);
                 Connection* con = new Connection();
                 con->a = k->getPins().at(0);
@@ -339,7 +340,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
                 c->setName(module->getPins().at(pinIndex)->getName());
                 Point<int> pos = module->getPinPosition(pinIndex);
                 c->setTopLeftPosition(pos.getX() - 150, mouseY - c->getHeight() / 2);
-                module->pins.at(pinIndex)->connections.push_back(c->getPins().at(0));
+                module->pins.at(pinIndex)->getConnections().push_back(c->getPins().at(0));
                 addAndMakeVisible(c);
                 Connection* con = new Connection();
                 con->a = c->getPins().at(0);
@@ -767,7 +768,7 @@ void SynthEditor::cleanUp() {
     inputChannels.clear();
     auxChannels.clear();
     Project::getInstance()->getUndoManager()->clearUndoHistory();
-    removeAllChangeListeners();
+   
     
 }
 
@@ -1150,7 +1151,7 @@ void SynthEditor::loadConnections(juce::ValueTree &cons, std::vector<Module *>* 
                     
                     if (!a->hasConnection(b)) {
                         
-                        a->connections.push_back(b);
+                        a->getConnections().push_back(b);
                         Logger::writeToLog("Connecting pin "+ String(a->index)+ " to pin "  +String(b->index));
                     }
                     
@@ -1170,7 +1171,7 @@ void SynthEditor::loadConnections(juce::ValueTree &cons, std::vector<Module *>* 
                 else if ((a->getType() != Pin::Type::EVENT && a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN)
                          || (a->getType() == Pin::Type::EVENT && a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT)) {
                     if (!b->hasConnection(a)) {
-                        b->connections.push_back(a);
+                        b->getConnections().push_back(a);
                         Logger::writeToLog("Conencting pin "+ String(b->index)+ " to pin "  +String(a->index));
                     }
                     
@@ -1469,14 +1470,14 @@ void SynthEditor::removeModule(Module* module) {
             for (int k = 0; k < root->getModules()->at(j)->getPins().size(); k++) {
                 
                 // for every connection of each pin
-                for (int l = 0; l < root->getModules()->at(j)->getPins().at(k)->connections.size(); l++) {
+                for (int l = 0; l < root->getModules()->at(j)->getPins().at(k)->getConnections().size(); l++) {
                     
                     // for each pin of the module being removed
                     for (int n = 0; n < module->getPins().size();n++) {
                         // if the index matches remove pin from vector
                         
-                        if (root->getModules()->at(j)->getPins().at(k)->connections.at(l)->index == module->getPins().at(n)->index) {
-                            pinsToBeRemoved.push_back(root->getModules()->at(j)->getPins().at(k)->connections.at(l)->index);
+                        if (root->getModules()->at(j)->getPins().at(k)->getConnections().at(l)->index == module->getPins().at(n)->index) {
+                            pinsToBeRemoved.push_back(root->getModules()->at(j)->getPins().at(k)->getConnections().at(l)->index);
                             
                         }
                     }
@@ -1494,9 +1495,9 @@ void SynthEditor::removeModule(Module* module) {
             for (int k = 0; k < root->getModules()->at(j)->getPins().size();k++) {
                 
                 Pin* p = root->getModules()->at(j)->getPins().at(k);
-                for (std::vector<Pin*>::iterator it = p->connections.begin();it != p->connections.end();) {
+                for (std::vector<Pin*>::iterator it = p->getConnections().begin();it != p->getConnections().end();) {
                     if ((*it)->index == pinsToBeRemoved.at(i)) {
-                        it = p->connections.erase(it);
+                        it = p->getConnections().erase(it);
                     }
                     else {
                         ++it;
@@ -1604,18 +1605,18 @@ Module* SynthEditor::getModule() {
 }
 
 bool SynthEditor::channelIsValid(int channel) {
-    if (outputChannels.at(0)->getPins().at(channel)->connections.size() == 1 &&
-        outputChannels.at(0)->getPins().at(channel)->connections.at(0) != nullptr &&
-        outputChannels.at(0)->getPins().at(channel)->connections.at(0)->getAudioBuffer() != nullptr) {
+    if (outputChannels.at(0)->getPins().at(channel)->getConnections().size() == 1 &&
+        outputChannels.at(0)->getPins().at(channel)->getConnections().at(0) != nullptr &&
+        outputChannels.at(0)->getPins().at(channel)->getConnections().at(0)->getAudioBuffer() != nullptr) {
         return true;
     }
     return false;
 }
 
 bool SynthEditor::auxChannelIsValid(int channel, int subchannel) {
-    if (auxChannels.at(channel)->getPins().at(subchannel)->connections.size() == 1 &&
-        auxChannels.at(channel)->getPins().at(subchannel)->connections.at(0) != nullptr &&
-        auxChannels.at(channel)->getPins().at(subchannel)->connections.at(0)->getAudioBuffer() != nullptr) {
+    if (auxChannels.at(channel)->getPins().at(subchannel)->getConnections().size() == 1 &&
+        auxChannels.at(channel)->getPins().at(subchannel)->getConnections().at(0) != nullptr &&
+        auxChannels.at(channel)->getPins().at(subchannel)->getConnections().at(0)->getAudioBuffer() != nullptr) {
         return true;
     }
     return false;

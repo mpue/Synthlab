@@ -85,6 +85,10 @@ void TerminalModule::setType(TerminalModule::Type type) {
     sendChangeMessage();
 }
 
+void TerminalModule::process() {
+    
+}
+
 
 void TerminalModule::createProperties() {
     nameValue = new Value();

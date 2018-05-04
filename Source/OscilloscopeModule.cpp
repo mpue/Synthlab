@@ -68,8 +68,8 @@ void OscilloscopeModule::paint(juce::Graphics &g) {
 
 void OscilloscopeModule::process() {
     
-    if (pins.at(0)->connections.size() == 1 ) {
-        const float* in = pins.at(0)->connections.at(0)->getAudioBuffer()->getReadPointer(0);
+    if (pins.at(0)->getConnections().size() == 1 ) {
+        const float* in = pins.at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
         for (int i = 0; i < buffersize;i++) {
             buffer[currentSample] = in[i];
             currentSample = (currentSample + 1) % 1024;

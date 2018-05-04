@@ -37,8 +37,10 @@ public:
     bool isSelected();
     
     AudioSampleBuffer* getAudioBuffer();
+    void setAudioBuffer(AudioSampleBuffer* buffer);
     
-    std::vector<Pin*> connections;
+    std::vector<Pin*>& getConnections ();
+                
     std::vector<EventListener*> listeners;
     
     void sendEvent(Event* e);
@@ -59,16 +61,22 @@ public:
     Pin* getTerminal() {
         return terminal;
     }
-    
+                
+    Terminal::Direction getDirection() {
+        return direction;
+    }
+                
     void invalidate() {
         delete audioBuffer;
         audioBuffer = nullptr;
     }
+                
     float value;
     float data[128] = {0};
     bool dataEnabled[128];
     bool hasConnection(Pin* target);
     
+                
     virtual void process(const float *in, float *out,int numSamples) override;
     void changeListenerCallback (ChangeBroadcaster* source) override;
 private:
@@ -76,6 +84,6 @@ private:
     String name;
     int note = 0;
     Pin* terminal = nullptr;
-
+    std::vector<Pin*> connections;
     AudioSampleBuffer* audioBuffer = nullptr;
 };

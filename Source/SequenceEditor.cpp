@@ -393,8 +393,8 @@ void SequenceEditor::timerCallback() {
             
             if (output != nullptr) {
                 
-                for (int i = 0; i < output->connections.size();i++) {
-                    output->connections.at(i)->sendEvent(new Event(e));
+                for (int i = 0; i < output->getConnections().size();i++) {
+                    output->getConnections().at(i)->sendEvent(new Event(e));
                 }
             }
         }
@@ -411,8 +411,8 @@ void SequenceEditor::timerCallback() {
         
         if (output != nullptr) {
             
-            for (int i = 0; i < output->connections.size();i++) {
-                output->connections.at(i)->sendEvent(new Event(e));
+            for (int i = 0; i < output->getConnections().size();i++) {
+                output->getConnections().at(i)->sendEvent(new Event(e));
             }
         }
 

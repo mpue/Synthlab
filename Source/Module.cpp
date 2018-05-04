@@ -98,9 +98,9 @@ Module::~Module()
     //[Destructor]. You can add your own custom destruction code here..
     for (std::vector<Pin*>::iterator it = pins.begin(); it != pins.end();) {
         
-        for (std::vector<Pin*>::iterator it2 = (*it)->connections.begin(); it2 != (*it)->connections.end(); ) {
+        for (std::vector<Pin*>::iterator it2 = (*it)->getConnections().begin(); it2 != (*it)->getConnections().end(); ) {
             if ((*it)->index == (*it2)->index) {
-                it2 = (*it)->connections.erase(it2);
+                it2 = (*it)->getConnections().erase(it2);
             }
             else {
                 ++it2;
@@ -431,13 +431,17 @@ void Module::process() {
 
     // if we have a terminal pin, just copy the value from the proxy to the output pin
     for (int i = 0; i < pins.size();i++){
-        if (pins.at(i)->connections.size() == 1) {
-            if (pins.at(i)->getType() == Pin::Type::VALUE && pins.at(i)->getTerminal() != nullptr) {
-                pins.at(i)->getTerminal()->setValue(pins.at(i)->connections.at(0)->getValue());
+
+        if (pins.at(i)->getTerminal() != nullptr) {
+            if (pins.at(i)->getType() == Terminal::Type::VALUE) {
+                if (pins.at(i)->getConnections().size() >= 1) {
+                    pins.at(i)->getTerminal()->setValue(pins.at(i)->getConnections().at(0)->getValue());
+                }
             }
         }
-
     }
+
+
     
 }
 

@@ -102,27 +102,27 @@ void SineModule::process() {
     bool volumegate = false;
     
     
-    if (pins.at(0)->connections.size() ==  1) {
-        this->setPitch(pins.at(0)->connections.at(0)->getValue());
+    if (pins.at(0)->getConnections().size() ==  1) {
+        this->setPitch(pins.at(0)->getConnections().at(0)->getValue());
     }
-    if (pins.at(1)->connections.size() ==  1) {
-        this->setFine(pins.at(1)->connections.at(0)->getValue());
+    if (pins.at(1)->getConnections().size() ==  1) {
+        this->setFine(pins.at(1)->getConnections().at(0)->getValue());
     }
-    if (pins.at(2)->connections.size() ==  1) {
+    if (pins.at(2)->getConnections().size() ==  1) {
         volumegate = true;
     }
-    if (pins.at(2)->connections.size() == 1) {
+    if (pins.at(2)->getConnections().size() == 1) {
         for (int i = 0; i < buffersize; i++) {
             float value = 0;
             for (int j = 0; j < 128;j++){
                 
-                if(pins.at(2)->connections.at(0)->dataEnabled[j]) {
+                if(pins.at(2)->getConnections().at(0)->dataEnabled[j]) {
                     if (oscillator[j] ==  nullptr) {
                         oscillator[j] = new Sine(sampleRate, buffersize);
                         
                         oscillator[j]->setFrequency((440 * pow(2.0,((j+1)-69.0)/12.0)) + pitch);
                     }
-                    float volume = pins.at(2)->connections.at(0)->data[j];
+                    float volume = pins.at(2)->getConnections().at(0)->data[j];
                     
                     this->oscillator[j]->setVolume(volume);
                 }

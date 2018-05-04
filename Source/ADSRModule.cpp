@@ -172,19 +172,19 @@ float ADSRModule::getRelease() {
 
 void ADSRModule::process() {
     
-    if (pins.at(1)->connections.size() ==  1) {
-        this->setAttack(abs(pins.at(1)->connections.at(0)->getValue()));
+    if (pins.at(1)->getConnections().size() ==  1) {
+        this->setAttack(abs(pins.at(1)->getConnections().at(0)->getValue()));
     }
-    if (pins.at(2)->connections.size() ==  1) {
-        this->setDecay(abs(pins.at(2)->connections.at(0)->getValue()));
-    }
-    
-    if (pins.at(3)->connections.size() ==  1) {
-        this->setSustain(abs(pins.at(3)->connections.at(0)->getValue()));
+    if (pins.at(2)->getConnections().size() ==  1) {
+        this->setDecay(abs(pins.at(2)->getConnections().at(0)->getValue()));
     }
     
-    if (pins.at(4)->connections.size() ==  1) {
-        this->setRelease(abs(pins.at(4)->connections.at(0)->getValue()));
+    if (pins.at(3)->getConnections().size() ==  1) {
+        this->setSustain(abs(pins.at(3)->getConnections().at(0)->getValue()));
+    }
+    
+    if (pins.at(4)->getConnections().size() ==  1) {
+        this->setRelease(abs(pins.at(4)->getConnections().at(0)->getValue()));
     }
     
     if (mono) {
