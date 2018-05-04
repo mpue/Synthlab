@@ -28,7 +28,7 @@ public:
     float getValue();
     virtual void configurePins() override;
 
-    virtual void setName(String name)  {
+    virtual void setName(String name) override {
         //Module::setName(name);
         Component::setName(name);
         this->name = name;

@@ -35,7 +35,7 @@
     Describe your class and how it works here!
                                                                     //[/Comments]
 */
-class MidiEventEditor  : public Component,
+class MidiEventEditor  : public juce::Component,
                          public TableListBoxModel
 {
 public:

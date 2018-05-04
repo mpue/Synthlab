@@ -25,7 +25,7 @@ public:
     } TState;
     
     typedef struct TStateChange {
-        String message = "";
+        juce::String message = "";
         State newState;
     } StateChange;
     

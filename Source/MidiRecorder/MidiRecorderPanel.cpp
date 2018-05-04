@@ -52,7 +52,7 @@ MidiRecorderPanel::MidiRecorderPanel ()
     textEditor->setScrollbarsShown (true);
     textEditor->setCaretVisible (true);
     textEditor->setPopupMenuEnabled (true);
-    textEditor->setText (String());
+    textEditor->setText (juce::String());
 
     addAndMakeVisible (clearButton = new TextButton ("clearButton"));
     clearButton->setButtonText (TRANS("Clear sequence"));
@@ -232,7 +232,7 @@ TextEditor* MidiRecorderPanel::getTextEditor() {
 
 void MidiRecorderPanel::log(juce::String message) {
 
-    const String m = message;
+    const juce::String m = message;
 
     std::function<void(void)> changeLambda =
     [=]() { textEditor->setText(m + "\n"+textEditor->getText()); };

@@ -44,7 +44,7 @@ public:
         expect(f.exists());
         Logger::writeToLog(f.getFullPathName());
         
-        String data = f.loadFileAsString();
+        juce:String data = f.loadFileAsString();
         
         mc->getEditor()->loadFromString(data);
         

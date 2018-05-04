@@ -16,7 +16,7 @@
 //==============================================================================
 /*
 */
-class AudioThumbnailComponent    : public Component
+class AudioThumbnailComponent    : public juce::Component
 {
 public:
     AudioThumbnailComponent(int buffersize, float sampleRate);

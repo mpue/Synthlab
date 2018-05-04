@@ -61,7 +61,7 @@ void MidiRecorder::stopRecording() {
     recording = false;
     RecordListener::StateChange change;
     change.newState = RecordListener::RECORDING_STOPPED;
-    change.message = "Recorded "+String(midiMessages.size())+ " event(s)";
+    change.message = "Recorded "+juce::String(midiMessages.size())+ " event(s)";
     notifyListeners(&change);
 }
 

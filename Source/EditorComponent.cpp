@@ -96,7 +96,7 @@ void EditorComponent::resized()
     auto r = getLocalBounds();
     
     // make a list of two of our child components that we want to reposition
-    Component* comps[] = { topTab, &resizerBar, bottomTab };
+    juce::Component* comps[] = { topTab, &resizerBar, bottomTab };
     
     // this will position the 3 components, one above the other, to fit
     // vertically into the rectangle provided.

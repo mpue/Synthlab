@@ -14,7 +14,7 @@
 #include "Pin.h"
 #include "../JuceLibraryCode/JuceHeader.h"
 class Module;
-class Connection : public Component
+class Connection : public juce::Component
 {
 public:
     void paint (Graphics& g) override;

@@ -24,7 +24,7 @@ void PluginManager::scanPlugins() {
 
     PropertiesFile::Options options;
     
-    String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
+    juce::String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
     
     File appDir = File(userHome+"/.Synthlab");
     
@@ -102,13 +102,13 @@ void PluginManager::configureBusLayout(AudioPluginInstance* plugin, AudioDeviceM
     
     component->setAudioChannels(requestedInputChannelSize, requestedOutputChannelSize);
     
-    Logger::getCurrentLogger()->writeToLog("Active output channels "+String(numActiveHostOutputs));
-    Logger::getCurrentLogger()->writeToLog("Active input channels "+String(numActiveHostInputs));
+    Logger::getCurrentLogger()->writeToLog("Active output channels "+juce::String(numActiveHostOutputs));
+    Logger::getCurrentLogger()->writeToLog("Active input channels "+juce::String(numActiveHostInputs));
 }
 
 void PluginManager::updatePluginList() {
     
-    String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
+    juce::String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
     File presetPath = File(userHome+"/.Synthlab/plugins/");
     
     pluginList = new KnownPluginList();
@@ -125,12 +125,12 @@ void PluginManager::updatePluginList() {
     iter = nullptr;
 }
 
-void PluginManager::addPlugin(String name, AudioDeviceManager* deviceManager) {
+void PluginManager::addPlugin(juce::String name, AudioDeviceManager* deviceManager) {
     
-    String error = String("Error");
+    juce::String error = juce::String("Error");
     PluginDescription pd;
     
-    String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
+    juce::String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
     
     File preset = File(userHome+"/.Synthlab/plugins/"+name);
     ScopedPointer<XmlElement> xml = XmlDocument(preset).getDocumentElement();
@@ -156,7 +156,7 @@ void PluginManager::addPlugin(String name, AudioDeviceManager* deviceManager) {
     
 }
 
-PluginManager::PluginWindow* PluginManager::getPluginWindow(String name) {
+PluginManager::PluginWindow* PluginManager::getPluginWindow(juce::String name) {
     return pluginWindowMap[name];
 }
 
@@ -176,10 +176,10 @@ PopupMenu* PluginManager::buildPluginMenu() {
     
     PopupMenu *menu = new PopupMenu();
     
-    String appDataPath = File::getSpecialLocation(File::userApplicationDataDirectory).getFullPathName();
-    String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
+    juce::String appDataPath = File::getSpecialLocation(File::userApplicationDataDirectory).getFullPathName();
+    juce::String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
     
-    String presetPath = userHome+"/.Synthlab/plugins";
+    juce::String presetPath = userHome+"/.Synthlab/plugins";
     File presets = File(presetPath);
     
     if (!presets.exists()) {
@@ -210,7 +210,7 @@ PopupMenu* PluginManager::buildPluginMenu() {
         
     }
     
-    std::map<std::string,PopupMenu> menuMap;
+    std::map<juce::String,PopupMenu> menuMap;
     
     for (int i = 0; i < manufacturers.size();i++) {
         PopupMenu sub = PopupMenu();
@@ -244,7 +244,7 @@ PopupMenu* PluginManager::buildPluginMenu() {
     return menu;
 }
 
-std::vector<String> PluginManager::getAvailablePlugins() {
+std::vector<juce::String> PluginManager::getAvailablePlugins() {
     return availableInstruments;
 }
 

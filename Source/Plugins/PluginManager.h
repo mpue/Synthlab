@@ -29,7 +29,7 @@ public:
     class PluginWindow    : public DocumentWindow
     {
     public:
-        PluginWindow (String name, AudioProcessorEditor* editor)  : DocumentWindow (name,
+        PluginWindow (juce::String name, AudioProcessorEditor* editor)  : DocumentWindow (name,
                                                                                     Colours::lightgrey,
                                                                                     DocumentWindow::allButtons)
         {
@@ -57,13 +57,13 @@ public:
     };
     
     void scanPlugins();
-    void addPlugin(String name,AudioDeviceManager* deviceManager);
+    void addPlugin(juce::String name,AudioDeviceManager* deviceManager);
     void configureBusLayout(AudioPluginInstance* plugin ,AudioDeviceManager* deviceManager, AudioAppComponent* component);
-    AudioPluginInstance* getPlugin(String name);
-    PluginWindow* getPluginWindow(String name);
+    AudioPluginInstance* getPlugin(juce::String name);
+    PluginWindow* getPluginWindow(juce::String name);
     PopupMenu* buildPluginMenu();
     long getNextPluginId();
-    std::vector<String> getAvailablePlugins();
+    std::vector<juce::String> getAvailablePlugins();
     StringArray& getPlugins();
     
     int getNumActiveChannels(int i) {
@@ -73,19 +73,19 @@ public:
     }
     
     void updatePluginList();
-    void openPluginWindow(String name, AudioDeviceManager* manager);
+    void openPluginWindow(juce::String name, AudioDeviceManager* manager);
     
 private:
     
-    std::vector<String> availableInstruments;
+    std::vector<juce::String> availableInstruments;
 
     PluginManager();
     
     ~PluginManager(){
-        for(std::map<String, AudioPluginInstance*>::iterator itr = pluginMap.begin(); itr != pluginMap.end(); itr++)
+        for(std::map<juce::String, AudioPluginInstance*>::iterator itr = pluginMap.begin(); itr != pluginMap.end(); itr++)
         {
       
-            String name = itr->first;
+            juce::String name = itr->first;
             
             if (pluginMap[name] != nullptr) {
         
@@ -106,9 +106,9 @@ private:
         delete apfm;
     }
     
-    std::map<String,AudioPluginInstance*> pluginMap;
-    std::map<String,PluginWindow*> pluginWindowMap;
-    std::map<String,AudioProcessorEditor*> editorWindowMap;
+    std::map<juce::String,AudioPluginInstance*> pluginMap;
+    std::map<juce::String,PluginWindow*> pluginWindowMap;
+    std::map<juce::String,AudioProcessorEditor*> editorWindowMap;
     StringArray* plugins = nullptr;
     KnownPluginList* pluginList = nullptr;
     static PluginManager* instance;

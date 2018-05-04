@@ -78,7 +78,8 @@ private:
             else if (value.toString().getIntValue() == 1) {
                 t = TerminalModule::Type::EVENT;
             }
-            else if (value.toString().getIntValue() == 2) {
+            else
+            {
                 t = TerminalModule::Type::VALUE;
             }
             module->setType(t);

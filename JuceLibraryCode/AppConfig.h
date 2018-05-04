@@ -40,7 +40,7 @@
 #endif
 
 #ifndef JUCE_REPORT_APP_USAGE
- #define JUCE_REPORT_APP_USAGE 0
+ #define JUCE_REPORT_APP_USAGE 1
 #endif
 
 // END SECTION A
@@ -90,6 +90,14 @@
 
 #ifndef    JUCE_JACK
  //#define JUCE_JACK 0
+#endif
+
+#ifndef    JUCE_BELA
+ //#define JUCE_BELA 0
+#endif
+
+#ifndef    JUCE_USE_ANDROID_OBOE
+ //#define JUCE_USE_ANDROID_OBOE 0
 #endif
 
 #ifndef    JUCE_USE_ANDROID_OPENSLES

@@ -72,11 +72,11 @@ public:
         return this->defaultSampler;
     }
     
-    Component* getMain() {
+    juce::Component* getMain() {
         return main;
     }
     
-    void setMain(Component* c) {
+    void setMain(juce::Component* c) {
         main = c;
     }
     
@@ -172,7 +172,7 @@ private:
     CustomLookAndFeel* lookAndFeel;
     MainTabbedComponent* supplementalTab = nullptr;
     std::vector<DialogWindow*> openWindows;
-    Component* main = nullptr;
+    juce::Component* main = nullptr;
     Sampler* defaultSampler = nullptr;
     
 #ifdef USE_PUSH

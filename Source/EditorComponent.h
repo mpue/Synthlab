@@ -20,7 +20,7 @@
 //==============================================================================
 /*
 */
-class EditorComponent    : public Component, public ChangeListener
+class EditorComponent    : public juce::Component, public ChangeListener
 {
 public:
     EditorComponent(float sampleRate, int bufferSize);

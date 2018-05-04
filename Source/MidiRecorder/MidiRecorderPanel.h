@@ -37,7 +37,7 @@
     Describe your class and how it works here!
                                                                     //[/Comments]
 */
-class MidiRecorderPanel  : public Component,
+class MidiRecorderPanel  : public juce::Component,
                            public MidiTools::Logger,
                            public RecordListener,
                            public Button::Listener
@@ -51,7 +51,7 @@ public:
     //[UserMethods]     -- You can add your own custom methods in this section.
     MidiRecorder* getRecorder();
     TextEditor* getTextEditor();
-    void log(String message) override;
+    void log(juce::String message) override;
     void setDeviceManager(AudioDeviceManager* manager);
     void changedState(StateChange* change) override;
     void incomingMessage(MidiMessage* message) override;

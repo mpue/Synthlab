@@ -14,7 +14,7 @@ namespace MidiTools {
     class Logger {
     public:
         virtual ~Logger() {};
-        virtual void log(String message) = 0;
+        virtual void log(juce::String message) = 0;
 
     };
 }

@@ -104,11 +104,11 @@ int MidiEventEditor::getNumRows() {
 void MidiEventEditor::paintCell(juce::Graphics &g, int rowNumber, int columnId, int width, int height, bool rowIsSelected) {
     g.setColour(juce::Colours::black);
     
-    String text = "";
+    juce::String text = "";
     
     if (columnId == 1) {
         
-        String type = "unknown";
+        juce::String type = "unknown";
         
         if (recorder->getMessages().at(rowNumber).isNoteOn()) {
             type = "Note on";
@@ -120,32 +120,32 @@ void MidiEventEditor::paintCell(juce::Graphics &g, int rowNumber, int columnId, 
             type = "Sysex";
         }
         else if (recorder->getMessages().at(rowNumber).isController()) {
-            type = "Controller "+String(recorder->getMessages().at(rowNumber).getControllerNumber());
+            type = "Controller "+juce::String(recorder->getMessages().at(rowNumber).getControllerNumber());
         }
         
         text = type;
     }
     else if (columnId == 2) {
-        text = String(recorder->getMessages().at(rowNumber).getChannel());
+        text = juce::String(recorder->getMessages().at(rowNumber).getChannel());
     }
     else if (columnId == 3) {
         
         if (recorder->getMessages().at(rowNumber).isNoteOn() || recorder->getMessages().at(rowNumber).isNoteOff()) {
-            text = String(recorder->getMessages().at(rowNumber).getNoteNumber());
+            text = juce::String(recorder->getMessages().at(rowNumber).getNoteNumber());
         }
         else if (recorder->getMessages().at(rowNumber).isSysEx()) {
         }
         else if (recorder->getMessages().at(rowNumber).isController()) {
-            text = String(recorder->getMessages().at(rowNumber).getControllerValue());
+            text = juce::String(recorder->getMessages().at(rowNumber).getControllerValue());
         }
     }
     else if (columnId == 4) {
         if (recorder->getMessages().at(rowNumber).isNoteOn() || recorder->getMessages().at(rowNumber).isNoteOff()) {
-            text = String(recorder->getMessages().at(rowNumber).getVelocity());
+            text = juce::String(recorder->getMessages().at(rowNumber).getVelocity());
         }
     }
     else if (columnId == 5) {
-        text = String(recorder->getMessages().at(rowNumber).getTimeStamp());
+        text = juce::String(recorder->getMessages().at(rowNumber).getTimeStamp());
     }
     g.drawText(text, 0,0, width,height, juce::Justification::centredLeft);
 }
