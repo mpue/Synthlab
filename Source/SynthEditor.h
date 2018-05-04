@@ -42,11 +42,7 @@ public:
     void openEditor(Module* m);
     void loadFromString(String in);
     void saveStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections, ValueTree* v);
-    void loadStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections,ValueTree* v, ChangeBroadcaster* broadcaster);
-    void connectTerminals(Module* m);
-    void configureModule(Module* m, ValueTree& mod, ChangeBroadcaster* broadcaster);
-    Module* loadModule(ValueTree& v, ChangeBroadcaster* broadcaster);
-    void loadConnections(ValueTree& v, std::vector<Module *>* modules, std::vector<Connection*>* connections);
+    void configureAudioModule(Module *m, ChangeBroadcaster* broadcaster);
                          
     // audio processing
 
