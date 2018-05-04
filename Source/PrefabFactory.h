@@ -19,15 +19,15 @@ public:
     class Prefab {
     public:
         Prefab() {};
-        Prefab(String name, String category){
+        Prefab(juce::String name, juce::String category){
             this->name = name;
             this->category = category;
             this->icon = icon;
         };
-        String getName() {
+        juce::String getName() {
             return name;
         }
-        String getCategory() {
+        juce::String getCategory() {
             return category;
         }
         int getId() {
@@ -38,11 +38,11 @@ public:
             this->prefabId = prefabId;
         }
         
-        Image* getIcon() {
+        juce::Image* getIcon() {
             return &icon;
         }
         
-        void setIcon(Image& icon) {
+        void setIcon(juce::Image& icon) {
             this->icon = icon;
         }
         
@@ -59,9 +59,9 @@ public:
         
     private:
         int numInstances = 0;
-        String name;
-        String category;
-        Image icon;
+        juce::String name;
+        juce::String category;
+        juce::Image icon;
         int prefabId;
     };
     
@@ -77,23 +77,23 @@ public:
     }
     
     
-    Image getImage(int prefabId) {
+    juce::Image getImage(int prefabId) {
         return prefabImages[prefabId];
     }
     
-    PopupMenu createPrefabMenu();
+    juce::PopupMenu createPrefabMenu();
     Module* getPrefab(int id, float sampleRate, int bufferSize);
     std::map<int,Prefab> getPrefabNames() {return prefabs;};
-    StringArray* getCategories() { return categories;};
+    juce::StringArray* getCategories() { return categories;};
     int getNumInstances(int id);
     void reset();
 private:
     static PrefabFactory* instance;
     
     std::map<int,Prefab> prefabs;
-    std::map<int,Image> prefabImages;
+    std::map<int,juce::Image> prefabImages;
     
-    StringArray* categories;
+    juce::StringArray* categories;
     
     PrefabFactory() {
         prefabs[53] = Prefab("Sampler","Sound sources");
@@ -129,40 +129,40 @@ private:
         prefabs[83] = Prefab("Terminal In","Input / Output");
         prefabs[84] = Prefab("Terminal Out","Input / Output");
         
-        prefabImages[53] = ImageCache::getFromMemory(BinaryData::sampler_png, BinaryData::sampler_pngSize);
-        prefabImages[54] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
-        prefabImages[55] = ImageCache::getFromMemory(BinaryData::p2f_png, BinaryData::p2f_pngSize);
-        prefabImages[56] = ImageCache::getFromMemory(BinaryData::inverter_png, BinaryData::inverter_pngSize);
-        prefabImages[57] = ImageCache::getFromMemory(BinaryData::multiplier_png, BinaryData::multiplier_pngSize);
-        prefabImages[58] = ImageCache::getFromMemory(BinaryData::display_png, BinaryData::display_pngSize);
-        prefabImages[59] = ImageCache::getFromMemory(BinaryData::adder_png, BinaryData::adder_pngSize);
-        prefabImages[60] = ImageCache::getFromMemory(BinaryData::adder_png, BinaryData::adder_pngSize);
-        prefabImages[61] = ImageCache::getFromMemory(BinaryData::midiin_png, BinaryData::midiin_pngSize);
-        prefabImages[62] = ImageCache::getFromMemory(BinaryData::midiout_png, BinaryData::midiout_pngSize);
-        prefabImages[63] = ImageCache::getFromMemory(BinaryData::note_png, BinaryData::note_pngSize);
-        prefabImages[64] = ImageCache::getFromMemory(BinaryData::saw_png, BinaryData::saw_pngSize);
-        prefabImages[65] = ImageCache::getFromMemory(BinaryData::whitenoise_png, BinaryData::whitenoise_pngSize);
-        prefabImages[66] = ImageCache::getFromMemory(BinaryData::speaker_png, BinaryData::speaker_pngSize);
-        prefabImages[67] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
-        prefabImages[68] = ImageCache::getFromMemory(BinaryData::lp_png, BinaryData::lp_pngSize);
-        prefabImages[69] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
-        prefabImages[70] = ImageCache::getFromMemory(BinaryData::adsr_png, BinaryData::adder_pngSize);
-        prefabImages[71] = ImageCache::getFromMemory(BinaryData::sine_png, BinaryData::sine_pngSize);
-        prefabImages[72] = ImageCache::getFromMemory(BinaryData::random_png, BinaryData::random_pngSize);
-        prefabImages[73] = ImageCache::getFromMemory(BinaryData::stereodelay_png, BinaryData::stereodelay_pngSize);
-        prefabImages[74] = ImageCache::getFromMemory(BinaryData::hp_png, BinaryData::hp_pngSize);
-        prefabImages[75] = ImageCache::getFromMemory(BinaryData::scope_png, BinaryData::scope_pngSize);
-        prefabImages[76] = ImageCache::getFromMemory(BinaryData::micro_png, BinaryData::micro_pngSize);
-        prefabImages[77] = ImageCache::getFromMemory(BinaryData::aux_png, BinaryData::aux_pngSize);
-        prefabImages[78] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
-        prefabImages[79] = ImageCache::getFromMemory(BinaryData::plugin_png, BinaryData::plugin_pngSize);
-        prefabImages[80] = ImageCache::getFromMemory(BinaryData::sequence_png, BinaryData::sequence_pngSize);
-        prefabImages[81] = ImageCache::getFromMemory(BinaryData::pulse_png, BinaryData::pulse_pngSize);
-        prefabImages[82] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
-        prefabImages[83] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
-        prefabImages[84] = ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[53] = juce::ImageCache::getFromMemory(BinaryData::sampler_png, BinaryData::sampler_pngSize);
+        prefabImages[54] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[55] = juce::ImageCache::getFromMemory(BinaryData::p2f_png, BinaryData::p2f_pngSize);
+        prefabImages[56] = juce::ImageCache::getFromMemory(BinaryData::inverter_png, BinaryData::inverter_pngSize);
+        prefabImages[57] = juce::ImageCache::getFromMemory(BinaryData::multiplier_png, BinaryData::multiplier_pngSize);
+        prefabImages[58] = juce::ImageCache::getFromMemory(BinaryData::display_png, BinaryData::display_pngSize);
+        prefabImages[59] = juce::ImageCache::getFromMemory(BinaryData::adder_png, BinaryData::adder_pngSize);
+        prefabImages[60] = juce::ImageCache::getFromMemory(BinaryData::adder_png, BinaryData::adder_pngSize);
+        prefabImages[61] = juce::ImageCache::getFromMemory(BinaryData::midiin_png, BinaryData::midiin_pngSize);
+        prefabImages[62] = juce::ImageCache::getFromMemory(BinaryData::midiout_png, BinaryData::midiout_pngSize);
+        prefabImages[63] = juce::ImageCache::getFromMemory(BinaryData::note_png, BinaryData::note_pngSize);
+        prefabImages[64] = juce::ImageCache::getFromMemory(BinaryData::saw_png, BinaryData::saw_pngSize);
+        prefabImages[65] = juce::ImageCache::getFromMemory(BinaryData::whitenoise_png, BinaryData::whitenoise_pngSize);
+        prefabImages[66] = juce::ImageCache::getFromMemory(BinaryData::speaker_png, BinaryData::speaker_pngSize);
+        prefabImages[67] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[68] = juce::ImageCache::getFromMemory(BinaryData::lp_png, BinaryData::lp_pngSize);
+        prefabImages[69] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[70] = juce::ImageCache::getFromMemory(BinaryData::adsr_png, BinaryData::adder_pngSize);
+        prefabImages[71] = juce::ImageCache::getFromMemory(BinaryData::sine_png, BinaryData::sine_pngSize);
+        prefabImages[72] = juce::ImageCache::getFromMemory(BinaryData::random_png, BinaryData::random_pngSize);
+        prefabImages[73] = juce::ImageCache::getFromMemory(BinaryData::stereodelay_png, BinaryData::stereodelay_pngSize);
+        prefabImages[74] = juce::ImageCache::getFromMemory(BinaryData::hp_png, BinaryData::hp_pngSize);
+        prefabImages[75] = juce::ImageCache::getFromMemory(BinaryData::scope_png, BinaryData::scope_pngSize);
+        prefabImages[76] = juce::ImageCache::getFromMemory(BinaryData::micro_png, BinaryData::micro_pngSize);
+        prefabImages[77] = juce::ImageCache::getFromMemory(BinaryData::aux_png, BinaryData::aux_pngSize);
+        prefabImages[78] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[79] = juce::ImageCache::getFromMemory(BinaryData::plugin_png, BinaryData::plugin_pngSize);
+        prefabImages[80] = juce::ImageCache::getFromMemory(BinaryData::sequence_png, BinaryData::sequence_pngSize);
+        prefabImages[81] = juce::ImageCache::getFromMemory(BinaryData::pulse_png, BinaryData::pulse_pngSize);
+        prefabImages[82] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[83] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[84] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         
-        categories = new StringArray();
+        categories = new juce::StringArray();
 
         categories->add("Audio");
         categories->add("Controls");

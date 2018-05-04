@@ -15,10 +15,10 @@
 #include "../MainComponent.h"
 
 
-class ModuleTest : public UnitTest {
+class ModuleTest : public juce::UnitTest {
     
 public:
-    ModuleTest() : UnitTest("ModuleTest") {
+    ModuleTest() : juce::UnitTest("ModuleTest") {
         
     }
     

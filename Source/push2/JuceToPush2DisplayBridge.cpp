@@ -24,6 +24,7 @@
 #include <assert.h>
 
 using namespace ableton;
+using juce::Image;
 
 //------------------------------------------------------------------------------
 

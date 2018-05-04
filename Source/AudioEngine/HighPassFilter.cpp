@@ -10,6 +10,9 @@
 #include "HighPassFilter.h"
 #include "ADSR.h"
 
+using juce::IIRFilter;
+using juce::IIRCoefficients;
+
 HighPassFilter::HighPassFilter() {
     this->filter1 = new IIRFilter();
     this->filter2 = new IIRFilter();

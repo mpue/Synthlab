@@ -20,13 +20,13 @@
 //==============================================================================
 /*
 */
-class EditorComponent    : public juce::Component, public ChangeListener
+class EditorComponent    : public juce::Component, public juce::ChangeListener
 {
 public:
     EditorComponent(float sampleRate, int bufferSize);
     ~EditorComponent();
 
-    void paint (Graphics&) override;
+    void paint (juce::Graphics&) override;
     void resized() override;
 
     SynthEditor* getEditor();
@@ -35,7 +35,7 @@ public:
     
     MainTabbedComponent* getEditorTab();
     
-    virtual void changeListenerCallback (ChangeBroadcaster* source) override;
+    virtual void changeListenerCallback (juce::ChangeBroadcaster* source) override;
 private:
     
     int bufferSize;
@@ -43,15 +43,15 @@ private:
 
     SynthEditor* editor = nullptr;
     MixerPanel* mixerPanel = nullptr;
-    Viewport* editorView = nullptr;
-    Viewport* mixerView = nullptr;
+    juce::Viewport* editorView = nullptr;
+    juce::Viewport* mixerView = nullptr;
     Mixer* mixer = nullptr;
     
     MainTabbedComponent* topTab = nullptr;
     MainTabbedComponent* bottomTab = nullptr;
 
-    StretchableLayoutManager stretchableManager;
-    StretchableLayoutResizerBar resizerBar;
+    juce::StretchableLayoutManager stretchableManager;
+    juce::StretchableLayoutResizerBar resizerBar;
 
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EditorComponent)

@@ -11,6 +11,21 @@
 #include "Project.h"
 #include "AudioManager.h"
 
+using juce::File;
+using juce::WildcardFileFilter;
+using juce::TableListBox;
+using juce::Viewport;
+using juce::Colour;
+using juce::String;
+using juce::DirectoryContentsList;
+using juce::ChangeBroadcaster;
+using juce::Graphics;
+using juce::ValueTree;
+using juce::OutputStream;
+using juce::XmlElement;
+using juce::XmlDocument;
+using juce::ScopedPointer;
+
 ExtendedFileBrowser::ExtendedFileBrowser(const File& initialFileOrDirectory,const WildcardFileFilter* fileFilter, FileBrowserModel* model) : initialDir(initialFileOrDirectory) {
     
     // addMouseListener(this, true);

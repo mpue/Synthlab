@@ -37,8 +37,8 @@ public:
     void resetDelay();
     
 private:
-    ScopedPointer<BasicDelayLine> delayLeft;
-    ScopedPointer<BasicDelayLine> delayRight;
+    juce::ScopedPointer<BasicDelayLine> delayLeft;
+    juce::ScopedPointer<BasicDelayLine> delayRight;
     
     JUCE_LEAK_DETECTOR(StereoDelay);
     

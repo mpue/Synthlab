@@ -23,12 +23,12 @@ public:
     ADSRModule(double sampleRate, int buffersize);
     ~ADSRModule();
 
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
 
     void process() override;
     virtual void configurePins() override;
     
-    virtual String getCategory() override {
+    virtual juce::String getCategory() override {
         return "Sound sources";
     }
     
@@ -47,32 +47,32 @@ public:
     
     void eventReceived(Event *e) override;
     
-    virtual String getDescription() override {
+    virtual juce::String getDescription() override {
         return BinaryData::adsr_txt;
     }
     
-    virtual juce::Array<PropertyComponent*>& getProperties() override;
+    virtual juce::Array<juce::PropertyComponent*>& getProperties() override;
     virtual void createProperties() override;
     
 private:
     
-    struct IsMonoListener : Value::Listener
+    struct IsMonoListener : juce::Value::Listener
     {
-        IsMonoListener (Value& v, ADSRModule* mod) : mod(mod),  value (v) { value.addListener (this); }
+        IsMonoListener (juce::Value& v, ADSRModule* mod) : mod(mod),  value (v) { value.addListener (this); }
         ~IsMonoListener()  {}  // no need to remove the listener
         
-        void valueChanged (Value& value) override {
+        void valueChanged (juce::Value& value) override {
             mod->setMono(value.toString().getIntValue() > 0);
         }
         ADSRModule* mod;
-        Value value;
+        juce::Value value;
     };
     
-    Value* isMonoValue;
-    PropertyComponent* isMonoProp;
+    juce::Value* isMonoValue;
+    juce::PropertyComponent* isMonoProp;
     IsMonoListener* isMonoListener;
 
-    Image* image;
+    juce::Image* image;
     ADSR* envelope;
     ADSR* envelopes[128];
     int currentSample = 0;

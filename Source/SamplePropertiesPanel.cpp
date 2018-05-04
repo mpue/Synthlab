@@ -24,6 +24,16 @@
 #include "AudioManager.h"
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
+using juce::TextButton;
+using juce::Slider;
+using juce::Label;
+using juce::Font;
+using juce::Justification;
+using juce::TextEditor;
+using juce::Colours;
+using juce::Colour;
+using juce::ToggleButton;
+using juce::ImageCache;
 //[/MiscUserDefs]
 
 //==============================================================================

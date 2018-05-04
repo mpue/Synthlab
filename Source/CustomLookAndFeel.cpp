@@ -10,6 +10,13 @@
 
 #include "CustomLookAndFeel.h"
 
+using juce::Graphics;
+using juce::Slider;
+using juce::Colours;
+using juce::Time;
+using juce::ImageCache;
+using juce::Image;
+
 void CustomLookAndFeel::drawLinearSlider (Graphics& g, int x, int y, int width, int height,
                                         float sliderPos, float minSliderPos, float maxSliderPos,
                                           const Slider::SliderStyle style, Slider& slider) {

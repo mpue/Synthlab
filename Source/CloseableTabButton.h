@@ -12,9 +12,9 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 
-class CloseableTabButton : public TabBarButton {
+class CloseableTabButton : public juce::TabBarButton {
 public:
-    CloseableTabButton(const String& name, TabbedButtonBar& ownerBar);
+    CloseableTabButton(const juce::String& name, juce::TabbedButtonBar& ownerBar);
     ~CloseableTabButton();
     
 };

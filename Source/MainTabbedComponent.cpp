@@ -11,7 +11,18 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "MainTabbedComponent.h"
 #include "CloseableTabButton.h"
-//==============================================================================
+
+using juce::TabbedButtonBar;
+using juce::Button;
+using juce::TabbedButtonBar;
+using juce::Colour;
+using juce::Colours;
+using juce::PopupMenu;
+using juce::TabBarButton;
+using juce::String;
+using juce::ImageButton;
+using juce::ImageCache;
+
 MainTabbedComponent::MainTabbedComponent() : juce::TabbedComponent(TabbedButtonBar::Orientation::TabsAtTop) , Button::Listener()
 {
     

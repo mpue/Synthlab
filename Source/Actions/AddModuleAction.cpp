@@ -14,7 +14,9 @@
 #include "../AudioManager.h"
 #include "../TerminalModule.h"
 
-AddModuleAction::AddModuleAction(SynthEditor* editor, Point<int> position, int moduleId) {
+using juce::String;
+
+AddModuleAction::AddModuleAction(SynthEditor* editor, juce::Point<int> position, int moduleId) {
     this->editor = editor;
     this->position = position;
     this->moduleId = moduleId;

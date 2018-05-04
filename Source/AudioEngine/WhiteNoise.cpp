@@ -10,6 +10,8 @@
 
 #include "WhiteNoise.h"
 
+using juce::Random;
+
 WhiteNoise::WhiteNoise(double sampleRate,  int buffersize) : Oszillator(sampleRate) {
     this->volume = 1.0f;
     random = new Random();

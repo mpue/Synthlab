@@ -9,6 +9,26 @@
 #include "PluginManager.h"
 #include "../Project.h"
 
+using juce::AudioPluginFormatManager;
+using juce::PropertiesFile;
+using juce::File;
+using juce::String;
+using juce::PluginListComponent;
+using juce::PluginDescription;
+using juce::DialogWindow;
+using juce::ScopedPointer;
+using juce::XmlElement;
+using juce::XmlDocument;
+using juce::Logger;
+using juce::AudioPluginInstance;
+using juce::AudioDeviceManager;
+using juce::AudioAppComponent;
+using juce::KnownPluginList;
+using juce::DirectoryIterator;
+using juce::StringArray;
+using juce::PopupMenu;
+using juce::AudioProcessorEditor;
+
 PluginManager* PluginManager::instance = NULL;
 
 PluginManager::PluginManager() {
@@ -24,7 +44,7 @@ void PluginManager::scanPlugins() {
 
     PropertiesFile::Options options;
     
-    juce::String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
+    String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
     
     File appDir = File(userHome+"/.Synthlab");
     

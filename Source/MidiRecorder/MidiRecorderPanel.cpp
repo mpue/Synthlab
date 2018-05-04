@@ -23,6 +23,20 @@
 
 #include "MidiRecorderPanel.h"
 
+using juce::TextButton;
+using juce::ImageButton;
+using juce::Graphics;
+using juce::TextEditor;
+using juce::ImageCache;
+using juce::Image;
+using juce::Colour;
+using juce::Button;
+using juce::FileChooser;
+using juce::File;
+using juce::ScopedPointer;
+using juce::MidiFile;
+using juce::FileOutputStream;
+using juce::DialogWindow;
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 //[/MiscUserDefs]

@@ -15,14 +15,14 @@
 #include <vector>
 #include "RecordListener.h"
 
-class MidiRecorder : public MidiInputCallback, public Timer {
+class MidiRecorder : public juce::MidiInputCallback, public juce::Timer {
     
 public:
     
     MidiRecorder(MidiTools::Logger* logger);
     ~MidiRecorder();
     
-    void handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) override;
+    void handleIncomingMidiMessage (juce::MidiInput* source, const juce::MidiMessage& message) override;
     void timerCallback() override;
     
     bool isRecording();
@@ -33,24 +33,24 @@ public:
     void startPlaying();
     void stopPlaying();
 
-    void setDeviceManager(AudioDeviceManager* manager);
+    void setDeviceManager(juce::AudioDeviceManager* manager);
     void addListener(RecordListener* listener);
     void clear();
     
-    MidiFile* getFile();
-    std::vector<MidiMessage> getMessages();
+    juce::MidiFile* getFile();
+    std::vector<juce::MidiMessage> getMessages();
     
 private:
     
     MidiTools::Logger* logger;
     bool recording = false;
     bool playing = false;
-    MidiBuffer* midiBuffer;
-    AudioDeviceManager* deviceManager;
+    juce::MidiBuffer* midiBuffer;
+    juce::AudioDeviceManager* deviceManager;
     double startTime = 0;
     int sampleRate = 44100;
     int previousSampleNumber = 0;
-    std::vector<MidiMessage> midiMessages;
+    std::vector<juce::MidiMessage> midiMessages;
     int currentMessageIndex = 0;
     std::vector<RecordListener*> listeners;
     

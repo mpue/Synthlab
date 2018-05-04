@@ -15,10 +15,10 @@
 #include "../MainComponent.h"
 #include "../PrefabFactory.h"
 
-class StartupTest : public UnitTest {
+class StartupTest : public juce::UnitTest {
     
 public:
-    StartupTest() : UnitTest("Startup") {
+    StartupTest() : juce::UnitTest("Startup") {
         
     }
     

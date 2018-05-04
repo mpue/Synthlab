@@ -23,7 +23,7 @@ public:
     SawtoothModule(double sampleRate, int buffersize);
     ~SawtoothModule();
 
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
 
     void setPitch(int pitch);
     void setAmplitude(float amplitude);
@@ -31,44 +31,44 @@ public:
     void process() override;
     virtual void configurePins() override;
     
-    virtual String getCategory() override {
+    virtual juce::String getCategory() override {
         return "Sound sources";
     }
-    virtual String getDescription() override {
+    virtual juce::String getDescription() override {
         return BinaryData::oscillator_txt;
     }
     
     bool isMono();
     void setMono(bool value);
     
-    virtual juce::Array<PropertyComponent*>& getProperties() override;
+    virtual juce::Array<juce::PropertyComponent*>& getProperties() override;
     virtual void createProperties() override;
     
     
 private:
     
-    struct IsMonoListener : Value::Listener
+    struct IsMonoListener : juce::Value::Listener
     {
-        IsMonoListener (Value& v, SawtoothModule* mod) : mod(mod),  value (v) { value.addListener (this); }
+        IsMonoListener (juce::Value& v, SawtoothModule* mod) : mod(mod),  value (v) { value.addListener (this); }
         ~IsMonoListener()  {}  // no need to remove the listener
         
-        void valueChanged (Value& value) override {
+        void valueChanged (juce::Value& value) override {
             mod->setMono(value.toString().getIntValue() > 0);
         }
         SawtoothModule* mod;
-        Value value;
+        juce::Value value;
     };
     
-    Value* isMonoValue;
-    PropertyComponent* isMonoProp;
+    juce::Value* isMonoValue;
+    juce::PropertyComponent* isMonoProp;
     IsMonoListener* isMonoListener;
     
-    AudioSampleBuffer* out = nullptr;
+    juce::AudioSampleBuffer* out = nullptr;
     float frequencies[128] = {0};
     int pitch = 0;
     float amplitude;
     float fine = 0;
-    Image* image;
+    juce::Image* image;
     Sawtooth* monoOscillator;
     Sawtooth* oscillator[128];
     int currentSample = 0;

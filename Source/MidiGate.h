@@ -22,39 +22,39 @@ public:
     MidiGate();
     ~MidiGate();
 
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
 
     void gateOn(int velocity, int note);
     void gateOff(int note);
     
     virtual void configurePins() override;
     
-    virtual String getCategory() override {
+    virtual juce::String getCategory() override {
         return "MIDI";
     }
     
     void setChannel(int channel);
     int getChannel();
     
-    virtual juce::Array<PropertyComponent*>& getProperties() override;
+    virtual juce::Array<juce::PropertyComponent*>& getProperties() override;
     virtual void createProperties() override;
     
 private:
     
-    struct ChannelListener : Value::Listener
+    struct ChannelListener : juce::Value::Listener
     {
-        ChannelListener (Value& v, MidiGate* g) : g(g),  value (v) { value.addListener (this); }
+        ChannelListener (juce::Value& v, MidiGate* g) : g(g),  value (v) { value.addListener (this); }
         ~ChannelListener()  {}  // no need to remove the listener
         
-        void valueChanged (Value& value) override {
+        void valueChanged (juce::Value& value) override {
             g->setChannel(value.toString().getIntValue());
         }
         MidiGate* g;
-        Value value;
+        juce::Value value;
     };
     
-    Value* channelValue;
-    PropertyComponent* channelProp;
+    juce::Value* channelValue;
+    juce::PropertyComponent* channelProp;
     ChannelListener* channelListener;
 
     int channel = 1;

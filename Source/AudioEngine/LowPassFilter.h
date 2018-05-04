@@ -28,8 +28,8 @@ public:
     virtual ~LowPassFilter();
     
 private:
-    IIRFilter* filter1;
-    IIRFilter* filter2;
+    juce::IIRFilter* filter1;
+    juce::IIRFilter* filter2;
     Modulator* modulator;
     float frequency;
     float modAmount;

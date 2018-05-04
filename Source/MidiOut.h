@@ -29,21 +29,21 @@ public:
 
     RawEvent* raw = nullptr;
     
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
 
-    void message(MidiMessage* message);
+    void message(juce::MidiMessage* message);
     void setNote(int note);
     void gate(bool on, int note, int velocity);
-    void setDeviceManager(AudioDeviceManager* manager);
+    void setDeviceManager(juce::AudioDeviceManager* manager);
     void eventReceived(Event* e) override;
     virtual void configurePins() override;
     
-    virtual String getCategory() override {
+    virtual juce::String getCategory() override {
         return "MIDI";
     }
     
 private:
-    AudioDeviceManager* deviceManager;
+    juce::AudioDeviceManager* deviceManager;
     int note = 0;
     int velocity = 0;
     bool gateOn = false;

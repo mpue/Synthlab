@@ -43,11 +43,11 @@ class Connection;
     Describe your class and how it works here!
                                                                     //[/Comments]
 */
-class Module  : public Component,
-                public TextEditor::Listener,
+class Module  : public juce::Component,
+                public juce::TextEditor::Listener,
                 public EventListener,
-                public ChangeListener,
-                public ChangeBroadcaster
+                public juce::ChangeListener,
+                public juce::ChangeBroadcaster
 {
 public:
     //==============================================================================
@@ -69,15 +69,15 @@ public:
     void addPin(Pin::Direction direction);
     void addPin(Pin::Direction direction, Pin *p);
     void addPin(Pin* p);
-	Module(String name);
+	Module(juce::String name);
 
     Pin* getSelectedPin();
 
     std::vector<Pin*> pins;
 
-	bool isMouseOverPin(int pin, Point<int> pos);
+	bool isMouseOverPin(int pin, juce::Point<int> pos);
 
-	Point<int> getPinPosition(int i);
+	juce::Point<int> getPinPosition(int i);
 
     virtual void setSelected(bool selected);
     bool isSelected();
@@ -93,26 +93,26 @@ public:
     void setConnections(std::vector<Connection*>* connections);
     void textEditorReturnKeyPressed(juce::TextEditor &) override;
     void setModules(std::vector<Module*>* modules);
-    virtual void setName(String name);
+    virtual void setName(juce::String name);
 
     bool isEditable() { return editable;}
     bool isPrefab() { return prefab;};
 
     void eventReceived(Event* e) override;
-    void changeListenerCallback (ChangeBroadcaster* source) override;
+    void changeListenerCallback (juce::ChangeBroadcaster* source) override;
     virtual void process();
     
     void savePosition();
     void moveTo(int x, int y);
-    Point<int> getSavedPosition();
+    juce::Point<int> getSavedPosition();
     
     virtual int getId() { return id;};
     virtual void setId(int id) {this->id = id;};
     
     virtual void configurePins() {};
     
-    virtual String getCategory();
-    virtual String getDescription();
+    virtual juce::String getCategory();
+    virtual juce::String getDescription();
     
     virtual void setSampleRate(float rate);
     virtual void setBuffersize(int buffersize);
@@ -121,27 +121,27 @@ public:
         return Layer::MODULES;
     };
 
-    struct NameListener : Value::Listener
+    struct NameListener : juce::Value::Listener
     {
-        NameListener (Value& v, Module* module) : module(module),  value (v) { value.addListener (this); }
+        NameListener (juce::Value& v, Module* module) : module(module),  value (v) { value.addListener (this); }
         ~NameListener()  {}  // no need to remove the listener
         
-        void valueChanged (Value& value) override {
+        void valueChanged (juce::Value& value) override {
             module->setName(value.toString());
         }
         Module* module;
-        Value value;
+        juce::Value value;
     };
     
 
-    virtual juce::Array<PropertyComponent*>& getProperties();
+    virtual juce::Array<juce::PropertyComponent*>& getProperties();
     virtual void createProperties();
     
     //[/UserMethods]
 
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
     void resized() override;
-    void mouseDoubleClick (const MouseEvent& e) override;
+    void mouseDoubleClick (const juce::MouseEvent& e) override;
     
     // Binary resources:
     static const char* materialicons_301_viewmodule_64_0_ffffff_none_png;
@@ -154,10 +154,10 @@ protected:
     MultiComponentDragger* dragger;
 
     NameListener* nameListener;
-    Value* nameValue;
+    juce::Value* nameValue;
 
-    PropertyComponent* nameProp;
-    juce::Array<PropertyComponent*> properties;
+    juce::PropertyComponent* nameProp;
+    juce::Array<juce::PropertyComponent*> properties;
     
     bool selected = false;
 	long index;
@@ -166,7 +166,7 @@ protected:
     std::vector<Module*>* modules = nullptr;
     std::vector<Connection*>* connections = nullptr;
     Pin* selectedPin = nullptr;
-    Point<int> savedPosition;
+    juce::Point<int> savedPosition;
     
     float sampleRate;
     int buffersize;
@@ -176,9 +176,9 @@ protected:
 
     
     //==============================================================================
-    ScopedPointer<TextEditor> nameEditor;
-    ScopedPointer<Label> nameLabel;
-    Image cachedImage_materialicons_301_viewmodule_64_0_ffffff_none_png_1;
+    juce::ScopedPointer<juce::TextEditor> nameEditor;
+    juce::ScopedPointer<juce::Label> nameLabel;
+    juce::Image cachedImage_materialicons_301_viewmodule_64_0_ffffff_none_png_1;
 
     int id = 0;
     

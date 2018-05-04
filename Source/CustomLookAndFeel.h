@@ -13,59 +13,59 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 
-class CustomLookAndFeel : public LookAndFeel_V3 {
+class CustomLookAndFeel : public juce::LookAndFeel_V3 {
     
 public:
     
     CustomLookAndFeel() {
-        gradientVertical = ColourGradient(Colours::red, 0, 0, Colours::chartreuse, 5, 128, false);
-        gradientVertical.addColour(0.2 , Colours::orange);
+        gradientVertical = juce::ColourGradient(juce::Colours::red, 0, 0, juce::Colours::chartreuse, 5, 128, false);
+        gradientVertical.addColour(0.2 , juce::Colours::orange);
         
-        gradientHorizontal = ColourGradient(Colours::chartreuse, 0, 0, Colours::red, 128, 5, false);
-        gradientHorizontal.addColour(0.8 , Colours::orange);
+        gradientHorizontal = juce::ColourGradient(juce::Colours::chartreuse, 0, 0, juce::Colours::red, 128, 5, false);
+        gradientHorizontal.addColour(0.8 , juce::Colours::orange);
         
-        setColour(Slider::rotarySliderFillColourId, Colours::steelblue.darker());
-        setColour(Slider::trackColourId, Colours::transparentBlack);
-        setColour(Slider::thumbColourId, Colours::transparentBlack);
-        setColour(DialogWindow::backgroundColourId, Colours::darkgrey);
-        setColour(Label::textColourId, Colours::white);
-        setColour(ComboBox::backgroundColourId, Colours::black);
-        setColour(PopupMenu::backgroundColourId, Colours::black);
-        setColour(PopupMenu::highlightedBackgroundColourId, Colours::steelblue.brighter());
-        setColour(PopupMenu::textColourId, Colours::steelblue.brighter());
-        setColour(ComboBox::textColourId, Colours::steelblue.brighter());
-        setColour(ComboBox::outlineColourId, Colours::steelblue.brighter());
-        setColour(ComboBox::arrowColourId, Colours::steelblue.brighter());
-        setColour(ComboBox::buttonColourId, Colours::steelblue.brighter());
-        setColour(ListBox::backgroundColourId, Colours::black);
-        setColour(ListBox::textColourId, Colours::steelblue.brighter());
-        setColour(TextButton::buttonColourId, Colours::steelblue.darker());
-        setColour(TextButton::buttonOnColourId, Colours::steelblue.darker());
-        setColour(TextButton::textColourOnId, Colours::white);
-        setColour(TextButton::textColourOffId, Colours::white);
-        setColour(TextEditor::outlineColourId, Colours::steelblue.darker());
-        setColour(TextEditor::backgroundColourId, Colours::black);
-        setColour(TextEditor::highlightColourId, Colours::steelblue.darker());
-        setColour(TextEditor::highlightedTextColourId, Colours::black);
-        setColour(TextEditor::textColourId, Colours::steelblue.brighter());
-        setColour(TextButton::textColourOffId, Colours::steelblue.darker());
-        setColour(TextButton::textColourOnId, Colours::black);
-        setColour(CaretComponent::caretColourId, Colours::steelblue);
-        setColour (ScrollBar::thumbColourId,Colours::steelblue.darker());
-        setColour (ScrollBar::backgroundColourId,Colour::fromRGBA(0x5a,0x5a,0x5a,0xff));
-        setColour (Slider::thumbColourId,Colours::steelblue.darker());
-        setColour (Slider::trackColourId,Colour::fromRGBA(0x5a,0x5a,0x5a,0xff));
+        setColour(juce::Slider::rotarySliderFillColourId, juce::Colours::steelblue.darker());
+        setColour(juce::Slider::trackColourId, juce::Colours::transparentBlack);
+        setColour(juce::Slider::thumbColourId, juce::Colours::transparentBlack);
+        setColour(juce::DialogWindow::backgroundColourId, juce::Colours::darkgrey);
+        setColour(juce::Label::textColourId, juce::Colours::white);
+        setColour(juce::ComboBox::backgroundColourId, juce::Colours::black);
+        setColour(juce::PopupMenu::backgroundColourId, juce::Colours::black);
+        setColour(juce::PopupMenu::highlightedBackgroundColourId, juce::Colours::steelblue.brighter());
+        setColour(juce::PopupMenu::textColourId, juce::Colours::steelblue.brighter());
+        setColour(juce::ComboBox::textColourId, juce::Colours::steelblue.brighter());
+        setColour(juce::ComboBox::outlineColourId, juce::Colours::steelblue.brighter());
+        setColour(juce::ComboBox::arrowColourId, juce::Colours::steelblue.brighter());
+        setColour(juce::ComboBox::buttonColourId, juce::Colours::steelblue.brighter());
+        setColour(juce::ListBox::backgroundColourId, juce::Colours::black);
+        setColour(juce::ListBox::textColourId, juce::Colours::steelblue.brighter());
+        setColour(juce::TextButton::buttonColourId, juce::Colours::steelblue.darker());
+        setColour(juce::TextButton::buttonOnColourId, juce::Colours::steelblue.darker());
+        setColour(juce::TextButton::textColourOnId, juce::Colours::white);
+        setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+        setColour(juce::TextEditor::outlineColourId, juce::Colours::steelblue.darker());
+        setColour(juce::TextEditor::backgroundColourId, juce::Colours::black);
+        setColour(juce::TextEditor::highlightColourId, juce::Colours::steelblue.darker());
+        setColour(juce::TextEditor::highlightedTextColourId, juce::Colours::black);
+        setColour(juce::TextEditor::textColourId, juce::Colours::steelblue.brighter());
+        setColour(juce::TextButton::textColourOffId, juce::Colours::steelblue.darker());
+        setColour(juce::TextButton::textColourOnId, juce::Colours::black);
+        setColour(juce::CaretComponent::caretColourId, juce::Colours::steelblue);
+        setColour (juce::ScrollBar::thumbColourId,juce::Colours::steelblue.darker());
+        setColour (juce::ScrollBar::backgroundColourId, juce::Colour::fromRGBA(0x5a,0x5a,0x5a,0xff));
+        setColour (juce::Slider::thumbColourId,juce::Colours::steelblue.darker());
+        setColour (juce::Slider::trackColourId, juce::Colour::fromRGBA(0x5a,0x5a,0x5a,0xff));
         
     }
     
-    void drawLinearSlider (Graphics&, int x, int y, int width, int height,
+    void drawLinearSlider (juce::Graphics&, int x, int y, int width, int height,
                            float sliderPos, float minSliderPos, float maxSliderPos,
-                           const Slider::SliderStyle, Slider&) override;
+                           const juce::Slider::SliderStyle, juce::Slider&) override;
     
 private:
-    ColourGradient gradientVertical;
-    ColourGradient gradientHorizontal;
-    ComponentAnimator animator;
+    juce::ColourGradient gradientVertical;
+    juce::ColourGradient gradientHorizontal;
+    juce::ComponentAnimator animator;
     
     long triggerTime = 0;
     int maxY = 0xFFFF;

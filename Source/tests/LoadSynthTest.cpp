@@ -24,6 +24,11 @@
 #include "../Plugins/PluginManager.h"
 #include "../MainComponent.h"
 
+using juce::File;
+using juce::UnitTest;
+using juce::Logger;
+using juce::String;
+using juce::JUCEApplication;
 
 class LoadSynthTest : public UnitTest {
     
@@ -44,7 +49,7 @@ public:
         expect(f.exists());
         Logger::writeToLog(f.getFullPathName());
         
-        juce:String data = f.loadFileAsString();
+        String data = f.loadFileAsString();
         
         mc->getEditor()->loadFromString(data);
         

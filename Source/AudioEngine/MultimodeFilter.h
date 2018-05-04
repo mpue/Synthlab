@@ -37,11 +37,11 @@ public:
 
 private:
     
-    ScopedPointer<LowPassFilter> lowPassLeft;
-    ScopedPointer<HighPassFilter> highPassLeft;
+    juce::ScopedPointer<LowPassFilter> lowPassLeft;
+    juce::ScopedPointer<HighPassFilter> highPassLeft;
     
-    ScopedPointer<LowPassFilter> lowPassRight;
-    ScopedPointer<HighPassFilter> highPassRight;
+    juce::ScopedPointer<LowPassFilter> lowPassRight;
+    juce::ScopedPointer<HighPassFilter> highPassRight;
     
     Mode mode;
     JUCE_LEAK_DETECTOR(MultimodeFilter);

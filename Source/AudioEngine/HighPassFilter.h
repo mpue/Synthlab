@@ -28,8 +28,8 @@ public:
     virtual ~HighPassFilter();
     
 private:
-    ScopedPointer<IIRFilter> filter1;
-    ScopedPointer<IIRFilter> filter2;
+    juce::ScopedPointer<juce::IIRFilter> filter1;
+    juce::ScopedPointer<juce::IIRFilter> filter2;
     Modulator* modulator;
     float frequency;
     float modAmount;

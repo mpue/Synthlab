@@ -22,13 +22,13 @@ public:
     AuxOut();
     ~AuxOut();
     
-    void paint (Graphics& g) override;
-    void setDeviceManager(AudioDeviceManager* manager);
+    void paint (juce::Graphics& g) override;
+    void setDeviceManager(juce::AudioDeviceManager* manager);
     virtual void process() override;
     
     virtual void configurePins() override;
     
-    virtual String getCategory() override {
+    virtual juce::String getCategory() override {
         return "Input / Output";
     }
     // this is needed to associate the channel with the mixer
@@ -36,7 +36,7 @@ public:
     void setChannelIndex(int index);
     
 private:
-    AudioDeviceManager* deviceManager;
+    juce::AudioDeviceManager* deviceManager;
     int channelIndex;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AuxOut)
 };

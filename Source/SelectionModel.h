@@ -29,16 +29,16 @@ public:
     Module* getSelectedModule();
     std::vector<Module*>& getSelectedModules();
     void clearSelection();
-    void checkForPinSelection(Point<int> position);
+    void checkForPinSelection(juce::Point<int> position);
     void deselectAllPins();
-    State checkForHitAndSelect(Point<int> pos);
-    void checkForConnection(Point<int> pos);
-    void select(Point<int> pos);
+    State checkForHitAndSelect(juce::Point<int> pos);
+    void checkForConnection(juce::Point<int> pos);
+    void select(juce::Point<int> pos);
     void setRoot(Module* root);
     
     
 private:
-    bool isPointOnLineSegment(Point<int> pt1, Point<int> pt2, Point<int> pt, double epsilon);
+    bool isPointOnLineSegment(juce::Point<int> pt1, juce::Point<int> pt2, juce::Point<int> pt, double epsilon);
 
     std::vector<Module*> selectedModules;
     Module* root;

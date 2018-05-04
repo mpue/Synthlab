@@ -36,9 +36,9 @@
     Describe your class and how it works here!
                                                                     //[/Comments]
 */
-class MixerPanel  : public Component,
-                    public ChangeListener,
-                    public Timer
+class MixerPanel  : public juce::Component,
+                    public juce::ChangeListener,
+                    public juce::Timer
 {
 public:
     //==============================================================================
@@ -51,8 +51,8 @@ public:
     std::vector<MasterChannelPanel*> getChannels();
 
     void removeAllChannels();
-    void changeListenerCallback (ChangeBroadcaster* source)  override;
-    int addChannel(String name, Mixer::Channel::Type channeltype);
+    void changeListenerCallback (juce::ChangeBroadcaster* source)  override;
+    int addChannel(juce::String name, Mixer::Channel::Type channeltype);
     void removeChannel(int index);
     void setMixer(Mixer* mixer);
     
@@ -60,7 +60,7 @@ public:
     
     //[/UserMethods]
     
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
     void resized() override;
 
 
@@ -68,7 +68,7 @@ private:
     //[UserVariables]   -- You can add your own custom variables in this section.
     std::vector<MasterChannelPanel*> channels;
     Mixer* mixer;
-    Viewport* mixerView = nullptr;
+    juce::Viewport* mixerView = nullptr;
     //[/UserVariables]
 
     //==============================================================================

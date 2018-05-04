@@ -11,63 +11,63 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "AudioEngine/Sampler.h"
 
-class FileBrowserModel : public TableListBoxModel {
+class FileBrowserModel : public juce::TableListBoxModel {
 public:
     
-    FileBrowserModel(DirectoryContentsList* directoryList, File& initalDir);
+    FileBrowserModel(juce::DirectoryContentsList* directoryList, juce::File& initalDir);
     
-    virtual void paintRowBackground (Graphics& g,
+    virtual void paintRowBackground (juce::Graphics& g,
                                      int rowNumber,
                                      int width, int height,
                                      bool rowIsSelected) override;
-    virtual void paintCell (Graphics& g,
+    virtual void paintCell (juce::Graphics& g,
                             int rowNumber,
                             int columnId,
                             int width, int height,
                             bool rowIsSelected) override;
     virtual int getNumRows() override;
-    void setCurrentDir(File* dir);
+    void setCurrentDir(juce::File* dir);
     void update();
-    DirectoryContentsList* getDirectoryList();
+    juce::DirectoryContentsList* getDirectoryList();
     
-    String& getCurrentDir() {
+    juce::String& getCurrentDir() {
         return currentDirectory;
     }
     
-    var getDragSourceDescription (const SparseSet<int>& currentlySelectedRows) override{
+    juce::var getDragSourceDescription (const juce::SparseSet<int>& currentlySelectedRows) override{
         
         if (!currentlySelectedRows.getTotalRange().isEmpty()) {
-            File file = directoryList->getFile(currentlySelectedRows.getTotalRange().getStart());
+            juce::File file = directoryList->getFile(currentlySelectedRows.getTotalRange().getStart());
             return file.getFullPathName();
         }
         
-        return var();
+        return juce::var();
     }
     
 private:
-    DirectoryContentsList* directoryList;
-    String currentDirectory;
+    juce::DirectoryContentsList* directoryList;
+    juce::String currentDirectory;
 
 };
 
-class ExtendedFileBrowser : public Component,  public ChangeListener, public Timer{
+class ExtendedFileBrowser : public juce::Component,  public juce::ChangeListener, public juce::Timer{
     
     
 public:
-    ExtendedFileBrowser(const File& initialFileOrDirectory,const WildcardFileFilter* fileFilter, FileBrowserModel* model);
+    ExtendedFileBrowser(const juce::File& initialFileOrDirectory,const juce::WildcardFileFilter* fileFilter, FileBrowserModel* model);
     ~ExtendedFileBrowser();
     
-    void mouseDrag (const MouseEvent& event) override;
-    void mouseDoubleClick(const MouseEvent& event) override;
-    void mouseDown(const MouseEvent& event) override;
-    void paint (Graphics& g) override;
+    void mouseDrag (const juce::MouseEvent& event) override;
+    void mouseDoubleClick(const juce::MouseEvent& event) override;
+    void mouseDown(const juce::MouseEvent& event) override;
+    void paint (juce::Graphics& g) override;
     void resized() override;
-    virtual void changeListenerCallback (ChangeBroadcaster* source) override;
+    virtual void changeListenerCallback (juce::ChangeBroadcaster* source) override;
     
     void saveState();
     void loadState();
     
-    TableListBox* getTable() {
+    juce::TableListBox* getTable() {
         return table;
     };
     
@@ -79,10 +79,10 @@ public:
     
 private:
     FileBrowserModel* model = nullptr;
-    const File& initialDir;
-    const WildcardFileFilter* filter;
-    TableListBox* table = nullptr;
-    Viewport* view = nullptr;
+    const juce::File& initialDir;
+    const juce::WildcardFileFilter* filter;
+    juce::TableListBox* table = nullptr;
+    juce::Viewport* view = nullptr;
     Sampler* sampler;
     bool playing = false;
 };

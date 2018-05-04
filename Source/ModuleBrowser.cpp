@@ -1,6 +1,17 @@
 #include "ModuleBrowserTable.h"
 #include "ModuleBrowser.h"
 
+using juce::Label;
+using juce::Font;
+using juce::Justification;
+using juce::TextEditor;
+using juce::Colours;
+using juce::Colour;
+using juce::DropShadow;
+using juce::Graphics;
+using juce::Rectangle;
+using juce::DropShadower;
+
 ModuleBrowser::ModuleBrowser ()
 {
     addAndMakeVisible (label = new Label ("new label",
@@ -30,7 +41,7 @@ ModuleBrowser::ModuleBrowser ()
 
     setSize (590, 390);
 
-    shadow = new DropShadow(Colours::black,5, Point<int>(2,2));
+    shadow = new DropShadow(Colours::black,5, juce::Point<int>(2,2));
     shadower = new DropShadower(*shadow);
     shadower->setOwner(this);
 

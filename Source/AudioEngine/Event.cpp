@@ -7,6 +7,8 @@
 
 #include "Event.h"
 
+using juce::String;
+
 Event::Event() {
     
 }

@@ -13,7 +13,7 @@
 #include "../SynthEditor.h"
 #include "../Module.h"
 
-class AddConnectionAction : public UndoableAction {
+class AddConnectionAction : public juce::UndoableAction {
     
 public:
     AddConnectionAction(SynthEditor* editor, Module* source);
@@ -25,7 +25,7 @@ public:
 private:
     
     SynthEditor* editor;
-    Point<int> position;
+    juce::Point<int> position;
     Module* source;
     Module* root;
     
