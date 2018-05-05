@@ -153,6 +153,8 @@
               file="Source/MidiRecorder/RecordListener.h"/>
       </GROUP>
       <GROUP id="{445DA53D-0AFD-01A4-6CC5-F19463380EB0}" name="tests">
+        <FILE id="gKOQV3" name="AdderModuleTest.cpp" compile="1" resource="0"
+              file="Source/tests/AdderModuleTest.cpp"/>
         <FILE id="ePeZ8d" name="ModuleTest.cpp" compile="1" resource="0" file="Source/tests/ModuleTest.cpp"/>
         <FILE id="PkTd81" name="StartUpTest.cpp" compile="1" resource="0" file="Source/tests/StartUpTest.cpp"/>
         <FILE id="GrsFOg" name="SynthEditorTest.cpp" compile="1" resource="0"
