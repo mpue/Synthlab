@@ -21,6 +21,8 @@
 #include "PluginModule.h"
 #include "ModuleBrowser.h"
 
+#define M_PI       3.14159265358979323846 
+
 using juce::String;
 using juce::File;
 using juce::MenuBarComponent;
@@ -113,6 +115,8 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     MenuBarModel::setMacMainMenu (this);
 #else
     menu->setModel(this);
+	addAndMakeVisible(menu);
+
 #endif
     createKeyMap();
     

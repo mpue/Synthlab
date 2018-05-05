@@ -54,7 +54,7 @@ public:
     }
 
     inline CustomLookAndFeel* getLookAndFeel() {
-        return nullptr;// return lookAndFeel;
+        return lookAndFeel;
     };
     
     std::vector<juce::DialogWindow*>& getOpenWindows() {

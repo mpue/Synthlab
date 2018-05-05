@@ -9,7 +9,7 @@
 */
 
 #include "Sampler.h"
-#include "AudioManager.h"
+#include "../AudioManager.h"
 
 using juce::CatmullRomInterpolator;
 using juce::AudioSampleBuffer;

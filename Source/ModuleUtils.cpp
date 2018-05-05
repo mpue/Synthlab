@@ -440,7 +440,7 @@ void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Conn
             pin.setProperty("index", String(((*it2)->index)), nullptr);
             pin.setProperty("x", (*it2)->x, nullptr);
             pin.setProperty("y", (*it2)->y, nullptr);
-            pins.addChild(pin,-1,nil);
+            pins.addChild(pin,-1,nullptr);
         }
         
         mods.addChild(file,-1, nullptr);
@@ -516,7 +516,7 @@ void ModuleUtils::savePins(Module* m, ValueTree& v) {
         pin.setProperty("index", String(((*it2)->index)), nullptr);
         pin.setProperty("x", (*it2)->x, nullptr);
         pin.setProperty("y", (*it2)->y, nullptr);
-        pins.addChild(pin,-1,nil);
+        pins.addChild(pin,-1,nullptr);
     }
     
     v.addChild(pins, -1, nullptr);
