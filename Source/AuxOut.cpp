@@ -49,7 +49,7 @@ void AuxOut::configurePins() {
 
 void AuxOut::paint(juce::Graphics &g) {
     Module::paint(g);
-    g.drawImageAt(ImageCache::getFromMemory(BinaryData::aux_png, BinaryData::aux_pngSize),25,40);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::auxmodule_png, BinaryData::auxmodule_pngSize),25,40);
 }
 
 void AuxOut::process() {

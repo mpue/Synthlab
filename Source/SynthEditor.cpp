@@ -872,6 +872,7 @@ void SynthEditor::saveModule(Module* m) {
 Module* SynthEditor::loadModule() {
     FileChooser chooser("Select module to open", File::nonexistent, "*");
     
+	Module* m = nullptr;
     if (chooser.browseForFileToOpen()) {
         
         File file = chooser.getResult();
@@ -893,7 +894,7 @@ Module* SynthEditor::loadModule() {
         xml = nullptr;
  
     }
-    
+	return m;
 }
 
 
