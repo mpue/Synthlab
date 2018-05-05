@@ -39,6 +39,7 @@
 #include "AudioEngine/Pulse.h"
 #include "MixerModule.h"
 #include "TerminalModule.h"
+#include "ReverbModule.h"
 
 using juce::Image;
 
@@ -158,6 +159,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Terminal Out") {
         m = new TerminalModule(TerminalModule::Direction::OUT, TerminalModule::Type::VALUE);
+    }
+    else if (prefabs[id].getName() == "Reverb") {
+        m = new ReverbModule(sampleRate,bufferSize);
     }
     
     m->setIndex(id + pow(10,prefabs[id].getNumInstances() + 1));
