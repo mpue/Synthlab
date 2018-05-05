@@ -496,7 +496,7 @@ Module* ModuleUtils::createCopy(Module *original, ChangeBroadcaster* broadcaster
     saveStructure(original->getModules(),original->getConnections(), &cloneTree);
     savePins(original, cloneTree);
     Logger::writeToLog(cloneTree.toXmlString());
-    // updateIndices(cloneTree, 1);
+    updateIndices(cloneTree, 1);
     Logger::writeToLog(cloneTree.toXmlString());
     loadPins(m, cloneTree);
     loadStructure(m->getModules(), m->getConnections(),&cloneTree, broadcaster);
