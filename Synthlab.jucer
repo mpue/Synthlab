@@ -153,10 +153,10 @@
               file="Source/MidiRecorder/RecordListener.h"/>
       </GROUP>
       <GROUP id="{445DA53D-0AFD-01A4-6CC5-F19463380EB0}" name="tests">
-        <FILE id="CVYORy" name="LoadSynthTest.cpp" compile="1" resource="0"
-              file="Source/tests/LoadSynthTest.cpp"/>
         <FILE id="ePeZ8d" name="ModuleTest.cpp" compile="1" resource="0" file="Source/tests/ModuleTest.cpp"/>
         <FILE id="PkTd81" name="StartUpTest.cpp" compile="1" resource="0" file="Source/tests/StartUpTest.cpp"/>
+        <FILE id="GrsFOg" name="SynthEditorTest.cpp" compile="1" resource="0"
+              file="Source/tests/SynthEditorTest.cpp"/>
       </GROUP>
       <GROUP id="{729787F7-9D73-8EF3-1B85-5A2642C72184}" name="Plugins">
         <FILE id="c8waHE" name="PluginManager.cpp" compile="1" resource="0"
