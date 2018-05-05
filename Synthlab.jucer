@@ -3,6 +3,72 @@
 <JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.3.1" bundleIdentifier="de.pueski.SynthlabX"
               version="1.0.1" companyName="Pueski">
   <MAINGROUP id="CKGTaZ" name="Synthlab">
+    <GROUP id="{E76D66D3-3296-502A-6AE0-5C2C43CF4558}" name="lib">
+      <GROUP id="{206F434C-B6C1-03B9-6D58-8B8B97CEF781}" name="gtest">
+        <GROUP id="{90ADE055-BFFC-2A19-0B0C-7A36FE471027}" name="internal">
+          <GROUP id="{E0DE1D2E-6FC3-C988-3473-7A6D23439469}" name="custom">
+            <FILE id="ckvK8A" name="gtest-port.h" compile="0" resource="0" file="lib/gtest/internal/custom/gtest-port.h"/>
+            <FILE id="ISIUmM" name="gtest-printers.h" compile="0" resource="0"
+                  file="lib/gtest/internal/custom/gtest-printers.h"/>
+            <FILE id="eVBe2j" name="gtest.h" compile="0" resource="0" file="lib/gtest/internal/custom/gtest.h"/>
+          </GROUP>
+          <FILE id="CExnvD" name="gtest-death-test-internal.h" compile="0" resource="0"
+                file="lib/gtest/internal/gtest-death-test-internal.h"/>
+          <FILE id="UczhZa" name="gtest-filepath.h" compile="0" resource="0"
+                file="lib/gtest/internal/gtest-filepath.h"/>
+          <FILE id="K0pkLf" name="gtest-internal.h" compile="0" resource="0"
+                file="lib/gtest/internal/gtest-internal.h"/>
+          <FILE id="XXMESG" name="gtest-linked_ptr.h" compile="0" resource="0"
+                file="lib/gtest/internal/gtest-linked_ptr.h"/>
+          <FILE id="xENsL8" name="gtest-param-util-generated.h" compile="0" resource="0"
+                file="lib/gtest/internal/gtest-param-util-generated.h"/>
+          <FILE id="auBvHT" name="gtest-param-util.h" compile="0" resource="0"
+                file="lib/gtest/internal/gtest-param-util.h"/>
+          <FILE id="RIYbCj" name="gtest-port-arch.h" compile="0" resource="0"
+                file="lib/gtest/internal/gtest-port-arch.h"/>
+          <FILE id="qerX4b" name="gtest-port.h" compile="0" resource="0" file="lib/gtest/internal/gtest-port.h"/>
+          <FILE id="eOsCYu" name="gtest-string.h" compile="0" resource="0" file="lib/gtest/internal/gtest-string.h"/>
+          <FILE id="ZiG1SK" name="gtest-tuple.h" compile="0" resource="0" file="lib/gtest/internal/gtest-tuple.h"/>
+          <FILE id="qAdzbL" name="gtest-type-util.h" compile="0" resource="0"
+                file="lib/gtest/internal/gtest-type-util.h"/>
+        </GROUP>
+        <GROUP id="{C35B4F7B-40ED-FFB7-C313-F9D79C900D56}" name="src">
+          <FILE id="I9uDWt" name="gtest-death-test.cc" compile="1" resource="0"
+                file="lib/gtest/src/gtest-death-test.cc"/>
+          <FILE id="eNkoqn" name="gtest-filepath.cc" compile="1" resource="0"
+                file="lib/gtest/src/gtest-filepath.cc"/>
+          <FILE id="qEHK5n" name="gtest-internal-inl.h" compile="0" resource="0"
+                file="lib/gtest/src/gtest-internal-inl.h"/>
+          <FILE id="Yv1tn2" name="gtest-port.cc" compile="1" resource="0" file="lib/gtest/src/gtest-port.cc"/>
+          <FILE id="zpzDzd" name="gtest-printers.cc" compile="1" resource="0"
+                file="lib/gtest/src/gtest-printers.cc"/>
+          <FILE id="bTtVjy" name="gtest-test-part.cc" compile="1" resource="0"
+                file="lib/gtest/src/gtest-test-part.cc"/>
+          <FILE id="Jv21MH" name="gtest-typed-test.cc" compile="1" resource="0"
+                file="lib/gtest/src/gtest-typed-test.cc"/>
+          <FILE id="MAHs1x" name="gtest.cc" compile="1" resource="0" file="lib/gtest/src/gtest.cc"/>
+        </GROUP>
+        <FILE id="VFug5p" name="gtest-all.cc" compile="1" resource="0" file="lib/gtest/gtest-all.cc"/>
+        <FILE id="qOaeql" name="gtest-death-test.h" compile="0" resource="0"
+              file="lib/gtest/gtest-death-test.h"/>
+        <FILE id="jY3GeD" name="gtest-message.h" compile="0" resource="0" file="lib/gtest/gtest-message.h"/>
+        <FILE id="r6Za6S" name="gtest-param-test.h" compile="0" resource="0"
+              file="lib/gtest/gtest-param-test.h"/>
+        <FILE id="quKdmD" name="gtest-param-test.h.pump" compile="0" resource="1"
+              file="lib/gtest/gtest-param-test.h.pump"/>
+        <FILE id="Je6LO6" name="gtest-printers.h" compile="0" resource="0"
+              file="lib/gtest/gtest-printers.h"/>
+        <FILE id="PSXlP4" name="gtest-spi.h" compile="0" resource="0" file="lib/gtest/gtest-spi.h"/>
+        <FILE id="Gzbo8S" name="gtest-test-part.h" compile="0" resource="0"
+              file="lib/gtest/gtest-test-part.h"/>
+        <FILE id="UapmRO" name="gtest-typed-test.h" compile="0" resource="0"
+              file="lib/gtest/gtest-typed-test.h"/>
+        <FILE id="L6dTaU" name="gtest.h" compile="0" resource="0" file="lib/gtest/gtest.h"/>
+        <FILE id="tX24MD" name="gtest_pred_impl.h" compile="0" resource="0"
+              file="lib/gtest/gtest_pred_impl.h"/>
+        <FILE id="SvXmYg" name="gtest_prod.h" compile="0" resource="0" file="lib/gtest/gtest_prod.h"/>
+      </GROUP>
+    </GROUP>
     <GROUP id="{9F92DD62-384A-EB91-F447-5583413CC3C4}" name="samples">
       <FILE id="hRXtES" name="boom.aif" compile="0" resource="1" file="samples/boom.aif"/>
     </GROUP>
@@ -378,8 +444,8 @@
   <EXPORTFORMATS>
     <XCODE_MAC targetFolder="Builds/MacOSX" smallIcon="udjGbx" bigIcon="udjGbx">
       <CONFIGURATIONS>
-        <CONFIGURATION isDebug="1" name="Debug" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;"/>
-        <CONFIGURATION isDebug="0" name="Release" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb"/>
+        <CONFIGURATION isDebug="1" name="Debug" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest&#10;"/>
+        <CONFIGURATION isDebug="0" name="Release" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_core" path="../JUCE/modules"/>
