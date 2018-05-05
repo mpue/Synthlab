@@ -197,6 +197,8 @@
         <FILE id="RO3JEM" name="WhiteNoise.h" compile="0" resource="0" file="Source/AudioEngine/WhiteNoise.h"/>
       </GROUP>
       <GROUP id="{F7A67158-9DD4-9E2C-0BDC-1B58ED967D9B}" name="Editor">
+        <FILE id="OEVoMu" name="ModuleUtils.cpp" compile="1" resource="0" file="Source/ModuleUtils.cpp"/>
+        <FILE id="BiTdjT" name="ModuleUtils.h" compile="0" resource="0" file="Source/ModuleUtils.h"/>
         <FILE id="NWNJTZ" name="AudioManager.h" compile="0" resource="0" file="Source/AudioManager.h"/>
         <FILE id="W9vONN" name="AudioManager.cpp" compile="1" resource="0"
               file="Source/AudioManager.cpp"/>
