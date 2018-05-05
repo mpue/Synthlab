@@ -8,11 +8,17 @@
 
 #pragma once
 
+/**
+  * Listener which listens for the changes of an editor selection
+  */
 class EditorListener {
     
 public:
     virtual ~EditorListener() {};
     
+    /**
+     * This handler is being called when the selection of the editor has been changed
+     */
     virtual void selectionChanged(Component* m) = 0;
     
 };

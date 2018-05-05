@@ -12,6 +12,7 @@
 #include "../AuxOut.h"
 #include "../PrefabFactory.h"
 #include "../AudioManager.h"
+#include "../ModuleUtils.h"
 
 using juce::String;
 
@@ -49,9 +50,7 @@ bool DuplicateModuleAction::undo() {
 
 bool DuplicateModuleAction::perform() {
     
-    if (moduleId < 1) {
-        return false;
-    }
+
     
     Module* m = nullptr;
     
@@ -94,26 +93,14 @@ bool DuplicateModuleAction::perform() {
                     editor->setRunning(true);
                 }
             }
+            
+            editor->addChangeListener(m);
         }
         else {
-            
-            m = new Module();
-            
-            ValueTree v = ValueTree("Module");
-            editor->saveStructure(m->getModules(), m->getConnections(), &v);
-            
-            
-
-            
-            
+            m = ModuleUtils::createCopy(this->module, editor);
         }
-        
-        
-        
     }
     
-    
-    editor->addChangeListener(m);
     m->setTopLeftPosition(position);
     
     editor->addAndMakeVisible(m);
@@ -124,12 +111,7 @@ bool DuplicateModuleAction::perform() {
     editor->getSelectionModel().getSelectedModules().push_back(m);
     editor->repaint();
     
-
-    
     return true;
 }
 
 
-void DuplicateModuleAction::updateIndices(juce::ValueTree &v) {
-    
-}

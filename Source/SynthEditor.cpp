@@ -264,6 +264,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
             if (module->isEditable()) {
                 m->addItem(1, "Add input");
                 m->addItem(2, "Add output");
+                m->addItem(6, "Save module");
             }
             else {
                 if ((k = dynamic_cast<Knob*>(module)) != NULL) {
@@ -287,6 +288,9 @@ void SynthEditor::showContextMenu(Point<int> position) {
             
             else if (result == 3) {
                 k->setLearning(true);
+            }
+            else if (result == 6) {
+                saveModule(selectionModel.getSelectedModule());
             }
         }
         else {
@@ -352,6 +356,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
                 repaint();
                 resized();
             }
+            
         }
         
     }
@@ -361,6 +366,9 @@ void SynthEditor::showContextMenu(Point<int> position) {
         m->addItem(2, "Save");
         m->addItem(3, "Load");
         m->addItem(4, "New");
+        m->addItem(5, "Load module");
+        m->addItem(6, "Save module");
+
         if (locked) {
             m->addItem(99, "Unlock");
             for (int i = 0; i < root->getModules()->size(); i++) {
@@ -445,6 +453,15 @@ void SynthEditor::showContextMenu(Point<int> position) {
             mixer->removeAllChannels();
             newFile();
             setRunning(true);
+        }
+        else if (result == 5) {
+            running = false;
+            Module* m = loadModule();
+            root->getModules()->push_back(m);
+            running = true;
+        }
+        else if (result == 6) {
+            saveModule(selectionModel.getSelectedModule());
         }
         else if (result == 99) {
             locked = !locked;
@@ -808,138 +825,6 @@ void SynthEditor::newFile() {
     repaint();
 }
 
-void SynthEditor::saveStructure(std::vector<Module *>* modules, std::vector<Connection*>* connections, ValueTree* v) {
-    ValueTree mods = ValueTree("Modules");
-
-    for (std::vector<Module*>::iterator it = modules->begin(); it != modules->end(); ++it) {
-        
-        ValueTree file = ValueTree("Module");
-        
-        file.setProperty("name",(*it)->getName(), nullptr);
-        file.setProperty("index",String((*it)->getIndex()), nullptr);
-        file.setProperty("x",(*it)->getPosition().getX(),nullptr);
-        file.setProperty("y",(*it)->getPosition().getY(),nullptr);
-        file.setProperty("isPrefab",(*it)->isPrefab(),nullptr);
-        file.setProperty("prefabId", (*it)->getId(), nullptr);
-        
-        Knob* k;
-        
-        if ((k = dynamic_cast<Knob*>((*it))) != NULL) {
-            file.setProperty("minvalue",k->getMinimum(), nullptr);
-            file.setProperty("maxvalue",k->getMaximum(), nullptr);
-            file.setProperty("stepsize", k->getStepsize(), nullptr);
-            file.setProperty("value", k->getValue(), nullptr);
-            file.setProperty("isController",k->isMidiController(), nullptr);
-            file.setProperty("controllerNum", k->getController(), nullptr);
-        }
-        
-        ADSRModule* adsr;
-        
-        if ((adsr = dynamic_cast<ADSRModule*>((*it))) != NULL) {
-            file.setProperty("attack",adsr->getAttack(), nullptr);
-            file.setProperty("decay",adsr->getDecay(), nullptr);
-            file.setProperty("sustain", adsr->getSustain(), nullptr);
-            file.setProperty("release", adsr->getRelease(), nullptr);
-            file.setProperty("mono", adsr->isMono(), nullptr);
-        }
-        
-        Constant* c = nullptr;
-        
-        if ((c = dynamic_cast<Constant*>((*it))) != NULL) {
-            file.setProperty("value", c->getValue(), nullptr);
-        }
-        
-        MidiGate* gate = nullptr;
-        
-        if ((gate = dynamic_cast<MidiGate*>((*it))) != NULL) {
-            file.setProperty("channel",gate->getChannel() , nullptr);
-        }
-        
-        SamplerModule* sm;
-        
-        if ((sm = dynamic_cast<SamplerModule*>((*it))) != NULL) {
-            
-            for (int i = 0; i < 128; i++) {
-                if (sm->hasSampleAt(i)) {
-                    ValueTree v = ValueTree("sample");
-                    v.setProperty("sampleStart",String(sm->getSamplerAt(i)->getStartPosition()),nullptr);
-                    v.setProperty("sampleEnd",String(sm->getSamplerAt(i)->getEndPosition()), nullptr);
-                    v.setProperty("sampleLength",String(sm->getSamplerAt(i)->getSampleLength()), nullptr);
-                    v.setProperty("loop",sm->getSamplerAt(i)->isLoop(), nullptr);
-                    v.setProperty("samplePath", sm->getSamplePath(i),nullptr);
-                    v.setProperty("note", i + 1 , nullptr);
-                    
-                    file.addChild(v,-1,nullptr);
-                }
-            }
-        }
-        
-        Monophonic* monophonic;
-        
-        if ((monophonic = dynamic_cast<Monophonic*>((*it))) != NULL) {
-            file.setProperty("mono", monophonic->isMono(), nullptr);
-        }
-        
-        TerminalModule* t;
-        
-        
-        if ((t = dynamic_cast<TerminalModule*>((*it))) != NULL) {
-            file.setProperty("type", t->getType(), nullptr);
-        }
-        
-        PluginModule* pm;
-        
-        if ((pm = dynamic_cast<PluginModule*>((*it))) != NULL) {
-            file.setProperty("plugin", pm->getPluginName(), nullptr);
-            file.setProperty("currentProgram", pm->getCurrentProgram(), nullptr);
-            file.setProperty("state", pm->getPluginState() ,nullptr);
-        }
-        
-        StepSequencerModule* ssm;
-        
-        if ((ssm = dynamic_cast<StepSequencerModule*>((*it))) != NULL) {
-            MemoryOutputStream* mos = new MemoryOutputStream();
-            uint8* config = ssm->getEditor()->getConfiguration();
-            Base64::convertToBase64(*mos,config , ssm->getEditor()->getConfigLength());
-            mos->flush();
-            file.setProperty("config", mos->toString(), nullptr);
-            delete mos;
-            delete config;
-        }
-        
-        ValueTree pins = ValueTree("Pins");
-
-        for (std::vector<Pin*>::iterator it2 =  (*it)->pins.begin(); it2 != (*it)->pins.end(); ++it2) {
-            ValueTree pin = ValueTree("Pin");
-            pin.setProperty("type", (*it2)->getType(), nullptr);
-            pin.setProperty("direction", (*it2)->direction, nullptr);
-            pin.setProperty("index", String(((*it2)->index)), nullptr);
-            pin.setProperty("x", (*it2)->x, nullptr);
-            pin.setProperty("y", (*it2)->y, nullptr);
-            pins.addChild(pin,-1,nil);
-        }
-
-        mods.addChild(file,-1, nullptr);
-        file.addChild(pins,-1, nullptr);
-
-        saveStructure((*it)->getModules(), (*it)->getConnections(), &file);
-    }
-
-    ValueTree cons = ValueTree("Connections");
-
-    for (std::vector<Connection*>::iterator it = connections->begin(); it != connections->end(); ++it) {
-        ValueTree con = ValueTree("Connection");
-        con.setProperty("source", String((*it)->source->getIndex()), nullptr);
-        con.setProperty("target", String((*it)->target->getIndex()), nullptr);
-        con.setProperty("a", String((*it)->a->index), nullptr);
-        con.setProperty("b", String((*it)->b->index), nullptr);
-        cons.addChild(con,-1, nullptr);
-    }
-
-    v->addChild(mods, -1, nullptr);
-    v->addChild(cons, -1, nullptr);
-
-}
 
 void SynthEditor::loadFromString(juce::String in){
     
@@ -960,6 +845,58 @@ void SynthEditor::loadFromString(juce::String in){
     setRunning(true);
 }
 
+void SynthEditor::saveModule(Module* m) {
+
+    FileChooser chooser("Select target file...", File::nonexistent, "*");
+    
+    if (chooser.browseForFileToSave(true)) {
+        
+        ValueTree* v = new ValueTree("Module");
+        
+        ModuleUtils::savePins(m, *v);
+        ModuleUtils::saveStructure(m->getModules(),m->getConnections(), v);
+        ModuleUtils::updateIndices(*v, Time::getMillisecondCounter());
+        
+        File file = chooser.getResult();
+        
+        XmlElement* xml = v->createXml();
+        xml->writeToFile(file, "");
+        
+        delete xml;
+        delete v;
+        
+    }
+    
+}
+
+Module* SynthEditor::loadModule() {
+    FileChooser chooser("Select module to open", File::nonexistent, "*");
+    
+    if (chooser.browseForFileToOpen()) {
+        
+        File file = chooser.getResult();
+        ScopedPointer<XmlElement> xml = XmlDocument(file).getDocumentElement();
+        
+        Project::getInstance()->addRecentFile(file.getFullPathName());
+        ValueTree v = ValueTree::fromXml(*xml.get());
+        
+        setRunning(false);
+        Module* m = new Module(v.getChildWithName("Module").getProperty("name").toString());
+        ModuleUtils::loadStructure(m->getModules(),m->getConnections(), &v, this);
+        
+        for (std::vector<Module*>::iterator it = m->getModules()->begin(); it != m->getModules()->end(); ++it) {
+            addAndMakeVisible((*it));
+        }
+        
+        resized();
+        
+        xml = nullptr;
+ 
+    }
+    
+}
+
+
 void SynthEditor::saveFile() {
     
 #if JUCE_IOS
@@ -972,7 +909,7 @@ void SynthEditor::saveFile() {
         
         ValueTree* v = new ValueTree("Synth");
         
-        saveStructure(root->getModules(),root->getConnections(), v);
+        ModuleUtils::saveStructure(root->getModules(),root->getConnections(), v);
         
         URL file = chooser.getURLResult();
         
@@ -993,7 +930,7 @@ void SynthEditor::saveFile() {
         
         ValueTree* v = new ValueTree("Synth");
         
-        saveStructure(root->getModules(),root->getConnections(), v);
+        ModuleUtils::saveStructure(root->getModules(),root->getConnections(), v);
         
         File file = chooser.getResult();
         
@@ -1375,7 +1312,7 @@ void SynthEditor::duplicateSelected() {
     if (m != nullptr) {
         Point<int> pos = m->getPosition();
         pos.addXY(10, m->getBounds().getY() + 10);
-        AddModuleAction* am = new AddModuleAction(this,pos,m->getId());
+        DuplicateModuleAction* am = new DuplicateModuleAction(this,pos,m);
         Project::getInstance()->getUndoManager()->beginNewTransaction();
         Project::getInstance()->getUndoManager()->perform(am);
     }

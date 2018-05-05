@@ -41,7 +41,8 @@ public:
     void openStepSequencer(StepSequencerModule* ssm);
     void openEditor(Module* m);
     void loadFromString(String in);
-    void saveStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections, ValueTree* v);
+    Module* loadModule();
+    void saveModule(Module* m);
     void configureAudioModule(Module *m, ChangeBroadcaster* broadcaster);
                          
     // audio processing

@@ -5,8 +5,7 @@
 //  Created by Matthias Pueski on 16.04.18.
 //
 
-#ifndef AddModuleAction_h
-#define AddModuleAction_h
+#pragma once
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "../Module.h"
@@ -20,8 +19,7 @@ public:
     
     virtual bool perform() override;
     virtual bool undo() override;
-    
-    void updateIndices(ValueTree &v);
+
     
 private:
     
@@ -33,5 +31,5 @@ private:
 };
 
 
-#endif /* AddModuleAction_h */
+
 
