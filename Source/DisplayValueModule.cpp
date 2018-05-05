@@ -11,7 +11,8 @@
 #include "DisplayValueModule.h"
 #include "../JuceLibraryCode/JuceHeader.h"
 
-
+using juce::Justification;
+using juce::String;
 
 //==============================================================================
 DisplayValueModule::DisplayValueModule()

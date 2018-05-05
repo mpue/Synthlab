@@ -40,6 +40,8 @@
 #include "MixerModule.h"
 #include "TerminalModule.h"
 
+using juce::Image;
+
 PrefabFactory* PrefabFactory::instance = NULL;
 
 Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {

@@ -16,10 +16,10 @@
 #include "AudioEngine/AudioProcessorModule.h"
 #include "Terminal.h"
 
-class Pin : public ChangeBroadcaster,
+class Pin : public juce::ChangeBroadcaster,
             public AudioProcessorModule,
             public Terminal,
-            public ChangeListener {
+            public juce::ChangeListener {
 
 
 public:
@@ -36,8 +36,8 @@ public:
     void setSelected(bool selected);
     bool isSelected();
     
-    AudioSampleBuffer* getAudioBuffer();
-    void setAudioBuffer(AudioSampleBuffer* buffer);
+    juce::AudioSampleBuffer* getAudioBuffer();
+    void setAudioBuffer(juce::AudioSampleBuffer* buffer);
     
     std::vector<Pin*>& getConnections ();
                 
@@ -45,8 +45,8 @@ public:
     
     void sendEvent(Event* e);
     
-    String getName();
-    void setName(String name);
+    juce::String getName();
+    void setName(juce::String name);
     
     float getValue();
     void setValue(float value);
@@ -78,12 +78,12 @@ public:
     
                 
     virtual void process(const float *in, float *out,int numSamples) override;
-    void changeListenerCallback (ChangeBroadcaster* source) override;
+    void changeListenerCallback (juce::ChangeBroadcaster* source) override;
 private:
     bool selected = false;
-    String name;
+    juce::String name;
     int note = 0;
     Pin* terminal = nullptr;
     std::vector<Pin*> connections;
-    AudioSampleBuffer* audioBuffer = nullptr;
+    juce::AudioSampleBuffer* audioBuffer = nullptr;
 };

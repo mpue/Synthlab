@@ -10,6 +10,10 @@
 
 #include "Connection.h"
 
+using juce::PathStrokeType;
+using juce::Path;
+using juce::Graphics;
+
 Connection::Connection()
 {
     linePath = Path();
@@ -62,7 +66,7 @@ void Connection::paint(Graphics& g) {
     g.fillPath(linePath);
 }
 
-void Connection::setPoints(Point<int> &p1, Point<int> &p2) {
+void Connection::setPoints(juce::Point<int> &p1, juce::Point<int> &p2) {
     this->p1 = p1;
     this->p2 = p2;
 }

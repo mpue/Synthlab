@@ -13,6 +13,13 @@
 #include "Connection.h"
 #include "MidiOut.h"
 
+using juce::Justification;
+using juce::ImageCache;
+using juce::Value;
+using juce::PropertyComponent;
+using juce::SliderPropertyComponent;
+using juce::Array;
+
 //==============================================================================
 MidiGate::MidiGate()
 {   

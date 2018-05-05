@@ -13,6 +13,12 @@
 #include "Connection.h"
 #include "AudioEngine/Sawtooth.h"
 
+using juce::Justification;
+using juce::ImageCache;
+using juce::PropertyComponent;
+using juce::BooleanPropertyComponent;
+using juce::Array;
+using juce::Value;
 //==============================================================================
 SawtoothModule::SawtoothModule(double sampleRate, int buffersize)
 {

@@ -23,12 +23,12 @@ public:
     RandomModule(double sampleRate, int buffersize);
     ~RandomModule();
 
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
     void setAmplitude(float amplitude);
     void process() override;
     virtual void configurePins() override;
     
-    virtual String getCategory() override {
+    virtual juce::String getCategory() override {
         return "Sound sources";
     }
     
@@ -36,7 +36,7 @@ public:
 private:
     float amplitude;
 
-    Image* image;
+    juce::Image* image;
     Synthlab::Random* oscillator;
     int currentSample = 0;
     

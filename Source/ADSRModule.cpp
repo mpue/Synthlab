@@ -18,6 +18,13 @@
 #include "Connection.h"
 #include "AudioEngine/Sawtooth.h"
 
+using juce::Justification;
+using juce::Value;
+using juce::ImageCache;
+using juce::PropertyComponent;
+using juce::BooleanPropertyComponent;
+using juce::Array;
+
 //==============================================================================
 ADSRModule::ADSRModule(double sampleRate, int buffersize)
 {

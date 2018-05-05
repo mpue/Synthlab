@@ -13,6 +13,8 @@
 
 #include "Connection.h"
 
+using juce::Justification;
+using juce::ImageCache;
 
 //==============================================================================
 MultiplyModule::MultiplyModule()

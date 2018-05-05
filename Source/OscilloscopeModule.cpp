@@ -13,6 +13,8 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Connection.h"
 
+using juce::Justification;
+using juce::Line;
 
 //==============================================================================
 OscilloscopeModule::OscilloscopeModule(double sampleRate, int buffersize)

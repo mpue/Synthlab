@@ -12,6 +12,9 @@
 #include "AdderModule.h"
 #include "Connection.h"
 
+using juce::Justification;
+using juce::ImageCache;
+using juce::AudioSampleBuffer;
 
 //==============================================================================
 AdderModule::AdderModule(int bufferSize)

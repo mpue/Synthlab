@@ -12,6 +12,11 @@
 #include "MidiOut.h"
 #include "AudioManager.h"
 
+using juce::ImageCache;
+using juce::MidiMessage;
+using juce::uint8;
+using juce::Logger;
+
 //==============================================================================
 MidiOut::MidiOut()
 {

@@ -13,6 +13,15 @@
 #include "Project.h"
 #include "AudioManager.h"
 #include "Plugins/PluginManager.h"
+#include <gtest.h>
+
+using juce::JUCEApplication;
+using juce::String;
+using juce::Logger;
+using juce::DocumentWindow;
+using juce::ScopedPointer;
+using juce::Desktop;
+using juce::Rectangle;
 
 //==============================================================================
 class SynthlabApplication  : public JUCEApplication
@@ -33,8 +42,15 @@ public:
         Logger::writeToLog(commandLine);
         
         if (commandLine.contains("runTests")) {
-            UnitTestRunner runner;
-            runner.runAllTests();
+            //juce::UnitTestRunner runner;
+            //runner.runAllTests();
+        }
+        else if(commandLine.contains("runUnitTests"))
+        {
+            int argc = 1;
+            char* args = (char*)"";
+            testing::InitGoogleTest(&argc, &args);
+            (void) RUN_ALL_TESTS();
         }
         else {
            mainWindow = new MainWindow (getApplicationName());

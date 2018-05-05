@@ -22,45 +22,45 @@ public:
     TerminalModule(TerminalModule::Direction dir, TerminalModule::Type type);
     ~TerminalModule();
     
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
 
     virtual void configurePins() override;
-    virtual String getCategory() override {
+    virtual juce::String getCategory() override {
         return "Input / Output";
     }
     
-    virtual void setName(String name) override;
+    virtual void setName(juce::String name) override;
     
     virtual void process() override;
     
     void setDirection(Direction dir);
     TerminalModule::Direction getDirection();
     
-    virtual juce::Array<PropertyComponent*>& getProperties() override;
+    virtual juce::Array<juce::PropertyComponent*>& getProperties() override;
     virtual void createProperties() override;
 
     virtual void setType(Terminal::Type type) override;
     
 private:
     
-    struct NameListener : Value::Listener
+    struct NameListener : juce::Value::Listener
     {
-        NameListener (Value& v, Module* module) : module(module),  value (v) { value.addListener (this); }
+        NameListener (juce::Value& v, Module* module) : module(module),  value (v) { value.addListener (this); }
         ~NameListener()  {}  // no need to remove the listener
         
-        void valueChanged (Value& value) override {
+        void valueChanged (juce::Value& value) override {
             module->setName(value.toString());
         }
         Module* module;
-        Value value;
+        juce::Value value;
     };
     
-    struct TypeListener : Value::Listener
+    struct TypeListener : juce::Value::Listener
     {
-        TypeListener (Value& v, TerminalModule* module) : module(module),  value (v) { value.addListener (this); }
+        TypeListener (juce::Value& v, TerminalModule* module) : module(module),  value (v) { value.addListener (this); }
         ~TypeListener()  {}  // no need to remove the listener
         
-        void valueChanged (Value& value) override {
+        void valueChanged (juce::Value& value) override {
             Type t;
             
             if (value.toString().getIntValue() == 0) {
@@ -77,20 +77,20 @@ private:
        
         }
         TerminalModule* module;
-        Value value;
+        juce::Value value;
     };
     
     NameListener* nameListener;
-    Value* nameValue;
+    juce::Value* nameValue;
 
     TypeListener* typeListener;
-    Value* typeValue;
+    juce::Value* typeValue;
     
-    PropertyComponent* typeProp;
+    juce::PropertyComponent* typeProp;
     
     
     Direction direction;
-    String name;
+    juce::String name;
     bool editing = false;
     Pin* pin = nullptr;
     

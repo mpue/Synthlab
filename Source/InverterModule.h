@@ -17,11 +17,11 @@ public:
     ~InverterModule();
     
     
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
     virtual void process() override;
     virtual void configurePins() override;
     
-    virtual String getCategory() override {
+    virtual juce::String getCategory() override {
         return "Math";
     }
     

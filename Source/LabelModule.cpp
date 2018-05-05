@@ -11,6 +11,10 @@
 #include "LabelModule.h"
 #include "../JuceLibraryCode/JuceHeader.h"
 
+using juce::String;
+using juce::Justification;
+using juce::Label;
+
 LabelModule::LabelModule() {
     
 }

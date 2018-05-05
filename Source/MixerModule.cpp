@@ -12,6 +12,13 @@
 #include "MixerModule.h"
 #include "Connection.h"
 
+using juce::Justification;
+using juce::String;
+using juce::ImageCache;
+using juce::Value;
+using juce::PropertyComponent;
+using juce::Array;
+using juce::SliderPropertyComponent;
 
 //==============================================================================
 MixerModule::MixerModule(float sampleRate, int bufferSize)

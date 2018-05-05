@@ -13,6 +13,8 @@
 #include "Connection.h"
 #include "AudioEngine/Distortion.h"
 
+using juce::Justification;
+
 //==============================================================================
 DistortionModule::DistortionModule(double sampleRate, int buffersize)
 {
