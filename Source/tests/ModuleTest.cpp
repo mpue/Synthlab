@@ -11,6 +11,7 @@
 #include "../MainComponent.h"
 #include <gtest.h>
 
+
 TEST(ModuleTest, newModule)
 {
     Module* pModule = new Module();

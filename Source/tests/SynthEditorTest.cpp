@@ -34,11 +34,11 @@ using juce::JUCEApplication;
 
 TEST(SynthEditorTest, load)
 {
-    MainComponent* mc = new MainComponent();
-
+    ScopedPointer<MainComponent> mc = new MainComponent();
     ASSERT_NE(nullptr, AudioManager::getInstance()->getDeviceManager());
     ASSERT_NE(nullptr, mc->getEditor());
     ASSERT_NE(nullptr, mc->getEditor()->getMixer());
+    
     File f = File(File::getCurrentWorkingDirectory().getFullPathName()+"/../../../../Regression/NoiseTest.xml");
     ASSERT_EQ(true, f.exists());
     
@@ -51,11 +51,14 @@ TEST(SynthEditorTest, load)
     ASSERT_NE(nullptr,mc->getEditor()->getModule());
     ASSERT_EQ(3,mc->getEditor()->getModule()->getConnections()->size());
     ASSERT_EQ(3,mc->getEditor()->getModule()->getModules()->size());
+    mc = nullptr;
+
+    juce::JUCEApplication::quit();
     
-    delete mc;
-    // JUCEApplication::getInstance()->shutdown();
-    JUCEApplication::getInstance()->quit();
 }
+
+
+
 
 
 

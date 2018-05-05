@@ -173,7 +173,8 @@ int PrefabFactory::getNumInstances(int id) {
 }
 
 void PrefabFactory::reset() {
-    for (std::map<int,Prefab>::iterator it = prefabs.begin();it != prefabs.end();it++) {
+    for (std::map<int,Prefab>::iterator it = prefabs.begin();it != prefabs.end();) {
         (*it).second.reset();
+        it++;
     }
 }

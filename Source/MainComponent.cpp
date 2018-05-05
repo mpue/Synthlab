@@ -194,6 +194,7 @@ MainComponent::~MainComponent()
 {
     running = false;
     
+    loadSlider->setLookAndFeel(nullptr);
     editor->removeAllChangeListeners();
     
     for (int i = 0; i < MidiInput::getDevices().size();i++) {

@@ -31,9 +31,6 @@ public:
     }
     
     static void destroy() {
-        
-
-        
         delete instance;
     }
 
@@ -57,7 +54,7 @@ public:
     }
 
     inline CustomLookAndFeel* getLookAndFeel() {
-        return lookAndFeel;
+        return nullptr;// return lookAndFeel;
     };
     
     std::vector<juce::DialogWindow*>& getOpenWindows() {
