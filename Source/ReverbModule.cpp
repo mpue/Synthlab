@@ -23,7 +23,7 @@ ReverbModule::ReverbModule(double sampleRate, int buffersize)
     
     reverb = new Reverb();
     
-    setSize(120,140);
+    setSize(120,150);
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(18,2);
     
