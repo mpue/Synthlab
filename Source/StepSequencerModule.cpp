@@ -12,6 +12,9 @@
 #include "StepSequencerModule.h"
 #include "Connection.h"
 
+using juce::Justification;
+using juce::ImageCache;
+using juce::MidiMessage;
 
 //==============================================================================
 StepSequencerModule::StepSequencerModule(float sampleRate, int bufferSize)

@@ -28,6 +28,23 @@
 
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
+using juce::TextEditor;
+using juce::String;
+using juce::Label;
+using juce::Value;
+using juce::Graphics;
+using juce::Colour;
+using juce::Colours;
+using juce::MouseEvent;
+using juce::Font;
+using juce::Justification;
+using juce::NotificationType;
+using juce::ImageCache;
+using juce::RectanglePlacement;
+using juce::TextPropertyComponent;
+using juce::Logger;
+using juce::Array;
+using juce::PropertyComponent;
 //[/MiscUserDefs]
 
 //==============================================================================
@@ -358,7 +375,7 @@ bool Module::isSelected() {
     return selected;
 }
 
-bool Module::isMouseOverPin(int pin, Point<int> pos) {
+bool Module::isMouseOverPin(int pin, juce::Point<int> pos) {
 
 	if (pos.x >= pins.at(pin)->x + getX() && pos.x <= pins.at(pin)->x + getX() + 10 &&
         pos.y >= pins.at(pin)->y+ getY() &&  pos.y <= pins.at(pin)->y + getY() + 10) {
@@ -368,8 +385,8 @@ bool Module::isMouseOverPin(int pin, Point<int> pos) {
 	return false;
 }
 
-Point<int> Module::getPinPosition(int i) {
-	return Point<int>(pins.at(i)->x + getX(), pins.at(i)->x + getX());
+juce::Point<int> Module::getPinPosition(int i) {
+    return juce::Point<int>(pins.at(i)->x + getX(), pins.at(i)->x + getX());
 }
 
 long Module::getIndex() {
@@ -409,9 +426,9 @@ void Module::eventReceived(Event *e) {
 
 }
 
- juce::Array<PropertyComponent*>& Module::getProperties() {
+ Array<PropertyComponent*>& Module::getProperties() {
     nameProp = new TextPropertyComponent(*nameValue,"Name",16, false,true);
-    properties = juce::Array<PropertyComponent*>();
+    properties = Array<PropertyComponent*>();
     properties.add(nameProp);
     return properties;
 }
@@ -458,7 +475,7 @@ void Module::savePosition() {
     this->savedPosition.y = getY();
 }
 
-Point<int> Module::getSavedPosition() {
+juce::Point<int> Module::getSavedPosition() {
     return savedPosition;
 }
 

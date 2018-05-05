@@ -13,6 +13,8 @@
 #include "Connection.h"
 #include "AudioEngine/LowPassFilter.h"
 
+using juce::Justification;
+using juce::ImageCache;
 //==============================================================================
 LPFilterModule::LPFilterModule(double sampleRate, int buffersize)
 {

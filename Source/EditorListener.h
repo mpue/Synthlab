@@ -13,6 +13,6 @@ class EditorListener {
 public:
     virtual ~EditorListener() {};
     
-    virtual void selectionChanged(Component* m) = 0;
+    virtual void selectionChanged(juce::Component* m) = 0;
     
 };

@@ -25,6 +25,15 @@
 
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
+using juce::TabbedButtonBar;
+using juce::TabbedComponent;
+using juce::TextEditor;
+using juce::WildcardFileFilter;
+using juce::DirectoryContentsList;
+using juce::File;
+using juce::PropertyPanel;
+using juce::Graphics;
+using juce::Colour;
 //[/MiscUserDefs]
 
 //==============================================================================

@@ -11,6 +11,12 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Constant.h"
 
+using juce::Justification;
+using juce::Value;
+using juce::PropertyComponent;
+using juce::SliderPropertyComponent;
+using juce::Array;
+using juce::String;
 
 //==============================================================================
 Constant::Constant()

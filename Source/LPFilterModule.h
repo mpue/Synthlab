@@ -23,21 +23,21 @@ public:
     LPFilterModule(double sampleRate, int buffersize);
     ~LPFilterModule();
 
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
 
     void process() override;
     virtual void configurePins() override;
-    virtual String getCategory() override {
+    virtual juce::String getCategory() override {
         return "Filter";
     }
-    virtual String getDescription() override {
+    virtual juce::String getDescription() override {
         return BinaryData::lowpass_txt;
     }
 private:
     
     LowPassFilter* filter;
 
-    Image* image;
+    juce::Image* image;
 
     int currentSample = 0;
     

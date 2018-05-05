@@ -22,10 +22,10 @@ template <typename T>
 class OscillatorModule : public Module, public Monophonic
 {
 public:
-    OscillatorModule(double sampleRate, int buffersize, Image* image);
+    OscillatorModule(double sampleRate, int buffersize, juce::Image* image);
     ~OscillatorModule();
     
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
     
     void setPitch(int pitch);
     void setAmplitude(float amplitude);
@@ -33,44 +33,44 @@ public:
     void process() override;
     virtual void configurePins() override;
     
-    virtual String getCategory() override {
+    virtual juce::String getCategory() override {
         return "Sound sources";
     }
-    virtual String getDescription() override {
+    virtual juce::String getDescription() override {
         return BinaryData::oscillator_txt;
     }
     
     bool isMono() override;
     void setMono(bool value) override;
     
-    virtual juce::Array<PropertyComponent*>& getProperties() override;
+    virtual juce::Array<juce::PropertyComponent*>& getProperties() override;
     virtual void createProperties() override;
     
     
 private:
     
-    struct IsMonoListener : Value::Listener
+    struct IsMonoListener : juce::Value::Listener
     {
-        IsMonoListener (Value& v, OscillatorModule* mod) : mod(mod),  value (v) { value.addListener (this); }
+        IsMonoListener (juce::Value& v, OscillatorModule* mod) : mod(mod),  value (v) { value.addListener (this); }
         ~IsMonoListener()  {}  // no need to remove the listener
         
-        void valueChanged (Value& value) override {
+        void valueChanged (juce::Value& value) override {
             mod->setMono(value.toString().getIntValue() > 0);
         }
         OscillatorModule* mod;
-        Value value;
+        juce::Value value;
     };
     
-    Value* isMonoValue;
-    PropertyComponent* isMonoProp;
+    juce::Value* isMonoValue;
+    juce::PropertyComponent* isMonoProp;
     IsMonoListener* isMonoListener;
     
-    AudioSampleBuffer* out = nullptr;
+    juce::AudioSampleBuffer* out = nullptr;
     float frequencies[128] = {0};
     int pitch = 0;
     float amplitude;
     float fine = 0;
-    Image* image = nullptr;
+    juce::Image* image = nullptr;
     T* monoOscillator;
     T* oscillator[128];
     int currentSample = 0;
@@ -97,7 +97,7 @@ private:
 #include "Connection.h"
 
 //==============================================================================
-template<typename T> OscillatorModule<T>::OscillatorModule(double sampleRate, int buffersize, Image* image) : image(image)
+template<typename T> OscillatorModule<T>::OscillatorModule(double sampleRate, int buffersize, juce::Image* image) : image(image)
 {
     this->sampleRate = sampleRate;
     this->buffersize = buffersize;
@@ -109,7 +109,7 @@ template<typename T> OscillatorModule<T>::OscillatorModule(double sampleRate, in
     monoOscillator = new T(sampleRate, buffersize);
     
     setSize(120,140);
-    nameLabel->setJustificationType (Justification::left);
+    nameLabel->setJustificationType (juce::Justification::left);
     nameLabel->setTopLeftPosition(18,2);
 
     editable = false;
@@ -204,10 +204,10 @@ template<typename T> bool OscillatorModule<T>::isMono() {
     return mono;
 }
 
-template<typename T> juce::Array<PropertyComponent*>& OscillatorModule<T>::getProperties() {
+template<typename T> juce::Array<juce::PropertyComponent*>& OscillatorModule<T>::getProperties() {
     
-    properties = juce::Array<PropertyComponent*>();
-    isMonoProp = new BooleanPropertyComponent(*isMonoValue,"isMono","Mono");
+    properties = juce::Array<juce::PropertyComponent*>();
+    isMonoProp = new juce::BooleanPropertyComponent(*isMonoValue,"isMono","Mono");
     
     
     properties.add(isMonoProp);
@@ -217,7 +217,7 @@ template<typename T> juce::Array<PropertyComponent*>& OscillatorModule<T>::getPr
 
 
 template<typename T> void OscillatorModule<T>::createProperties() {
-    isMonoValue = new Value();
+    isMonoValue = new juce::Value();
     isMonoListener = new IsMonoListener(*isMonoValue, this);
     isMonoValue->setValue(mono);
 }

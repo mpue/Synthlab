@@ -34,6 +34,15 @@ using juce::Colours;
 using juce::Colour;
 using juce::ToggleButton;
 using juce::ImageCache;
+using juce::ImageButton;
+using juce::Graphics;
+using juce::Button;
+using juce::AudioDeviceManager;
+using juce::MidiMessage;
+using juce::String;
+using juce::FileChooser;
+using juce::FileInputStream;
+using juce::File;
 //[/MiscUserDefs]
 
 //==============================================================================

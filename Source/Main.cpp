@@ -14,6 +14,14 @@
 #include "AudioManager.h"
 #include "Plugins/PluginManager.h"
 
+using juce::JUCEApplication;
+using juce::String;
+using juce::Logger;
+using juce::DocumentWindow;
+using juce::ScopedPointer;
+using juce::Desktop;
+using juce::Rectangle;
+
 //==============================================================================
 class SynthlabApplication  : public JUCEApplication
 {
@@ -33,7 +41,7 @@ public:
         Logger::writeToLog(commandLine);
         
         if (commandLine.contains("runTests")) {
-            UnitTestRunner runner;
+            juce::UnitTestRunner runner;
             runner.runAllTests();
         }
         else {

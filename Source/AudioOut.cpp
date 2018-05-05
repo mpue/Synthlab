@@ -12,6 +12,8 @@
 #include "AudioOut.h"
 #include "Connection.h"
 
+using juce::Justification;
+using juce::ImageCache;
 
 //==============================================================================
 AudioOut::AudioOut()

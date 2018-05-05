@@ -17,17 +17,17 @@
 //==============================================================================
 /*
  */
-class OscilloscopeModule : public Module, public Timer
+class OscilloscopeModule : public Module, public juce::Timer
 {
 public:
     OscilloscopeModule(double sampleRate, int buffersize);
     ~OscilloscopeModule();
     
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
     
     void process() override;
     virtual void configurePins() override;
-    virtual String getCategory() override {
+    virtual juce::String getCategory() override {
         return "Debug";
     }
     
@@ -39,7 +39,7 @@ public:
         return Layer::GUI;
     };
     
-    virtual String getDescription() override {
+    virtual juce::String getDescription() override {
         return "A soimple oscilloscope";
     }
     

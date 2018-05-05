@@ -12,6 +12,8 @@
 #include "MidiNote.h"
 #include "Connection.h"
 
+using juce::Justification;
+using juce::ImageCache;
 
 //==============================================================================
 MidiNote::MidiNote()

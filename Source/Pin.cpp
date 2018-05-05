@@ -12,6 +12,10 @@
 #include <stdio.h>
 #include <string.h>
 
+using juce::AudioSampleBuffer;
+using juce::String;
+using juce::Component;
+
 Pin::Pin(Terminal::Type type) {
     name = "";
     this->type = type;

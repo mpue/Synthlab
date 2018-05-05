@@ -35,9 +35,9 @@
     Describe your class and how it works here!
                                                                     //[/Comments]
 */
-class PropertyView  : public Component,
-                      public TimeSliceThread,
-                      public TimeSliceClient,
+class PropertyView  : public juce::Component,
+                      public juce::TimeSliceThread,
+                      public juce::TimeSliceClient,
                       public EditorListener
 {
 public:
@@ -52,23 +52,23 @@ public:
     ExtendedFileBrowser* getBrowser();
     //[/UserMethods]
 
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
     void resized() override;
 
-    virtual void selectionChanged(Component* m) override;
+    virtual void selectionChanged(juce::Component* m) override;
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
 
-    PropertyPanel* propertyPanel = nullptr;
-    ScopedPointer<TextEditor> descriptionEditor;
-    DirectoryContentsList* directoryContents = nullptr;
-    WildcardFileFilter* filter = nullptr;
+    juce::PropertyPanel* propertyPanel = nullptr;
+    juce::ScopedPointer<juce::TextEditor> descriptionEditor;
+    juce::DirectoryContentsList* directoryContents = nullptr;
+    juce::WildcardFileFilter* filter = nullptr;
     ExtendedFileBrowser* browser = nullptr;
     //[/UserVariables]
 
     //==============================================================================
-    ScopedPointer<MainTabbedComponent> propertyTab;
-    ScopedPointer<TabbedComponent> tabbedComponent;
+    juce::ScopedPointer<MainTabbedComponent> propertyTab;
+    juce::ScopedPointer<juce::TabbedComponent> tabbedComponent;
 
 
     //==============================================================================

@@ -13,6 +13,9 @@
 #include "Connection.h"
 #include "AudioEngine/Sine.h"
 
+using juce::Justification;
+using juce::ImageCache;
+
 //==============================================================================
 RandomModule::RandomModule(double sampleRate, int buffersize)
 {

@@ -21,6 +21,42 @@
 #include "PluginModule.h"
 #include "ModuleBrowser.h"
 
+using juce::String;
+using juce::File;
+using juce::MenuBarComponent;
+using juce::MidiInput;
+using juce::Label;
+using juce::Slider;
+using juce::ScopedPointer;
+using juce::XmlDocument;
+using juce::XmlElement;
+using juce::Toolbar;
+using juce::Colour;
+using juce::Colours;
+using juce::MouseEvent;
+using juce::ChoicePropertyComponent;
+using juce::MemoryBlock;
+using juce::var;
+using juce::Image;
+using juce::Logger;
+using juce::AudioSourceChannelInfo;
+using juce::DragAndDropTarget;
+using juce::Time;
+using juce::Graphics;
+using juce::PopupMenu;
+using juce::ResizableWindow;
+using juce::JUCEApplication;
+using juce::StringArray;
+using juce::AudioDeviceSelectorComponent;
+using juce::DialogWindow;
+using juce::LookAndFeel;
+using juce::AudioDeviceManager;
+using juce::ModalComponentManager;
+using juce::ModalCallbackFunction;
+using juce::KeyPress;
+using juce::Button;
+using juce::ToolbarButton;
+
 //==============================================================================
 MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
 {

@@ -11,6 +11,13 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Knob.h"
 
+using juce::Justification;
+using juce::Slider;
+using juce::Value;
+using juce::String;
+using juce::PropertyComponent;
+using juce::SliderPropertyComponent;
+using juce::BooleanPropertyComponent;
 
 //==============================================================================
 Knob::Knob()

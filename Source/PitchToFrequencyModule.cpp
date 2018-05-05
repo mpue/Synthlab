@@ -10,6 +10,8 @@
 
 #include "PitchToFrequencyModule.h"
 
+using juce::Justification;
+using juce::ImageCache;
 
 PitchToFrequencyModule::PitchToFrequencyModule()
 {

@@ -17,6 +17,26 @@
 #ifdef USE_PUSH
 #include "push2/JuceToPush2DisplayBridge.h"
 #endif
+
+using juce::AudioFormatManager;
+using juce::AudioThumbnailCache;
+using juce::AudioThumbnail;
+using juce::AudioSampleBuffer;
+using juce::Justification;
+using juce::ImageCache;
+using juce::Rectangle;
+using juce::Colours;
+using juce::String;
+using juce::Logger;
+using juce::WavAudioFormat;
+using juce::File;
+using juce::Timer;
+using juce::FileOutputStream;
+using juce::AudioFormatWriter;
+using juce::AudioDeviceManager;
+using juce::MidiMessage;
+using juce::Time;
+
 //==============================================================================
 SamplerModule::SamplerModule(double sampleRate, int buffersize, AudioFormatManager* manager)
 {

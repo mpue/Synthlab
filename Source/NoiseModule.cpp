@@ -13,6 +13,9 @@
 #include "Connection.h"
 #include "AudioEngine/WhiteNoise.h"
 
+using juce::Justification;
+using juce::ImageCache;
+
 //==============================================================================
 NoiseModule::NoiseModule(double sampleRate, int buffersize)
 {

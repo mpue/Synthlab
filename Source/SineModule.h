@@ -23,7 +23,7 @@ public:
     SineModule(double sampleRate, int buffersize);
     ~SineModule();
     
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
     
     void setPitch(int pitch);
     void setAmplitude(float amplitude);
@@ -31,10 +31,10 @@ public:
     void process() override;
     virtual void configurePins() override;
     
-    virtual String getCategory() override {
+    virtual juce::String getCategory() override {
         return "Sound sources";
     }
-    virtual String getDescription() override {
+    virtual juce::String getDescription() override {
         return BinaryData::oscillator_txt;
     }
     
@@ -43,7 +43,7 @@ private:
     int pitch = 0;
     float amplitude;
     float fine = 0;
-    Image* image;
+    juce::Image* image;
     Sine* oscillator[128];
     int currentSample = 0;
     

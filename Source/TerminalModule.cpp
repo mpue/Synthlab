@@ -11,7 +11,15 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "TerminalModule.h"
 
-
+using juce::Justification;
+using juce::Value;
+using juce::PropertyComponent;
+using juce::TextPropertyComponent;
+using juce::Array;
+using juce::var;
+using juce::String;
+using juce::ChoicePropertyComponent;
+using juce::StringArray;
 //==============================================================================
 TerminalModule::TerminalModule(Direction dir, Type type) : Module("T"), direction(dir)
 {

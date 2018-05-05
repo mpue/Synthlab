@@ -14,6 +14,21 @@
 #include "AudioManager.h"
 #include "Plugins/PluginManager.h"
 
+using juce::Justification;
+using juce::AudioBuffer;
+using juce::String;
+using juce::ImageCache;
+using juce::MidiMessage;
+using juce::Time;
+using juce::Value;
+using juce::Array;
+using juce::PropertyComponent;
+using juce::var;
+using juce::MemoryOutputStream;
+using juce::Base64;
+using juce::ChoicePropertyComponent;
+using juce::MemoryBlock;
+
 //==============================================================================
 PluginModule::PluginModule(double sampleRate, int buffersize)
 {

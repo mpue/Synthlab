@@ -1,6 +1,20 @@
 #include <iomanip>
 #include "SequenceEditor.h"
 
+using juce::String;
+using juce::TextButton;
+using juce::Slider;
+using juce::Viewport;
+using juce::Graphics;
+using juce::Button;
+using juce::MouseEvent;
+using juce::KeyPress;
+using juce::ModifierKeys;
+using juce::MidiMessage;
+using juce::MidiInput;
+using juce::Logger;
+using juce::uint8;
+
 const String SequenceEditor::notes[128] = {"C","C#", "D", "D#", "E", "F", "F#", "G", "G#" , "A" ,"A#", "B"};
 int SequenceEditor::selectedCol = 0;
 int SequenceEditor::selectedRow = 0;

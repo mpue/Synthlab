@@ -12,6 +12,8 @@
 #include "AudioIn.h"
 #include "Connection.h"
 
+using juce::Justification;
+using juce::ImageCache;
 
 //==============================================================================
 AudioIn::AudioIn()

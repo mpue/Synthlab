@@ -13,6 +13,9 @@
 #include "Connection.h"
 #include "AudioEngine/LowPassFilter.h"
 
+using juce::Justification;
+using juce::ImageCache;
+
 //==============================================================================
 DelayModule::DelayModule(double sampleRate, int buffersize)
 {

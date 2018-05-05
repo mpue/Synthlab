@@ -13,6 +13,8 @@
 #include "Connection.h"
 #include "AudioEngine/HighPassFilter.h"
 
+using juce::Justification;
+using juce::ImageCache;
 //==============================================================================
 HPFilterModule::HPFilterModule(double sampleRate, int buffersize)
 {

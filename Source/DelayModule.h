@@ -23,17 +23,17 @@ public:
     DelayModule(double sampleRate, int buffersize);
     ~DelayModule();
 
-    void paint (Graphics& g) override;
+    void paint (juce::Graphics& g) override;
 
     void process() override;
     virtual void configurePins() override;
-    virtual String getCategory() override {
+    virtual juce::String getCategory() override {
         return "FX";
     }
 
 private:
 
-    Image* image;
+    juce::Image* image;
 
     int currentSample = 0;
     float* bufferLeft;
