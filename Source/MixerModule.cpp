@@ -70,7 +70,7 @@ void MixerModule::configurePins() {
 
 void MixerModule::paint(juce::Graphics &g) {
     Module::paint(g);
-    g.drawImageAt(ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize),25,40);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::mixer_png, BinaryData::mixer_pngSize),25,40);
 }
 
 void MixerModule::process() {

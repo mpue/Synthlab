@@ -62,8 +62,6 @@ void NoiseModule::paint(juce::Graphics &g) {
     g.drawImageAt(ImageCache::getFromMemory(BinaryData::whitenoise_png, BinaryData::whitenoise_pngSize),25,40);
 }
 
-
-
 void NoiseModule::setAmplitude(float amplitude) {
     this->oscillator->setVolume(amplitude);
 }

@@ -160,7 +160,7 @@ private:
         prefabImages[79] = juce::ImageCache::getFromMemory(BinaryData::plugin_png, BinaryData::plugin_pngSize);
         prefabImages[80] = juce::ImageCache::getFromMemory(BinaryData::sequence_png, BinaryData::sequence_pngSize);
         prefabImages[81] = juce::ImageCache::getFromMemory(BinaryData::pulse_png, BinaryData::pulse_pngSize);
-        prefabImages[82] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[82] = juce::ImageCache::getFromMemory(BinaryData::mixer_png, BinaryData::mixer_pngSize);
         prefabImages[83] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[84] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[85] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);

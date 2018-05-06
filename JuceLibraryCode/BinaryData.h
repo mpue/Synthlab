@@ -80,6 +80,9 @@ namespace BinaryData
     extern const char*   midiout_png;
     const int            midiout_pngSize = 4672;
 
+    extern const char*   mixer_png;
+    const int            mixer_pngSize = 21499;
+
     extern const char*   module_png;
     const int            module_pngSize = 3828;
 
@@ -167,13 +170,20 @@ namespace BinaryData
     extern const char*   whitenoise_png;
     const int            whitenoise_pngSize = 7446;
 
+    // Number of elements in the namedResourceList and originalFileNames arrays.
+    const int namedResourceListSize = 54;
+
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];
 
-    // Number of elements in the namedResourceList array.
-    const int namedResourceListSize = 53;
+    // Points to the start of a list of resource filenames.
+    extern const char* originalFilenames[];
 
     // If you provide the name of one of the binary resource variables above, this function will
     // return the corresponding data and its size (or a null pointer if the name isn't found).
-    const char* getNamedResource (const char* resourceNameUTF8, int& dataSizeInBytes) throw();
+    const char* getNamedResource (const char* resourceNameUTF8, int& dataSizeInBytes) noexcept;
+
+    // If you provide the name of one of the binary resource variables above, this function will
+    // return the corresponding original, non-mangled filename (or a null pointer if the name isn't found).
+    const char* getNamedResourceOriginalFilename (const char* resourceNameUTF8) noexcept;
 }
