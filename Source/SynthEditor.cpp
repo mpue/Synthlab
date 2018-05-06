@@ -100,7 +100,7 @@ SynthEditor::~SynthEditor()
 
 void SynthEditor::paint (Graphics& g)
 {
-    g.fillAll (Colour (0xff323e44));
+    g.fillAll (Colour (0xff222222));
     g.setColour(juce::Colours::white);
 
 	if (isLeftMouseDown) {

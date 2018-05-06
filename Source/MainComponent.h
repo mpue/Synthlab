@@ -48,7 +48,6 @@ public:
     void createKeyMap();
     void buttonClicked (juce::Button*) override;
     
-    
     void handleIncomingMidiMessage (juce::MidiInput* source, const juce::MidiMessage& message) override;
     void sendGateMessage(Module* module, int channel, int velocity,int note,bool on);
     void sendNoteMessage(Module* module, int channel, int note);
@@ -56,6 +55,8 @@ public:
     void sendPitchBendMessage(Module *module, int channel, int pitch);
     void processModule(Module* m);
     int getNumActiveChannels(int i);
+    
+    void refreshMidiInputs();
     
     SynthEditor* getEditor() {
         return editor;

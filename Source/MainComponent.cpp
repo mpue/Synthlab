@@ -461,7 +461,7 @@ void MainComponent::releaseResources()
 //==============================================================================
 void MainComponent::paint (Graphics& g)
 {
-    g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));
+    g.fillAll (Colour (0xff222222));
 }
 
 void MainComponent::resized()
@@ -581,6 +581,7 @@ void MainComponent::openSettings() {
     AudioDeviceSelectorComponent* selector = new AudioDeviceSelectorComponent(deviceManager, 2, 16, 2, 16, true, true, true, false);
     DialogWindow::LaunchOptions launchOptions;
     
+    selector->setLookAndFeel(Project::getInstance()->getLookAndFeel());
     launchOptions.dialogTitle = ("Audio Settings");
     launchOptions.escapeKeyTriggersCloseButton = true;
     launchOptions.resizable = false;
@@ -589,15 +590,18 @@ void MainComponent::openSettings() {
     launchOptions.componentToCentreAround = getParentComponent();
     launchOptions.content.setOwned(selector);
     launchOptions.content->setSize(600, 580);
-    launchOptions.dialogBackgroundColour = LookAndFeel::getDefaultLookAndFeel().findColour(ResizableWindow::backgroundColourId);
+    launchOptions.dialogBackgroundColour = Colour(0xff222222);
+    
     DialogWindow* window = launchOptions.launchAsync();
     
     std::function<void(int)> lambda =
     [=](int result) {
         AudioDeviceManager::AudioDeviceSetup setup;
-        deviceManager.getAudioDeviceSetup(setup);
         
+        deviceManager.getAudioDeviceSetup(setup);
         deviceManager.restartLastAudioDevice();
+        
+        refreshMidiInputs();        
         
         XmlElement* config = deviceManager.createStateXml();
         
@@ -616,6 +620,7 @@ void MainComponent::openSettings() {
             delete config;
         }
     };
+    
     
     ModalComponentManager::Callback* callback = ModalCallbackFunction::create(lambda);
     ModalComponentManager::getInstance()->attachCallback(window, callback);
@@ -929,5 +934,14 @@ void MainComponent::processModule(Module* m) {
         
     }
     
+}
+
+void MainComponent::refreshMidiInputs() {
+    for (int i = 0; i < MidiInput::getDevices().size();i++) {
+        if (deviceManager.isMidiInputEnabled(MidiInput::getDevices().getReference(i))) {
+            deviceManager.removeMidiInputCallback(MidiInput::getDevices().getReference(i),this);
+            deviceManager.addMidiInputCallback(MidiInput::getDevices().getReference(i),this);
+        }
+    }
 }
 

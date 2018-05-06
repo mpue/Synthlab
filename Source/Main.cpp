@@ -97,8 +97,8 @@ public:
                                                                           .findColour (ResizableWindow::backgroundColourId),
                                                     DocumentWindow::allButtons)
         {
-            //Project::getInstance()->getLookAndFeel()->setColourScheme(LookAndFeel_V4::getMidnightColourScheme());
-            // setLookAndFeel(Project::getInstance()->getLookAndFeel());
+            // Project::getInstance()->getLookAndFeel()->setColourScheme(LookAndFeel_V4::getDarkColourScheme());
+            setLookAndFeel(Project::getInstance()->getLookAndFeel());
             setUsingNativeTitleBar (false);
             setContentOwned (new MainComponent(), true);
             setResizable (true, true);

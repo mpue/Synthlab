@@ -34,7 +34,7 @@ MainTabbedComponent::MainTabbedComponent(TabbedButtonBar::Orientation orientatio
 
 
 void MainTabbedComponent::paint(juce::Graphics &g) {
-    g.fillAll (Colour (0xff2e373c));
+    // g.fillAll (Colour (0xff2e373c));
     g.setColour(Colours::grey);
     // g.drawRect(getBounds());
     g.drawLine(getWidth(), 0, getWidth(), getHeight());

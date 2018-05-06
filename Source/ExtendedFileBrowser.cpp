@@ -65,9 +65,9 @@ void ExtendedFileBrowser::mouseDrag(const juce::MouseEvent &event) {
 }
 
 void ExtendedFileBrowser::paint(juce::Graphics &g) {
-    g.fillAll (Colour (0xff323e44));
+    g.fillAll (Colour (0xff222222));
     g.fillRect (getLocalBounds());
-    Component::paint(g);
+    // Component::paint(g);
 }
 
 void ExtendedFileBrowser::resized() {
@@ -187,7 +187,7 @@ void FileBrowserModel::paintRowBackground (Graphics& g,
         g.setColour(juce::Colours::orange);
     }
     else {
-        g.setColour(Colour (0xff2e373b));
+        g.setColour(Colour (0xff222222));
     }
     
     g.fillRect(0,0,width,height);

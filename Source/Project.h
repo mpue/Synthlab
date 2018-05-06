@@ -96,6 +96,8 @@ private:
     Project() {
         undoManager = new juce::UndoManager();
         lookAndFeel = new CustomLookAndFeel();
+        
+        
 #ifdef USE_PUSH
         
         // First we initialise the low level push2 object

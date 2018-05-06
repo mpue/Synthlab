@@ -245,7 +245,7 @@ template<typename T> void OscillatorModule<T>::process() {
         this->pitchBend = pins.at(5)->getConnections().at(0)->getValue();
         for (int j = 0; j < 128;j++){
             
-            if(gatePin->dataEnabled[j]) {
+            if(gatePin != nullptr && gatePin->dataEnabled[j]) {
                 if (oscillator[j] != nullptr) {
                     oscillator[j]->setFrequency((440 * pow(2.0,((j+1+pitch)-69.0)/12.0)) * pitchBend);
                 }
@@ -306,8 +306,8 @@ template<typename T> void OscillatorModule<T>::process() {
 }
 
 template<typename T> void OscillatorModule<T>::eventReceived(Event *e) {
-    if (e->getType() == Event::Type::PITCH) {
-        pitchBend = e->getValue();
+    if (e->getType() == Event::Type::GATE) {
+
     }
 }
 

@@ -74,6 +74,7 @@ void MixerPanel::paint (Graphics& g)
     //[/UserPrePaint]
 
     //[UserPaint] Add your own custom painting code here..
+    g.fillAll (Colour (0xff222222));
     //[/UserPaint]
 }
 
