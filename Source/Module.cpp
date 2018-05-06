@@ -93,6 +93,11 @@ Module::Module ()
     
     createProperties();
     
+    /*
+    shadow = new DropShadow(Colour(0x88222222),3, juce::Point<int>(2,2));
+    shadower = new DropShadower(*shadow);
+    shadower->setOwner(this);
+    */
     //[/Constructor]
 }
 
@@ -146,8 +151,10 @@ Module::~Module()
     delete connections;
     delete modules;
     
-
-
+    /*
+    delete shadow;
+    delete shadower;
+     */
     //[/Destructor]
 }
 
@@ -164,7 +171,7 @@ void Module::paint (Graphics& g)
 
     //[/UserPrePaint]
 
-    g.fillAll (Colour (0xff323e44));
+    g.fillAll (Colour (0xff2d2d2d));
 
     {
         int x = 28, y = 44, width = 64, height = 64;
@@ -179,7 +186,7 @@ void Module::paint (Graphics& g)
 
     //[UserPaint] Add your own custom painting code here..
 
-    g.setColour(juce::Colours::grey);
+    g.setColour(Colour(0xff434242));
 
     g.fillRect(0,0,getWidth(), getHeight());
 
@@ -187,7 +194,7 @@ void Module::paint (Graphics& g)
         g.setColour(juce::Colours::orange);
     }
     else {
-        g.setColour(juce::Colours::black);
+        g.setColour(juce::Colours::grey);
     }
     g.drawRect(0, 0, getWidth(), getHeight());
 

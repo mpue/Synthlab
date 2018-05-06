@@ -122,7 +122,7 @@ void SynthEditor::paint (Graphics& g)
             if (c->source != NULL && c->target != NULL) {
                 
                 if (c->selected) {
-                    g.setColour(juce::Colours::cyan);
+                    g.setColour(juce::Colours::orange);
                 }
                 else {
                     g.setColour(juce::Colours::lightgrey);

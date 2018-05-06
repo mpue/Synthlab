@@ -34,7 +34,7 @@ public:
         setColour(juce::ResizableWindow::backgroundColourId, Colour (0xff222222));
         setColour(juce::Label::textColourId, juce::Colours::white);
         setColour(juce::ComboBox::backgroundColourId, Colour (0xff222222));
-        setColour(juce::PopupMenu::backgroundColourId, Colour (0xff222222));
+        setColour(juce::PopupMenu::backgroundColourId, Colour (0xff2d2d2d));
         setColour(juce::PopupMenu::highlightedBackgroundColourId, juce::Colours::orange.brighter());
         setColour(juce::PopupMenu::textColourId, juce::Colours::orange.brighter());
         setColour(juce::ComboBox::textColourId, juce::Colours::orange.brighter());
@@ -48,7 +48,7 @@ public:
         setColour(juce::TextButton::textColourOnId, juce::Colours::white);
         setColour(juce::TextButton::textColourOffId, juce::Colours::white);
         setColour(juce::TextEditor::outlineColourId, juce::Colours::orange.darker());
-        setColour(juce::TextEditor::backgroundColourId, juce::Colours::black);
+        setColour(juce::TextEditor::backgroundColourId, juce::Colour (0xff222222));
         setColour(juce::TextEditor::highlightColourId, juce::Colours::orange.darker());
         setColour(juce::TextEditor::highlightedTextColourId, juce::Colours::black);
         setColour(juce::TextEditor::textColourId, juce::Colours::orange.brighter());

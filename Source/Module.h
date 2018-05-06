@@ -171,6 +171,9 @@ protected:
     float sampleRate;
     int buffersize;
     
+    juce::DropShadow* shadow = nullptr;
+    juce::DropShadower* shadower = nullptr;
+    
     //[/UserVariables]
 
 

@@ -4,7 +4,7 @@
     ADSR Module
  
     This module contains the logic for the adsr envelope module,
-    it can be used as a modulation source in momophonic mode or as ADSR envelope
+    it can be used as a modulation source in monophonic mode or as ADSR envelope
     for the oscillator modules.
  
     Created: 4 Apr 2018 3:48:23pm
