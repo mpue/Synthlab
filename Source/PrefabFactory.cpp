@@ -40,6 +40,7 @@
 #include "MixerModule.h"
 #include "TerminalModule.h"
 #include "ReverbModule.h"
+#include "PitchBendModule.h"
 
 using juce::Image;
 
@@ -162,6 +163,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Reverb") {
         m = new ReverbModule(sampleRate,bufferSize);
+    }
+    else if (prefabs[id].getName() == "Pitch bend") {
+        m = new PitchBendModule();
     }
     
     m->setIndex(id + pow(10,prefabs[id].getNumInstances() + 1));

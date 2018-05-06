@@ -53,6 +53,7 @@ public:
     void sendGateMessage(Module* module, int channel, int velocity,int note,bool on);
     void sendNoteMessage(Module* module, int channel, int note);
     void sendControllerMessage(Module* module, int channel, int controller, float value);
+    void sendPitchBendMessage(Module *module, int channel, int pitch);
     void processModule(Module* m);
     int getNumActiveChannels(int i);
     

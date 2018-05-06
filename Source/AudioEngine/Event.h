@@ -17,7 +17,8 @@ public:
     enum Type {
         GATE,
         NOTE,
-        CONTROLLER
+        CONTROLLER,
+        PITCH
     };
     
     Event();

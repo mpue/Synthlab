@@ -43,6 +43,8 @@ public:
     bool isMono() override;
     void setMono(bool value) override;
     
+    void eventReceived(Event *e) override;
+    
     virtual juce::Array<juce::PropertyComponent*>& getProperties() override;
     virtual void createProperties() override;
     
@@ -75,7 +77,7 @@ private:
     T* oscillator[128];
     int currentSample = 0;
     bool mono;
-    
+    float pitchBend = 1;
     Pin* gatePin = nullptr;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OscillatorModule)
@@ -160,11 +162,17 @@ template<typename T> void OscillatorModule<T>::configurePins() {
     p5->listeners.push_back(this);
     p5->setName("V");
     
+    Pin* p6 = new Pin(Pin::Type::VALUE);
+    p6->direction = Pin::Direction::IN;
+    p6->listeners.push_back(this);
+    p6->setName("Pb");
+    
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::IN,p2);
     addPin(Pin::Direction::IN,p3);
     addPin(Pin::Direction::OUT,p4);
     addPin(Pin::Direction::OUT,p5);
+    addPin(Pin::Direction::IN,p6);
     
     createProperties();
     out = pins.at(3)->getAudioBuffer();
@@ -233,6 +241,17 @@ template<typename T> void OscillatorModule<T>::process() {
     if (pins.at(1)->getConnections().size() ==  1) {
         this->setFine(pins.at(1)->getConnections().at(0)->getValue());
     }
+    if (pins.at(5)->getConnections().size() ==  1) {
+        this->pitchBend = pins.at(5)->getConnections().at(0)->getValue();
+        for (int j = 0; j < 128;j++){
+            
+            if(gatePin->dataEnabled[j]) {
+                if (oscillator[j] != nullptr) {
+                    oscillator[j]->setFrequency((440 * pow(2.0,((j+1+pitch)-69.0)/12.0)) * pitchBend);
+                }
+            }
+        }
+    }
     if (pins.at(2)->getConnections().size() ==  1) {
         volumegate = true;
         gatePin = pins.at(2)->getConnections().at(0);
@@ -242,7 +261,7 @@ template<typename T> void OscillatorModule<T>::process() {
             float value = 0;
             
             if (mono) {
-                this->monoOscillator->setFrequency((440 * pow(2.0,((pitch)-69.0)/12.0)));
+                this->monoOscillator->setFrequency((440 * pow(2.0,((pitch)-69.0)/12.0)) * pitchBend);
                 this->monoOscillator->setVolume(pins.at(2)->getConnections().at(0)->getValue());
                 value = monoOscillator->process();
                 pins.at(4)->setValue(abs(value + 1));
@@ -254,7 +273,7 @@ template<typename T> void OscillatorModule<T>::process() {
                         if (oscillator[j] ==  nullptr) {
                             oscillator[j] = new T(sampleRate, buffersize);
                             
-                            oscillator[j]->setFrequency((440 * pow(2.0,((j+1+pitch)-69.0)/12.0)));
+                            oscillator[j]->setFrequency((440 * pow(2.0,((j+1+pitch)-69.0)/12.0)) * pitchBend);
                         }
                         float volume = gatePin->data[j];
                         
@@ -284,7 +303,12 @@ template<typename T> void OscillatorModule<T>::process() {
         }
     }
     
-    
+}
+
+template<typename T> void OscillatorModule<T>::eventReceived(Event *e) {
+    if (e->getType() == Event::Type::PITCH) {
+        pitchBend = e->getValue();
+    }
 }
 
 

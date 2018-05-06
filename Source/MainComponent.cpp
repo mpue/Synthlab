@@ -20,6 +20,7 @@
 #include "Mixer.h"
 #include "PluginModule.h"
 #include "ModuleBrowser.h"
+#include "PitchBendModule.h"
 
 #define M_PI       3.14159265358979323846 
 
@@ -766,6 +767,11 @@ void MainComponent::handleIncomingMidiMessage(juce::MidiInput *source, const juc
             sendControllerMessage(editor->getModule()->getModules()->at(i), message.getChannel(),message.getControllerNumber(),message.getControllerValue());
         }
     }
+    else if(message.isPitchWheel()) {
+        for (int i = 0; i < editor->getModule()->getModules()->size();i++) {
+            sendPitchBendMessage(editor->getModule()->getModules()->at(i), message.getChannel(),message.getPitchWheelValue());
+        }
+    }
     
     // deviceManager.getDefaultMidiOutput()->sendMessageNow(message);
 }
@@ -819,6 +825,21 @@ void MainComponent::sendNoteMessage(Module *module, int channel, int note) {
         
         if ((midiNote = dynamic_cast<MidiNote*>(module->getModules()->at(i)))!= NULL) {
             sendNoteMessage(module->getModules()->at(i),channel, note);
+        }
+    }
+}
+
+void MainComponent::sendPitchBendMessage(Module *module, int channel, int pitch) {
+    
+    PitchBendModule* pbm;
+    
+    if ((pbm = dynamic_cast<PitchBendModule*>(module)) != NULL) {
+        pbm->setPitch(pitch);
+    }
+    
+    for (int i = 0; i< module->getModules()->size();i++) {
+        if ((pbm = dynamic_cast<PitchBendModule*>(module->getModules()->at(i)))!= NULL) {
+            sendPitchBendMessage(module->getModules()->at(i),channel, pitch);
         }
     }
 }
