@@ -154,6 +154,8 @@ MasterChannelPanel::MasterChannelPanel ()
     muteButton->setClickingTogglesState(true);
     soloButton->setClickingTogglesState(true);
 
+    channelVolume->toFront(false);
+    
     //[/Constructor]
 }
 

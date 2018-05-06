@@ -72,6 +72,7 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize) : resizerBar 
                                       -0.3);
 
     Project::getInstance()->setSupplemental(this->bottomTab);
+    
 }
 
 EditorComponent::~EditorComponent()

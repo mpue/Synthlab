@@ -17,6 +17,7 @@
 #include "MixerPanel.h"
 #include "Project.h"
 #include "EditorListener.h"
+#include "IEditor.h"
 
 class SamplerModule;
 
@@ -24,7 +25,9 @@ class SynthEditor  : public Component,
                      public ChangeBroadcaster,
                      public AudioModule,
                      public Timer,
-                     public DragAndDropTarget {
+                     public DragAndDropTarget,
+                     public IEditor
+{
 public:
 
     SynthEditor (double sampleRate, int buffersize );
@@ -97,7 +100,8 @@ public:
     std::vector<AudioOut*>& getOutputChannels();
     std::vector<AuxOut*>& getAuxChannels();
     
-                         
+    bool isDirty() override;
+    void setDirty(bool dirty) override;
                          
     void setSamplerate(double rate);
     virtual float getSampleRate() override;
@@ -106,7 +110,9 @@ public:
     virtual float getBufferSize() override;
     
     void addEditorListener(EditorListener* listener);
-                         
+    
+    void saveScreenShot();
+    
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
 
@@ -162,7 +168,7 @@ private:
     static String defaultMidiInputName;
     static String defaultMidiOutputName;
     
-                         
+    bool dirty = false;
                          
     int currentSample = 0;
     int bufferSize;

@@ -104,5 +104,12 @@ void MainTabbedComponent::addTab (const String& tabName,
              Colour tabBackgroundColour,
              Component* contentComponent,
              bool deleteComponentWhenNotNeeded) {
+    
+    IEditor* editor = dynamic_cast<IEditor*>(contentComponent);
+    
+    if (editor != nullptr) {
+        editorMap.push_back(editor);
+    }
+    
     TabbedComponent::addTab(tabName, tabBackgroundColour, contentComponent, deleteComponentWhenNotNeeded);
 }

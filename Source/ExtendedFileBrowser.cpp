@@ -74,7 +74,7 @@ void ExtendedFileBrowser::resized() {
     if (getParentComponent() != nullptr) {
         setSize(getParentWidth(), getParentHeight());
         view->setSize(getWidth(), getHeight());
-        table->setSize(getWidth()-4, getHeight()-4);
+        table->setSize(getWidth(), getHeight() - 30);
         
     }
 }

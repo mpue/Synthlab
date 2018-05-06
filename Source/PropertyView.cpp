@@ -140,7 +140,10 @@ void PropertyView::selectionChanged(Component* c) {
     
         if (m != nullptr) {
             descriptionEditor->setText(m->getDescription());
-            propertyPanel->addProperties(m->getProperties());
+            
+            propertyPanel->addSection("Module settings", m->getProperties());
+            
+            // propertyPanel->addProperties(m->getProperties());
         }
     }
 

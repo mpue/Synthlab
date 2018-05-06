@@ -11,6 +11,8 @@
 #pragma once
 
 #include "../JuceLibraryCode/JuceHeader.h"
+#include "IEditor.h"
+#include <map>
 
 //==============================================================================
 /*
@@ -28,8 +30,12 @@ public:
                  juce::Colour tabBackgroundColour,
                  juce::Component* contentComponent,
                  bool deleteComponentWhenNotNeeded);
-;
+
+    
     
 private:
+    
+    std::vector<IEditor*> editorMap;
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainTabbedComponent)
 };

@@ -192,6 +192,8 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     Project::getInstance()->setDefaultSampler(defaultSampler);
     
     setWantsKeyboardFocus(true);
+    
+    
 }
 
 MainComponent::~MainComponent()
@@ -483,6 +485,8 @@ void MainComponent::resized()
     if (getParentComponent() != nullptr) {
         cpuLoadLabel->setBounds(getParentComponent()->getWidth() - 50,0,50,20);
         loadSlider->setBounds(getParentComponent()->getWidth() - 150, 10, 100, 5);
+        
+        editorView->getEditor()->resized();
     }
 }
 

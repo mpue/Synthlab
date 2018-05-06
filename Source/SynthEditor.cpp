@@ -76,6 +76,7 @@ SynthEditor::SynthEditor (double sampleRate, int buffersize)
     addChildComponent(root);
     
     linePath = Path();
+
 }
 
 SynthEditor::~SynthEditor()
@@ -368,7 +369,8 @@ void SynthEditor::showContextMenu(Point<int> position) {
         m->addItem(4, "New");
         m->addItem(5, "Load module");
         m->addItem(6, "Save module");
-
+        m->addItem(7, "Save picture");
+        
         if (locked) {
             m->addItem(99, "Unlock");
             for (int i = 0; i < root->getModules()->size(); i++) {
@@ -462,6 +464,9 @@ void SynthEditor::showContextMenu(Point<int> position) {
         }
         else if (result == 6) {
             saveModule(selectionModel.getSelectedModule());
+        }
+        else if (result == 7) {
+            saveScreenShot();
         }
         else if (result == 99) {
             locked = !locked;
@@ -786,7 +791,27 @@ void SynthEditor::cleanUp() {
     auxChannels.clear();
     Project::getInstance()->getUndoManager()->clearUndoHistory();
     removeAllChangeListeners();
+    if (tab != nullptr) {
+        
+        int i = tab->getNumTabs();
+        
+        while(tab->getNumTabs() > 1) {
+            tab->removeTab(--i);
+        }
+    }
+    tab->setCurrentTabIndex(0);
     
+    MainTabbedComponent* supplemental = Project::getInstance()->getSupplemental();
+    
+    if (supplemental != nullptr) {
+        
+        int i = supplemental->getNumTabs();
+        
+        while(supplemental->getNumTabs() > 1) {
+            supplemental->removeTab(--i);
+        }
+    }
+    supplemental->setCurrentTabIndex(0);
 }
 
 
@@ -1326,5 +1351,26 @@ void SynthEditor::addEditorListener(EditorListener *listener) {
 void SynthEditor::notifyListeners() {
     for (int i = 0;i < listener.size();i++) {
         listener.at(i)->selectionChanged(this->selectionModel.getSelectedModule());
+    }
+}
+
+bool SynthEditor::isDirty() {
+    return dirty;
+}
+
+void SynthEditor::setDirty(bool dirty) {
+    this->dirty = dirty;
+}
+
+void SynthEditor::saveScreenShot() {
+    Image image = createComponentSnapshot(getLocalBounds());
+    JPEGImageFormat format;
+    
+    FileChooser chooser("Select target file...", File::nonexistent, "*");
+    
+    if (chooser.browseForFileToSave(true)) {
+        FileOutputStream* fos = new FileOutputStream(chooser.getResult());
+        format.writeImageToStream (image, *fos);
+        delete fos;
     }
 }
