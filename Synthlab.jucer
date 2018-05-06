@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.3.1" bundleIdentifier="de.pueski.SynthlabX"
+<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.2.1" bundleIdentifier="de.pueski.SynthlabX"
               version="1.0.1" companyName="Pueski">
   <MAINGROUP id="CKGTaZ" name="Synthlab">
     <GROUP id="{E76D66D3-3296-502A-6AE0-5C2C43CF4558}" name="lib">
@@ -349,6 +349,9 @@
                 file="Source/ToolbarComboBox.h"/>
         </GROUP>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
+          <FILE id="CIDmBE" name="ReverbModule.cpp" compile="1" resource="0"
+                file="Source/ReverbModule.cpp"/>
+          <FILE id="OLWphw" name="ReverbModule.h" compile="0" resource="0" file="Source/ReverbModule.h"/>
           <FILE id="vV9Bh4" name="TerminalModule.cpp" compile="1" resource="0"
                 file="Source/TerminalModule.cpp"/>
           <FILE id="yqhIV8" name="TerminalModule.h" compile="0" resource="0"

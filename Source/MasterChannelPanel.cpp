@@ -7,12 +7,12 @@
   the "//[xyz]" and "//[/xyz]" sections will be retained when the file is loaded
   and re-saved.
 
-  Created with Projucer version: 4.3.0
+  Created with Projucer version: 5.2.1
 
   ------------------------------------------------------------------------------
 
-  The Projucer is part of the JUCE library - "Jules' Utility Class Extensions"
-  Copyright (c) 2015 - ROLI Ltd.
+  The Projucer is part of the JUCE library.
+  Copyright (c) 2017 - ROLI Ltd.
 
   ==============================================================================
 */
@@ -23,6 +23,7 @@
 //[/Headers]
 
 #include "MasterChannelPanel.h"
+
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 using juce::Slider;
@@ -58,6 +59,8 @@ MasterChannelPanel::MasterChannelPanel ()
     vuSliderL->setColour (Slider::textBoxBackgroundColourId, Colour (0x00ffffff));
     vuSliderL->addListener (this);
 
+    vuSliderL->setBounds (24, 48, 6, 128);
+
     addAndMakeVisible (channelVolume = new Slider ("channelVolume"));
     channelVolume->setRange (0, 1, 0.01);
     channelVolume->setSliderStyle (Slider::LinearVertical);
@@ -66,23 +69,30 @@ MasterChannelPanel::MasterChannelPanel ()
     channelVolume->setColour (Slider::trackColourId, Colour (0xff061e0f));
     channelVolume->addListener (this);
 
+    channelVolume->setBounds (48, 40, 16, 136);
+
     addAndMakeVisible (panSlider = new Slider ("panSlider"));
     panSlider->setRange (-1, 1, 0.02);
-    panSlider->setSliderStyle (Slider::RotaryVerticalDrag);
+    panSlider->setSliderStyle (Slider::LinearHorizontal);
     panSlider->setTextBoxStyle (Slider::NoTextBox, false, 80, 20);
+    panSlider->setColour (Slider::backgroundColourId, Colour (0xff263238));
     panSlider->setColour (Slider::thumbColourId, Colours::white);
     panSlider->setColour (Slider::rotarySliderFillColourId, Colours::cornflowerblue);
     panSlider->setColour (Slider::rotarySliderOutlineColourId, Colour (0x7cffffff));
     panSlider->addListener (this);
 
+    panSlider->setBounds (8, 8, 72, 24);
+
     addAndMakeVisible (nameLabel = new Label ("nameLabel",
                                               TRANS("Name\n")));
-    nameLabel->setFont (Font (12.00f, Font::plain));
+    nameLabel->setFont (Font (12.00f, Font::plain).withTypefaceStyle ("Regular"));
     nameLabel->setJustificationType (Justification::centred);
     nameLabel->setEditable (false, false, false);
     nameLabel->setColour (Label::textColourId, Colours::white);
     nameLabel->setColour (TextEditor::textColourId, Colours::black);
     nameLabel->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
+
+    nameLabel->setBounds (11, 219, 64, 24);
 
     addAndMakeVisible (muteButton = new ImageButton ("muteButton"));
     muteButton->setButtonText (TRANS("new button"));
@@ -92,6 +102,8 @@ MasterChannelPanel::MasterChannelPanel ()
                            ImageCache::getFromMemory (round_button_png, round_button_pngSize), 1.000f, Colour (0x00000000),
                            Image(), 1.000f, Colour (0x00000000),
                            ImageCache::getFromMemory (round_button_pushed_png, round_button_pushed_pngSize), 1.000f, Colours::cornflowerblue);
+    muteButton->setBounds (19, 200, 16, 16);
+
     addAndMakeVisible (soloButton = new ImageButton ("soloButton"));
     soloButton->setButtonText (TRANS("new button"));
     soloButton->addListener (this);
@@ -100,23 +112,29 @@ MasterChannelPanel::MasterChannelPanel ()
                            ImageCache::getFromMemory (round_button_png, round_button_pngSize), 1.000f, Colour (0x00000000),
                            Image(), 1.000f, Colour (0x00000000),
                            ImageCache::getFromMemory (round_button_pushed_png, round_button_pushed_pngSize), 1.000f, Colour (0xffffa800));
+    soloButton->setBounds (48, 200, 16, 16);
+
     addAndMakeVisible (M = new Label ("M",
                                       TRANS("M")));
-    M->setFont (Font (11.60f, Font::plain));
+    M->setFont (Font (11.60f, Font::plain).withTypefaceStyle ("Regular"));
     M->setJustificationType (Justification::centredLeft);
     M->setEditable (false, false, false);
     M->setColour (Label::textColourId, Colours::white);
     M->setColour (TextEditor::textColourId, Colours::black);
     M->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
 
+    M->setBounds (18, 200, 22, 16);
+
     addAndMakeVisible (S = new Label ("S",
                                       TRANS("S")));
-    S->setFont (Font (11.60f, Font::plain));
+    S->setFont (Font (11.60f, Font::plain).withTypefaceStyle ("Regular"));
     S->setJustificationType (Justification::centredLeft);
     S->setEditable (false, false, false);
     S->setColour (Label::textColourId, Colours::white);
     S->setColour (TextEditor::textColourId, Colours::black);
     S->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
+
+    S->setBounds (48, 200, 20, 16);
 
     addAndMakeVisible (vuSliderR = new Slider ("vuSlider"));
     vuSliderR->setRange (0, 1, 0.01);
@@ -129,18 +147,21 @@ MasterChannelPanel::MasterChannelPanel ()
     vuSliderR->setColour (Slider::textBoxBackgroundColourId, Colour (0x00ffffff));
     vuSliderR->addListener (this);
 
+    vuSliderR->setBounds (32, 48, 6, 128);
+
 
     //[UserPreSize]
     //[/UserPreSize]
 
     setSize (90, 250);
 
+
     //[Constructor] You can add your own custom stuff here..
 
     channelVolume->setValue(1.0);
 
     link = false;
-    
+
     channelVolume->setLookAndFeel(Project::getInstance()->getLookAndFeel());
     vuSliderL->setLookAndFeel(Project::getInstance()->getLookAndFeel());
     vuSliderR->setLookAndFeel(Project::getInstance()->getLookAndFeel());
@@ -155,7 +176,7 @@ MasterChannelPanel::MasterChannelPanel ()
     soloButton->setClickingTogglesState(true);
 
     channelVolume->toFront(false);
-    
+
     //[/Constructor]
 }
 
@@ -188,12 +209,18 @@ void MasterChannelPanel::paint (Graphics& g)
     //[UserPrePaint] Add your own custom painting code here..
     //[/UserPrePaint]
 
-    g.setColour (Colour(0xff323e44));
- 
-    g.fillRect (0, 0, 90, 250);
-    g.setColour (juce::Colours::black);
+    {
+        int x = 0, y = 0, width = 90, height = 250;
+        Colour fillColour = Colour (0xff434242);
+        Colour strokeColour = Colour (0xff3f3f3f);
+        //[UserPaintCustomArguments] Customize the painting arguments here..
+        //[/UserPaintCustomArguments]
+        g.setColour (fillColour);
+        g.fillRect (x, y, width, height);
+        g.setColour (strokeColour);
+        g.drawRect (x, y, width, height, 1);
 
-    g.drawRect (0, 0, 90, 250, 1);
+    }
 
     //[UserPaint] Add your own custom painting code here..
     g.drawRect (getBounds(), 1);   // draw an outline around the component
@@ -205,15 +232,6 @@ void MasterChannelPanel::resized()
     //[UserPreResize] Add your own custom resize code here..
     //[/UserPreResize]
 
-    vuSliderL->setBounds (24, 48, 6, 128);
-    channelVolume->setBounds (48, 40, 16, 136);
-    panSlider->setBounds (40, 8, 32, 32);
-    nameLabel->setBounds (11, 219, 64, 24);
-    muteButton->setBounds (19, 200, 16, 16);
-    soloButton->setBounds (48, 200, 16, 16);
-    M->setBounds (18, 200, 22, 16);
-    S->setBounds (48, 200, 20, 16);
-    vuSliderR->setBounds (32, 48, 6, 128);
     //[UserResized] Add your own custom resize handling here..
     //[/UserResized]
 }
@@ -241,7 +259,7 @@ void MasterChannelPanel::sliderValueChanged (Slider* sliderThatWasMoved)
         //[UserSliderCode_panSlider] -- add your slider handling code here..
         pan = panSlider->getValue();
         channel->pan = pan;
-    
+        //[/UserSliderCode_panSlider]
     }
     else if (sliderThatWasMoved == vuSliderR)
     {
@@ -372,53 +390,62 @@ BEGIN_JUCER_METADATA
   <SLIDER name="vuSliderL" id="ec971d63574facb2" memberName="vuSliderL"
           virtualName="" explicitFocusOrder="0" pos="24 48 6 128" bkgcol="ff313131"
           thumbcol="ff7fff00" trackcol="ff434242" rotaryslideroutline="66ffffff"
-          textboxbkgd="ffffff" min="0" max="1" int="0.010000000000000000208"
-          style="LinearBarVertical" textBoxPos="NoTextBox" textBoxEditable="1"
-          textBoxWidth="80" textBoxHeight="20" skewFactor="1" needsCallback="1"/>
+          textboxbkgd="ffffff" min="0.00000000000000000000" max="1.00000000000000000000"
+          int="0.01000000000000000021" style="LinearBarVertical" textBoxPos="NoTextBox"
+          textBoxEditable="1" textBoxWidth="80" textBoxHeight="20" skewFactor="1.00000000000000000000"
+          needsCallback="1"/>
   <SLIDER name="channelVolume" id="5a134fd786161e27" memberName="channelVolume"
           virtualName="" explicitFocusOrder="0" pos="48 40 16 136" thumbcol="ff000000"
-          trackcol="ff061e0f" min="0" max="1" int="0.010000000000000000208"
-          style="LinearVertical" textBoxPos="NoTextBox" textBoxEditable="1"
-          textBoxWidth="80" textBoxHeight="20" skewFactor="1" needsCallback="1"/>
+          trackcol="ff061e0f" min="0.00000000000000000000" max="1.00000000000000000000"
+          int="0.01000000000000000021" style="LinearVertical" textBoxPos="NoTextBox"
+          textBoxEditable="1" textBoxWidth="80" textBoxHeight="20" skewFactor="1.00000000000000000000"
+          needsCallback="1"/>
   <SLIDER name="panSlider" id="c52368ab34d3e8df" memberName="panSlider"
-          virtualName="" explicitFocusOrder="0" pos="40 8 32 32" thumbcol="ffffffff"
-          rotarysliderfill="ff6495ed" rotaryslideroutline="7cffffff" min="-1"
-          max="1" int="0.020000000000000000416" style="RotaryVerticalDrag"
-          textBoxPos="NoTextBox" textBoxEditable="1" textBoxWidth="80"
-          textBoxHeight="20" skewFactor="1" needsCallback="1"/>
+          virtualName="" explicitFocusOrder="0" pos="8 8 72 24" bkgcol="ff263238"
+          thumbcol="ffffffff" rotarysliderfill="ff6495ed" rotaryslideroutline="7cffffff"
+          min="-1.00000000000000000000" max="1.00000000000000000000" int="0.02000000000000000042"
+          style="LinearHorizontal" textBoxPos="NoTextBox" textBoxEditable="1"
+          textBoxWidth="80" textBoxHeight="20" skewFactor="1.00000000000000000000"
+          needsCallback="1"/>
   <LABEL name="nameLabel" id="811ce273ae91866a" memberName="nameLabel"
          virtualName="" explicitFocusOrder="0" pos="11 219 64 24" textCol="ffffffff"
          edTextCol="ff000000" edBkgCol="0" labelText="Name&#10;" editableSingleClick="0"
          editableDoubleClick="0" focusDiscardsChanges="0" fontname="Default font"
-         fontsize="12" bold="0" italic="0" justification="36"/>
+         fontsize="12.00000000000000000000" kerning="0.00000000000000000000"
+         bold="0" italic="0" justification="36"/>
   <IMAGEBUTTON name="muteButton" id="59064bccfd6a8352" memberName="muteButton"
                virtualName="" explicitFocusOrder="0" pos="19 200 16 16" buttonText="new button"
                connectedEdges="0" needsCallback="1" radioGroupId="0" keepProportions="1"
-               resourceNormal="round_button_png" opacityNormal="1" colourNormal="0"
-               resourceOver="" opacityOver="1" colourOver="0" resourceDown="round_button_pushed_png"
-               opacityDown="1" colourDown="ff6495ed"/>
+               resourceNormal="round_button_png" opacityNormal="1.00000000000000000000"
+               colourNormal="0" resourceOver="" opacityOver="1.00000000000000000000"
+               colourOver="0" resourceDown="round_button_pushed_png" opacityDown="1.00000000000000000000"
+               colourDown="ff6495ed"/>
   <IMAGEBUTTON name="soloButton" id="c246db8f0f11748c" memberName="soloButton"
                virtualName="" explicitFocusOrder="0" pos="48 200 16 16" buttonText="new button"
                connectedEdges="0" needsCallback="1" radioGroupId="0" keepProportions="1"
-               resourceNormal="round_button_png" opacityNormal="1" colourNormal="0"
-               resourceOver="" opacityOver="1" colourOver="0" resourceDown="round_button_pushed_png"
-               opacityDown="1" colourDown="ffffa800"/>
+               resourceNormal="round_button_png" opacityNormal="1.00000000000000000000"
+               colourNormal="0" resourceOver="" opacityOver="1.00000000000000000000"
+               colourOver="0" resourceDown="round_button_pushed_png" opacityDown="1.00000000000000000000"
+               colourDown="ffffa800"/>
   <LABEL name="M" id="326797e7520c2518" memberName="M" virtualName=""
          explicitFocusOrder="0" pos="18 200 22 16" textCol="ffffffff"
          edTextCol="ff000000" edBkgCol="0" labelText="M" editableSingleClick="0"
          editableDoubleClick="0" focusDiscardsChanges="0" fontname="Default font"
-         fontsize="11.599999999999999645" bold="0" italic="0" justification="33"/>
+         fontsize="11.59999999999999964473" kerning="0.00000000000000000000"
+         bold="0" italic="0" justification="33"/>
   <LABEL name="S" id="3a23039c2fdeb175" memberName="S" virtualName=""
          explicitFocusOrder="0" pos="48 200 20 16" textCol="ffffffff"
          edTextCol="ff000000" edBkgCol="0" labelText="S" editableSingleClick="0"
          editableDoubleClick="0" focusDiscardsChanges="0" fontname="Default font"
-         fontsize="11.599999999999999645" bold="0" italic="0" justification="33"/>
+         fontsize="11.59999999999999964473" kerning="0.00000000000000000000"
+         bold="0" italic="0" justification="33"/>
   <SLIDER name="vuSlider" id="13ed73975c767d8f" memberName="vuSliderR"
           virtualName="" explicitFocusOrder="0" pos="32 48 6 128" bkgcol="ff313131"
           thumbcol="ff7fff00" trackcol="ff434242" rotaryslideroutline="66ffffff"
-          textboxbkgd="ffffff" min="0" max="1" int="0.010000000000000000208"
-          style="LinearBarVertical" textBoxPos="NoTextBox" textBoxEditable="1"
-          textBoxWidth="80" textBoxHeight="20" skewFactor="1" needsCallback="1"/>
+          textboxbkgd="ffffff" min="0.00000000000000000000" max="1.00000000000000000000"
+          int="0.01000000000000000021" style="LinearBarVertical" textBoxPos="NoTextBox"
+          textBoxEditable="1" textBoxWidth="80" textBoxHeight="20" skewFactor="1.00000000000000000000"
+          needsCallback="1"/>
 </JUCER_COMPONENT>
 
 END_JUCER_METADATA

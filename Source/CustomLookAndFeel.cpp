@@ -71,11 +71,11 @@ void CustomLookAndFeel::drawLinearSlider (Graphics& g, int x, int y, int width, 
         
 
         float from  = (sliderPos / maxSliderPos) * height;
-        LookAndFeel_V3::drawLinearSliderBackground(g, x, y, width, height, sliderPos, minSliderPos, maxSliderPos, style, slider);
+        LookAndFeel_V3::drawLinearSliderBackground(g, x, y + 10, width, height + 10, sliderPos, minSliderPos, maxSliderPos, style, slider);
         
         
         g.setColour(Colours::white);
-        g.drawImageAt(fader.rescaled(fader.getWidth(), fader.getHeight()/2),0, from - fader.getHeight()/4 );
+        g.drawImageAt(fader.rescaled(fader.getWidth(), fader.getHeight()/2),0, from - fader.getHeight()/4 + 10);
         
     }
     else {

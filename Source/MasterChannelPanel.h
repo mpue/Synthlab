@@ -7,18 +7,17 @@
   the "//[xyz]" and "//[/xyz]" sections will be retained when the file is loaded
   and re-saved.
 
-  Created with Projucer version: 4.3.0
+  Created with Projucer version: 5.2.1
 
   ------------------------------------------------------------------------------
 
-  The Projucer is part of the JUCE library - "Jules' Utility Class Extensions"
-  Copyright (c) 2015 - ROLI Ltd.
+  The Projucer is part of the JUCE library.
+  Copyright (c) 2017 - ROLI Ltd.
 
   ==============================================================================
 */
 
-#ifndef __JUCE_HEADER_F8A62509C3ECE492__
-#define __JUCE_HEADER_F8A62509C3ECE492__
+#pragma once
 
 //[Headers]     -- You can add your own extra header files here --
 #include "../JuceLibraryCode/JuceHeader.h"
@@ -37,11 +36,11 @@
     Describe your class and how it works here!
                                                                     //[/Comments]
 */
-class MasterChannelPanel  : public juce::Component,
-                            public juce::ChangeListener,
-                            public juce::ChangeBroadcaster,
-                            public juce::Slider::Listener,
-                            public juce::Button::Listener
+class MasterChannelPanel  : public Component,
+                            public ChangeListener,
+                            public ChangeBroadcaster,
+                            public Slider::Listener,
+                            public Button::Listener
 {
 public:
     //==============================================================================
@@ -52,7 +51,7 @@ public:
     //[UserMethods]     -- You can add your own custom methods in this section.
 
 
-    
+
     enum MeterMode {
         RMS,
         MAGNITUDE
@@ -75,13 +74,13 @@ public:
     Mixer::Channel::Type getChannelType();
     void setChannelType(Mixer::Channel::Type type);
     void setChannel(Mixer::Channel* channel);
-    
+
     //[/UserMethods]
 
-    void paint (juce::Graphics& g) override;
+    void paint (Graphics& g) override;
     void resized() override;
-    void sliderValueChanged (juce::Slider* sliderThatWasMoved) override;
-    void buttonClicked (juce::Button* buttonThatWasClicked) override;
+    void sliderValueChanged (Slider* sliderThatWasMoved) override;
+    void buttonClicked (Button* buttonThatWasClicked) override;
 
     // Binary resources:
     static const char* peaks_png;
@@ -107,19 +106,19 @@ private:
 
     int index = 0;
     Mixer::Channel* channel;
-    
+
     //[/UserVariables]
 
     //==============================================================================
-    juce::ScopedPointer<juce::Slider> vuSliderL;
-    juce::ScopedPointer<juce::Slider> channelVolume;
-    juce::ScopedPointer<juce::Slider> panSlider;
-    juce::ScopedPointer<juce::Label> nameLabel;
-    juce::ScopedPointer<juce::ImageButton> muteButton;
-    juce::ScopedPointer<juce::ImageButton> soloButton;
-    juce::ScopedPointer<juce::Label> M;
-    juce::ScopedPointer<juce::Label> S;
-    juce::ScopedPointer<juce::Slider> vuSliderR;
+    ScopedPointer<Slider> vuSliderL;
+    ScopedPointer<Slider> channelVolume;
+    ScopedPointer<Slider> panSlider;
+    ScopedPointer<Label> nameLabel;
+    ScopedPointer<ImageButton> muteButton;
+    ScopedPointer<ImageButton> soloButton;
+    ScopedPointer<Label> M;
+    ScopedPointer<Label> S;
+    ScopedPointer<Slider> vuSliderR;
 
 
     //==============================================================================
@@ -128,5 +127,3 @@ private:
 
 //[EndFile] You can add extra defines here...
 //[/EndFile]
-
-#endif   // __JUCE_HEADER_F8A62509C3ECE492__

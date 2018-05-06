@@ -233,7 +233,9 @@ void ADSRModule::eventReceived(Event *e) {
         
             // monophonic envelope is for modulation purposes
             if (mono) {
-                this->envelope->gate(e->getValue());
+                if (voices == 0)
+                    this->envelope->gate(e->getValue());
+                voices++;
             }
             // in polyphonic mode we need an envelope for each voice of the oscillator module
             else {
@@ -247,6 +249,8 @@ void ADSRModule::eventReceived(Event *e) {
         else {
             if (mono) {
                 this->envelope->gate(0);
+                if (voices > 0)
+                    voices--;
             }
             else {
                 this->gate[e->getNote()]= false;
