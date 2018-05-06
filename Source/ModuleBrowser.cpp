@@ -63,7 +63,7 @@ ModuleBrowser::~ModuleBrowser()
 void ModuleBrowser::paint (Graphics& g)
 {
     shadow->drawForRectangle(g, Rectangle<int>(0,0,getWidth(),getHeight()));
-    g.fillAll (Colour (0xff323e44));
+    g.fillAll (Colour (0xff222222));
 
     g.setColour(juce::Colours::lightgrey);
     g.drawRect(0,0,getWidth(),getHeight());

@@ -56,6 +56,7 @@ void PluginManager::scanPlugins() {
     PropertiesFile* props = new PropertiesFile(file,options);
     
     PluginListComponent* pluginListComponent = new PluginListComponent(*apfm,*pluginList,File(), props);
+    pluginListComponent->setLookAndFeel(Project::getInstance()->getLookAndFeel());
     
     DialogWindow::LaunchOptions launchOptions;
     launchOptions.dialogTitle = ("Manage Plugins");

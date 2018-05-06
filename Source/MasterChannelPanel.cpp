@@ -75,7 +75,7 @@ MasterChannelPanel::MasterChannelPanel ()
     panSlider->setRange (-1, 1, 0.02);
     panSlider->setSliderStyle (Slider::LinearHorizontal);
     panSlider->setTextBoxStyle (Slider::NoTextBox, false, 80, 20);
-    panSlider->setColour (Slider::backgroundColourId, Colour (0xff263238));
+    panSlider->setColour (Slider::backgroundColourId, Colour (0x00263238));
     panSlider->setColour (Slider::thumbColourId, Colours::white);
     panSlider->setColour (Slider::rotarySliderFillColourId, Colours::cornflowerblue);
     panSlider->setColour (Slider::rotarySliderOutlineColourId, Colour (0x7cffffff));
@@ -401,7 +401,7 @@ BEGIN_JUCER_METADATA
           textBoxEditable="1" textBoxWidth="80" textBoxHeight="20" skewFactor="1.00000000000000000000"
           needsCallback="1"/>
   <SLIDER name="panSlider" id="c52368ab34d3e8df" memberName="panSlider"
-          virtualName="" explicitFocusOrder="0" pos="8 8 72 24" bkgcol="ff263238"
+          virtualName="" explicitFocusOrder="0" pos="8 8 72 24" bkgcol="263238"
           thumbcol="ffffffff" rotarysliderfill="ff6495ed" rotaryslideroutline="7cffffff"
           min="-1.00000000000000000000" max="1.00000000000000000000" int="0.02000000000000000042"
           style="LinearHorizontal" textBoxPos="NoTextBox" textBoxEditable="1"

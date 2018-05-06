@@ -242,6 +242,7 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 
 void SynthEditor::showContextMenu(Point<int> position) {
     PopupMenu* m = new PopupMenu();
+    m->setLookAndFeel(Project::getInstance()->getLookAndFeel());
     
     Module* module = nullptr;
 
