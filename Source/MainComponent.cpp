@@ -645,7 +645,7 @@ bool MainComponent::keyStateChanged(bool isKeyDown, juce::Component *originating
         else {
             keyStates[(*it).second] = false;
             if (!isKeyDown)
-                sendGateMessage(editor->getModule(), 1,0f,(*it).second + 12 * currentOctave, false);
+                sendGateMessage(editor->getModule(), 1,0,(*it).second + 12 * currentOctave, false);
         }
     }
     return true;
