@@ -170,7 +170,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     loadSlider = new Slider();
     
     loadSlider->setRange (0, 100, 1);
-    loadSlider->setSliderStyle (Slider::LinearHorizontal);
+    loadSlider->setSliderStyle (Slider::LinearBar);
     loadSlider->setTextBoxStyle (Slider::NoTextBox, false, 80, 20);
     loadSlider->setColour (Slider::backgroundColourId, Colour (0xff313131));
     loadSlider->setColour (Slider::thumbColourId, Colours::chartreuse);
@@ -503,7 +503,7 @@ void MainComponent::resized()
         propertyView->setSize(r.getWidth()-editorView->getWidth(), propertyView->getHeight());
     if (getParentComponent() != nullptr) {
         cpuLoadLabel->setBounds(getParentComponent()->getWidth() - 50,0,50,20);
-        loadSlider->setBounds(getParentComponent()->getWidth() - 150, 10, 100, 5);
+        loadSlider->setBounds(getParentComponent()->getWidth() - 150, 10, 100, 10);
         
         editorView->getEditor()->resized();
     }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.2.1" bundleIdentifier="de.pueski.SynthlabX"
+<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.3.1" bundleIdentifier="de.pueski.SynthlabX"
               version="1.0.1" companyName="Pueski">
   <MAINGROUP id="CKGTaZ" name="Synthlab">
     <GROUP id="{E76D66D3-3296-502A-6AE0-5C2C43CF4558}" name="lib">
@@ -72,9 +72,7 @@
     <GROUP id="{9F92DD62-384A-EB91-F447-5583413CC3C4}" name="samples">
       <FILE id="hRXtES" name="boom.aif" compile="0" resource="1" file="samples/boom.aif"/>
     </GROUP>
-    <GROUP id="{76D84681-B72F-D5A2-9B1D-2A847D7CEA82}" name="Synths">
-      <FILE id="csI6SF" name="delaytest6" compile="0" resource="1" file="Regression/delaytest6"/>
-    </GROUP>
+    <GROUP id="{76D84681-B72F-D5A2-9B1D-2A847D7CEA82}" name="Synths"/>
     <GROUP id="{4B823972-67BB-E3BB-E219-7A6E1BDAC3BE}" name="docs">
       <FILE id="Z3Znri" name="adsr.txt" compile="0" resource="1" file="docs/adsr.txt"/>
       <FILE id="IcVqhD" name="highpass.txt" compile="0" resource="1" file="docs/highpass.txt"/>
@@ -282,6 +280,14 @@
         <FILE id="RViUJy" name="SelectionModel.h" compile="0" resource="0"
               file="Source/SelectionModel.h"/>
         <GROUP id="{19B8F02D-4185-9D0D-F820-8F1C70EECC53}" name="Components">
+          <FILE id="tEnZwJ" name="AudioRecorderEditor.cpp" compile="1" resource="0"
+                file="Source/AudioRecorderEditor.cpp"/>
+          <FILE id="KnI53e" name="AudioRecorderEditor.h" compile="0" resource="0"
+                file="Source/AudioRecorderEditor.h"/>
+          <FILE id="cEFdn7" name="AudioRecorderPanel.cpp" compile="1" resource="0"
+                file="Source/AudioRecorderPanel.cpp"/>
+          <FILE id="WTn4nQ" name="AudioRecorderPanel.h" compile="0" resource="0"
+                file="Source/AudioRecorderPanel.h"/>
           <FILE id="zDXqTh" name="AudioThumbnailComponent.cpp" compile="1" resource="0"
                 file="Source/AudioThumbnailComponent.cpp"/>
           <FILE id="rtSeW2" name="AudioThumbnailComponent.h" compile="0" resource="0"
@@ -350,6 +356,10 @@
                 file="Source/ToolbarComboBox.h"/>
         </GROUP>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
+          <FILE id="ueUtc4" name="AudioRecorderModule.cpp" compile="1" resource="0"
+                file="Source/AudioRecorderModule.cpp"/>
+          <FILE id="afKHij" name="AudioRecorderModule.h" compile="0" resource="0"
+                file="Source/AudioRecorderModule.h"/>
           <FILE id="ZIy0JG" name="PitchBendModule.cpp" compile="1" resource="0"
                 file="Source/PitchBendModule.cpp"/>
           <FILE id="lQ6pZe" name="PitchBendModule.h" compile="0" resource="0"

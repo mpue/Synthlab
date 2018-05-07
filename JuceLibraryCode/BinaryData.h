@@ -14,9 +14,6 @@ namespace BinaryData
     extern const char*   boom_aif;
     const int            boom_aifSize = 1768430;
 
-    extern const char*   delaytest6;
-    const int            delaytest6Size = 8514;
-
     extern const char*   adsr_txt;
     const int            adsr_txtSize = 1205;
 
@@ -170,13 +167,20 @@ namespace BinaryData
     extern const char*   whitenoise_png;
     const int            whitenoise_pngSize = 7446;
 
+    // Number of elements in the namedResourceList and originalFileNames arrays.
+    const int namedResourceListSize = 53;
+
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];
 
-    // Number of elements in the namedResourceList array.
-    const int namedResourceListSize = 54;
+    // Points to the start of a list of resource filenames.
+    extern const char* originalFilenames[];
 
     // If you provide the name of one of the binary resource variables above, this function will
     // return the corresponding data and its size (or a null pointer if the name isn't found).
-    const char* getNamedResource (const char* resourceNameUTF8, int& dataSizeInBytes) throw();
+    const char* getNamedResource (const char* resourceNameUTF8, int& dataSizeInBytes) noexcept;
+
+    // If you provide the name of one of the binary resource variables above, this function will
+    // return the corresponding original, non-mangled filename (or a null pointer if the name isn't found).
+    const char* getNamedResourceOriginalFilename (const char* resourceNameUTF8) noexcept;
 }
