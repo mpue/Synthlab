@@ -24,6 +24,7 @@ public:
     virtual void changeListenerCallback (ChangeBroadcaster* source) override;
     AudioRecorderPanel::State getState();
     void setState(AudioRecorderPanel::State state);
+    void saveRecording();
 private:
     AudioRecorderPanel* recorderPanel = nullptr;
     float sampleRate;

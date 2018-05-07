@@ -113,7 +113,7 @@ void AudioRecorderModule::process() {
         inL = getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
     }
     if (getPins().at(1)->getConnections().size() >= 1) {
-        inR = getPins().at(1)->getConnections().at(1)->getAudioBuffer()->getReadPointer(0);
+        inR = getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
     }
 
     outL = getPins().at(2)->getAudioBuffer()->getWritePointer(0);
@@ -144,7 +144,6 @@ void AudioRecorderModule::process() {
             outR[i] = editor->getSampler()->getCurrentSample(1);
 
         }
-        
 
     }
     else {
@@ -158,10 +157,7 @@ void AudioRecorderModule::process() {
     
 
 }
-
-
-
-
+    
 void AudioRecorderModule::setSampleRate(float rate) {
     this->sampleRate = rate;
 }

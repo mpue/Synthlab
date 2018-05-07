@@ -25,7 +25,7 @@ Sampler::Sampler(float sampleRate, int bufferSize) {
     this->manager = AudioManager::getInstance()->getFormatManager();
     this->interpolatorLeft = new CatmullRomInterpolator();
     this->interpolatorRight = new CatmullRomInterpolator();
-    this->sampleBuffer = new AudioSampleBuffer(2,4096*1024);
+    this->sampleBuffer = new AudioSampleBuffer(2,16384*1024);
     this->samplerEnvelope = new ADSR();
     this->samplerEnvelope->setAttackRate(0.1 * sampleRate);
     this->samplerEnvelope->setReleaseRate(0.3 * sampleRate);

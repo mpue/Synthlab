@@ -41,6 +41,7 @@ public:
     }
     void startRecording();
     void stopRecording();
+
     
     AudioRecorderEditor* getEditor();
     

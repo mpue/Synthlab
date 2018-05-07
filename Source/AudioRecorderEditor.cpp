@@ -54,6 +54,7 @@ void AudioRecorderEditor::changeListenerCallback(juce::ChangeBroadcaster *source
     
     if (panel != nullptr) {
         if (panel->getState() == AudioRecorderPanel::State::RECORDING) {
+            numRecordedSamples = 0;
             sampler->setStartPosition(0);
             sampler->setLoaded(false);
             sampler->reset();
@@ -71,8 +72,30 @@ void AudioRecorderEditor::changeListenerCallback(juce::ChangeBroadcaster *source
             sendChangeMessage();
         }
         else if (panel->getState() == AudioRecorderPanel::State::SAVE) {
+            panel->setState(AudioRecorderPanel::State::IDLE);
+            saveRecording();
             sendChangeMessage();
         }
+    }
+    
+}
+
+void AudioRecorderEditor::saveRecording() {
+    WavAudioFormat* wavFormat = new WavAudioFormat();
+    
+    String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
+    File appDir = File(userHome+"/.Synthlab");
+    
+    FileChooser chooser("Select file to save", File::nonexistent, "*");
+    
+    if (chooser.browseForFileToSave(true)) {
+        File outputFile = chooser.getResult();
+        FileOutputStream* outputTo = outputFile.createOutputStream();
+        AudioFormatWriter* writer = wavFormat->createWriterFor(outputTo, sampleRate, 2, 16,NULL, 0);
+        writer->writeFromAudioSampleBuffer(*getSampler()->getSampleBuffer(), 0,numRecordedSamples);
+        delete writer;
+        delete wavFormat;
+
     }
     
 }
