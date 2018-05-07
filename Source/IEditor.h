@@ -15,7 +15,7 @@ public:
     virtual ~IEditor() {};
     
     virtual bool isDirty() = 0;
-    virtual void setDirty(bool dirty) = 0;
+    virtual void setDirty(bool dirty) = 0;
     
     
 };

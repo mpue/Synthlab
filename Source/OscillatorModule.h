@@ -141,31 +141,42 @@ template<typename T> void OscillatorModule<T>::configurePins() {
     p1->direction = Pin::Direction::IN;
     p1->listeners.push_back(this);
     p1->setName("P");
+    p1->setDescription("Pitch of the oscillator. Typical range [-64..64]");
     
     Pin* p2 = new Pin(Pin::Type::VALUE);
     p2->direction = Pin::Direction::IN;
     p2->listeners.push_back(this);
     p2->setName("F");
     
+    p2->setDescription("Frequency tune of the oscillator. Typical range [-2..2]");
+    
     Pin* p3 = new Pin(Pin::Type::VALUE);
     p3->direction = Pin::Direction::IN;
     p3->listeners.push_back(this);
     p3->setName("A");
+    
+    p3->setDescription("Amplitude of the oscillator. Requires a value or an ADSR module. Typical range [0..1]");
     
     Pin* p4 = new Pin(Pin::Type::AUDIO);
     p4->direction = Pin::Direction::OUT;
     p4->listeners.push_back(this);
     p4->setName("Out");
     
+    p4->setDescription("Audio output");
+    
     Pin* p5 = new Pin(Pin::Type::VALUE);
     p5->direction = Pin::Direction::OUT;
     p5->listeners.push_back(this);
     p5->setName("V");
     
+    p5->setDescription("Value out for modulation. Typical range [0..1]");
+    
     Pin* p6 = new Pin(Pin::Type::VALUE);
     p6->direction = Pin::Direction::IN;
     p6->listeners.push_back(this);
     p6->setName("Pb");
+    
+    p6->setDescription("Pitch bend input");
     
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::IN,p2);

@@ -121,11 +121,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
 #endif
     createKeyMap();
     
-    for (int i = 0; i < MidiInput::getDevices().size();i++) {
-        if (deviceManager.isMidiInputEnabled(MidiInput::getDevices().getReference(i))) {
-            deviceManager.addMidiInputCallback(MidiInput::getDevices().getReference(i),this);
-        }
-    }
+    enableAllMidiInputs();
     
     editorView = new EditorComponent(sampleRate, buffersize);
     editor = editorView->getEditor();
@@ -204,11 +200,7 @@ MainComponent::~MainComponent()
     loadSlider->setLookAndFeel(nullptr);
     editor->removeAllChangeListeners();
     
-    for (int i = 0; i < MidiInput::getDevices().size();i++) {
-        if (deviceManager.isMidiInputEnabled(MidiInput::getDevices().getReference(i))) {
-            deviceManager.removeMidiInputCallback(MidiInput::getDevices().getReference(i),this);
-        }
-    }
+    disableAllMidiInputs();
 
 #if JUCE_MAC
     MenuBarModel::setMacMainMenu(nullptr);
@@ -277,21 +269,46 @@ void MainComponent::timerCallback(){
 void MainComponent::mouseDrag (const MouseEvent& event) {
     
     var description;
+    /*
+    TabBarButton* t = dynamic_cast<TabBarButton*>(event.originalComponent);
+    
+    if (t != nullptr) {
+        description.append("tab");
+        Logger::writeToLog("Drag from tab "+t->getParentComponent()->getName());
+        startDragging(description,t->getParentComponent());
+    }
+    else {
+     */
+        description.append("property");
+        startDragging(description,propertyView->getBrowser());
+    //}
+     
+}
+
+void MainComponent::dragOperationStarted (const DragAndDropTarget::SourceDetails& details)  {
     
     /*
-    if (moduleBrowser != nullptr && moduleBrowser->isVisible())
-        startDragging(description, moduleBrowser->getTable());
-    else {
-   
-     
+    TabbedButtonBar* tbb = dynamic_cast<TabbedButtonBar*>(details.sourceComponent.get());
+    
+    if(tbb != nullptr) {
+
+        
+        int index = tbb->getCurrentTabIndex();
+        
+        MainTabbedComponent* tab = dynamic_cast<MainTabbedComponent*>(tbb->getParentComponent());
+        
+        if (tab != nullptr) {
+             setDragImageForIndex(0,tab->getComponentAt(index)->createComponentSnapshot(tab->getComponentAt(index)->getLocalBounds()));
+        }
     }
+    
+    
+    else {
      */
+        setDragImageForIndex(0, Image());
+    // }
     
-     startDragging(description,propertyView->getBrowser());
     
-}
-void MainComponent::dragOperationStarted (const DragAndDropTarget::SourceDetails& details)  {
-    setDragImageForIndex(0,Image());
 }
 
 //==============================================================================
@@ -324,7 +341,7 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
     
     int numSamples = bufferToFill.numSamples;
     float** outputChannelData = bufferToFill.buffer->getArrayOfWritePointers();
-    const float** inputChannelData = bufferToFill.buffer->getArrayOfReadPointers();
+    // const float** inputChannelData = bufferToFill.buffer->getArrayOfReadPointers();
     
     if (defaultSampler != nullptr && defaultSampler->isPlaying()) {
         for (int j = 0;j < numSamples;j++) {
@@ -536,17 +553,12 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
     else if (menuItemID == 2) {
         editor->saveFile();
     }
-    else if (menuItemID == 4) {
-        
-    }
     else if (menuItemID == 5) {
         openSettings();
     }
     else if (menuItemID == 12) {
         PluginManager::getInstance()->scanPlugins();
-        
     }
-    
     else if (menuItemID == 31) {
         editor->duplicateSelected();
         
@@ -627,8 +639,6 @@ void MainComponent::openSettings() {
     
     Project::getInstance()->getOpenWindows().push_back(window);
     
-
-
 }
 
 bool MainComponent::keyStateChanged(bool isKeyDown, juce::Component *originatingComponent) {
@@ -640,12 +650,12 @@ bool MainComponent::keyStateChanged(bool isKeyDown, juce::Component *originating
                 sendGateMessage(editor->getModule(),1, 64,(*it).second + 12 * currentOctave, true);
                 keyStates[(*it).second] = true;
             }
-
         }
         else {
             keyStates[(*it).second] = false;
-            if (!isKeyDown)
+            if (!isKeyDown) {
                 sendGateMessage(editor->getModule(), 1,0,(*it).second + 12 * currentOctave, false);
+            }
         }
     }
     return true;
@@ -751,15 +761,12 @@ void MainComponent::buttonClicked (Button* b)
 
 }
 
-
 void MainComponent::handleIncomingMidiMessage(juce::MidiInput *source, const juce::MidiMessage &message) {
-    
     
     if (message.isNoteOn() && message.getNoteNumber() > 7) {
         for (int i = 0; i < editor->getModule()->getModules()->size();i++) {
             sendNoteMessage(editor->getModule()->getModules()->at(i), message.getChannel(),message.getNoteNumber());
             sendGateMessage(editor->getModule()->getModules()->at(i), message.getChannel(),message.getVelocity(),message.getNoteNumber(),true);
-            
         }
     }
     else if (message.isNoteOff() && message.getNoteNumber() > 7) {
@@ -782,7 +789,6 @@ void MainComponent::handleIncomingMidiMessage(juce::MidiInput *source, const juc
 }
 
 void MainComponent::sendGateMessage(Module *module,int channel, int velocity,int note,  bool on) {
-    
     
     MidiGate* gate;
     
@@ -890,7 +896,6 @@ void MainComponent::sendControllerMessage(Module *module, int channel, int contr
                     sm->getCurrentSampler()->setStartPosition(start - value);
                 }
                 
-                
             }
             else {
                 long start = sm->getCurrentSampler()->getStartPosition();
@@ -906,13 +911,11 @@ void MainComponent::sendControllerMessage(Module *module, int channel, int contr
             sm->updatePush2Display();
             
         }
-
         
     }
     #endif
     
     for (int i = 0; i< module->getModules()->size();i++) {
-        
         if ((k = dynamic_cast<Knob*>(module->getModules()->at(i)))!= NULL) {
             sendControllerMessage(module->getModules()->at(i), channel, controller, value);
         }
@@ -925,15 +928,12 @@ void MainComponent::processModule(Module* m) {
         
         m->process();
         
-        
-         for (int i = 0; i< m->getModules()->size();i++) {
-             if (m->getModules()->at(i) != nullptr) {
-                 processModule(m->getModules()->at(i));
-             }
-         }
-        
+        for (int i = 0; i< m->getModules()->size();i++) {
+            if (m->getModules()->at(i) != nullptr) {
+                processModule(m->getModules()->at(i));
+            }
+        }
     }
-    
 }
 
 void MainComponent::refreshMidiInputs() {
@@ -945,3 +945,18 @@ void MainComponent::refreshMidiInputs() {
     }
 }
 
+void MainComponent::enableAllMidiInputs() {
+    for (int i = 0; i < MidiInput::getDevices().size();i++) {
+        if (deviceManager.isMidiInputEnabled(MidiInput::getDevices().getReference(i))) {
+            deviceManager.addMidiInputCallback(MidiInput::getDevices().getReference(i),this);
+        }
+    }
+}
+
+void MainComponent::disableAllMidiInputs() {
+    for (int i = 0; i < MidiInput::getDevices().size();i++) {
+        if (deviceManager.isMidiInputEnabled(MidiInput::getDevices().getReference(i))) {
+            deviceManager.removeMidiInputCallback(MidiInput::getDevices().getReference(i),this);
+        }
+    }
+}

@@ -133,7 +133,7 @@ public:
         juce::Value value;
     };
     
-
+    
     virtual juce::Array<juce::PropertyComponent*>& getProperties();
     virtual void createProperties();
     

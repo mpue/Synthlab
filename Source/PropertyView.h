@@ -68,7 +68,7 @@ private:
 
     //==============================================================================
     juce::ScopedPointer<MainTabbedComponent> propertyTab;
-    juce::ScopedPointer<juce::TabbedComponent> tabbedComponent;
+    juce::ScopedPointer<MainTabbedComponent> tabbedComponent;
 
 
     //==============================================================================

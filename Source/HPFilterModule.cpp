@@ -46,26 +46,35 @@ void HPFilterModule::configurePins() {
     p1->listeners.push_back(this);
     p1->setName("F");
     
+    p1->setDescription("Input for the cutoff frequency of the filter. Typical range [0..15000]");
+    
     Pin* p2 = new Pin(Pin::Type::VALUE);
     p2->direction = Pin::Direction::IN;
     p2->listeners.push_back(this);
     p2->setName("R");
     
+    p2->setDescription("Resonance or Q-Factor of the filter. Typical range [0..5]");
     
     Pin* p3 = new Pin(Pin::Type::AUDIO);
     p3->direction = Pin::Direction::IN;
     p3->listeners.push_back(this);
     p3->setName("In");
     
+    p3->setDescription("Audio in of the filter module.");
+
     Pin* p4 = new Pin(Pin::Type::AUDIO);
     p4->direction = Pin::Direction::OUT;
     p4->listeners.push_back(this);
     p4->setName("Out");
     
+    p4->setDescription("Audio out of the filter module.");
+    
     Pin* p5 = new Pin(Pin::Type::VALUE);
     p5->direction = Pin::Direction::IN;
     p5->listeners.push_back(this);
     p5->setName("Mod");
+    
+    p5->setDescription("Modulation in of the filter module. Modulates the cutoff frequency. Connect knobs, oscillators or ADSR modules here. Typical range  [-1..1]");
     
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::IN,p2);

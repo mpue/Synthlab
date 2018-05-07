@@ -50,7 +50,7 @@ private:
 
 };
 
-class ExtendedFileBrowser : public juce::Component,  public juce::ChangeListener, public juce::Timer{
+class ExtendedFileBrowser : public juce::Component,  public juce::ChangeListener, public juce::Timer {
     
     
 public:

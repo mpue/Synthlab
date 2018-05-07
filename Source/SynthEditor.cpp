@@ -224,6 +224,7 @@ void SynthEditor::mouseDown (const MouseEvent& e)
     }
     else {
         selectionModel.checkForPinSelection(e.getPosition());
+        notifyListeners();
     }
     
     // has any connection been clicked?

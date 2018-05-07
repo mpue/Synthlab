@@ -57,6 +57,8 @@ public:
     int getNumActiveChannels(int i);
     
     void refreshMidiInputs();
+    void enableAllMidiInputs();
+    void disableAllMidiInputs();
     
     SynthEditor* getEditor() {
         return editor;

@@ -105,11 +105,49 @@ void MainTabbedComponent::addTab (const String& tabName,
              Component* contentComponent,
              bool deleteComponentWhenNotNeeded) {
     
-    IEditor* editor = dynamic_cast<IEditor*>(contentComponent);
+    // IEditor* editor = dynamic_cast<IEditor*>(contentComponent);
     
-    if (editor != nullptr) {
-        editorMap.push_back(editor);
-    }
+    editorMap.push_back(contentComponent);
     
     TabbedComponent::addTab(tabName, tabBackgroundColour, contentComponent, deleteComponentWhenNotNeeded);
+}
+
+bool MainTabbedComponent::isInterestedInDragSource(const juce::DragAndDropTarget::SourceDetails &dragSourceDetails) {
+    /*
+    TabbedButtonBar* tbb = dynamic_cast<TabbedButtonBar*>(dragSourceDetails.sourceComponent.get());
+    
+    if (tbb != nullptr) {
+
+        MainTabbedComponent* tab = dynamic_cast<MainTabbedComponent*>(tbb->getParentComponent());
+        
+        if (tab != nullptr) {
+             return true;
+        }
+        
+       
+    }
+     */
+    return false;
+}
+
+void MainTabbedComponent::itemDropped(const juce::DragAndDropTarget::SourceDetails &dragSourceDetails) {
+    TabbedButtonBar* tbb = dynamic_cast<TabbedButtonBar*>(dragSourceDetails.sourceComponent.get());
+    if (tbb != nullptr) {
+        
+        int index = tbb->getCurrentTabIndex();
+        
+        MainTabbedComponent* tab = dynamic_cast<MainTabbedComponent*>(tbb->getParentComponent());
+        
+        if (tab != nullptr) {
+            Component* c = tab->getComponentAt(index);
+            String name = tab->getTabNames().getReference(index);
+            tab->removeTab(index);
+            addTab(name, Colours::darkgrey, c, false);
+        }
+ 
+    }
+}
+
+Component* MainTabbedComponent::getComponentAt(int index) {
+    return editorMap.at(index);
 }

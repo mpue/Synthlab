@@ -53,6 +53,14 @@ public:
     
     int getNote();
     void setNote(int note);
+                
+    virtual juce::String getDescription() {
+        return description;
+    };
+                
+    void setDescription(juce::String description) {
+        this->description = description;
+    }
     
     void setTerminal(Pin* p) {
         this->terminal = p;
@@ -86,4 +94,5 @@ private:
     Pin* terminal = nullptr;
     std::vector<Pin*> connections;
     juce::AudioSampleBuffer* audioBuffer = nullptr;
+    String description = "";
 };

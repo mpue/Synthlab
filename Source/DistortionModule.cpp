@@ -48,27 +48,35 @@ void DistortionModule::configurePins() {
     p1->listeners.push_back(this);
     p1->setName("In");
     
+    p1->setDescription("Audio input");
+    
     Pin* p2 = new Pin(Pin::Type::AUDIO);
     p2->direction = Pin::Direction::OUT;
     p2->listeners.push_back(this);
     p2->setName("Out");
     
+    p2->setDescription("Audio output");
+    
     Pin* p3 = new Pin(Pin::Type::VALUE);
     p3->direction = Pin::Direction::IN;
     p3->listeners.push_back(this);
     p3->setName("Drive");
-   
-
     
+    p3->setDescription("Drive of the module. Typical range [0..5]");
+   
     Pin* p4 = new Pin(Pin::Type::VALUE);
     p4->direction = Pin::Direction::IN;
     p4->listeners.push_back(this);
     p4->setName("Mix");
     
+    p4->setDescription("Mix factor determines how much of the distorion is being sent to the output. Typical range [0..1]");
+    
     Pin* p5 = new Pin(Pin::Type::VALUE);
     p5->direction = Pin::Direction::IN;
     p5->listeners.push_back(this);
     p5->setName("Type");
+    
+    p5->setDescription("Distortion type. Typical range [0..6]");
     
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::OUT,p2);

@@ -47,12 +47,14 @@ void MidiGate::configurePins() {
     p1->direction = Pin::Direction::OUT;
     p1->listeners.push_back(this);
     p1->setName("G");
+    p1->setDescription("Gate value out. Contains velocity and note value as well.");
     addPin(Pin::Direction::OUT,p1);
     
     Pin* p2 = new Pin(Pin::Type::EVENT);
     p2->direction = Pin::Direction::OUT;
     p2->listeners.push_back(this);
     p2->setName("E");
+    p2->setDescription("Event out. Contains the velocity and note values of all 128 notes as well.");
     addPin(Pin::Direction::OUT,p2);
 }
 

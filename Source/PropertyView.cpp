@@ -46,7 +46,7 @@ PropertyView::PropertyView () : TimeSliceThread("PropertyWatcher")
     propertyTab->setTabBarDepth (30);
     propertyTab->setCurrentTabIndex (-1);
 
-    addAndMakeVisible (tabbedComponent = new TabbedComponent (TabbedButtonBar::TabsAtTop));
+    addAndMakeVisible (tabbedComponent = new MainTabbedComponent (TabbedButtonBar::TabsAtTop));
     tabbedComponent->setTabBarDepth (30);
     tabbedComponent->setCurrentTabIndex (-1);
 
@@ -139,7 +139,13 @@ void PropertyView::selectionChanged(Component* c) {
         Module* m = dynamic_cast<Module*>(c);
     
         if (m != nullptr) {
-            descriptionEditor->setText(m->getDescription());
+            
+            if (m->getSelectedPin() != nullptr){
+                descriptionEditor->setText(m->getSelectedPin()->getDescription());
+            }
+            else {
+                descriptionEditor->setText(m->getDescription());
+            }
             
             propertyPanel->addSection("Module settings", m->getProperties());
             

@@ -17,7 +17,7 @@
 //==============================================================================
 /*
 */
-class MainTabbedComponent    : public juce::TabbedComponent, public juce::Button::Listener
+class MainTabbedComponent    : public juce::TabbedComponent, public juce::Button::Listener, public DragAndDropTarget
 {
 public:
     MainTabbedComponent();
@@ -31,11 +31,12 @@ public:
                  juce::Component* contentComponent,
                  bool deleteComponentWhenNotNeeded);
 
-    
-    
+    void itemDropped (const SourceDetails& dragSourceDetails) override;
+    bool isInterestedInDragSource (const SourceDetails& dragSourceDetails) override;
+    Component* getComponentAt(int index);
 private:
     
-    std::vector<IEditor*> editorMap;
+    std::vector<Component*> editorMap;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainTabbedComponent)
 };
