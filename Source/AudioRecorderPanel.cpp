@@ -7,7 +7,7 @@
   the "//[xyz]" and "//[/xyz]" sections will be retained when the file is loaded
   and re-saved.
 
-  Created with Projucer version: 5.3.1
+  Created with Projucer version: 5.2.1
 
   ------------------------------------------------------------------------------
 
@@ -109,16 +109,36 @@ void AudioRecorderPanel::buttonClicked (Button* buttonThatWasClicked)
     if (buttonThatWasClicked == recordButton)
     {
         //[UserButtonCode_recordButton] -- add your button handler code here..
+        if (state == IDLE) {
+            state = RECORDING;
+            recordButton->setButtonText("Stop recording");
+        }
+        else {
+            state = IDLE;
+            recordButton->setButtonText("Start recording");
+        }
+        sendChangeMessage();
+        
         //[/UserButtonCode_recordButton]
     }
     else if (buttonThatWasClicked == playButton)
     {
         //[UserButtonCode_playButton] -- add your button handler code here..
-        //[/UserButtonCode_playButton]
+        if (state == IDLE) {
+            state = PLAYING;
+            playButton->setButtonText("Stop playback");
+        }
+        else {
+            state = IDLE;
+            playButton->setButtonText("Start playback");
+        }
+        sendChangeMessage();        //[/UserButtonCode_playButton]
     }
     else if (buttonThatWasClicked == saveButton)
     {
         //[UserButtonCode_saveButton] -- add your button handler code here..
+        state = SAVE;
+        sendChangeMessage();
         //[/UserButtonCode_saveButton]
     }
 
@@ -129,6 +149,21 @@ void AudioRecorderPanel::buttonClicked (Button* buttonThatWasClicked)
 
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
+
+AudioRecorderPanel::State AudioRecorderPanel::getState() {
+    return state;
+}
+
+void AudioRecorderPanel::setState(AudioRecorderPanel::State state) {
+    this->state = state;
+}
+
+void AudioRecorderPanel::updateContent(AudioSampleBuffer *buffer, int numSamples) {
+    this->component->setSampleBuffer(buffer);
+    this->component->setStartPosition(0);
+    this->component->setEndPosition(numSamples);
+}
+
 //[/MiscUserCode]
 
 
@@ -142,13 +177,13 @@ void AudioRecorderPanel::buttonClicked (Button* buttonThatWasClicked)
 BEGIN_JUCER_METADATA
 
 <JUCER_COMPONENT documentType="Component" className="AudioRecorderPanel" componentName=""
-                 parentClasses="public Component" constructorParams="float sampleRate, int bufferSize"
+                 parentClasses="public Component, public ChangeBroadcaster" constructorParams="float sampleRate, int bufferSize"
                  variableInitialisers="" snapPixels="8" snapActive="1" snapShown="1"
                  overlayOpacity="0.330" fixedSize="0" initialWidth="600" initialHeight="400">
   <BACKGROUND backgroundColour="ff323e44"/>
   <GENERICCOMPONENT name="new component" id="59344fe7f0e5ab69" memberName="component"
-                    virtualName="" explicitFocusOrder="0" pos="8 8 100% 20%" class="AudioThumbnailComponent"
-                    params="sampleRate, bufferSize"/>
+                    virtualName="" explicitFocusOrder="0" pos="8 8 100% 19.958%"
+                    class="AudioThumbnailComponent" params="sampleRate, bufferSize"/>
   <TEXTBUTTON name="recordButton" id="323ad77bb3d5e053" memberName="recordButton"
               virtualName="" explicitFocusOrder="0" pos="16 192 150 24" buttonText="Record"
               connectedEdges="0" needsCallback="1" radioGroupId="0"/>

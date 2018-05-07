@@ -12,6 +12,7 @@
 #include "SampleEditor.h"
 #include "SelectionModel.h"
 #include "StepSequencerModule.h"
+#include "AudioRecorderModule.h"
 #include "PrefabFactory.h"
 #include <vector>
 #include "MixerPanel.h"
@@ -46,6 +47,7 @@ public:
     void openSampleEditor(SamplerModule* sm);
     void openStepSequencer(StepSequencerModule* ssm);
     void openEditor(Module* m);
+    void openRecorder(AudioRecorderModule* arm);
     void loadFromString(String in);
     Module* loadModule();
     void saveModule(Module* m);

@@ -130,6 +130,7 @@ private:
         prefabs[84] = Prefab("Terminal Out","Input / Output");
         prefabs[85] = Prefab("Reverb","FX");
         prefabs[86] = Prefab("Pitch bend","MIDI");
+        prefabs[87] = Prefab("Audio recorder","Audio");
         
         prefabImages[53] = juce::ImageCache::getFromMemory(BinaryData::sampler_png, BinaryData::sampler_pngSize);
         prefabImages[54] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
@@ -165,6 +166,7 @@ private:
         prefabImages[84] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[85] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[86] = juce::ImageCache::getFromMemory(BinaryData::midiin_png, BinaryData::midiin_pngSize);
+        prefabImages[87] = juce::ImageCache::getFromMemory(BinaryData::micro_png, BinaryData::micro_pngSize);
         
         categories = new juce::StringArray();
 

@@ -41,6 +41,7 @@
 #include "TerminalModule.h"
 #include "ReverbModule.h"
 #include "PitchBendModule.h"
+#include "AudioRecorderModule.h"
 
 using juce::Image;
 
@@ -166,6 +167,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Pitch bend") {
         m = new PitchBendModule();
+    }
+    else if (prefabs[id].getName() == "Audio recorder") {
+        m = new AudioRecorderModule(sampleRate,bufferSize,AudioManager::getInstance()->getFormatManager());
     }
     
     m->setIndex(id + pow(10,prefabs[id].getNumInstances() + 1));

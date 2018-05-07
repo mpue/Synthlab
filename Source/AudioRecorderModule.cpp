@@ -40,84 +40,55 @@ AudioRecorderModule::AudioRecorderModule(double sampleRate, int buffersize, Audi
 {
     this->sampleRate = sampleRate;
     this->buffersize = buffersize;
-
     
-    cache = new AudioThumbnailCache(128);
-    thumbnail = new AudioThumbnail(buffersize ,*manager,*cache);
-    recordingBuffer = new AudioSampleBuffer(2,1024*1024);
-    
-    setSize(256,140);
+    setSize(120,140);
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(18,2);
     
-    setName("Sampler");
+    setName("Recorder");
     
     editable = false;
     prefab = true;
     
-    sampler = new Sampler(sampleRate, buffersize);
-    this->manager = manager;
-    
-
+    this->editor = new AudioRecorderEditor(sampleRate, buffersize, manager);
+    editor->addChangeListener(this);
 }
 
 AudioRecorderModule::~AudioRecorderModule()
 {
-    
-    delete thumbnail;
-    delete cache;
-    delete recordingBuffer;
-    delete sampler;
-
+    editor->removeAllChangeListeners();
+    // delete editor;
 }
 
 
 
 void AudioRecorderModule::configurePins() {
-    Pin* p1 = new Pin(Pin::Type::VALUE);
+
+    Pin* p1 = new Pin(Pin::Type::AUDIO);
     p1->direction = Pin::Direction::IN;
     p1->listeners.push_back(this);
-    p1->setName("A");
+    p1->setName("L");
     
     Pin* p2 = new Pin(Pin::Type::AUDIO);
-    p2->direction = Pin::Direction::OUT;
+    p2->direction = Pin::Direction::IN;
     p2->listeners.push_back(this);
-    p2->setName("L");
+    p2->setName("R");
     
     Pin* p3 = new Pin(Pin::Type::AUDIO);
     p3->direction = Pin::Direction::OUT;
     p3->listeners.push_back(this);
-    p3->setName("R");
+    p3->setName("L");
     
-    Pin* p4 = new Pin(Pin::Type::EVENT);
-    p4->direction = Pin::Direction::IN;
+    
+    Pin* p4 = new Pin(Pin::Type::AUDIO);
+    p4->direction = Pin::Direction::OUT;
     p4->listeners.push_back(this);
-    p4->setName("E");
-    
-    Pin* p5 = new Pin(Pin::Type::VALUE);
-    p5->direction = Pin::Direction::IN;
-    p5->listeners.push_back(this);
-    p5->setName("P");
-    
-    
-    Pin* p6 = new Pin(Pin::Type::AUDIO);
-    p6->direction = Pin::Direction::IN;
-    p6->listeners.push_back(this);
-    p6->setName("L");
-    
-    
-    Pin* p7 = new Pin(Pin::Type::AUDIO);
-    p7->direction = Pin::Direction::IN;
-    p7->listeners.push_back(this);
-    p7->setName("R");
+    p4->setName("R");
     
     addPin(Pin::Direction::IN,p1);
-    addPin(Pin::Direction::OUT,p2);
+    addPin(Pin::Direction::IN,p2);
     addPin(Pin::Direction::OUT,p3);
-    addPin(Pin::Direction::IN,p4);
-    addPin(Pin::Direction::IN,p5);
-    addPin(Pin::Direction::IN,p6);
-    addPin(Pin::Direction::IN,p7);
+    addPin(Pin::Direction::OUT,p4);
     
 }
 
@@ -132,7 +103,60 @@ void AudioRecorderModule::timerCallback() {
 
 void AudioRecorderModule::process() {
     
+    const float* inL = nullptr;
+    const float* inR = nullptr;
     
+    float* outL = nullptr;
+    float* outR = nullptr;
+    
+    if (getPins().at(0)->getConnections().size() >= 1) {
+        inL = getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
+    }
+    if (getPins().at(1)->getConnections().size() >= 1) {
+        inR = getPins().at(1)->getConnections().at(1)->getAudioBuffer()->getReadPointer(0);
+    }
+
+    outL = getPins().at(2)->getAudioBuffer()->getWritePointer(0);
+    outR = getPins().at(3)->getAudioBuffer()->getWritePointer(0);
+
+    if (editor->getState() == AudioRecorderPanel::State::RECORDING) {
+        
+        for (int i = 0; i < buffersize;i++) {
+        
+            if (inL != nullptr)
+                editor->getBuffer()->setSample(0, currentRecordingSample,inL[i]);
+            
+            if (inR != nullptr)
+                editor->getBuffer()->setSample(1, currentRecordingSample,inR[i]);
+        
+            currentRecordingSample = (currentRecordingSample + 1);
+            numRecordedSamples++;
+            
+            editor->setNumSamples(numRecordedSamples);
+        }
+    }
+    else if (editor->getState() == AudioRecorderPanel::State::PLAYING) {
+        
+        for (int i = 0; i < buffersize;i++) {
+            editor->getSampler()->nextSample();
+            currentPlaybackSample = (currentPlaybackSample + 1) % numRecordedSamples;
+            outL[i] = editor->getSampler()->getCurrentSample(0);
+            outR[i] = editor->getSampler()->getCurrentSample(1);
+
+        }
+        
+
+    }
+    else {
+        for (int i = 0; i < buffersize;i++) {
+            if (inL != nullptr)
+                outL[i] = inL[i];
+            if (inR != nullptr)
+                outR[i] = inR[i];
+        }
+    }
+    
+
 }
 
 
@@ -149,15 +173,17 @@ void AudioRecorderModule::setBuffersize(int buffersize){
 
 void AudioRecorderModule::startRecording() {
     
+
     if (!recording) {
-        if (sampler != nullptr) {
-            sampler->getSampleBuffer()->clear();
+        if (editor->getSampler() != nullptr) {
+            editor->getSampler()->getSampleBuffer()->clear();
             recordingBuffer->clear();
             recording = true;
-            currentSample = 0;
+            currentRecordingSample = 0;
             numRecordedSamples = 0;
         }
     }
+
     
 }
 
@@ -208,3 +234,27 @@ void AudioRecorderModule::stopRecording() {
     }
 }
 
+AudioRecorderEditor* AudioRecorderModule::getEditor() {
+    return editor;
+}
+
+void AudioRecorderModule::changeListenerCallback (ChangeBroadcaster* source) {
+    
+    if (source == editor) {
+     
+        if (editor->getState() == AudioRecorderPanel::State::RECORDING) {
+            
+        }
+        if (editor->getState() == AudioRecorderPanel::State::PLAYING) {
+            
+        }
+        else if (editor->getState() == AudioRecorderPanel::State::IDLE) {
+            
+        }
+        else if (editor->getState() == AudioRecorderPanel::State::SAVE) {
+            
+        }
+
+    }
+    
+}

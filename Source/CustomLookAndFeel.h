@@ -52,8 +52,8 @@ public:
         setColour(juce::TextEditor::highlightColourId, juce::Colours::orange.darker());
         setColour(juce::TextEditor::highlightedTextColourId, juce::Colours::black);
         setColour(juce::TextEditor::textColourId, juce::Colours::orange.brighter());
-        setColour(juce::TextButton::textColourOffId, juce::Colours::orange.darker());
-        setColour(juce::TextButton::textColourOnId, juce::Colours::black);
+        setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+        setColour(juce::TextButton::textColourOnId, juce::Colours::white);
         setColour(juce::CaretComponent::caretColourId, juce::Colours::orange);
         
         setColour (juce::ScrollBar::thumbColourId,juce::Colours::orange.darker());

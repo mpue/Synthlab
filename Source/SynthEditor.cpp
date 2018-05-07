@@ -32,6 +32,7 @@
 #include "AudioEngine/Sine.h"
 #include "ModuleUtils.h"
 #include "ExtendedFileBrowser.h"
+#include "AudioRecorderModule.h"
 
 class SampleEditor;
 
@@ -673,6 +674,12 @@ void SynthEditor::mouseDoubleClick (const MouseEvent& e)
                     openStepSequencer(ssm);
                 }
             
+                AudioRecorderModule *arm = dynamic_cast<AudioRecorderModule*>(m);
+                
+                if (arm != NULL) {
+                    openRecorder(arm);
+                }
+                
             }
             else {
                 if (m->isSelected() && m->isEditable()) {
@@ -1004,6 +1011,12 @@ void SynthEditor::openSampleEditor(SamplerModule *sm) {
 void SynthEditor::openStepSequencer(StepSequencerModule *ssm) {
     SequenceEditor* se = ssm->getEditor();
     Project::getInstance()->getSupplemental()->addTab("Step sequencer", Colours::darkgrey, se, true);
+    Project::getInstance()->getSupplemental()->setCurrentTabIndex(Project::getInstance()->getSupplemental()->getNumTabs() - 1);
+}
+
+void SynthEditor::openRecorder(AudioRecorderModule *arm) {
+    AudioRecorderEditor* are = arm->getEditor();
+    Project::getInstance()->getSupplemental()->addTab("Audio recorder", Colours::darkgrey, are, true);
     Project::getInstance()->getSupplemental()->setCurrentTabIndex(Project::getInstance()->getSupplemental()->getNumTabs() - 1);
 }
 

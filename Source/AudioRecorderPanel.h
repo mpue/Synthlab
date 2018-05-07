@@ -7,7 +7,7 @@
   the "//[xyz]" and "//[/xyz]" sections will be retained when the file is loaded
   and re-saved.
 
-  Created with Projucer version: 5.3.1
+  Created with Projucer version: 5.2.1
 
   ------------------------------------------------------------------------------
 
@@ -35,6 +35,7 @@
                                                                     //[/Comments]
 */
 class AudioRecorderPanel  : public Component,
+                            public ChangeBroadcaster,
                             public Button::Listener
 {
 public:
@@ -44,14 +45,24 @@ public:
 
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
+    
+    enum State {
+        IDLE,
+        RECORDING,
+        PLAYING,
+        SAVE,
+    };
+    
     //[/UserMethods]
 
     void paint (Graphics& g) override;
     void resized() override;
     void buttonClicked (Button* buttonThatWasClicked) override;
 
-
-
+    State getState();
+    void setState(AudioRecorderPanel::State state);
+    void updateContent(AudioSampleBuffer* buffer, int numSamples);
+    
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
     //[/UserVariables]
@@ -62,7 +73,8 @@ private:
     ScopedPointer<TextButton> playButton;
     ScopedPointer<TextButton> saveButton;
 
-
+    State state = IDLE;
+    int recordedSamples = 0;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioRecorderPanel)
 };

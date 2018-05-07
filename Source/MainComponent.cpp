@@ -645,7 +645,7 @@ void MainComponent::openSettings() {
 bool MainComponent::keyStateChanged(bool isKeyDown, juce::Component *originatingComponent) {
     
     for (std::map<int, int>::iterator it = keyCodeMidiNote.begin();it != keyCodeMidiNote.end();it++) {
-        if (KeyPress::isKeyCurrentlyDown((*it).first)) {
+        if (KeyPress::isKeyCurrentlyDown((*it).first)) { 
             if (!keyStates[(*it).second]) {
                 sendNoteMessage(editor->getModule(),1, (*it).second + 12 * currentOctave);
                 sendGateMessage(editor->getModule(),1, 64,(*it).second + 12 * currentOctave, true);

@@ -9,7 +9,7 @@
 */
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Module.h"
-
+#include "AudioRecorderEditor.h"
 
 #pragma once
 
@@ -27,6 +27,7 @@ public:
         return "Audio";
     }
     
+    virtual void changeListenerCallback (ChangeBroadcaster* source) override;
     virtual void timerCallback() override;
 
     void loadSample(juce::InputStream* is, int sampler);
@@ -41,14 +42,12 @@ public:
     void startRecording();
     void stopRecording();
     
-
+    AudioRecorderEditor* getEditor();
     
 private:
 
-    juce::AudioFormatManager* manager;
-    juce::AudioThumbnailCache* cache = nullptr;
-    juce::AudioThumbnail* thumbnail = nullptr;
-    Sampler* sampler = nullptr;
+
+    AudioRecorderEditor* editor = nullptr;
     
     virtual void setSampleRate(float rate) override;
     virtual void setBuffersize(int buffersize) override;
@@ -57,7 +56,9 @@ private:
 
     bool recording = false;
     
-    int currentSample = 0;
+    int currentRecordingSample = 0;
+    int currentPlaybackSample = 0;
+    
     int numRecordedSamples = 0;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioRecorderModule)

@@ -9,13 +9,32 @@
  */
 
 #include "../JuceLibraryCode/JuceHeader.h"
+#include "AudioRecorderPanel.h"
+#include "AudioEngine/Sampler.h"
 
-class AudioRecorderEditor : public Component {
+class AudioRecorderEditor : public Component, public ChangeListener, public ChangeBroadcaster {
 public:
-    AudioRecorderEditor();
+    AudioRecorderEditor(float sampleRate, int bufferSize, AudioFormatManager* manager);
     ~AudioRecorderEditor();
     void paint(Graphics& g) override;
-    void resized();
+    void resized() override;
+    Sampler* getSampler();
+    void setNumSamples(int samples);
+    AudioSampleBuffer* getBuffer();
+    virtual void changeListenerCallback (ChangeBroadcaster* source) override;
+    AudioRecorderPanel::State getState();
+    void setState(AudioRecorderPanel::State state);
+private:
+    AudioRecorderPanel* recorderPanel = nullptr;
+    float sampleRate;
+    int bufferSize;
+    
+    int numRecordedSamples = 0;
+    
+    juce::AudioFormatManager* manager;
+
+    Sampler* sampler = nullptr;
+    AudioSampleBuffer* recordingBuffer = nullptr;
     
     
 };
