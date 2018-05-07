@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Synth>
+  <Modules>
+    <Module name="Gate" index="71" x="168" y="333" isPrefab="1" prefabId="61"
+            channel="1">
+      <Pins>
+        <Pin type="2" direction="1" index="7101" x="110" y="10"/>
+        <Pin type="1" direction="1" index="7102" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="MIDI Gate input" index="64" x="165" y="292" isPrefab="1"
+            prefabId="54">
+      <Pins/>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Sawtooth" index="74" x="399" y="208" isPrefab="1" prefabId="64"
+            mono="1">
+      <Pins>
+        <Pin type="2" direction="0" index="7401" x="0" y="10"/>
+        <Pin type="2" direction="0" index="7402" x="0" y="30"/>
+        <Pin type="2" direction="0" index="7403" x="0" y="50"/>
+        <Pin type="0" direction="1" index="7404" x="110" y="10"/>
+        <Pin type="2" direction="1" index="7405" x="110" y="30"/>
+        <Pin type="2" direction="0" index="7406" x="0" y="70"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Audio out" index="76" x="628" y="208" isPrefab="1" prefabId="66">
+      <Pins>
+        <Pin type="0" direction="0" index="7601" x="0" y="10"/>
+        <Pin type="0" direction="0" index="7602" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Note" index="73" x="169" y="121" isPrefab="1" prefabId="63">
+      <Pins>
+        <Pin type="0" direction="1" index="7301" x="110" y="10"/>
+        <Pin type="2" direction="1" index="7302" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Osc (mono)" index="154" x="377" y="177" isPrefab="1" prefabId="54">
+      <Pins/>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="MIDI Note" index="1054" x="141" y="85" isPrefab="1" prefabId="54">
+      <Pins/>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections>
+    <Connection source="71" target="74" a="7101" b="7403"/>
+    <Connection source="74" target="76" a="7404" b="7601"/>
+    <Connection source="74" target="76" a="7404" b="7602"/>
+    <Connection source="73" target="74" a="7302" b="7401"/>
+  </Connections>
+</Synth>
