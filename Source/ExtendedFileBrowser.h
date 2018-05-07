@@ -50,7 +50,7 @@ private:
 
 };
 
-class ExtendedFileBrowser : public juce::Component,  public juce::ChangeListener, public juce::Timer {
+class ExtendedFileBrowser : public juce::Component,  public juce::ChangeListener, public juce::Timer, public ChangeBroadcaster {
     
     
 public:
@@ -63,7 +63,7 @@ public:
     void paint (juce::Graphics& g) override;
     void resized() override;
     virtual void changeListenerCallback (juce::ChangeBroadcaster* source) override;
-    
+    File* getSelectedFile();
     void saveState();
     void loadState();
     
@@ -81,6 +81,7 @@ private:
     FileBrowserModel* model = nullptr;
     const juce::File& initialDir;
     const juce::WildcardFileFilter* filter;
+    File* selectedFile;
     juce::TableListBox* table = nullptr;
     juce::Viewport* view = nullptr;
     Sampler* sampler;

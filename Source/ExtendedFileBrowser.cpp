@@ -110,8 +110,11 @@ void ExtendedFileBrowser::mouseDoubleClick(const juce::MouseEvent &event) {
             if (f->isDirectory()) {
                 model->setCurrentDir(f);
             }
+            else {
+                selectedFile = f;
+                sendChangeMessage();
+            }
         }
-        delete f;
     }
     else {
         File* current = new File(model->getCurrentDir());
@@ -264,4 +267,9 @@ void ExtendedFileBrowser::loadState() {
         }
         xml = nullptr;
     }
+}
+
+
+File* ExtendedFileBrowser::getSelectedFile() {
+    return selectedFile;
 }

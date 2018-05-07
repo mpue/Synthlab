@@ -130,6 +130,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     
     propertyView =  new PropertyView();
     editor->addEditorListener(propertyView);
+    propertyView->getBrowser()->addChangeListener(editor);
     
     Project::getInstance()->setPropertyView(propertyView);
     

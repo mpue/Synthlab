@@ -25,6 +25,7 @@ class SynthEditor  : public Component,
                      public ChangeBroadcaster,
                      public AudioModule,
                      public Timer,
+                     public ChangeListener,
                      public DragAndDropTarget,
                      public IEditor
 {
@@ -34,6 +35,8 @@ public:
     SynthEditor ();
     ~SynthEditor();
 
+    virtual void changeListenerCallback (ChangeBroadcaster* source);
+    
     // load and save
     
     void cleanUp();

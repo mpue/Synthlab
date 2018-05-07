@@ -31,6 +31,7 @@
 #include "AudioEngine/Pulse.h"
 #include "AudioEngine/Sine.h"
 #include "ModuleUtils.h"
+#include "ExtendedFileBrowser.h"
 
 class SampleEditor;
 
@@ -874,7 +875,7 @@ void SynthEditor::loadFromString(juce::String in){
 
 void SynthEditor::saveModule(Module* m) {
 
-    FileChooser chooser("Select target file...", File::nonexistent, "*");
+    FileChooser chooser("Select target file...", File::nonexistent, "*.slb");
     
     if (chooser.browseForFileToSave(true)) {
         
@@ -897,7 +898,7 @@ void SynthEditor::saveModule(Module* m) {
 }
 
 Module* SynthEditor::loadModule() {
-    FileChooser chooser("Select module to open", File::nonexistent, "*");
+    FileChooser chooser("Select module to open", File::nonexistent, "*.slb");
     
 	Module* m = nullptr;
     if (chooser.browseForFileToOpen()) {
@@ -931,7 +932,7 @@ void SynthEditor::saveFile() {
     File path = File::getSpecialLocation(File::userApplicationDataDirectory);
     File outputDir = File(path.getFullPathName()+"/structure.xml");
     
-    FileChooser chooser("Select target file...",outputDir, "*");
+    FileChooser chooser("Select target file...",outputDir, "*.slb");
     
     if (chooser.browseForFileToSave(true)) {
         
@@ -952,7 +953,7 @@ void SynthEditor::saveFile() {
         delete v;
     }
 #else
-    FileChooser chooser("Select target file...", File::nonexistent, "*");
+    FileChooser chooser("Select target file...", File::nonexistent, "*.slb");
     
     if (chooser.browseForFileToSave(true)) {
         
@@ -1007,7 +1008,7 @@ void SynthEditor::openStepSequencer(StepSequencerModule *ssm) {
 }
 
 void SynthEditor::openFile() {
-    FileChooser chooser("Select file to open", File::nonexistent, "*");
+    FileChooser chooser("Select file to open", File::nonexistent, "*.slb");
 
     if (chooser.browseForFileToOpen()) {
             
@@ -1375,4 +1376,28 @@ void SynthEditor::saveScreenShot() {
         format.writeImageToStream (image, *fos);
         delete fos;
     }
+}
+
+void SynthEditor::changeListenerCallback(juce::ChangeBroadcaster *source) {
+    
+    ExtendedFileBrowser* efb = dynamic_cast<ExtendedFileBrowser*>(source);
+    
+    if (efb != nullptr) {
+        File* f = efb->getSelectedFile();
+        
+        if (f->getFullPathName().endsWith("slb")) {
+            FileInputStream *fis = new FileInputStream(*f);
+            String data = fis->readEntireStreamAsString();
+            delete fis;
+            delete f;
+            setRunning(false);
+            cleanUp();
+            mixer->removeAllChannels();
+            newFile();
+            loadFromString(data);
+            setRunning(true);
+        }
+
+    }
+    
 }
