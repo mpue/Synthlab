@@ -280,7 +280,7 @@
         <FILE id="RViUJy" name="SelectionModel.h" compile="0" resource="0"
               file="Source/SelectionModel.h"/>
         <GROUP id="{19B8F02D-4185-9D0D-F820-8F1C70EECC53}" name="Components">
-          <FILE id="tEnZwJ" name="AudioRecorderEditor.cpp" compile="1" resource="0"
+          <FILE id="VObwK5" name="AudioRecorderEditor.cpp" compile="1" resource="0"
                 file="Source/AudioRecorderEditor.cpp"/>
           <FILE id="KnI53e" name="AudioRecorderEditor.h" compile="0" resource="0"
                 file="Source/AudioRecorderEditor.h"/>
