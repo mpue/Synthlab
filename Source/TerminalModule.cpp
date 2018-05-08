@@ -64,11 +64,13 @@ void TerminalModule::configurePins(){
     if (direction == TerminalModule::Direction::IN) {
         p1->direction = Pin::Direction::OUT;
         p1->setName("In");
+        //p1->listeners.push_back(this);
         addPin(Pin::Direction::OUT,p1);
     }
     else {
         p1->direction = Pin::Direction::IN;
         p1->setName("Out");
+        // p1->listeners.push_back(this);
         addPin(Pin::Direction::IN,p1);
     }
 
@@ -158,4 +160,8 @@ juce::Array<PropertyComponent*>& TerminalModule::getProperties() {
     properties.add(nameProp);
     properties.add(typeProp);
     return properties;
+}
+
+void TerminalModule::eventReceived(Event *e) {
+    pins.at(0)->sendEvent(e);
 }

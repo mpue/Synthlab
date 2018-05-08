@@ -39,6 +39,8 @@ public:
     virtual juce::Array<juce::PropertyComponent*>& getProperties() override;
     virtual void createProperties() override;
 
+    virtual void eventReceived(Event *e) override;
+    
     virtual void setType(Terminal::Type type) override;
     
 private:

@@ -212,6 +212,7 @@ void ModuleUtils::connectTerminals(Module* m) {
                     Logger::writeToLog("Found terminal "+ String(t->getIndex()));
                     t->getPins().at(0)->setTerminal(m->getPins().at(j));
                     t->getPins().at(0)->setType(m->getPins().at(j)->getType());
+                    m->getPins().at(j)->listeners.push_back(t);
                     t->addChangeListener(m->getPins().at(j));
                 }
             }

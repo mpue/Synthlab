@@ -412,13 +412,15 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
                     const float* auxL = auxChannels.at(k)->getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
                     
                     Mixer::Channel* channel =  mixer->getChannel(Mixer::Channel::Type::AUX, k);
-                    float auxVolume = channel->mute ? 0 : channel->volume;
-                    double auxpan = channel->pan;
-                    
-                    float auxgainLeft = cos((M_PI*(auxpan + 1) / 4));
-                    channel->magnitudeLeft = auxVolume * auxgainLeft * auxChannels.at(k)->getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
-
-                    auxLeftOut += auxL[j] * auxVolume * auxgainLeft;
+                    if (channel != NULL) {
+                        float auxVolume = channel->mute ? 0 : channel->volume;
+                        double auxpan = channel->pan;
+                        
+                        float auxgainLeft = cos((M_PI*(auxpan + 1) / 4));
+                        channel->magnitudeLeft = auxVolume * auxgainLeft * auxChannels.at(k)->getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+                        
+                        auxLeftOut += auxL[j] * auxVolume * auxgainLeft;
+                    }
                     
                 }
                 

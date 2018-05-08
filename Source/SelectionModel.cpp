@@ -45,9 +45,9 @@ void SelectionModel::checkForPinSelection(juce::Point<int> position) {
 
 Module* SelectionModel::getSelectedModule() {
     if (root != NULL && root != nullptr) {
-        for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
-            if ((*it)->isSelected()) {
-                return (*it);
+        for (int i = 0; i< root->getModules()->size();i++) {
+            if (root->getModules()->at(i) != NULL && root->getModules()->at(i)->isSelected()) {
+                return root->getModules()->at(i);
             }
         }
     }

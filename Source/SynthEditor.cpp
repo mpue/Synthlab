@@ -238,9 +238,13 @@ void SynthEditor::mouseDown (const MouseEvent& e)
     }
 
     repaint();
+    
+    if (root->getModules()->size() > 0) {
+        sendChangeMessage();
+        notifyListeners();
+    }
+    
 
-    sendChangeMessage();
-    notifyListeners();
 }
 
 void SynthEditor::showContextMenu(Point<int> position) {
@@ -464,6 +468,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
             running = false;
             Module* m = loadModule();
             root->getModules()->push_back(m);
+            addAndMakeVisible(m);
             running = true;
         }
         else if (result == 6) {
@@ -497,6 +502,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
         delete prefabMenu;
     }
     
+    m->setLookAndFeel(nullptr);
     delete m;
 
 }
@@ -1076,10 +1082,13 @@ void SynthEditor::configureAudioModule(Module *m, ChangeBroadcaster* broadcaster
     AudioIn* in;
     
     if ((in = dynamic_cast<AudioIn*>(m)) != NULL) {
-        inputChannels.push_back(in);
-        String channelName = am->getInputChannelNames().getReference(static_cast<int>(getInputChannels().size()) - 1);
-        int channelIndex = addChannel(channelName, Mixer::Channel::Type::IN);
-        in->setChannelIndex(channelIndex);
+        if (am->getInputChannelNames().size() > 0) {
+            inputChannels.push_back(in);
+            String channelName = am->getInputChannelNames().getReference(static_cast<int>(getInputChannels().size()) - 1);
+            int channelIndex = addChannel(channelName, Mixer::Channel::Type::IN);
+            in->setChannelIndex(channelIndex);
+        }
+
     }
     
     AuxOut* aux;
@@ -1365,8 +1374,12 @@ void SynthEditor::addEditorListener(EditorListener *listener) {
 }
 
 void SynthEditor::notifyListeners() {
-    for (int i = 0;i < listener.size();i++) {
-        listener.at(i)->selectionChanged(this->selectionModel.getSelectedModule());
+    
+    if (this->selectionModel.getSelectedModule() != nullptr) {
+    
+        for (int i = 0;i < listener.size();i++) {
+            listener.at(i)->selectionChanged(this->selectionModel.getSelectedModule());
+        }
     }
 }
 
