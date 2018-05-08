@@ -458,9 +458,37 @@ void Module::process() {
 
         if (pins.at(i)->getTerminal() != nullptr) {
             if (pins.at(i)->getType() == Terminal::Type::VALUE) {
-                if (pins.at(i)->getConnections().size() >= 1) {
-                    pins.at(i)->getTerminal()->setValue(pins.at(i)->getConnections().at(0)->getValue());
+                
+                if (pins.at(i)->getTerminal()->getDirection() == Pin::Direction::OUT) {
+                    
+                    if (pins.at(i)->getConnections().size() >= 1) {
+                        pins.at(i)->getTerminal()->setValue(pins.at(i)->getConnections().at(0)->getValue());
+                        
+                        for (int j = 0; j < 128;j++) {
+                            pins.at(i)->getTerminal()->data[j] = pins.at(i)->getConnections().at(0)->data[j];
+                            pins.at(i)->getTerminal()->dataEnabled[j] = pins.at(i)->getConnections().at(0)->dataEnabled[j];
+                        }
+                        pins.at(i)->getTerminal()->setNote(pins.at(i)->getConnections().at(0)->getNote());
+                    }
+                    
+
                 }
+                else {
+                
+                    pins.at(i)->setValue(pins.at(i)->getTerminal()->getValue());
+                    
+                    if (pins.at(i)->getConnections().size() >= 1 && pins.at(i)->getTerminal()->getConnections().size() >= 1) {
+                        
+                        for (int j = 0; j < 128;j++) {
+                            pins.at(i)->getConnections().at(0)->data[j] = pins.at(i)->getTerminal()->getConnections().at(0)->data[j];
+                            pins.at(i)->getConnections().at(0)->dataEnabled[j] = pins.at(i)->getTerminal()->getConnections().at(0)->dataEnabled[j];
+                        }
+                        
+                    }
+                    pins.at(i)->setNote(pins.at(i)->getTerminal()->getNote());
+                    
+                }
+
             }
         }
     }
