@@ -60,7 +60,9 @@ void AudioThumbnailComponent::paint (Graphics& g)
         g.drawLine(startx, 0, startx, getHeight());
         g.drawLine(endx, 0, endx, getHeight());
     }
-
+    
+    g.setColour(juce::Colours::orange);
+    g.drawRect(0,0,getWidth(), getHeight());
 }
 
 void AudioThumbnailComponent::resized()

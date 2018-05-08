@@ -13,6 +13,7 @@
 #include "AudioEngine/Sampler.h"
 
 class AudioRecorderEditor : public Component, public ChangeListener, public ChangeBroadcaster {
+
 public:
     AudioRecorderEditor(float sampleRate, int bufferSize, AudioFormatManager* manager);
     ~AudioRecorderEditor();
@@ -25,15 +26,20 @@ public:
     AudioRecorderPanel::State getState();
     void setState(AudioRecorderPanel::State state);
     void saveRecording();
+    void setCurrentTime(String time);
+    void setMagnitude(int channel, float value);
+    bool isMonitoring();
+    float getGain();
 private:
+    
     AudioRecorderPanel* recorderPanel = nullptr;
+    
     float sampleRate;
     int bufferSize;
-    
     int numRecordedSamples = 0;
+    bool monitoring = false;
     
     juce::AudioFormatManager* manager;
-
     Sampler* sampler = nullptr;
     AudioSampleBuffer* recordingBuffer = nullptr;
     

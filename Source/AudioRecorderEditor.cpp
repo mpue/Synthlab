@@ -11,6 +11,8 @@
  *   Descr: 
  */
 AudioRecorderEditor::AudioRecorderEditor(float sampleRate, int bufferSize , AudioFormatManager* manager) {
+    
+    setSize(1000, 200);
     this->sampleRate = sampleRate;
     this->bufferSize = bufferSize;
     recordingBuffer = new AudioSampleBuffer(2,10204*1024);
@@ -19,6 +21,7 @@ AudioRecorderEditor::AudioRecorderEditor(float sampleRate, int bufferSize , Audi
     this->recorderPanel = new AudioRecorderPanel(sampleRate, bufferSize);
     addAndMakeVisible(recorderPanel);
     this->recorderPanel->addChangeListener(this);
+
 }
 
 
@@ -40,9 +43,15 @@ AudioRecorderEditor::~AudioRecorderEditor() {
  *   Descr: 
  */
 void AudioRecorderEditor::resized() {
+    
+    
+
+    //setSize(proportionOfWidth (1.0000f),proportionOfHeight(1.0000f));
+    /*
     if (getParentComponent() != nullptr) {
         setSize(getParentWidth(), getParentHeight());
     }
+     */
 }
 
 void AudioRecorderEditor::paint(juce::Graphics& g) {
@@ -74,6 +83,10 @@ void AudioRecorderEditor::changeListenerCallback(juce::ChangeBroadcaster *source
         else if (panel->getState() == AudioRecorderPanel::State::SAVE) {
             panel->setState(AudioRecorderPanel::State::IDLE);
             saveRecording();
+            sendChangeMessage();
+        }
+        
+        if (panel->isMonitoring()) {
             sendChangeMessage();
         }
     }
@@ -118,4 +131,21 @@ AudioSampleBuffer* AudioRecorderEditor::getBuffer() {
 
 void AudioRecorderEditor::setNumSamples(int samples) {
     this->numRecordedSamples = samples;
+}
+
+void AudioRecorderEditor::setCurrentTime(juce::String time) {
+    this->recorderPanel->setCurrentTime(time);
+    recorderPanel->updateContent(getBuffer(), static_cast<int>(numRecordedSamples));
+}
+
+void AudioRecorderEditor::setMagnitude(int channel, float value) {
+    recorderPanel->setMagnitude(channel, value);
+}
+
+bool AudioRecorderEditor::isMonitoring() {
+    return recorderPanel->isMonitoring();
+}
+
+float AudioRecorderEditor::getGain() {
+    return recorderPanel->getGain();
 }

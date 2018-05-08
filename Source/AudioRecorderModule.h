@@ -13,8 +13,8 @@
 
 #pragma once
 
-class AudioRecorderModule : public Module, public juce::Timer
-{
+class AudioRecorderModule : public Module, public juce::Timer {
+    
 public:
     AudioRecorderModule(double sampleRate, int buffersize, juce::AudioFormatManager* manager);
     ~AudioRecorderModule();
@@ -42,6 +42,7 @@ public:
     void startRecording();
     void stopRecording();
 
+    void updateRecordingTime();
     
     AudioRecorderEditor* getEditor();
     
@@ -52,15 +53,18 @@ private:
     
     virtual void setSampleRate(float rate) override;
     virtual void setBuffersize(int buffersize) override;
-    
-    juce::AudioSampleBuffer* recordingBuffer = nullptr;
 
     bool recording = false;
+    
+    float magnitudeL = 0;
+    float magnitudeR = 0;
     
     int currentRecordingSample = 0;
     int currentPlaybackSample = 0;
     
     int numRecordedSamples = 0;
+    int tick = 0;
+    int seconds;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioRecorderModule)
 };

@@ -98,7 +98,15 @@ void AudioRecorderModule::paint(juce::Graphics &g) {
 
 
 void AudioRecorderModule::timerCallback() {
-
+    if (tick % 50 == 0) {
+        if (recording) {
+            updateRecordingTime();
+            seconds++;
+        }
+    }
+    tick++;
+    editor->setMagnitude(0, magnitudeL);
+    editor->setMagnitude(1, magnitudeR);
 }
 
 void AudioRecorderModule::process() {
@@ -123,17 +131,25 @@ void AudioRecorderModule::process() {
         
         for (int i = 0; i < buffersize;i++) {
         
-            if (inL != nullptr)
-                editor->getBuffer()->setSample(0, currentRecordingSample,inL[i]);
+            if (inL != nullptr) {
+                editor->getBuffer()->setSample(0, currentRecordingSample,inL[i] * editor->getGain());
+            }
             
-            if (inR != nullptr)
-                editor->getBuffer()->setSample(1, currentRecordingSample,inR[i]);
+            if (inR != nullptr) {
+                editor->getBuffer()->setSample(1, currentRecordingSample,inR[i] * editor->getGain());
+            }
         
             currentRecordingSample = (currentRecordingSample + 1);
             numRecordedSamples++;
             
             editor->setNumSamples(numRecordedSamples);
         }
+        if (currentRecordingSample > buffersize) {
+            magnitudeL = editor->getBuffer()->getMagnitude(0, currentRecordingSample - buffersize, buffersize) * editor->getGain();
+            magnitudeR = editor->getBuffer()->getMagnitude(1, currentRecordingSample - buffersize, buffersize) * editor->getGain();
+        }
+
+        
     }
     else if (editor->getState() == AudioRecorderPanel::State::PLAYING) {
         
@@ -148,10 +164,15 @@ void AudioRecorderModule::process() {
     }
     else {
         for (int i = 0; i < buffersize;i++) {
-            if (inL != nullptr)
+            if (inL != nullptr) {
                 outL[i] = inL[i];
-            if (inR != nullptr)
+                magnitudeL =  getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, buffersize) * editor->getGain();
+            }
+            
+            if (inR != nullptr) {
                 outR[i] = inR[i];
+                 magnitudeR = getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, buffersize) * editor->getGain();
+            }
         }
     }
     
@@ -173,10 +194,13 @@ void AudioRecorderModule::startRecording() {
     if (!recording) {
         if (editor->getSampler() != nullptr) {
             editor->getSampler()->getSampleBuffer()->clear();
-            recordingBuffer->clear();
             recording = true;
+            if (!isTimerRunning()) {
+                startTimer(20);
+            }
             currentRecordingSample = 0;
             numRecordedSamples = 0;
+            seconds = 0;
         }
     }
 
@@ -187,46 +211,6 @@ void AudioRecorderModule::startRecording() {
 void AudioRecorderModule::stopRecording() {
     if (recording) {
         recording = false;
-        /*
-        Logger::writeToLog("Recorded "+String(numRecordedSamples)+" samples.");
-        
-        sampler[currentSampler]->setDirty(true);
-        
-        WavAudioFormat* wavFormat = new WavAudioFormat();
-        
-        String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
-        File appDir = File(userHome+"/.Synthlab");
-        
-        File dataDir = File(appDir);
-        
-        File outputFile = File(dataDir.getFullPathName()+"/"+String(Time::getMillisecondCounter())+".wav");
-        setSamplePath(outputFile.getFullPathName(),currentSampler);
-        
-        Logger::writeToLog("wrote file "+outputFile.getFullPathName());
-        
-        FileOutputStream* outputTo = outputFile.createOutputStream();
-        
-        AudioFormatWriter* writer = wavFormat->createWriterFor(outputTo, sampleRate, 2, 16,NULL, 0);
-        writer->writeFromAudioSampleBuffer(*recordingBuffer, 0,numRecordedSamples);
-        delete writer;
-        delete wavFormat;
-        
-        this->sampler[currentSampler]->loadSample(outputFile);
-        
-        
-        if (sampler[currentSampler]->hasSample()) {
-            selectSample(currentSampler);
-            
-            thumbnail->addBlock(0, *recordingBuffer, 0, numRecordedSamples);
-            std::function<void(void)> changeLambda =
-            [=]() {  repaint(); };
-            juce::MessageManager::callAsync(changeLambda);
-            
-        }
-        editor->getPanel()->stopRecording();
-        
-        
-        */
     }
 }
 
@@ -239,18 +223,45 @@ void AudioRecorderModule::changeListenerCallback (ChangeBroadcaster* source) {
     if (source == editor) {
      
         if (editor->getState() == AudioRecorderPanel::State::RECORDING) {
-            
+            startRecording();
         }
         if (editor->getState() == AudioRecorderPanel::State::PLAYING) {
             
         }
         else if (editor->getState() == AudioRecorderPanel::State::IDLE) {
-            
+            stopRecording();
         }
         else if (editor->getState() == AudioRecorderPanel::State::SAVE) {
             
         }
-
+        if (editor->isMonitoring()) {
+            startTimer(20);
+        }
+        else {
+            if (!recording) {
+                stopTimer();
+            }
+        }
     }
+    
+}
+
+
+void AudioRecorderModule::updateRecordingTime() {
+    
+    String time;
+    
+    int _minutes = seconds / 60;
+    // int _seconds = seconds % 60;
+    
+    time = String(_minutes)+":";
+    
+    if (seconds < 10) {
+        time += "0";
+    }
+    
+    time += String(seconds);
+    editor->setCurrentTime(time);
+    
     
 }

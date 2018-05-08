@@ -36,7 +36,7 @@ public:
     SynthEditor ();
     ~SynthEditor();
 
-    virtual void changeListenerCallback (ChangeBroadcaster* source);
+    virtual void changeListenerCallback (ChangeBroadcaster* source) override;
     
     // load and save
     
