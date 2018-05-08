@@ -964,7 +964,7 @@ void SynthEditor::saveFile() {
     
     if (chooser.browseForFileToSave(true)) {
         
-        ValueTree* v = new ValueTree("Synth");
+        ValueTree* v = new ValueTree("Module");
         
         ModuleUtils::saveStructure(root->getModules(),root->getConnections(), v);
         

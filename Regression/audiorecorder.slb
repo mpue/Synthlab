@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Synth>
+  <Modules>
+    <Module name="Audio in" index="86" x="220" y="216" isPrefab="1" prefabId="76">
+      <Pins>
+        <Pin type="0" direction="1" index="8601" x="110" y="10"/>
+        <Pin type="0" direction="1" index="8602" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Recorder" index="97" x="462" y="219" isPrefab="1" prefabId="87">
+      <Pins>
+        <Pin type="0" direction="0" index="9701" x="0" y="10"/>
+        <Pin type="0" direction="0" index="9702" x="0" y="30"/>
+        <Pin type="0" direction="1" index="9703" x="110" y="10"/>
+        <Pin type="0" direction="1" index="9704" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Audio out" index="76" x="686" y="224" isPrefab="1" prefabId="66">
+      <Pins>
+        <Pin type="0" direction="0" index="7601" x="0" y="10"/>
+        <Pin type="0" direction="0" index="7602" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections>
+    <Connection source="86" target="97" a="8601" b="9702"/>
+    <Connection source="86" target="97" a="8601" b="9701"/>
+    <Connection source="97" target="76" a="9703" b="7601"/>
+    <Connection source="97" target="76" a="9704" b="7602"/>
+  </Connections>
+</Synth>

@@ -21,6 +21,7 @@ AudioRecorderEditor::AudioRecorderEditor(float sampleRate, int bufferSize , Audi
     this->recorderPanel = new AudioRecorderPanel(sampleRate, bufferSize);
     addAndMakeVisible(recorderPanel);
     this->recorderPanel->addChangeListener(this);
+    recorderPanel->setTopLeftPosition(0,8);
 
 }
 

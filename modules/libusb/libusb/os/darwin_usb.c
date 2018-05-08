@@ -390,7 +390,7 @@ static void *darwin_event_thread_main (void *arg0) {
      and crash reports. */
   pthread_setname_np ("org.libusb.device-hotplug");
 #endif
-
+#define OBJC_SILENCE_GC_DEPRECATIONS 1
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 1060 && MAC_OS_X_VERSION_MIN_REQUIRED < 101200
   /* Tell the Objective-C garbage collector about this thread.
      This is required because, unlike NSThreads, pthreads are

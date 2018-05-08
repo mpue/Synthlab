@@ -90,6 +90,8 @@ private:
     ScopedPointer<Slider> vuSliderRight;
     ScopedPointer<ToggleButton> monitorButton;
     ScopedPointer<Slider> gainSlider;
+    ScopedPointer<Label> gainLabel;
+    ScopedPointer<Label> timeLabel2;
 
 
     //==============================================================================

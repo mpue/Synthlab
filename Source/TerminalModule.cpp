@@ -95,6 +95,7 @@ void TerminalModule::setType(TerminalModule::Type type) {
 }
 
 void TerminalModule::process() {
+    Module::process();
     for (int i = 0; i < buffersize;i++) {
         if (getType() == Terminal::Type::AUDIO){
             if (direction == Terminal::Direction::OUT){

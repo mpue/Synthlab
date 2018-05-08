@@ -149,11 +149,17 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
         
         m = PrefabFactory::getInstance()->getPrefab(mod.getProperty("prefabId").toString().getIntValue(), sampleRate, bufferSize);
         broadcaster->addChangeListener(m);
-        
+        m->setIndex(mod.getProperty("index").toString().getLargeIntValue());
         LabelModule* label = dynamic_cast<LabelModule*>(m);
         
         if (label != nullptr) {
             label->setName(mod.getProperty("name"));
+        }
+        ValueTree pins = mod.getChildWithName("Pins");
+        
+        for (int j = 0; j < pins.getNumChildren();j++) {
+            ValueTree pin = pins.getChild(j);
+            m->getPins().at(j)->index = pin.getProperty("index").toString().getLargeIntValue();
         }
     }
     else {
@@ -485,6 +491,7 @@ void ModuleUtils::updateIndices(juce::ValueTree &v, int offset) {
          ValueTree child = v.getChild(i);
          updateIndices(child, offset);
       }
+      
 }
 
 Module* ModuleUtils::createCopy(Module *original, ChangeBroadcaster* broadcaster) {
@@ -495,13 +502,22 @@ Module* ModuleUtils::createCopy(Module *original, ChangeBroadcaster* broadcaster
     m = new Module(original->getName());
     saveStructure(original->getModules(),original->getConnections(), &cloneTree);
     savePins(original, cloneTree);
+        
+    
+    
     Logger::writeToLog(cloneTree.toXmlString());
-    updateIndices(cloneTree, 1);
+    updateIndices(cloneTree, Time::getMillisecondCounter());
     Logger::writeToLog(cloneTree.toXmlString());
     loadPins(m, cloneTree);
     loadStructure(m->getModules(), m->getConnections(),&cloneTree, broadcaster);
+    /*
     ValueTree cons = cloneTree.getChildWithName("Connections");
     loadConnections(cons,m->getModules(), m->getConnections());
+     */
+    m->resized();
+    
+    ModuleUtils::connectTerminals(m);
+    
     return m;
 }
 
