@@ -25,7 +25,7 @@ private:
 
     juce::DropShadow* shadow = nullptr;
     juce::DropShadower* shadower = nullptr;
-    ModuleBrowserTable* table = nullptr;
+    juce::ScopedPointer<ModuleBrowserTable> table = nullptr;
 
     juce::ScopedPointer<juce::Label> label;
     juce::ScopedPointer<juce::TextEditor> searchText;

@@ -53,10 +53,10 @@ ModuleBrowser::~ModuleBrowser()
 {
     label = nullptr;
     searchText = nullptr;
-
+    table = nullptr;
     delete shadower;
     delete shadow;
-    delete table;
+
 
 }
 

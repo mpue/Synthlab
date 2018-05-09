@@ -208,6 +208,13 @@ MainComponent::~MainComponent()
     MenuBarModel::setMacMainMenu(nullptr);
 #endif
 
+    if(moduleBrowser != nullptr) {
+        if (moduleBrowser->isVisible()) {
+            moduleBrowser->setVisible(false);
+        }
+        delete moduleBrowser;
+    }
+    
     delete tab;
     delete view;
     delete propertyView;
@@ -224,9 +231,6 @@ MainComponent::~MainComponent()
         delete defaultSampler;
     }
     
-    if(moduleBrowser != nullptr) {
-        delete moduleBrowser;
-    }
 
     PrefabFactory::getInstance()->destroy();
     Project::getInstance()->destroy();
