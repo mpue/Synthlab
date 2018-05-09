@@ -15,6 +15,7 @@ AddConnectionAction::AddConnectionAction(SynthEditor* editor, Module* module) {
 
 bool AddConnectionAction::perform() {
 
+    Logger::writeToLog("Adding connection.");
     
     // find the selected input of the source module
     for (int j = 0; j < source->pins.size(); j++) {

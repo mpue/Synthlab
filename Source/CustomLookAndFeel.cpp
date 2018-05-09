@@ -120,7 +120,15 @@ void CustomLookAndFeel::drawRotarySlider    (    Graphics &     g,
     g.setColour(Colours::darkorange);
     {
         Path filledArc;
-        filledArc.addPieSegment (rx+1, ry+1, rw-0.5, rw-0.5, rotaryStartAngle, angle, thickness);
+
+        float dist = angle - rotaryStartAngle;
+        
+        for (float a = rotaryStartAngle; a < dist + rotaryStartAngle;a+= 0.15) {
+            filledArc.addPieSegment (rx+1, ry+1, rw-0.5, rw-0.5, a, a+0.1, thickness);
+        }
+        
+        // filledArc.addPieSegment (rx+1, ry+1, rw-0.5, rw-0.5, rotaryStartAngle, angle, thickness);
+        
         g.fillPath (filledArc);
     }
     
