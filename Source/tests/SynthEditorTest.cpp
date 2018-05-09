@@ -32,7 +32,7 @@ using juce::JUCEApplication;
 
 #include <gtest.h>
 
-TEST(SynthEditorTest, load)
+TEST(SynthEditorTest, DISABLED_load)
 {
     ScopedPointer<MainComponent> mc = new MainComponent();
     ASSERT_NE(nullptr, AudioManager::getInstance()->getDeviceManager());

@@ -1,31 +1,32 @@
 /*
-  ==============================================================================
+ ==============================================================================
+ 
+ MultiplyModuleTest.cpp
+ Created: 9 May 2018 4:40:52pm
+ Author:  Matthias Pueski
+ 
+ ==============================================================================
+ */
 
-    AdderModuleTest.cpp
-    Created: 5 May 2018 4:40:52pm
-    Author:  Matthias Pueski
-
-  ==============================================================================
-*/
 
 #include <gtest.h>
 #include "../Constant.h"
 #include "../Connection.h"
-#include "../AddValueModule.h"
+#include "../MultiplyModule.h"
 #include "../ModuleUtils.h"
 
-TEST(AdderModule, addValues) {
+TEST(MultiplyModuleTest, multiplyalues) {
     
     Constant* c1 = new Constant();
     c1->configurePins();
-    c1->setValue(12);
+    c1->setValue(10);
     
     Constant* c2 = new Constant();
     c2->configurePins();
     c2->setValue(121);
     
-    AddValueModule* m = new AddValueModule();
-
+    MultiplyModule* m = new MultiplyModule();
+    
     m->configurePins();
     
     ASSERT_TRUE(ModuleUtils::connectModules(c1, m, 0));
@@ -33,7 +34,8 @@ TEST(AdderModule, addValues) {
     
     m->process();
     
-    ASSERT_EQ(133, m->getPins().at(2)->getValue());
+    ASSERT_EQ(1210, m->getPins().at(2)->getValue());
+    
     delete c1;
     delete c2;
     delete m;

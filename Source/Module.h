@@ -89,6 +89,8 @@ public:
     std::vector<Connection*>* getConnections();
     std::vector<Module*>* getModules();
     virtual std::vector<Pin*>& getPins();
+    
+    virtual Pin* getValueOutputPin();
 
     void setConnections(std::vector<Connection*>* connections);
     void textEditorReturnKeyPressed(juce::TextEditor &) override;

@@ -374,6 +374,21 @@ std::vector<Pin*>& Module::getPins() {
     return pins;
 }
 
+Pin* Module::getValueOutputPin()
+{
+    for (int i = 0; i < pins.size();i++)
+    {
+        Pin* pin = pins.at(i);
+        
+        if(Terminal::VALUE == pin->getType() && Terminal::Direction::OUT == pin->getDirection() )
+        {
+            return pin;
+        }
+    }
+    
+    return nullptr;
+}
+
 void Module::setSelected(bool selected) {
     this->selected = selected;
 }

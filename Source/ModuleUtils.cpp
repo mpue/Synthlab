@@ -690,3 +690,71 @@ void ModuleUtils::removeModule(Module *root,Module* module,MixerPanel* mixer, Ch
     
     
 }
+
+bool ModuleUtils::connectModules(Module* source, Module* target, int pin) {
+    
+    Pin* output = nullptr;
+    Terminal::Type inputType = target->getPins().at(pin)->getType();
+    
+    switch (inputType) {
+        case Terminal::VALUE:
+            return connectModuleValues(source, target, pin);
+            break;
+        case Terminal::EVENT:
+            return connectModuleEvents(source, target, pin);
+            break;
+        case Terminal::AUDIO:
+            return connectModuleAutio(source, target, pin);
+            break;
+            
+        default:
+            return false;
+            break;
+    }
+    return false;
+}
+
+bool ModuleUtils::connectModuleValues(Module* source, Module* target, int inputPin)
+{
+    if(Terminal::Direction::IN != target->getPins().at(inputPin)->getDirection())
+    {
+        return false;
+    }
+    
+    Pin* sourePin = source->getValueOutputPin();
+    
+    if(nullptr != sourePin)
+    {
+        target->getPins().at(inputPin)->getConnections().push_back(sourePin);
+        return true;
+    }
+        
+    return false;
+}
+
+bool ModuleUtils::connectModuleAutio(Module* source, Module* target, int pin)
+{
+    return false;
+}
+
+bool ModuleUtils::connectModuleEvents(Module* source, Module* target, int pin)
+{
+    Pin* subscriber = target->getPins().at(pin);
+    if(Terminal::Direction::IN != subscriber->getDirection())
+    {
+        return false;
+    }
+    
+    for (int i = 0; i < source->getPins().size();i++)
+    {
+        Pin* publisher = source->getPins().at(i);
+        
+        if(Terminal::EVENT == publisher->getType() && Terminal::Direction::OUT == publisher->getDirection() )
+        {
+            publisher->getConnections().push_back(subscriber);
+            return true;
+        }
+    }
+    
+    return false;
+}

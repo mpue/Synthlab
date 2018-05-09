@@ -11,6 +11,7 @@
 #include <gtest.h>
 #include "../Constant.h"
 #include "../InverterModule.h"
+#include "../ModuleUtils.h"
 
 // This test checks the inverter module (Category maths), we simply connect two Constant modules
 // set the according values and check the output.
@@ -31,7 +32,7 @@ TEST(InverterModule, invertValue) {
     m->configurePins();
     
     // connects pin 0 of the constant C1 with pin 0 of the module
-    m->getPins().at(0)->getConnections().push_back(c1->getPins().at(0));
+    ASSERT_TRUE(ModuleUtils::connectModules(c1, m, 0));
     
     // we need to call the process method in order to be able to retrieve a result
     // this is usually called repeatedly by the audio callback, so we have to teke care

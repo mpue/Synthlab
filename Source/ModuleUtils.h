@@ -106,4 +106,14 @@ public:
     static void loadPins(Module* m,ValueTree& mod);
     
     static void removeModule(Module *root,Module* module,MixerPanel* mixer, ChangeBroadcaster* broadcaster);
+    
+    static bool connectModules(Module* source, Module* target, int pin);
+    
+private:
+    static bool connectModuleValues(Module* source, Module* target, int pin);
+    
+    static bool connectModuleAutio(Module* source, Module* target, int pin);
+    
+    static bool connectModuleEvents(Module* source, Module* target, int pin);
+    
 };
