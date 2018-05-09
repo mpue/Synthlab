@@ -10,6 +10,7 @@
 #include "MidiGate.h"
 #include "MidiOut.h"
 #include "MidiNote.h"
+#include "PadModule.h"
 #include "SawtoothModule.h"
 #include "NoiseModule.h"
 #include "AudioOut.h"
@@ -81,6 +82,10 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     else if (prefabs[id].getName() == "Midi note") {
         m = new MidiNote();
         m->setName("Note");
+    }
+    else if (prefabs[id].getName() == "Pad") {
+        m = new PadModule();
+        m->setName("Pad");
     }
     else if (prefabs[id].getName() == "Sawtooth") {
         Image* img = new Image(prefabImages[id]);

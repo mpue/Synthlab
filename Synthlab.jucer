@@ -369,6 +369,8 @@
                 file="Source/ToolbarComboBox.h"/>
         </GROUP>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
+          <FILE id="hcW7IT" name="PadModule.cpp" compile="1" resource="0" file="Source/PadModule.cpp"/>
+          <FILE id="gx1wqg" name="PadModule.h" compile="0" resource="0" file="Source/PadModule.h"/>
           <FILE id="ueUtc4" name="AudioRecorderModule.cpp" compile="1" resource="0"
                 file="Source/AudioRecorderModule.cpp"/>
           <FILE id="afKHij" name="AudioRecorderModule.h" compile="0" resource="0"
