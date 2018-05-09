@@ -86,6 +86,10 @@ public:
         return propertiesPanel;
     }
     
+    SamplerModule* getModule() {
+        return sampleModule;
+    }
+    
 private:
     juce::MidiKeyboardState state;
     juce::MidiKeyboardComponent::Orientation orientation = juce::MidiKeyboardComponent::Orientation::horizontalKeyboard;

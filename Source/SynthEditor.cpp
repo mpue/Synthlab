@@ -993,6 +993,26 @@ void SynthEditor::saveFile() {
 
 void SynthEditor::openEditor(Module *m) {
     
+    for (int i = 0; i < tab->getNumTabs();i++) {
+        
+        Viewport* view = dynamic_cast<Viewport*>(tab->getTabContentComponent(i));
+        
+        if (view != nullptr) {
+            
+            SynthEditor* editor = dynamic_cast<SynthEditor*>(view->getViewedComponent());
+            
+            if (editor != nullptr) {
+                if (editor->getModule() != nullptr && editor->getModule() == m) {
+                    tab->setCurrentTabIndex(i);
+                    return;
+                }
+            }
+           
+
+        }
+        
+    }
+    
     SynthEditor* editor = new SynthEditor(_sampleRate, bufferSize);
     Viewport* editorView = new Viewport();
     editorView->setSize(500,200);
@@ -1002,6 +1022,7 @@ void SynthEditor::openEditor(Module *m) {
     editorView->setWantsKeyboardFocus(false);
     editorView->setMouseClickGrabsKeyboardFocus(false);
     editor->setModule(m, false);
+    editor->setIndex(static_cast<int>(m->getIndex()));
     editor->setTab(tab);
     editor->addEditorListener(Project::getInstance()->getPropertyView());
     tab->addTab(m->getName(), Colours::darkgrey, editorView, false);
@@ -1011,7 +1032,23 @@ void SynthEditor::openEditor(Module *m) {
 }
 
 void SynthEditor::openSampleEditor(SamplerModule *sm) {
-    Project::getInstance()->getSupplemental()->addTab("Sample editor", Colours::darkgrey, sm->getEditor(), true);
+    
+    MainTabbedComponent* tab = Project::getInstance()->getSupplemental();
+    
+    for (int i = 0; i < tab->getNumTabs();i++) {
+        
+        SampleEditor* editor = dynamic_cast<SampleEditor*>(tab->getTabContentComponent(i));
+        
+        if (editor != nullptr) {
+            if (editor != nullptr && editor->getModule() == sm) {
+                tab->setCurrentTabIndex(i);
+                return;
+            }
+        }
+        
+    }
+    
+    Project::getInstance()->getSupplemental()->addTab("Sample editor", Colours::darkgrey, sm->getEditor(), false);
     Project::getInstance()->getSupplemental()->setCurrentTabIndex(Project::getInstance()->getSupplemental()->getNumTabs() - 1);
 #ifdef USE_PUSH
     sm->updatePush2Pads();
@@ -1394,6 +1431,14 @@ bool SynthEditor::isDirty() {
 
 void SynthEditor::setDirty(bool dirty) {
     this->dirty = dirty;
+}
+
+int SynthEditor::getIndex() {
+    return index;
+}
+
+void SynthEditor::setIndex(int index) {
+    this->index = index;
 }
 
 void SynthEditor::saveScreenShot() {

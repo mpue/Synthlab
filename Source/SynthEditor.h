@@ -95,6 +95,9 @@ public:
 
     // member access
     
+    int getIndex();
+    void setIndex(int index);
+    
     void setTab(TabbedComponent* t);
     void setModule(Module * m, bool deleteWhenRemoved);
     Module* getModule();
@@ -188,6 +191,8 @@ private:
     MixerPanel* mixer = nullptr;
     
     bool deleteModuleWhenRemoved = true;
+    
+    int index = 0;
     
     Path linePath;
     Point<int> p1;

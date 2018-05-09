@@ -78,6 +78,8 @@ SamplerModule::~SamplerModule()
         }
     }
     
+    delete editor;
+    
 }
 
 void SamplerModule::loadSample(juce::InputStream *is, int samplerIndex) {
