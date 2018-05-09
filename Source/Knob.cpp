@@ -23,9 +23,9 @@ using juce::BooleanPropertyComponent;
 Knob::Knob()
 {
    
-    setSize(80,80);
+    setSize(90,90);
     nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(10,58);
+    nameLabel->setTopLeftPosition(10,70);
     
     
     slider = new Slider ("knob");
@@ -97,12 +97,51 @@ void Knob::configurePins(){
     addPin(Pin::Direction::OUT,p1);
 
 }
-/*
+
 void Knob::paint(juce::Graphics &g) {
-    // Module::paint(g);
+    // Module::paint(g);    for (int i = 0; i < pins.size();i++) {
+    
+    if (pins.at(0)->isSelected()) {
+        g.setColour(juce::Colours::white);
+    }
+    else {
+        
+        if(pins.at(0)->getType() == Pin::Type::AUDIO) {
+            g.setColour(juce::Colours::orange);
+        }
+        else if (pins.at(0)->getType() == Pin::Type::VALUE) {
+            g.setColour(juce::Colours::yellow);
+        }
+        else {
+            g.setColour(juce::Colours::lightblue);
+        }
+        
+    }
+    
+    g.setFont(10);
+    
+    if (pins.at(0)->direction == Pin::Direction::IN) {
+        //g.fillRect(pins.at(i)->x,pins.at(i)->y, 5, 10);
+        g.drawEllipse(pins.at(0)->x,pins.at(0)->y, 10, 10,1);
+        g.fillEllipse(pins.at(0)->x+2,pins.at(0)->y+2, 6, 6);
+        g.drawText(pins.at(0)->getName() , pins.at(0)->x + 12,pins.at(0)->y, 10, 10, juce::Justification::left);
+    }
+    else {
+        // g.fillRect(pins.at(i)->x + 5, pins.at(i)->y, 5, 10);
+        g.drawEllipse(pins.at(0)->x, pins.at(0)->y, 10, 10,1);
+        g.fillEllipse(pins.at(0)->x+2,pins.at(0)->y +2, 6, 6);
+        g.drawText(pins.at(0)->getName() , pins.at(0)->x - 25,pins.at(0)->y, 20, 10, juce::Justification::right);
+    }
+    
+    
+
     Component::paint(g);
+    if (selected) {
+        g.setColour(Colours::orange);
+        g.drawRect(0,0,getWidth(),getHeight());
+    }
 }
- */
+
 
 float Knob::getValue() {
     return value;

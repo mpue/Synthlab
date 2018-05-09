@@ -477,11 +477,11 @@ void Module::process() {
                 
                     pins.at(i)->setValue(pins.at(i)->getTerminal()->getValue());
                     
-                    if (pins.at(i)->getConnections().size() >= 1 && pins.at(i)->getTerminal()->getConnections().size() >= 1) {
+                    if (pins.at(i)->getTerminal()->getConnections().size() >= 1) {
                         
                         for (int j = 0; j < 128;j++) {
-                            pins.at(i)->getConnections().at(0)->data[j] = pins.at(i)->getTerminal()->getConnections().at(0)->data[j];
-                            pins.at(i)->getConnections().at(0)->dataEnabled[j] = pins.at(i)->getTerminal()->getConnections().at(0)->dataEnabled[j];
+                            pins.at(i)->data[j] = pins.at(i)->getTerminal()->getConnections().at(0)->data[j];
+                            pins.at(i)->dataEnabled[j] = pins.at(i)->getTerminal()->getConnections().at(0)->dataEnabled[j];
                         }
                         
                     }

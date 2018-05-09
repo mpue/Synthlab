@@ -22,7 +22,7 @@ public:
     Knob();
     ~Knob();
 
-    // void paint (Graphics& g) override;
+    void paint (Graphics& g) override;
 
     void setValue(float value);
     float getValue();

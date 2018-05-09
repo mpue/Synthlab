@@ -68,6 +68,15 @@ public:
                            float sliderPos, float minSliderPos, float maxSliderPos,
                            const juce::Slider::SliderStyle, juce::Slider&) override;
     
+    void drawRotarySlider    (    Graphics &     g,
+                                                 int     x,
+                                                 int     y,
+                                                 int     width,
+                                                 int     height,
+                                                 float     sliderPosProportional,
+                                                 float     rotaryStartAngle,
+                                                 float     rotaryEndAngle,
+                              Slider &     slider ) override;
 private:
     juce::ColourGradient gradientVertical;
     juce::ColourGradient gradientHorizontal;
