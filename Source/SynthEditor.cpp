@@ -1057,14 +1057,33 @@ void SynthEditor::openSampleEditor(SamplerModule *sm) {
 }
 
 void SynthEditor::openStepSequencer(StepSequencerModule *ssm) {
+    
+    
+    
     SequenceEditor* se = ssm->getEditor();
     Project::getInstance()->getSupplemental()->addTab("Step sequencer", Colours::darkgrey, se, true);
     Project::getInstance()->getSupplemental()->setCurrentTabIndex(Project::getInstance()->getSupplemental()->getNumTabs() - 1);
 }
 
 void SynthEditor::openRecorder(AudioRecorderModule *arm) {
+    
+    MainTabbedComponent* tab = Project::getInstance()->getSupplemental();
+    
+    for (int i = 0; i < tab->getNumTabs();i++) {
+        
+        AudioRecorderEditor* editor = dynamic_cast<AudioRecorderEditor*>(tab->getTabContentComponent(i));
+        
+        if (editor != nullptr) {
+            if (editor != nullptr && editor->getIndex() == arm->getIndex()) {
+                tab->setCurrentTabIndex(i);
+                return;
+            }
+        }
+        
+    }
     AudioRecorderEditor* are = arm->getEditor();
-    Project::getInstance()->getSupplemental()->addTab("Audio recorder", Colours::darkgrey, are, true);
+    are->setIndex(static_cast<int>(arm->getIndex()));
+    Project::getInstance()->getSupplemental()->addTab("Audio recorder", Colours::darkgrey, are, false);
     Project::getInstance()->getSupplemental()->setCurrentTabIndex(Project::getInstance()->getSupplemental()->getNumTabs() - 1);
 }
 

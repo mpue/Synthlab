@@ -30,6 +30,8 @@ public:
     void setMagnitude(int channel, float value);
     bool isMonitoring();
     float getGain();
+    int getIndex();
+    void setIndex(int index);
 private:
     
     AudioRecorderPanel* recorderPanel = nullptr;
@@ -38,7 +40,7 @@ private:
     int bufferSize;
     int numRecordedSamples = 0;
     bool monitoring = false;
-    
+    int index;
     juce::AudioFormatManager* manager;
     Sampler* sampler = nullptr;
     AudioSampleBuffer* recordingBuffer = nullptr;

@@ -57,10 +57,8 @@ AudioRecorderModule::AudioRecorderModule(double sampleRate, int buffersize, Audi
 AudioRecorderModule::~AudioRecorderModule()
 {
     editor->removeAllChangeListeners();
-    // delete editor;
+    delete editor;
 }
-
-
 
 void AudioRecorderModule::configurePins() {
 

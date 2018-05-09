@@ -150,3 +150,11 @@ bool AudioRecorderEditor::isMonitoring() {
 float AudioRecorderEditor::getGain() {
     return recorderPanel->getGain();
 }
+
+int AudioRecorderEditor::getIndex() {
+    return index;
+}
+
+void AudioRecorderEditor::setIndex(int index) {
+    this->index = index;
+}
