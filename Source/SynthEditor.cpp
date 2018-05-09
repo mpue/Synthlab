@@ -375,11 +375,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
     else {
         
         m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::ADD_MODULE);
-        /*
-        m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::SAVE);
-        m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::LOAD);
-        m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::NEW);
-         */
+        m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::DELETE_SELECTED);
         m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::LOAD_MODULE);
         m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::SAVE_MODULE);
         m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::SAVE_SCREENSHOT);
@@ -1257,14 +1253,14 @@ void SynthEditor::getAllCommands (Array<CommandID>& commands) {
     commands.add({ SynthEditor::CommandIds::NEW });
     commands.add({ SynthEditor::CommandIds::ADD_MODULE });
     commands.add({ SynthEditor::CommandIds::DUPLICATE });
+    commands.add({ SynthEditor::CommandIds::DELETE_SELECTED });
     commands.add({ SynthEditor::CommandIds::SAVE });
     commands.add({ SynthEditor::CommandIds::LOAD });
     commands.add({ SynthEditor::CommandIds::LOAD_MODULE });
     commands.add({ SynthEditor::CommandIds::SAVE_MODULE });
     commands.add({ SynthEditor::CommandIds::SAVE_SCREENSHOT });
-    
-    
 }
+
 void SynthEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo& result) {
     switch (commandID)
     {
@@ -1274,6 +1270,10 @@ void SynthEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo& r
             break;
         case SynthEditor::CommandIds::ADD_MODULE:
             result.setInfo("Add module", String::empty, String::empty, 0);
+            break;
+        case SynthEditor::CommandIds::DELETE_SELECTED:
+            result.setInfo("Delete selected", String::empty, String::empty, 0);
+            result.addDefaultKeypress('x', ModifierKeys::commandModifier);
             break;
         case SynthEditor::CommandIds::SAVE:
             result.setInfo("Save", String::empty, String::empty, 0);
@@ -1351,5 +1351,12 @@ bool SynthEditor::perform (const InvocationInfo& info) {
         duplicateSelected();
         return true;
     }
+    else if(info.commandID == SynthEditor::CommandIds::DELETE_SELECTED) {
+        RemoveSelectedAction* rsa = new RemoveSelectedAction(this);
+        Project::getInstance()->getUndoManager()->beginNewTransaction();
+        Project::getInstance()->getUndoManager()->perform(rsa);
+        return true;
+    }
+    
     return false;
 }

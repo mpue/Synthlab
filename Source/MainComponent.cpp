@@ -542,6 +542,7 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String & menuName) {
     }
     else if (index == 3) {
         menu.addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::DUPLICATE);
+        menu.addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::DELETE_SELECTED);
     }
     
     return menu;

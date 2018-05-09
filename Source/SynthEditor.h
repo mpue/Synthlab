@@ -104,7 +104,8 @@ public:
         LOAD_MODULE = 5,
         SAVE_MODULE = 6,
         SAVE_SCREENSHOT = 7,
-        DUPLICATE = 8
+        DUPLICATE = 8,
+        DELETE_SELECTED = 9
     };
     
     // member access
