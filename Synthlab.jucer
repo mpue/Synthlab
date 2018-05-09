@@ -202,6 +202,10 @@
               file="Source/Actions/DuplicateModuleAction.cpp"/>
         <FILE id="GOE4dx" name="DuplicateModuleAction.h" compile="0" resource="0"
               file="Source/Actions/DuplicateModuleAction.h"/>
+        <FILE id="tQblPY" name="RemoveSelectedAction.cpp" compile="1" resource="0"
+              file="Source/Actions/RemoveSelectedAction.cpp"/>
+        <FILE id="pwtJAH" name="RemoveSelectedAction.h" compile="0" resource="0"
+              file="Source/Actions/RemoveSelectedAction.h"/>
       </GROUP>
       <GROUP id="{A79C9093-D329-37A0-AEE1-CF7BDC5C60DE}" name="AudioEngine">
         <FILE id="CzCxcs" name="AuxOut.cpp" compile="1" resource="0" file="Source/AuxOut.cpp"/>

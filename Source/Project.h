@@ -85,6 +85,14 @@ public:
         return propertyView;
     }
     
+    ApplicationCommandManager* getCommandManager() {
+        return commandManager;
+    };
+    
+    void setCommandManager(ApplicationCommandManager* commandManager) {
+        this->commandManager = commandManager;
+    }
+    
 #ifdef USE_PUSH
     ableton::Push2DisplayBridge*  getPush2Bridge() {
         return &bridge;
@@ -162,7 +170,10 @@ private:
 
         delete undoManager;
         delete lookAndFeel;
+        delete commandManager;
     }
+    
+    ApplicationCommandManager* commandManager;
     
     PropertyView* propertyView = nullptr;
     static Project* instance;

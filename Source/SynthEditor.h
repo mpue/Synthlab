@@ -28,7 +28,8 @@ class SynthEditor  : public Component,
                      public Timer,
                      public ChangeListener,
                      public DragAndDropTarget,
-                     public IEditor
+                     public IEditor,
+                     public ApplicationCommandTarget
 {
 public:
 
@@ -57,8 +58,7 @@ public:
 
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate);
     void showContextMenu(Point<int> position);
-    bool channelIsValid(int channel);
-    bool auxChannelIsValid(int channel, int subchannel);
+
     bool isRunning();
     void setRunning(bool running);
     void timerCallback() override;
@@ -67,11 +67,8 @@ public:
 
     int addChannel(String name, Mixer::Channel::Type channeltype);
     void addConnection(const MouseEvent& e, Module* m);
-    void deleteSelected(bool deleteAll);
     bool connectionExists(std::vector<Connection*> connections, Connection* c);
-    void removeModule(Module* module);
     SelectionModel& getSelectionModel();
-    void removeSelectedItem();
     void setCurrentLayer(int layer);
     void duplicateSelected();
     
@@ -93,6 +90,23 @@ public:
     bool keyStateChanged (bool isKeyDown) override;
     void modifierKeysChanged (const ModifierKeys& modifiers) override;
 
+    // command handling
+    virtual ApplicationCommandTarget* getNextCommandTarget() override;
+    virtual void getAllCommands (Array<CommandID>& commands) override;
+    void getCommandInfo (CommandID commandID, ApplicationCommandInfo& result) override;
+    virtual bool perform (const InvocationInfo& info) override;
+    
+    enum CommandIds {
+        ADD_MODULE = 1,
+        SAVE = 2,
+        LOAD = 3,
+        NEW = 4,
+        LOAD_MODULE = 5,
+        SAVE_MODULE = 6,
+        SAVE_SCREENSHOT = 7,
+        DUPLICATE = 8
+    };
+    
     // member access
     
     int getIndex();
@@ -104,9 +118,7 @@ public:
     void setMixer(MixerPanel* mixer);
     MixerPanel* getMixer();
 
-    std::vector<AudioIn*>& getInputChannels();
-    std::vector<AudioOut*>& getOutputChannels();
-    std::vector<AuxOut*>& getAuxChannels();
+
     
     bool isDirty() override;
     void setDirty(bool dirty) override;
@@ -118,7 +130,6 @@ public:
     virtual float getBufferSize() override;
     
     void addEditorListener(EditorListener* listener);
-    
     void saveScreenShot();
     
 private:
@@ -169,9 +180,7 @@ private:
     TabbedComponent* tab = nullptr;
     Rectangle<int> selectionFrame = Rectangle<int>(0, 0, 0, 0);
 
-    std::vector<AudioOut*> outputChannels;
-    std::vector<AudioIn*> inputChannels;
-    std::vector<AuxOut*> auxChannels;
+
     
     static String defaultMidiInputName;
     static String defaultMidiOutputName;

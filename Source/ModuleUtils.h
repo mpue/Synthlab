@@ -10,7 +10,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Module.h"
-
+#include "MixerPanel.h"
 /**
  * A class containing various helper methods for loading and saving structures of modules
  */
@@ -104,4 +104,6 @@ public:
     static void savePins(Module* m, ValueTree& v);
     
     static void loadPins(Module* m,ValueTree& mod);
+    
+    static void removeModule(Module *root,Module* module,MixerPanel* mixer, ChangeBroadcaster* broadcaster);
 };

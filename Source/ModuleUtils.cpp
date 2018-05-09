@@ -23,6 +23,10 @@
 #include "Monophonic.h"
 #include "PluginModule.h"
 #include "StepSequencerModule.h"
+#include "AudioIn.h"
+#include "AudioOut.h"
+#include "AuxOut.h"
+#include "MixerPanel.h"
 
 void ModuleUtils::loadStructure(std::vector<Module *>* modules, std::vector<Connection*>* connections,juce::ValueTree *v, ChangeBroadcaster* broadcaster) {
     ValueTree mods = v->getChildWithName("Modules");
@@ -569,4 +573,120 @@ void ModuleUtils::loadPins(Module* m,ValueTree& mod) {
         m->addPin(p);
         
     }
+}
+
+void ModuleUtils::removeModule(Module *root,Module* module,MixerPanel* mixer, ChangeBroadcaster* broadcaster) {
+    
+    
+    AudioOut* out = nullptr;
+    
+    if ((out = dynamic_cast<AudioOut*>(module)) != nullptr){
+        mixer->removeChannel(out->getChannelIndex());
+        for(std::vector<AudioOut*>::iterator it = mixer->getOutputChannels().begin();it != mixer->getOutputChannels().end();) {
+            if ((*it)->getChannelIndex() == out->getChannelIndex()) {
+                it = mixer->getOutputChannels().erase(it);
+            }
+            else {
+                ++it;
+            }
+        }
+    }
+    
+    
+    AudioIn* in = nullptr;
+    
+    if ((in = dynamic_cast<AudioIn*>(module)) != nullptr){
+        mixer->removeChannel(in->getChannelIndex());
+        for(std::vector<AudioIn*>::iterator it = mixer->getInputChannels().begin();it != mixer->getInputChannels().end();) {
+            if ((*it)->getChannelIndex() == in->getChannelIndex()) {
+                it = mixer->getInputChannels().erase(it);
+            }
+            else {
+                ++it;
+            }
+        }
+    }
+    
+    AuxOut* aux = nullptr;
+    
+    if ((aux = dynamic_cast<AuxOut*>(module)) != nullptr){
+        mixer->removeChannel(aux->getChannelIndex());
+        for(std::vector<AuxOut*>::iterator it = mixer->getAuxChannels().begin();it != mixer->getAuxChannels().end();) {
+            if ((*it)->getChannelIndex() == aux->getChannelIndex()) {
+                it = mixer->getAuxChannels().erase(it);
+            }
+            else {
+                ++it;
+            }
+        }
+    }
+    
+    
+    vector<long> pinsToBeRemoved;
+    
+    broadcaster->removeChangeListener(module);
+    
+    // find the indices of the pins being involved in the disconnect
+    
+    for (int j = 0; j < root->getModules()->size(); j++) {
+        if (root->getModules()->at(j)->getIndex() != module->getIndex()) {
+            
+            for (int k = 0; k < root->getModules()->at(j)->getPins().size(); k++) {
+                
+                // for every connection of each pin
+                for (int l = 0; l < root->getModules()->at(j)->getPins().at(k)->getConnections().size(); l++) {
+                    
+                    // for each pin of the module being removed
+                    for (int n = 0; n < module->getPins().size();n++) {
+                        // if the index matches remove pin from vector
+                        
+                        if (root->getModules()->at(j)->getPins().at(k)->getConnections().at(l)->index == module->getPins().at(n)->index) {
+                            pinsToBeRemoved.push_back(root->getModules()->at(j)->getPins().at(k)->getConnections().at(l)->index);
+                            
+                        }
+                    }
+                    
+                }
+            }
+        }
+    }
+    
+    // remove according pins
+    
+    for (int i = 0; i < pinsToBeRemoved.size();i++) {
+        for (int j = 0; j < root->getModules()->size(); j++) {
+            
+            for (int k = 0; k < root->getModules()->at(j)->getPins().size();k++) {
+                
+                Pin* p = root->getModules()->at(j)->getPins().at(k);
+                for (std::vector<Pin*>::iterator it = p->getConnections().begin();it != p->getConnections().end();) {
+                    if ((*it)->index == pinsToBeRemoved.at(i)) {
+                        it = p->getConnections().erase(it);
+                    }
+                    else {
+                        ++it;
+                    }
+                }
+            }
+        }
+    }
+    
+    // remove dangling connections from other modules
+    
+    std::vector<Connection*>* cons = root->getConnections();
+    
+    for(int i = 0;i <root->getModules()->size();i++) {
+        for (std::vector<Connection*>::iterator it = cons->begin(); it != cons->end(); ) {
+            if ((*it)->source->getIndex() == module->getIndex() ||
+                (*it)->target->getIndex() == module->getIndex() ) {
+                delete (*it);
+                it = cons->erase(it);
+            }
+            else {
+                ++it;
+            }
+        }
+    }
+    
+    
 }

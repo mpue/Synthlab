@@ -89,6 +89,8 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     AudioManager::getInstance()->setDeviceManager(&deviceManager);
     PluginManager::getInstance();
     
+    Project::getInstance()->setCommandManager(new ApplicationCommandManager());
+    
     toolbar = new Toolbar();
     toolbar->setBounds(0,0,  getWidth(), 50);
     
@@ -109,17 +111,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
             };
         }
     }
-    
-    this->menu = new MenuBarComponent();
-    
-#if JUCE_MAC
-    menu->setModel (nullptr);
-    MenuBarModel::setMacMainMenu (this);
-#else
-    menu->setModel(this);
-	addAndMakeVisible(menu);
 
-#endif
     createKeyMap();
     
     enableAllMidiInputs();
@@ -144,7 +136,19 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
 
     addKeyListener(this);
 
+    Project::getInstance()->getCommandManager()->registerAllCommandsForTarget(editor);
+    Project::getInstance()->getCommandManager()->setFirstCommandTarget(editor);
     
+    this->menu = new MenuBarComponent();
+    
+#if JUCE_MAC
+    menu->setModel (nullptr);
+    MenuBarModel::setMacMainMenu (this);
+#else
+    menu->setModel(this);
+    addAndMakeVisible(menu);
+    
+#endif
     
     // we have to set up our StretchableLayoutManager so it know the limits and preferred sizes of it's contents
     stretchableManager.setItemLayout (0,            // for the properties
@@ -190,6 +194,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     defaultSampler = new Sampler(sampleRate, buffersize);
     Project::getInstance()->setDefaultSampler(defaultSampler);
     
+
     setWantsKeyboardFocus(true);
     
     
@@ -364,9 +369,9 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
     if (editor->getModule() != nullptr)
         processModule(editor->getModule());
     
-    std::vector<AudioOut*> outputChannels = editor->getOutputChannels();
-    std::vector<AudioIn*> inputChannels = editor->getInputChannels();
-    std::vector<AuxOut*> auxChannels = editor->getAuxChannels();
+    std::vector<AudioOut*> outputChannels = editor->getMixer()->getOutputChannels();
+    std::vector<AudioIn*> inputChannels = editor->getMixer()->getInputChannels();
+    std::vector<AuxOut*> auxChannels = editor->getMixer()->getAuxChannels();
     
     for (int k = 0; k < mixer->getNumInputs();k++) {
         
@@ -412,7 +417,7 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
             
             for (int k = 0; k < auxChannels.size();k++) {
                 
-                if (editor->auxChannelIsValid(k,0)) {
+                if (editor->getMixer()->auxChannelIsValid(k,0)) {
                     const float* auxL = auxChannels.at(k)->getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
                     
                     Mixer::Channel* channel =  mixer->getChannel(Mixer::Channel::Type::AUX, k);
@@ -430,7 +435,7 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
                 
             }
             
-            if (editor->channelIsValid(0)) {
+            if (editor->getMixer()->channelIsValid(0)) {
                 // outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->applyGain(channelVolume);
                 const float* outL = outputChannels.at(0)->getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
                 outputChannelData[0][j] += channelVolume * (outL[j] + auxLeftOut) * gainLeft;
@@ -443,7 +448,7 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
             
             for (int k = 0; k < auxChannels.size();k++) {
                 
-                if (editor->auxChannelIsValid(k,1)) {
+                if (editor->getMixer()->auxChannelIsValid(k,1)) {
                     const float* auxR = auxChannels.at(k)->getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
                     
                     Mixer::Channel* channel =  mixer->getChannel(Mixer::Channel::Type::AUX, k);
@@ -457,7 +462,7 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
                 
             }
             
-            if (editor->channelIsValid(1)) {
+            if (editor->getMixer()->channelIsValid(1)) {
                 // outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->applyGain(channelVolume);
                 const float* outR = outputChannels.at(0)->getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
                 outputChannelData[1][j] += channelVolume * (outR[j] + auxRightOut) * gainRight;
@@ -467,9 +472,9 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
             }
         }
 
-        if (editor->channelIsValid(0))
+        if (editor->getMixer()->channelIsValid(0))
             outputChannel->magnitudeLeft = channelVolume * gainLeft * outputChannels.at(0)->getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
-        if (editor->channelIsValid(1))
+        if (editor->getMixer()->channelIsValid(1))
             outputChannel->magnitudeRight  = channelVolume * gainRight * outputChannels.at(0)->getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
     }
     
@@ -520,10 +525,9 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String & menuName) {
     PopupMenu menu;
     
     if (index == 0) {
-        menu.addItem(1, "New project", true, false, nullptr);
-        menu.addItem(2, "Load project", true, false, nullptr);
-        menu.addItem(3, "Save project", true, false, nullptr);
-        menu.addItem(4, "Save project as", true, false, nullptr);
+        menu.addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::NEW);
+        menu.addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::LOAD);
+        menu.addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::SAVE);
         menu.addItem(5, "Settings", true, false, nullptr);
         menu.addItem(999, "Exit", true, false, nullptr);
     }
@@ -537,9 +541,8 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String & menuName) {
             return *pluginMenu;
     }
     else if (index == 3) {
-        menu.addItem(31, "Duplicate", true, false, nullptr);
+        menu.addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::DUPLICATE);
     }
-
     
     return menu;
 }
@@ -722,7 +725,7 @@ void MainComponent::buttonClicked (Button* b)
     if (tb != NULL) {
         
         if (tb->getItemId() == toolbarFactory->delete_element) {
-            editor->removeSelectedItem();
+            //editor->removeSelectedItem();
         }
         else if(tb->getItemId() == toolbarFactory->doc_new) {
             editor->setRunning(false);

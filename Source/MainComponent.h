@@ -27,7 +27,8 @@ class MainComponent   : public juce::AudioAppComponent,
                         public juce::Button::Listener,
                         public juce::Timer,
                         public juce::AudioProcessorPlayer,
-                        public juce::DragAndDropContainer
+                        public juce::DragAndDropContainer,
+                        public ApplicationCommandManager
 {
 public:
     //==============================================================================

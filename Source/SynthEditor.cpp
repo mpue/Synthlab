@@ -18,6 +18,7 @@
 #include "Actions/AddModuleAction.h"
 #include "Actions/AddConnectionAction.h"
 #include "Actions/DuplicateModuleAction.h"
+#include "Actions/RemoveSelectedAction.h"
 #include "Project.h"
 #include "LabelModule.h"
 #include "SamplerModule.h"
@@ -52,7 +53,7 @@ SynthEditor::SynthEditor(){
     
     setRepaintsOnMouseActivity(true);
     // setMouseClickGrabsKeyboardFocus(true);
-    //setWantsKeyboardFocus(true);
+    // setWantsKeyboardFocus(true);
     
     addChildComponent(root);
 }
@@ -78,6 +79,8 @@ SynthEditor::SynthEditor (double sampleRate, int buffersize)
     addChildComponent(root);
     
     linePath = Path();
+    
+    Project::getInstance()->getCommandManager()->registerAllCommandsForTarget(this);
 
 }
 
@@ -371,14 +374,16 @@ void SynthEditor::showContextMenu(Point<int> position) {
     }
     else {
         
-        m->addItem(1, "Add module");
-        m->addItem(2, "Save");
-        m->addItem(3, "Load");
-        m->addItem(4, "New");
-        m->addItem(5, "Load module");
-        m->addItem(6, "Save module");
-        m->addItem(7, "Save picture");
-        
+        m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::ADD_MODULE);
+        /*
+        m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::SAVE);
+        m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::LOAD);
+        m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::NEW);
+         */
+        m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::LOAD_MODULE);
+        m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::SAVE_MODULE);
+        m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::SAVE_SCREENSHOT);
+        /*
         if (locked) {
             m->addItem(99, "Unlock");
             for (int i = 0; i < root->getModules()->size(); i++) {
@@ -391,6 +396,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
             }
              m->addItem(99, "Lock");
         }
+         */
         
         PopupMenu* prefabMenu = new PopupMenu();
         
@@ -442,48 +448,16 @@ void SynthEditor::showContextMenu(Point<int> position) {
         {
             // user dismissed the menu without picking anything
         }
-        else if (result == 1)
-        {
-            Module* m3 = new Module("Macro");
-            
-            m3->setTopLeftPosition(position.getX(), position.getY());
-            m3->setIndex(Time::currentTimeMillis());
-            
-            addAndMakeVisible(m3);
-            root->getModules()->push_back(m3);
-            
-        }
-        else if (result == 2)
-        {
-            saveFile();
-        }
-        else if (result == 3) {
-            setRunning(false);
-            openFile();
-            setRunning(true);
-        }
-        else if (result == 4) {
-            setRunning(false);
-            cleanUp();
-            mixer->removeAllChannels();
-            newFile();
-            setRunning(true);
-        }
-        else if (result == 5) {
-            running = false;
-            Module* m = loadModule();
-            root->getModules()->push_back(m);
-            addAndMakeVisible(m);
-            running = true;
-        }
-        else if (result == 6) {
-            saveModule(selectionModel.getSelectedModule());
-        }
-        else if (result == 7) {
-            saveScreenShot();
-        }
+
+        /*
         else if (result == 99) {
             locked = !locked;
+        }
+         */
+        else if (result >= 53 && result <= 87 ){
+            AddModuleAction* am = new AddModuleAction(this,position,result);
+            Project::getInstance()->getUndoManager()->beginNewTransaction();
+            Project::getInstance()->getUndoManager()->perform(am);
         }
         else if (result >= 1000) {
             StringArray recent = Project::getInstance()->getRecentFiles();
@@ -498,11 +472,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
             loadFromString(data);
             setRunning(true);
         }
-        else {
-            AddModuleAction* am = new AddModuleAction(this,position,result);
-            Project::getInstance()->getUndoManager()->beginNewTransaction();
-            Project::getInstance()->getUndoManager()->perform(am);
-        }
+
         
         delete prefabMenu;
     }
@@ -759,7 +729,9 @@ MixerPanel* SynthEditor::getMixer() {
 bool SynthEditor::keyPressed (const KeyPress& key)
 {
     if (key.getKeyCode() == KeyPress::deleteKey || key.getKeyCode() == KeyPress::backspaceKey) {
-        removeSelectedItem();
+        RemoveSelectedAction* rsa = new RemoveSelectedAction(this);
+        Project::getInstance()->getUndoManager()->beginNewTransaction();
+        Project::getInstance()->getUndoManager()->perform(rsa);
     }
     if(key.getKeyCode() == 65 && isCtrlDown) {
         for (int i = 0; i < root->getModules()->size();i++) {
@@ -786,7 +758,7 @@ void SynthEditor::modifierKeysChanged (const ModifierKeys& modifiers)
 
 void SynthEditor::cleanUp() {
     for(std::vector<Module*>::iterator it = root->getModules()->begin();it != root->getModules()->end();it++) {
-        removeModule((*it));
+        ModuleUtils::removeModule(root, (*it),getMixer(), this);
     }
     for(std::vector<Module*>::iterator it = root->getModules()->begin();it != root->getModules()->end();) {
         for(std::vector<Connection*>::iterator it2 = (*it)->getConnections()->begin();it2 != (*it)->getConnections()->end();) {
@@ -807,9 +779,7 @@ void SynthEditor::cleanUp() {
     root = nullptr;
     //deleteSelected(true);
     selectionModel.getSelectedModules().clear();
-    outputChannels.clear();
-    inputChannels.clear();
-    auxChannels.clear();
+    mixer->clearChannels();
     Project::getInstance()->getUndoManager()->clearUndoHistory();
     removeAllChangeListeners();
     if (tab != nullptr) {
@@ -833,35 +803,6 @@ void SynthEditor::cleanUp() {
         }
     }
     supplemental->setCurrentTabIndex(0);
-}
-
-
-void SynthEditor::removeSelectedItem() {
-    running = false;
-    std::vector<Connection*>* cons = root->getConnections();
-    cons->erase(std::remove_if(cons->begin(), cons->end(), [](Connection* c){
-        if (c->selected){
-            delete c;
-            return true;
-        }
-        return false;
-    }),cons->end());
-    
-    for(std::vector<Module*>::iterator it = root->getModules()->begin();it != root->getModules()->end();it++) {
-        if ((*it)->isSelected())
-            removeModule((*it));
-    }
-    for(std::vector<Module*>::iterator it = root->getModules()->begin();it != root->getModules()->end();) {
-        if ((*it)->isSelected()) {
-            delete *it;
-            it = root->getModules()->erase(it);
-        }
-        else {
-            ++it;
-        }
-    }
-    selectionModel.clearSelection();
-    running = true;
 }
 
 void SynthEditor::newFile() {
@@ -1134,8 +1075,8 @@ void SynthEditor::configureAudioModule(Module *m, ChangeBroadcaster* broadcaster
     AudioOut* out;
     
     if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
-        outputChannels.push_back(out);
-        String channelName = am->getOutputChannelNames().getReference(static_cast<int>(getOutputChannels().size()) - 1);
+        mixer->getOutputChannels().push_back(out);
+        String channelName = am->getOutputChannelNames().getReference(static_cast<int>(mixer->getOutputChannels().size()) - 1);
         int channelIndex = addChannel(channelName, Mixer::Channel::Type::OUT);
         out->setChannelIndex(channelIndex);
     }
@@ -1144,8 +1085,8 @@ void SynthEditor::configureAudioModule(Module *m, ChangeBroadcaster* broadcaster
     
     if ((in = dynamic_cast<AudioIn*>(m)) != NULL) {
         if (am->getInputChannelNames().size() > 0) {
-            inputChannels.push_back(in);
-            String channelName = am->getInputChannelNames().getReference(static_cast<int>(getInputChannels().size()) - 1);
+            mixer->getInputChannels().push_back(in);
+            String channelName = am->getInputChannelNames().getReference(static_cast<int>(mixer->getInputChannels().size()) - 1);
             int channelIndex = addChannel(channelName, Mixer::Channel::Type::IN);
             in->setChannelIndex(channelIndex);
         }
@@ -1155,8 +1096,8 @@ void SynthEditor::configureAudioModule(Module *m, ChangeBroadcaster* broadcaster
     AuxOut* aux;
     
     if ((aux = dynamic_cast<AuxOut*>(m)) != NULL) {
-        auxChannels.push_back(aux);
-        String channelName = "Aux "+ String(getAuxChannels().size());
+        mixer->getAuxChannels().push_back(aux);
+        String channelName = "Aux "+ String(mixer->getAuxChannels().size());
         int channelIndex = addChannel(channelName, Mixer::Channel::Type::AUX);
         aux->setChannelIndex(channelIndex);
     }
@@ -1168,168 +1109,6 @@ void SynthEditor::configureAudioModule(Module *m, ChangeBroadcaster* broadcaster
 
 void SynthEditor::setTab(juce::TabbedComponent *t) {
     this->tab = t;
-}
-
-void SynthEditor::removeModule(Module* module) {
-
-    
-    AudioOut* out = nullptr;
-    
-    if ((out = dynamic_cast<AudioOut*>(module)) != nullptr){
-        mixer->removeChannel(out->getChannelIndex());
-        for(std::vector<AudioOut*>::iterator it = outputChannels.begin();it != outputChannels.end();) {
-            if ((*it)->getChannelIndex() == out->getChannelIndex()) {
-                it = outputChannels.erase(it);
-            }
-            else {
-                ++it;
-            }
-        }
-    }
-
-    
-    AudioIn* in = nullptr;
-    
-    if ((in = dynamic_cast<AudioIn*>(module)) != nullptr){
-        mixer->removeChannel(in->getChannelIndex());
-        for(std::vector<AudioIn*>::iterator it = inputChannels.begin();it != inputChannels.end();) {
-            if ((*it)->getChannelIndex() == in->getChannelIndex()) {
-                it = inputChannels.erase(it);
-            }
-            else {
-                ++it;
-            }
-        }
-    }
-    
-    AuxOut* aux = nullptr;
-    
-    if ((aux = dynamic_cast<AuxOut*>(module)) != nullptr){
-        mixer->removeChannel(aux->getChannelIndex());
-        for(std::vector<AuxOut*>::iterator it = auxChannels.begin();it != auxChannels.end();) {
-            if ((*it)->getChannelIndex() == aux->getChannelIndex()) {
-                it = auxChannels.erase(it);
-            }
-            else {
-                ++it;
-            }
-        }
-    }
-    
-    vector<long> pinsToBeRemoved;
-    
-    removeChangeListener(module);
-    
-    // find the indices of the pins being involved in the disconnect
-
-    for (int j = 0; j < root->getModules()->size(); j++) {
-        if (root->getModules()->at(j)->getIndex() != module->getIndex()) {
-            
-            for (int k = 0; k < root->getModules()->at(j)->getPins().size(); k++) {
-                
-                // for every connection of each pin
-                for (int l = 0; l < root->getModules()->at(j)->getPins().at(k)->getConnections().size(); l++) {
-                    
-                    // for each pin of the module being removed
-                    for (int n = 0; n < module->getPins().size();n++) {
-                        // if the index matches remove pin from vector
-                        
-                        if (root->getModules()->at(j)->getPins().at(k)->getConnections().at(l)->index == module->getPins().at(n)->index) {
-                            pinsToBeRemoved.push_back(root->getModules()->at(j)->getPins().at(k)->getConnections().at(l)->index);
-                            
-                        }
-                    }
-                    
-                }
-            }
-        }
-    }
-    
-    // remove according pins
-    
-    for (int i = 0; i < pinsToBeRemoved.size();i++) {
-        for (int j = 0; j < root->getModules()->size(); j++) {
-            
-            for (int k = 0; k < root->getModules()->at(j)->getPins().size();k++) {
-                
-                Pin* p = root->getModules()->at(j)->getPins().at(k);
-                for (std::vector<Pin*>::iterator it = p->getConnections().begin();it != p->getConnections().end();) {
-                    if ((*it)->index == pinsToBeRemoved.at(i)) {
-                        it = p->getConnections().erase(it);
-                    }
-                    else {
-                        ++it;
-                    }
-                }
-            }
-        }
-    }
-    
-    // remove dangling connections from other modules
-    
-    std::vector<Connection*>* cons = root->getConnections();
-   
-    for(int i = 0;i < root->getModules()->size();i++) {
-        for (std::vector<Connection*>::iterator it = cons->begin(); it != cons->end(); ) {
-            if ((*it)->source->getIndex() == module->getIndex() ||
-                (*it)->target->getIndex() == module->getIndex() ) {
-                delete (*it);
-                it = cons->erase(it);
-            }
-            else {
-                ++it;
-            }
-        }
-    }
-    
-    
-}
-
-void SynthEditor::deleteSelected(bool deleteAll) {
-    
-    if(!deleteAll) {
-        for (int i = 0; i < selectionModel.getSelectedModules().size();i++) {
-            
-            removeModule(selectionModel.getSelectedModules().at(i));
-        }
-    }
-    
-    // handle connections at root level
-    if (deleteAll) {
-        std::vector<Connection*>* cons = root->getConnections();
-        cons->erase(std::remove_if(cons->begin(), cons->end(), [](Connection* c){return true;}),cons->end());
-
-    }
-    else {
-        std::vector<Connection*>* cons = root->getConnections();
-        cons->erase(std::remove_if(cons->begin(), cons->end(), [](Connection* c){
-            if (c->selected){
-                return true;
-            }
-            return false;
-        }),cons->end());
-    }
-    std::vector<Module*>* mods = root->getModules();
-    
-    if (deleteAll) {
-        
-        mods->erase(std::remove_if(mods->begin(), mods->end(), [](Module* m){
-            delete m; return true;
-        }),mods->end());
-    }
-    else {
-        
-        mods->erase(std::remove_if(mods->begin(), mods->end(), [](Module* m){
-            bool selected =  m->isSelected();
-            if (selected) {
-                delete m;
-                m = nullptr;
-            }
-            return selected;
-        }),mods->end());
-    }
-    notifyListeners();
-    sendChangeMessage();
 }
 
 void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
@@ -1362,23 +1141,7 @@ Module* SynthEditor::getModule() {
     return root;
 }
 
-bool SynthEditor::channelIsValid(int channel) {
-    if (outputChannels.at(0)->getPins().at(channel)->getConnections().size() == 1 &&
-        outputChannels.at(0)->getPins().at(channel)->getConnections().at(0) != nullptr &&
-        outputChannels.at(0)->getPins().at(channel)->getConnections().at(0)->getAudioBuffer() != nullptr) {
-        return true;
-    }
-    return false;
-}
 
-bool SynthEditor::auxChannelIsValid(int channel, int subchannel) {
-    if (auxChannels.at(channel)->getPins().at(subchannel)->getConnections().size() == 1 &&
-        auxChannels.at(channel)->getPins().at(subchannel)->getConnections().at(0) != nullptr &&
-        auxChannels.at(channel)->getPins().at(subchannel)->getConnections().at(0)->getAudioBuffer() != nullptr) {
-        return true;
-    }
-    return false;
-}
 
 void SynthEditor::prepareToPlay(int samplesPerBlockExpected, double sampleRate) {
     this->_sampleRate = sampleRate;
@@ -1402,17 +1165,7 @@ void SynthEditor::setBufferSize(int buffersize) {
     this->bufferSize = buffersize;
 }
 
-std::vector<AudioIn*>& SynthEditor::getInputChannels() {
-    return inputChannels;
-}
 
-std::vector<AudioOut*>& SynthEditor::getOutputChannels() {
-    return outputChannels;
-}
-
-std::vector<AuxOut*>& SynthEditor::getAuxChannels() {
-    return auxChannels;
-}
 
 int SynthEditor::addChannel(juce::String name, Mixer::Channel::Type channeltype) {
     return mixer->addChannel(name, channeltype);
@@ -1495,4 +1248,108 @@ void SynthEditor::changeListenerCallback(juce::ChangeBroadcaster *source) {
 
     }
     
+}
+
+ApplicationCommandTarget* SynthEditor::getNextCommandTarget() {
+    return nullptr;
+}
+void SynthEditor::getAllCommands (Array<CommandID>& commands) {
+    commands.add({ SynthEditor::CommandIds::NEW });
+    commands.add({ SynthEditor::CommandIds::ADD_MODULE });
+    commands.add({ SynthEditor::CommandIds::DUPLICATE });
+    commands.add({ SynthEditor::CommandIds::SAVE });
+    commands.add({ SynthEditor::CommandIds::LOAD });
+    commands.add({ SynthEditor::CommandIds::LOAD_MODULE });
+    commands.add({ SynthEditor::CommandIds::SAVE_MODULE });
+    commands.add({ SynthEditor::CommandIds::SAVE_SCREENSHOT });
+    
+    
+}
+void SynthEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo& result) {
+    switch (commandID)
+    {
+        case SynthEditor::CommandIds::NEW:
+            result.setInfo("New", String::empty, String::empty, 0);
+            result.addDefaultKeypress('N', ModifierKeys::commandModifier);
+            break;
+        case SynthEditor::CommandIds::ADD_MODULE:
+            result.setInfo("Add module", String::empty, String::empty, 0);
+            break;
+        case SynthEditor::CommandIds::SAVE:
+            result.setInfo("Save", String::empty, String::empty, 0);
+            result.addDefaultKeypress('s', ModifierKeys::commandModifier);
+            break;
+        case SynthEditor::CommandIds::LOAD:
+            result.setInfo("Load", String::empty, String::empty, 0);
+            result.addDefaultKeypress('l', ModifierKeys::commandModifier);
+            break;
+        case SynthEditor::CommandIds::LOAD_MODULE:
+            result.setInfo("Load module", String::empty, String::empty, 0);
+            break;
+        case SynthEditor::CommandIds::SAVE_MODULE:
+            result.setInfo("Save module", String::empty, String::empty, 0);
+            break;
+        case SynthEditor::CommandIds::SAVE_SCREENSHOT:
+            result.setInfo("Save module", String::empty, String::empty, 0);
+            break;
+        case SynthEditor::CommandIds::DUPLICATE:
+            result.setInfo("Duplicate module", String::empty, String::empty, 0);
+            result.addDefaultKeypress('d', ModifierKeys::commandModifier);
+            result.setActive(true);
+            
+            break;
+    }
+};
+
+bool SynthEditor::perform (const InvocationInfo& info) {
+    
+    if (info.commandID == SynthEditor::CommandIds::NEW) {
+        setRunning(false);
+        cleanUp();
+        mixer->removeAllChannels();
+        newFile();
+        setRunning(true);
+        return true;
+    }
+    else if(info.commandID == SynthEditor::CommandIds::ADD_MODULE) {
+        Module* m3 = new Module("Module");
+        
+        m3->setTopLeftPosition(mouseX, mouseY);
+        m3->setIndex(Time::currentTimeMillis());
+        
+        addAndMakeVisible(m3);
+        root->getModules()->push_back(m3);
+        return true;
+    }
+    else if (info.commandID == SynthEditor::CommandIds::SAVE) {
+        saveFile();
+        return true;
+    }
+    else if(info.commandID == SynthEditor::CommandIds::LOAD) {
+        setRunning(false);
+        openFile();
+        setRunning(true);
+        return true;
+    }
+    else if(info.commandID == SynthEditor::CommandIds::LOAD_MODULE) {
+        running = false;
+        Module* m = loadModule();
+        root->getModules()->push_back(m);
+        addAndMakeVisible(m);
+        running = true;
+        return true;
+    }
+    else if(info.commandID == SynthEditor::CommandIds::SAVE_MODULE) {
+        saveModule(selectionModel.getSelectedModule());
+        return true;
+    }
+    else if (info.commandID == SynthEditor::CommandIds::SAVE_SCREENSHOT) {
+        saveScreenShot();
+        return true;
+    }
+    else if (info.commandID == SynthEditor::CommandIds::DUPLICATE) {
+        duplicateSelected();
+        return true;
+    }
+    return false;
 }

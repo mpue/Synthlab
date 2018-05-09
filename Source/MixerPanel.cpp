@@ -187,6 +187,41 @@ void MixerPanel::removeAllChannels() {
     }
 }
 
+bool MixerPanel::channelIsValid(int channel) {
+    if (outputChannels.at(0)->getPins().at(channel)->getConnections().size() == 1 &&
+        outputChannels.at(0)->getPins().at(channel)->getConnections().at(0) != nullptr &&
+        outputChannels.at(0)->getPins().at(channel)->getConnections().at(0)->getAudioBuffer() != nullptr) {
+        return true;
+    }
+    return false;
+}
+
+bool MixerPanel::auxChannelIsValid(int channel, int subchannel) {
+    if (auxChannels.at(channel)->getPins().at(subchannel)->getConnections().size() == 1 &&
+        auxChannels.at(channel)->getPins().at(subchannel)->getConnections().at(0) != nullptr &&
+        auxChannels.at(channel)->getPins().at(subchannel)->getConnections().at(0)->getAudioBuffer() != nullptr) {
+        return true;
+    }
+    return false;
+}
+
+std::vector<AudioIn*>& MixerPanel::getInputChannels() {
+    return inputChannels;
+}
+
+std::vector<AudioOut*>& MixerPanel::getOutputChannels() {
+    return outputChannels;
+}
+
+std::vector<AuxOut*>& MixerPanel::getAuxChannels() {
+    return auxChannels;
+}
+
+void MixerPanel::clearChannels() {
+    outputChannels.clear();
+    inputChannels.clear();
+    auxChannels.clear();
+}
 //[/MiscUserCode]
 
 

@@ -53,7 +53,7 @@ public:
             (void) RUN_ALL_TESTS();
         }
         else {
-           mainWindow = new MainWindow (getApplicationName());
+            mainWindow = new MainWindow (getApplicationName());
         }
         
     }

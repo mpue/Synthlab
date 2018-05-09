@@ -23,6 +23,9 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "MasterChannelPanel.h"
 #include "Mixer.h"
+#include "AuxOut.h"
+#include "AudioIn.h"
+#include "AudioOut.h"
 
 //[/Headers]
 
@@ -55,9 +58,13 @@ public:
     int addChannel(juce::String name, Mixer::Channel::Type channeltype);
     void removeChannel(int index);
     void setMixer(Mixer* mixer);
-    
     int getNextFreeChannelIndex();
-    
+    std::vector<AudioIn*>& getInputChannels();
+    std::vector<AudioOut*>& getOutputChannels();
+    std::vector<AuxOut*>& getAuxChannels();
+    bool channelIsValid(int channel);
+    bool auxChannelIsValid(int channel, int subchannel);
+    void clearChannels();
     //[/UserMethods]
     
     void paint (juce::Graphics& g) override;
@@ -69,6 +76,11 @@ private:
     std::vector<MasterChannelPanel*> channels;
     Mixer* mixer;
     juce::Viewport* mixerView = nullptr;
+
+    
+    std::vector<AudioOut*> outputChannels;
+    std::vector<AudioIn*> inputChannels;
+    std::vector<AuxOut*> auxChannels;
     //[/UserVariables]
 
     //==============================================================================
