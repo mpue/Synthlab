@@ -150,11 +150,19 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
         m = PrefabFactory::getInstance()->getPrefab(mod.getProperty("prefabId").toString().getIntValue(), sampleRate, bufferSize);
         broadcaster->addChangeListener(m);
         m->setIndex(mod.getProperty("index").toString().getLargeIntValue());
+   
         LabelModule* label = dynamic_cast<LabelModule*>(m);
         
         if (label != nullptr) {
             label->setName(mod.getProperty("name"));
         }
+        
+        TerminalModule* t;
+        
+        if ((t = dynamic_cast<TerminalModule*>(m)) != NULL) {
+            t->setName(mod.getProperty("name").toString());
+        }
+        
         ValueTree pins = mod.getChildWithName("Pins");
         
         for (int j = 0; j < pins.getNumChildren();j++) {
@@ -172,6 +180,7 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
             ValueTree pin = pins.getChild(j);
             Pin* p = new Pin(Pin::Type::AUDIO);
             
+            juce::String name = pin.getProperty("name").toString();
             int type = pin.getProperty("type").toString().getIntValue();
             int direction = pin.getProperty("direction").toString().getIntValue();
             long index = pin.getProperty("index").toString().getLargeIntValue();
@@ -182,6 +191,7 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
             p->direction = dir;
             Pin::Type t = static_cast<Pin::Type>(type);
             p->setType(t);
+            p->setName(name);
             p->index = index;
             p->x = x;
             p->y = y;
@@ -192,9 +202,7 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
     }
     
     m->setTopLeftPosition(mod.getProperty("x").toString().getIntValue(), mod.getProperty("y").toString().getIntValue());
-    
 
-    
     return m;
 }
 
@@ -336,9 +344,6 @@ void ModuleUtils::configureModule(Module *m, ValueTree& mod, ChangeBroadcaster* 
     broadcaster->addChangeListener(m);
 }
 
-
-
-
 void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Connection*>* connections, ValueTree* v) {
     ValueTree mods = ValueTree("Modules");
     
@@ -443,6 +448,7 @@ void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Conn
         for (std::vector<Pin*>::iterator it2 =  (*it)->pins.begin(); it2 != (*it)->pins.end(); ++it2) {
             ValueTree pin = ValueTree("Pin");
             pin.setProperty("type", (*it2)->getType(), nullptr);
+            pin.setProperty("name", (*it2)->getName(), nullptr);
             pin.setProperty("direction", (*it2)->direction, nullptr);
             pin.setProperty("index", String(((*it2)->index)), nullptr);
             pin.setProperty("x", (*it2)->x, nullptr);
@@ -511,10 +517,7 @@ Module* ModuleUtils::createCopy(Module *original, ChangeBroadcaster* broadcaster
     Logger::writeToLog(cloneTree.toXmlString());
     loadPins(m, cloneTree);
     loadStructure(m->getModules(), m->getConnections(),&cloneTree, broadcaster);
-    /*
-    ValueTree cons = cloneTree.getChildWithName("Connections");
-    loadConnections(cons,m->getModules(), m->getConnections());
-     */
+
     m->resized();
     
     ModuleUtils::connectTerminals(m);
@@ -529,6 +532,7 @@ void ModuleUtils::savePins(Module* m, ValueTree& v) {
     for (std::vector<Pin*>::iterator it2 =  m->pins.begin(); it2 != m->pins.end(); ++it2) {
         ValueTree pin = ValueTree("Pin");
         pin.setProperty("type", (*it2)->getType(), nullptr);
+        pin.setProperty("name", (*it2)->getName(), nullptr);
         pin.setProperty("direction", (*it2)->direction, nullptr);
         pin.setProperty("index", String(((*it2)->index)), nullptr);
         pin.setProperty("x", (*it2)->x, nullptr);
@@ -547,6 +551,7 @@ void ModuleUtils::loadPins(Module* m,ValueTree& mod) {
         ValueTree pin = pins.getChild(j);
         Pin* p = new Pin(Pin::Type::AUDIO);
         
+        juce::String name = pin.getProperty("name").toString();
         int type = pin.getProperty("type").toString().getIntValue();
         int direction = pin.getProperty("direction").toString().getIntValue();
         long index = pin.getProperty("index").toString().getLargeIntValue();
@@ -558,6 +563,7 @@ void ModuleUtils::loadPins(Module* m,ValueTree& mod) {
         Pin::Type t = static_cast<Pin::Type>(type);
         p->setType(t);
         p->index = index;
+        p->setName("name");
         p->x = x;
         p->y = y;
         m->addPin(p);
