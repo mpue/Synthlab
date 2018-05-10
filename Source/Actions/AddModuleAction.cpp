@@ -80,6 +80,8 @@ bool AddModuleAction::perform() {
         String channelName = p->getOutputChannelNames().getReference(static_cast<int>(editor->getMixer()->getOutputChannels().size()) - 1);
         int channelIndex = editor->addChannel(channelName, Mixer::Channel::Type::OUT);
         out->setChannelIndex(channelIndex);
+        editor->getMixer()->setVolume(channelIndex, out->getVolume());
+        editor->getMixer()->setModule(channelIndex, out);
         if (!editor->isRunning()) {
             editor->setRunning(true);
         }
@@ -91,6 +93,8 @@ bool AddModuleAction::perform() {
         String channelName = "Aux "+ String(editor->getMixer()->getAuxChannels().size());
         int channelIndex = editor->addChannel(channelName, Mixer::Channel::Type::AUX);
         aux->setChannelIndex(channelIndex);
+        editor->getMixer()->setVolume(channelIndex, aux->getVolume());
+        editor->getMixer()->setModule(channelIndex, aux);
         if (!editor->isRunning()) {
             editor->setRunning(true);
         }
@@ -102,6 +106,8 @@ bool AddModuleAction::perform() {
         String channelName = p->getInputChannelNames().getReference(static_cast<int>(editor->getMixer()->getInputChannels().size()) - 1);
         int channelIndex = editor->addChannel(channelName, Mixer::Channel::Type::IN);
         in->setChannelIndex(channelIndex);
+        editor->getMixer()->setVolume(channelIndex, in->getVolume());
+        editor->getMixer()->setModule(channelIndex, in);
         if (!editor->isRunning()) {
             editor->setRunning(true);
         }

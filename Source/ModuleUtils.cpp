@@ -28,6 +28,7 @@
 #include "AuxOut.h"
 #include "MixerPanel.h"
 #include "VolumeAdjustable.h"
+#include "PadModule.h"
 
 void ModuleUtils::loadStructure(std::vector<Module *>* modules, std::vector<Connection*>* connections,juce::ValueTree *v, ChangeBroadcaster* broadcaster) {
     ValueTree mods = v->getChildWithName("Modules");
@@ -340,6 +341,13 @@ void ModuleUtils::configureModule(Module *m, ValueTree& mod, ChangeBroadcaster* 
         v->setVolume(mod.getProperty("volume").toString().getFloatValue());
     }
     
+    PadModule* p;
+    
+    if ((p = dynamic_cast<PadModule*>(m)) != NULL) {
+        p->setChannel(mod.getProperty("channel").toString().getIntValue());
+        p->setNote(mod.getProperty("note").toString().getIntValue());
+    }
+    
     PluginModule* pm ;
     
     if ((pm = dynamic_cast<PluginModule*>(m)) != NULL) {
@@ -444,6 +452,13 @@ void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Conn
         
         if ((v = dynamic_cast<VolumeAdjustable*>((*it))) != NULL) {
             file.setProperty("volume", v->getVolume(), nullptr);
+        }
+        
+        PadModule* p;
+        
+        if ((p = dynamic_cast<PadModule*>((*it))) != NULL) {
+            file.setProperty("channel", p->getChannel(), nullptr);
+            file.setProperty("note", p->getNote(), nullptr);
         }
         
         PluginModule* pm;

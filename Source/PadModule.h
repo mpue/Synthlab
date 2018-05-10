@@ -30,18 +30,24 @@ public:
     virtual void configurePins() override;
     
     virtual juce::String getCategory() override {
-        return "MIDI";
+        return "Controls";
     }
     
     void setChannel(int channel);
     int getChannel();
     
+    void setNote(int note);
+    int getNote();
+    
     virtual juce::Array<juce::PropertyComponent*>& getProperties() override;
     virtual void createProperties() override;
     
     virtual void buttonClicked (Button*) override;
-    
     virtual void buttonStateChanged (Button*) override;
+    
+    virtual Layer getLayer() override {
+        return Layer::GUI;
+    };
     
 private:
     
@@ -57,11 +63,29 @@ private:
         juce::Value value;
     };
     
+    struct NoteListener : juce::Value::Listener
+    {
+        NoteListener (juce::Value& v, PadModule* g) : g(g),  value (v) { value.addListener (this); }
+        ~NoteListener()  {}  // no need to remove the listener
+        
+        void valueChanged (juce::Value& value) override {
+            g->setNote(value.toString().getIntValue());
+        }
+        PadModule* g;
+        juce::Value value;
+    };
+    
     juce::Value* channelValue;
     juce::PropertyComponent* channelProp;
     ChannelListener* channelListener;
+    
+    juce::Value* noteValue;
+    juce::PropertyComponent* noteProp;
+    NoteListener* noteListener;
+    
     juce::TextButton* button;
     
+    int note = 64;
     int channel = 1;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PadModule)

@@ -23,7 +23,7 @@ using juce::Array;
 //==============================================================================
 PadModule::PadModule()
 {
-    setSize(120,140);
+    setSize(140,140);
     
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(2,2);
@@ -42,7 +42,8 @@ PadModule::~PadModule()
 {
     delete channelValue;
     delete channelListener;
-    // delete channelProp;
+    delete noteValue;
+    delete noteListener;
 }
 
 void PadModule::configurePins() {
@@ -100,6 +101,8 @@ void PadModule::gateOff(int note) {
 void PadModule::createProperties() {
     channelValue = new Value();
     channelListener = new ChannelListener(*channelValue, this);
+    noteValue = new Value();
+    noteListener = new NoteListener(*noteValue, this);
 }
 
 juce::Array<PropertyComponent*>& PadModule::getProperties() {
@@ -108,6 +111,10 @@ juce::Array<PropertyComponent*>& PadModule::getProperties() {
     
     channelProp = new SliderPropertyComponent(*channelValue,"channel",1,16,1,1,true);
     properties.add(channelProp);
+    
+    noteProp = new SliderPropertyComponent(*noteValue,"note",0,127,1,1,true);
+    properties.add(noteProp);
+    
     return properties;
 }
 
@@ -123,6 +130,15 @@ void PadModule::setChannel(int channel) {
     this->channelValue->setValue(channel);
 }
 
+int PadModule::getNote() {
+    return note;
+}
+
+void PadModule::setNote(int note) {
+    this->note = note;
+    this->noteValue->setValue(note);
+}
+
 void PadModule::buttonClicked (Button*)
 {
 }
@@ -131,11 +147,10 @@ void PadModule::buttonStateChanged (Button* button)
 {
     if(juce::Button::ButtonState::buttonDown == button->getState())
     {
-        gateOn(64, 64);
+        gateOn(64, note);
     }
-    else if(juce::Button::ButtonState::buttonNormal == button->getState())
-    {
-        gateOff(64);
+    else {
+        gateOff(note);
     }
 }
 

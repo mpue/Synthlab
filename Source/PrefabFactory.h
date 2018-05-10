@@ -131,7 +131,7 @@ private:
         prefabs[85] = Prefab("Reverb","FX");
         prefabs[86] = Prefab("Pitch bend","MIDI");
         prefabs[87] = Prefab("Audio recorder","Audio");
-        prefabs[88] = Prefab("Pad","MIDI");
+        prefabs[88] = Prefab("Pad","Controls");
         
         prefabImages[53] = juce::ImageCache::getFromMemory(BinaryData::sampler_png, BinaryData::sampler_pngSize);
         prefabImages[54] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
