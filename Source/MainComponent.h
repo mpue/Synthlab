@@ -94,6 +94,13 @@ private:
     virtual juce::PopupMenu getMenuForIndex(int index, const juce::String & menuName) override;
     virtual void menuItemSelected(int menuItemID, int topLevelMenuIndex) override;
     
+    void createConfig();
+    void createToolbar();
+    void createMenu();
+    void createCPUMeter();
+    void createStudioLayout();
+    void createPlayerLayout();
+    
     juce::StretchableLayoutManager stretchableManager;
     juce::StretchableLayoutResizerBar resizerBar;
     

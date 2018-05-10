@@ -450,7 +450,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
             locked = !locked;
         }
          */
-        else if (result >= 53 && result <= 87 ){
+        else if (result >= 53 && result <= 88 ){
             AddModuleAction* am = new AddModuleAction(this,position,result);
             Project::getInstance()->getUndoManager()->beginNewTransaction();
             Project::getInstance()->getUndoManager()->perform(am);
@@ -786,19 +786,25 @@ void SynthEditor::cleanUp() {
             tab->removeTab(--i);
         }
     }
-    tab->setCurrentTabIndex(0);
     
-    MainTabbedComponent* supplemental = Project::getInstance()->getSupplemental();
+    if (tab != nullptr)
+        tab->setCurrentTabIndex(0);
     
-    if (supplemental != nullptr) {
+    if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
+        MainTabbedComponent* supplemental = Project::getInstance()->getSupplemental();
         
-        int i = supplemental->getNumTabs();
-        
-        while(supplemental->getNumTabs() > 1) {
-            supplemental->removeTab(--i);
+        if (supplemental != nullptr) {
+            
+            int i = supplemental->getNumTabs();
+            
+            while(supplemental->getNumTabs() > 1) {
+                supplemental->removeTab(--i);
+            }
         }
+        supplemental->setCurrentTabIndex(0);
     }
-    supplemental->setCurrentTabIndex(0);
+    
+
 }
 
 void SynthEditor::newFile() {

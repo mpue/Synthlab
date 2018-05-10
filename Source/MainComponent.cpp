@@ -70,7 +70,108 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
 
     // specify the number of input and output channels that we want to open
     setAudioChannels (2, 2);
+    createConfig();
+    
+    AudioManager::getInstance()->setDeviceManager(&deviceManager);
+    PluginManager::getInstance();
 
+    if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
+        createToolbar();
+        createCPUMeter();
+        createMenu();
+        createKeyMap();
+        createStudioLayout();
+    }
+    else if(Project::getInstance()->getAppMode() == Project::AppMode::PLAYER) {
+        createPlayerLayout();
+    }
+        
+    Project::getInstance()->setMain(this);
+
+    startTimer(20);
+    
+    // a global sampler object which allows us to play audio at any place like for preview for example
+    defaultSampler = new Sampler(sampleRate, buffersize);
+    Project::getInstance()->setDefaultSampler(defaultSampler);
+    
+    enableAllMidiInputs();
+    
+    addMouseListener(this, true);
+    addKeyListener(this);
+    setWantsKeyboardFocus(true);
+    
+    initialized = true;
+    running = true;
+    
+}
+
+MainComponent::~MainComponent()
+{
+    running = false;
+    
+    
+    if(Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
+        loadSlider->setLookAndFeel(nullptr);
+        
+#if JUCE_MAC
+        MenuBarModel::setMacMainMenu(nullptr);
+#endif
+    }
+
+    editor->removeAllChangeListeners();
+    
+    disableAllMidiInputs();
+
+
+
+    if(moduleBrowser != nullptr) {
+        if (moduleBrowser->isVisible()) {
+            moduleBrowser->setVisible(false);
+        }
+        delete moduleBrowser;
+    }
+    
+    if(Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
+        delete tab;
+        delete view;
+        delete propertyView;
+        delete menu;
+        delete toolbar;
+        delete toolbarFactory;
+        delete editorView;
+        delete pluginMenu;
+        delete cpuLoadLabel;
+        delete loadSlider;
+    }
+    else if(Project::getInstance()->getAppMode() == Project::AppMode::PLAYER) {
+        delete editorView;
+    }
+    
+    if (defaultSampler != nullptr) {
+        delete defaultSampler;
+    }
+    
+
+    PrefabFactory::getInstance()->destroy();
+    Project::getInstance()->destroy();
+    
+    // This shuts down the audio device and clears the audio source.
+    shutdownAudio();
+}
+
+void MainComponent::createMenu() {
+    this->menu = new MenuBarComponent();
+    
+#if JUCE_MAC
+    menu->setModel (nullptr);
+    MenuBarModel::setMacMainMenu (this);
+#else
+    menu->setModel(this);
+    addAndMakeVisible(menu);
+#endif
+}
+
+void MainComponent::createConfig() {
     String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
     
     File appDir = File(userHome+"/.Synthlab");
@@ -85,12 +186,9 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
         ScopedPointer<XmlElement> xml = XmlDocument(configFile).getDocumentElement();
         deviceManager.initialise(2,2, xml, true);
     }
-    
-    AudioManager::getInstance()->setDeviceManager(&deviceManager);
-    PluginManager::getInstance();
-    
-    Project::getInstance()->setCommandManager(new ApplicationCommandManager());
-    
+}
+
+void MainComponent::createToolbar() {
     toolbar = new Toolbar();
     toolbar->setBounds(0,0,  getWidth(), 50);
     
@@ -111,63 +209,9 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
             };
         }
     }
+}
 
-    createKeyMap();
-    
-    enableAllMidiInputs();
-    
-    editorView = new EditorComponent(sampleRate, buffersize);
-    editor = editorView->getEditor();
-    mixer = editorView->getMixer();
-    mixerPanel = editorView->getMixerPanel();
-    
-    propertyView =  new PropertyView();
-    editor->addEditorListener(propertyView);
-    propertyView->getBrowser()->addChangeListener(editor);
-    
-    Project::getInstance()->setPropertyView(propertyView);
-    
-    addMouseListener(this, true);
-    
-    addAndMakeVisible (propertyView);
-    addAndMakeVisible (resizerBar);
-    addAndMakeVisible(editorView);
-    editor->setTab(editorView->getEditorTab());
-
-    addKeyListener(this);
-
-    Project::getInstance()->getCommandManager()->registerAllCommandsForTarget(editor);
-    Project::getInstance()->getCommandManager()->setFirstCommandTarget(editor);
-    
-    this->menu = new MenuBarComponent();
-    
-#if JUCE_MAC
-    menu->setModel (nullptr);
-    MenuBarModel::setMacMainMenu (this);
-#else
-    menu->setModel(this);
-    addAndMakeVisible(menu);
-    
-#endif
-    
-    // we have to set up our StretchableLayoutManager so it know the limits and preferred sizes of it's contents
-    stretchableManager.setItemLayout (0,            // for the properties
-                                      -0.1, -0.9,   // must be between 50 pixels and 90% of the available space
-                                      -0.2);        // and its preferred size is 30% of the total available space
-    
-    stretchableManager.setItemLayout (1,            // for the resize bar
-                                      5, 5, 5);     // hard limit to 5 pixels
-    
-    stretchableManager.setItemLayout (2,            // for the main editor
-                                      -0.1, -0.9,   // size must be between 50 pixels and 90% of the available space
-                                      -0.8);
-    
-    
-    pluginMenu = PluginManager::getInstance()->buildPluginMenu();
-    
-    initialized = true;
-    running = true;
-    
+void MainComponent::createCPUMeter() {
     cpuLoadLabel = new Label("0%");
     cpuLoadLabel->setText("0%",juce::NotificationType::dontSendNotification);
     toolbar->addAndMakeVisible(cpuLoadLabel);
@@ -185,63 +229,52 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     loadSlider->setLookAndFeel(Project::getInstance()->getLookAndFeel());
     
     addAndMakeVisible(loadSlider);
-    
-    Project::getInstance()->setMain(this);
-    addMouseListener(propertyView->getBrowser(), false);
-    startTimer(20);
-    
-    // a global sampler object which allows us to play audio at any place like for preview for example
-    defaultSampler = new Sampler(sampleRate, buffersize);
-    Project::getInstance()->setDefaultSampler(defaultSampler);
-    
-
-    setWantsKeyboardFocus(true);
-    
-    
 }
 
-MainComponent::~MainComponent()
-{
-    running = false;
+void MainComponent::createStudioLayout() {
+    editorView = new EditorComponent(sampleRate, buffersize);
+    editor = editorView->getEditor();
+    mixer = editorView->getMixer();
+    mixerPanel = editorView->getMixerPanel();
     
-    loadSlider->setLookAndFeel(nullptr);
-    editor->removeAllChangeListeners();
+    propertyView =  new PropertyView();
+    editor->addEditorListener(propertyView);
+    propertyView->getBrowser()->addChangeListener(editor);
     
-    disableAllMidiInputs();
+    Project::getInstance()->setPropertyView(propertyView);
+    
+    addAndMakeVisible (propertyView);
+    addAndMakeVisible (resizerBar);
+    addAndMakeVisible(editorView);
+    editor->setTab(editorView->getEditorTab());
+    
+    addMouseListener(propertyView->getBrowser(), false);
+    
+    Project::getInstance()->getCommandManager()->registerAllCommandsForTarget(editor);
+    Project::getInstance()->getCommandManager()->setFirstCommandTarget(editor);
+    
+    // we have to set up our StretchableLayoutManager so it know the limits and preferred sizes of it's contents
+    stretchableManager.setItemLayout (0,            // for the properties
+                                      -0.1, -0.9,   // must be between 50 pixels and 90% of the available space
+                                      -0.2);        // and its preferred size is 30% of the total available space
+    
+    stretchableManager.setItemLayout (1,            // for the resize bar
+                                      5, 5, 5);     // hard limit to 5 pixels
+    
+    stretchableManager.setItemLayout (2,            // for the main editor
+                                      -0.1, -0.9,   // size must be between 50 pixels and 90% of the available space
+                                      -0.8);
+    
+    
+    pluginMenu = PluginManager::getInstance()->buildPluginMenu();
+}
 
-#if JUCE_MAC
-    MenuBarModel::setMacMainMenu(nullptr);
-#endif
-
-    if(moduleBrowser != nullptr) {
-        if (moduleBrowser->isVisible()) {
-            moduleBrowser->setVisible(false);
-        }
-        delete moduleBrowser;
-    }
-    
-    delete tab;
-    delete view;
-    delete propertyView;
-    delete menu;
-    delete toolbar;
-    delete toolbarFactory;
-    delete editorView;
-    delete pluginMenu;
-    delete cpuLoadLabel;
-    delete loadSlider;
-    
-    
-    if (defaultSampler != nullptr) {
-        delete defaultSampler;
-    }
-    
-
-    PrefabFactory::getInstance()->destroy();
-    Project::getInstance()->destroy();
-    
-    // This shuts down the audio device and clears the audio source.
-    shutdownAudio();
+void MainComponent::createPlayerLayout() {
+    editorView = new EditorComponent(sampleRate, buffersize);
+    editor = editorView->getEditor();
+    mixer = editorView->getMixer();
+    mixerPanel = editorView->getMixerPanel();
+    addAndMakeVisible(editorView);
 }
 
 void MainComponent::timerCallback(){
@@ -253,31 +286,37 @@ void MainComponent::timerCallback(){
         }
     }
     
-    currentMeasure = (currentMeasure +1) % 10;
+    if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
     
-    loads[currentMeasure] = cpuLoad;
-    
-    if (currentMeasure == 0) {
-        for (int i = 0; i < 10;i++) {
-            cpuLoad += loads[i];
-        }
-        cpuLoad /= 10;
+        currentMeasure = (currentMeasure +1) % 10;
         
-        if (cpuLoad < 0) {
-            cpuLoad = 0;
-        }
-        if (cpuLoad == NAN) {
-            cpuLoad = 0;
-        }
+        loads[currentMeasure] = cpuLoad;
         
-        loadSlider->setValue(cpuLoad);
-        cpuLoadLabel->setText(String(cpuLoad)+"%", juce::NotificationType::dontSendNotification);
+        if (currentMeasure == 0) {
+            for (int i = 0; i < 10;i++) {
+                cpuLoad += loads[i];
+            }
+            cpuLoad /= 10;
+            
+            if (cpuLoad < 0) {
+                cpuLoad = 0;
+            }
+            if (cpuLoad == NAN) {
+                cpuLoad = 0;
+            }
+            
+            loadSlider->setValue(cpuLoad);
+            cpuLoadLabel->setText(String(cpuLoad)+"%", juce::NotificationType::dontSendNotification);
+        }
     }
-    
 
 }
 
 void MainComponent::mouseDrag (const MouseEvent& event) {
+    
+    if(Project::getInstance()->getAppMode() == Project::AppMode::PLAYER) {
+        return;
+    }
     
     var description;
     /*
@@ -297,6 +336,10 @@ void MainComponent::mouseDrag (const MouseEvent& event) {
 }
 
 void MainComponent::dragOperationStarted (const DragAndDropTarget::SourceDetails& details)  {
+    
+    if(Project::getInstance()->getAppMode() == Project::AppMode::PLAYER) {
+        return;
+    }
     
     /*
     TabbedButtonBar* tbb = dynamic_cast<TabbedButtonBar*>(details.sourceComponent.get());
@@ -514,10 +557,14 @@ void MainComponent::resized()
     if (propertyView != nullptr && propertyView->getParentComponent() != NULL)
         propertyView->setSize(r.getWidth()-editorView->getWidth(), propertyView->getHeight());
     if (getParentComponent() != nullptr) {
-        cpuLoadLabel->setBounds(getParentComponent()->getWidth() - 50,0,50,20);
-        loadSlider->setBounds(getParentComponent()->getWidth() - 150, 10, 100, 10);
-        
-        editorView->getEditor()->resized();
+        if (cpuLoadLabel != NULL) {
+            cpuLoadLabel->setBounds(getParentComponent()->getWidth() - 50,0,50,20);
+            loadSlider->setBounds(getParentComponent()->getWidth() - 150, 10, 100, 10);
+        }
+        if (editorView != NULL) {
+            editorView->getEditor()->resized();
+        }
+
     }
 }
 

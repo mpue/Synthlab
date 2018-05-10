@@ -284,7 +284,7 @@ template<typename T> void OscillatorModule<T>::process() {
                         if (oscillator[j] ==  nullptr) {
                             oscillator[j] = new T(sampleRate, buffersize);
                             
-                            oscillator[j]->setFrequency((440 * pow(2.0,((j+1+pitch)-69.0)/12.0)) * pitchBend);
+                            oscillator[j]->setFrequency((440 * pow(2.0,((j+pitch)-69.0)/12.0)) * pitchBend);
                         }
                         float volume = gatePin->data[j];
                         

@@ -22,6 +22,12 @@
 
 class Project {
 public:
+    
+    enum AppMode {
+        STUDIO,
+        PLAYER
+    };
+    
     static Project* getInstance() {
         if (instance == NULL) {
             instance = new Project();
@@ -93,6 +99,10 @@ public:
         this->commandManager = commandManager;
     }
     
+    AppMode getAppMode() {
+        return mode;
+    }
+    
 #ifdef USE_PUSH
     ableton::Push2DisplayBridge*  getPush2Bridge() {
         return &bridge;
@@ -104,7 +114,7 @@ private:
     Project() {
         undoManager = new juce::UndoManager();
         lookAndFeel = new CustomLookAndFeel();
-        
+        commandManager = new ApplicationCommandManager();
         
 #ifdef USE_PUSH
         
@@ -184,6 +194,7 @@ private:
     std::vector<juce::DialogWindow*> openWindows;
     juce::Component* main = nullptr;
     Sampler* defaultSampler = nullptr;
+    AppMode mode = STUDIO;
     
 #ifdef USE_PUSH
     ableton::Push2DisplayBridge bridge;    /*!< The bridge allowing to use juce::graphics for push */
