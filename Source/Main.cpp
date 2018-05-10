@@ -105,8 +105,12 @@ public:
             setResizable (true, true);
 
             Rectangle<int> r = Desktop::getInstance().getDisplays().getMainDisplay().userArea;
-            
-            centreWithSize (r.getWidth(), r.getHeight() - 25);
+#if JUCE_MAC
+			centreWithSize(r.getWidth(), r.getHeight() - 25);
+#else
+	        centreWithSize (r.getWidth(), r.getHeight());
+#endif
+
             setVisible (true);
         }
 

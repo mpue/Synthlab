@@ -69,7 +69,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     setSize (1280, 800);
 
     // specify the number of input and output channels that we want to open
-    setAudioChannels (2, 2);
+    // setAudioChannels (2, 2);
     createConfig();
     
     AudioManager::getInstance()->setDeviceManager(&deviceManager);
@@ -167,6 +167,7 @@ void MainComponent::createMenu() {
     MenuBarModel::setMacMainMenu (this);
 #else
     menu->setModel(this);
+	menu->setBounds(0, 0, 1000, 25);
     addAndMakeVisible(menu);
 #endif
 }
@@ -190,7 +191,13 @@ void MainComponent::createConfig() {
 
 void MainComponent::createToolbar() {
     toolbar = new Toolbar();
-    toolbar->setBounds(0,0,  getWidth(), 50);
+
+#if JUCE_MAC
+	
+#else
+    toolbar->setBounds(0,25,  getWidth(), 50);
+#endif
+
     
     addAndMakeVisible(toolbar);
     
@@ -238,6 +245,11 @@ void MainComponent::createStudioLayout() {
     mixerPanel = editorView->getMixerPanel();
     
     propertyView =  new PropertyView();
+#if JUCE_MAC
+
+#else
+	propertyView->setTopLeftPosition(0, 75);
+#endif
     editor->addEditorListener(propertyView);
     propertyView->getBrowser()->addChangeListener(editor);
     
@@ -551,7 +563,7 @@ void MainComponent::resized()
     // this will position the 3 components, one above the other, to fit
     // vertically into the rectangle provided.
     stretchableManager.layOutComponents (comps, 3,
-                                         r.getX(), r.getY(), r.getWidth(), r.getHeight(),
+                                         r.getX(), r.getY()+25, r.getWidth(), r.getHeight(),
                                          false, true);
     
     if (propertyView != nullptr && propertyView->getParentComponent() != NULL)
@@ -564,6 +576,9 @@ void MainComponent::resized()
         if (editorView != NULL) {
             editorView->getEditor()->resized();
         }
+		if (menu != NULL) {
+			menu->setBounds(0, 0, getParentWidth(), 25);
+		}
 
     }
 }
@@ -622,7 +637,7 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
         editor->duplicateSelected();
         
     }
-    else if (menuItemID > 100){
+    else if (menuItemID > 100 && menuItemID < 999) {
         String pluginName = PluginManager::getInstance()->getAvailablePlugins().at(menuItemID - 100);
         
         if (editor->getSelectionModel().getSelectedModule() != nullptr) {

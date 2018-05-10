@@ -34,7 +34,9 @@ using juce::String;
 MixerPanel::MixerPanel ()
 {
     //[Constructor_pre] You can add your own custom stuff here..
-
+	outputChannels.reserve(2);
+	inputChannels.reserve(2);
+	auxChannels.reserve(2);
 
     //[/Constructor_pre]
 
@@ -239,9 +241,16 @@ std::vector<AuxOut*>& MixerPanel::getAuxChannels() {
 }
 
 void MixerPanel::clearChannels() {
-    outputChannels.clear();
-    inputChannels.clear();
-    auxChannels.clear();
+	
+	if (outputChannels.size() > 0)
+		outputChannels.clear();
+    
+	if (inputChannels.size() > 0) 
+		inputChannels.clear();
+
+	if (auxChannels.size() > 0)
+		auxChannels.clear();
+
 }
 //[/MiscUserCode]
 

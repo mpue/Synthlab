@@ -587,10 +587,6 @@ void SynthEditor::mouseUp (const MouseEvent& e)
 {
 	if (e.mods.isLeftButtonDown()) {
 		isLeftMouseDown = false;
-        
-        if (!dragHasStarted)
-            selectionModel.clearSelection();
-        
 	}
 
     for (int i = 0; i < root->getModules()->size(); i++) {
@@ -665,11 +661,11 @@ void SynthEditor::mouseDoubleClick (const MouseEvent& e)
             }
         }
     }
-    
+    /*
     if (selectionModel.getSelectedModules().size() == 0) {
         showContextMenu(e.getPosition());
     }
-
+	*/
     //[/UserCode_mouseDoubleClick]
 }
 

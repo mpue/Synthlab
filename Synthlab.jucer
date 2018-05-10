@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.2.1" bundleIdentifier="de.pueski.SynthlabX"
+<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.3.1" bundleIdentifier="de.pueski.SynthlabX"
               version="1.0.1" companyName="Pueski">
   <MAINGROUP id="CKGTaZ" name="Synthlab">
     <GROUP id="{E76D66D3-3296-502A-6AE0-5C2C43CF4558}" name="lib">
