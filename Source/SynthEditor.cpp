@@ -1075,6 +1075,8 @@ void SynthEditor::configureAudioModule(Module *m, ChangeBroadcaster* broadcaster
         String channelName = am->getOutputChannelNames().getReference(static_cast<int>(mixer->getOutputChannels().size()) - 1);
         int channelIndex = addChannel(channelName, Mixer::Channel::Type::OUT);
         out->setChannelIndex(channelIndex);
+        mixer->setVolume(channelIndex, out->getVolume());
+        mixer->setModule(channelIndex, out);
     }
     
     AudioIn* in;
@@ -1085,6 +1087,8 @@ void SynthEditor::configureAudioModule(Module *m, ChangeBroadcaster* broadcaster
             String channelName = am->getInputChannelNames().getReference(static_cast<int>(mixer->getInputChannels().size()) - 1);
             int channelIndex = addChannel(channelName, Mixer::Channel::Type::IN);
             in->setChannelIndex(channelIndex);
+            mixer->setVolume(channelIndex, in->getVolume());
+            mixer->setModule(channelIndex, in);
         }
 
     }
@@ -1096,6 +1100,8 @@ void SynthEditor::configureAudioModule(Module *m, ChangeBroadcaster* broadcaster
         String channelName = "Aux "+ String(mixer->getAuxChannels().size());
         int channelIndex = addChannel(channelName, Mixer::Channel::Type::AUX);
         aux->setChannelIndex(channelIndex);
+        mixer->setVolume(channelIndex, aux->getVolume());
+        mixer->setModule(channelIndex, aux);
     }
     
     broadcaster->addChangeListener(m);

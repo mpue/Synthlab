@@ -139,12 +139,33 @@ int MixerPanel::addChannel(String name, Mixer::Channel::Type channeltype) {
     channel->channelType = channeltype;
     panel->setChannel(channel);
     
+    
+    
     channels.push_back(panel);
     addAndMakeVisible(panel);
     setBounds(0, 0, 90 * static_cast<int>(channels.size()),250);
     repaint();
     
     return index;
+}
+
+void MixerPanel::setVolume(int channelIndex, float volume) {
+    for (int i = 0; i < channels.size();i++) {
+        if (channels.at(i)->getIndex() == channelIndex){
+            channels.at(i)->setVolume(volume);
+            break;
+        }
+    }
+}
+
+void MixerPanel::setModule(int channelIndex, VolumeAdjustable* v) {
+    for (int i = 0; i < channels.size();i++) {
+        if (channels.at(i)->getIndex() == channelIndex){
+            channels.at(i)->setModule(v);
+            v->addChangeListener(channels.at(i));
+            break;
+        }
+    }
 }
 
 int MixerPanel::getNextFreeChannelIndex() {

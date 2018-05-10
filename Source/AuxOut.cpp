@@ -25,12 +25,19 @@ AuxOut::AuxOut()
     
     editable = false;
     prefab = true;
+    
+    createProperties();
 }
 
 AuxOut::~AuxOut()
 {
-    
-    
+    delete volumeValue;
+    delete volumeListener;
+}
+
+void AuxOut::createProperties() {
+    volumeValue = new Value();
+    volumeListener = new ValueListener(*volumeValue, this);
 }
 
 void AuxOut::configurePins() {
@@ -63,3 +70,14 @@ void AuxOut::setChannelIndex(int index) {
 int AuxOut::getChannelIndex() {
     return channelIndex;
 }
+
+juce::Array<PropertyComponent*>& AuxOut::getProperties() {
+    
+    properties = juce::Array<PropertyComponent*>();
+    volumeProp = new SliderPropertyComponent(*volumeValue,"Volume",0,1,0.01,1.0,true);
+    
+    properties.add(volumeProp);
+    
+    return properties;
+}
+

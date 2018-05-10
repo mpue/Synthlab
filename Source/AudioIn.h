@@ -12,11 +12,12 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Module.h"
+#include "VolumeAdjustable.h"
 
 //==============================================================================
 /*
  */
-class AudioIn    : public Module
+class AudioIn    : public Module , public VolumeAdjustable
 {
 public:
     AudioIn();
@@ -36,8 +37,32 @@ public:
     int getChannelIndex();
     void setChannelIndex(int index);
     
+    struct ValueListener : juce::Value::Listener
+    {
+        ValueListener (juce::Value& v, AudioIn* a) : a(a),  value (v) { value.addListener (this); }
+        ~ValueListener()  {}  // no need to remove the listener
+        
+        void valueChanged (juce::Value& value) override {
+            a->setVolume(value.toString().getFloatValue());
+        }
+        AudioIn* a;
+        juce::Value value;
+    };
+    
+    virtual void setVolume(float volume) override {
+        this->volumeValue->setValue(volume);
+        this->volume = volume;
+        VolumeAdjustable::sendChangeMessage();
+    }
+    
+    virtual juce::Array<juce::PropertyComponent*>& getProperties() override;
+    virtual void createProperties() override;
     
 private:
+    juce::Value* volumeValue;
+    juce::PropertyComponent* volumeProp;
+    ValueListener* volumeListener;
+    
     juce::AudioDeviceManager* deviceManager;
     int channelIndex;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioIn)

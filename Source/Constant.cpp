@@ -36,7 +36,6 @@ Constant::Constant()
 void Constant::createProperties() {
     valueValue = new Value();
     valueListener = new ValueListener(*valueValue, this);
-    
 }
 
 Constant::~Constant()

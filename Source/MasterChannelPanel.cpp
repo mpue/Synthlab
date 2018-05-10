@@ -252,6 +252,9 @@ void MasterChannelPanel::sliderValueChanged (Slider* sliderThatWasMoved)
         volume = channelVolume->getValue();
         channel->volume = volume;
         sendChangeMessage();
+        if (this->module != nullptr) {
+            this->module->setVolume(volume);
+        }
         //[/UserSliderCode_channelVolume]
     }
     else if (sliderThatWasMoved == panSlider)
@@ -326,7 +329,11 @@ void MasterChannelPanel::setMagnitude(int channel, float magnitude) {
 
 void MasterChannelPanel::changeListenerCallback(ChangeBroadcaster * source) {
 
-
+    VolumeAdjustable* v = dynamic_cast<VolumeAdjustable*>(source);
+    
+    if (v != nullptr) {
+        setVolume(v->getVolume());
+    }
 
 }
 
@@ -365,6 +372,14 @@ void MasterChannelPanel::setChannel(Mixer::Channel *channel) {
     this->channel = channel;
 }
 
+void MasterChannelPanel::setVolume(float volume) {
+    this->volume = volume;
+    this->channelVolume->setValue(volume);
+}
+
+void MasterChannelPanel::setModule(VolumeAdjustable *v) {
+    this->module = v;
+}
 
 //[/MiscUserCode]
 

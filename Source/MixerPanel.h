@@ -26,6 +26,7 @@
 #include "AuxOut.h"
 #include "AudioIn.h"
 #include "AudioOut.h"
+#include "VolumeAdjustable.h"
 
 //[/Headers]
 
@@ -59,6 +60,8 @@ public:
     void removeChannel(int index);
     void setMixer(Mixer* mixer);
     int getNextFreeChannelIndex();
+    void setVolume(int channelIndex, float volume);
+    void setModule(int chnnelIndex, VolumeAdjustable* v);
     std::vector<AudioIn*>& getInputChannels();
     std::vector<AudioOut*>& getOutputChannels();
     std::vector<AuxOut*>& getAuxChannels();

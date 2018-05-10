@@ -89,7 +89,7 @@ public:
         return commandManager;
     };
     
-    void setCommandManager(ApplicationCommandManager* commandManager) {
+    void setCommandManager(ApplicationCommandManager* commandManager) {
         this->commandManager = commandManager;
     }
     

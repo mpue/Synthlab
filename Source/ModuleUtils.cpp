@@ -27,6 +27,7 @@
 #include "AudioOut.h"
 #include "AuxOut.h"
 #include "MixerPanel.h"
+#include "VolumeAdjustable.h"
 
 void ModuleUtils::loadStructure(std::vector<Module *>* modules, std::vector<Connection*>* connections,juce::ValueTree *v, ChangeBroadcaster* broadcaster) {
     ValueTree mods = v->getChildWithName("Modules");
@@ -42,12 +43,19 @@ void ModuleUtils::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         Logger::writeToLog("Module "+ m->getName() +" has "+String(childCons.getNumChildren())+ " connections.");
         if (childCons.getNumChildren() > 0)
             loadConnections(childCons, m->getModules(),m->getConnections());
+        
         TerminalModule* t;
         
         if ((t = dynamic_cast<TerminalModule*>(m)) != nullptr) {
             t->setIndex(mod.getProperty("index").toString().getLargeIntValue());
         }
         connectTerminals(m);
+        
+        VolumeAdjustable* v;
+        
+        if ((v = dynamic_cast<VolumeAdjustable*>(m)) != nullptr) {
+            v->setVolume(mod.getProperty("volume").toString().getFloatValue());
+        }
     }
     
     ValueTree cons = v->getChildWithName("Connections");
@@ -250,7 +258,6 @@ bool ModuleUtils::connectionExists(std::vector<Connection*> connections,Connecti
 
 void ModuleUtils::configureModule(Module *m, ValueTree& mod, ChangeBroadcaster* broadcaster) {
 
-    
     Knob* k;
     
     if ((k = dynamic_cast<Knob*>(m)) != NULL) {
@@ -325,6 +332,12 @@ void ModuleUtils::configureModule(Module *m, ValueTree& mod, ChangeBroadcaster* 
     
     if ((t = dynamic_cast<TerminalModule*>(m)) != NULL) {
         t->setType(static_cast<Terminal::Type>(mod.getProperty("type").toString().getIntValue()));
+    }
+    
+    VolumeAdjustable* v;
+    
+    if ((v = dynamic_cast<VolumeAdjustable*>(m)) != NULL) {
+        v->setVolume(mod.getProperty("volume").toString().getFloatValue());
     }
     
     PluginModule* pm ;
@@ -427,6 +440,12 @@ void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Conn
             file.setProperty("type", t->getType(), nullptr);
         }
         
+        VolumeAdjustable* v;
+        
+        if ((v = dynamic_cast<VolumeAdjustable*>((*it))) != NULL) {
+            file.setProperty("volume", v->getVolume(), nullptr);
+        }
+        
         PluginModule* pm;
         
         if ((pm = dynamic_cast<PluginModule*>((*it))) != NULL) {
@@ -513,12 +532,7 @@ Module* ModuleUtils::createCopy(Module *original, ChangeBroadcaster* broadcaster
     m = new Module(original->getName());
     saveStructure(original->getModules(),original->getConnections(), &cloneTree);
     savePins(original, cloneTree);
-        
-    
-    
-    Logger::writeToLog(cloneTree.toXmlString());
     updateIndices(cloneTree, Time::getMillisecondCounter());
-    Logger::writeToLog(cloneTree.toXmlString());
     loadPins(m, cloneTree);
     loadStructure(m->getModules(), m->getConnections(),&cloneTree, broadcaster);
 
@@ -546,7 +560,6 @@ void ModuleUtils::savePins(Module* m, ValueTree& v) {
     
     v.addChild(pins, -1, nullptr);
 }
-
 
 void ModuleUtils::loadPins(Module* m,ValueTree& mod) {
     ValueTree pins = mod.getChildWithName("Pins");
@@ -577,7 +590,6 @@ void ModuleUtils::loadPins(Module* m,ValueTree& mod) {
 
 void ModuleUtils::removeModule(Module *root,Module* module,MixerPanel* mixer, ChangeBroadcaster* broadcaster) {
     
-    
     AudioOut* out = nullptr;
     
     if ((out = dynamic_cast<AudioOut*>(module)) != nullptr){
@@ -591,7 +603,6 @@ void ModuleUtils::removeModule(Module *root,Module* module,MixerPanel* mixer, Ch
             }
         }
     }
-    
     
     AudioIn* in = nullptr;
     
@@ -688,12 +699,10 @@ void ModuleUtils::removeModule(Module *root,Module* module,MixerPanel* mixer, Ch
         }
     }
     
-    
 }
 
 bool ModuleUtils::connectModules(Module* source, Module* target, int pin) {
     
-    Pin* output = nullptr;
     Terminal::Type inputType = target->getPins().at(pin)->getType();
     
     switch (inputType) {

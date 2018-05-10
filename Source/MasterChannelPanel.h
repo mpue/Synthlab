@@ -23,7 +23,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "CustomLookAndFeel.h"
 #include "Mixer.h"
-
+#include "VolumeAdjustable.h"
 //[/Headers]
 
 
@@ -68,12 +68,14 @@ public:
     bool getMute();
     bool getSolo();
     double getVolume();
+    void setVolume(float volume);
     double getPan();
     int getIndex();
     void setIndex(int index);
     Mixer::Channel::Type getChannelType();
     void setChannelType(Mixer::Channel::Type type);
     void setChannel(Mixer::Channel* channel);
+    void setModule(VolumeAdjustable* v);
 
     //[/UserMethods]
 
@@ -106,7 +108,8 @@ private:
 
     int index = 0;
     Mixer::Channel* channel;
-
+    VolumeAdjustable* module;
+    
     //[/UserVariables]
 
     //==============================================================================

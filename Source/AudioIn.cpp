@@ -25,12 +25,19 @@ AudioIn::AudioIn()
     
     editable = false;
     prefab = true;
+    
+    createProperties();
 }
 
 AudioIn::~AudioIn()
 {
-    
-    
+    delete volumeValue;
+    delete volumeListener;
+}
+
+void AudioIn::createProperties() {
+    volumeValue = new Value();
+    volumeListener = new ValueListener(*volumeValue, this);
 }
 
 void AudioIn::configurePins() {
@@ -44,7 +51,6 @@ void AudioIn::configurePins() {
     
     addPin(Pin::Direction::OUT,p1);
     addPin(Pin::Direction::OUT,p2);
-    
 }
 
 void AudioIn::paint(juce::Graphics &g) {
@@ -64,5 +70,14 @@ int AudioIn::getChannelIndex() {
     return channelIndex;
 }
 
+juce::Array<PropertyComponent*>& AudioIn::getProperties() {
+    
+    properties = juce::Array<PropertyComponent*>();
+    volumeProp = new SliderPropertyComponent(*volumeValue,"Volume",0,1,0.01,1.0,true);
+    
+    properties.add(volumeProp);
+    
+    return properties;
+}
 
 
