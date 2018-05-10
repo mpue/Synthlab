@@ -51,6 +51,7 @@ public:
             char* args = (char*)"";
             testing::InitGoogleTest(&argc, &args);
             (void) RUN_ALL_TESTS();
+            juce::JUCEApplication::quit();
         }
         else {
             mainWindow = new MainWindow (getApplicationName());
