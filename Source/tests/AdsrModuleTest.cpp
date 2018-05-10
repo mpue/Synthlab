@@ -21,7 +21,6 @@ class AdsrModuleTest : public testing::Test
 public:
     AdsrModuleTest()
     {
-        
     }
     
     virtual void SetUp()
@@ -38,7 +37,6 @@ public:
         m->setAttack(0);
         
         ASSERT_TRUE(ModuleUtils::connectModules(g1 , m, 0));
-
     }
     
     virtual void TearDown()
@@ -46,6 +44,11 @@ public:
         if(nullptr != g1)
         {
             delete g1;
+        }
+        
+        if(nullptr != m)
+        {
+            delete m;
         }
     }
     
