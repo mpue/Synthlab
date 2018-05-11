@@ -105,7 +105,9 @@ public:
         SAVE_MODULE = 6,
         SAVE_SCREENSHOT = 7,
         DUPLICATE = 8,
-        DELETE_SELECTED = 9
+        DELETE_SELECTED = 9,
+        ALIGN_Y = 10,
+        ALIGN_X = 11
     };
     
     // member access
@@ -132,6 +134,9 @@ public:
     
     void addEditorListener(EditorListener* listener);
     void saveScreenShot();
+    
+    void alignSelectedY();
+    void alignSelectedX();
     
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.

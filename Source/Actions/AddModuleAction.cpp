@@ -61,6 +61,8 @@ bool AddModuleAction::perform() {
     
     editor->addChangeListener(m);
     m->setTopLeftPosition(position);
+    m->setUiPosition(position.x, position.y);
+    m->saveUiPosition();
     
     editor->addAndMakeVisible(m);
     editor->getModule()->getModules()->push_back(m);

@@ -105,8 +105,12 @@ public:
     virtual void process();
     
     void savePosition();
+    void saveUiPosition();
     void moveTo(int x, int y);
+    void setUiPosition(int x, int y);
     juce::Point<int> getSavedPosition();
+    juce::Point<int> getSavedUiPosition();
+    juce::Point<int> getUiPosition();
     
     virtual int getId() { return id;};
     virtual void setId(int id) {this->id = id;};
@@ -122,6 +126,10 @@ public:
     virtual Layer getLayer() {
         return Layer::MODULES;
     };
+    
+    void setCurrentLayer(Layer layer) {
+        currentLayer = layer;
+    }
 
     struct NameListener : juce::Value::Listener
     {
@@ -165,16 +173,22 @@ protected:
 	long index;
     bool editable = true;
     bool prefab = false;
+    
     std::vector<Module*>* modules = nullptr;
     std::vector<Connection*>* connections = nullptr;
     Pin* selectedPin = nullptr;
+    
     juce::Point<int> savedPosition;
+    juce::Point<int> savedUIPosition;
+    juce::Point<int> uiPosition;
     
     float sampleRate;
     int buffersize;
     
     juce::DropShadow* shadow = nullptr;
     juce::DropShadower* shadower = nullptr;
+    
+    Layer currentLayer = Layer::ALL;
     
     //[/UserVariables]
 

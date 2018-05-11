@@ -394,6 +394,13 @@ void SynthEditor::showContextMenu(Point<int> position) {
         }
          */
         
+        PopupMenu* alignMenu = new PopupMenu();
+        
+        alignMenu->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::ALIGN_X);
+        alignMenu->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::ALIGN_Y);
+        
+        m->addSubMenu("Align",*alignMenu);
+        
         PopupMenu* prefabMenu = new PopupMenu();
         
         StringArray* categories = PrefabFactory::getInstance()->getCategories();
@@ -531,9 +538,14 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
                 
                 if (m->getSelectedPin() == nullptr || m->getSelectedPin() == NULL ) {
                     
-                   
-                    m->setTopLeftPosition(m->getSavedPosition().getX() + e.getOffsetFromDragStart().getX(), m->getSavedPosition().getY()+ e.getOffsetFromDragStart().getY());
-                    
+                    if (currentLayer == Module::Layer::GUI) {
+                        m->setUiPosition(m->getSavedUiPosition().getX() + e.getOffsetFromDragStart().getX(), m->getSavedUiPosition().getY()+ e.getOffsetFromDragStart().getY());
+                        m->setTopLeftPosition(m->getSavedUiPosition().getX() + e.getOffsetFromDragStart().getX(), m->getSavedUiPosition().getY()+ e.getOffsetFromDragStart().getY());
+                    }
+                    else {
+                        m->setTopLeftPosition(m->getSavedPosition().getX() + e.getOffsetFromDragStart().getX(), m->getSavedPosition().getY()+ e.getOffsetFromDragStart().getY());
+                        
+                    }
 
                     repaint();
                 }
@@ -569,8 +581,12 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
             if (selectionFrame.contains(m->getBounds())) {
                 if (!m->isSelected()) {
                     m->setSelected(true);
-                    m->savePosition();
-                    
+                    if (currentLayer == Module::Layer::GUI) {
+                        m->saveUiPosition();
+                    }
+                    else {
+                        m->savePosition();
+                    }
                     selectionModel.getSelectedModules().push_back(m);
                 }
 
@@ -592,8 +608,14 @@ void SynthEditor::mouseUp (const MouseEvent& e)
     for (int i = 0; i < root->getModules()->size(); i++) {
 
         Module* m = root->getModules()->at(i);
-        m->savePosition();
+       
         
+        if (currentLayer == Module::Layer::GUI) {
+            m->saveUiPosition();
+        }
+        else {
+            m->savePosition();
+        }
         if (state == SelectionModel::State::DRAGGING_CONNECTION)  {
             if (m->isSelected()) {
                 addConnection(e, m);
@@ -694,14 +716,25 @@ void SynthEditor::timerCallback(){
 void SynthEditor::setCurrentLayer(int layer) {
     
     currentLayer = static_cast<Module::Layer>(layer);
-    
+   
     for (int i = 0;i < root->getModules()->size();i++) {
+        root->getModules()->at(i)->setCurrentLayer(currentLayer);
         if (currentLayer == Module::Layer::ALL || root->getModules()->at(i)->getLayer() == currentLayer) {
+            
+            if (currentLayer == Module::Layer::GUI ) {
+                root->getModules()->at(i)->setTopLeftPosition(root->getModules()->at(i)->getUiPosition().x, root->getModules()->at(i)->getUiPosition().y);
+            }
+            else {
+                root->getModules()->at(i)->setTopLeftPosition(root->getModules()->at(i)->getSavedPosition().x, root->getModules()->at(i)->getSavedPosition().y);
+            }
+            
             root->getModules()->at(i)->setVisible(true);
         }
         else {
             root->getModules()->at(i)->setVisible(false);
         }
+        
+       
     }
     
 }
@@ -1267,6 +1300,8 @@ void SynthEditor::getAllCommands (Array<CommandID>& commands) {
     commands.add({ SynthEditor::CommandIds::LOAD_MODULE });
     commands.add({ SynthEditor::CommandIds::SAVE_MODULE });
     commands.add({ SynthEditor::CommandIds::SAVE_SCREENSHOT });
+    commands.add({ SynthEditor::CommandIds::ALIGN_X });
+    commands.add({ SynthEditor::CommandIds::ALIGN_Y });
 }
 
 void SynthEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo& result) {
@@ -1304,7 +1339,12 @@ void SynthEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo& r
             result.setInfo("Duplicate module", String::empty, String::empty, 0);
             result.addDefaultKeypress('d', ModifierKeys::commandModifier);
             result.setActive(true);
-            
+            break;
+        case SynthEditor::CommandIds::ALIGN_Y:
+            result.setInfo("Align vertically", String::empty, String::empty, 0);
+            break;
+        case SynthEditor::CommandIds::ALIGN_X:
+            result.setInfo("Align horizontally", String::empty, String::empty, 0);
             break;
     }
 };
@@ -1365,6 +1405,69 @@ bool SynthEditor::perform (const InvocationInfo& info) {
         Project::getInstance()->getUndoManager()->perform(rsa);
         return true;
     }
+    else if(info.commandID == SynthEditor::CommandIds::ALIGN_Y) {
+        alignSelectedY();
+        return true;
+    }
+    else if(info.commandID == SynthEditor::CommandIds::ALIGN_X) {
+        alignSelectedX();
+        return true;
+    }
+
     
     return false;
+}
+
+void SynthEditor::alignSelectedX() {
+    
+    if (selectionModel.getSelectedModules().size() >= 2) {
+    
+        if (currentLayer == Module::Layer::ALL) {
+            
+            Point<int> pos = selectionModel.getSelectedModules().at(0)->getPosition();
+            
+            for (int i = 0; i < selectionModel.getSelectedModules().size();i++) {
+                selectionModel.getSelectedModules().at(i)->savePosition();
+                selectionModel.getSelectedModules().at(i)->setTopLeftPosition(pos.x, selectionModel.getSelectedModules().at(i)->getY());
+            }
+        }
+        else {
+            Point<int> pos = selectionModel.getSelectedModules().at(0)->getUiPosition();
+           
+            for (int i = 0; i < selectionModel.getSelectedModules().size();i++) {               
+               
+                selectionModel.getSelectedModules().at(i)->setUiPosition(pos.x, selectionModel.getSelectedModules().at(i)->getUiPosition().getY());
+                selectionModel.getSelectedModules().at(i)->saveUiPosition();
+                selectionModel.getSelectedModules().at(i)->setTopLeftPosition(selectionModel.getSelectedModules().at(i)->getUiPosition());
+            }
+        }
+
+    }
+    
+
+}
+
+void SynthEditor::alignSelectedY() {
+    if (selectionModel.getSelectedModules().size() >= 2) {
+        
+        if (currentLayer == Module::Layer::ALL) {
+            
+            Point<int> pos = selectionModel.getSelectedModules().at(0)->getPosition();
+            
+            for (int i = 0; i < selectionModel.getSelectedModules().size();i++) {
+                selectionModel.getSelectedModules().at(i)->savePosition();
+                selectionModel.getSelectedModules().at(i)->setTopLeftPosition(selectionModel.getSelectedModules().at(i)->getX(), pos.y);
+            }
+        }
+        else {
+            Point<int> pos = selectionModel.getSelectedModules().at(0)->getUiPosition();
+            
+            for (int i = 0; i < selectionModel.getSelectedModules().size();i++) {
+                selectionModel.getSelectedModules().at(i)->setUiPosition(selectionModel.getSelectedModules().at(i)->getUiPosition().getX(), pos.y);
+                selectionModel.getSelectedModules().at(i)->saveUiPosition();
+                selectionModel.getSelectedModules().at(i)->setTopLeftPosition(selectionModel.getSelectedModules().at(i)->getUiPosition());
+            }
+        }
+        
+    }
 }

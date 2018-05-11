@@ -215,7 +215,8 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
     }
     
     m->setTopLeftPosition(mod.getProperty("x").toString().getIntValue(), mod.getProperty("y").toString().getIntValue());
-
+    m->savePosition();
+    m->setUiPosition(mod.getProperty("ui_x").toString().getIntValue(), mod.getProperty("ui_y").toString().getIntValue());
     return m;
 }
 
@@ -380,6 +381,8 @@ void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Conn
         file.setProperty("index",String((*it)->getIndex()), nullptr);
         file.setProperty("x",(*it)->getPosition().getX(),nullptr);
         file.setProperty("y",(*it)->getPosition().getY(),nullptr);
+        file.setProperty("ui_x",(*it)->getUiPosition().getX(),nullptr);
+        file.setProperty("ui_y",(*it)->getUiPosition().getY(),nullptr);
         file.setProperty("isPrefab",(*it)->isPrefab(),nullptr);
         file.setProperty("prefabId", (*it)->getId(), nullptr);
         

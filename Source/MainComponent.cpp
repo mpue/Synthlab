@@ -69,7 +69,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     setSize (1280, 800);
 
     // specify the number of input and output channels that we want to open
-    // setAudioChannels (2, 2);
+    setAudioChannels (2, 2);
     createConfig();
     
     AudioManager::getInstance()->setDeviceManager(&deviceManager);
@@ -605,6 +605,13 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String & menuName) {
     else if (index == 3) {
         menu.addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::DUPLICATE);
         menu.addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::DELETE_SELECTED);
+        
+        PopupMenu* alignMenu = new PopupMenu();
+        
+        alignMenu->addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::ALIGN_X);
+        alignMenu->addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::ALIGN_Y);
+        
+        menu.addSubMenu("Align",*alignMenu);
     }
     
     return menu;

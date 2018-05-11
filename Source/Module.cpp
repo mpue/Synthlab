@@ -529,6 +529,24 @@ juce::Point<int> Module::getSavedPosition() {
     return savedPosition;
 }
 
+juce::Point<int> Module::getUiPosition() {
+    return uiPosition;
+}
+
+void Module::setUiPosition(int x, int y) {
+    this->uiPosition.x = x;
+    this->uiPosition.y = y;
+}
+
+void Module::saveUiPosition() {
+    this->savedUIPosition.x = uiPosition.x;
+    this->savedUIPosition.y = uiPosition.y;
+}
+
+juce::Point<int> Module::getSavedUiPosition() {
+    return savedUIPosition;
+}
+
 void Module::moveTo(int x, int y) {
     setTopLeftPosition(savedPosition.x + x, savedPosition.y + y);
 }
