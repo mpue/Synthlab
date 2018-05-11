@@ -6,7 +6,10 @@
   ==============================================================================
 */
 
+
 #include "Plugins/PluginManager.h"
+#include "PluginModule.h"
+
 #include "AudioManager.h"
 #include "MainComponent.h"
 #include "SynthEditor.h"
@@ -18,9 +21,10 @@
 #include "Project.h"
 #include "Knob.h"
 #include "Mixer.h"
-#include "PluginModule.h"
+#include "Actions/RemoveSelectedAction.h"
 #include "ModuleBrowser.h"
 #include "PitchBendModule.h"
+#include "ModuleUtils.h"
 
 #ifndef M_PI
 #define M_PI       3.14159265358979323846 
@@ -73,8 +77,10 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     createConfig();
     
     AudioManager::getInstance()->setDeviceManager(&deviceManager);
+    
+#if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
     PluginManager::getInstance();
-
+#endif
     if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
         createToolbar();
         createCPUMeter();
@@ -139,7 +145,9 @@ MainComponent::~MainComponent()
         delete toolbar;
         delete toolbarFactory;
         delete editorView;
+#if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
         delete pluginMenu;
+#endif
         delete cpuLoadLabel;
         delete loadSlider;
     }
@@ -277,8 +285,10 @@ void MainComponent::createStudioLayout() {
                                       -0.1, -0.9,   // size must be between 50 pixels and 90% of the available space
                                       -0.8);
     
-    
+#if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
     pluginMenu = PluginManager::getInstance()->buildPluginMenu();
+#endif
+    
 }
 
 void MainComponent::createPlayerLayout() {
@@ -595,7 +605,9 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String & menuName) {
     }
     else if (index == 1) {
         menu.addItem(11, "Show mixer", true, false, nullptr);
+#if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
         menu.addItem(12, "Manage plugins", true, false, nullptr);
+#endif
     }
     else if (index == 2) {
         
@@ -637,13 +649,16 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
     else if (menuItemID == 5) {
         openSettings();
     }
+#if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
     else if (menuItemID == 12) {
         PluginManager::getInstance()->scanPlugins();
     }
+#endif
     else if (menuItemID == 31) {
         editor->duplicateSelected();
         
     }
+#if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
     else if (menuItemID > 100 && menuItemID < 999) {
         String pluginName = PluginManager::getInstance()->getAvailablePlugins().at(menuItemID - 100);
         
@@ -656,6 +671,7 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
         }
         
     }
+#endif
     else if (menuItemID == 999) {
         JUCEApplication::getInstance()->shutdown();
     }
@@ -663,7 +679,12 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 }
 
 StringArray MainComponent::getMenuBarNames() {
+    
+#if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
     const char* const names[] = { "File", "View","Plugins", "Edit", nullptr };
+#else
+    const char* const names[] = { "File", "View", "Edit", nullptr };
+#endif
     
     return StringArray(names);
     
@@ -795,7 +816,9 @@ void MainComponent::buttonClicked (Button* b)
     if (tb != NULL) {
         
         if (tb->getItemId() == toolbarFactory->delete_element) {
-            //editor->removeSelectedItem();
+            RemoveSelectedAction* rma = new RemoveSelectedAction(editor);
+            Project::getInstance()->getUndoManager()->beginNewTransaction();
+            Project::getInstance()->getUndoManager()->perform(rma);
         }
         else if(tb->getItemId() == toolbarFactory->doc_new) {
             editor->setRunning(false);
@@ -951,51 +974,6 @@ void MainComponent::sendControllerMessage(Module *module, int channel, int contr
         }
         
     }
-#ifdef USE_PUSH
-    SamplerModule* sm = nullptr;
-    
-    if ((sm = dynamic_cast<SamplerModule*>(module)) != NULL) { 
-        
-        if (controller == 86 && value > 0) {
-            if (sm->isRecording()) {
-                sm->stopRecording();
-            }
-            else {
-                sm->startRecording();
-            }
-                
-        }
-        else if (controller == 71) {
-            // turn controller left
-            if ((int)value & (1 << 6)) {
-                long start = sm->getCurrentSampler()->getStartPosition();
-                
-                if (start - value < 0) {
-                   sm->getCurrentSampler()->setStartPosition(0);
-                }
-                else {
-                    sm->getCurrentSampler()->setStartPosition(start - value);
-                }
-                
-            }
-            else {
-                long start = sm->getCurrentSampler()->getStartPosition();
-                long end = sm->getCurrentSampler()->getSampleLength();
-                
-                if (sm->getCurrentSampler()->getStartPosition() + value * 100 >= end) {
-                    sm->getCurrentSampler()->setStartPosition(end-2);
-                }
-                else {
-                    sm->getCurrentSampler()->setStartPosition(start + value * 100);
-                }
-            }
-            sm->updatePush2Display();
-            
-        }
-        
-    }
-    #endif
-    
     for (int i = 0; i< module->getModules()->size();i++) {
         if ((k = dynamic_cast<Knob*>(module->getModules()->at(i)))!= NULL) {
             sendControllerMessage(module->getModules()->at(i), channel, controller, value);

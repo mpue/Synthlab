@@ -14,10 +14,6 @@
 #include "Project.h"
 #include "AudioManager.h"
 
-#ifdef USE_PUSH
-#include "push2/JuceToPush2DisplayBridge.h"
-#endif
-
 using juce::AudioFormatManager;
 using juce::AudioThumbnailCache;
 using juce::AudioThumbnail;
@@ -149,9 +145,7 @@ void SamplerModule::paint(juce::Graphics &g) {
 
     g.setColour(juce::Colours::white);
     g.drawLine(samplePosX, 20,samplePosX, 120);
-#ifdef USE_PUSH
-    updatePush2Display();
-#endif
+
 }
 
 
@@ -163,10 +157,6 @@ void SamplerModule::setAmplitude(float amplitude) {
 void SamplerModule::timerCallback() {
     samplePosX = (100.0 / sampler[currentSampler]->getSampleLength())* currentSample + 20;
     repaint();
-#ifdef USE_PUSH
-    pushSamplePosX = ((float)ableton::Push2DisplayBitmap::kWidth / sampler[currentSampler]->getSampleLength())* currentSample;
-    updatePush2Display();
-#endif
 }
 
 void SamplerModule::process() {
@@ -293,12 +283,6 @@ void SamplerModule::selectSample(int i) {
     std::function<void(void)> changeLambda =
     [=]() {  repaint(); };
     juce::MessageManager::callAsync(changeLambda);
-
-    
-    
-#ifdef USE_PUSH
-    updatePush2Display();
-#endif
 }
 
 
@@ -351,21 +335,6 @@ void SamplerModule::stopRecording() {
         
         if (sampler[currentSampler]->hasSample()) {
             selectSample(currentSampler);
-#ifdef USE_PUSH
-            AudioDeviceManager* deviceManager = AudioManager::getInstance()->getDeviceManager();
-            
-            if (deviceManager->getDefaultMidiOutput() != nullptr) {
-                deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0xb0,86,1));
-                for (int i = 0; i < 128;i++) {
-                    deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0x90,i,0));
-                    if (sampler[i] != nullptr && sampler[i]->hasSample()) {
-                        
-                        deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0x90,i,0x7e));
-                    }
-                }
-            }
-
-#endif
             thumbnail->addBlock(0, *recordingBuffer, 0, numRecordedSamples);
             std::function<void(void)> changeLambda =
             [=]() {  repaint(); };
@@ -378,31 +347,3 @@ void SamplerModule::stopRecording() {
         
     }
 }
-
-#ifdef USE_PUSH
-void SamplerModule::updatePush2Display() {
-
-    
-    pushSamplePosX = ((float)ableton::Push2DisplayBitmap::kWidth / sampler[currentSampler]->getSampleLength())* sampler[currentSampler]->getStartPosition();
-    auto& g = Project::getInstance()->getPush2Bridge()->GetGraphic();
-    
-    // Clear previous frame
-    g.fillAll(juce::Colour(0xff000000));
-    
-    // Create a path for the animated wave
-    const auto height = ableton::Push2DisplayBitmap::kHeight;
-    const auto width = ableton::Push2DisplayBitmap::kWidth;
-    
-
-    Rectangle<int> tb = Rectangle<int>(0,0,width,height);
-    g.setColour(Colours::black);
-    g.fillRect(tb);
-    g.setColour(Colours::orange);
-    this->thumbnail->drawChannels(g, tb,0,sampler[currentSampler]->getSampleLength() / sampleRate,1);
-    
-    g.setColour(juce::Colours::white);
-    
-    g.drawLine(pushSamplePosX, 0,pushSamplePosX, height);
-    Project::getInstance()->getPush2Bridge()->Flip();
-}
-#endif

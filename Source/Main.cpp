@@ -63,8 +63,10 @@ public:
     {
         if (mainWindow != nullptr)
             mainWindow->setLookAndFeel(nullptr);
-        mainWindow = nullptr; // (deletes our window)
+         mainWindow = nullptr; // (deletes our window)
+#if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
         PluginManager::getInstance()->destroy();
+#endif
         AudioManager::getInstance()->destroy();
         
 
@@ -105,12 +107,7 @@ public:
             setResizable (true, true);
 
             Rectangle<int> r = Desktop::getInstance().getDisplays().getMainDisplay().userArea;
-#if JUCE_MAC
-			centreWithSize(r.getWidth(), r.getHeight() - 25);
-#else
 	        centreWithSize (r.getWidth(), r.getHeight());
-#endif
-
             setVisible (true);
         }
 

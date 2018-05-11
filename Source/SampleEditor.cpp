@@ -1,7 +1,7 @@
     
 #include "AudioManager.h"
 #include "SampleEditor.h"
-#include "push2/JuceToPush2DisplayBridge.h"
+
 
 using juce::AudioFormatManager;
 using juce::MidiKeyboardComponent;
@@ -100,7 +100,7 @@ void SampleEditor::handleNoteOff(juce::MidiKeyboardState *source, int midiChanne
 }
 
 bool SampleEditor::isInterestedInDragSource (const SourceDetails& dragSourceDetails) {
-    return true;
+    return false;
 }
 
 void SampleEditor::itemDropped (const SourceDetails& dragSourceDetails) {

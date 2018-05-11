@@ -8,17 +8,11 @@
 #ifndef Project_h
 #define Project_h
 
-#define USE_PUSH
-
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "CustomLookAndFeel.h"
 #include "MainTabbedComponent.h"
 #include "AudioEngine/Sampler.h"
 #include "PropertyView.h"
-
-#ifdef USE_PUSH
-#include "push2/JuceToPush2DisplayBridge.h"
-#endif
 
 class Project {
 public:
@@ -115,49 +109,6 @@ private:
         undoManager = new juce::UndoManager();
         lookAndFeel = new CustomLookAndFeel();
         commandManager = new ApplicationCommandManager();
-        
-#ifdef USE_PUSH
-        
-        // First we initialise the low level push2 object
-        NBase::Result result = push2Display.Init();
-        
-        /*
-        if (result.Failed()){
-            Logger::writeToLog("Failed to initialize Push2");
-        }
-        
-        // Then we initialise the juce to push bridge
-        */
-        result = bridge.Init(push2Display);
-        /*
-        if (result.Failed()) {
-             Logger::writeToLog("Failed to initialize Push display");
-        }
-        else {
-         
-            auto& g = Project::getInstance()->getPush2Bridge()->GetGraphic();
-            // Clear previous frame
-            g.fillAll(juce::Colour(0xff000000));
-            
-            // Create a path for the animated wave
-            const auto height = ableton::Push2DisplayBitmap::kHeight;
-            const auto width = ableton::Push2DisplayBitmap::kWidth;
-            
-            g.setFont(18);
-             String message = "Welcome to Synthlab";
-            Rectangle<int> rect = Rectangle<int>(width / 2 - g.getCurrentFont().getStringWidth(message) / 2, height / 2);
-            g.drawText(message, rect, juce::Justification::centred);
-        
-        }
-        
-        
-        const auto height = ableton::Push2DisplayBitmap::kHeight;
-        const auto width = ableton::Push2DisplayBitmap::kWidth;
-        
-        Rectangle<int> pushBounds = Rectangle<int>(0,0,width,height);
-        */
-
-#endif
     }
     
     ~Project() {
@@ -196,10 +147,6 @@ private:
     Sampler* defaultSampler = nullptr;
     AppMode mode = STUDIO;
     
-#ifdef USE_PUSH
-    ableton::Push2DisplayBridge bridge;    /*!< The bridge allowing to use juce::graphics for push */
-    ableton::Push2Display push2Display;
-#endif
     
 };
 

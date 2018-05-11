@@ -268,12 +268,6 @@ void SamplePropertiesPanel::timerCallback() {
     recordActiveButton->setToggleState(!recordActiveButton->getToggleState(), juce::NotificationType::dontSendNotification);
     updateRecordingTime();
     seconds++;
-#ifdef USE_PUSH
-    AudioDeviceManager* deviceManager = AudioManager::getInstance()->getDeviceManager();
-    if(deviceManager->getDefaultMidiOutput() != nullptr) {
-        deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage(0xb0,86,seconds%2));
-    }
-#endif
 }
 
 void SamplePropertiesPanel::updateThumb() {
@@ -317,11 +311,11 @@ void SamplePropertiesPanel::openSample() {
         URL url = chooser.getURLResult();
         InputStream* is = url.createInputStream(false);
 
-        module->loadSample(is);
+        module->loadSample(is,module->getCurrentSamplerIndex());
 
         delete is;
 
-        ScopedPointer<XmlElement> xml = XmlDocument(data).getDocumentElement();
+        // ScopedPointer<XmlElement> xml = XmlDocument(data).getDocumentElement();
 #else
         File file = chooser.getResult();
         FileInputStream* is = new FileInputStream(file);

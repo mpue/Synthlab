@@ -152,9 +152,11 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     else if (prefabs[id].getName() == "Distortion") {
         m = new DistortionModule(sampleRate,bufferSize);
     }
+#if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
     else if (prefabs[id].getName() == "Plugin") {
         m = new PluginModule(sampleRate,bufferSize);
     }
+#endif
     else if (prefabs[id].getName() == "Step sequencer") {
         m = new StepSequencerModule(sampleRate,bufferSize);
     }

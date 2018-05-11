@@ -40,9 +40,6 @@ class SampleEditor;
 String SynthEditor::defaultMidiOutputName = "Express 128 Port 7";
 String SynthEditor::defaultMidiInputName = "Express 128 Port 7";
 
-
-#define USE_PUSH
-
 SynthEditor::SynthEditor(){
     
     setSize (1280, 800);
@@ -867,7 +864,7 @@ void SynthEditor::loadFromString(juce::String in){
 
 void SynthEditor::saveModule(Module* m) {
 
-    FileChooser chooser("Select target file...", File::nonexistent, "*.slb");
+    FileChooser chooser("Select target file...", File::nonexistent, "*");
     
     if (chooser.browseForFileToSave(true)) {
         
@@ -890,7 +887,7 @@ void SynthEditor::saveModule(Module* m) {
 }
 
 Module* SynthEditor::loadModule() {
-    FileChooser chooser("Select module to open", File::nonexistent, "*.slb");
+    FileChooser chooser("Select module to open", File::nonexistent, "*");
     
 	Module* m = nullptr;
     if (chooser.browseForFileToOpen()) {
@@ -924,7 +921,7 @@ void SynthEditor::saveFile() {
     File path = File::getSpecialLocation(File::userApplicationDataDirectory);
     File outputDir = File(path.getFullPathName()+"/structure.xml");
     
-    FileChooser chooser("Select target file...",outputDir, "*.slb");
+    FileChooser chooser("Select target file...",outputDir, "*");
     
     if (chooser.browseForFileToSave(true)) {
         
@@ -936,7 +933,7 @@ void SynthEditor::saveFile() {
         
         OutputStream* os = file.createOutputStream();
         
-        XmlElement* xml = v->createXml()
+        XmlElement* xml = v->createXml();
         
         xml->writeToStream(*os, "");
         
@@ -945,7 +942,7 @@ void SynthEditor::saveFile() {
         delete v;
     }
 #else
-    FileChooser chooser("Select target file...", File::nonexistent, "*.slb");
+    FileChooser chooser("Select target file...", File::nonexistent, "*");
     
     if (chooser.browseForFileToSave(true)) {
         
@@ -1024,10 +1021,7 @@ void SynthEditor::openSampleEditor(SamplerModule *sm) {
     
     Project::getInstance()->getSupplemental()->addTab("Sample editor", Colours::darkgrey, sm->getEditor(), false);
     Project::getInstance()->getSupplemental()->setCurrentTabIndex(Project::getInstance()->getSupplemental()->getNumTabs() - 1);
-#ifdef USE_PUSH
-    sm->updatePush2Pads();
-    sm->updatePush2Display();
-#endif
+
 }
 
 void SynthEditor::openStepSequencer(StepSequencerModule *ssm) {
@@ -1062,7 +1056,7 @@ void SynthEditor::openRecorder(AudioRecorderModule *arm) {
 }
 
 void SynthEditor::openFile() {
-    FileChooser chooser("Select file to open", File::nonexistent, "*.slb");
+    FileChooser chooser("Select file to open", File::nonexistent, "*");
 
     if (chooser.browseForFileToOpen()) {
             
@@ -1272,7 +1266,7 @@ void SynthEditor::changeListenerCallback(juce::ChangeBroadcaster *source) {
     if (efb != nullptr) {
         File* f = efb->getSelectedFile();
         
-        if (f->getFullPathName().endsWith("slb")) {
+        if (f->getFullPathName().endsWith("slb") || f->getFullPathName().endsWith("xml")) {
             FileInputStream *fis = new FileInputStream(*f);
             String data = fis->readEntireStreamAsString();
             delete fis;

@@ -150,34 +150,9 @@ public:
     }
     
     Sampler* getCurrentSampler() {
-#ifdef USE_PUSH
-        if (sampler[currentSampler] != nullptr) {
-            pushSamplePosX = ((float)ableton::Push2DisplayBitmap::kWidth / sampler[currentSampler]->getSampleLength())* sampler[currentSampler]->getStartPosition();
-            updatePush2Display();
-        }
-#endif
-        
         return sampler[currentSampler];
     }
 
-#ifdef USE_PUSH
-    void updatePush2Pads() {
-
-        juce::AudioDeviceManager* deviceManager = AudioManager::getInstance()->getDeviceManager();
-        
-        if (deviceManager->getDefaultMidiOutput() != nullptr) {
-            deviceManager->getDefaultMidiOutput()->sendMessageNow(juce::MidiMessage(0xb0,86,1));
-            for (int i = 0; i < 128;i++) {
-                deviceManager->getDefaultMidiOutput()->sendMessageNow(juce::MidiMessage(0x90,i,0));
-                if (sampler[i] != nullptr && sampler[i]->hasSample()) {
-                    
-                    deviceManager->getDefaultMidiOutput()->sendMessageNow(juce::MidiMessage(0x90,i,0x7e));
-                }
-            }
-        }
-
-    }
-#endif
     Sampler* getSamplerAt(int samplerNum) {
         return sampler[samplerNum];
     }
