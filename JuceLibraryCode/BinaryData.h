@@ -9,22 +9,22 @@
 namespace BinaryData
 {
     extern const char*   gtestparamtest_h_pump;
-    const int            gtestparamtest_h_pumpSize = 20552;
+    const int            gtestparamtest_h_pumpSize = 20042;
 
     extern const char*   boom_aif;
     const int            boom_aifSize = 1768430;
 
     extern const char*   adsr_txt;
-    const int            adsr_txtSize = 1210;
+    const int            adsr_txtSize = 1205;
 
     extern const char*   highpass_txt;
     const int            highpass_txtSize = 644;
 
     extern const char*   lowpass_txt;
-    const int            lowpass_txtSize = 1367;
+    const int            lowpass_txtSize = 1363;
 
     extern const char*   oscillator_txt;
-    const int            oscillator_txtSize = 528;
+    const int            oscillator_txtSize = 526;
 
     extern const char*   adder_png;
     const int            adder_pngSize = 3242;
@@ -170,20 +170,13 @@ namespace BinaryData
     extern const char*   whitenoise_png;
     const int            whitenoise_pngSize = 7446;
 
-    // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 54;
-
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];
 
-    // Points to the start of a list of resource filenames.
-    extern const char* originalFilenames[];
+    // Number of elements in the namedResourceList array.
+    const int namedResourceListSize = 54;
 
     // If you provide the name of one of the binary resource variables above, this function will
     // return the corresponding data and its size (or a null pointer if the name isn't found).
-    const char* getNamedResource (const char* resourceNameUTF8, int& dataSizeInBytes) noexcept;
-
-    // If you provide the name of one of the binary resource variables above, this function will
-    // return the corresponding original, non-mangled filename (or a null pointer if the name isn't found).
-    const char* getNamedResourceOriginalFilename (const char* resourceNameUTF8) noexcept;
+    const char* getNamedResource (const char* resourceNameUTF8, int& dataSizeInBytes) throw();
 }
