@@ -132,7 +132,7 @@ void PluginManager::updatePluginList() {
     juce::String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
     File presetPath = File(userHome+"/.Synthlab/plugins/");
     
-    pluginList = new KnownPluginList();
+    pluginList = std::shared_ptr<KnownPluginList>(new KnownPluginList());
     
     ScopedPointer<DirectoryIterator> iter = new DirectoryIterator(presetPath, false);
     

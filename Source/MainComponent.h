@@ -134,6 +134,8 @@ private:
     int currentMeasure = 0;
     int currentSample = 0;
     
+    StringArray sampleData;
+    
     bool isOptionPressed = false;
     
     Sampler* defaultSampler = nullptr;

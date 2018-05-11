@@ -44,6 +44,9 @@ PadModule::~PadModule()
     delete channelListener;
     delete noteValue;
     delete noteListener;
+    delete holdValue;
+    delete holdListener;
+    delete button;
 }
 
 void PadModule::configurePins() {
@@ -103,6 +106,8 @@ void PadModule::createProperties() {
     channelListener = new ChannelListener(*channelValue, this);
     noteValue = new Value();
     noteListener = new NoteListener(*noteValue, this);
+    holdValue = new Value();
+    holdListener = new HoldListener(*holdValue, this);
 }
 
 juce::Array<PropertyComponent*>& PadModule::getProperties() {
@@ -114,6 +119,9 @@ juce::Array<PropertyComponent*>& PadModule::getProperties() {
     
     noteProp = new SliderPropertyComponent(*noteValue,"note",0,127,1,1,true);
     properties.add(noteProp);
+    
+    holdProp = new BooleanPropertyComponent(*holdValue,"Hold","Hold");
+    properties.add(holdProp);
     
     return properties;
 }
@@ -139,18 +147,42 @@ void PadModule::setNote(int note) {
     this->noteValue->setValue(note);
 }
 
+bool PadModule::isHold() {
+    return holdMode;
+}
+
+void PadModule::setHold(bool hold){
+    this->holdMode = hold;
+}
+
 void PadModule::buttonClicked (Button*)
 {
 }
 
 void PadModule::buttonStateChanged (Button* button)
 {
-    if(juce::Button::ButtonState::buttonDown == button->getState())
-    {
-        gateOn(64, note);
+    if (isHold()) {
+        
+        if (juce::Button::ButtonState::buttonDown == button->getState()) {
+            buttonDown = !buttonDown;
+            
+            if(buttonDown)
+            {
+                gateOn(64, note);
+            }
+            else {
+                gateOff(note);
+            }
+        }
     }
     else {
-        gateOff(note);
+        if(juce::Button::ButtonState::buttonDown == button->getState())
+        {
+            gateOn(64, note);
+        }
+        else {
+            gateOff(note);
+        }
     }
 }
 

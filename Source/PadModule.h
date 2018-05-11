@@ -39,6 +39,9 @@ public:
     void setNote(int note);
     int getNote();
     
+    void setHold(bool hold);
+    bool isHold();
+    
     virtual juce::Array<juce::PropertyComponent*>& getProperties() override;
     virtual void createProperties() override;
     
@@ -75,6 +78,20 @@ private:
         juce::Value value;
     };
     
+    struct HoldListener : juce::Value::Listener
+    {
+        HoldListener (juce::Value& v, PadModule* g) : g(g),  value (v) { value.addListener (this); }
+        ~HoldListener()  {}  // no need to remove the listener
+        
+        void valueChanged (juce::Value& value) override {
+            g->setHold(value.toString().getIntValue() > 0);
+        }
+        PadModule* g;
+        juce::Value value;
+    };
+    
+    
+    
     juce::Value* channelValue;
     juce::PropertyComponent* channelProp;
     ChannelListener* channelListener;
@@ -82,11 +99,17 @@ private:
     juce::Value* noteValue;
     juce::PropertyComponent* noteProp;
     NoteListener* noteListener;
+
+    juce::Value* holdValue;
+    juce::PropertyComponent* holdProp;
+    HoldListener* holdListener;
     
     juce::TextButton* button;
     
     int note = 64;
     int channel = 1;
+    bool holdMode = false;
+    bool buttonDown = false;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PadModule)
 };

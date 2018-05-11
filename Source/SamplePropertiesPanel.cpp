@@ -303,7 +303,7 @@ void SamplePropertiesPanel::setThumbnail(AudioThumbnailComponent* thumbnail) {
 
 void SamplePropertiesPanel::openSample() {
 
-    FileChooser chooser("Select file to open", File::nonexistent, "*");
+    FileChooser chooser("Select file to open", File(), "*");
 
     if (chooser.browseForFileToOpen()) {
 

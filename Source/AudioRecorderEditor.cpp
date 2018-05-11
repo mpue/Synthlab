@@ -100,7 +100,7 @@ void AudioRecorderEditor::saveRecording() {
     String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
     File appDir = File(userHome+"/.Synthlab");
     
-    FileChooser chooser("Select file to save", File::nonexistent, "*");
+    FileChooser chooser("Select file to save", File(), "*");
     
     if (chooser.browseForFileToSave(true)) {
         File outputFile = chooser.getResult();

@@ -120,7 +120,7 @@ void Knob::paint(juce::Graphics &g) {
             
         }
         
-        g.setFont(10);
+        g.setFont(8);
         
         if (pins.at(0)->direction == Pin::Direction::IN) {
             //g.fillRect(pins.at(i)->x,pins.at(i)->y, 5, 10);
@@ -133,6 +133,10 @@ void Knob::paint(juce::Graphics &g) {
             g.drawEllipse(pins.at(0)->x, pins.at(0)->y, 10, 10,1);
             g.fillEllipse(pins.at(0)->x+2,pins.at(0)->y +2, 6, 6);
             g.drawText(pins.at(0)->getName() , pins.at(0)->x - 25,pins.at(0)->y, 20, 10, juce::Justification::right);
+        }
+        
+        if (pins.at(0)->getConnections().size() >= 1 &&  pins.at(0)->getConnections().at(0) != nullptr) {
+            g.drawText(pins.at(0)->getConnections().at(0)->getName(),5,5, 10, 10, juce::Justification::left);
         }
     
     }
@@ -174,7 +178,7 @@ void Knob::setValue(float value) {
 void Knob::sliderValueChanged(juce::Slider *slider) {
     this->value = slider->getValue();
     this->valueValue->setValue(this->value);
-    this->nameLabel->setText(String(value),juce::NotificationType::dontSendNotification);
+    // this->nameLabel->setText(String(value),juce::NotificationType::dontSendNotification);
     this->pins.at(0)->setValue(value);
 }
 

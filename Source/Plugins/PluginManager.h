@@ -101,6 +101,7 @@ private:
         }
         if (pluginList != nullptr) {
             pluginList->clear();
+            pluginList = nullptr;
             // delete pluginList;
         }
         delete apfm;
@@ -110,7 +111,7 @@ private:
     std::map<juce::String,PluginWindow*> pluginWindowMap;
     std::map<juce::String,juce::AudioProcessorEditor*> editorWindowMap;
     juce::StringArray* plugins = nullptr;
-    juce::KnownPluginList* pluginList = nullptr;
+    std::shared_ptr<juce::KnownPluginList> pluginList = nullptr;
     static PluginManager* instance;
     juce::AudioPluginFormatManager* apfm;
 };

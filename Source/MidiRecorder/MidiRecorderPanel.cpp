@@ -197,7 +197,7 @@ void MidiRecorderPanel::buttonClicked (Button* buttonThatWasClicked)
     {
         //[UserButtonCode_saveButton] -- add your button handler code here..
 
-        FileChooser chooser("Select target file...", File::nonexistent, "*");
+        FileChooser chooser("Select target file...", File(), "*");
 
         if (chooser.browseForFileToSave(true)) {
             File file = chooser.getResult();

@@ -347,6 +347,7 @@ void ModuleUtils::configureModule(Module *m, ValueTree& mod, ChangeBroadcaster* 
     if ((p = dynamic_cast<PadModule*>(m)) != NULL) {
         p->setChannel(mod.getProperty("channel").toString().getIntValue());
         p->setNote(mod.getProperty("note").toString().getIntValue());
+        p->setHold(mod.getProperty("hold").toString().getIntValue() > 0);
     }
     
     PluginModule* pm ;
@@ -462,6 +463,7 @@ void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Conn
         if ((p = dynamic_cast<PadModule*>((*it))) != NULL) {
             file.setProperty("channel", p->getChannel(), nullptr);
             file.setProperty("note", p->getNote(), nullptr);
+            file.setProperty("hold", p->isHold(),nullptr);
         }
         
         PluginModule* pm;

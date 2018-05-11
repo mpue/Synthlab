@@ -392,14 +392,14 @@ void SynthEditor::showContextMenu(Point<int> position) {
         }
          */
         
-        PopupMenu* alignMenu = new PopupMenu();
+        PopupMenu alignMenu = PopupMenu();
         
-        alignMenu->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::ALIGN_X);
-        alignMenu->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::ALIGN_Y);
+        alignMenu.addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::ALIGN_X);
+        alignMenu.addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::ALIGN_Y);
         
-        m->addSubMenu("Align",*alignMenu);
+        m->addSubMenu("Align",alignMenu);
         
-        PopupMenu* prefabMenu = new PopupMenu();
+        PopupMenu prefabMenu = PopupMenu();
         
         StringArray* categories = PrefabFactory::getInstance()->getCategories();
         
@@ -427,10 +427,10 @@ void SynthEditor::showContextMenu(Point<int> position) {
                 
             }
             
-            prefabMenu->addSubMenu(categories->getReference(i), category, true);
+            prefabMenu.addSubMenu(categories->getReference(i), category, true);
         }
         
-        m->addSubMenu("Prefabs",*prefabMenu);
+        m->addSubMenu("Prefabs",prefabMenu);
         
         PopupMenu recentFiles = PopupMenu();
         
@@ -474,8 +474,6 @@ void SynthEditor::showContextMenu(Point<int> position) {
             setRunning(true);
         }
 
-        
-        delete prefabMenu;
     }
     
     m->setLookAndFeel(nullptr);
@@ -864,7 +862,7 @@ void SynthEditor::loadFromString(juce::String in){
 
 void SynthEditor::saveModule(Module* m) {
 
-    FileChooser chooser("Select target file...", File::nonexistent, "*");
+    FileChooser chooser("Select target file...", File(), "*");
     
     if (chooser.browseForFileToSave(true)) {
         
@@ -887,7 +885,7 @@ void SynthEditor::saveModule(Module* m) {
 }
 
 Module* SynthEditor::loadModule() {
-    FileChooser chooser("Select module to open", File::nonexistent, "*");
+    FileChooser chooser("Select module to open", File(), "*");
     
 	Module* m = nullptr;
     if (chooser.browseForFileToOpen()) {
@@ -1056,7 +1054,7 @@ void SynthEditor::openRecorder(AudioRecorderModule *arm) {
 }
 
 void SynthEditor::openFile() {
-    FileChooser chooser("Select file to open", File::nonexistent, "*");
+    FileChooser chooser("Select file to open", File::getSpecialLocation(File::commonDocumentsDirectory), "*",true, true);
 
     if (chooser.browseForFileToOpen()) {
             
@@ -1250,7 +1248,7 @@ void SynthEditor::saveScreenShot() {
     Image image = createComponentSnapshot(getLocalBounds());
     JPEGImageFormat format;
     
-    FileChooser chooser("Select target file...", File::nonexistent, "*");
+    FileChooser chooser("Select target file...", File(), "*");
     
     if (chooser.browseForFileToSave(true)) {
         FileOutputStream* fos = new FileOutputStream(chooser.getResult());
@@ -1305,46 +1303,46 @@ void SynthEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo& r
     switch (commandID)
     {
         case SynthEditor::CommandIds::NEW:
-            result.setInfo("New", String::empty, String::empty, 0);
+            result.setInfo("New", String(), String(), 0);
             result.addDefaultKeypress('N', ModifierKeys::commandModifier);
             break;
         case SynthEditor::CommandIds::ADD_MODULE:
-            result.setInfo("Add module", String::empty, String::empty, 0);
+            result.setInfo("Add module", String(), String(), 0);
             break;
         case SynthEditor::CommandIds::DELETE_SELECTED:
-            result.setInfo("Delete selected", String::empty, String::empty, 0);
+            result.setInfo("Delete selected", String(), String(), 0);
             result.addDefaultKeypress('x', ModifierKeys::commandModifier);
             break;
         case SynthEditor::CommandIds::SAVE:
-            result.setInfo("Save", String::empty, String::empty, 0);
+            result.setInfo("Save", String(), String(), 0);
             result.addDefaultKeypress('s', ModifierKeys::commandModifier);
             break;
         case SynthEditor::CommandIds::LOAD:
-            result.setInfo("Load", String::empty, String::empty, 0);
+            result.setInfo("Load", String(), String(), 0);
             result.addDefaultKeypress('l', ModifierKeys::commandModifier);
             break;
         case SynthEditor::CommandIds::LOAD_MODULE:
-            result.setInfo("Load module", String::empty, String::empty, 0);
+            result.setInfo("Load module", String(), String(), 0);
             break;
         case SynthEditor::CommandIds::SAVE_MODULE:
-            result.setInfo("Save module", String::empty, String::empty, 0);
+            result.setInfo("Save module", String(), String(), 0);
             break;
         case SynthEditor::CommandIds::SAVE_SCREENSHOT:
-            result.setInfo("Save module", String::empty, String::empty, 0);
+            result.setInfo("Save module", String(), String(), 0);
             break;
         case SynthEditor::CommandIds::DUPLICATE:
-            result.setInfo("Duplicate module", String::empty, String::empty, 0);
+            result.setInfo("Duplicate module", String(), String(), 0);
             result.addDefaultKeypress('d', ModifierKeys::commandModifier);
             result.setActive(true);
             break;
         case SynthEditor::CommandIds::ALIGN_Y:
-            result.setInfo("Align vertically", String::empty, String::empty, 0);
+            result.setInfo("Align vertically", String(), String(), 0);
             break;
         case SynthEditor::CommandIds::ALIGN_X:
-            result.setInfo("Align horizontally", String::empty, String::empty, 0);
+            result.setInfo("Align horizontally", String(), String(), 0);
             break;
         case SynthEditor::CommandIds::RESET_GUI_POS:
-            result.setInfo("Reset UI position", String::empty, String::empty, 0);
+            result.setInfo("Reset UI position", String(), String(), 0);
             break;
     }
 };

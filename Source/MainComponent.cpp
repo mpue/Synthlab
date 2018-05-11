@@ -145,7 +145,7 @@ MainComponent::~MainComponent()
         delete toolbar;
         delete toolbarFactory;
         delete editorView;
-#if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
+#if defined(JUCE_PLUGINHOST_AU)
         delete pluginMenu;
 #endif
         delete cpuLoadLabel;
@@ -517,12 +517,16 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
                     const float* auxR = auxChannels.at(k)->getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
                     
                     Mixer::Channel* channel =  mixer->getChannel(Mixer::Channel::Type::AUX, k);
-                    float auxVolume = channel->mute ? 0 : channel->volume;
-                    double auxpan = channel->pan;
                     
-                    float auxgainRight = sin((M_PI*(auxpan + 1) / 4));
-                    channel->magnitudeRight = auxVolume * auxgainRight * auxChannels.at(k)->getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
-                    auxRightOut += auxR[j] * auxVolume * auxgainRight;
+                    if (channel != nullptr) {
+                        
+                        float auxVolume = channel->mute ? 0 : channel->volume;
+                        double auxpan = channel->pan;
+                        
+                        float auxgainRight = sin((M_PI*(auxpan + 1) / 4));
+                        channel->magnitudeRight = auxVolume * auxgainRight * auxChannels.at(k)->getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+                        auxRightOut += auxR[j] * auxVolume * auxgainRight;
+                    }
                 }
                 
             }
@@ -601,6 +605,23 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String & menuName) {
         menu.addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::LOAD);
         menu.addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::SAVE);
         menu.addItem(5, "Settings", true, false, nullptr);
+        
+        PopupMenu samplesMenu = PopupMenu();
+        
+        for (int i = 0; i < BinaryData::namedResourceListSize;i++) {
+            if (juce::String(BinaryData::namedResourceList[i]).contains("slb")) {
+                samplesMenu.addItem(1000+i,String(BinaryData::namedResourceList[i]));
+                
+                int size;
+                const char* data = BinaryData::getNamedResource(BinaryData::namedResourceList[i], size);
+                String xmlData = String(data);
+                sampleData.add(xmlData);
+            }
+        }
+        
+        menu.addSubMenu("Samples",samplesMenu);
+        
+        
         menu.addItem(999, "Exit", true, false, nullptr);
     }
     else if (index == 1) {
@@ -618,12 +639,12 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String & menuName) {
         menu.addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::DUPLICATE);
         menu.addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::DELETE_SELECTED);
         
-        PopupMenu* alignMenu = new PopupMenu();
+        PopupMenu alignMenu = PopupMenu();
         
-        alignMenu->addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::ALIGN_X);
-        alignMenu->addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::ALIGN_Y);
+        alignMenu.addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::ALIGN_X);
+        alignMenu.addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::ALIGN_Y);
         
-        menu.addSubMenu("Align",*alignMenu);
+        menu.addSubMenu("Align",alignMenu);
     }
     
     return menu;
@@ -675,7 +696,15 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
     else if (menuItemID == 999) {
         JUCEApplication::getInstance()->shutdown();
     }
-    
+    else if (menuItemID >= 1000) {
+        String xmlData = sampleData.getReference(menuItemID-1000);
+        editor->setRunning(false);
+        editor->cleanUp();
+        editor->getMixer()->removeAllChannels();
+        editor->newFile();
+        editor->loadFromString(xmlData);
+        editor->setRunning(true);
+    }
 }
 
 StringArray MainComponent::getMenuBarNames() {

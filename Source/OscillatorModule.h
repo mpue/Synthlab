@@ -242,13 +242,9 @@ template<typename T> void OscillatorModule<T>::createProperties() {
 }
 
 template<typename T> void OscillatorModule<T>::process() {
+
     bool volumegate = false;
-    
-    
-    
-    if (pins.at(0)->getConnections().size() ==  1) {
-        this->setPitch(pins.at(0)->getConnections().at(0)->getValue());
-    }
+
     if (pins.at(1)->getConnections().size() ==  1) {
         this->setFine(pins.at(1)->getConnections().at(0)->getValue());
     }
@@ -268,6 +264,9 @@ template<typename T> void OscillatorModule<T>::process() {
         gatePin = pins.at(2)->getConnections().at(0);
     }
     if (pins.at(2)->getConnections().size() == 1) {
+        if (pins.at(0)->getConnections().size() ==  1) {
+            this->setPitch(pins.at(0)->getConnections().at(0)->getValue());
+        }
         for (int i = 0; i < buffersize; i++) {
             float value = 0;
             
@@ -284,10 +283,10 @@ template<typename T> void OscillatorModule<T>::process() {
                         if (oscillator[j] ==  nullptr) {
                             oscillator[j] = new T(sampleRate, buffersize);
                             
-                            oscillator[j]->setFrequency((440 * pow(2.0,((j+pitch)-69.0)/12.0)) * pitchBend);
+                            
                         }
                         float volume = gatePin->data[j];
-                        
+                        oscillator[j]->setFrequency((440 * pow(2.0,((j+pitch)-69.0)/12.0)) * pitchBend);
                         this->oscillator[j]->setVolume(volume);
                     }
                     else {
