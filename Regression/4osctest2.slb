@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Module>
+  <Modules>
+    <Module name="Sawtooth" index="74" x="-2" y="87" ui_x="-2" ui_y="87"
+            isPrefab="1" prefabId="64" mono="0">
+      <Pins>
+        <Pin type="2" name="P" direction="0" index="7401" x="0" y="10"/>
+        <Pin type="2" name="F" direction="0" index="7402" x="0" y="30"/>
+        <Pin type="2" name="A" direction="0" index="7403" x="0" y="50"/>
+        <Pin type="0" name="Out" direction="1" index="7404" x="110" y="10"/>
+        <Pin type="2" name="V" direction="1" index="7405" x="110" y="30"/>
+        <Pin type="2" name="Pb" direction="0" index="7406" x="0" y="70"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Sawtooth" index="164" x="776" y="200" ui_x="-2" ui_y="87"
+            isPrefab="1" prefabId="64" mono="0">
+      <Pins>
+        <Pin type="2" name="P" direction="0" index="16401" x="0" y="10"/>
+        <Pin type="2" name="F" direction="0" index="16402" x="0" y="30"/>
+        <Pin type="2" name="A" direction="0" index="16403" x="0" y="50"/>
+        <Pin type="0" name="Out" direction="1" index="16404" x="110" y="10"/>
+        <Pin type="2" name="V" direction="1" index="16405" x="110" y="30"/>
+        <Pin type="2" name="Pb" direction="0" index="16406" x="0" y="70"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Sawtooth" index="1064" x="781" y="507" ui_x="-2" ui_y="87"
+            isPrefab="1" prefabId="64" mono="0">
+      <Pins>
+        <Pin type="2" name="P" direction="0" index="106401" x="0" y="10"/>
+        <Pin type="2" name="F" direction="0" index="106402" x="0" y="30"/>
+        <Pin type="2" name="A" direction="0" index="106403" x="0" y="50"/>
+        <Pin type="0" name="Out" direction="1" index="106404" x="110" y="10"/>
+        <Pin type="2" name="V" direction="1" index="106405" x="110" y="30"/>
+        <Pin type="2" name="Pb" direction="0" index="106406" x="0" y="70"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Sawtooth" index="10064" x="779" y="351" ui_x="-2" ui_y="87"
+            isPrefab="1" prefabId="64" mono="0">
+      <Pins>
+        <Pin type="2" name="P" direction="0" index="1006401" x="0" y="10"/>
+        <Pin type="2" name="F" direction="0" index="1006402" x="0" y="30"/>
+        <Pin type="2" name="A" direction="0" index="1006403" x="0" y="50"/>
+        <Pin type="0" name="Out" direction="1" index="1006404" x="110" y="10"/>
+        <Pin type="2" name="V" direction="1" index="1006405" x="110" y="30"/>
+        <Pin type="2" name="Pb" direction="0" index="1006406" x="0" y="70"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Mixer" index="92" x="1085" y="154" ui_x="-2" ui_y="87"
+            isPrefab="1" prefabId="82">
+      <Pins>
+        <Pin type="0" name="In1" direction="0" index="9201" x="0" y="10"/>
+        <Pin type="2" name="A1" direction="0" index="9202" x="0" y="30"/>
+        <Pin type="0" name="In2" direction="0" index="9203" x="0" y="50"/>
+        <Pin type="2" name="A2" direction="0" index="9204" x="0" y="70"/>
+        <Pin type="0" name="In3" direction="0" index="9205" x="0" y="90"/>
+        <Pin type="2" name="A3" direction="0" index="9206" x="0" y="110"/>
+        <Pin type="0" name="Out" direction="1" index="9207" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Mixer" index="182" x="1106" y="461" ui_x="-2" ui_y="87"
+            isPrefab="1" prefabId="82">
+      <Pins>
+        <Pin type="0" name="In1" direction="0" index="18201" x="0" y="10"/>
+        <Pin type="2" name="A1" direction="0" index="18202" x="0" y="30"/>
+        <Pin type="0" name="In2" direction="0" index="18203" x="0" y="50"/>
+        <Pin type="2" name="A2" direction="0" index="18204" x="0" y="70"/>
+        <Pin type="0" name="In3" direction="0" index="18205" x="0" y="90"/>
+        <Pin type="2" name="A3" direction="0" index="18206" x="0" y="110"/>
+        <Pin type="0" name="Out" direction="1" index="18207" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="77" x="-88" y="76" ui_x="-88" ui_y="76" isPrefab="1"
+            prefabId="67" value="1.00000000000000000000">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="7701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="167" x="933" y="192" ui_x="-2" ui_y="87" isPrefab="1"
+            prefabId="67" value="1.00000000000000000000">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="16701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="1067" x="919" y="480" ui_x="-2" ui_y="87" isPrefab="1"
+            prefabId="67" value="1.00000000000000000000">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="106701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="10067" x="920" y="529" ui_x="-2" ui_y="87" isPrefab="1"
+            prefabId="67" value="2.00000000000000000000">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="1006701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Audio out" index="76" x="1621" y="315" ui_x="-2" ui_y="87"
+            isPrefab="1" prefabId="66" volume="0.69999998807907104492">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="7601" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="7602" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="ADSR" index="80" x="494" y="285" ui_x="-2" ui_y="87" isPrefab="1"
+            prefabId="70" attack="4.51000022888183593750" decay="1.82000005245208740234"
+            sustain="0.20000000298023223877" release="1.72000002861022949219"
+            mono="0">
+      <Pins>
+        <Pin type="1" name="G" direction="0" index="8001" x="0" y="10"/>
+        <Pin type="2" name="A" direction="0" index="8002" x="0" y="30"/>
+        <Pin type="2" name="D" direction="0" index="8003" x="0" y="50"/>
+        <Pin type="2" name="S" direction="0" index="8004" x="0" y="70"/>
+        <Pin type="2" name="R" direction="0" index="8005" x="0" y="90"/>
+        <Pin type="2" name="Out" direction="1" index="8006" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Gate" index="71" x="42" y="262" ui_x="-2" ui_y="87" isPrefab="1"
+            prefabId="61" channel="1">
+      <Pins>
+        <Pin type="2" name="G" direction="1" index="7101" x="110" y="10"/>
+        <Pin type="1" name="E" direction="1" index="7102" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="100067" x="627" y="70" ui_x="-2" ui_y="87" isPrefab="1"
+            prefabId="67" value="2.00000000000000000000">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="10006701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="10000067" x="626" y="200" ui_x="-101" ui_y="545"
+            isPrefab="1" prefabId="67" value="-12.00000000000000000000">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="1000006701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Sine" index="81" x="358" y="134" ui_x="-2" ui_y="87" isPrefab="1"
+            prefabId="71" mono="1">
+      <Pins>
+        <Pin type="2" name="P" direction="0" index="8101" x="0" y="10"/>
+        <Pin type="2" name="F" direction="0" index="8102" x="0" y="30"/>
+        <Pin type="2" name="A" direction="0" index="8103" x="0" y="50"/>
+        <Pin type="0" name="Out" direction="1" index="8104" x="110" y="10"/>
+        <Pin type="2" name="V" direction="1" index="8105" x="110" y="30"/>
+        <Pin type="2" name="Pb" direction="0" index="8106" x="0" y="70"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="100000067" x="-2" y="87" ui_x="-2" ui_y="87" isPrefab="1"
+            prefabId="67" value="1.00000000000000000000">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="10000006701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="1000000067" x="-2" y="87" ui_x="-2" ui_y="87"
+            isPrefab="1" prefabId="67" value="0.00000000000000000000">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="100000006701" x="110"
+             y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Noise" index="75" x="415" y="528" ui_x="-2" ui_y="87" isPrefab="1"
+            prefabId="65" mono="0">
+      <Pins>
+        <Pin type="2" name="P" direction="0" index="7501" x="0" y="10"/>
+        <Pin type="2" name="F" direction="0" index="7502" x="0" y="30"/>
+        <Pin type="2" name="A" direction="0" index="7503" x="0" y="50"/>
+        <Pin type="0" name="Out" direction="1" index="7504" x="110" y="10"/>
+        <Pin type="2" name="V" direction="1" index="7505" x="110" y="30"/>
+        <Pin type="2" name="Pb" direction="0" index="7506" x="0" y="70"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="10000000067" x="942" y="233" ui_x="-2" ui_y="87"
+            isPrefab="1" prefabId="67" value="0.40000000596046447754">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="1000000006701" x="110"
+             y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="1000000000067" x="956" y="559" ui_x="-2" ui_y="87"
+            isPrefab="1" prefabId="67" value="1.00000000000000000000">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="100000000006701" x="110"
+             y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="LP Filter" index="78" x="1270" y="159" ui_x="-2" ui_y="87"
+            isPrefab="1" prefabId="68">
+      <Pins>
+        <Pin type="2" name="F" direction="0" index="7801" x="0" y="10"/>
+        <Pin type="2" name="R" direction="0" index="7802" x="0" y="30"/>
+        <Pin type="0" name="In" direction="0" index="7803" x="0" y="50"/>
+        <Pin type="0" name="Out" direction="1" index="7804" x="110" y="10"/>
+        <Pin type="2" name="Mod" direction="0" index="7805" x="0" y="70"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="LP Filter" index="168" x="1269" y="391" ui_x="-2" ui_y="87"
+            isPrefab="1" prefabId="68">
+      <Pins>
+        <Pin type="2" name="F" direction="0" index="16801" x="0" y="10"/>
+        <Pin type="2" name="R" direction="0" index="16802" x="0" y="30"/>
+        <Pin type="0" name="In" direction="0" index="16803" x="0" y="50"/>
+        <Pin type="0" name="Out" direction="1" index="16804" x="110" y="10"/>
+        <Pin type="2" name="Mod" direction="0" index="16805" x="0" y="70"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="79" x="951" y="55" ui_x="509" ui_y="545" isPrefab="1"
+            prefabId="69" minvalue="100.00000000000000000000" maxvalue="15000.00000000000000000000"
+            stepsize="10.00100040435791015625" value="4870.47998046875000000000"
+            isController="0" controllerNum="1">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="7901" x="80" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Plugin" index="89" x="1455" y="261" ui_x="-2" ui_y="87"
+            isPrefab="1" prefabId="79" plugin="Reaktor 6 MFX" currentProgram="7"
+            state="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AAAyAwAAAQAAACAAAAACAAAAAgAAAAIAAAABAAAAAQAAAAEAAABCYOU9AAAAAEMCAAABAAAAIAAAAAIAAAACAAAAAgAAAAEAAAABAAAAAQAAAAAAgD8AAAAAAwMAAAEAAAAgAAAAAgAAAAIAAAACAAAAAQAAAAEAAAABAAAAAACAPwAAAAAEAwAAAQAAACAAAAACAAAAAgAAAAIAAAABAAAAAQAAAAEAAAAAAIA/AAAAAAUDAAABAAAAIAAAAAIAAAACAAAAAgAAAAEAAAABAAAAAQAAAPZ6PT8AAAAANgMAAAEAAAAgAAAAAgAAAAIAAAABAAAAAQAAAAEAAAABAAAAAQAAAAAAAAA3AwAAAQAAACAAAAACAAAAAgAAAAEAAAABAAAAAQAAAAEAAAABAAAAAAAAADQDAAABAAAAIAAAAAIAAAACAAAAAQAAAAEAAAABAAAAAQAAAP////8AAAAANQMAAAEAAAAgAAAAAgAAAAIAAAABAAAAAQAAAAEAAAABAAAA/////wAAAAC/DAAAAQAAACAAAAACAAAAAgAAAAEAAAABAAAAAQAAAAEAAAABAAAAAAAAADMDAAABAAAAIAAAAAIAAAACAAAAAQAAAAEAAAABAAAAAQAAAAEAAAAAAAAAvgwAAAEAAAAgAAAAAgAAAAIAAAACAAAAAQAAAAEAAAABAAAAP59PPwAAAAABAAAAAgAAAAIAAAAGAAAAAQAAAAEAAAABAAAAAQAAAAAAAAAHAAAAAgAAAAIAAAAHAAAAAQAAAAEAAAABAAAAAQAAAAEAAAABAAAAAgAAAAIAAAAIAAAAAQAAAAEAAAABAAAABwAAAFNodXR0ZXICAAAAAgAAAAkAAAABAAAAAQAAAAEAAAAAAAAAAgAAAAIAAAAKAAAAAQAAAAEAAAABAAAAAAAAAAIAAAACAAAACwAAAAEAAAABAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAB5/nMOAQAAAAAAAAABAAAAAQAAAAEAAAACAAAAAQAAAAIAAAAAAAAAAgAAAAAAAAABAAAAAgAAAAAAAAACAAAAAAAAAAEAAAACAAAAAAAAAAwAAAABAAAAAQAAAAAAAAADAAAAPAIAAAEAAAABAAAAHAAAABIAAAAAAAAAAAAAAAAAAAAAAAAAFAAAAAAAAAAAAAAAAAAAAAAAAAAVAAAAAAAAAAAAAAAAAAAAAAAAABYAAAAAAAAAAAAAAAAAAAAAAAAAFwAAAAAAAAAAAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAAAAAAAAAAAALUAAAAAAAAAAAAAAAAAAAAAAAAA0gAAAAAAAAAAAAAAAAAAABAAAAD7AAAAAAAAAAAAAAAAAAAAAAAAAAsBAAAAAAAAAAAAAAAAAAAAAAAADAEAAAAAAAAAAAAAAAAAAAAAAAASAQAAAAAAAAAAAAAAAAAAAAAAABMBAAAAAAAAAAAAAAAAAAAAAAAAFAEAAAAAAAAAAAAAAAAAAAAAAAAVAQAAAAAAAAAAAAAAAAAAAAAAABYBAAAAAAAAAAAAAAAAAAAAAAAAyAEAAAAAAAABAAAAAAAAABAAAADRAQAAAAAAAAAAAAAAAAAAAAAAANcBAAAAAAAAAAAAAAAAAAAAAAAA2AEAAAAAAAAAAAAAAAAAAAAAAADbAQAAAAAAAAAAAAAAAAAAAAAAAOkBAAAAAAAAAAAAAAAAAAAAAAAA6gEAAAAAAAAAAAAAAAAAAAAAAADrAQAAAAAAAAAAAAAAAAAAAAAAAOwBAAAAAAAAAAAAAAAAAAAAAAAA7QEAAAAAAAAAAAAAAAAAAAAAAADuAQAAAAAAAAAAAAAAAAAAAAAAAPIBAAAAAAAAAAAAAAAAAAAAAAAA6gIAAAAAAACQAQAAAADwQoC7AAABAAAAAQAAAAAAAAABAAAAAAMAAAACAAABAAAAAAMAAAACAWZpbGU6Ly8vTWFjaW50b3NoSEQvVXNlcnMvbXB1ZS9Eb2N1bWVudHMvTmF0aXZlJTIwSW5zdHJ1bWVudHMvUmVha3RvciUyMDYvdW50aXRsZWQlMjBBdWRpb2ZpbGUuYWlmAAQAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAAAAAAEAAAAAQAAAAUAAAAAAAAAAQAAAAMAAAAAAAAAAAAAAAEAAAACAAAAARJOaVI2EAASYXVtZldTaHV0dGVyAAgAFwAkACkAMQA5AEEARgBLAFAAURgBGAYYCBgNAAAAAAAAAgEAAAAAAAAADwAAAAAAAAAAAAAAAAAAGBU=">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="8901" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="8902" x="0" y="30"/>
+        <Pin type="0" name="L" direction="1" index="8903" x="110" y="10"/>
+        <Pin type="0" name="R" direction="1" index="8904" x="110" y="30"/>
+        <Pin type="1" name="G" direction="0" index="8905" x="0" y="50"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="169" x="257" y="312" ui_x="103" ui_y="545" isPrefab="1"
+            prefabId="69" minvalue="0.00000000000000000000" maxvalue="10.00000000000000000000"
+            stepsize="0.50099998712539672852" value="4.51000022888183593750"
+            isController="0" controllerNum="1">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="16901" x="80" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="1069" x="256" y="430" ui_x="197" ui_y="545" isPrefab="1"
+            prefabId="69" minvalue="0.00000000000000000000" maxvalue="5.00000000000000000000"
+            stepsize="0.10100000351667404175" value="1.82000005245208740234"
+            isController="0" controllerNum="1">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="106901" x="80" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="10069" x="256" y="537" ui_x="290" ui_y="545" isPrefab="1"
+            prefabId="69" minvalue="0.00000000000000000000" maxvalue="1.00000000000000000000"
+            stepsize="0.10100000351667404175" value="0.20000000298023223877"
+            isController="0" controllerNum="1">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="1006901" x="80" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="100069" x="249" y="638" ui_x="388" ui_y="545"
+            isPrefab="1" prefabId="69" minvalue="0.00000000000000000000"
+            maxvalue="10.00000000000000000000" stepsize="0.10100000351667404175"
+            value="1.72000002861022949219" isController="0" controllerNum="1">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="10006901" x="80" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Attack" index="64" x="162" y="339" ui_x="80" ui_y="525"
+            isPrefab="1" prefabId="54">
+      <Pins/>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Decay" index="154" x="160" y="467" ui_x="174" ui_y="525"
+            isPrefab="1" prefabId="54">
+      <Pins/>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Sustain" index="1054" x="150" y="557" ui_x="271" ui_y="525"
+            isPrefab="1" prefabId="54">
+      <Pins/>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Release" index="10054" x="149" y="674" ui_x="364" ui_y="525"
+            isPrefab="1" prefabId="54">
+      <Pins/>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections>
+    <Connection source="92" target="74" a="9201" b="7404"/>
+    <Connection source="92" target="164" a="9203" b="16404"/>
+    <Connection source="92" target="77" a="9202" b="7701"/>
+    <Connection source="92" target="167" a="9204" b="16701"/>
+    <Connection source="182" target="10064" a="18201" b="1006404"/>
+    <Connection source="182" target="1064" a="18203" b="106404"/>
+    <Connection source="182" target="1067" a="18202" b="106701"/>
+    <Connection source="182" target="10067" a="18204" b="1006701"/>
+    <Connection source="71" target="80" a="7102" b="8001"/>
+    <Connection source="74" target="80" a="7403" b="8006"/>
+    <Connection source="164" target="80" a="16403" b="8006"/>
+    <Connection source="10064" target="80" a="1006403" b="8006"/>
+    <Connection source="1064" target="80" a="106403" b="8006"/>
+    <Connection source="74" target="100067" a="7402" b="10006701"/>
+    <Connection source="164" target="10000067" a="16401" b="1000006701"/>
+    <Connection source="81" target="100000067" a="8103" b="10000006701"/>
+    <Connection source="81" target="1000000067" a="8101" b="100000006701"/>
+    <Connection source="92" target="75" a="9205" b="7504"/>
+    <Connection source="92" target="10000000067" a="9206" b="1000000006701"/>
+    <Connection source="75" target="80" a="7503" b="8006"/>
+    <Connection source="164" target="81" a="16402" b="8105"/>
+    <Connection source="10064" target="81" a="1006402" b="8105"/>
+    <Connection source="182" target="75" a="18205" b="7504"/>
+    <Connection source="182" target="1000000000067" a="18206" b="100000000006701"/>
+    <Connection source="78" target="92" a="7803" b="9207"/>
+    <Connection source="168" target="182" a="16803" b="18207"/>
+    <Connection source="78" target="79" a="7801" b="7901"/>
+    <Connection source="168" target="79" a="16801" b="7901"/>
+    <Connection source="76" target="89" a="7601" b="8903"/>
+    <Connection source="76" target="89" a="7602" b="8904"/>
+    <Connection source="89" target="78" a="8901" b="7804"/>
+    <Connection source="89" target="168" a="8902" b="16804"/>
+    <Connection source="80" target="169" a="8002" b="16901"/>
+    <Connection source="80" target="1069" a="8003" b="106901"/>
+    <Connection source="80" target="10069" a="8004" b="1006901"/>
+    <Connection source="80" target="100069" a="8005" b="10006901"/>
+  </Connections>
+</Module>

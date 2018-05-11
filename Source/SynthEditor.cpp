@@ -281,6 +281,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
             else {
                 if ((k = dynamic_cast<Knob*>(module)) != NULL) {
                     m->addItem(3, "MIDI learn");
+                    m->addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::RESET_GUI_POS);
                 }
             }
       
@@ -736,7 +737,8 @@ void SynthEditor::setCurrentLayer(int layer) {
         
        
     }
-    
+    repaint();
+    resized();
 }
 
 SelectionModel& SynthEditor::getSelectionModel() {
@@ -1302,6 +1304,7 @@ void SynthEditor::getAllCommands (Array<CommandID>& commands) {
     commands.add({ SynthEditor::CommandIds::SAVE_SCREENSHOT });
     commands.add({ SynthEditor::CommandIds::ALIGN_X });
     commands.add({ SynthEditor::CommandIds::ALIGN_Y });
+    commands.add({ SynthEditor::CommandIds::RESET_GUI_POS });
 }
 
 void SynthEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo& result) {
@@ -1345,6 +1348,9 @@ void SynthEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo& r
             break;
         case SynthEditor::CommandIds::ALIGN_X:
             result.setInfo("Align horizontally", String::empty, String::empty, 0);
+            break;
+        case SynthEditor::CommandIds::RESET_GUI_POS:
+            result.setInfo("Reset UI position", String::empty, String::empty, 0);
             break;
     }
 };
@@ -1413,7 +1419,10 @@ bool SynthEditor::perform (const InvocationInfo& info) {
         alignSelectedX();
         return true;
     }
-
+    else if(info.commandID == SynthEditor::CommandIds::RESET_GUI_POS) {
+        resetGUIPosition();
+        return true;
+    }
     
     return false;
 }
@@ -1470,4 +1479,10 @@ void SynthEditor::alignSelectedY() {
         }
         
     }
+}
+
+void SynthEditor::resetGUIPosition() {
+     for (int i = 0; i < selectionModel.getSelectedModules().size();i++) {
+         selectionModel.getSelectedModules().at(i)->resetUIPosition();
+     }
 }

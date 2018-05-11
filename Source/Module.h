@@ -127,7 +127,7 @@ public:
         return Layer::MODULES;
     };
     
-    void setCurrentLayer(Layer layer) {
+    void setCurrentLayer(Layer layer){
         currentLayer = layer;
     }
 
@@ -157,6 +157,9 @@ public:
     static const char* materialicons_301_viewmodule_64_0_ffffff_none_png;
     static const int materialicons_301_viewmodule_64_0_ffffff_none_pngSize;
 
+    void resetUIPosition() {
+        uiPosition = getPosition();
+    }
 
     
 protected:

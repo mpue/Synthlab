@@ -107,7 +107,8 @@ public:
         DUPLICATE = 8,
         DELETE_SELECTED = 9,
         ALIGN_Y = 10,
-        ALIGN_X = 11
+        ALIGN_X = 11,
+        RESET_GUI_POS = 12
     };
     
     // member access
@@ -121,8 +122,6 @@ public:
     void setMixer(MixerPanel* mixer);
     MixerPanel* getMixer();
 
-
-    
     bool isDirty() override;
     void setDirty(bool dirty) override;
                          
@@ -137,6 +136,8 @@ public:
     
     void alignSelectedY();
     void alignSelectedX();
+    
+    void resetGUIPosition();
     
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
