@@ -140,7 +140,7 @@ void SelectionModel::checkForConnection(juce::Point<int> pos) {
             
             if (isPointOnLineSegment(Point<int>(x1, y1), Point<int>(x2, y2), pos, 5)) {
             */
-            if(c->getPath().contains(pos.x,pos.y) ){
+            if(c->getPath()->contains(pos.x,pos.y) ){
                 
                 c->selected = true;
             }

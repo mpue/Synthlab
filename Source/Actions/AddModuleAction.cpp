@@ -59,8 +59,6 @@ bool AddModuleAction::perform() {
         m = PrefabFactory::getInstance()->getPrefab(moduleId, editor->getSampleRate(), editor->getBufferSize());
     }
     
-
-    
     AudioManager* audioManager = AudioManager::getInstance();
     
     AudioOut* out;
@@ -127,6 +125,7 @@ bool AddModuleAction::perform() {
     }
     
     TerminalModule* t;
+    
     if ((t = dynamic_cast<TerminalModule*>(m)) != NULL) {
         Pin* p = new Pin(Pin::Type::VALUE);
         t->getPins().at(0)->setTerminal(p);

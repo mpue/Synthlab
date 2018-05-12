@@ -16,7 +16,7 @@ using juce::Graphics;
 
 Connection::Connection()
 {
-    linePath = Path();
+    linePath = new Path();
 }
 
 Connection::Connection(Module* source, Pin* a, Module* target, Pin* b) {
@@ -24,7 +24,7 @@ Connection::Connection(Module* source, Pin* a, Module* target, Pin* b) {
 	this->target = target;
 	this->a = a;
 	this->b = b;
-    linePath = Path();
+    linePath = new Path();
 }
 
 Connection::~Connection()
@@ -32,6 +32,7 @@ Connection::~Connection()
     a->getConnections().clear();
     b->getConnections().clear();
     
+    delete linePath;
     
     for (std::vector<Pin*>::iterator it = a->getConnections().begin(); it != a->getConnections().end();it++) {
         (*it)->invalidate();
@@ -42,28 +43,28 @@ Connection::~Connection()
      
 }
 
-Path& Connection::getPath() {
+Path* Connection::getPath() {
     return linePath;
 }
 
 void Connection::resized() {
     
-    linePath.clear();
-    linePath.startNewSubPath (p1.x, p1.y);
+    linePath->clear();
+    linePath->startNewSubPath (p1.x, p1.y);
 
-    linePath.cubicTo (p1.x , p1.y ,
+    linePath->cubicTo (p1.x , p1.y ,
                        p1.x + (p2.x - p1.x) * 0.25f, p1.y ,
                        p1.x + (p2.x - p1.x) * 0.5f, p1.y + (p2.y - p1.y) * 0.5f);
-    linePath.cubicTo ( p1.x + (p2.x - p1.x) * 0.5f, p1.y + (p2.y - p1.y) * 0.5f,
+    linePath->cubicTo ( p1.x + (p2.x - p1.x) * 0.5f, p1.y + (p2.y - p1.y) * 0.5f,
                        p2.x - (p2.x - p1.x) * 0.25, p2.y ,
                        p2.x,p2.y  );
     PathStrokeType wideStroke (2.0f);
-    wideStroke.createStrokedPath (linePath, linePath);
+    wideStroke.createStrokedPath (*linePath, *linePath);
     
 }
 
 void Connection::paint(Graphics& g) {
-    g.fillPath(linePath);
+    g.fillPath(*linePath);
 }
 
 void Connection::setPoints(juce::Point<int> &p1, juce::Point<int> &p2) {

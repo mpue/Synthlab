@@ -89,6 +89,7 @@ private:
 
         manager = new juce::AudioFormatManager();
         manager->registerBasicFormats();
+    
    }
     
     ~AudioManager() {

@@ -63,13 +63,13 @@ public:
     {
         if (mainWindow != nullptr)
             mainWindow->setLookAndFeel(nullptr);
-         mainWindow = nullptr; // (deletes our window)
+         delete mainWindow; // (deletes our window)
 #if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
         PluginManager::getInstance()->destroy();
 #endif
         AudioManager::getInstance()->destroy();
         
-
+        
     }
 
     //==============================================================================
@@ -116,8 +116,8 @@ public:
             // This is called when the user tries to close this window. Here, we'll just
             // ask the app to quit when this happens, but you can change this to do
             // whatever you need.
-            // JUCEApplication::getInstance()->shutdown();
-            // quit();
+          
+            quit();
         }
 
         /* Note: Be careful if you override any DocumentWindow methods - the base
@@ -132,7 +132,7 @@ public:
     };
 
 private:
-    ScopedPointer<MainWindow> mainWindow = nullptr;
+    MainWindow* mainWindow = nullptr;
 };
 
 //==============================================================================

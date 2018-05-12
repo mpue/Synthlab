@@ -122,6 +122,7 @@ Module::~Module()
         
         for (std::vector<Pin*>::iterator it2 = (*it)->getConnections().begin(); it2 != (*it)->getConnections().end(); ) {
             if ((*it)->index == (*it2)->index) {
+                delete *it2;
                 it2 = (*it)->getConnections().erase(it2);
             }
             else {
