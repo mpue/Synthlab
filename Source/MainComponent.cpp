@@ -274,6 +274,7 @@ void MainComponent::createStudioLayout() {
     addAndMakeVisible (resizerBar);
     addAndMakeVisible(editorView);
     editor->setTab(editorView->getEditorTab());
+    editorView->getEditorTab()->addChangeListener(this);
     
     addMouseListener(propertyView->getBrowser(), false);
     
@@ -1081,5 +1082,14 @@ void MainComponent::disableAllMidiInputs() {
         if (deviceManager.isMidiInputEnabled(MidiInput::getDevices().getReference(i))) {
             deviceManager.removeMidiInputCallback(MidiInput::getDevices().getReference(i),this);
         }
+    }
+}
+
+void MainComponent::changeListenerCallback(juce::ChangeBroadcaster *source) {
+    
+    MainTabbedComponent* tabComponent = dynamic_cast<MainTabbedComponent*>(source);
+    
+    if (tabComponent != nullptr) {
+        
     }
 }

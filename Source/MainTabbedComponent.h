@@ -17,7 +17,10 @@
 //==============================================================================
 /*
 */
-class MainTabbedComponent    : public juce::TabbedComponent, public juce::Button::Listener, public DragAndDropTarget
+class MainTabbedComponent    : public juce::TabbedComponent,
+                               public juce::Button::Listener,
+                               public DragAndDropTarget,
+                               public ChangeBroadcaster
 {
 public:
     MainTabbedComponent();
@@ -30,13 +33,16 @@ public:
                  juce::Colour tabBackgroundColour,
                  juce::Component* contentComponent,
                  bool deleteComponentWhenNotNeeded);
-
+    virtual void mouseDoubleClick (const MouseEvent& event) override;
     void itemDropped (const SourceDetails& dragSourceDetails) override;
     bool isInterestedInDragSource (const SourceDetails& dragSourceDetails) override;
     Component* getComponentAt(int index);
+    bool isFullSize() {
+        return fullSize;
+    }
 private:
     
     std::vector<Component*> editorMap;
-    
+    bool fullSize = false;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainTabbedComponent)
 };

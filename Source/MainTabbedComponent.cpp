@@ -78,7 +78,8 @@ TabBarButton* MainTabbedComponent::createTabButton(const juce::String &tabName, 
 {
     TabBarButton* tb = new TabBarButton(tabName,getTabbedButtonBar());
     tb->setName(String(tabIndex));
-
+    tb->addMouseListener(this, true);
+    
     ImageButton* ib = new ImageButton();
     ib->setName(String(tabIndex));
     ib->setSize(16,16);
@@ -150,4 +151,10 @@ void MainTabbedComponent::itemDropped(const juce::DragAndDropTarget::SourceDetai
 
 Component* MainTabbedComponent::getComponentAt(int index) {
     return editorMap.at(index);
+}
+
+
+void MainTabbedComponent::mouseDoubleClick(const juce::MouseEvent &event) {
+    fullSize = !fullSize;
+    sendChangeMessage();
 }
