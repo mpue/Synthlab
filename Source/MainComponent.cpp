@@ -779,7 +779,7 @@ void MainComponent::openSettings() {
         
         deviceManager.getAudioDeviceSetup(setup);
         deviceManager.restartLastAudioDevice();
-        
+        AudioManager::getInstance()->setupChannels();
         refreshMidiInputs();        
         
         XmlElement* config = deviceManager.createStateXml();
@@ -805,7 +805,7 @@ void MainComponent::openSettings() {
     ModalComponentManager::getInstance()->attachCallback(window, callback);
     
     Project::getInstance()->getOpenWindows().push_back(window);
-    
+ 
 }
 
 bool MainComponent::keyStateChanged(bool isKeyDown, juce::Component *originatingComponent) {

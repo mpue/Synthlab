@@ -38,6 +38,7 @@ public:
     
     void setDeviceManager(juce::AudioDeviceManager* manager){
         this->deviceManager = manager;
+        setupChannels();
     }
 
     int getNumInputChannels() {

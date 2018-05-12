@@ -59,34 +59,32 @@ bool AddModuleAction::perform() {
         m = PrefabFactory::getInstance()->getPrefab(moduleId, editor->getSampleRate(), editor->getBufferSize());
     }
     
-    editor->addChangeListener(m);
-    m->setTopLeftPosition(position);
-    m->setUiPosition(position.x, position.y);
-    m->saveUiPosition();
+
     
-    editor->addAndMakeVisible(m);
-    editor->getModule()->getModules()->push_back(m);
-    
-    m->setSelected(true);
-    m->savePosition();
-    editor->getSelectionModel().getSelectedModules().push_back(m);
-    editor->repaint();
-    
-    module = m;
-    
-    AudioManager* p = AudioManager::getInstance();
+    AudioManager* audioManager = AudioManager::getInstance();
     
     AudioOut* out;
-    if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
-        editor->getMixer()->getOutputChannels().push_back(out);
-        String channelName = p->getOutputChannelNames().getReference(static_cast<int>(editor->getMixer()->getOutputChannels().size()) - 1);
-        int channelIndex = editor->addChannel(channelName, Mixer::Channel::Type::OUT);
-        out->setChannelIndex(channelIndex);
-        editor->getMixer()->setVolume(channelIndex, out->getVolume());
-        editor->getMixer()->setModule(channelIndex, out);
-        if (!editor->isRunning()) {
-            editor->setRunning(true);
+    
+    int numCurrentOutputs = static_cast<int>(editor->getMixer()->getInputChannels().size()) * 2; // take care! we have N input channels but from the audio interfaces point of view we have twice as much channels!
+    
+    if (numCurrentOutputs < audioManager->getNumActiveInputs()) {
+    
+        if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
+            editor->getMixer()->getOutputChannels().push_back(out);
+            String channelName = audioManager->getOutputChannelNames().getReference(static_cast<int>(editor->getMixer()->getOutputChannels().size()) - 1);
+            int channelIndex = editor->addChannel(channelName, Mixer::Channel::Type::OUT);
+            out->setChannelIndex(channelIndex);
+            m->setName(channelName);
+            editor->getMixer()->setVolume(channelIndex, out->getVolume());
+            editor->getMixer()->setModule(channelIndex, out);
+            if (!editor->isRunning()) {
+                editor->setRunning(true);
+            }
         }
+    }
+    else {
+        delete m;
+        return false;
     }
     
     AuxOut* aux;
@@ -95,6 +93,7 @@ bool AddModuleAction::perform() {
         String channelName = "Aux "+ String(editor->getMixer()->getAuxChannels().size());
         int channelIndex = editor->addChannel(channelName, Mixer::Channel::Type::AUX);
         aux->setChannelIndex(channelIndex);
+        m->setName(channelName);
         editor->getMixer()->setVolume(channelIndex, aux->getVolume());
         editor->getMixer()->setModule(channelIndex, aux);
         if (!editor->isRunning()) {
@@ -103,16 +102,28 @@ bool AddModuleAction::perform() {
     }
     
     AudioIn* in;
-    if ((in = dynamic_cast<AudioIn*>(m)) != NULL) {
-        editor->getMixer()->getInputChannels().push_back(in);
-        String channelName = p->getInputChannelNames().getReference(static_cast<int>(editor->getMixer()->getInputChannels().size()) - 1);
-        int channelIndex = editor->addChannel(channelName, Mixer::Channel::Type::IN);
-        in->setChannelIndex(channelIndex);
-        editor->getMixer()->setVolume(channelIndex, in->getVolume());
-        editor->getMixer()->setModule(channelIndex, in);
-        if (!editor->isRunning()) {
-            editor->setRunning(true);
+    
+    int numCurrentInputs = static_cast<int>(editor->getMixer()->getInputChannels().size()) * 2; // take care! we have N input channels but from the audio interfaces point of view we have twice as much channels!
+    
+    if (numCurrentInputs < audioManager->getNumActiveInputs()) {
+    
+        if ((in = dynamic_cast<AudioIn*>(m)) != NULL) {
+            editor->getMixer()->getInputChannels().push_back(in);
+            String channelName = audioManager->getInputChannelNames().getReference(static_cast<int>(editor->getMixer()->getInputChannels().size()) - 1);
+            m->setName(channelName);
+            int channelIndex = editor->addChannel(channelName, Mixer::Channel::Type::IN);
+            in->setChannelIndex(channelIndex);
+            editor->getMixer()->setVolume(channelIndex, in->getVolume());
+            editor->getMixer()->setModule(channelIndex, in);
+            if (!editor->isRunning()) {
+                editor->setRunning(true);
+            }
         }
+        
+    }
+    else {
+        delete m;
+        return false;
     }
     
     TerminalModule* t;
@@ -133,6 +144,21 @@ bool AddModuleAction::perform() {
         editor->getModule()->repaint();
         
     }
+    
+    editor->addChangeListener(m);
+    m->setTopLeftPosition(position);
+    m->setUiPosition(position.x, position.y);
+    m->saveUiPosition();
+    
+    editor->addAndMakeVisible(m);
+    editor->getModule()->getModules()->push_back(m);
+    
+    m->setSelected(true);
+    m->savePosition();
+    editor->getSelectionModel().getSelectedModules().push_back(m);
+    editor->repaint();
+    
+    module = m;
     
     return true;
 }

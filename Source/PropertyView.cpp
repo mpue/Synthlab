@@ -76,7 +76,7 @@ PropertyView::PropertyView () : TimeSliceThread("PropertyWatcher")
     directoryContents->addChangeListener(browser);
     tabbedComponent->addTab("Browser",juce::Colours::grey, browser, false);
     tabbedComponent->addTab("Description",juce::Colours::grey, descriptionEditor, false);
-    addMouseListener(browser, true);
+    // addMouseListener(browser, true);
     
     startThread();
     
