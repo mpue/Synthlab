@@ -145,6 +145,7 @@ private:
     std::vector<juce::DialogWindow*> openWindows;
     juce::Component* main = nullptr;
     Sampler* defaultSampler = nullptr;
+    
     AppMode mode = STUDIO;
     
     

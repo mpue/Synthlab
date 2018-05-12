@@ -79,6 +79,7 @@ SynthEditor::SynthEditor (double sampleRate, int buffersize)
     
     Project::getInstance()->getCommandManager()->registerAllCommandsForTarget(this);
 
+   
 }
 
 SynthEditor::~SynthEditor()
@@ -237,13 +238,13 @@ void SynthEditor::mouseDown (const MouseEvent& e)
         showContextMenu(e.getPosition());
     }
 
-    repaint();
+
     
     if (root->getModules()->size() > 0) {
         sendChangeMessage();
         notifyListeners();
     }
-    
+    repaint();
 
 }
 
@@ -1419,57 +1420,101 @@ bool SynthEditor::perform (const InvocationInfo& info) {
     return false;
 }
 
-void SynthEditor::alignSelectedX() {
+void SynthEditor::alignSelectedY() {
     
     if (selectionModel.getSelectedModules().size() >= 2) {
     
+        int minX = getWidth();
+        int minY = getHeight();
+        
         if (currentLayer == Module::Layer::ALL) {
             
-            Point<int> pos = selectionModel.getSelectedModules().at(0)->getPosition();
+            // find the topmost-topleft coordinate
             
             for (int i = 0; i < selectionModel.getSelectedModules().size();i++) {
+                if (selectionModel.getSelectedModules().at(i)->getPosition().getX() < minX) {
+                    minX = selectionModel.getSelectedModules().at(i)->getPosition().getX();
+                }
+                if (selectionModel.getSelectedModules().at(i)->getPosition().getY() < minY) {
+                    minY = selectionModel.getSelectedModules().at(i)->getPosition().getY();
+                }
+            }
+            
+            /// now position the modules in the desired raster
+            for (int i = 0; i < selectionModel.getSelectedModules().size();i++) {
                 selectionModel.getSelectedModules().at(i)->savePosition();
-                selectionModel.getSelectedModules().at(i)->setTopLeftPosition(pos.x, selectionModel.getSelectedModules().at(i)->getY());
+                selectionModel.getSelectedModules().at(i)->setTopLeftPosition(minX, minY + i *  selectionModel.getSelectedModules().at(i)->getHeight());
+                
             }
         }
         else {
-            Point<int> pos = selectionModel.getSelectedModules().at(0)->getUiPosition();
-           
-            for (int i = 0; i < selectionModel.getSelectedModules().size();i++) {               
-               
-                selectionModel.getSelectedModules().at(i)->setUiPosition(pos.x, selectionModel.getSelectedModules().at(i)->getUiPosition().getY());
+            // find the topmost-topleft coordinate of the UI positions
+            
+            for (int i = 0; i < selectionModel.getSelectedModules().size();i++) {
+                if (selectionModel.getSelectedModules().at(i)->getUiPosition().getX() < minX) {
+                    minX = selectionModel.getSelectedModules().at(i)->getUiPosition().getX();
+                }
+                if (selectionModel.getSelectedModules().at(i)->getPosition().getY() < minY) {
+                    minY = selectionModel.getSelectedModules().at(i)->getUiPosition().getY();
+                }
+            }
+            
+            /// now position the modules in the desired raster
+            for (int i = 0; i < selectionModel.getSelectedModules().size();i++) {
+                selectionModel.getSelectedModules().at(i)->setUiPosition(minX, minY + i *  selectionModel.getSelectedModules().at(i)->getHeight());
                 selectionModel.getSelectedModules().at(i)->saveUiPosition();
                 selectionModel.getSelectedModules().at(i)->setTopLeftPosition(selectionModel.getSelectedModules().at(i)->getUiPosition());
             }
         }
 
     }
-    
 
 }
 
-void SynthEditor::alignSelectedY() {
+void SynthEditor::alignSelectedX() {
     if (selectionModel.getSelectedModules().size() >= 2) {
+        
+        
+        int minX = getWidth();
+        int minY = getHeight();
         
         if (currentLayer == Module::Layer::ALL) {
             
-            Point<int> pos = selectionModel.getSelectedModules().at(0)->getPosition();
+            // find the topmost-topleft coordinate for the GUI layer position
+            
+            for (int i = 0; i < selectionModel.getSelectedModules().size();i++) {
+                if (selectionModel.getSelectedModules().at(i)->getPosition().getX() < minX) {
+                    minX = selectionModel.getSelectedModules().at(i)->getPosition().getX();
+                }
+                if (selectionModel.getSelectedModules().at(i)->getPosition().getY() < minY) {
+                    minY = selectionModel.getSelectedModules().at(i)->getPosition().getY();
+                }
+            }
             
             for (int i = 0; i < selectionModel.getSelectedModules().size();i++) {
                 selectionModel.getSelectedModules().at(i)->savePosition();
-                selectionModel.getSelectedModules().at(i)->setTopLeftPosition(selectionModel.getSelectedModules().at(i)->getX(), pos.y);
+                selectionModel.getSelectedModules().at(i)->setTopLeftPosition(minX + i * selectionModel.getSelectedModules().at(i)->getWidth(), minY);
             }
         }
         else {
-            Point<int> pos = selectionModel.getSelectedModules().at(0)->getUiPosition();
+            
+            // find the topmost-topleft coordinate for the GUI layer position
             
             for (int i = 0; i < selectionModel.getSelectedModules().size();i++) {
-                selectionModel.getSelectedModules().at(i)->setUiPosition(selectionModel.getSelectedModules().at(i)->getUiPosition().getX(), pos.y);
+                if (selectionModel.getSelectedModules().at(i)->getUiPosition().getX() < minX) {
+                    minX = selectionModel.getSelectedModules().at(i)->getUiPosition().getX();
+                }
+                if (selectionModel.getSelectedModules().at(i)->getUiPosition().getY() < minY) {
+                    minY = selectionModel.getSelectedModules().at(i)->getUiPosition().getY();
+                }
+            }
+            
+            for (int i = 0; i < selectionModel.getSelectedModules().size();i++) {
+                selectionModel.getSelectedModules().at(i)->setUiPosition(minX + i * selectionModel.getSelectedModules().at(i)->getWidth(), minY);
                 selectionModel.getSelectedModules().at(i)->saveUiPosition();
                 selectionModel.getSelectedModules().at(i)->setTopLeftPosition(selectionModel.getSelectedModules().at(i)->getUiPosition());
             }
         }
-        
     }
 }
 

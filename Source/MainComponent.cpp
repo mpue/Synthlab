@@ -106,8 +106,15 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     addKeyListener(this);
     setWantsKeyboardFocus(true);
     
+    resized();
+    repaint();
     initialized = true;
     running = true;
+    
+    if (Project::getInstance()->getAppMode() == Project::AppMode::PLAYER) {
+        editor->loadFromString(String(BinaryData::_3osc_broad_slb));
+        editor->setCurrentLayer(Module::Layer::GUI);
+    }
     
 }
 
@@ -292,11 +299,20 @@ void MainComponent::createStudioLayout() {
 }
 
 void MainComponent::createPlayerLayout() {
+    /*
     editorView = new EditorComponent(sampleRate, buffersize);
     editor = editorView->getEditor();
     mixer = editorView->getMixer();
     mixerPanel = editorView->getMixerPanel();
     addAndMakeVisible(editorView);
+     */
+    editor = new SynthEditor(sampleRate, buffersize);
+    mixerPanel = new MixerPanel();
+    mixer = new Mixer();
+    mixerPanel->setMixer(mixer);
+    editor->setMixer(mixerPanel);
+    addAndMakeVisible(editor);
+    addChildComponent(mixerPanel);
 }
 
 void MainComponent::timerCallback(){
@@ -443,10 +459,19 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
         Mixer::Channel* input =  mixer->getChannel(Mixer::Channel::Type::IN, k);
         
         if (input != nullptr) {
+            
+            double pan = input->pan;
+            
+            float gainLeft = cos((M_PI*(pan + 1) / 4));
+            float gainRight = sin((M_PI*(pan + 1) / 4));
+            
             inputChannels.at(k)->pins.at(0)->getAudioBuffer()->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, k, bufferToFill.startSample, numSamples);
             inputChannels.at(k)->pins.at(1)->getAudioBuffer()->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, k+1, bufferToFill.startSample, numSamples);
-            input->magnitudeLeft = inputChannels.at(k)->pins.at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
-            input->magnitudeRight = inputChannels.at(k)->pins.at(1)->getAudioBuffer()->getMagnitude(1, 0, numSamples);
+            inputChannels.at(k)->pins.at(0)->getAudioBuffer()->applyGain(0, bufferToFill.startSample, numSamples, input->volume * gainLeft);
+            inputChannels.at(k)->pins.at(1)->getAudioBuffer()->applyGain(0, bufferToFill.startSample, numSamples, input->volume * gainRight);
+            input->magnitudeLeft = inputChannels.at(k)->pins.at(0)->getAudioBuffer()->getMagnitude(0, bufferToFill.startSample, numSamples);
+            input->magnitudeRight = inputChannels.at(k)->pins.at(1)->getAudioBuffer()->getMagnitude(0, bufferToFill.startSample, numSamples);
+            Logger::writeToLog(String(magnitudeLeft));
         }
  
     }
@@ -566,35 +591,45 @@ void MainComponent::paint (Graphics& g)
 void MainComponent::resized()
 {
 
-    auto r = getLocalBounds().reduced (4).removeFromBottom(getHeight() - 55);
-    
-    if (toolbar != nullptr)
-        toolbar->setSize(getLocalBounds().getWidth() , 50);
-    
-    // make a list of two of our child components that we want to reposition
-    Component* comps[] = { propertyView, &resizerBar, editorView };
-    
-    // this will position the 3 components, one above the other, to fit
-    // vertically into the rectangle provided.
-    stretchableManager.layOutComponents (comps, 3,
-                                         r.getX(), r.getY()+25, r.getWidth(), r.getHeight(),
-                                         false, true);
-    
-    if (propertyView != nullptr && propertyView->getParentComponent() != NULL)
-        propertyView->setSize(r.getWidth()-editorView->getWidth(), propertyView->getHeight());
-    if (getParentComponent() != nullptr) {
-        if (cpuLoadLabel != NULL) {
-            cpuLoadLabel->setBounds(getParentComponent()->getWidth() - 50,0,50,20);
-            loadSlider->setBounds(getParentComponent()->getWidth() - 150, 10, 100, 10);
+    if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
+        auto r = getLocalBounds().reduced (4).removeFromBottom(getHeight() - 55);
+        
+        if (toolbar != nullptr)
+            toolbar->setSize(getLocalBounds().getWidth() , 50);
+        
+        // make a list of two of our child components that we want to reposition
+        Component* comps[] = { propertyView, &resizerBar, editorView };
+        
+        // this will position the 3 components, one above the other, to fit
+        // vertically into the rectangle provided.
+        stretchableManager.layOutComponents (comps, 3,
+                                             r.getX(), r.getY()+25, r.getWidth(), r.getHeight(),
+                                             false, true);
+        
+        if (propertyView != nullptr && propertyView->getParentComponent() != NULL)
+            propertyView->setSize(r.getWidth()-editorView->getWidth(), propertyView->getHeight());
+        if (getParentComponent() != nullptr) {
+            if (cpuLoadLabel != NULL) {
+                cpuLoadLabel->setBounds(getParentComponent()->getWidth() - 50,0,50,20);
+                loadSlider->setBounds(getParentComponent()->getWidth() - 150, 10, 100, 10);
+            }
+            if (editorView != NULL) {
+                editorView->getEditor()->resized();
+            }
+            if (menu != NULL) {
+                menu->setBounds(0, 0, getParentWidth(), 25);
+            }
+            
         }
-        if (editorView != NULL) {
+    }
+    else {
+        if (getParentComponent() != nullptr && editorView != nullptr) {
+            editorView->setSize(getParentWidth(), getParentHeight());
             editorView->getEditor()->resized();
         }
-		if (menu != NULL) {
-			menu->setBounds(0, 0, getParentWidth(), 25);
-		}
-
     }
+    
+
 }
 
 PopupMenu MainComponent::getMenuForIndex(int index, const String & menuName) {
