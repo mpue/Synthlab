@@ -25,6 +25,7 @@
 #include "ModuleBrowser.h"
 #include "PitchBendModule.h"
 #include "ModuleUtils.h"
+#include "MidiClock.h"
 
 #ifndef M_PI
 #define M_PI       3.14159265358979323846 
@@ -472,7 +473,6 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
             inputChannels.at(k)->pins.at(1)->getAudioBuffer()->applyGain(0, bufferToFill.startSample, numSamples, input->volume * gainRight);
             input->magnitudeLeft = inputChannels.at(k)->pins.at(0)->getAudioBuffer()->getMagnitude(0, bufferToFill.startSample, numSamples);
             input->magnitudeRight = inputChannels.at(k)->pins.at(1)->getAudioBuffer()->getMagnitude(0, bufferToFill.startSample, numSamples);
-            Logger::writeToLog(String(magnitudeLeft));
         }
  
     }
@@ -932,6 +932,8 @@ void MainComponent::buttonClicked (Button* b)
 
 void MainComponent::handleIncomingMidiMessage(juce::MidiInput *source, const juce::MidiMessage &message) {
     
+
+    
     if (message.isNoteOn() && message.getNoteNumber() > 7) {
         for (int i = 0; i < editor->getModule()->getModules()->size();i++) {
             sendNoteMessage(editor->getModule()->getModules()->at(i), message.getChannel(),message.getNoteNumber());
@@ -952,6 +954,24 @@ void MainComponent::handleIncomingMidiMessage(juce::MidiInput *source, const juc
         for (int i = 0; i < editor->getModule()->getModules()->size();i++) {
             sendPitchBendMessage(editor->getModule()->getModules()->at(i), message.getChannel(),message.getPitchWheelValue());
         }
+    }
+    else if (message.isMidiClock()) {
+        for (int i = 0; i < editor->getModule()->getModules()->size();i++) {
+            sendClockMessage(editor->getModule()->getModules()->at(i), message.getChannel());
+        }
+    }
+    else if (message.isMidiStart()) {
+        for (int i = 0; i < editor->getModule()->getModules()->size();i++) {
+            sendMidiStartMessage(editor->getModule()->getModules()->at(i), message.getChannel());
+        }
+    }
+    else if (message.isMidiMachineControlMessage()) {
+        for (int i = 0; i < editor->getModule()->getModules()->size();i++) {
+            sendMidiStopMessage(editor->getModule()->getModules()->at(i), message.getChannel());
+        }
+    }
+    else {
+        Logger::writeToLog(message.getDescription());
     }
     
     // deviceManager.getDefaultMidiOutput()->sendMessageNow(message);
@@ -1005,6 +1025,54 @@ void MainComponent::sendNoteMessage(Module *module, int channel, int note) {
         
         if ((midiNote = dynamic_cast<MidiNote*>(module->getModules()->at(i)))!= NULL) {
             sendNoteMessage(module->getModules()->at(i),channel, note);
+        }
+    }
+}
+
+void MainComponent::sendClockMessage(Module *module, int channel) {
+    
+    MidiClock* midiClock;
+    
+    if ((midiClock = dynamic_cast<MidiClock*>(module)) != NULL) {
+        midiClock->clock(MidiMessage::midiClock());
+    }
+    
+    for (int i = 0; i< module->getModules()->size();i++) {
+        
+        if ((midiClock = dynamic_cast<MidiClock*>(module->getModules()->at(i)))!= NULL) {
+            sendClockMessage(module->getModules()->at(i),channel);
+        }
+    }
+}
+
+void MainComponent::sendMidiStartMessage(Module *module, int channel) {
+    
+    MidiClock* midiClock;
+    
+    if ((midiClock = dynamic_cast<MidiClock*>(module)) != NULL) {
+        midiClock->midiStart();
+    }
+    
+    for (int i = 0; i< module->getModules()->size();i++) {
+        
+        if ((midiClock = dynamic_cast<MidiClock*>(module->getModules()->at(i)))!= NULL) {
+            sendMidiStartMessage(module->getModules()->at(i),channel);
+        }
+    }
+}
+
+void MainComponent::sendMidiStopMessage(Module *module, int channel) {
+    
+    MidiClock* midiClock;
+    
+    if ((midiClock = dynamic_cast<MidiClock*>(module)) != NULL) {
+        midiClock->midiStop();
+    }
+    
+    for (int i = 0; i< module->getModules()->size();i++) {
+        
+        if ((midiClock = dynamic_cast<MidiClock*>(module->getModules()->at(i)))!= NULL) {
+            sendMidiStopMessage(module->getModules()->at(i),channel);
         }
     }
 }

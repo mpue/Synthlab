@@ -99,6 +99,7 @@
       <FILE id="LYnUGD" name="adsr.png" compile="0" resource="1" file="Images/adsr.png"/>
       <FILE id="udjGbx" name="apicon.png" compile="0" resource="1" file="Images/apicon.png"/>
       <FILE id="Xwf0m7" name="auxmodule.png" compile="0" resource="1" file="Images/auxmodule.png"/>
+      <FILE id="gW9OzU" name="clock.png" compile="0" resource="1" file="Images/clock.png"/>
       <FILE id="soAd9z" name="close.png" compile="0" resource="1" file="Images/close.png"/>
       <FILE id="Kxq8Ss" name="delete.png" compile="0" resource="1" file="Images/delete.png"/>
       <FILE id="pb7t0i" name="display.png" compile="0" resource="1" file="Images/display.png"/>
@@ -362,6 +363,8 @@
                 file="Source/ToolbarComboBox.h"/>
         </GROUP>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
+          <FILE id="PDgqHN" name="MidiClock.cpp" compile="1" resource="0" file="Source/MidiClock.cpp"/>
+          <FILE id="Y3fwGt" name="MidiClock.h" compile="0" resource="0" file="Source/MidiClock.h"/>
           <FILE id="E9ISuK" name="VolumeAdjustable.h" compile="0" resource="0"
                 file="Source/VolumeAdjustable.h"/>
           <FILE id="hcW7IT" name="PadModule.cpp" compile="1" resource="0" file="Source/PadModule.cpp"/>

@@ -40,7 +40,7 @@ ReverbModule::ReverbModule(double sampleRate, int buffersize)
     reverb->setParameters(params);
 }
 
-ReverbModule::ReverbModule()
+ReverbModule::~ReverbModule()
 {
     delete bufferLeft;
     delete bufferRight;

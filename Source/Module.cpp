@@ -117,7 +117,15 @@ Module::~Module()
     nameEditor = nullptr;
     nameLabel = nullptr;
 
-    //[Destructor]. You can add your own custom destruction code here..
+
+    
+    
+
+    for (std::vector<Connection*>::iterator it = connections->begin(); it != connections->end(); ) {
+        delete *it;
+        it = connections->erase(it);
+    }
+    
     for (std::vector<Pin*>::iterator it = pins.begin(); it != pins.end();) {
         
         for (std::vector<Pin*>::iterator it2 = (*it)->getConnections().begin(); it2 != (*it)->getConnections().end(); ) {
@@ -135,12 +143,6 @@ Module::~Module()
         it = pins.erase(it);
     }
     
-    
-
-    for (std::vector<Connection*>::iterator it = connections->begin(); it != connections->end(); ) {
-        delete *it;
-        it = connections->erase(it);
-    }
     for (std::vector<Module*>::iterator it = modules->begin(); it != modules->end();) {
         delete *it;
         it = modules->erase(it);

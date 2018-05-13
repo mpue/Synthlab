@@ -83,7 +83,15 @@ void StepSequencerModule::eventReceived(Event *e) {
         else {
         }
     }
-    
+    else if (e->getType() == Event::Type::CLOCK) {
+        editor->triggerNextStep();
+    }
+    else if (e->getType() == Event::Type::CLOCK_START) {
+        editor->setRunning(true);
+    }
+    else if (e->getType() == Event::Type::CLOCK_STOP) {
+        editor->setRunning(false);
+    }
 }
 
 

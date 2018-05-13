@@ -18,7 +18,10 @@ public:
         GATE,
         NOTE,
         CONTROLLER,
-        PITCH
+        PITCH,
+        CLOCK,
+        CLOCK_START,
+        CLOCK_STOP
     };
     
     Event();

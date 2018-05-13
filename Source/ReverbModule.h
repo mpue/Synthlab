@@ -21,7 +21,7 @@ class ReverbModule : public Module
 {
 public:
     ReverbModule(double sampleRate, int buffersize);
-    ReverbModule();
+    ~ReverbModule();
     
     void paint (juce::Graphics& g) override;
     

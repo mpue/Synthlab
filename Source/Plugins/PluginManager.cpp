@@ -82,7 +82,6 @@ void PluginManager::scanPlugins() {
         xml = nullptr;
     }
     
-    delete pluginListComponent;
     delete props;
 
 }

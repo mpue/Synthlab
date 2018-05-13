@@ -113,12 +113,20 @@ void SequenceEditor::buttonClicked (Button* buttonThatWasClicked)
 
     if (buttonThatWasClicked == playButton)
     {
-        startTimer(((float)60 / tempo) * (float)1000 / (float)4);
+        if (syncMode == SyncMode::INTERNAL) {
+            startTimer(((float)60 / tempo) * (float)1000 / (float)4);
+        }
+        running = true;
 
     }
     else if (buttonThatWasClicked == recordButton)
     {
-        stopTimer();
+        if (syncMode == SyncMode::INTERNAL) {
+            stopTimer();
+        }
+        else {
+            running = false;
+        }
     }
     else if(buttonThatWasClicked == clearButton) {
         clearSequence();
@@ -391,19 +399,55 @@ void SequenceEditor::handlePartialSysexMessage (MidiInput* source,
 
 
 void SequenceEditor::timerCallback() {
-    currentStep = (currentStep + 1) % gridWidth;
-    content->repaint();
+    triggerNextStep();
+}
+
+void SequenceEditor::setRunning(bool running) {
+    this->running = running; 
+}
+
+void SequenceEditor::triggerNextStep() {
     
-    for (int y = 0; y < gridHeight;y++) {
+    if (!running){
+        return;
+    }
+
+    if (clockEventNum % 6 == 0) {
+        currentStep = (currentStep + 1) % gridWidth;
         
-        Event* e = nullptr;
+        std::function<void(void)> changeLambda =
+        [=]() {  content->repaint(); };
+        juce::MessageManager::callAsync(changeLambda);
         
-        if (grid[currentStep][y].isEnabled()) {
+        
+        for (int y = 0; y < gridHeight;y++) {
             
-            e = new Event("gate on",Event::Type::GATE);
+            Event* e = nullptr;
             
-            e->setValue(grid[currentStep][y].getVelocity());
-            e->setNote(grid[currentStep][y].getNote());
+            if (grid[currentStep][y].isEnabled()) {
+                
+                e = new Event("gate on",Event::Type::GATE);
+                
+                e->setValue(grid[currentStep][y].getVelocity());
+                e->setNote(grid[currentStep][y].getNote());
+                
+                if (output != nullptr) {
+                    
+                    for (int i = 0; i < output->getConnections().size();i++) {
+                        output->getConnections().at(i)->sendEvent(new Event(e));
+                    }
+                }
+            }
+            e = new Event("gate off",Event::Type::GATE);
+            e->setValue(0);
+            
+            
+            if (currentStep > 0) {
+                e->setNote(grid[currentStep - 1][y].getNote());
+            }
+            else {
+                e->setNote(grid[gridWidth - 1][y].getNote());
+            }
             
             if (output != nullptr) {
                 
@@ -411,27 +455,11 @@ void SequenceEditor::timerCallback() {
                     output->getConnections().at(i)->sendEvent(new Event(e));
                 }
             }
-        }
-        e = new Event("gate off",Event::Type::GATE);
-        e->setValue(0);
-        
-        
-        if (currentStep > 0) {
-            e->setNote(grid[currentStep - 1][y].getNote());
-        }
-        else {
-            e->setNote(grid[gridWidth - 1][y].getNote());
-        }
-        
-        if (output != nullptr) {
             
-            for (int i = 0; i < output->getConnections().size();i++) {
-                output->getConnections().at(i)->sendEvent(new Event(e));
-            }
         }
-
     }
-    
+    clockEventNum++;
+
 }
 
 uint8* SequenceEditor::getConfiguration() {

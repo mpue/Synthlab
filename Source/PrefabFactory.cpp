@@ -43,6 +43,7 @@
 #include "ReverbModule.h"
 #include "PitchBendModule.h"
 #include "AudioRecorderModule.h"
+#include "MidiClock.h"
 
 using juce::Image;
 
@@ -83,6 +84,11 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
         m = new MidiNote();
         m->setName("Note");
     }
+    else if (prefabs[id].getName() == "Midi clock") {
+        m = new MidiClock();
+        m->setName("Clock");
+    }
+    
     else if (prefabs[id].getName() == "Pad") {
         m = new PadModule();
         m->setName("Pad");

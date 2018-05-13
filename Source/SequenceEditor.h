@@ -13,6 +13,11 @@ class SequenceEditor  : public juce::Component,
 {
 public:
 
+    enum SyncMode {
+        INTERNAL,
+        MIDI_CLOCK
+    };
+    
     SequenceEditor (Pin* output);
     ~SequenceEditor();
 
@@ -40,6 +45,11 @@ public:
     void sliderValueChanged (juce::Slider* slider) override;
     juce::uint8* getConfiguration();
     void setConfiguration(juce::uint8* data);
+    
+    void setRunning(bool running);
+    
+    void triggerNextStep();
+    
     struct SequencePanel : public juce::Component {
         
         friend class SequenceEditor;
@@ -122,6 +132,9 @@ private:
     juce::Viewport* view = nullptr;
     SequencePanel* content = nullptr;
 
+    SyncMode syncMode = MIDI_CLOCK;
+    int clockEventNum = 0;
+    
     bool running = false;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SequenceEditor)

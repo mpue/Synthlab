@@ -74,6 +74,9 @@ namespace BinaryData
     extern const char*   auxmodule_png;
     const int            auxmodule_pngSize = 4961;
 
+    extern const char*   clock_png;
+    const int            clock_pngSize = 5554;
+
     extern const char*   close_png;
     const int            close_pngSize = 4179;
 
@@ -207,7 +210,7 @@ namespace BinaryData
     const int            whitenoise_pngSize = 7446;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 66;
+    const int namedResourceListSize = 67;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

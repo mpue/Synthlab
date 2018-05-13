@@ -1,4 +1,4 @@
-/*
+ /*
  ==============================================================================
  
  SawtoothModule
@@ -133,7 +133,8 @@ void PluginModule::process() {
         const float* inR = pins.at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
         
         
-        for (int i = 0; i < buffersize;i++){            bufferLeft[i] = inL[i];
+        for (int i = 0; i < buffersize;i++){
+            bufferLeft[i] = inL[i];
             bufferRight[i] = inR[i];
         }
         
@@ -164,16 +165,26 @@ void PluginModule::eventReceived(Event *e) {
         float velocity = (1.0/127) * e->getValue();
         
         if (e->getValue() > 0) {
-    
+            MidiMessage start = MidiMessage::midiStart();
+            start.setTimeStamp(Time::getMillisecondCounter());
+            midiBuffer.addEvent(start,currentSample);
             MidiMessage* m = new MidiMessage(MidiMessage::noteOn((int)1, (int)e->getNote(), velocity));
             m->setTimeStamp(Time::getMillisecondCounter());
             midiBuffer.addEvent(*m, currentSample);
+            
         }
         else {
+            midiBuffer.addEvent(MidiMessage::midiStop(),currentSample);
             MidiMessage* m = new MidiMessage(MidiMessage::noteOff((int)1, (int)e->getNote(), velocity));
             m->setTimeStamp(Time::getMillisecondCounter());
             midiBuffer.addEvent(*m, currentSample);
         }
+    }
+    else if (e->getType() == Event::Type::CLOCK) {
+
+        MidiMessage* m = new MidiMessage(MidiMessage::midiClock());
+        m->setTimeStamp(Time::getMillisecondCounter());
+        midiBuffer.addEvent(*m, currentSample);
     }
 }
 

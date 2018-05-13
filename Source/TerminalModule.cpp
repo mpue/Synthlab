@@ -105,7 +105,9 @@ void TerminalModule::process() {
                     if (getPins().at(0)->getConnections().size() == 1) {
                         const float* source = getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
                         float* target = getPins().at(0)->getTerminal()->getAudioBuffer()->getWritePointer(0);
-                        target[i] = source[i];
+                        if (target != NULL) {
+                            target[i] = source[i];
+                        }
                     }
                 }
             }
@@ -115,13 +117,17 @@ void TerminalModule::process() {
                     
                     float* target = getPins().at(0)->getAudioBuffer()->getWritePointer(0);
                     
-                    if (getPins().at(0)->getTerminal()->getConnections().size() == 1) {
-                        const float* source = getPins().at(0)->getTerminal()->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
-                        target[i] = source[i];
+                    if (target != NULL) {
+                        if (getPins().at(0)->getTerminal()->getConnections().size() == 1) {
+                            const float* source = getPins().at(0)->getTerminal()->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
+                            target[i] = source[i];
+                        }
+                        else {
+                            target[i] = 0;
+                        }
                     }
-                    else {
-                        target[i] = 0;
-                    }
+                    
+
                 }
             }
             
