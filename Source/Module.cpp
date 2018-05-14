@@ -117,10 +117,6 @@ Module::~Module()
     nameEditor = nullptr;
     nameLabel = nullptr;
 
-
-    
-    
-
     for (std::vector<Connection*>::iterator it = connections->begin(); it != connections->end(); ) {
         delete *it;
         it = connections->erase(it);

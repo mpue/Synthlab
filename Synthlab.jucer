@@ -1,25 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.3.1" bundleIdentifier="de.pueski.SynthlabX"
+<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.3.2" bundleIdentifier="de.pueski.SynthlabX"
               version="1.0.1" companyName="Pueski" id="JWX8Tz">
   <MAINGROUP id="CKGTaZ" name="Synthlab">
     <GROUP id="{9F42F092-AC3C-70BC-861B-ED2885470C98}" name="Regression">
       <FILE id="jOfdml" name="2osc_gate.slb" compile="0" resource="1" file="Regression/2osc_gate.slb"/>
       <FILE id="FCpfyi" name="3osc_broad.slb" compile="0" resource="1" file="Regression/3osc_broad.slb"/>
+      <FILE id="v3B4qR" name="3OscV3" compile="0" resource="1" file="../../../Desktop/3OscV3"/>
       <FILE id="hjgAVM" name="4osctest.slb" compile="0" resource="1" file="Regression/4osctest.slb"/>
       <FILE id="zjSfw3" name="4osctest2.slb" compile="0" resource="1" file="Regression/4osctest2.slb"/>
       <FILE id="Vvy1yu" name="audiorecorder.slb" compile="0" resource="1"
             file="Regression/audiorecorder.slb"/>
       <FILE id="FbvkLd" name="dual_macro.slb" compile="0" resource="1" file="Regression/dual_macro.slb"/>
-      <FILE id="VLrQvp" name="locktest" compile="0" resource="1" file="../../../Desktop/locktest"/>
       <FILE id="EFvcmT" name="padtest.slb" compile="0" resource="1" file="Regression/padtest.slb"/>
       <FILE id="WmOuQ8" name="pitchbend.slb" compile="0" resource="1" file="Regression/pitchbend.slb"/>
       <FILE id="iE28J3" name="sh_echo.slb" compile="0" resource="1" file="Regression/sh_echo.slb"/>
-      <FILE id="N3gspF" name="simplesynth" compile="0" resource="1" file="../../../Desktop/simplesynth"/>
       <FILE id="bYBLo0" name="step1.slb" compile="0" resource="1" file="Regression/step1.slb"/>
       <FILE id="tdVRVS" name="step2.slb" compile="0" resource="1" file="Regression/step2.slb"/>
       <FILE id="MTiWPG" name="step3.slb" compile="0" resource="1" file="Regression/step3.slb"/>
-      <FILE id="i0OCVu" name="synth.dat" compile="0" resource="1" file="Regression/synth.dat"/>
     </GROUP>
     <GROUP id="{E76D66D3-3296-502A-6AE0-5C2C43CF4558}" name="lib">
       <GROUP id="{206F434C-B6C1-03B9-6D58-8B8B97CEF781}" name="gtest">

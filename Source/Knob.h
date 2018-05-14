@@ -43,6 +43,8 @@ public:
     bool isMidiController();
     void setIsMidicontroller(bool isController);
     
+    virtual void setCurrentLayer(Layer layer) override;
+    
     bool isLearning();
     void setLearning(bool learning);
     
@@ -139,6 +141,18 @@ private:
         juce::Value value;
     };
     
+    struct NameListener : juce::Value::Listener
+    {
+        NameListener (juce::Value& v, Module* module) : module(module),  value (v) { value.addListener (this); }
+        ~NameListener()  {}  // no need to remove the listener
+        
+        void valueChanged (juce::Value& value) override {
+            module->setName(value.toString());
+        }
+        Module* module;
+        juce::Value value;
+    };
+    
     float value;
     juce::Slider* slider;
     bool isController = false;
@@ -155,6 +169,7 @@ private:
     juce::Value* stepsizeValue;
     juce::Value* isControllerValue;
     juce::Value* controllerValue;
+    juce::Value* nameValue;
     
     juce::PropertyComponent* valueProp;
     juce::PropertyComponent* minValueProp;
@@ -162,6 +177,7 @@ private:
     juce::PropertyComponent* stepsizeValueProp;
     juce::PropertyComponent* isControllerValueProp;
     juce::PropertyComponent* controllerValueProp;
+    juce::PropertyComponent* nameValueProp;
     
     ValueListener* valueListener;
     MinValueListener* minValueListener;
@@ -169,6 +185,10 @@ private:
     StepsizeValueListener* stepsizeValueListener;
     IsControllerValueListener* isControllerValueListener;
     ControllerValueListener* controllerValueListener;
+    NameListener* nameListener;
+
+    
+    Label* valueLabel = nullptr;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Knob)
 };

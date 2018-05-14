@@ -23,10 +23,15 @@ using juce::BooleanPropertyComponent;
 Knob::Knob()
 {
    
+    setName("Knob");
+    
     setSize(90,90);
     nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(10,70);
+    nameLabel->setTopLeftPosition(30 ,2);
     
+    valueLabel = new Label();
+    valueLabel->setJustificationType (Justification::left);
+    valueLabel->setTopLeftPosition(2,70);
     
     slider = new Slider ("knob");
     slider->setSize(70,70);
@@ -40,7 +45,9 @@ Knob::Knob()
     slider->setTopLeftPosition(getWidth() / 2 - slider->getWidth() / 2, getHeight() / 2 - slider->getHeight()/2);
     
     addAndMakeVisible(slider);
-
+    addAndMakeVisible(valueLabel);
+    valueLabel->toFront(false);
+    
     setInterceptsMouseClicks(false,true);
     
     createProperties();
@@ -51,11 +58,10 @@ Knob::Knob()
     setMinimum(0);
     setMaximum(127);
     
-  
-    
 }
 
 void Knob::createProperties() {
+    nameValue = new Value(); 
     valueValue = new Value();
     minValue = new Value();
     maxValue = new Value();
@@ -68,6 +74,7 @@ void Knob::createProperties() {
     stepsizeValueListener = new StepsizeValueListener(*stepsizeValue, this);
     isControllerValueListener = new IsControllerValueListener(*isControllerValue,this);
     controllerValueListener = new ControllerValueListener(*controllerValue,this);
+    nameListener = new NameListener(*nameValue, this);
 }
 
 
@@ -81,6 +88,7 @@ Knob::~Knob()
     delete controllerValue;
     delete minValue;
     delete maxValue;
+    delete nameValue;
     
     delete valueListener;
     delete minValueListener;
@@ -88,6 +96,9 @@ Knob::~Knob()
     delete stepsizeValueListener;
     delete isControllerValueListener;
     delete controllerValueListener;
+    delete nameListener;
+    
+    delete valueLabel;
 }
 
 void Knob::configurePins(){
@@ -102,7 +113,7 @@ void Knob::paint(juce::Graphics &g) {
     // Module::paint(g);    for (int i = 0; i < pins.size();i++) {
     
     if (currentLayer == Layer::ALL) {
-    
+        Module::paint(g);
         if (pins.at(0)->isSelected()) {
             g.setColour(juce::Colours::white);
         }
@@ -146,11 +157,41 @@ void Knob::paint(juce::Graphics &g) {
         g.setColour(Colours::orange);
         g.drawRect(0,0,getWidth(),getHeight());
     }
+    
+    g.setColour(Colours::white);
+    g.drawText(String(value), 2, getHeight() - 10, 50, 10, juce::Justification::right);
+    
+
 }
 
 
 float Knob::getValue() {
     return value;
+}
+
+void Knob::setCurrentLayer(Module::Layer layer) {
+    Module::setCurrentLayer(layer);
+    
+    if (currentLayer == Module::Layer::ALL) {
+        setSize(90,30);
+        slider->setSize(26,26);
+        slider->setEnabled(false);
+        slider->setTopLeftPosition(2,2);
+        nameLabel->setTopLeftPosition(30 ,2);
+        valueLabel->setVisible(false);
+        setInterceptsMouseClicks(false,false);
+    }
+    else {
+        // GUI Mode
+        setSize(90,90);
+        slider->setSize(70,70);
+        slider->setEnabled(true);
+        slider->setTopLeftPosition(10,10);
+        nameLabel->setFont(Font(9));
+        nameLabel->setTopLeftPosition(2 ,2);
+        valueLabel->setVisible(true);
+        setInterceptsMouseClicks(false,true);
+    }
 }
 
 void Knob::setValue(float value) {
@@ -166,7 +207,7 @@ void Knob::setValue(float value) {
     [=]() {
         
         if (getParentComponent() != NULL) {
-            this->nameLabel->setText(String(value),juce::NotificationType::dontSendNotification);
+            this->valueLabel->setText(String(value),juce::NotificationType::dontSendNotification);
             this->slider->setValue(value, juce::NotificationType::dontSendNotification);
         }
     };
@@ -180,6 +221,7 @@ void Knob::sliderValueChanged(juce::Slider *slider) {
     this->valueValue->setValue(this->value);
     // this->nameLabel->setText(String(value),juce::NotificationType::dontSendNotification);
     this->pins.at(0)->setValue(value);
+    repaint();
 }
 
 void Knob::setStepSize(float stepsize) {
@@ -255,7 +297,9 @@ juce::Array<PropertyComponent*>& Knob::getProperties() {
     stepsizeValueProp = new SliderPropertyComponent(*stepsizeValue,"Stepsize",0.001,10000,0.01,1.0,true);
     isControllerValueProp = new BooleanPropertyComponent(*isControllerValue,"isController","Is controller");
     controllerValueProp = new SliderPropertyComponent(*controllerValue,"Controller number",0,127,1,1.0,true);
+    nameValueProp = new TextPropertyComponent(*nameValue,"Name",16, false,true);
     
+    properties.add(nameValueProp);
     properties.add(valueProp);
     properties.add(minValueProp);
     properties.add(maxValueProp);

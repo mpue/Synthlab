@@ -14,6 +14,9 @@ namespace BinaryData
     extern const char*   _3osc_broad_slb;
     const int            _3osc_broad_slbSize = 15803;
 
+    extern const char*   _3OscV3;
+    const int            _3OscV3Size = 15895;
+
     extern const char*   _4osctest_slb;
     const int            _4osctest_slbSize = 21829;
 
@@ -26,9 +29,6 @@ namespace BinaryData
     extern const char*   dual_macro_slb;
     const int            dual_macro_slbSize = 6800;
 
-    extern const char*   locktest;
-    const int            locktestSize = 3931;
-
     extern const char*   padtest_slb;
     const int            padtest_slbSize = 4600;
 
@@ -38,9 +38,6 @@ namespace BinaryData
     extern const char*   sh_echo_slb;
     const int            sh_echo_slbSize = 5161;
 
-    extern const char*   simplesynth;
-    const int            simplesynthSize = 15845;
-
     extern const char*   step1_slb;
     const int            step1_slbSize = 2358;
 
@@ -49,9 +46,6 @@ namespace BinaryData
 
     extern const char*   step3_slb;
     const int            step3_slbSize = 3956;
-
-    extern const char*   synth_dat;
-    const int            synth_datSize = 1048584;
 
     extern const char*   gtestparamtest_h_pump;
     const int            gtestparamtest_h_pumpSize = 20042;
@@ -225,7 +219,7 @@ namespace BinaryData
     const int            whitenoise_pngSize = 7446;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 72;
+    const int namedResourceListSize = 70;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];
@@ -235,9 +229,9 @@ namespace BinaryData
 
     // If you provide the name of one of the binary resource variables above, this function will
     // return the corresponding data and its size (or a null pointer if the name isn't found).
-    const char* getNamedResource (const char* resourceNameUTF8, int& dataSizeInBytes) noexcept;
+    const char* getNamedResource (const char* resourceNameUTF8, int& dataSizeInBytes);
 
     // If you provide the name of one of the binary resource variables above, this function will
     // return the corresponding original, non-mangled filename (or a null pointer if the name isn't found).
-    const char* getNamedResourceOriginalFilename (const char* resourceNameUTF8) noexcept;
+    const char* getNamedResourceOriginalFilename (const char* resourceNameUTF8);
 }

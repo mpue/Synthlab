@@ -107,7 +107,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     enableAllMidiInputs();
     
     addMouseListener(this, true);
-    addKeyListener(this);
+    // addKeyListener(this);
     setWantsKeyboardFocus(true);
     
     resized();
@@ -116,7 +116,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     running = true;
     
     if (Project::getInstance()->getAppMode() == Project::AppMode::PLAYER) {
-        editor->loadFromString(String(BinaryData::_3osc_broad_slb ));
+        editor->loadFromString(String(BinaryData::_3OscV3 ));
         editor->setCurrentLayer(Module::Layer::GUI);
         editor->setLocked(true);
     }
@@ -883,6 +883,7 @@ bool MainComponent::keyPressed(const juce::KeyPress &key, juce::Component *origi
     
     return true;
 }
+
 
 void MainComponent::createKeyMap() {
     keyCodeMidiNote['a'] = 36 ;

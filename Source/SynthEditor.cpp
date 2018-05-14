@@ -938,7 +938,7 @@ void SynthEditor::saveFile() {
         ModuleUtils::saveStructure(root->getModules(),root->getConnections(), v);
         
         v->setProperty("lock", isLocked(), nullptr);
-        v->setProperty("layer",static_cast<int>(currentLayer));
+        v->setProperty("layer",static_cast<int>(currentLayer),nullptr);
         
         URL file = chooser.getURLResult();
         
@@ -1303,7 +1303,7 @@ void SynthEditor::changeListenerCallback(juce::ChangeBroadcaster *source) {
 }
 
 ApplicationCommandTarget* SynthEditor::getNextCommandTarget() {
-    return nullptr;
+    return this;
 }
 void SynthEditor::getAllCommands (Array<CommandID>& commands) {
     commands.add({ SynthEditor::CommandIds::NEW });
@@ -1437,7 +1437,7 @@ bool SynthEditor::perform (const InvocationInfo& info) {
         return true;
     }
     
-    return false;
+    return true;
 }
 
 void SynthEditor::alignSelectedY() {
