@@ -50,6 +50,9 @@ namespace BinaryData
     extern const char*   step3_slb;
     const int            step3_slbSize = 3956;
 
+    extern const char*   synth_dat;
+    const int            synth_datSize = 1048584;
+
     extern const char*   gtestparamtest_h_pump;
     const int            gtestparamtest_h_pumpSize = 20042;
 
@@ -222,7 +225,7 @@ namespace BinaryData
     const int            whitenoise_pngSize = 7446;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 71;
+    const int namedResourceListSize = 72;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

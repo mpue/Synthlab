@@ -19,6 +19,7 @@
       <FILE id="bYBLo0" name="step1.slb" compile="0" resource="1" file="Regression/step1.slb"/>
       <FILE id="tdVRVS" name="step2.slb" compile="0" resource="1" file="Regression/step2.slb"/>
       <FILE id="MTiWPG" name="step3.slb" compile="0" resource="1" file="Regression/step3.slb"/>
+      <FILE id="i0OCVu" name="synth.dat" compile="0" resource="1" file="Regression/synth.dat"/>
     </GROUP>
     <GROUP id="{E76D66D3-3296-502A-6AE0-5C2C43CF4558}" name="lib">
       <GROUP id="{206F434C-B6C1-03B9-6D58-8B8B97CEF781}" name="gtest">
