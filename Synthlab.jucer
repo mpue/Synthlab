@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.3.2" bundleIdentifier="de.pueski.SynthlabX"
+<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.3.1" bundleIdentifier="de.pueski.SynthlabX"
               version="1.0.1" companyName="Pueski" id="JWX8Tz">
   <MAINGROUP id="CKGTaZ" name="Synthlab">
     <GROUP id="{9F42F092-AC3C-70BC-861B-ED2885470C98}" name="Regression">
@@ -11,9 +11,11 @@
       <FILE id="Vvy1yu" name="audiorecorder.slb" compile="0" resource="1"
             file="Regression/audiorecorder.slb"/>
       <FILE id="FbvkLd" name="dual_macro.slb" compile="0" resource="1" file="Regression/dual_macro.slb"/>
+      <FILE id="VLrQvp" name="locktest" compile="0" resource="1" file="../../../Desktop/locktest"/>
       <FILE id="EFvcmT" name="padtest.slb" compile="0" resource="1" file="Regression/padtest.slb"/>
       <FILE id="WmOuQ8" name="pitchbend.slb" compile="0" resource="1" file="Regression/pitchbend.slb"/>
       <FILE id="iE28J3" name="sh_echo.slb" compile="0" resource="1" file="Regression/sh_echo.slb"/>
+      <FILE id="N3gspF" name="simplesynth" compile="0" resource="1" file="../../../Desktop/simplesynth"/>
       <FILE id="bYBLo0" name="step1.slb" compile="0" resource="1" file="Regression/step1.slb"/>
       <FILE id="tdVRVS" name="step2.slb" compile="0" resource="1" file="Regression/step2.slb"/>
       <FILE id="MTiWPG" name="step3.slb" compile="0" resource="1" file="Regression/step3.slb"/>
@@ -110,6 +112,7 @@
       <FILE id="t88qcC" name="Knob_64.png" compile="0" resource="1" file="Images/Knob_64.png"/>
       <FILE id="gJAegc" name="led_off.png" compile="1" resource="1" file="Images/led_off.png"/>
       <FILE id="xTBQB1" name="led_on.png" compile="1" resource="1" file="Images/led_on.png"/>
+      <FILE id="iCVW3k" name="lock.png" compile="0" resource="1" file="Images/lock.png"/>
       <FILE id="HGa4kr" name="lp.png" compile="0" resource="1" file="Images/lp.png"/>
       <FILE id="floa7Y" name="micro.png" compile="0" resource="1" file="Images/micro.png"/>
       <FILE id="wjQQld" name="midiin.png" compile="0" resource="1" file="Images/midiin.png"/>
@@ -147,6 +150,7 @@
       <FILE id="oa95Wx" name="stop.png" compile="0" resource="1" file="Images/stop.png"/>
       <FILE id="LlFYc6" name="tri.png" compile="0" resource="1" file="Images/tri.png"/>
       <FILE id="ogxnye" name="undo.png" compile="0" resource="1" file="Images/undo.png"/>
+      <FILE id="S55ijn" name="unlock.png" compile="0" resource="1" file="Images/unlock.png"/>
       <FILE id="EJ4uon" name="whitenoise.png" compile="0" resource="1" file="Images/whitenoise.png"/>
     </GROUP>
     <GROUP id="{CA20D122-1EA5-3A93-F1F8-F6EE53DA457E}" name="Source">

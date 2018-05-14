@@ -54,7 +54,7 @@ public:
             juce::JUCEApplication::quit();
         }
         else {
-            mainWindow = new MainWindow (getApplicationName());
+            mainWindow = new MainWindow (getApplicationName());    
         }
         
     }

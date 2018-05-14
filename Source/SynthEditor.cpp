@@ -378,11 +378,11 @@ void SynthEditor::showContextMenu(Point<int> position) {
         m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::LOAD_MODULE);
         m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::SAVE_MODULE);
         m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::SAVE_SCREENSHOT);
-        /*
+        
         if (locked) {
             m->addItem(99, "Unlock");
             for (int i = 0; i < root->getModules()->size(); i++) {
-                root->getModules()->at(i)->setInterceptsMouseClicks(false, true);
+                // root->getModules()->at(i)->setInterceptsMouseClicks(false, true);
             }
         }
         else {
@@ -391,7 +391,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
             }
              m->addItem(99, "Lock");
         }
-         */
+        
         
         PopupMenu alignMenu = PopupMenu();
         
@@ -451,11 +451,11 @@ void SynthEditor::showContextMenu(Point<int> position) {
             // user dismissed the menu without picking anything
         }
 
-        /*
+        
         else if (result == 99) {
             locked = !locked;
         }
-         */
+        
         else if (result >= 53 && result <= 99 ){
             AddModuleAction* am = new AddModuleAction(this,position,result);
             Project::getInstance()->getUndoManager()->beginNewTransaction();
@@ -737,6 +737,10 @@ void SynthEditor::setCurrentLayer(int layer) {
     resized();
 }
 
+int SynthEditor::getCurrentLayer() {
+    return static_cast<int>(currentLayer);
+}
+
 SelectionModel& SynthEditor::getSelectionModel() {
     return selectionModel;
 }
@@ -847,7 +851,7 @@ void SynthEditor::loadFromString(juce::String in){
     ScopedPointer<XmlElement> xml = XmlDocument(in).getDocumentElement();
     
     ValueTree v = ValueTree::fromXml(*xml.get());
-    
+
     setRunning(false);
     ModuleUtils::loadStructure(root->getModules(),root->getConnections(), &v, this);
     
@@ -855,6 +859,11 @@ void SynthEditor::loadFromString(juce::String in){
         addAndMakeVisible((*it));
         configureAudioModule((*it),this);
     }
+    
+    setCurrentLayer(v.getProperty("layer").toString().getIntValue());
+    setLocked(v.getProperty("lock").toString().getIntValue() > 0);
+    
+    notifyListeners();
     
     xml = nullptr;
     resized();
@@ -896,7 +905,7 @@ Module* SynthEditor::loadModule() {
         
         Project::getInstance()->addRecentFile(file.getFullPathName());
         ValueTree v = ValueTree::fromXml(*xml.get());
-        
+
         setRunning(false);
         Module* m = new Module(v.getChildWithName("Module").getProperty("name").toString());
         ModuleUtils::loadStructure(m->getModules(),m->getConnections(), &v, this);
@@ -925,8 +934,11 @@ void SynthEditor::saveFile() {
     if (chooser.browseForFileToSave(true)) {
         
         ValueTree* v = new ValueTree("Synth");
-        
+
         ModuleUtils::saveStructure(root->getModules(),root->getConnections(), v);
+        
+        v->setProperty("lock", isLocked(), nullptr);
+        v->setProperty("layer",static_cast<int>(currentLayer));
         
         URL file = chooser.getURLResult();
         
@@ -946,6 +958,9 @@ void SynthEditor::saveFile() {
     if (chooser.browseForFileToSave(true)) {
         
         ValueTree* v = new ValueTree("Module");
+        
+        v->setProperty("lock", isLocked(), nullptr);
+        v->setProperty("layer",static_cast<int>(currentLayer), nullptr);
         
         ModuleUtils::saveStructure(root->getModules(),root->getConnections(), v);
         
@@ -1024,9 +1039,6 @@ void SynthEditor::openSampleEditor(SamplerModule *sm) {
 }
 
 void SynthEditor::openStepSequencer(StepSequencerModule *ssm) {
-    
-    
-    
     SequenceEditor* se = ssm->getEditor();
     Project::getInstance()->getSupplemental()->addTab("Step sequencer", Colours::darkgrey, se, true);
     Project::getInstance()->getSupplemental()->setCurrentTabIndex(Project::getInstance()->getSupplemental()->getNumTabs() - 1);
@@ -1077,16 +1089,20 @@ void SynthEditor::openFile() {
         Project::getInstance()->addRecentFile(file.getFullPathName());
 #endif
         ValueTree v = ValueTree::fromXml(*xml.get());
-
         setRunning(false);
         ModuleUtils::loadStructure(root->getModules(),root->getConnections(), &v, this);
-
+        
         for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
             addAndMakeVisible((*it));
             configureAudioModule((*it),this);
         }
 
         resized();
+
+        setCurrentLayer(v.getProperty("layer").toString().getIntValue());
+        setLocked(v.getProperty("lock").toString().getIntValue() > 0);
+        
+        notifyListeners();
         
         xml = nullptr;
         setRunning(true);
@@ -1226,6 +1242,10 @@ void SynthEditor::notifyListeners() {
         for (int i = 0;i < listener.size();i++) {
             listener.at(i)->selectionChanged(this->selectionModel.getSelectedModule());
         }
+    }
+    
+    for (int i = 0;i < listener.size();i++) {
+        listener.at(i)->fileChanged("");
     }
 }
 

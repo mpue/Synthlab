@@ -56,6 +56,7 @@ public:
     void resized() override;
 
     virtual void selectionChanged(juce::Component* m) override;
+    virtual void fileChanged(String name) override;
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
 

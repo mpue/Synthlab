@@ -153,6 +153,10 @@ void PropertyView::selectionChanged(Component* c) {
 
 }
 
+void PropertyView::fileChanged(juce::String name) {
+    // propertyPanel->clear();
+}
+
 int PropertyView::useTimeSlice() {
     return 1000;
 }

@@ -127,7 +127,7 @@ public:
         return Layer::MODULES;
     };
     
-    void setCurrentLayer(Layer layer){
+    virtual void setCurrentLayer(Layer layer){
         currentLayer = layer;
     }
 
