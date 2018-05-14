@@ -53,7 +53,7 @@ public:
     Module* loadModule();
     void saveModule(Module* m);
     void configureAudioModule(Module *m, ChangeBroadcaster* broadcaster);
-                         
+    
     // audio processing
 
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate);
@@ -70,7 +70,15 @@ public:
     bool connectionExists(std::vector<Connection*> connections, Connection* c);
     SelectionModel& getSelectionModel();
     void setCurrentLayer(int layer);
+    int getCurrentLayer();
     void duplicateSelected();
+    void setLocked(bool lock) {
+        this->locked = lock;
+    }
+    
+    bool isLocked() {
+        return this->locked;
+    }
     
     // drag and drop
     

@@ -79,15 +79,22 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     
     AudioManager::getInstance()->setDeviceManager(&deviceManager);
     
-#if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
-    PluginManager::getInstance();
-#endif
+
     if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
+        
+#if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
+        PluginManager::getInstance();
+#endif
+        
         createToolbar();
         createCPUMeter();
         createMenu();
         createKeyMap();
         createStudioLayout();
+        
+        // a global sampler object which allows us to play audio at any place like for preview for example
+        defaultSampler = new Sampler(sampleRate, buffersize);
+        Project::getInstance()->setDefaultSampler(defaultSampler);
     }
     else if(Project::getInstance()->getAppMode() == Project::AppMode::PLAYER) {
         createPlayerLayout();
@@ -96,10 +103,6 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     Project::getInstance()->setMain(this);
 
     startTimer(20);
-    
-    // a global sampler object which allows us to play audio at any place like for preview for example
-    defaultSampler = new Sampler(sampleRate, buffersize);
-    Project::getInstance()->setDefaultSampler(defaultSampler);
     
     enableAllMidiInputs();
     
@@ -113,8 +116,9 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     running = true;
     
     if (Project::getInstance()->getAppMode() == Project::AppMode::PLAYER) {
-        editor->loadFromString(String(BinaryData::_3osc_broad_slb));
+        editor->loadFromString(String(BinaryData::_3osc_broad_slb ));
         editor->setCurrentLayer(Module::Layer::GUI);
+        editor->setLocked(true);
     }
     
 }
@@ -122,7 +126,6 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
 MainComponent::~MainComponent()
 {
     running = false;
-    
     
     if(Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
         loadSlider->setLookAndFeel(nullptr);
@@ -136,8 +139,6 @@ MainComponent::~MainComponent()
     
     disableAllMidiInputs();
 
-
-
     if(moduleBrowser != nullptr) {
         if (moduleBrowser->isVisible()) {
             moduleBrowser->setVisible(false);
@@ -149,6 +150,7 @@ MainComponent::~MainComponent()
         delete tab;
         delete view;
         delete propertyView;
+        delete lockButton;
         delete menu;
         delete toolbar;
         delete toolbarFactory;
@@ -158,15 +160,23 @@ MainComponent::~MainComponent()
 #endif
         delete cpuLoadLabel;
         delete loadSlider;
+
     }
     else if(Project::getInstance()->getAppMode() == Project::AppMode::PLAYER) {
+        delete editor;
+        delete tab;
+        delete propertyView;
+        delete toolbarFactory;
         delete editorView;
+        delete mixer;
+        delete mixerPanel;
+        delete lockButton;
     }
     
     if (defaultSampler != nullptr) {
         delete defaultSampler;
     }
-    
+
 
     PrefabFactory::getInstance()->destroy();
     Project::getInstance()->destroy();
@@ -213,7 +223,6 @@ void MainComponent::createToolbar() {
 #else
     toolbar->setBounds(0,25,  getWidth(), 50);
 #endif
-
     
     addAndMakeVisible(toolbar);
     
@@ -223,15 +232,28 @@ void MainComponent::createToolbar() {
         toolbar->addItem(*toolbarFactory, i+1);
         toolbar->getItemComponent(i)->addListener(this);
         
-        ToolbarComboBox* tcb = dynamic_cast<ToolbarComboBox*>(toolbar->getItemComponent(i));
-        
-        if (tcb != NULL) {
-            tcb->getComboBox().onChange = [tcb,this]() {
-                int id = tcb->getComboBox().getSelectedId() - 1;
-                editor->setCurrentLayer(id);
-            };
+        if (layerCombobox == NULL) {
+            layerCombobox = dynamic_cast<ToolbarComboBox*>(toolbar->getItemComponent(i));
+        }
+        if (layerCombobox != NULL) {
+            
+            layerCombobox->getComboBox().addListener(this);
         }
     }
+    
+    lockButton = new ImageButton("Lock");
+    
+    Image normalImage = juce::ImageCache::getFromMemory(BinaryData::unlock_png, BinaryData::unlock_pngSize);
+    Image downImage = juce::ImageCache::getFromMemory(BinaryData::lock_png, BinaryData::lock_pngSize);
+    
+    lockButton->setImages(false, true, true, normalImage, 1.0f, juce::Colours::white, normalImage, 1.0, juce::Colours::white, downImage, 1.0f, juce::Colours::white);
+    lockButton->setClickingTogglesState(true);
+    lockButton->setSize(24, 24);
+    lockButton->setTopLeftPosition(700,10);
+    toolbar->addAndMakeVisible(lockButton);
+    
+    lockButton->addListener(this);
+    
 }
 
 void MainComponent::createCPUMeter() {
@@ -276,7 +298,7 @@ void MainComponent::createStudioLayout() {
     addAndMakeVisible(editorView);
     editor->setTab(editorView->getEditorTab());
     editorView->getEditorTab()->addChangeListener(this);
-    
+    editor->addEditorListener(this);
     addMouseListener(propertyView->getBrowser(), false);
     
     Project::getInstance()->getCommandManager()->registerAllCommandsForTarget(editor);
@@ -301,13 +323,6 @@ void MainComponent::createStudioLayout() {
 }
 
 void MainComponent::createPlayerLayout() {
-    /*
-    editorView = new EditorComponent(sampleRate, buffersize);
-    editor = editorView->getEditor();
-    mixer = editorView->getMixer();
-    mixerPanel = editorView->getMixerPanel();
-    addAndMakeVisible(editorView);
-     */
     editor = new SynthEditor(sampleRate, buffersize);
     mixerPanel = new MixerPanel();
     mixer = new Mixer();
@@ -435,6 +450,11 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
     
     int numSamples = bufferToFill.numSamples;
     float** outputChannelData = bufferToFill.buffer->getArrayOfWritePointers();
+    
+    if (outputChannelData == NULL) {
+        return;
+    }
+    
     // const float** inputChannelData = bufferToFill.buffer->getArrayOfReadPointers();
     
     if (defaultSampler != nullptr && defaultSampler->isPlaying()) {
@@ -936,6 +956,10 @@ void MainComponent::buttonClicked (Button* b)
         }
     }
 
+    if (b == lockButton) {
+        editor->setLocked(lockButton->getToggleState());
+    }
+    
 }
 
 void MainComponent::handleIncomingMidiMessage(juce::MidiInput *source, const juce::MidiMessage &message) {
@@ -1161,9 +1185,24 @@ void MainComponent::disableAllMidiInputs() {
 
 void MainComponent::changeListenerCallback(juce::ChangeBroadcaster *source) {
     
-    MainTabbedComponent* tabComponent = dynamic_cast<MainTabbedComponent*>(source);
-    
-    if (tabComponent != nullptr) {
+    SynthEditor* editor = dynamic_cast<SynthEditor*>(source);
+    if (editor != nullptr) {
+        
         
     }
+}
+
+void MainComponent::comboBoxChanged(juce::ComboBox *comboBoxThatHasChanged) {
+    int id = comboBoxThatHasChanged->getSelectedId() - 1;
+    editor->setCurrentLayer(id);
+}
+
+void MainComponent::selectionChanged(juce::Component *m) {
+    
+}
+
+void MainComponent::fileChanged(juce::String name) {
+    lockButton->setToggleState(editor->isLocked(), juce::NotificationType::dontSendNotification);
+    if (layerCombobox != NULL)
+        layerCombobox->getComboBox().setSelectedId(editor->getCurrentLayer() + 1);
 }

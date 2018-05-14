@@ -29,7 +29,10 @@ class MainComponent   : public juce::AudioAppComponent,
                         public juce::AudioProcessorPlayer,
                         public juce::DragAndDropContainer,
                         public juce::ApplicationCommandManager,
-                        public juce::ChangeListener
+                        public juce::ChangeListener,
+                        public EditorListener,
+                        public ComboBox::Listener
+
 
 {
 public:
@@ -50,6 +53,10 @@ public:
     void modifierKeysChanged (const juce::ModifierKeys& modifiers) override;
     void createKeyMap();
     void buttonClicked (juce::Button*) override;
+    
+    virtual void fileChanged(String name) override;
+    virtual void selectionChanged(juce::Component* m) override;
+    virtual void comboBoxChanged (ComboBox* comboBoxThatHasChanged) override;
     
     void handleIncomingMidiMessage (juce::MidiInput* source, const juce::MidiMessage& message) override;
     void sendGateMessage(Module* module, int channel, int velocity,int note,bool on);
@@ -86,6 +93,7 @@ private:
     juce::Viewport* view = nullptr;
     juce::MenuBarComponent* menu;
     ModuleBrowser* moduleBrowser = nullptr;
+    ToolbarComboBox* layerCombobox = nullptr;
 
     juce::Label* cpuLoadLabel = nullptr;
     juce::Slider* loadSlider = nullptr;
@@ -95,6 +103,8 @@ private:
     juce::PopupMenu* pluginMenu = nullptr;
     
     EditorComponent* editorView = nullptr;
+    
+    ImageButton* lockButton = nullptr;
     
     virtual juce::StringArray getMenuBarNames() override;
     virtual juce::PopupMenu getMenuForIndex(int index, const juce::String & menuName) override;

@@ -68,7 +68,17 @@ void PadModule::configurePins() {
 }
 
 void PadModule::paint(juce::Graphics &g) {
-    Module::paint(g);
+    
+    if (currentLayer == Layer::ALL) {
+        Module::paint(g);
+    }
+    else {
+        Component::paint(g);
+    }
+    if (selected) {
+        g.setColour(Colours::orange);
+        g.drawRect(0,0,getWidth(),getHeight());
+    }
 }
 
 void PadModule::gateOn(int velocity, int note) {

@@ -52,6 +52,16 @@ public:
         return Layer::GUI;
     };
     
+    
+    virtual void setCurrentLayer(Layer layer) override{
+        currentLayer = layer;
+        if (currentLayer == Layer::GUI) {
+            nameLabel->setVisible(false);
+        }
+        else {
+            nameLabel->setVisible(true);
+        }
+    }
 private:
     
     struct ChannelListener : juce::Value::Listener
