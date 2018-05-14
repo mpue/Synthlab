@@ -430,7 +430,7 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
 {
     lastTime = Time::getMillisecondCounterHiRes() - currentTime;
     currentTime = Time::getMillisecondCounterHiRes();
-
+    
     long startTime = currentTime;
     
     int numSamples = bufferToFill.numSamples;
@@ -484,8 +484,14 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
        }
        else {
            for (int j = 0;j < numSamples;j++) {
-               outputChannelData[0][j] = 0;
-               outputChannelData[1][j] = 0;
+               
+               if (outputChannelData[0] != NULL) {
+                   outputChannelData[0][j] = 0;
+               }
+               if (outputChannelData[1] != NULL) {
+                   outputChannelData[1][j] = 0;
+               }
+
            }
        }
     }
@@ -560,10 +566,12 @@ void MainComponent::getNextAudioBlock (const AudioSourceChannelInfo& bufferToFil
             if (editor->getMixer()->channelIsValid(1)) {
                 // outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->applyGain(channelVolume);
                 const float* outR = outputChannels.at(0)->getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
-                outputChannelData[1][j] += channelVolume * (outR[j] + auxRightOut) * gainRight;
+                if (outputChannelData[1] != NULL)
+                    outputChannelData[1][j] += channelVolume * (outR[j] + auxRightOut) * gainRight;
             }
             else {
-                outputChannelData[1][j] = auxRightOut;
+                if (outputChannelData[1] != NULL)
+                    outputChannelData[1][j] = auxRightOut;
             }
         }
 
@@ -931,8 +939,6 @@ void MainComponent::buttonClicked (Button* b)
 }
 
 void MainComponent::handleIncomingMidiMessage(juce::MidiInput *source, const juce::MidiMessage &message) {
-    
-
     
     if (message.isNoteOn() && message.getNoteNumber() > 7) {
         for (int i = 0; i < editor->getModule()->getModules()->size();i++) {

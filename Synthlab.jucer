@@ -525,8 +525,8 @@
     </VS2015>
     <XCODE_IPHONE targetFolder="Builds/iOS" iPadScreenOrientation="landscape" smallIcon="udjGbx"
                   bigIcon="udjGbx" iosDevelopmentTeamID="8M4G4EW8QQ" extraDefs="IOS_APP"
-                  microphonePermissionNeeded="1" iosDeviceFamily="2" UIFileSharingEnabled="1"
-                  UISupportsDocumentBrowser="1" iCloudPermissions="1" keepCustomXcodeSchemes="1">
+                  microphonePermissionNeeded="1" UIFileSharingEnabled="1" UISupportsDocumentBrowser="1"
+                  iCloudPermissions="1" keepCustomXcodeSchemes="1">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest&#10;"
                        iosCompatibility="10.3"/>

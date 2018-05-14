@@ -403,7 +403,8 @@ void SequenceEditor::timerCallback() {
 }
 
 void SequenceEditor::setRunning(bool running) {
-    this->running = running; 
+    this->running = running;
+    this->currentStep = 0;
 }
 
 void SequenceEditor::triggerNextStep() {
