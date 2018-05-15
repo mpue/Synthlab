@@ -123,6 +123,10 @@ public:
     virtual void setSampleRate(float rate);
     virtual void setBuffersize(int buffersize);
     
+    virtual void setLocked(bool locked) {
+        this->locked = locked;
+    }
+    
     virtual Layer getLayer() {
         return Layer::MODULES;
     };
@@ -159,9 +163,9 @@ public:
 
     void resetUIPosition() {
         uiPosition = getPosition();
+        saveUiPosition();
     }
 
-    
 protected:
     //[UserVariables]   -- You can add your own custom variables in this section.
     MultiComponentDragger* dragger;
@@ -176,6 +180,7 @@ protected:
 	long index;
     bool editable = true;
     bool prefab = false;
+    bool locked = false;
     
     std::vector<Module*>* modules = nullptr;
     std::vector<Connection*>* connections = nullptr;

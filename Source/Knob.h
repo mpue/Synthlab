@@ -70,6 +70,12 @@ public:
         return Layer::GUI;
     };
     
+    virtual void setLocked(bool locked) override {
+        this->locked = locked;
+        this->slider->setEnabled(locked);
+        setInterceptsMouseClicks(locked, locked);
+    }
+    
 private:
     
     struct ValueListener : juce::Value::Listener

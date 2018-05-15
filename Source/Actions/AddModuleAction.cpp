@@ -146,7 +146,9 @@ bool AddModuleAction::perform() {
     }
     
     editor->addChangeListener(m);
+    
     m->setTopLeftPosition(position);
+    m->savePosition();
     m->setUiPosition(position.x, position.y);
     m->saveUiPosition();
     
@@ -154,7 +156,7 @@ bool AddModuleAction::perform() {
     editor->getModule()->getModules()->push_back(m);
     
     m->setSelected(true);
-    m->savePosition();
+
     editor->getSelectionModel().getSelectedModules().push_back(m);
     editor->repaint();
     

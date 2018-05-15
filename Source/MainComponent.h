@@ -32,6 +32,7 @@ class MainComponent   : public juce::AudioAppComponent,
                         public juce::ChangeListener,
                         public EditorListener,
                         public ComboBox::Listener
+    
 
 
 {
@@ -53,7 +54,6 @@ public:
     void modifierKeysChanged (const juce::ModifierKeys& modifiers) override;
     void createKeyMap();
     void buttonClicked (juce::Button*) override;
-    
     virtual void fileChanged(String name) override;
     virtual void selectionChanged(juce::Component* m) override;
     virtual void comboBoxChanged (ComboBox* comboBoxThatHasChanged) override;

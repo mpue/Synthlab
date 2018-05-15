@@ -69,16 +69,18 @@ using juce::ToolbarButton;
 //==============================================================================
 MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
 {
+    
     // Make sure you set the size of the component after
     // you add any child components.
     setSize (1280, 800);
 
     // specify the number of input and output channels that we want to open
     setAudioChannels (2, 2);
+
     createConfig();
     
     AudioManager::getInstance()->setDeviceManager(&deviceManager);
-    
+    Project::getInstance()->setCommandManager(this);
 
     if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
         
@@ -102,17 +104,14 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
         
     Project::getInstance()->setMain(this);
 
-    startTimer(20);
-    
+    startTimer(20);    
     enableAllMidiInputs();
-    
     
     addMouseListener(this, true);
     addKeyListener(this);
-    setMouseClickGrabsKeyboardFocus(true);
-    // setWantsKeyboardFocus(true);
+    // editor->setMouseClickGrabsKeyboardFocus(true);
+    // editor->setWantsKeyboardFocus(true);
     
-     
     resized();
     repaint();
     initialized = true;
@@ -124,7 +123,6 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
         editor->setLocked(true);
     }
     
-    editor->setWantsKeyboardFocus(true);
 }
 
 MainComponent::~MainComponent()
@@ -305,8 +303,8 @@ void MainComponent::createStudioLayout() {
     editor->addEditorListener(this);
     addMouseListener(propertyView->getBrowser(), false);
     
-    Project::getInstance()->getCommandManager()->registerAllCommandsForTarget(editor);
-    Project::getInstance()->getCommandManager()->setFirstCommandTarget(editor);
+    registerAllCommandsForTarget(editor);
+    setFirstCommandTarget(editor);
     
     // we have to set up our StretchableLayoutManager so it know the limits and preferred sizes of it's contents
     stretchableManager.setItemLayout (0,            // for the properties
@@ -669,9 +667,9 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String & menuName) {
     PopupMenu menu;
     
     if (index == 0) {
-        menu.addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::NEW);
-        menu.addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::LOAD);
-        menu.addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::SAVE);
+        menu.addCommandItem(this, SynthEditor::CommandIds::NEW);
+        menu.addCommandItem(this, SynthEditor::CommandIds::LOAD);
+        menu.addCommandItem(this, SynthEditor::CommandIds::SAVE);
         menu.addItem(5, "Settings", true, false, nullptr);
         
         PopupMenu samplesMenu = PopupMenu();
@@ -693,9 +691,8 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String & menuName) {
         menu.addItem(999, "Exit", true, false, nullptr);
     }
     else if (index == 1) {
-        menu.addItem(11, "Show mixer", true, false, nullptr);
 #if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
-        menu.addItem(12, "Manage plugins", true, false, nullptr);
+        menu.addItem(200, "Manage plugins", true, false, nullptr);
 #endif
     }
     else if (index == 2) {
@@ -704,13 +701,14 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String & menuName) {
             return *pluginMenu;
     }
     else if (index == 3) {
-        menu.addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::DUPLICATE);
-        menu.addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::DELETE_SELECTED);
+        menu.addCommandItem(this, SynthEditor::CommandIds::DUPLICATE);
+        menu.addCommandItem(this, SynthEditor::CommandIds::DELETE_SELECTED);
+        menu.addCommandItem(this, SynthEditor::CommandIds::RESET_GUI_POS);
         
         PopupMenu alignMenu = PopupMenu();
         
-        alignMenu.addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::ALIGN_X);
-        alignMenu.addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::ALIGN_Y);
+        alignMenu.addCommandItem(this, SynthEditor::CommandIds::ALIGN_X);
+        alignMenu.addCommandItem(this, SynthEditor::CommandIds::ALIGN_Y);
         
         menu.addSubMenu("Align",alignMenu);
     }
@@ -739,7 +737,7 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
         openSettings();
     }
 #if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
-    else if (menuItemID == 12) {
+    else if (menuItemID == 200) {
         PluginManager::getInstance()->scanPlugins();
     }
 #endif

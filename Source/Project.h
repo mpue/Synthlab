@@ -108,7 +108,6 @@ private:
     Project() {
         undoManager = new juce::UndoManager();
         lookAndFeel = new CustomLookAndFeel();
-        commandManager = new ApplicationCommandManager();
     }
     
     ~Project() {
@@ -131,7 +130,6 @@ private:
 
         delete undoManager;
         delete lookAndFeel;
-        delete commandManager;
     }
     
     ApplicationCommandManager* commandManager;

@@ -14,6 +14,9 @@ namespace BinaryData
     extern const char*   _3osc_broad_slb;
     const int            _3osc_broad_slbSize = 15803;
 
+    extern const char*   _3oscV2_slb;
+    const int            _3oscV2_slbSize = 17120;
+
     extern const char*   _4osctest_slb;
     const int            _4osctest_slbSize = 21829;
 
@@ -216,7 +219,7 @@ namespace BinaryData
     const int            whitenoise_pngSize = 7446;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 69;
+    const int namedResourceListSize = 70;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

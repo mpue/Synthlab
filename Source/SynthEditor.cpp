@@ -51,7 +51,7 @@ SynthEditor::SynthEditor(){
     
     setRepaintsOnMouseActivity(true);
     setMouseClickGrabsKeyboardFocus(true);
-    setWantsKeyboardFocus(true);
+    //setWantsKeyboardFocus(true);
     
     addChildComponent(root);
 }
@@ -342,6 +342,19 @@ void SynthEditor::showContextMenu(Point<int> position) {
                 if (module->getName().contains("Mixer")){
                     k->setMinimum(0);
                     k->setMaximum(1);
+                    k->setStepSize(0.01);
+                }
+                if (module->getName().contains("ADSR")){
+                    
+                    k->setMinimum(0);
+                    
+                    if (module->getPins().at(pinIndex)->getName() == "S"){
+                        k->setMaximum(1);
+                    }
+                    else {
+                        k->setMaximum(10);
+                    }
+                    
                     k->setStepSize(0.01);
                 }
                 
@@ -1324,7 +1337,7 @@ void SynthEditor::changeListenerCallback(juce::ChangeBroadcaster *source) {
 }
 
 ApplicationCommandTarget* SynthEditor::getNextCommandTarget() {
-    return this;
+    return nullptr;
 }
 void SynthEditor::getAllCommands (Array<CommandID>& commands) {
     commands.add({ SynthEditor::CommandIds::NEW });

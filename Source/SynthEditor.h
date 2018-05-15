@@ -73,13 +73,26 @@ public:
     int getCurrentLayer();
     void duplicateSelected();
     void setLocked(bool lock) {
-        this->locked = lock;
+        setModuleLocked(this->getModule(), lock);
     }
     
     bool isLocked() {
         return this->locked;
     }
     
+    void setModuleLocked(Module* m, bool locked) {
+        
+        if (m != nullptr) {
+            
+            m->setLocked(locked);
+            
+            for (int i = 0; i< m->getModules()->size();i++) {
+                if (m->getModules()->at(i) != nullptr) {
+                    m->getModules()->at(i)->setLocked(locked);
+                }
+            }
+        }
+    }
     
     /**
      * Snaps the current given location to a given grid

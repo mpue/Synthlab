@@ -58,6 +58,8 @@ Knob::Knob()
     
     setCurrentLayer(Layer::ALL);
     
+    slider->setEnabled(false);
+    
 }
 
 void Knob::createProperties() {
@@ -175,7 +177,6 @@ void Knob::setCurrentLayer(Module::Layer layer) {
     if (currentLayer == Module::Layer::ALL) {
         setSize(90,30);
         slider->setSize(26,26);
-        slider->setEnabled(false);
         slider->setTopLeftPosition(2,2);
         nameLabel->setTopLeftPosition(30 ,2);
         valueLabel->setVisible(false);
@@ -185,12 +186,11 @@ void Knob::setCurrentLayer(Module::Layer layer) {
         // GUI Mode
         setSize(90,90);
         slider->setSize(70,70);
-        slider->setEnabled(true);
         slider->setTopLeftPosition(10,10);
         nameLabel->setFont(Font(9));
         nameLabel->setTopLeftPosition(2 ,2);
         valueLabel->setVisible(true);
-        setInterceptsMouseClicks(false,true);
+        setInterceptsMouseClicks(false,false);
     }
 }
 
