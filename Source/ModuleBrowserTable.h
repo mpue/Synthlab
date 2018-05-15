@@ -42,7 +42,7 @@ public:
             prefabs.push_back((*it).second);
             filteredPrefabs->push_back((*it).second);
         }
-        table->addMouseListener(this,true);
+        //table->addMouseListener(this,true);
         
         
     }

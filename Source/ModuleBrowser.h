@@ -30,6 +30,8 @@ private:
     juce::ScopedPointer<juce::Label> label;
     juce::ScopedPointer<juce::TextEditor> searchText;
     
+    juce::ScopedPointer<juce::ResizableCornerComponent> resizer = nullptr;
+    
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ModuleBrowser)
 };
 

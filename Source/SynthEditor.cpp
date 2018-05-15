@@ -19,6 +19,7 @@
 #include "Actions/AddConnectionAction.h"
 #include "Actions/DuplicateModuleAction.h"
 #include "Actions/RemoveSelectedAction.h"
+#include "Actions/MoveSelectedAction.h"
 #include "Project.h"
 #include "LabelModule.h"
 #include "SamplerModule.h"
@@ -49,8 +50,8 @@ SynthEditor::SynthEditor(){
     selectionModel = SelectionModel();
     
     setRepaintsOnMouseActivity(true);
-    // setMouseClickGrabsKeyboardFocus(true);
-    // setWantsKeyboardFocus(true);
+    setMouseClickGrabsKeyboardFocus(true);
+    setWantsKeyboardFocus(true);
     
     addChildComponent(root);
 }
@@ -70,8 +71,8 @@ SynthEditor::SynthEditor (double sampleRate, int buffersize)
     selectionModel.setRoot(root);
     
 	setRepaintsOnMouseActivity(true);
-	setMouseClickGrabsKeyboardFocus(true);
-	setWantsKeyboardFocus(true);
+	// setMouseClickGrabsKeyboardFocus(true);
+	// setWantsKeyboardFocus(true);
 
     addChildComponent(root);
     
@@ -536,11 +537,31 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
                 if (m->getSelectedPin() == nullptr || m->getSelectedPin() == NULL ) {
                     
                     if (currentLayer == Module::Layer::GUI) {
-                        m->setUiPosition(m->getSavedUiPosition().getX() + e.getOffsetFromDragStart().getX(), m->getSavedUiPosition().getY()+ e.getOffsetFromDragStart().getY());
-                        m->setTopLeftPosition(m->getSavedUiPosition().getX() + e.getOffsetFromDragStart().getX(), m->getSavedUiPosition().getY()+ e.getOffsetFromDragStart().getY());
+                        
+                        int x = m->getSavedUiPosition().getX() + e.getOffsetFromDragStart().getX();
+                        int y = m->getSavedUiPosition().getY()+ e.getOffsetFromDragStart().getY();
+                        
+                        if (snapToGrid) {
+                             x = snap(x,10);
+                             y = snap(y,10);
+
+                        }
+                        
+                        m->setUiPosition(x,y);
+                        m->setTopLeftPosition(x,y);
                     }
                     else {
-                        m->setTopLeftPosition(m->getSavedPosition().getX() + e.getOffsetFromDragStart().getX(), m->getSavedPosition().getY()+ e.getOffsetFromDragStart().getY());
+
+                        int x = m->getSavedPosition().getX() + e.getOffsetFromDragStart().getX();
+                        int y = m->getSavedPosition().getY() + e.getOffsetFromDragStart().getY();
+                        
+                        if (snapToGrid) {
+                            x = snap(x,10);
+                            y = snap(y,10);
+                            
+                        }
+                        
+                        m->setTopLeftPosition(x,y);
                         
                     }
 
@@ -602,19 +623,19 @@ void SynthEditor::mouseUp (const MouseEvent& e)
 		isLeftMouseDown = false;
 	}
 
-    for (int i = 0; i < root->getModules()->size(); i++) {
+    if (state == SelectionModel::MOVING_SELECTION) {
+        MoveSelectedAction* msa = new MoveSelectedAction(this);
+        Project::getInstance()->getUndoManager()->beginNewTransaction();
+        Project::getInstance()->getUndoManager()->perform(msa);
+    }
 
-        Module* m = root->getModules()->at(i);
-       
-        
-        if (currentLayer == Module::Layer::GUI) {
-            m->saveUiPosition();
-        }
-        else {
-            m->savePosition();
-        }
-        if (state == SelectionModel::State::DRAGGING_CONNECTION)  {
+    else if (state == SelectionModel::State::DRAGGING_CONNECTION)  {
+        for (int i = 0; i < root->getModules()->size(); i++) {
+            
+            Module* m = root->getModules()->at(i);
+            
             if (m->isSelected()) {
+                
                 addConnection(e, m);
             }
         }

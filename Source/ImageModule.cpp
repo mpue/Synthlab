@@ -30,12 +30,14 @@ ImageModule::ImageModule()
     prefab = true;
     
     createProperties();
-    resizer = new ResizableBorderComponent(this,nullptr);
+    resizer = new ResizableCornerComponent(this,nullptr);
     resizer->setSize(getWidth(), getHeight());
     addAndMakeVisible(resizer);
     resizer->toFront(true);
-    setInterceptsMouseClicks(false, false);
-    resizer->setInterceptsMouseClicks(true, true);
+    resizer->setTopLeftPosition(getWidth()-10, getHeight()-10);
+    resizer->setSize(10,10);
+    setInterceptsMouseClicks(false, true);
+    // addMouseListener(resizer, true);
     //addMouseListener(resizer, true);
 }
 
@@ -73,8 +75,15 @@ void ImageModule::paint(juce::Graphics &g) {
 }
 
 void ImageModule::resized() {
-    if (resizer != nullptr)
-        resizer->setBounds(getBounds());
+    if (resizer != nullptr) {
+        resizer->setTopLeftPosition(getWidth() - 10, getHeight() - 10);
+        
+        if (originalImage != nullptr && this->image != nullptr) {
+            if (getWidth() > 0 && getHeight() > 0) {
+                this->image = new Image(this->originalImage->rescaled(getWidth(), getHeight()));
+            }
+        }
+    }
 }
 
 String ImageModule::getImage() {
@@ -86,10 +95,11 @@ void ImageModule::setImage(String imagePath) {
     Image img = ImageFileFormat::loadFrom(imageFile);
     this->image = new Image(img);
     this->imagePath = imagePath;
+    
+    originalImage = this->image;
+    
     setSize(this->image->getWidth(), this->image->getHeight());
 }
-
-
 
 juce::Array<PropertyComponent*>& ImageModule::getProperties() {
     

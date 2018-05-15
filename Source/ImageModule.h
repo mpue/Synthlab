@@ -26,11 +26,16 @@ public:
     
     void setImage(String path);
     String getImage();
+    
     virtual void configurePins() override;
     
     virtual juce::String getCategory() override {
         return "Math";
     }
+    
+    virtual Layer getLayer() override {
+        return Layer::GUI;
+    };
     
     void resized() override;
     
@@ -55,7 +60,8 @@ private:
     juce::PropertyComponent* imageProp;
     ImageListener* imageListener;
     Image* image = nullptr;
-    ResizableBorderComponent* resizer = nullptr;
+    Image* originalImage = nullptr;
+    ResizableCornerComponent* resizer = nullptr;
     juce::String imagePath;
     bool editing = false;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ImageModule)

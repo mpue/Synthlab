@@ -44,7 +44,11 @@ ModuleBrowser::ModuleBrowser ()
     shadow = new DropShadow(Colours::black,5, juce::Point<int>(2,2));
     shadower = new DropShadower(*shadow);
     shadower->setOwner(this);
-
+    
+    resizer = new ResizableCornerComponent(this,nullptr);
+    resizer->setTopLeftPosition(getWidth()-10, getHeight()-10);
+    resizer->setSize(10,10);
+    addAndMakeVisible(resizer);
     searchText->addListener(this);
 
 }
@@ -54,6 +58,7 @@ ModuleBrowser::~ModuleBrowser()
     label = nullptr;
     searchText = nullptr;
     table = nullptr;
+    resizer = nullptr;
     delete shadower;
     delete shadow;
 
@@ -74,6 +79,8 @@ void ModuleBrowser::resized()
 {
     searchText->setBounds (16, 48, proportionOfWidth (0.8000f), 24);
     table->setBounds (5, 80, proportionOfWidth (0.85f), proportionOfHeight (0.5f));
+    if (resizer != nullptr)
+        resizer->setTopLeftPosition(getWidth()-10, getHeight()-10);
 }
 
 void ModuleBrowser::textEditorTextChanged (TextEditor& t) {

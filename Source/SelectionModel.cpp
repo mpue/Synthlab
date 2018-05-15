@@ -74,12 +74,15 @@ SelectionModel::State SelectionModel::checkForHitAndSelect(juce::Point<int> pos)
     
     for (int i = 0; i < root->getModules()->size(); i++) {
         if (root->getModules()->at(i)->getBounds().contains(pos)) {
-   
+            
+            if(!selectionContains(root->getModules()->at(i))) {
                 root->getModules()->at(i)->setSelected(true);
+                
                 getSelectedModules().push_back(root->getModules()->at(i));
                 root->getModules()->at(i)->savePosition();
                 hit = true;
                 break;
+            }
             
         }
     }
@@ -98,11 +101,12 @@ void SelectionModel::select(juce::Point<int> pos) {
     for (int i = 0; i < root->getModules()->size(); i++) {
         if (root->getModules()->at(i)->getBounds().contains(pos)) {
             
-            root->getModules()->at(i)->setSelected(true);
-            getSelectedModules().push_back(root->getModules()->at(i));
-            root->getModules()->at(i)->savePosition();
-            break;
-            
+            if (selectionContains(root->getModules()->at(i))) {
+                root->getModules()->at(i)->setSelected(true);
+                getSelectedModules().push_back(root->getModules()->at(i));
+                root->getModules()->at(i)->savePosition();
+                break;
+            }
         }
     }
 }
@@ -154,4 +158,14 @@ void SelectionModel::checkForConnection(juce::Point<int> pos) {
 
 void SelectionModel::setRoot(Module *root) {
     this->root = root;
+}
+
+bool SelectionModel::selectionContains(Module *m) {
+    for (int j = 0; j < selectedModules.size();j++) {
+        if (selectedModules.at(j)->getIndex() == root->getModules()->at(j)->getIndex()) {
+            return true;
+        }
+    }
+    return false;
+    
 }

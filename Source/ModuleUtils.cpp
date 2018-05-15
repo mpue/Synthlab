@@ -29,6 +29,7 @@
 #include "MixerPanel.h"
 #include "VolumeAdjustable.h"
 #include "PadModule.h"
+#include "ImageModule.h"
 
 void ModuleUtils::loadStructure(std::vector<Module *>* modules, std::vector<Connection*>* connections,juce::ValueTree *v, ChangeBroadcaster* broadcaster) {
     ValueTree mods = v->getChildWithName("Modules");
@@ -181,6 +182,13 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
         
         if ((k = dynamic_cast<Knob*>(m)) != NULL) {
             k->setName(mod.getProperty("name").toString());
+        }
+        
+        ImageModule* im = nullptr;
+        
+        if ((im = dynamic_cast<ImageModule*>(m)) != NULL) {
+            im->setImage(mod.getProperty("imagePath").toString());
+            im->setSize(mod.getProperty("width").toString().getIntValue(), mod.getProperty("height").toString().getIntValue());
         }
         
         ValueTree pins = mod.getChildWithName("Pins");
@@ -375,6 +383,13 @@ void ModuleUtils::configureModule(Module *m, ValueTree& mod, ChangeBroadcaster* 
         delete mos;
     }
     
+    ImageModule* im = nullptr;
+    
+    if ((im = dynamic_cast<ImageModule*>(m)) != NULL) {
+        im->setImage(mod.getProperty("imagePath").toString());
+        im->setSize(mod.getProperty("width").toString().getIntValue(), mod.getProperty("height").toString().getIntValue());
+    }
+    
     broadcaster->addChangeListener(m);
 }
 
@@ -491,6 +506,15 @@ void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Conn
             file.setProperty("config", mos->toString(), nullptr);
             delete mos;
             delete config;
+        }
+        
+        
+        ImageModule* im = nullptr;
+        
+        if ((im = dynamic_cast<ImageModule*>(*it)) != NULL) {
+            file.setProperty("imagePath", im->getImage(), nullptr);
+            file.setProperty("width", im->getWidth(), nullptr);
+            file.setProperty("height", im->getHeight(), nullptr);
         }
         
         ValueTree pins = ValueTree("Pins");

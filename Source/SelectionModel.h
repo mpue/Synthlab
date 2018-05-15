@@ -35,7 +35,7 @@ public:
     void checkForConnection(juce::Point<int> pos);
     void select(juce::Point<int> pos);
     void setRoot(Module* root);
-    
+    bool selectionContains(Module* m);
     
 private:
     bool isPointOnLineSegment(juce::Point<int> pt1, juce::Point<int> pt2, juce::Point<int> pt, double epsilon);

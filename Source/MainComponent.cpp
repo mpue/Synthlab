@@ -106,10 +106,13 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     
     enableAllMidiInputs();
     
-    addMouseListener(this, true);
-    // addKeyListener(this);
-    setWantsKeyboardFocus(true);
     
+    addMouseListener(this, true);
+    addKeyListener(this);
+    setMouseClickGrabsKeyboardFocus(true);
+    // setWantsKeyboardFocus(true);
+    
+     
     resized();
     repaint();
     initialized = true;
@@ -121,6 +124,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
         editor->setLocked(true);
     }
     
+    editor->setWantsKeyboardFocus(true);
 }
 
 MainComponent::~MainComponent()

@@ -80,6 +80,40 @@ public:
         return this->locked;
     }
     
+    
+    /**
+     * Snaps the current given location to a given grid
+     *
+     * @param location the location to be snapped
+     * @param raster the raster size
+     * @param tolerance the tolerance to cosult while snapping
+     * @return
+     */
+    static int snap(int location, int raster) {
+        
+        int toleranceWindow = (raster / 2);
+        
+        if (location > 0) {
+            if ((location % raster) > toleranceWindow) {
+                location = location + (raster - (location % raster));
+            }
+            else {
+                location = location - (location % raster);
+            }
+        }
+        else {
+            if ((location % raster) < toleranceWindow) {
+                location = location + (raster - (location % raster)) - raster;
+            }
+            else {
+                location = location - (location % raster) - raster;
+            }
+        }
+        return location;
+    }
+    
+    
+    
     // drag and drop
     
     void itemDropped (const SourceDetails& dragSourceDetails) override;
@@ -151,7 +185,8 @@ private:
     //[UserVariables]   -- You can add your own custom variables in this section.
 
     void notifyListeners();
-                         
+    
+    bool snapToGrid = true;
                          
     bool isAltDown = false;
     bool isCtrlDown = false;

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.3.1" bundleIdentifier="de.pueski.SynthlabX"
+<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.3.2" bundleIdentifier="de.pueski.SynthlabX"
               version="1.0.1" companyName="Pueski" id="JWX8Tz">
   <MAINGROUP id="CKGTaZ" name="Synthlab">
     <GROUP id="{9F42F092-AC3C-70BC-861B-ED2885470C98}" name="Regression">
@@ -204,6 +204,10 @@
               file="Source/Actions/DuplicateModuleAction.cpp"/>
         <FILE id="GOE4dx" name="DuplicateModuleAction.h" compile="0" resource="0"
               file="Source/Actions/DuplicateModuleAction.h"/>
+        <FILE id="D45eq4" name="MoveSelectedAction.cpp" compile="1" resource="0"
+              file="Source/Actions/MoveSelectedAction.cpp"/>
+        <FILE id="D2QKLB" name="MoveSelectedAction.h" compile="0" resource="0"
+              file="Source/Actions/MoveSelectedAction.h"/>
         <FILE id="tQblPY" name="RemoveSelectedAction.cpp" compile="1" resource="0"
               file="Source/Actions/RemoveSelectedAction.cpp"/>
         <FILE id="pwtJAH" name="RemoveSelectedAction.h" compile="0" resource="0"
