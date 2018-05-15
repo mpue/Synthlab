@@ -70,10 +70,11 @@ void ModuleUtils::loadConnections(juce::ValueTree &cons, std::vector<Module *>* 
         ValueTree con = cons.getChild(i);
         
         Connection* c = new Connection();
-        long sourceIndex = con.getProperty("source").toString().getLargeIntValue();
-        long targetIndex = con.getProperty("target").toString().getLargeIntValue();
-        long aIndex = con.getProperty("a").toString().getLargeIntValue();
-        long bIndex = con.getProperty("b").toString().getLargeIntValue();
+        
+        long sourceIndex = static_cast<long>(con.getProperty("source").toString().getIntValue());
+        long targetIndex = static_cast<long>(con.getProperty("target").toString().getLargeIntValue());
+        long aIndex = static_cast<long>(con.getProperty("a").toString().getLargeIntValue());
+        long bIndex = static_cast<long>(con.getProperty("b").toString().getLargeIntValue());
         
         Module* source = nullptr;
         Module* target = nullptr;
@@ -162,7 +163,7 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
         
         m = PrefabFactory::getInstance()->getPrefab(mod.getProperty("prefabId").toString().getIntValue(), sampleRate, bufferSize);
         broadcaster->addChangeListener(m);
-        m->setIndex(mod.getProperty("index").toString().getLargeIntValue());
+        m->setIndex(static_cast<long>(mod.getProperty("index").toString().getLargeIntValue()));
    
         LabelModule* label = dynamic_cast<LabelModule*>(m);
         
