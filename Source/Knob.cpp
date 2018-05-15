@@ -22,12 +22,10 @@ using juce::BooleanPropertyComponent;
 //==============================================================================
 Knob::Knob()
 {
-   
-    setName("Knob");
-    
     setSize(90,90);
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(30 ,2);
+    nameLabel->setFont(Font(9));
     
     valueLabel = new Label();
     valueLabel->setJustificationType (Justification::left);
@@ -57,6 +55,8 @@ Knob::Knob()
     setStepSize(1);
     setMinimum(0);
     setMaximum(127);
+    
+    setCurrentLayer(Layer::ALL);
     
 }
 
@@ -244,6 +244,11 @@ float Knob::getMinimum() {
     return minimum;
 }
 
+void Knob::setName(juce::String name) {
+    Module::setName(name);
+    nameValue->setValue(name);
+}
+
 void Knob::setMaximum(float max) {
     this->maximum = max;
     this->maxValue->setValue(max);
@@ -256,6 +261,7 @@ float Knob::getMaximum() {
 
 void Knob::setIsMidicontroller(bool isController) {
     this->isController = isController;
+    this->isControllerValue->setValue(isController);
 }
 
 bool Knob::isMidiController() {
@@ -264,6 +270,7 @@ bool Knob::isMidiController() {
 
 void Knob::setController(int num) {
     this->controllerNum = num;
+    this->controllerValue->setValue(controllerValue);
 }
 
 int Knob::getController() {

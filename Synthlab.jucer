@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.3.2" bundleIdentifier="de.pueski.SynthlabX"
+<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.3.1" bundleIdentifier="de.pueski.SynthlabX"
               version="1.0.1" companyName="Pueski" id="JWX8Tz">
   <MAINGROUP id="CKGTaZ" name="Synthlab">
     <GROUP id="{9F42F092-AC3C-70BC-861B-ED2885470C98}" name="Regression">
       <FILE id="jOfdml" name="2osc_gate.slb" compile="0" resource="1" file="Regression/2osc_gate.slb"/>
       <FILE id="FCpfyi" name="3osc_broad.slb" compile="0" resource="1" file="Regression/3osc_broad.slb"/>
-      <FILE id="v3B4qR" name="3OscV3" compile="0" resource="1" file="../../../Desktop/3OscV3"/>
       <FILE id="hjgAVM" name="4osctest.slb" compile="0" resource="1" file="Regression/4osctest.slb"/>
       <FILE id="zjSfw3" name="4osctest2.slb" compile="0" resource="1" file="Regression/4osctest2.slb"/>
       <FILE id="Vvy1yu" name="audiorecorder.slb" compile="0" resource="1"
@@ -322,6 +321,10 @@
                 file="Source/ExtendedFileBrowser.cpp"/>
           <FILE id="l1q3BL" name="ExtendedFileBrowser.h" compile="0" resource="0"
                 file="Source/ExtendedFileBrowser.h"/>
+          <FILE id="XT0Ux5" name="FileButtonPropertyComponent.cpp" compile="1"
+                resource="0" file="Source/FileButtonPropertyComponent.cpp"/>
+          <FILE id="fin4m5" name="FileButtonPropertyComponent.h" compile="0"
+                resource="0" file="Source/FileButtonPropertyComponent.h"/>
           <FILE id="mkTk7I" name="ISampleEditor.h" compile="0" resource="0" file="Source/ISampleEditor.h"/>
           <FILE id="p4Fr6r" name="MainTabbedComponent.cpp" compile="1" resource="0"
                 file="Source/MainTabbedComponent.cpp"/>
@@ -366,6 +369,8 @@
                 file="Source/ToolbarComboBox.h"/>
         </GROUP>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
+          <FILE id="A4HGfD" name="ImageModule.cpp" compile="1" resource="0" file="Source/ImageModule.cpp"/>
+          <FILE id="sO3TFE" name="ImageModule.h" compile="0" resource="0" file="Source/ImageModule.h"/>
           <FILE id="PDgqHN" name="MidiClock.cpp" compile="1" resource="0" file="Source/MidiClock.cpp"/>
           <FILE id="Y3fwGt" name="MidiClock.h" compile="0" resource="0" file="Source/MidiClock.h"/>
           <FILE id="E9ISuK" name="VolumeAdjustable.h" compile="0" resource="0"

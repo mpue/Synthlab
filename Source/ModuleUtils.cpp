@@ -177,6 +177,12 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
             t->setName(mod.getProperty("name").toString());
         }
         
+        Knob* k = nullptr;
+        
+        if ((k = dynamic_cast<Knob*>(m)) != NULL) {
+            k->setName(mod.getProperty("name").toString());
+        }
+        
         ValueTree pins = mod.getChildWithName("Pins");
         
         for (int j = 0; j < pins.getNumChildren();j++) {

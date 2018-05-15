@@ -1349,7 +1349,7 @@ void SynthEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo& r
             result.setInfo("Save module", String(), String(), 0);
             break;
         case SynthEditor::CommandIds::SAVE_SCREENSHOT:
-            result.setInfo("Save module", String(), String(), 0);
+            result.setInfo("Save image", String(), String(), 0);
             break;
         case SynthEditor::CommandIds::DUPLICATE:
             result.setInfo("Duplicate module", String(), String(), 0);

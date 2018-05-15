@@ -14,9 +14,6 @@ namespace BinaryData
     extern const char*   _3osc_broad_slb;
     const int            _3osc_broad_slbSize = 15803;
 
-    extern const char*   _3OscV3;
-    const int            _3OscV3Size = 15895;
-
     extern const char*   _4osctest_slb;
     const int            _4osctest_slbSize = 21829;
 
@@ -219,7 +216,7 @@ namespace BinaryData
     const int            whitenoise_pngSize = 7446;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 70;
+    const int namedResourceListSize = 69;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];
@@ -229,9 +226,9 @@ namespace BinaryData
 
     // If you provide the name of one of the binary resource variables above, this function will
     // return the corresponding data and its size (or a null pointer if the name isn't found).
-    const char* getNamedResource (const char* resourceNameUTF8, int& dataSizeInBytes);
+    const char* getNamedResource (const char* resourceNameUTF8, int& dataSizeInBytes) noexcept;
 
     // If you provide the name of one of the binary resource variables above, this function will
     // return the corresponding original, non-mangled filename (or a null pointer if the name isn't found).
-    const char* getNamedResourceOriginalFilename (const char* resourceNameUTF8);
+    const char* getNamedResourceOriginalFilename (const char* resourceNameUTF8) noexcept;
 }

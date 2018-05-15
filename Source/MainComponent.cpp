@@ -116,7 +116,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     running = true;
     
     if (Project::getInstance()->getAppMode() == Project::AppMode::PLAYER) {
-        editor->loadFromString(String(BinaryData::_3OscV3 ));
+        editor->loadFromString(String(BinaryData::_3osc_broad_slb ));
         editor->setCurrentLayer(Module::Layer::GUI);
         editor->setLocked(true);
     }
