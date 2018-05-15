@@ -53,6 +53,9 @@ public:
     void eventReceived(Event *e) override;
     
     virtual void setSelected(bool selected) override;
+    virtual void setName(String name) override;
+    
+    
     
     virtual juce::Array<juce::PropertyComponent*>& getProperties() override;
     virtual void createProperties() override;

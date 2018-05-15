@@ -44,6 +44,7 @@
 #include "PitchBendModule.h"
 #include "AudioRecorderModule.h"
 #include "MidiClock.h"
+#include "ImageModule.h"
 
 using juce::Image;
 
@@ -183,6 +184,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Audio recorder") {
         m = new AudioRecorderModule(sampleRate,bufferSize,AudioManager::getInstance()->getFormatManager());
+    }
+    else if (prefabs[id].getName() == "Image") {
+        m = new ImageModule();
     }
     
     m->setIndex(id + pow(10,prefabs[id].getNumInstances() + 1));
