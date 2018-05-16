@@ -134,6 +134,7 @@ private:
         prefabs[88] = Prefab("Pad","Controls");
         prefabs[89] = Prefab("Midi clock","MIDI");
         prefabs[90] = Prefab("Image","Controls");
+        prefabs[91] = Prefab("Keyboard","Controls");
         
         prefabImages[53] = juce::ImageCache::getFromMemory(BinaryData::sampler_png, BinaryData::sampler_pngSize);
         prefabImages[54] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
@@ -151,7 +152,7 @@ private:
         prefabImages[66] = juce::ImageCache::getFromMemory(BinaryData::speaker_png, BinaryData::speaker_pngSize);
         prefabImages[67] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[68] = juce::ImageCache::getFromMemory(BinaryData::lp_png, BinaryData::lp_pngSize);
-        prefabImages[69] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[69] = juce::ImageCache::getFromMemory(BinaryData::knob_png, BinaryData::knob_pngSize);
         prefabImages[70] = juce::ImageCache::getFromMemory(BinaryData::adsr_png, BinaryData::adder_pngSize);
         prefabImages[71] = juce::ImageCache::getFromMemory(BinaryData::sine_png, BinaryData::sine_pngSize);
         prefabImages[72] = juce::ImageCache::getFromMemory(BinaryData::random_png, BinaryData::random_pngSize);
@@ -173,6 +174,7 @@ private:
         prefabImages[88] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[89] = juce::ImageCache::getFromMemory(BinaryData::clock_png, BinaryData::clock_pngSize);
         prefabImages[90] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[91] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         
         categories = new juce::StringArray();
 

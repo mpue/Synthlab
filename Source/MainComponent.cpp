@@ -108,9 +108,10 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     enableAllMidiInputs();
     
     addMouseListener(this, true);
-    addKeyListener(this);
-    // editor->setMouseClickGrabsKeyboardFocus(true);
-    // editor->setWantsKeyboardFocus(true);
+    editor->addKeyListener(getKeyMappings());
+    addKeyListener(getKeyMappings());
+    editor->setMouseClickGrabsKeyboardFocus(true);
+    editor->setWantsKeyboardFocus(true);
     
     resized();
     repaint();

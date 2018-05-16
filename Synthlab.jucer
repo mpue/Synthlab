@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.3.2" bundleIdentifier="de.pueski.SynthlabX"
+<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.3.1" bundleIdentifier="de.pueski.SynthlabX"
               version="1.0.1" companyName="Pueski" id="JWX8Tz">
   <MAINGROUP id="CKGTaZ" name="Synthlab">
     <GROUP id="{9F42F092-AC3C-70BC-861B-ED2885470C98}" name="Regression">
@@ -108,6 +108,7 @@
       <FILE id="GoPlKq" name="Fader.png" compile="0" resource="1" file="Images/Fader.png"/>
       <FILE id="v1N5Vy" name="hp.png" compile="0" resource="1" file="Images/hp.png"/>
       <FILE id="MpStxg" name="inverter.png" compile="0" resource="1" file="Images/inverter.png"/>
+      <FILE id="h83R3I" name="knob.png" compile="0" resource="1" file="Images/knob.png"/>
       <FILE id="t88qcC" name="Knob_64.png" compile="0" resource="1" file="Images/Knob_64.png"/>
       <FILE id="gJAegc" name="led_off.png" compile="1" resource="1" file="Images/led_off.png"/>
       <FILE id="xTBQB1" name="led_on.png" compile="1" resource="1" file="Images/led_on.png"/>
@@ -374,6 +375,10 @@
                 file="Source/ToolbarComboBox.h"/>
         </GROUP>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
+          <FILE id="yPE3Xy" name="KeyboardModule.cpp" compile="1" resource="0"
+                file="Source/KeyboardModule.cpp"/>
+          <FILE id="LlNnSk" name="KeyboardModule.h" compile="0" resource="0"
+                file="Source/KeyboardModule.h"/>
           <FILE id="A4HGfD" name="ImageModule.cpp" compile="1" resource="0" file="Source/ImageModule.cpp"/>
           <FILE id="sO3TFE" name="ImageModule.h" compile="0" resource="0" file="Source/ImageModule.h"/>
           <FILE id="PDgqHN" name="MidiClock.cpp" compile="1" resource="0" file="Source/MidiClock.cpp"/>

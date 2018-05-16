@@ -63,12 +63,13 @@ void ModuleUtils::loadStructure(std::vector<Module *>* modules, std::vector<Conn
     }
     
     ValueTree cons = v->getChildWithName("Connections");
-    
+    Logger::writeToLog("Found " + String(cons.getNumChildren()) + "connections.");
     loadConnections(cons, modules, connections);
     
 }
 
 void ModuleUtils::loadConnections(juce::ValueTree &cons, std::vector<Module *>* modules, std::vector<Connection*>* connections) {
+    
     for (int i = 0; i < cons.getNumChildren();i++) {
         ValueTree con = cons.getChild(i);
         
@@ -85,74 +86,86 @@ void ModuleUtils::loadConnections(juce::ValueTree &cons, std::vector<Module *>* 
         for (int j = 0; j < modules->size(); j++) {
             
             Module* m = modules->at(j);
-            
-            if (m->getIndex() == sourceIndex) {
+            if (m->getIndex() == sourceIndex && source == nullptr) {
                 source = m;
+                for (int k = 0; k < m->getPins().size();k++) {
+                    if (m->getPins().at(k)->index == aIndex) {
+                        a = m->getPins().at(k);
+                        break;
+                    }
+                }
+                
             }
-            if (m->getIndex() == targetIndex) {
+            else if (m->getIndex() == targetIndex && target == nullptr) {
                 target = m;
-            }
-            
-            for (int k = 0; k < m->getPins().size();k++) {
-                if (m->getPins().at(k)->index == aIndex) {
-                    a = m->getPins().at(k);
-                }
-                if (m->getPins().at(k)->index == bIndex) {
-                    b = m->getPins().at(k);
+                for (int k = 0; k < m->getPins().size();k++) {
+                    if (m->getPins().at(k)->index == bIndex) {
+                        b = m->getPins().at(k);
+                        break;
+                    }
                 }
             }
             
-            if (source != nullptr && target != nullptr && a != nullptr && b != nullptr) {
-                
-                
-                // EVENTS: in listens at out
-                // OTHER: in gets its values from out
-                if ((a->getType() != Pin::Type::EVENT && a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT)
-                    || (a->getType() == Pin::Type::EVENT && a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN)) {
-                    
-                    if (!a->hasConnection(b)) {
-                        
-                        a->getConnections().push_back(b);
-                        Logger::writeToLog("Connecting pin "+ String(a->index)+ " to pin "  +String(b->index));
-                    }
-                    
-                    // xConnection* c = new Connection(source, a, target, b);
-                    // root->getConnections()->push_back(c);
-                    Connection* c = new Connection();
-                    c->a = a;
-                    c->b = b;
-                    c->source = source;
-                    c->target = target;
-                    if (!connectionExists(*connections, c)) {
-                        Logger::writeToLog("Adding connection from module "+ source->getName() + ", index "+ String(source->getIndex()) + " to module "  +target->getName()+ ", index : " + String(target->getIndex()));
-                        connections->push_back(c);
-                    }
-                    
-                }
-                else if ((a->getType() != Pin::Type::EVENT && a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN)
-                         || (a->getType() == Pin::Type::EVENT && a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT)) {
-                    if (!b->hasConnection(a)) {
-                        b->getConnections().push_back(a);
-                        Logger::writeToLog("Connecting pin "+ String(b->index)+ " to pin "  +String(a->index));
-                    }
-                    
-                    // Connection* c = new Connection(target, b, source, a);
-                    // root->getConnections()->push_back(c);
-                    Connection* c = new Connection();
-                    c->a = b;
-                    c->b = a;
-                    c->source = target;
-                    c->target = source;
-                    if (!connectionExists(*connections, c)) {
-                        Logger::writeToLog("Adding connection from module "+ source->getName() + ", index "+ String(source->getIndex()) + " to module "  +target->getName()+ ", index : " + String(target->getIndex()));
-                        connections->push_back(c);
-                    }
-                }
+            if (source != nullptr && target != nullptr && a != nullptr && b != nullptr)  {
+                addConnection(source, a, target, b, connections);
                 break;
             }
+        }
+
+    }
+    
+}
+
+void ModuleUtils::addConnection(Module *source, Pin *a, Module *target, Pin *b, std::vector<Connection*>* connections) {
+
+    Logger::writeToLog(String(a->getType()) + ", " + String(a->direction)+", " + String(b->getType())+ ", " + String(b->direction));
+    
+    // EVENTS: in listens at out
+    // OTHER: in gets its values from out
+    if ((a->getType() != Pin::Type::EVENT && a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT)
+        || (a->getType() == Pin::Type::EVENT && a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN)) {
+        
+        if (!a->hasConnection(b)) {
             
+            a->getConnections().push_back(b);
+            Logger::writeToLog("Connecting pin "+ String(a->index)+ " to pin "  +String(b->index));
+        }
+        
+        // xConnection* c = new Connection(source, a, target, b);
+        // root->getConnections()->push_back(c);
+        Connection* c = new Connection();
+        c->a = a;
+        c->b = b;
+        c->source = source;
+        c->target = target;
+        if (!connectionExists(*connections, c)) {
+            Logger::writeToLog("Adding connection from module "+ source->getName() + ", index "+ String(source->getIndex()) + " to module "  +target->getName()+ ", index : " + String(target->getIndex()));
+            connections->push_back(c);
+        
+        }
+        
+    }
+    else if ((a->getType() != Pin::Type::EVENT && a->direction == Pin::Direction::OUT && b->direction == Pin::Direction::IN)
+             || (a->getType() == Pin::Type::EVENT && a->direction == Pin::Direction::IN && b->direction == Pin::Direction::OUT)) {
+        if (!b->hasConnection(a)) {
+            b->getConnections().push_back(a);
+            Logger::writeToLog("Connecting pin "+ String(b->index)+ " to pin "  +String(a->index));
+        }
+        
+        // Connection* c = new Connection(target, b, source, a);
+        // root->getConnections()->push_back(c);
+        Connection* c = new Connection();
+        c->a = b;
+        c->b = a;
+        c->source = target;
+        c->target = source;
+        if (!connectionExists(*connections, c)) {
+            Logger::writeToLog("Adding connection from module "+ source->getName() + ", index "+ String(source->getIndex()) + " to module "  +target->getName()+ ", index : " + String(target->getIndex()));
+            connections->push_back(c);
         }
     }
+
+    
 }
 
 Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) {

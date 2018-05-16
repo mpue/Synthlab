@@ -66,8 +66,14 @@ bool AddModuleAction::perform() {
         int numCurrentOutputs = static_cast<int>(editor->getMixer()->getInputChannels().size()) * 2;
         // take care! we have N input channels but from the audio interfaces point of view we have twice as much channels!
         
-        if (numCurrentOutputs < audioManager->getNumActiveInputs()) {
+        bool useDefaultOutput = false;
         
+        if (audioManager->getOutputChannelNames().size() == 2) {
+            String channelName = audioManager->getOutputChannelNames().getReference(0);
+            useDefaultOutput = true;
+        }
+        
+        if (numCurrentOutputs < audioManager->getNumActiveInputs() || (useDefaultOutput && numCurrentOutputs == 0)) {
             editor->getMixer()->getOutputChannels().push_back(out);
             String channelName = audioManager->getOutputChannelNames().getReference(static_cast<int>(editor->getMixer()->getOutputChannels().size()) - 1);
             int channelIndex = editor->addChannel(channelName, Mixer::Channel::Type::OUT);
@@ -83,6 +89,9 @@ bool AddModuleAction::perform() {
             delete m;
             return false;
         }
+        
+        
+
     }
 
     

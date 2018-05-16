@@ -100,6 +100,7 @@ public:
      */
     static Module* createCopy(Module* original, ChangeBroadcaster* broadcaster);
     
+    static void addConnection(Module* source, Pin* a, Module* target, Pin* b, std::vector<Connection*>* connections);
     
     static void savePins(Module* m, ValueTree& v);
     

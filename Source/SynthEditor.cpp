@@ -1366,7 +1366,7 @@ void SynthEditor::getCommandInfo (CommandID commandID, ApplicationCommandInfo& r
             break;
         case SynthEditor::CommandIds::DELETE_SELECTED:
             result.setInfo("Delete selected", String(), String(), 0);
-            result.addDefaultKeypress('x', ModifierKeys::commandModifier);
+            result.addDefaultKeypress(KeyPress::backspaceKey, ModifierKeys::commandModifier);
             break;
         case SynthEditor::CommandIds::SAVE:
             result.setInfo("Save", String(), String(), 0);

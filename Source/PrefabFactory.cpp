@@ -45,6 +45,7 @@
 #include "AudioRecorderModule.h"
 #include "MidiClock.h"
 #include "ImageModule.h"
+#include "KeyboardModule.h"
 
 using juce::Image;
 
@@ -187,6 +188,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Image") {
         m = new ImageModule();
+    }
+    else if (prefabs[id].getName() == "Keyboard") {
+        m = new KeyboardModule();
     }
     
     m->setIndex(id + pow(10,prefabs[id].getNumInstances() + 1));
