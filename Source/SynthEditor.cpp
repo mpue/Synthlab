@@ -90,7 +90,9 @@ SynthEditor::SynthEditor (double sampleRate, int buffersize)
 
 SynthEditor::~SynthEditor()
 {
+    setRunning(false);
     if (isRoot && deleteModuleWhenRemoved) {
+        
         cleanUp();
         delete root;
         if (tab != nullptr) {
@@ -105,6 +107,7 @@ SynthEditor::~SynthEditor()
     }
 
     listener.clear();
+    setRunning(true);
 }
 
 void SynthEditor::paint (Graphics& g)
@@ -490,7 +493,6 @@ void SynthEditor::showContextMenu(Point<int> position) {
             delete fis;
             setRunning(false);
             cleanUp();
-            mixer->removeAllChannels();
             newFile();
             loadFromString(data);
             setRunning(true);
@@ -744,6 +746,16 @@ bool SynthEditor::isRunning() {
 
 void SynthEditor::setRunning(bool running) {
     this->running = running;
+    
+    CriticalSection& c = AudioManager::getInstance()->getDeviceManager()->getAudioCallbackLock();
+    
+    if (!running) {
+       
+        c.enter();
+    }
+    else {
+        c.exit();
+    }
     // startTimer(100);
 }
 
@@ -825,6 +837,7 @@ void SynthEditor::modifierKeysChanged (const ModifierKeys& modifiers)
 }
 
 void SynthEditor::cleanUp() {
+    mixer->removeAllChannels();
     for(std::vector<Module*>::iterator it = root->getModules()->begin();it != root->getModules()->end();it++) {
         ModuleUtils::removeModule(root, (*it),getMixer(), this);
     }
@@ -1117,9 +1130,7 @@ void SynthEditor::openFile() {
     FileChooser chooser("Select file to open", File::getSpecialLocation(File::commonDocumentsDirectory), "*",true, true);
 
     if (chooser.browseForFileToOpen()) {
-            
         cleanUp();
-        mixer->removeAllChannels();
         newFile();
         
 #if JUCE_IOS
@@ -1339,7 +1350,6 @@ void SynthEditor::changeListenerCallback(juce::ChangeBroadcaster *source) {
             delete f;
             setRunning(false);
             cleanUp();
-            mixer->removeAllChannels();
             newFile();
             loadFromString(data);
             setRunning(true);
@@ -1420,7 +1430,6 @@ bool SynthEditor::perform (const InvocationInfo& info) {
     if (info.commandID == SynthEditor::CommandIds::NEW) {
         setRunning(false);
         cleanUp();
-        mixer->removeAllChannels();
         newFile();
         setRunning(true);
         return true;
@@ -1446,9 +1455,9 @@ bool SynthEditor::perform (const InvocationInfo& info) {
         return true;
     }
     else if(info.commandID == SynthEditor::CommandIds::LOAD_MODULE) {
-        running = false;
+        setRunning(false);
         Module* m = loadModule();
-        
+        setRunning(true);
         if (m != nullptr)
             return true;
     }

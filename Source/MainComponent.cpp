@@ -752,7 +752,6 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
         String xmlData = sampleData.getReference(menuItemID-1000);
         editor->setRunning(false);
         editor->cleanUp();
-        editor->getMixer()->removeAllChannels();
         editor->newFile();
         editor->loadFromString(xmlData);
         editor->setRunning(true);
@@ -905,7 +904,6 @@ void MainComponent::buttonClicked (Button* b)
         else if(tb->getItemId() == toolbarFactory->doc_new) {
             editor->setRunning(false);
             editor->cleanUp();
-            editor->getMixer()->removeAllChannels();
             editor->newFile();
             editor->setRunning(true);
         }

@@ -101,5 +101,4 @@ void Mixer::removeAllChannels() {
         delete (*it);
         it = channels.erase(it);
     }
-    
 }

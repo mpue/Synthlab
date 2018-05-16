@@ -58,6 +58,7 @@ ADSRModule::~ADSRModule()
     delete isMonoValue;
     for (int i = 0; i < 128;i++){
         delete this->envelopes[i];
+        this->envelopes[i] = nullptr;
     }
     delete envelope;
 }
