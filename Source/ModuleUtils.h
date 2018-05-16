@@ -110,7 +110,8 @@ public:
     
     static bool connectModules(Module* source, Module* target, int pin);
     
-
+    static Module* loadFromXml(ValueTree &v, ChangeBroadcaster* broadcaster);
+    
 private:
     static bool connectModuleValues(Module* source, Module* target, int pin);
     

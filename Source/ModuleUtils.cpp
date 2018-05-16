@@ -30,8 +30,7 @@
 #include "VolumeAdjustable.h"
 #include "PadModule.h"
 #include "ImageModule.h"
-
-
+#include "KeyboardModule.h"
 
 void ModuleUtils::loadStructure(std::vector<Module *>* modules, std::vector<Connection*>* connections,juce::ValueTree *v, ChangeBroadcaster* broadcaster) {
     ValueTree mods = v->getChildWithName("Modules");
@@ -165,7 +164,6 @@ void ModuleUtils::addConnection(Module *source, Pin *a, Module *target, Pin *b, 
         }
     }
 
-    
 }
 
 Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) {
@@ -203,6 +201,13 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
         if ((im = dynamic_cast<ImageModule*>(m)) != NULL) {
             im->setImage(mod.getProperty("imagePath").toString());
             im->setSize(mod.getProperty("width").toString().getIntValue(), mod.getProperty("height").toString().getIntValue());
+        }
+        
+        KeyboardModule* km = nullptr;
+        
+        if ((km = dynamic_cast<KeyboardModule*>(m)) != NULL) {
+            km->setChannel(mod.getProperty("channel").toString().getIntValue());
+            km->setSize(mod.getProperty("width").toString().getIntValue(), mod.getProperty("height").toString().getIntValue());
         }
         
         ValueTree pins = mod.getChildWithName("Pins");
@@ -404,6 +409,13 @@ void ModuleUtils::configureModule(Module *m, ValueTree& mod, ChangeBroadcaster* 
         im->setSize(mod.getProperty("width").toString().getIntValue(), mod.getProperty("height").toString().getIntValue());
     }
     
+    KeyboardModule* km = nullptr;
+    
+    if ((km = dynamic_cast<KeyboardModule*>(m)) != NULL) {
+        km->setChannel(mod.getProperty("channel").toString().getIntValue());
+        km->setSize(mod.getProperty("width").toString().getIntValue(), mod.getProperty("height").toString().getIntValue());
+    }
+    
     broadcaster->addChangeListener(m);
 }
 
@@ -522,13 +534,20 @@ void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Conn
             delete config;
         }
         
-        
         ImageModule* im = nullptr;
         
         if ((im = dynamic_cast<ImageModule*>(*it)) != NULL) {
             file.setProperty("imagePath", im->getImage(), nullptr);
             file.setProperty("width", im->getWidth(), nullptr);
             file.setProperty("height", im->getHeight(), nullptr);
+        }
+        
+        KeyboardModule* km = nullptr;
+        
+        if ((km = dynamic_cast<KeyboardModule*>(*it)) != NULL) {
+            file.setProperty("channel", km->getChannel(), nullptr);
+            file.setProperty("width", km->getWidth(), nullptr);
+            file.setProperty("height", km->getHeight(), nullptr);
         }
         
         ValueTree pins = ValueTree("Pins");
@@ -601,6 +620,22 @@ Module* ModuleUtils::createCopy(Module *original, ChangeBroadcaster* broadcaster
     loadPins(m, cloneTree);
     loadStructure(m->getModules(), m->getConnections(),&cloneTree, broadcaster);
 
+    m->resized();
+    
+    ModuleUtils::connectTerminals(m);
+    
+    return m;
+}
+
+Module* ModuleUtils::loadFromXml(juce::ValueTree &v, ChangeBroadcaster* broadcaster) {
+    
+    Module* m = nullptr;
+    m = new Module(v.getProperty("name").toString());
+    
+    updateIndices(v, Time::getMillisecondCounter());
+    loadPins(m, v);
+    loadStructure(m->getModules(), m->getConnections(),&v, broadcaster);
+    
     m->resized();
     
     ModuleUtils::connectTerminals(m);

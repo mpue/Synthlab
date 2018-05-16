@@ -911,6 +911,7 @@ void SynthEditor::saveModule(Module* m) {
     if (chooser.browseForFileToSave(true)) {
         
         ValueTree* v = new ValueTree("Module");
+        v->setProperty("name", m->getName(), nullptr);
         
         ModuleUtils::savePins(m, *v);
         ModuleUtils::saveStructure(m->getModules(),m->getConnections(), v);
@@ -930,30 +931,35 @@ void SynthEditor::saveModule(Module* m) {
 
 Module* SynthEditor::loadModule() {
     FileChooser chooser("Select module to open", File(), "*");
-    
-	Module* m = nullptr;
+
     if (chooser.browseForFileToOpen()) {
         
         File file = chooser.getResult();
         ScopedPointer<XmlElement> xml = XmlDocument(file).getDocumentElement();
         
         Project::getInstance()->addRecentFile(file.getFullPathName());
-        ValueTree v = ValueTree::fromXml(*xml.get());
+         ValueTree v = ValueTree::fromXml(*xml.get());
 
         setRunning(false);
-        Module* m = new Module(v.getChildWithName("Module").getProperty("name").toString());
-        ModuleUtils::loadStructure(m->getModules(),m->getConnections(), &v, this);
+
+        Module* module = ModuleUtils::loadFromXml(v, this);
+        module->setName(v.getProperty("name"));
         
-        for (std::vector<Module*>::iterator it = m->getModules()->begin(); it != m->getModules()->end(); ++it) {
-            addAndMakeVisible((*it));
-        }
         
-        resized();
+        module->setTopLeftPosition(mouseX,mouseY);
         
+        addAndMakeVisible(module);
+        getModule()->getModules()->push_back(module);
+        
+        module->setSelected(true);
+        module->savePosition();
+        getSelectionModel().getSelectedModules().push_back(module);
+        repaint();
+        setRunning(true);
         xml = nullptr;
- 
+        return module;
     }
-	return m;
+    return nullptr;
 }
 
 
@@ -1435,10 +1441,9 @@ bool SynthEditor::perform (const InvocationInfo& info) {
     else if(info.commandID == SynthEditor::CommandIds::LOAD_MODULE) {
         running = false;
         Module* m = loadModule();
-        root->getModules()->push_back(m);
-        addAndMakeVisible(m);
-        running = true;
-        return true;
+        
+        if (m != nullptr)
+            return true;
     }
     else if(info.commandID == SynthEditor::CommandIds::SAVE_MODULE) {
         saveModule(selectionModel.getSelectedModule());
