@@ -199,7 +199,7 @@ private:
 
     void notifyListeners();
     
-    bool snapToGrid = true;
+    bool snapToGrid = false;
                          
     bool isAltDown = false;
     bool isCtrlDown = false;

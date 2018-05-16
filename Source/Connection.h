@@ -28,9 +28,9 @@ public:
 	Pin* b;
 	bool selected = false;
     void setPoints(juce::Point<int>& p1, juce::Point<int>& p2);
-    juce::Path* getPath();
+    juce::Path getPath();
 private:
-    juce::Path* linePath;
+    juce::Path linePath;
     juce::Point<int> p1;
     juce::Point<int> p2;
 };

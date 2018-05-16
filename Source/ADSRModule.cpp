@@ -205,8 +205,9 @@ void ADSRModule::process() {
             for (int j = 0; j < 128;j++) {
                 if (pins.at(5) != NULL) {
                     if (this->envelopes[j]->getState() != ADSR::envState::env_idle) {
-                       
-                        pins.at(5)->data[j] = this->envelopes[j]->process();
+                        if (this->envelopes[j] != nullptr) {
+                            pins.at(5)->data[j] = this->envelopes[j]->process();
+                        }
                     }
                     else {
                         pins.at(5)->dataEnabled[j] = false;

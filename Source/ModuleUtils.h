@@ -109,6 +109,7 @@ public:
     
     static bool connectModules(Module* source, Module* target, int pin);
     
+
 private:
     static bool connectModuleValues(Module* source, Module* target, int pin);
     
@@ -116,4 +117,5 @@ private:
     
     static bool connectModuleEvents(Module* source, Module* target, int pin);
     
+ 
 };

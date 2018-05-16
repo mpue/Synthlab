@@ -717,23 +717,8 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String & menuName) {
 }
 
 void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
-    
-    if (menuItemID == 1) {
-        editor->setRunning(false);
-        editor->cleanUp();
-        editor->getMixer()->removeAllChannels();
-        editor->newFile();
-        editor->setRunning(true);
-    }
-    else if (menuItemID == 2) {
-        editor->setRunning(false);
-        editor->openFile();
-        editor->setRunning(true);
-    }
-    else if (menuItemID == 2) {
-        editor->saveFile();
-    }
-    else if (menuItemID == 5) {
+
+    if (menuItemID == 5) {
         openSettings();
     }
 #if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)

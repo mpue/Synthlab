@@ -31,6 +31,8 @@
 #include "PadModule.h"
 #include "ImageModule.h"
 
+
+
 void ModuleUtils::loadStructure(std::vector<Module *>* modules, std::vector<Connection*>* connections,juce::ValueTree *v, ChangeBroadcaster* broadcaster) {
     ValueTree mods = v->getChildWithName("Modules");
     
@@ -69,8 +71,6 @@ void ModuleUtils::loadStructure(std::vector<Module *>* modules, std::vector<Conn
 void ModuleUtils::loadConnections(juce::ValueTree &cons, std::vector<Module *>* modules, std::vector<Connection*>* connections) {
     for (int i = 0; i < cons.getNumChildren();i++) {
         ValueTree con = cons.getChild(i);
-        
-        Connection* c = new Connection();
         
         long sourceIndex = static_cast<long>(con.getProperty("source").toString().getIntValue());
         long targetIndex = static_cast<long>(con.getProperty("target").toString().getLargeIntValue());
@@ -118,7 +118,7 @@ void ModuleUtils::loadConnections(juce::ValueTree &cons, std::vector<Module *>* 
                     
                     // xConnection* c = new Connection(source, a, target, b);
                     // root->getConnections()->push_back(c);
-                    
+                    Connection* c = new Connection();
                     c->a = a;
                     c->b = b;
                     c->source = source;
@@ -138,6 +138,7 @@ void ModuleUtils::loadConnections(juce::ValueTree &cons, std::vector<Module *>* 
                     
                     // Connection* c = new Connection(target, b, source, a);
                     // root->getConnections()->push_back(c);
+                    Connection* c = new Connection();
                     c->a = b;
                     c->b = a;
                     c->source = target;
