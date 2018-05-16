@@ -135,6 +135,8 @@ private:
         prefabs[89] = Prefab("Midi clock","MIDI");
         prefabs[90] = Prefab("Image","Controls");
         prefabs[91] = Prefab("Keyboard","Controls");
+        prefabs[92] = Prefab("Publisher","Controls");
+        prefabs[93] = Prefab("Subscriber","Controls");
         
         prefabImages[53] = juce::ImageCache::getFromMemory(BinaryData::sampler_png, BinaryData::sampler_pngSize);
         prefabImages[54] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
@@ -175,6 +177,8 @@ private:
         prefabImages[89] = juce::ImageCache::getFromMemory(BinaryData::clock_png, BinaryData::clock_pngSize);
         prefabImages[90] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[91] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[92] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[93] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         
         categories = new juce::StringArray();
 

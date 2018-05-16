@@ -154,6 +154,13 @@
       <FILE id="EJ4uon" name="whitenoise.png" compile="0" resource="1" file="Images/whitenoise.png"/>
     </GROUP>
     <GROUP id="{CA20D122-1EA5-3A93-F1F8-F6EE53DA457E}" name="Source">
+      <GROUP id="{1C1CC707-767F-0A14-4BBC-FC07D9A8C470}" name="MessageBus">
+        <FILE id="xxFait" name="BusListener.h" compile="0" resource="0" file="Source/MessageBus/BusListener.h"/>
+        <FILE id="Ukzbap" name="MessageBus.cpp" compile="1" resource="0" file="Source/MessageBus/MessageBus.cpp"/>
+        <FILE id="C20i76" name="MessageBus.h" compile="0" resource="0" file="Source/MessageBus/MessageBus.h"/>
+        <FILE id="xCo42k" name="Topic.cpp" compile="1" resource="0" file="Source/MessageBus/Topic.cpp"/>
+        <FILE id="jloBCb" name="Topic.h" compile="0" resource="0" file="Source/MessageBus/Topic.h"/>
+      </GROUP>
       <FILE id="xFR6SE" name="EditorListener.h" compile="0" resource="0"
             file="Source/EditorListener.h"/>
       <GROUP id="{FB7BC6C4-6B07-639E-1335-421CB2A3BBB4}" name="MidiRecorder">
@@ -375,6 +382,14 @@
                 file="Source/ToolbarComboBox.h"/>
         </GROUP>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
+          <FILE id="L0JRsI" name="SubscriberModule.cpp" compile="1" resource="0"
+                file="Source/SubscriberModule.cpp"/>
+          <FILE id="zBdQDz" name="SubscriberModule.h" compile="0" resource="0"
+                file="Source/SubscriberModule.h"/>
+          <FILE id="aFwhia" name="PublisherModule.cpp" compile="1" resource="0"
+                file="Source/PublisherModule.cpp"/>
+          <FILE id="yqFyOO" name="PublisherModule.h" compile="0" resource="0"
+                file="Source/PublisherModule.h"/>
           <FILE id="yPE3Xy" name="KeyboardModule.cpp" compile="1" resource="0"
                 file="Source/KeyboardModule.cpp"/>
           <FILE id="LlNnSk" name="KeyboardModule.h" compile="0" resource="0"

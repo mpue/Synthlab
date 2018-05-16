@@ -85,22 +85,28 @@ void ModuleUtils::loadConnections(juce::ValueTree &cons, std::vector<Module *>* 
         for (int j = 0; j < modules->size(); j++) {
             
             Module* m = modules->at(j);
-            if (m->getIndex() == sourceIndex && source == nullptr) {
+            
+            if (m->getIndex() == sourceIndex) {
                 source = m;
+            }
+            if (m->getIndex() == targetIndex) {
+                target = m;
+            }
+            
+            if (source != nullptr) {
+                
                 for (int k = 0; k < m->getPins().size();k++) {
                     if (m->getPins().at(k)->index == aIndex) {
                         a = m->getPins().at(k);
-                        break;
                     }
                 }
-                
             }
-            else if (m->getIndex() == targetIndex && target == nullptr) {
-                target = m;
+            
+            if (target != nullptr) {
+                
                 for (int k = 0; k < m->getPins().size();k++) {
                     if (m->getPins().at(k)->index == bIndex) {
                         b = m->getPins().at(k);
-                        break;
                     }
                 }
             }
@@ -632,7 +638,7 @@ Module* ModuleUtils::loadFromXml(juce::ValueTree &v, ChangeBroadcaster* broadcas
     Module* m = nullptr;
     m = new Module(v.getProperty("name").toString());
     
-    updateIndices(v, Time::getMillisecondCounter());
+    // updateIndices(v, Time::getMillisecondCounter());
     loadPins(m, v);
     loadStructure(m->getModules(), m->getConnections(),&v, broadcaster);
     

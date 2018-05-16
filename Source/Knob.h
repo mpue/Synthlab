@@ -16,7 +16,7 @@
 //==============================================================================
 /*
 */
-class Knob    : public Module, juce::Slider::Listener
+class Knob    : public Module, public juce::Slider::Listener
 {
 public:
     Knob();
@@ -31,7 +31,7 @@ public:
     virtual juce::String getCategory() override {
         return "Controls";
     }
-    
+
     void setStepSize(float stepsize);
     void setMinimum(float min);
     void setMaximum(float max);
@@ -55,7 +55,9 @@ public:
     virtual void setSelected(bool selected) override;
     virtual void setName(String name) override;
     
-    
+    Slider* getSlider() {
+        return slider;
+    }
     
     virtual juce::Array<juce::PropertyComponent*>& getProperties() override;
     virtual void createProperties() override;

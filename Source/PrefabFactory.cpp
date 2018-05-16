@@ -46,6 +46,8 @@
 #include "MidiClock.h"
 #include "ImageModule.h"
 #include "KeyboardModule.h"
+#include "PublisherModule.h"
+#include "SubscriberModule.h"
 
 using juce::Image;
 
@@ -192,7 +194,13 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     else if (prefabs[id].getName() == "Keyboard") {
         m = new KeyboardModule();
     }
-    
+    else if (prefabs[id].getName() == "Publisher") {
+        m = new PublisherModule();
+    }
+    else if (prefabs[id].getName() == "Subscriber") {
+        m = new SubscriberModule();
+    }
+
     m->setIndex(id + pow(10,prefabs[id].getNumInstances() + 1));
     m->setId(id);
     prefabs[id].addInstance();

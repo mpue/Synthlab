@@ -67,7 +67,12 @@ SynthEditor::SynthEditor (double sampleRate, int buffersize)
     setSize (1280, 800);
 
     root = new Module("Root");
-
+    
+    // only the topmost module can be root
+    if (Project::getInstance()->getRoot() == nullptr) {
+        Project::getInstance()->setRoot(root);
+    }
+    
     selectionModel.setRoot(root);
     
 	setRepaintsOnMouseActivity(true);
@@ -140,6 +145,7 @@ void SynthEditor::paint (Graphics& g)
         }
 
     }
+
 
 }
 
@@ -276,6 +282,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
                 m->addItem(1, "Add input");
                 m->addItem(2, "Add output");
                 m->addItem(6, "Save module");
+
             }
             else {
                 if ((k = dynamic_cast<Knob*>(module)) != NULL) {

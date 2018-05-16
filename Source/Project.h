@@ -13,6 +13,7 @@
 #include "MainTabbedComponent.h"
 #include "AudioEngine/Sampler.h"
 #include "PropertyView.h"
+#include "Module.h"
 
 class Project {
 public:
@@ -67,6 +68,14 @@ public:
     
     Sampler* getDefaultSampler() {
         return this->defaultSampler;
+    }
+    
+    void setRoot(Module* root) {
+        this->root = root;
+    }
+ 
+    Module* getRoot() {
+        return root;
     }
     
     juce::Component* getMain() {
@@ -143,7 +152,7 @@ private:
     std::vector<juce::DialogWindow*> openWindows;
     juce::Component* main = nullptr;
     Sampler* defaultSampler = nullptr;
-    
+    Module* root;
     AppMode mode = STUDIO;
     
     
