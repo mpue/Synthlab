@@ -75,7 +75,7 @@ void ModuleUtils::loadConnections(juce::ValueTree &cons, std::vector<Module *>* 
     for (int i = 0; i < cons.getNumChildren();i++) {
         ValueTree con = cons.getChild(i);
         
-        long sourceIndex = static_cast<long>(con.getProperty("source").toString().getIntValue());
+        long sourceIndex = static_cast<long>(con.getProperty("source").toString().getLargeIntValue());
         long targetIndex = static_cast<long>(con.getProperty("target").toString().getLargeIntValue());
         long aIndex = static_cast<long>(con.getProperty("a").toString().getLargeIntValue());
         long bIndex = static_cast<long>(con.getProperty("b").toString().getLargeIntValue());

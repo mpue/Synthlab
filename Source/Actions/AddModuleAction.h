@@ -20,6 +20,10 @@ public:
     
     virtual bool perform() override;
     virtual bool undo() override;
+
+    void setModule(Module* m) {
+        this->module = m;
+    }
     
 private:
     

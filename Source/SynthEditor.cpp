@@ -397,7 +397,8 @@ void SynthEditor::showContextMenu(Point<int> position) {
     }
     else {
         
-        m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::ADD_MODULE);
+        m->addItem(1,"Add module");
+        // m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::ADD_MODULE);
         m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::DELETE_SELECTED);
         m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::LOAD_MODULE);
         m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::SAVE_MODULE);
@@ -474,12 +475,17 @@ void SynthEditor::showContextMenu(Point<int> position) {
         {
             // user dismissed the menu without picking anything
         }
-
-        
+        else if (result == 1) {
+            Module* m = new Module("Module");
+            m->setIndex(Time::currentTimeMillis());
+            AddModuleAction* am = new AddModuleAction(this,position,static_cast<int>(m->getIndex()));
+            am->setModule(m);
+            Project::getInstance()->getUndoManager()->beginNewTransaction();
+            Project::getInstance()->getUndoManager()->perform(am);
+        }
         else if (result == 99) {
             locked = !locked;
         }
-        
         else if (result >= 53 && result <= 99 ){
             AddModuleAction* am = new AddModuleAction(this,position,result);
             Project::getInstance()->getUndoManager()->beginNewTransaction();
@@ -1364,7 +1370,7 @@ ApplicationCommandTarget* SynthEditor::getNextCommandTarget() {
 }
 void SynthEditor::getAllCommands (Array<CommandID>& commands) {
     commands.add({ SynthEditor::CommandIds::NEW });
-    commands.add({ SynthEditor::CommandIds::ADD_MODULE });
+    // commands.add({ SynthEditor::CommandIds::ADD_MODULE });
     commands.add({ SynthEditor::CommandIds::DUPLICATE });
     commands.add({ SynthEditor::CommandIds::DELETE_SELECTED });
     commands.add({ SynthEditor::CommandIds::SAVE });
@@ -1435,6 +1441,7 @@ bool SynthEditor::perform (const InvocationInfo& info) {
         return true;
     }
     else if(info.commandID == SynthEditor::CommandIds::ADD_MODULE) {
+        /*
         Module* m3 = new Module("Module");
         
         m3->setTopLeftPosition(mouseX, mouseY);
@@ -1443,6 +1450,8 @@ bool SynthEditor::perform (const InvocationInfo& info) {
         addAndMakeVisible(m3);
         root->getModules()->push_back(m3);
         return true;
+         */
+        return false;
     }
     else if (info.commandID == SynthEditor::CommandIds::SAVE) {
         saveFile();
