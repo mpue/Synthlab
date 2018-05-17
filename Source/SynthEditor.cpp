@@ -35,6 +35,7 @@
 #include "ModuleUtils.h"
 #include "ExtendedFileBrowser.h"
 #include "AudioRecorderModule.h"
+#include "ImageModule.h"
 
 class SampleEditor;
 
@@ -922,6 +923,10 @@ void SynthEditor::loadFromString(juce::String in){
     for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
         addAndMakeVisible((*it));
         configureAudioModule((*it),this);
+        ImageModule* im;
+        if ((im = dynamic_cast<ImageModule*>(*it)) != NULL) {
+            im->toBack();
+        }
     }
     
     setCurrentLayer(v.getProperty("layer").toString().getIntValue());
@@ -1163,6 +1168,10 @@ void SynthEditor::openFile() {
         for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
             addAndMakeVisible((*it));
             configureAudioModule((*it),this);
+            ImageModule* im;
+            if ((im = dynamic_cast<ImageModule*>(*it)) != NULL) {
+                im->toBack();
+            }
         }
 
         resized();

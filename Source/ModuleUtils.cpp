@@ -224,7 +224,10 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
         if ((im = dynamic_cast<ImageModule*>(m)) != NULL) {
             im->setImage(mod.getProperty("imagePath").toString());
             im->setSize(mod.getProperty("width").toString().getIntValue(), mod.getProperty("height").toString().getIntValue());
+            im->toBack();
         }
+        
+        
         
         KeyboardModule* km = nullptr;
         
@@ -464,8 +467,8 @@ void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Conn
         
         file.setProperty("name",(*it)->getName(), nullptr);
         file.setProperty("index",String((*it)->getIndex()), nullptr);
-        file.setProperty("x",(*it)->getPosition().getX(),nullptr);
-        file.setProperty("y",(*it)->getPosition().getY(),nullptr);
+        file.setProperty("x",(*it)->getSavedPosition().getX(),nullptr);
+        file.setProperty("y",(*it)->getSavedPosition().getY(),nullptr);
         file.setProperty("ui_x",(*it)->getUiPosition().getX(),nullptr);
         file.setProperty("ui_y",(*it)->getUiPosition().getY(),nullptr);
         file.setProperty("isPrefab",(*it)->isPrefab(),nullptr);

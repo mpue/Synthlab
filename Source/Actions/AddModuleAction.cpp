@@ -13,6 +13,7 @@
 #include "../PrefabFactory.h"
 #include "../AudioManager.h"
 #include "../TerminalModule.h"
+#include "../ImageModule.h"
 
 using juce::String;
 
@@ -154,6 +155,7 @@ bool AddModuleAction::perform() {
         
     }
     
+
     editor->addChangeListener(m);
     
     m->setTopLeftPosition(position);
@@ -163,6 +165,12 @@ bool AddModuleAction::perform() {
     
     editor->addAndMakeVisible(m);
     editor->getModule()->getModules()->push_back(m);
+    
+    ImageModule* im;
+    
+    if ((im = dynamic_cast<ImageModule*>(m)) != NULL) {
+        im->toBack();   
+    }
     
     m->setSelected(true);
 

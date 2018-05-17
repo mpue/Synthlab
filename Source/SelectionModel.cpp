@@ -176,7 +176,7 @@ void SelectionModel::setRoot(Module *root) {
 }
 
 bool SelectionModel::selectionContains(Module *m) {
-    for (int j = 0; j < selectedModules.size();j++) {
+    for (int j = 0; j < selectedModules.size() && j < root->getModules()->size();j++) {
         if (selectedModules.at(j)->getIndex() == root->getModules()->at(j)->getIndex()) {
             return true;
         }
