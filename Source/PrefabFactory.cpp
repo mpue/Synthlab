@@ -48,6 +48,7 @@
 #include "KeyboardModule.h"
 #include "PublisherModule.h"
 #include "SubscriberModule.h"
+#include "ChorusModule.h"
 
 using juce::Image;
 
@@ -199,6 +200,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Subscriber") {
         m = new SubscriberModule();
+    }
+    else if (prefabs[id].getName() == "Chorus") {
+        m = new ChorusModule(sampleRate,bufferSize);
     }
 
     m->setIndex(id + pow(10,prefabs[id].getNumInstances() + 1));

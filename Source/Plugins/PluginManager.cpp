@@ -67,7 +67,8 @@ void PluginManager::scanPlugins() {
     launchOptions.componentToCentreAround = nullptr;
     launchOptions.content.setOwned(pluginListComponent);
     launchOptions.content->setSize(600, 580);
-    Project::getInstance()->getOpenWindows().push_back(launchOptions.launchAsync());
+    //Project::getInstance()->getOpenWindows().push_back(launchOptions.launchAsync());
+    launchOptions.runModal();
     
     File pluginDir = File(userHome+"/.Synthlab/plugins");
     

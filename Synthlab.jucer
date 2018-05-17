@@ -223,6 +223,10 @@
               file="Source/Actions/RemoveSelectedAction.h"/>
       </GROUP>
       <GROUP id="{A79C9093-D329-37A0-AEE1-CF7BDC5C60DE}" name="AudioEngine">
+        <FILE id="r72Pun" name="FractionalDelayBuffer.cpp" compile="1" resource="0"
+              file="Source/AudioEngine/FractionalDelayBuffer.cpp"/>
+        <FILE id="RHMY06" name="FractionalDelayBuffer.h" compile="0" resource="0"
+              file="Source/AudioEngine/FractionalDelayBuffer.h"/>
         <FILE id="CzCxcs" name="AuxOut.cpp" compile="1" resource="0" file="Source/AuxOut.cpp"/>
         <FILE id="bvlaqP" name="AuxOut.h" compile="0" resource="0" file="Source/AuxOut.h"/>
         <FILE id="JS0IMS" name="Mixer.cpp" compile="1" resource="0" file="Source/Mixer.cpp"/>
@@ -382,6 +386,9 @@
                 file="Source/ToolbarComboBox.h"/>
         </GROUP>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
+          <FILE id="m8Kazc" name="ChorusModule.cpp" compile="1" resource="0"
+                file="Source/ChorusModule.cpp"/>
+          <FILE id="C2bJ8k" name="ChorusModule.h" compile="0" resource="0" file="Source/ChorusModule.h"/>
           <FILE id="L0JRsI" name="SubscriberModule.cpp" compile="1" resource="0"
                 file="Source/SubscriberModule.cpp"/>
           <FILE id="zBdQDz" name="SubscriberModule.h" compile="0" resource="0"
