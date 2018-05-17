@@ -138,3 +138,8 @@ void Pin::changeListenerCallback(juce::ChangeBroadcaster *source) {
     }
     
 }
+
+void Pin::addEventListener(EventListener* listener)
+{
+    listeners.push_back(listener);
+}

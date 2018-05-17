@@ -487,7 +487,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
         else if (result == 99) {
             locked = !locked;
         }
-        else if (result >= 53 && result <= 99 ){
+        else if (result >= 30 && result <= 99 ){
             AddModuleAction* am = new AddModuleAction(this,position,result);
             Project::getInstance()->getUndoManager()->beginNewTransaction();
             Project::getInstance()->getUndoManager()->perform(am);

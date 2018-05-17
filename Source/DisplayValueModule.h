@@ -37,8 +37,14 @@ public:
         repaint();
     }
     
+    virtual void eventReceived(Event* e) override;
+
+    
 private:
     float value = 0;
+    float velocity = 0;
+    int note = 0;
+    Pin* eventInPin;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DisplayValueModule)
 };

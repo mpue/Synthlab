@@ -79,6 +79,8 @@ public:
         audioBuffer = nullptr;
     }
                 
+    void addEventListener(EventListener* listener);
+                
     float value;
     float data[128] = {0};
     bool dataEnabled[128];

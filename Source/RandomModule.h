@@ -26,6 +26,7 @@ public:
     void paint (juce::Graphics& g) override;
     void setAmplitude(float amplitude);
     void process() override;
+    virtual void eventReceived(Event *e) override;
     virtual void configurePins() override;
     
     virtual juce::String getCategory() override {
@@ -35,6 +36,13 @@ public:
 
 private:
     float amplitude;
+    Pin* gatePin;
+    Pin* p1;
+    Pin* p2;
+    Pin* p3;
+    Pin* p4;
+    Pin* eventOutPin;
+    juce::Random random;
 
     juce::Image* image;
     Synthlab::Random* oscillator;

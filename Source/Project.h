@@ -153,7 +153,7 @@ private:
     juce::Component* main = nullptr;
     Sampler* defaultSampler = nullptr;
     Module* root;
-    AppMode mode = PLAYER;
+    AppMode mode = STUDIO;
     
     
 };

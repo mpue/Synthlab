@@ -17,7 +17,8 @@ using juce::Justification;
 using juce::ImageCache;
 
 //==============================================================================
-RandomModule::RandomModule(double sampleRate, int buffersize)
+RandomModule::RandomModule(double sampleRate, int buffersize) :
+    gatePin(nullptr), p1(nullptr), p2(nullptr), p3(nullptr), p4(nullptr), eventOutPin(nullptr)
 {
     this->sampleRate = sampleRate;
     this->buffersize = buffersize;
@@ -48,30 +49,44 @@ void RandomModule::setAmplitude(float amplitude) {
 
 void RandomModule::configurePins() {
     
-    Pin* p1 = new Pin(Pin::Type::VALUE);
+    gatePin = new Pin(Pin::Type::EVENT);
+    gatePin->direction = Pin::Direction::IN;
+    gatePin->listeners.push_back(this);
+    gatePin->setDescription("Gate event in (use ADSR or Gate module for triggering.");
+    gatePin->setName("G");
+    
+    p1 = new Pin(Pin::Type::VALUE);
     p1->direction = Pin::Direction::IN;
     p1->listeners.push_back(this);
     p1->setName("F");
     
-    Pin* p2 = new Pin(Pin::Type::VALUE);
+    p2 = new Pin(Pin::Type::VALUE);
     p2->direction = Pin::Direction::IN;
     p2->listeners.push_back(this);
     p2->setName("A");
     
-    Pin* p3 = new Pin(Pin::Type::AUDIO);
+    p3 = new Pin(Pin::Type::AUDIO);
     p3->direction = Pin::Direction::OUT;
     p3->listeners.push_back(this);
     p3->setName("Out");
     
-    Pin* p4 = new Pin(Pin::Type::VALUE);
+    p4 = new Pin(Pin::Type::VALUE);
     p4->direction = Pin::Direction::OUT;
     p4->listeners.push_back(this);
     p4->setName("V");
+    
+    eventOutPin = new Pin(Pin::Type::EVENT);
+    eventOutPin->direction = Pin::Direction::OUT;
+    eventOutPin->listeners.push_back(this);
+    eventOutPin->setDescription("Produces random node values on each trigger. Typical range [0..127].");
+    eventOutPin->setName("R");
 
+    addPin(Pin::Direction::IN,gatePin);
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::IN,p2);
     addPin(Pin::Direction::OUT,p3);
     addPin(Pin::Direction::OUT,p4);
+    addPin(Pin::Direction::OUT,eventOutPin);
 }
 
 void RandomModule::paint(juce::Graphics &g) {
@@ -97,4 +112,35 @@ void RandomModule::process() {
         pins.at(3)->setValue(abs(value + 1));
     }
     
+}
+
+void RandomModule::eventReceived(Event *eventIn) {
+    
+    if (eventIn->getType() == Event::Type::GATE) {
+        
+        Event* eventOut;
+        int velocity = 0;
+        int note = 0;
+        
+        if (eventIn->getValue() > 0) {
+            eventOut = new Event("gate on",Event::Type::GATE);
+            velocity = 64; // TODO add property
+            note = random.nextInt(127); // TODO add property for min/max value
+        }
+        else {
+            eventOut = new Event("gate off",Event::Type::GATE);
+            velocity = 0;
+            note = 0;
+        }
+        
+        eventOut->setValue(velocity);
+        eventOut->setNote(note);
+        
+        for (int i = 0; i < eventOutPin->getConnections().size();i++) {
+            eventOutPin->getConnections().at(i)->sendEvent(new Event(eventOut));
+        }
+        
+        delete eventOut;
+        
+    }
 }

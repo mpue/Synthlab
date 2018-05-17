@@ -390,6 +390,10 @@
                 file="Source/ToolbarComboBox.h"/>
         </GROUP>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
+          <FILE id="A7ktPf" name="TriggerTimerModule.cpp" compile="1" resource="0"
+                file="Source/TriggerTimerModule.cpp"/>
+          <FILE id="Xy0b2v" name="TriggerTimerModule.h" compile="0" resource="0"
+                file="Source/TriggerTimerModule.h"/>
           <FILE id="bTtl4g" name="OrModule.cpp" compile="1" resource="0" file="Source/OrModule.cpp"/>
           <FILE id="w5nCTf" name="OrModule.h" compile="0" resource="0" file="Source/OrModule.h"/>
           <FILE id="GSUKzt" name="AndModule.cpp" compile="1" resource="0" file="Source/AndModule.cpp"/>
