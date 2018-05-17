@@ -49,6 +49,10 @@
 #include "PublisherModule.h"
 #include "SubscriberModule.h"
 #include "ChorusModule.h"
+#include "LedModule.h"
+#include "AndModule.h"
+#include "OrModule.h"
+#include "NotModule.h"
 
 using juce::Image;
 
@@ -204,7 +208,19 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     else if (prefabs[id].getName() == "Chorus") {
         m = new ChorusModule(sampleRate,bufferSize);
     }
-
+    else if (prefabs[id].getName() == "LED") {
+        m = new LedModule();
+    }
+    else if (prefabs[id].getName() == "And") {
+        m = new AndModule();
+    }
+    else if (prefabs[id].getName() == "Or") {
+        m = new OrModule();
+    }
+    else if (prefabs[id].getName() == "Not") {
+        m = new NotModule();
+    }
+    
     m->setIndex(id + pow(10,prefabs[id].getNumInstances() + 1));
     m->setId(id);
     prefabs[id].addInstance();

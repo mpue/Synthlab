@@ -122,7 +122,7 @@ private:
     
     std::map<int,int> keyCodeMidiNote;
     
-    int currentOctave = 1;
+    int currentOctave = 0;
     DefaultToolbarItemFactory* toolbarFactory;
     juce::Toolbar* toolbar = nullptr;
     

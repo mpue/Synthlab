@@ -113,6 +113,9 @@
       <FILE id="gJAegc" name="led_off.png" compile="1" resource="1" file="Images/led_off.png"/>
       <FILE id="xTBQB1" name="led_on.png" compile="1" resource="1" file="Images/led_on.png"/>
       <FILE id="iCVW3k" name="lock.png" compile="0" resource="1" file="Images/lock.png"/>
+      <FILE id="LyJb37" name="logic_and.png" compile="0" resource="1" file="Images/logic_and.png"/>
+      <FILE id="qc79je" name="logic_not.png" compile="0" resource="1" file="Images/logic_not.png"/>
+      <FILE id="fD6Tjk" name="logic_or.png" compile="0" resource="1" file="Images/logic_or.png"/>
       <FILE id="HGa4kr" name="lp.png" compile="0" resource="1" file="Images/lp.png"/>
       <FILE id="floa7Y" name="micro.png" compile="0" resource="1" file="Images/micro.png"/>
       <FILE id="wjQQld" name="midiin.png" compile="0" resource="1" file="Images/midiin.png"/>
@@ -386,6 +389,14 @@
                 file="Source/ToolbarComboBox.h"/>
         </GROUP>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
+          <FILE id="bTtl4g" name="OrModule.cpp" compile="1" resource="0" file="Source/OrModule.cpp"/>
+          <FILE id="w5nCTf" name="OrModule.h" compile="0" resource="0" file="Source/OrModule.h"/>
+          <FILE id="GSUKzt" name="AndModule.cpp" compile="1" resource="0" file="Source/AndModule.cpp"/>
+          <FILE id="QTlWKR" name="AndModule.h" compile="0" resource="0" file="Source/AndModule.h"/>
+          <FILE id="aAlv56" name="NotModule.cpp" compile="1" resource="0" file="Source/NotModule.cpp"/>
+          <FILE id="dFQ6rR" name="NotModule.h" compile="0" resource="0" file="Source/NotModule.h"/>
+          <FILE id="DEjcCX" name="LedModule.cpp" compile="1" resource="0" file="Source/LedModule.cpp"/>
+          <FILE id="zPtzfS" name="LedModule.h" compile="0" resource="0" file="Source/LedModule.h"/>
           <FILE id="m8Kazc" name="ChorusModule.cpp" compile="1" resource="0"
                 file="Source/ChorusModule.cpp"/>
           <FILE id="C2bJ8k" name="ChorusModule.h" compile="0" resource="0" file="Source/ChorusModule.h"/>

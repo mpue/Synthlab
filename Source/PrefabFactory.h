@@ -137,7 +137,11 @@ private:
         prefabs[91] = Prefab("Keyboard","Controls");
         prefabs[92] = Prefab("Publisher","Controls");
         prefabs[93] = Prefab("Subscriber","Controls");
-        prefabs[93] = Prefab("Chorus","FX");
+        prefabs[94] = Prefab("Chorus","FX");
+        prefabs[95] = Prefab("LED","Controls");
+        prefabs[96] = Prefab("And","Logic");
+        prefabs[97] = Prefab("Or","Logic");
+        prefabs[98] = Prefab("Not","Logic");
         
         prefabImages[53] = juce::ImageCache::getFromMemory(BinaryData::sampler_png, BinaryData::sampler_pngSize);
         prefabImages[54] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
@@ -181,12 +185,18 @@ private:
         prefabImages[92] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[93] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[94] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[95] = juce::ImageCache::getFromMemory(BinaryData::led_on_png, BinaryData::led_on_pngSize);
+        prefabImages[96] = juce::ImageCache::getFromMemory(BinaryData::logic_and_png, BinaryData::logic_and_pngSize);
+        prefabImages[97] = juce::ImageCache::getFromMemory(BinaryData::logic_or_png, BinaryData::logic_or_pngSize);
+        prefabImages[98] = juce::ImageCache::getFromMemory(BinaryData::logic_not_png, BinaryData::logic_not_pngSize);
+     
         
         categories = new juce::StringArray();
 
         categories->add("Audio");
         categories->add("Controls");
         categories->add("Filter");
+        categories->add("Logic");
         categories->add("Math");
         categories->add("Input / Output");
         categories->add("MIDI");

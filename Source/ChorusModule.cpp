@@ -72,10 +72,34 @@ void ChorusModule::configurePins() {
     p4->listeners.push_back(this);
     p4->setName("R");
     
+    Pin* p5 = new Pin(Pin::Type::VALUE);
+    p5->direction = Pin::Direction::IN;
+    p5->listeners.push_back(this);
+    p5->setName("M");
+    
+    Pin* p6 = new Pin(Pin::Type::VALUE);
+    p6->direction = Pin::Direction::IN;
+    p6->listeners.push_back(this);
+    p6->setName("Fb");
+    
+    Pin* p7 = new Pin(Pin::Type::VALUE);
+    p7->direction = Pin::Direction::IN;
+    p7->listeners.push_back(this);
+    p7->setName("Dly");
+
+    Pin* p8 = new Pin(Pin::Type::VALUE);
+    p8->direction = Pin::Direction::IN;
+    p8->listeners.push_back(this);
+    p8->setName("Mix");
+    
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::IN,p2);
     addPin(Pin::Direction::OUT,p3);
     addPin(Pin::Direction::OUT,p4);
+    addPin(Pin::Direction::IN,p5);
+    addPin(Pin::Direction::IN,p6);
+    addPin(Pin::Direction::IN,p7);
+    addPin(Pin::Direction::IN,p8);
 }
 
 void ChorusModule::paint(juce::Graphics &g) {
@@ -85,6 +109,27 @@ void ChorusModule::paint(juce::Graphics &g) {
 
 
 void ChorusModule::process() {
+    
+    if (pins.at(4)->getConnections().size() ==  1) {
+        if (modulation != pins.at(4)->getConnections().at(0)->getValue()) {
+            modulation = pins.at(4)->getConnections().at(0)->getValue();
+        }
+    }
+    if (pins.at(5)->getConnections().size() ==  1) {
+        if (feedback != pins.at(5)->getConnections().at(0)->getValue()) {
+            feedback = pins.at(5)->getConnections().at(0)->getValue();
+        }
+    }
+    if (pins.at(6)->getConnections().size() ==  1) {
+        if (delay != pins.at(6)->getConnections().at(0)->getValue()) {
+            delay = pins.at(6)->getConnections().at(0)->getValue();
+        }
+    }
+    if (pins.at(7)->getConnections().size() ==  1) {
+        if (mix != pins.at(7)->getConnections().at(0)->getValue()) {
+            mix = pins.at(7)->getConnections().at(0)->getValue();
+        }
+    }
     
     if (pins.at(0)->getConnections().size() == 1 && pins.at(1)->getConnections().size() == 1) {
         

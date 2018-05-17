@@ -116,6 +116,15 @@ namespace BinaryData
     extern const char*   lock_png;
     const int            lock_pngSize = 21188;
 
+    extern const char*   logic_and_png;
+    const int            logic_and_pngSize = 21437;
+
+    extern const char*   logic_not_png;
+    const int            logic_not_pngSize = 21383;
+
+    extern const char*   logic_or_png;
+    const int            logic_or_pngSize = 21344;
+
     extern const char*   lp_png;
     const int            lp_pngSize = 2979;
 
@@ -222,7 +231,7 @@ namespace BinaryData
     const int            whitenoise_pngSize = 7446;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 71;
+    const int namedResourceListSize = 74;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];
