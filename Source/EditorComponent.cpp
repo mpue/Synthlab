@@ -77,11 +77,12 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize) : resizerBar 
 
 EditorComponent::~EditorComponent()
 {
+
+    delete editor;
+    delete editorView;
     delete mixer;
     delete mixerPanel;
     delete mixerView;
-    delete editor;
-    delete editorView;
     // delete topTab;
     // delete bottomTab;
 }

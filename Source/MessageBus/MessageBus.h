@@ -43,7 +43,10 @@ private:
     }
     
     ~MessageBus() {
-        
+        for(std::map<String,Topic*>::iterator it = topics.begin(); it != topics.end();++it) {
+            delete (*it).second;
+        }
+        topics.clear();
     }
     
     static MessageBus* instance;

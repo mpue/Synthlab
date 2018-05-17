@@ -31,6 +31,9 @@
 #include "PadModule.h"
 #include "ImageModule.h"
 #include "KeyboardModule.h"
+#include "SubscriberModule.h"
+#include "PublisherModule.h"
+#include "MessageBus/MessageBus.h"
 
 void ModuleUtils::loadStructure(std::vector<Module *>* modules, std::vector<Connection*>* connections,juce::ValueTree *v, ChangeBroadcaster* broadcaster) {
     ValueTree mods = v->getChildWithName("Modules");
@@ -200,6 +203,20 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
         
         if ((k = dynamic_cast<Knob*>(m)) != NULL) {
             k->setName(mod.getProperty("name").toString());
+        }
+        
+        SubscriberModule* sm = nullptr;
+        
+        if ((sm = dynamic_cast<SubscriberModule*>(m)) != NULL) {
+            sm->setTopic(mod.getProperty("topic").toString());
+            MessageBus::getInstance()->addListener(sm->getTopic(), sm);
+        }
+        
+        
+        PublisherModule* pm = nullptr;
+        
+        if ((pm = dynamic_cast<PublisherModule*>(m)) != NULL) {
+            pm->setTopic(mod.getProperty("topic").toString());
         }
         
         ImageModule* im = nullptr;
@@ -422,6 +439,18 @@ void ModuleUtils::configureModule(Module *m, ValueTree& mod, ChangeBroadcaster* 
         km->setSize(mod.getProperty("width").toString().getIntValue(), mod.getProperty("height").toString().getIntValue());
     }
     
+    SubscriberModule* sum = nullptr;
+    
+    if ((sum = dynamic_cast<SubscriberModule*>(m)) != NULL) {
+        sum->setTopic(mod.getProperty("topic").toString());
+    }
+    
+    PublisherModule* pum = nullptr;
+    
+    if ((pum = dynamic_cast<PublisherModule*>(m)) != NULL) {
+        pum->setTopic(mod.getProperty("topic").toString());
+    }
+    
     broadcaster->addChangeListener(m);
 }
 
@@ -567,6 +596,18 @@ void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Conn
             pin.setProperty("x", (*it2)->x, nullptr);
             pin.setProperty("y", (*it2)->y, nullptr);
             pins.addChild(pin,-1,nullptr);
+        }
+        
+        SubscriberModule* sum = nullptr;
+        
+        if ((sum = dynamic_cast<SubscriberModule*>(*it)) != NULL) {
+            file.setProperty("topic", sum->getTopic(), nullptr);
+        }
+        
+        PublisherModule* pum = nullptr;
+        
+        if ((pum = dynamic_cast<PublisherModule*>(*it)) != NULL) {
+             file.setProperty("topic", pum->getTopic(), nullptr);
         }
         
         mods.addChild(file,-1, nullptr);
