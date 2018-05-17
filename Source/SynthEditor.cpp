@@ -596,7 +596,7 @@ void SynthEditor::mouseDrag (const MouseEvent& e)
                     repaint();
                 }
             }
-            selectionModel.checkForPinSelection(e.getPosition());
+            // selectionModel.checkForPinSelection(e.getPosition());
         }
     }
     else {
@@ -772,6 +772,8 @@ void SynthEditor::timerCallback(){
 void SynthEditor::setCurrentLayer(int layer) {
     
     currentLayer = static_cast<Module::Layer>(layer);
+    
+    selectionModel.setCurrentLayer(layer);
    
     for (int i = 0;i < root->getModules()->size();i++) {
         root->getModules()->at(i)->setCurrentLayer(currentLayer);
@@ -779,9 +781,11 @@ void SynthEditor::setCurrentLayer(int layer) {
             
             if (currentLayer == Module::Layer::GUI ) {
                 root->getModules()->at(i)->setTopLeftPosition(root->getModules()->at(i)->getUiPosition().x, root->getModules()->at(i)->getUiPosition().y);
+                root->getModules()->at(i)->saveUiPosition();
             }
             else {
                 root->getModules()->at(i)->setTopLeftPosition(root->getModules()->at(i)->getSavedPosition().x, root->getModules()->at(i)->getSavedPosition().y);
+                root->getModules()->at(i)->savePosition();
             }
             
             root->getModules()->at(i)->setVisible(true);

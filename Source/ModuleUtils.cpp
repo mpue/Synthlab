@@ -274,6 +274,7 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
     m->setTopLeftPosition(mod.getProperty("x").toString().getIntValue(), mod.getProperty("y").toString().getIntValue());
     m->savePosition();
     m->setUiPosition(mod.getProperty("ui_x").toString().getIntValue(), mod.getProperty("ui_y").toString().getIntValue());
+    m->saveUiPosition();
     return m;
 }
 

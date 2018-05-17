@@ -36,12 +36,14 @@ public:
     void select(juce::Point<int> pos);
     void setRoot(Module* root);
     bool selectionContains(Module* m);
+    void setCurrentLayer(int layer);
     
 private:
     bool isPointOnLineSegment(juce::Point<int> pt1, juce::Point<int> pt2, juce::Point<int> pt, double epsilon);
 
     std::vector<Module*> selectedModules;
     Module* root;
+    int layer = Module::Layer::ALL;
 };
 
 #endif /* SelectionModel_h */

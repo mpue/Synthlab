@@ -68,6 +68,11 @@ void SelectionModel::deselectAllPins(){
         }
     }
 }
+
+void SelectionModel::setCurrentLayer(int layer) {
+    this->layer = layer;
+}
+
 SelectionModel::State SelectionModel::checkForHitAndSelect(juce::Point<int> pos) {
     
     bool hit = false;
@@ -79,7 +84,12 @@ SelectionModel::State SelectionModel::checkForHitAndSelect(juce::Point<int> pos)
                 root->getModules()->at(i)->setSelected(true);
                 
                 getSelectedModules().push_back(root->getModules()->at(i));
-                root->getModules()->at(i)->savePosition();
+                if (layer == Module::Layer::ALL) {
+                    root->getModules()->at(i)->savePosition();
+                }
+                else {
+                    root->getModules()->at(i)->saveUiPosition();
+                }
                 hit = true;
                 break;
             }
@@ -104,7 +114,12 @@ void SelectionModel::select(juce::Point<int> pos) {
             if (selectionContains(root->getModules()->at(i))) {
                 root->getModules()->at(i)->setSelected(true);
                 getSelectedModules().push_back(root->getModules()->at(i));
-                root->getModules()->at(i)->savePosition();
+                if (layer == Module::Layer::ALL) {
+                    root->getModules()->at(i)->savePosition();
+                }
+                else {
+                    root->getModules()->at(i)->saveUiPosition();
+                }
                 break;
             }
         }

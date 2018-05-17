@@ -27,8 +27,8 @@ ChorusModule::ChorusModule(double sampleRate, int buffersize)
     leftOsc = new Sine(sampleRate, buffersize);
     rightOsc = new Sine(sampleRate, buffersize);
     
-    leftBuffer->setBufferSize((int)buffersize * 10);
-    rightBuffer->setBufferSize((int)buffersize * 10);
+    leftBuffer->setBufferSize((int)sampleRate / 10);
+    rightBuffer->setBufferSize((int)sampleRate / 10);
     leftOsc->setFrequency(0.5);
     rightOsc->setFrequency(0.6);
 
