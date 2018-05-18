@@ -109,8 +109,8 @@ void CustomLookAndFeel::drawRotarySlider    (    Graphics &     g,
     const float rw = radius * 2.0f;
     const float thickness = 0.9f;
     
-    const double fractRotation = (slider.getValue() - slider.getMinimum())  /
-    (slider.getMaximum() - slider.getMinimum()); //value between 0 and 1 for current amount of rotation
+    // const double fractRotation = (slider.getValue() - slider.getMinimum())  /
+    //(slider.getMaximum() - slider.getMinimum()); //value between 0 and 1 for current amount of rotation
     
     const int nFrames = myStrip.getHeight()/myStrip.getWidth(); // number of frames for vertical film strip
     const int frameIdx = (int)ceil(sliderPosProportional  * ((double)nFrames-1.0) ); // current index from 0 --> nFrames-1

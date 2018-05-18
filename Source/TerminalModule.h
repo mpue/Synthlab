@@ -9,8 +9,9 @@
 #pragma once
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Module.h"
-#include "Pin.h"
 #include "Terminal.h"
+
+class Pin;
 
 //==============================================================================
 /*

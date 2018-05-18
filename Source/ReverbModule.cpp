@@ -11,7 +11,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "ReverbModule.h"
 #include "Connection.h"
-
+#include "AudioEngine/StereoReverb.h"
 
 using juce::Justification;
 

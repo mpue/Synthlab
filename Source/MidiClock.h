@@ -42,6 +42,12 @@ public:
     virtual juce::Array<juce::PropertyComponent*>& getProperties() override;
     virtual void createProperties() override;
     
+    bool isInternal();
+    void setInternal(bool isInternal);
+    
+    void setTempo(float tempo);
+    float getTempo();
+    
 private:
     
     struct ChannelListener : juce::Value::Listener
@@ -56,11 +62,48 @@ private:
         juce::Value value;
     };
     
+    struct InternalClockListener : juce::Value::Listener
+    {
+        InternalClockListener (juce::Value& v, MidiClock* g) : g(g),  value (v) { value.addListener (this); }
+        ~InternalClockListener()  {}  // no need to remove the listener
+        
+        void valueChanged (juce::Value& value) override {
+            g->setInternal(value.toString().getIntValue() > 0);
+        }
+        MidiClock* g;
+        juce::Value value;
+    };
+    
+    struct TempoListener : juce::Value::Listener
+    {
+        TempoListener (juce::Value& v, MidiClock* g) : g(g),  value (v) { value.addListener (this); }
+        ~TempoListener()  {}  // no need to remove the listener
+        
+        void valueChanged (juce::Value& value) override {
+            g->setTempo(value.toString().getFloatValue());
+        }
+        MidiClock* g;
+        juce::Value value;
+    };
+    
     juce::Value* channelValue;
     juce::PropertyComponent* channelProp;
     ChannelListener* channelListener;
     
+    juce::Value* internalValue;
+    juce::PropertyComponent* internalProp;
+    InternalClockListener* internalListener;
+    
+    juce::Value* tempoValue;
+    juce::PropertyComponent* tempoProp;
+    TempoListener* tempoListener;
+    
     int channel = 1;
+    
+    bool internalClock = false;
+    float tempo = 120.0f;
+    
+    bool running = false;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MidiClock)
 };

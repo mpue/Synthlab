@@ -10,8 +10,10 @@
 
 #pragma once
 
-class BusListener {
+class Topic;
 
+class BusListener {
+    
 public:
     virtual ~BusListener() {}; 
     virtual void topicChanged(Topic* t) = 0;

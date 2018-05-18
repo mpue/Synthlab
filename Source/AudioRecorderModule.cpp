@@ -14,7 +14,7 @@
 #include "Connection.h"
 #include "Project.h"
 #include "AudioManager.h"
-
+#include "AudioRecorderEditor.h"
 
 using juce::AudioFormatManager;
 using juce::AudioThumbnailCache;

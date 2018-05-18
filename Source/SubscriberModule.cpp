@@ -10,6 +10,8 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "SubscriberModule.h"
+#include "MessageBus/MessageBus.h"
+#include "MessageBus/Topic.h"
 
 using juce::Justification;
 using juce::Value;

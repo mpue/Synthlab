@@ -12,8 +12,10 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Module.h"
-#include "AudioEngine/FractionalDelayBuffer.h"
-#include "AudioEngine/Sine.h"
+
+
+class FractionalDelayBuffer;
+class Sine;
 
 //==============================================================================
 /*

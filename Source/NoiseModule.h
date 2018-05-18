@@ -13,7 +13,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Module.h"
 
-#include "AudioEngine/WhiteNoise.h"
+class WhiteNoise;
 
 //==============================================================================
 /*

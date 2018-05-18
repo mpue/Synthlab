@@ -17,6 +17,7 @@
 #include "ADSRModule.h"
 #include "Connection.h"
 #include "AudioEngine/Sawtooth.h"
+#include "AudioEngine/ADSR.h"
 
 using juce::Justification;
 using juce::Value;

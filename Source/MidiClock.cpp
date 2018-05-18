@@ -38,12 +38,15 @@ MidiClock::~MidiClock()
 {
     delete channelValue;
     delete channelListener;
+    delete tempoValue;
+    delete tempoListener;
+    delete internalValue;
+    delete internalListener;
     // stopTimer();
     // delete channelProp;
 }
 
 void MidiClock::configurePins() {
-    
     
     Pin* p1 = new Pin(Pin::Type::VALUE);
     p1->direction = Pin::Direction::OUT;
@@ -106,11 +109,14 @@ void MidiClock::midiStop() {
     delete e;
 }
 
-
-
 void MidiClock::createProperties() {
     channelValue = new Value();
     channelListener = new ChannelListener(*channelValue, this);
+    internalValue = new Value();
+    internalListener = new InternalClockListener(*internalValue,this);
+    tempoValue = new Value();
+    tempoValue->setValue(tempo);
+    tempoListener = new TempoListener(*tempoValue,this);
 }
 
 juce::Array<PropertyComponent*>& MidiClock::getProperties() {
@@ -118,7 +124,13 @@ juce::Array<PropertyComponent*>& MidiClock::getProperties() {
     properties = juce::Array<PropertyComponent*>();
     
     channelProp = new SliderPropertyComponent(*channelValue,"channel",1,16,1,1,true);
+    tempoProp = new SliderPropertyComponent(*tempoValue,"Tempo",1,240,0.1,1.0,true);
+    internalProp = new BooleanPropertyComponent(*internalValue,"Internal","Internal");
+    
     properties.add(channelProp);
+    properties.add(tempoProp);
+    properties.add(internalProp);
+    
     return properties;
 }
 
@@ -133,4 +145,42 @@ void MidiClock::setChannel(int channel) {
     this->channel = channel;
     this->channelValue->setValue(channel);
 }
+
+void MidiClock::setInternal(bool isInternal) {
+    if (isInternal) {
+        
+        float t = ((60.0f/tempo) * 1000) / 24.0f;
+        
+        if (!running){
+            startTimer(t);
+            running = true;
+        }
+        else {
+            stopTimer();
+            startTimer(t);
+            running = true;
+        }
+    }
+    else {
+        if(running) {
+            stopTimer();
+        }
+    }
+    this->internalClock = isInternal;
+    this->internalValue->setValue(isInternal);
+}
+
+bool MidiClock::isInternal() {
+    return internalClock;
+}
+
+void MidiClock::setTempo(float tempo) {
+    this->tempo = tempo;
+    this->tempoValue->setValue(tempo);
+}
+
+float MidiClock::getTempo() {
+    return tempo;
+}
+
 

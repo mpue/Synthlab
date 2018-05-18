@@ -36,6 +36,7 @@
 #include "ExtendedFileBrowser.h"
 #include "AudioRecorderModule.h"
 #include "ImageModule.h"
+#include "AudioRecorderEditor.h"
 
 class SampleEditor;
 
@@ -1028,7 +1029,7 @@ void SynthEditor::saveFile() {
         delete v;
     }
 #else
-    FileChooser chooser("Select target file...", File::nonexistent, "*");
+    FileChooser chooser("Select target file...", File(), "*");
     
     if (chooser.browseForFileToSave(true)) {
         

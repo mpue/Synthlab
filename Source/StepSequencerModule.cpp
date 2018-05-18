@@ -32,10 +32,10 @@ StepSequencerModule::StepSequencerModule(float sampleRate, int bufferSize)
 
 StepSequencerModule::~StepSequencerModule()
 {
+    delete editor;
 }
 
 void StepSequencerModule::configurePins() {
-
 
     Pin* p1 = new Pin(Pin::Type::EVENT);
     p1->direction = Pin::Direction::IN;

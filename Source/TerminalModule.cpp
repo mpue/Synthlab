@@ -10,6 +10,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "TerminalModule.h"
+#include "Pin.h"
 
 using juce::Justification;
 using juce::Value;

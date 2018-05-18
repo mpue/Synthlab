@@ -9,7 +9,8 @@
 */
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Module.h"
-#include "AudioRecorderEditor.h"
+
+class AudioRecorderEditor;
 
 #pragma once
 

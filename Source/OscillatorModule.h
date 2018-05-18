@@ -97,6 +97,7 @@ private:
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "OscillatorModule.h"
 #include "Connection.h"
+#include "AudioEngine/WhiteNoise.h"
 
 //==============================================================================
 template<typename T> OscillatorModule<T>::OscillatorModule(double sampleRate, int buffersize, juce::Image* image) : image(image)

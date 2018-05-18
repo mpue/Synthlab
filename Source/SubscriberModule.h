@@ -12,9 +12,12 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Module.h"
-#include "MessageBus/MessageBus.h"
-#include "MessageBus/Topic.h"
 #include "MessageBus/BusListener.h"
+
+class MessageBus;
+class Topic;
+
+
 //==============================================================================
 /*
  */

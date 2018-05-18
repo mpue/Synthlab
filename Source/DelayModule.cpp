@@ -12,6 +12,7 @@
 #include "DelayModule.h"
 #include "Connection.h"
 #include "AudioEngine/LowPassFilter.h"
+#include "AudioEngine/StereoDelay.h"
 
 using juce::Justification;
 using juce::ImageCache;

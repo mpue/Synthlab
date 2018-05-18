@@ -12,6 +12,7 @@
 #include "ChorusModule.h"
 #include "Connection.h"
 #include "AudioEngine/FractionalDelayBuffer.h"
+#include "AudioEngine/Sine.h"
 
 using juce::Justification;
 

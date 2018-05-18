@@ -12,7 +12,8 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Module.h"
-#include "AudioEngine/Distortion.h"
+
+class Distortion;
 
 //==============================================================================
 /*

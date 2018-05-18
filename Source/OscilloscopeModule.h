@@ -12,7 +12,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Module.h"
-#include "AudioEngine/HighPassFilter.h"
+
 
 //==============================================================================
 /*
@@ -40,7 +40,7 @@ public:
     };
     
     virtual juce::String getDescription() override {
-        return "A soimple oscilloscope";
+        return "A simple oscilloscope";
     }
     
     
