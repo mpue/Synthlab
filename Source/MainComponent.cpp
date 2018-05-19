@@ -120,7 +120,7 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
     running = true;
     
     if (Project::getInstance()->getAppMode() == Project::AppMode::PLAYER) {
-        editor->loadFromString(String(BinaryData::_3OscV10 ));
+        editor->loadFromString(String(BinaryData::_3oscV2_slb ));
         editor->setCurrentLayer(Module::Layer::GUI);
         editor->setLocked(true);
     }
@@ -1193,4 +1193,8 @@ void MainComponent::fileChanged(juce::String name) {
     lockButton->setToggleState(editor->isLocked(), juce::NotificationType::dontSendNotification);
     if (layerCombobox != NULL)
         layerCombobox->getComboBox().setSelectedId(editor->getCurrentLayer() + 1);
+}
+
+void MainComponent::dirtyChanged(bool dirty) {
+    
 }

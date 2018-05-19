@@ -110,6 +110,8 @@ bool DuplicateModuleAction::perform() {
     m->savePosition();
     editor->getSelectionModel().getSelectedModules().push_back(m);
     editor->repaint();
+
+    editor->setDirty(true);
     
     return true;
 }

@@ -193,11 +193,13 @@ public:
     void alignSelectedX();
     
     void resetGUIPosition();
+    void updateProject(File file);
     
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
 
     void notifyListeners();
+    void notifyDirtyListeners();
     
     bool snapToGrid = false;
                          
@@ -272,6 +274,7 @@ private:
     
     std::vector<Viewport*> openViews;
     std::vector<EditorListener*> listener;
+    
     //[/UserVariables]
 
     

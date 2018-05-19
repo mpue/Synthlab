@@ -48,6 +48,7 @@ bool MoveSelectedAction::perform() {
 
     }
     
+    editor->setDirty(true);
 
     return true;
 }
@@ -78,7 +79,7 @@ bool MoveSelectedAction::undo() {
     editor->repaint();
     editor->resized();
     
-    
+    editor->setDirty(true);
     
     return true;
 }

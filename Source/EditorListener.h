@@ -23,4 +23,6 @@ public:
     virtual void selectionChanged(juce::Component* m) = 0;
 
     virtual void fileChanged(String name) = 0;
+    
+    virtual void dirtyChanged(bool dirty) = 0;
 };

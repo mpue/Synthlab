@@ -87,7 +87,7 @@ bool AddConnectionAction::perform() {
         
     }
     
-    
+    editor->setDirty(true);
     
     return true;
 }

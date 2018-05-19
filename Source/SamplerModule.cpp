@@ -58,7 +58,7 @@ SamplerModule::SamplerModule(double sampleRate, int buffersize, AudioFormatManag
     selectSample(64);
     this->manager = manager;
     
-     editor = new SampleEditor(this->buffersize, this->sampleRate, AudioManager::getInstance()->getFormatManager(), this);
+    editor = new SampleEditor(this->buffersize, this->sampleRate, AudioManager::getInstance()->getFormatManager(), this);
 }
 
 SamplerModule::~SamplerModule()

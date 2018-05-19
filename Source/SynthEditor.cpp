@@ -496,14 +496,21 @@ void SynthEditor::showContextMenu(Point<int> position) {
         else if (result >= 1000) {
             StringArray recent = Project::getInstance()->getRecentFiles();
             String path = recent.getReference(result - 1000);
-            FileInputStream *fis = new FileInputStream(File(path));
-            String data = fis->readEntireStreamAsString();
-            delete fis;
-            setRunning(false);
-            cleanUp();
-            newFile();
-            loadFromString(data);
-            setRunning(true);
+            File file = File(path);
+            
+            if (file.exists()) {
+                FileInputStream *fis = new FileInputStream(file);
+                String data = fis->readEntireStreamAsString();
+                delete fis;
+                setRunning(false);
+                cleanUp();
+                newFile();
+                loadFromString(data);
+                updateProject(file);
+                Project::getInstance()->setNewFile(false);
+                setRunning(true);
+            }
+
         }
 
     }
@@ -937,6 +944,7 @@ void SynthEditor::loadFromString(juce::String in){
     
     xml = nullptr;
     resized();
+    
     setRunning(true);
 }
 
@@ -1005,51 +1013,77 @@ void SynthEditor::saveFile() {
     File path = File::getSpecialLocation(File::userApplicationDataDirectory);
     File outputDir = File(path.getFullPathName()+"/structure.xml");
     
-    FileChooser chooser("Select target file...",outputDir, "*");
+    URL file;
     
-    if (chooser.browseForFileToSave(true)) {
+    ValueTree* v = new ValueTree("Synth");
+    
+    ModuleUtils::saveStructure(root->getModules(),root->getConnections(), v);
+    
+    v->setProperty("lock", isLocked(), nullptr);
+    v->setProperty("layer",static_cast<int>(currentLayer),nullptr);
+    
+    if (Project::getInstance()->isNewFile()) {
         
-        ValueTree* v = new ValueTree("Synth");
+        FileChooser chooser("Select target file...",outputDir, "*");
 
-        ModuleUtils::saveStructure(root->getModules(),root->getConnections(), v);
+        if (chooser.browseForFileToSave(true)) {
+            file = chooser.getURLResult();
+        }
         
-        v->setProperty("lock", isLocked(), nullptr);
-        v->setProperty("layer",static_cast<int>(currentLayer),nullptr);
-        
-        URL file = chooser.getURLResult();
-        
-        OutputStream* os = file.createOutputStream();
-        
-        XmlElement* xml = v->createXml();
-        
-        xml->writeToStream(*os, "");
-        
-        delete os;
-        delete xml;
-        delete v;
     }
+    else {
+        file = new URL(Project::getInstance()->getCurrentFilePath());
+    }
+    
+    OutputStream* os = file.createOutputStream();
+    XmlElement* xml = v->createXml();
+    xml->writeToStream(*os, "");
+    
+    delete os;
+    delete xml;
+    delete v;
+
 #else
-    FileChooser chooser("Select target file...", File(), "*");
     
-    if (chooser.browseForFileToSave(true)) {
+    bool fileValid = false;
+    
+    File file;
+    
+    ValueTree* v = new ValueTree("Module");
+    
+    v->setProperty("lock", isLocked(), nullptr);
+    v->setProperty("layer",static_cast<int>(currentLayer), nullptr);
+    
+    ModuleUtils::saveStructure(root->getModules(),root->getConnections(), v);
+    
+    if (Project::getInstance()->isNewFile()) {
         
-        ValueTree* v = new ValueTree("Module");
+        FileChooser chooser("Select target file...", File(), "*");
         
-        v->setProperty("lock", isLocked(), nullptr);
-        v->setProperty("layer",static_cast<int>(currentLayer), nullptr);
-        
-        ModuleUtils::saveStructure(root->getModules(),root->getConnections(), v);
-        
-        File file = chooser.getResult();
-        
-        XmlElement* xml = v->createXml();
-        xml->writeToFile(file, "");
-
-        delete xml;
-        delete v;
+        if (chooser.browseForFileToSave(true)) {
+            File file = chooser.getResult();
+            fileValid = true;
+        }
         
     }
+    else {
+        file = File(Project::getInstance()->getCurrentFilePath());
+        if (file.exists()) {
+            fileValid = true;
+        }
+    }
+    
+    XmlElement* xml = v->createXml();
+    xml->writeToFile(file, "");
+    
+    delete xml;
+    delete v;
+
 #endif
+    setDirty(false);
+    
+    Project::getInstance()->setNewFile(false);
+    updateProject(file);
 }
 
 void SynthEditor::openEditor(Module *m) {
@@ -1183,6 +1217,9 @@ void SynthEditor::openFile() {
         notifyListeners();
         
         xml = nullptr;
+        
+        updateProject(file);
+        
         setRunning(true);
     }
 }
@@ -1325,6 +1362,14 @@ void SynthEditor::notifyListeners() {
     for (int i = 0;i < listener.size();i++) {
         listener.at(i)->fileChanged("");
     }
+    
+    
+}
+
+void SynthEditor::notifyDirtyListeners() {
+    for (int i = 0;i < listener.size();i++) {
+        listener.at(i)->dirtyChanged(isDirty());
+    }
 }
 
 bool SynthEditor::isDirty() {
@@ -1333,6 +1378,27 @@ bool SynthEditor::isDirty() {
 
 void SynthEditor::setDirty(bool dirty) {
     this->dirty = dirty;
+    for (int i = 0; i < tab->getNumTabs();i++) {
+        
+        Viewport* view = dynamic_cast<Viewport*>(tab->getTabContentComponent(i));
+        
+        if (view != nullptr) {
+            
+            SynthEditor* editor = dynamic_cast<SynthEditor*>(view->getViewedComponent());
+            
+            if (editor != nullptr && editor == this) {
+                
+                if (dirty) {
+                    tab->setTabName(i, Project::getInstance()->getCurrentFileName()+"*");
+                }
+                else {
+                    tab->setTabName(i, Project::getInstance()->getCurrentFileName());
+                }
+            }
+        }
+    }
+    notifyDirtyListeners();
+    Project::getInstance()->setDirty(dirty);
 }
 
 int SynthEditor::getIndex() {
@@ -1372,6 +1438,8 @@ void SynthEditor::changeListenerCallback(juce::ChangeBroadcaster *source) {
             cleanUp();
             newFile();
             loadFromString(data);
+            updateProject(*f);
+            Project::getInstance()->setNewFile(false);
             setRunning(true);
         }
 
@@ -1451,6 +1519,8 @@ bool SynthEditor::perform (const InvocationInfo& info) {
         setRunning(false);
         cleanUp();
         newFile();
+        updateProject(File());
+        Project::getInstance()->setNewFile(true);
         setRunning(true);
         return true;
     }
@@ -1620,4 +1690,23 @@ void SynthEditor::resetGUIPosition() {
      for (int i = 0; i < selectionModel.getSelectedModules().size();i++) {
          selectionModel.getSelectedModules().at(i)->resetUIPosition();
      }
+}
+
+void SynthEditor::updateProject(File file) {
+    Project::getInstance()->setCurrentFilePath(file.getFullPathName());
+    Project::getInstance()->setCurrentFileName(file.getFileName());
+    
+    for (int i = 0; i < tab->getNumTabs();i++) {
+        
+        Viewport* view = dynamic_cast<Viewport*>(tab->getTabContentComponent(i));
+        
+        if (view != nullptr) {
+            
+            SynthEditor* editor = dynamic_cast<SynthEditor*>(view->getViewedComponent());
+            
+            if (editor != nullptr && editor == this) {
+                tab->setTabName(i, Project::getInstance()->getCurrentFileName());
+            }
+        }
+    }
 }

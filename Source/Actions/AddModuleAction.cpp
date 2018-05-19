@@ -179,5 +179,7 @@ bool AddModuleAction::perform() {
     
     module = m;
     
+    editor->setDirty(true);
+    
     return true;
 }

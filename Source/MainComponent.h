@@ -56,6 +56,7 @@ public:
     void buttonClicked (juce::Button*) override;
     virtual void fileChanged(String name) override;
     virtual void selectionChanged(juce::Component* m) override;
+    virtual void dirtyChanged(bool dirty) override;
     virtual void comboBoxChanged (ComboBox* comboBoxThatHasChanged) override;
     
     void handleIncomingMidiMessage (juce::MidiInput* source, const juce::MidiMessage& message) override;

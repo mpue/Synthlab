@@ -57,6 +57,7 @@ public:
 
     virtual void selectionChanged(juce::Component* m) override;
     virtual void fileChanged(String name) override;
+    virtual void dirtyChanged(bool dirty) override {};
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
 

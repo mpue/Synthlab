@@ -31,86 +31,48 @@ public:
         
     }
     
-    static void destroy() {
-        delete instance;
-    }
+    static void destroy();
 
-    juce::UndoManager* getUndoManager() {
-        return undoManager;
-    }
-    
-    juce::StringArray& getRecentFiles() {
-        return recentFiles;
-    }
-
+    juce::UndoManager* getUndoManager();
+    juce::StringArray& getRecentFiles();
     void loadRecentFileList();
     void addRecentFile(juce::String path);
-    
-    void setSupplemental(MainTabbedComponent* component) {
-        this->supplementalTab = component;
-    }
-    
-    MainTabbedComponent* getSupplemental(){
-        return supplementalTab;
-    }
 
-    inline CustomLookAndFeel* getLookAndFeel() {
-        return lookAndFeel;
-    };
+    void setSupplemental(MainTabbedComponent* component) ;
+    MainTabbedComponent* getSupplemental();
+
+    CustomLookAndFeel* getLookAndFeel();
     
-    std::vector<juce::DialogWindow*>& getOpenWindows() {
-        return openWindows;
-    }
+    std::vector<juce::DialogWindow*>& getOpenWindows();
+
+    void setDefaultSampler(Sampler* sampler);
+    Sampler* getDefaultSampler();
     
-    void setDefaultSampler(Sampler* sampler) {
-        this->defaultSampler = sampler;
-    }
+    void setRoot(Module* root);
+    Module* getRoot();
     
-    Sampler* getDefaultSampler() {
-        return this->defaultSampler;
-    }
+    juce::Component* getMain();
+    void setMain(juce::Component* c);
     
-    void setRoot(Module* root) {
-        this->root = root;
-    }
- 
-    Module* getRoot() {
-        return root;
-    }
+    void setPropertyView(PropertyView* view);
+    PropertyView* getPropertyView();
     
-    juce::Component* getMain() {
-        return main;
-    }
+    ApplicationCommandManager* getCommandManager();
+    void setCommandManager(ApplicationCommandManager* commandManager);
     
-    void setMain(juce::Component* c) {
-        main = c;
-    }
+    AppMode getAppMode();
+
+    String getCurrentFilePath();
+    void setCurrentFilePath(String path);
     
-    void setPropertyView(PropertyView* view) {
-        this->propertyView = view;
-    }
+    String getCurrentFileName();
+    void setCurrentFileName(String path);
     
-    PropertyView* getPropertyView() {
-        return propertyView;
-    }
+    bool isNewFile();
+    void setNewFile(bool isNew);
     
-    ApplicationCommandManager* getCommandManager() {
-        return commandManager;
-    };
-    
-    void setCommandManager(ApplicationCommandManager* commandManager) {
-        this->commandManager = commandManager;
-    }
-    
-    AppMode getAppMode() {
-        return mode;
-    }
-    
-#ifdef USE_PUSH
-    ableton::Push2DisplayBridge*  getPush2Bridge() {
-        return &bridge;
-    }
-#endif
+    bool isDirty();
+    void setDirty(bool dirty);
     
 private:
     
@@ -155,7 +117,10 @@ private:
     Module* root;
     AppMode mode = STUDIO;
     
-    
+    String currentFilePath;
+    String currentFileName;
+    bool newFile = true;
+    bool dirty = false;
 };
 
 #endif /* Project_hp*/

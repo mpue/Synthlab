@@ -50,6 +50,7 @@ void RemoveSelectedAction::removeSelectedItem() {
         }   
     }
     editor->getSelectionModel().clearSelection();
+    editor->setDirty(true);
     editor->setRunning(true);
 }
 

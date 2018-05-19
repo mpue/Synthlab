@@ -62,6 +62,9 @@ PropertyView::PropertyView () : TimeSliceThread("PropertyWatcher")
 
     propertyTab->addTab("Properties",juce::Colours::grey,propertyPanel = new PropertyPanel(), true);
 
+    propertyPanel->setMessageWhenEmpty("Nothing to display.");
+    propertyPanel->setColour(juce::PropertyComponent::labelTextColourId, juce::Colours::white);
+    
     descriptionEditor = new TextEditor();
     descriptionEditor->setMultiLine(true);
     descriptionEditor->setReadOnly(true);

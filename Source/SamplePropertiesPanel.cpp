@@ -343,10 +343,21 @@ void SamplePropertiesPanel::updateValues() {
         thumb->setStartPosition(static_cast<int>(start));
         thumb->setEndPosition(static_cast<int>(end));
 
-        sampleStartSlider->setRange(0, module->getCurrentSampler()->getEndPosition() - 1, juce::NotificationType::dontSendNotification);
-        sampleEndSlider->setRange(module->getCurrentSampler()->getStartPosition() + 1,module->getCurrentSampler()->getSampleLength(), juce::NotificationType::dontSendNotification);
+        long startRangeEnd = module->getCurrentSampler()->getEndPosition() - 1;
+        if (startRangeEnd == 0) {
+            startRangeEnd = 1;
+        }
+    
+        long endRangeStart = module->getCurrentSampler()->getStartPosition() + 1;
+        long endRangeEnd = module->getCurrentSampler()->getSampleLength();
+
+        
+        sampleStartSlider->setRange(0,startRangeEnd , juce::NotificationType::dontSendNotification);
+        sampleEndSlider->setRange(endRangeStart,endRangeEnd, juce::NotificationType::dontSendNotification);
+        
         sampleStartSlider->setValue(start);
         sampleEndSlider->setValue(end);
+        
         pitchSlider->setValue(module->getCurrentSampler()->getPitch());
     };
     juce::MessageManager::callAsync(changeLambda);

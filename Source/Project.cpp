@@ -95,3 +95,108 @@ void Project::loadRecentFileList() {
    
 
 }
+
+void Project::destroy() {
+    delete instance;
+}
+
+juce::UndoManager* Project::getUndoManager() {
+    return undoManager;
+}
+
+juce::StringArray& Project::getRecentFiles() {
+    return recentFiles;
+}
+
+
+void Project::setSupplemental(MainTabbedComponent* component) {
+    this->supplementalTab = component;
+}
+
+MainTabbedComponent* Project::getSupplemental(){
+    return supplementalTab;
+}
+
+CustomLookAndFeel* Project::getLookAndFeel() {
+    return lookAndFeel;
+};
+
+std::vector<juce::DialogWindow*>& Project::getOpenWindows() {
+    return openWindows;
+}
+
+void Project::setDefaultSampler(Sampler* sampler) {
+    this->defaultSampler = sampler;
+}
+
+Sampler* Project::getDefaultSampler() {
+    return this->defaultSampler;
+}
+
+void Project::setRoot(Module* root) {
+    this->root = root;
+}
+
+Module* Project::getRoot() {
+    return root;
+}
+
+juce::Component* Project::getMain() {
+    return main;
+}
+
+void Project::setMain(juce::Component* c) {
+    main = c;
+}
+
+void Project::setPropertyView(PropertyView* view) {
+    this->propertyView = view;
+}
+
+PropertyView* Project::getPropertyView() {
+    return propertyView;
+}
+
+ApplicationCommandManager* Project::getCommandManager() {
+    return commandManager;
+};
+
+void Project::setCommandManager(ApplicationCommandManager* commandManager) {
+    this->commandManager = commandManager;
+}
+
+Project::AppMode Project::getAppMode() {
+    return mode;
+}
+
+void Project::setNewFile(bool isNew) {
+    this->newFile = isNew;
+}
+
+bool Project::isNewFile() {
+    return newFile;
+}
+
+void Project::setCurrentFilePath(juce::String path) {
+    this->currentFilePath = path;
+}
+
+String Project::getCurrentFilePath() {
+    return currentFilePath; 
+}
+
+void Project::setCurrentFileName(juce::String path) {
+    this->currentFileName = path;
+}
+
+String Project::getCurrentFileName() {
+    return currentFileName;
+}
+
+bool Project::isDirty() {
+    return dirty;
+}
+
+void Project::setDirty(bool dirty) {
+    this->dirty = dirty;
+}
