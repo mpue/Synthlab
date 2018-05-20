@@ -76,7 +76,7 @@ public:
     void systemRequestedQuit() override
     {
         if (Project::getInstance()->isDirty()) {
-            bool exit = juce::AlertWindow::showOkCancelBox(juce::AlertWindow::AlertIconType::QuestionIcon, "Hey!", "You have unsaved resources, wanna exit anyway?");
+            bool exit = juce::AlertWindow::showOkCancelBox(juce::AlertWindow::AlertIconType::NoIcon, "Hey!", "You have unsaved resources, wanna exit anyway?");
             
             if (exit) {
                 quit();
@@ -109,7 +109,10 @@ public:
                                                     DocumentWindow::allButtons)
         {
             // Project::getInstance()->getLookAndFeel()->setColourScheme(LookAndFeel_V4::getDarkColourScheme());
-            setLookAndFeel(Project::getInstance()->getLookAndFeel());
+            
+            LookAndFeel::setDefaultLookAndFeel(Project::getInstance()->getLookAndFeel());
+            
+            // setLookAndFeel(Project::getInstance()->getLookAndFeel());
             setUsingNativeTitleBar (false);
             setContentOwned (new MainComponent(), true);
             setResizable (true, true);
@@ -122,7 +125,7 @@ public:
         void closeButtonPressed() override {
             
             if (Project::getInstance()->isDirty()) {
-                bool exit = juce::AlertWindow::showOkCancelBox(juce::AlertWindow::AlertIconType::QuestionIcon, "Hey!", "You have unsaved resources, wanna exit anyway?");
+                bool exit = juce::AlertWindow::showOkCancelBox(juce::AlertWindow::AlertIconType::NoIcon, "Hey!", "You have unsaved resources, wanna exit anyway?");
                 
                 if (exit) {
                     quit();

@@ -26,12 +26,13 @@ public:
         gradientHorizontal = juce::ColourGradient(juce::Colours::chartreuse, 0, 0, juce::Colours::red, 128, 5, false);
         gradientHorizontal.addColour(0.8 , juce::Colours::orange);
         
-        
         setColour(juce::Slider::rotarySliderFillColourId, juce::Colours::orange.darker());
         setColour(juce::Slider::trackColourId, juce::Colours::transparentBlack);
         setColour(juce::Slider::thumbColourId, juce::Colours::transparentBlack);
         setColour(juce::DialogWindow::backgroundColourId, juce::Colour (0xff222222));
         setColour(juce::ResizableWindow::backgroundColourId, juce::Colour (0xff222222));
+        setColour(juce::AlertWindow::backgroundColourId ,juce::Colour (0xff222222));
+        setColour(juce::AlertWindow::outlineColourId ,juce::Colours::orange);
         setColour(juce::Label::textColourId, juce::Colours::white);
         setColour(juce::ComboBox::backgroundColourId, juce::Colour (0xff222222));
         setColour(juce::PopupMenu::backgroundColourId, juce::Colour (0xff2d2d2d));

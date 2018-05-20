@@ -1061,7 +1061,7 @@ void SynthEditor::saveFile() {
         FileChooser chooser("Select target file...", File(), "*");
         
         if (chooser.browseForFileToSave(true)) {
-            File file = chooser.getResult();
+            file = chooser.getResult();
             fileValid = true;
         }
         
@@ -1389,7 +1389,12 @@ void SynthEditor::setDirty(bool dirty) {
             if (editor != nullptr && editor == this) {
                 
                 if (dirty) {
-                    tab->setTabName(i, Project::getInstance()->getCurrentFileName()+"*");
+                    if (Project::getInstance()->isNewFile()) {
+                        tab->setTabName(i, "untitled*");
+                    }
+                    else {
+                        tab->setTabName(i, Project::getInstance()->getCurrentFileName()+"*");
+                    }
                 }
                 else {
                     tab->setTabName(i, Project::getInstance()->getCurrentFileName());
