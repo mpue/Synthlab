@@ -17,7 +17,7 @@
 
 using juce::String;
 
-AddModuleAction::AddModuleAction(SynthEditor* editor, juce::Point<int> position, int moduleId) {
+AddModuleAction::AddModuleAction(SynthEditor* editor, juce::Point<int> position, long moduleId) {
     this->editor = editor;
     this->position = position;
     this->moduleId = moduleId;
@@ -154,7 +154,6 @@ bool AddModuleAction::perform() {
         editor->getModule()->repaint();
         
     }
-    
 
     editor->addChangeListener(m);
     

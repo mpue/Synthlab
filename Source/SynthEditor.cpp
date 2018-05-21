@@ -735,7 +735,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
         else if (result == 1) {
             Module* m = new Module("Module");
             m->setIndex(Time::currentTimeMillis());
-            AddModuleAction* am = new AddModuleAction(this,position,static_cast<int>(m->getIndex()));
+            AddModuleAction* am = new AddModuleAction(this,position,m->getIndex());
             am->setModule(m);
             Project::getInstance()->getUndoManager()->beginNewTransaction();
             Project::getInstance()->getUndoManager()->perform(am);

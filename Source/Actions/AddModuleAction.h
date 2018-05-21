@@ -15,7 +15,7 @@
 class AddModuleAction : public juce::UndoableAction {
     
 public:
-    AddModuleAction(SynthEditor* editor, juce::Point<int> position, int moduleId);
+    AddModuleAction(SynthEditor* editor, juce::Point<int> position, long moduleId);
     ~AddModuleAction(){};
     
     virtual bool perform() override;
@@ -29,7 +29,7 @@ private:
     
     SynthEditor* editor;
     juce::Point<int> position;
-    int moduleId;
+    long moduleId;
     Module* module = nullptr;
     
 };
