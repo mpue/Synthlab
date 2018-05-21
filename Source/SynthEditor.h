@@ -94,38 +94,10 @@ public:
         }
     }
     
-    /**
-     * Snaps the current given location to a given grid
-     *
-     * @param location the location to be snapped
-     * @param raster the raster size
-     * @param tolerance the tolerance to cosult while snapping
-     * @return
-     */
-    static int snap(int location, int raster) {
-        
-        int toleranceWindow = (raster / 2);
-        
-        if (location > 0) {
-            if ((location % raster) > toleranceWindow) {
-                location = location + (raster - (location % raster));
-            }
-            else {
-                location = location - (location % raster);
-            }
-        }
-        else {
-            if ((location % raster) < toleranceWindow) {
-                location = location + (raster - (location % raster)) - raster;
-            }
-            else {
-                location = location - (location % raster) - raster;
-            }
-        }
-        return location;
-    }
-    
-    
+    int snap(int location, int raster);
+    void dragSelection();
+    void moveSelection(const MouseEvent& e);
+    void checkForConnectionDrag();
     
     // drag and drop
     

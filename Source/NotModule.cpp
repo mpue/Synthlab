@@ -19,10 +19,11 @@ using juce::ImageCache;
 //==============================================================================
 NotModule::NotModule()
 {
-    setSize(120,140);
+    setSize(110,70);
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(18,2);
     setName("Not");
+    nameLabel->setVisible(false);
     editable = false;
     prefab = true;
 }
@@ -47,7 +48,7 @@ void NotModule::configurePins() {
 
 void NotModule::paint(juce::Graphics &g) {
     Module::paint(g);
-    g.drawImageAt(ImageCache::getFromMemory(BinaryData::logic_not_png, BinaryData::logic_not_pngSize),25,40);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::logic_not_png, BinaryData::logic_not_pngSize),getWidth()/2 - 32,getHeight() / 2  - 32);
 }
 
 void NotModule::process() {

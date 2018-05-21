@@ -73,38 +73,50 @@ void SelectionModel::setCurrentLayer(int layer) {
     this->layer = layer;
 }
 
-SelectionModel::State SelectionModel::checkForHitAndSelect(juce::Point<int> pos) {
+SelectionModel::State SelectionModel::checkForHitAndSelect(juce::Point<int> pos, bool additionalSelect) {
     
     bool hit = false;
     
     for (int i = 0; i < root->getModules()->size(); i++) {
+        
+        // hit something
         if (root->getModules()->at(i)->getBounds().contains(pos)) {
+
+            hit = true;
             
+            // not selected yet
             if(!selectionContains(root->getModules()->at(i))) {
+                if (!additionalSelect) {
+                    clearSelection();
+                }
                 root->getModules()->at(i)->setSelected(true);
-                
                 getSelectedModules().push_back(root->getModules()->at(i));
-                if (layer == Module::Layer::ALL) {
-                    root->getModules()->at(i)->savePosition();
-                }
-                else {
-                    root->getModules()->at(i)->saveUiPosition();
-                }
-                hit = true;
                 break;
             }
             
         }
+        
     }
     
     if (!hit) {
         clearSelection();
     }
-    else {
+    
+    if (getSelectedModules().size() > 0) {
+        
+        for (int i = 0; i < root->getModules()->size(); i++) {
+            if (layer == Module::Layer::ALL) {
+                root->getModules()->at(i)->savePosition();
+            }
+            else {
+                root->getModules()->at(i)->saveUiPosition();
+            }
+        }
         return MOVING_SELECTION;
     }
-    
-    return NONE;
+    else {
+        return NONE;
+    }
 }
 
 void SelectionModel::select(juce::Point<int> pos) {
@@ -146,19 +158,12 @@ bool SelectionModel::isPointOnLineSegment(juce::Point<int> pt1, juce::Point<int>
     return abs(pt.x - x) < epsilon ||abs(pt.y - y) < epsilon;
 }
 
-void SelectionModel::checkForConnection(juce::Point<int> pos) {
+void SelectionModel::checkForConnectionSelect(juce::Point<int> pos) {
+    
     for (int i = 0; i < root->getConnections()->size(); i++) {
         Connection* c = root->getConnections()->at(i);
         
         if (c->source != NULL && c->target != NULL)  {
-            /*
-            int x1 = c->source->getX() + c->a->x;
-            int y1 = c->source->getY() + c->a->y + 5;
-            int x2 = c->target->getX() + c->b->x;
-            int y2 = c->target->getY() + c->b->y + 5;
-            
-            if (isPointOnLineSegment(Point<int>(x1, y1), Point<int>(x2, y2), pos, 5)) {
-            */
             if(c->getPath().contains(pos.x,pos.y) ){
                 
                 c->selected = true;
@@ -177,7 +182,7 @@ void SelectionModel::setRoot(Module *root) {
 
 bool SelectionModel::selectionContains(Module *m) {
     for (int j = 0; j < selectedModules.size() && j < root->getModules()->size();j++) {
-        if (selectedModules.at(j)->getIndex() == root->getModules()->at(j)->getIndex()) {
+        if (selectedModules.at(j)->getIndex() == m->getIndex()) {
             return true;
         }
     }

@@ -205,7 +205,7 @@ void SynthEditor::mouseMove (const MouseEvent& e)
 	mouseX = e.getPosition().getX();
 	mouseY = e.getPosition().getY();
 
-    selectionModel.checkForConnection(e.getPosition());
+    selectionModel.checkForConnectionSelect(e.getPosition());
 }
 
 void SynthEditor::mouseDown (const MouseEvent& e)
@@ -221,20 +221,14 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 		isLeftMouseDown = true;
     }
     
-    if (!isLeftShiftDown) {
-        selectionModel.clearSelection();
-    }
-
-    selectionModel.select(e.getPosition());
     selectionModel.deselectAllPins();
-    selectionModel.checkForConnection(e.getPosition());
+    selectionModel.checkForConnectionSelect(e.getPosition());
     
     // has HitModule ?
 
-    state = selectionModel.checkForHitAndSelect(e.getPosition());
+    state = selectionModel.checkForHitAndSelect(e.getPosition(), isLeftShiftDown);
     
     if (state == SelectionModel::State::NONE) {
-        selectionModel.clearSelection();
         state = SelectionModel::State::DRAGGING_SELECTION;
     }
     else {
@@ -244,7 +238,7 @@ void SynthEditor::mouseDown (const MouseEvent& e)
     
     // has any connection been clicked?
     
-    selectionModel.checkForConnection(e.getPosition());
+    selectionModel.checkForConnectionSelect(e.getPosition());
 	
 	if (e.mods.isRightButtonDown()) {
         showContextMenu(e.getPosition());
@@ -258,6 +252,266 @@ void SynthEditor::mouseDown (const MouseEvent& e)
     }
     repaint();
 
+}
+
+void SynthEditor::mouseDrag (const MouseEvent& e)
+{
+    
+    if (locked) {
+        return;
+    }
+    
+    dragHasStarted = true;
+    
+    mouseX = e.getPosition().getX();
+    mouseY = e.getPosition().getY();
+    
+    dragDistanceX = e.getDistanceFromDragStartX();
+    dragDistanceY = e.getDistanceFromDragStartY();
+    
+    lineStopX = lineStartX + e.getDistanceFromDragStartX();
+    lineStopY = lineStartY + e.getDistanceFromDragStartY();
+    
+    if (state != SelectionModel::State::DRAGGING_SELECTION) {
+        checkForConnectionDrag();
+    }
+    
+    if (state == SelectionModel::State::MOVING_SELECTION) {
+        moveSelection(e);
+    }
+    else {
+        for (int i = 0; i < root->getModules()->size(); i++) {
+            Module* m = root->getModules()->at(i);
+            if (!m->isSelected()) {
+                selectionModel.checkForPinSelection(e.getPosition());
+            }
+        }
+    }
+    
+    if (state == SelectionModel::State::DRAGGING_SELECTION) {
+        dragSelection();
+    }
+    
+    repaint();
+    resized();
+}
+
+void SynthEditor::checkForConnectionDrag() {
+    for (int i = 0; i < root->getModules()->size(); i++) {
+        
+        Module* m = root->getModules()->at(i);
+        
+        if (m->isSelected()) {
+            for (int j = 0; j < m->pins.size(); j++) {
+                if (m->pins.at(j)->isSelected()) {
+                    lineStartX = m->getX() + m->pins.at(j)->x + 5;
+                    lineStartY = m->getY() + m->pins.at(j)->y + 5;
+                    startPin = m->pins.at(j);
+                    state = SelectionModel::State::DRAGGING_CONNECTION;
+                    break;
+                }
+                
+            }
+        }
+    }
+}
+
+void SynthEditor::moveSelection(const MouseEvent& e) {
+    for (int i = 0; i < root->getModules()->size(); i++) {
+        
+        Module* m = root->getModules()->at(i);
+        
+        if (m->isSelected()) {
+            
+            if (m->getSelectedPin() == nullptr || m->getSelectedPin() == NULL ) {
+                
+                if (currentLayer == Module::Layer::GUI) {
+                    
+                    int x = m->getSavedUiPosition().getX() + e.getOffsetFromDragStart().getX();
+                    int y = m->getSavedUiPosition().getY()+ e.getOffsetFromDragStart().getY();
+                    
+                    if (snapToGrid) {
+                        x = snap(x,10);
+                        y = snap(y,10);
+                        
+                    }
+                    
+                    m->setUiPosition(x,y);
+                    m->setTopLeftPosition(x,y);
+                }
+                else {
+                    
+                    int x = m->getSavedPosition().getX() + e.getOffsetFromDragStart().getX();
+                    int y = m->getSavedPosition().getY() + e.getOffsetFromDragStart().getY();
+                    
+                    if (snapToGrid) {
+                        x = snap(x,10);
+                        y = snap(y,10);
+                        
+                    }
+                    
+                    m->setTopLeftPosition(x,y);
+                    
+                }
+                
+                repaint();
+            }
+        }
+    }
+}
+
+void SynthEditor::dragSelection() {
+    int x = mouseDownX;
+    int y = mouseDownY;
+    
+    if (mouseX < x) {
+        x = mouseX;
+    }
+    if (mouseY < y) {
+        y = mouseY;
+    }
+    selectionFrame.setBounds(x,y,abs(dragDistanceX),abs(dragDistanceY));
+    
+    for (int i = 0; i < root->getModules()->size(); i++) {
+        Module* m = root->getModules()->at(i);
+        
+        if (selectionFrame.contains(m->getBounds())) {
+            if (!m->isSelected()) {
+                m->setSelected(true);
+                if (currentLayer == Module::Layer::GUI) {
+                    m->saveUiPosition();
+                }
+                else {
+                    m->savePosition();
+                }
+                selectionModel.getSelectedModules().push_back(m);
+            }
+            
+        }
+    }
+}
+
+void SynthEditor::mouseUp (const MouseEvent& e)
+{
+    if (e.mods.isLeftButtonDown()) {
+        isLeftMouseDown = false;
+    }
+    
+    if (state == SelectionModel::MOVING_SELECTION) {
+        MoveSelectedAction* msa = new MoveSelectedAction(this);
+        Project::getInstance()->getUndoManager()->beginNewTransaction();
+        Project::getInstance()->getUndoManager()->perform(msa);
+    }
+    
+    else if (state == SelectionModel::State::DRAGGING_CONNECTION)  {
+        for (int i = 0; i < root->getModules()->size(); i++) {
+            
+            Module* m = root->getModules()->at(i);
+            
+            if (m->isSelected()) {
+                
+                addConnection(e, m);
+            }
+        }
+    }
+    
+    lineStopX = 0;
+    lineStopY = 0;
+    
+    state = SelectionModel::State::NONE;
+    
+    dragHasStarted = false;
+}
+
+void SynthEditor::mouseDoubleClick (const MouseEvent& e)
+{
+    if (isAltDown) {
+        for (int i = 0; i < root->getModules()->size(); i++) {
+            
+            Module* m = root->getModules()->at(i);
+            
+            if (m->isSelected()) {
+                m->setEditing(true);
+                break;
+            }
+        }
+    }
+    else {
+        for (int i = 0; i < root->getModules()->size(); i++) {
+            
+            Module* m = root->getModules()->at(i);
+            
+            if (m->isPrefab() && m->getBounds().contains(e.getPosition())) {
+                
+                SamplerModule*sm = dynamic_cast<SamplerModule*>(m);
+                
+                if (sm != NULL) {
+                    openSampleEditor(sm);
+                }
+                
+                PluginModule *pm = dynamic_cast<PluginModule*>(m);
+                
+                if (pm != NULL) {
+                    pm->openPluginWindow();
+                }
+                
+                StepSequencerModule *ssm = dynamic_cast<StepSequencerModule*>(m);
+                
+                if (ssm != NULL) {
+                    openStepSequencer(ssm);
+                }
+                
+                AudioRecorderModule *arm = dynamic_cast<AudioRecorderModule*>(m);
+                
+                if (arm != NULL) {
+                    openRecorder(arm);
+                }
+                
+            }
+            else {
+                if (m->isSelected() && m->isEditable()) {
+                    openEditor(m);
+                }
+            }
+        }
+    }
+    /*
+     if (selectionModel.getSelectedModules().size() == 0) {
+     showContextMenu(e.getPosition());
+     }
+     */
+    //[/UserCode_mouseDoubleClick]
+}
+
+/**
+ * Snaps the current given location to a given grid
+ *
+ * @param location the location to be snapped
+ * @param raster the raster size
+ * @param tolerance the tolerance to cosult while snapping
+ * @return
+ */
+int SynthEditor::snap(int location, int raster) {
+    
+    int toleranceWindow = (raster / 2);
+    
+    if (location > 0) {
+        if ((location % raster) > toleranceWindow) {
+            location = location + (raster - (location % raster));
+        }
+        else {
+            location = location - (location % raster);
+        }
+    }
+    else {
+        if ((location % raster) < toleranceWindow) {
+            location = location + (raster - (location % raster)) - raster;
+        }
+        else {
+            location = location - (location % raster) - raster;
+        }
+    }
+    return location;
 }
 
 void SynthEditor::showContextMenu(Point<int> position) {
@@ -402,7 +656,8 @@ void SynthEditor::showContextMenu(Point<int> position) {
         m->addItem(1,"Add module");
         // m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::ADD_MODULE);
         m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::DELETE_SELECTED);
-        m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::LOAD_MODULE);
+        // m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::LOAD_MODULE);
+        m->addItem(3,"Load module");
         m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::SAVE_MODULE);
         m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::SAVE_SCREENSHOT);
         
@@ -485,6 +740,11 @@ void SynthEditor::showContextMenu(Point<int> position) {
             Project::getInstance()->getUndoManager()->beginNewTransaction();
             Project::getInstance()->getUndoManager()->perform(am);
         }
+        else if (result == 3) {
+            setRunning(false);
+            Module* m = loadModule();
+            setRunning(true);
+        }
         else if (result == 99) {
             locked = !locked;
         }
@@ -526,225 +786,7 @@ void SynthEditor::itemDropped (const SourceDetails& dragSourceDetails)  {
     Project::getInstance()->getUndoManager()->perform(am);
 };
 
-void SynthEditor::mouseDrag (const MouseEvent& e)
-{
-    
-    if (locked) {
-        return;
-    }
-    
-    mouseX = e.getPosition().getX();
-    mouseY = e.getPosition().getY();
-    
-    dragDistanceX = e.getDistanceFromDragStartX();
-    dragDistanceY = e.getDistanceFromDragStartY();
-    
-    dragHasStarted = true;
-    
-    if (state != SelectionModel::State::DRAGGING_SELECTION) {
-        for (int i = 0; i < root->getModules()->size(); i++) {
-        
-            Module* m = root->getModules()->at(i);
-        
-            if (m->isSelected()) {
-                for (int j = 0; j < m->pins.size(); j++) {
-                    if (m->pins.at(j)->isSelected()) {
-                        lineStartX = m->getX() + m->pins.at(j)->x + 5;
-                        lineStartY = m->getY() + m->pins.at(j)->y + 5;
-                        startPin = m->pins.at(j);
-                        state = SelectionModel::State::DRAGGING_CONNECTION;
-                        break;
-                    }
-                    
-                }
-            }
-        }
-    }
-    
-	lineStopX = lineStartX + e.getDistanceFromDragStartX();
-	lineStopY = lineStartY + e.getDistanceFromDragStartY();
 
-    if (state == SelectionModel::State::MOVING_SELECTION) {
-        for (int i = 0; i < root->getModules()->size(); i++) {
-            
-            Module* m = root->getModules()->at(i);
-            
-            if (m->isSelected()) {
-                
-                if (m->getSelectedPin() == nullptr || m->getSelectedPin() == NULL ) {
-                    
-                    if (currentLayer == Module::Layer::GUI) {
-                        
-                        int x = m->getSavedUiPosition().getX() + e.getOffsetFromDragStart().getX();
-                        int y = m->getSavedUiPosition().getY()+ e.getOffsetFromDragStart().getY();
-                        
-                        if (snapToGrid) {
-                             x = snap(x,10);
-                             y = snap(y,10);
-
-                        }
-                        
-                        m->setUiPosition(x,y);
-                        m->setTopLeftPosition(x,y);
-                    }
-                    else {
-
-                        int x = m->getSavedPosition().getX() + e.getOffsetFromDragStart().getX();
-                        int y = m->getSavedPosition().getY() + e.getOffsetFromDragStart().getY();
-                        
-                        if (snapToGrid) {
-                            x = snap(x,10);
-                            y = snap(y,10);
-                            
-                        }
-                        
-                        m->setTopLeftPosition(x,y);
-                        
-                    }
-
-                    repaint();
-                }
-            }
-            // selectionModel.checkForPinSelection(e.getPosition());
-        }
-    }
-    else {
-        for (int i = 0; i < root->getModules()->size(); i++) {
-            Module* m = root->getModules()->at(i);
-            if (!m->isSelected()) {
-                selectionModel.checkForPinSelection(e.getPosition());
-            }
-        }
-    }
-    
-    if (state == SelectionModel::State::DRAGGING_SELECTION) {
-
-        int x = mouseDownX;
-        int y = mouseDownY;
-        
-        if (mouseX < x) {
-            x = mouseX;
-        }
-        if (mouseY < y) {
-            y = mouseY;
-        }
-        selectionFrame.setBounds(x,y,abs(dragDistanceX),abs(dragDistanceY));
-        
-        for (int i = 0; i < root->getModules()->size(); i++) {
-            Module* m = root->getModules()->at(i);
-            
-            if (selectionFrame.contains(m->getBounds())) {
-                if (!m->isSelected()) {
-                    m->setSelected(true);
-                    if (currentLayer == Module::Layer::GUI) {
-                        m->saveUiPosition();
-                    }
-                    else {
-                        m->savePosition();
-                    }
-                    selectionModel.getSelectedModules().push_back(m);
-                }
-
-            }
-        }
-    }
-
-    
-	repaint();
-    resized();
-}
-
-void SynthEditor::mouseUp (const MouseEvent& e)
-{
-	if (e.mods.isLeftButtonDown()) {
-		isLeftMouseDown = false;
-	}
-
-    if (state == SelectionModel::MOVING_SELECTION) {
-        MoveSelectedAction* msa = new MoveSelectedAction(this);
-        Project::getInstance()->getUndoManager()->beginNewTransaction();
-        Project::getInstance()->getUndoManager()->perform(msa);
-    }
-
-    else if (state == SelectionModel::State::DRAGGING_CONNECTION)  {
-        for (int i = 0; i < root->getModules()->size(); i++) {
-            
-            Module* m = root->getModules()->at(i);
-            
-            if (m->isSelected()) {
-                
-                addConnection(e, m);
-            }
-        }
-    }
-    
-	lineStopX = 0;
-	lineStopY = 0;
-    
-    state = SelectionModel::State::NONE;
-
-    dragHasStarted = false;
-}
-
-void SynthEditor::mouseDoubleClick (const MouseEvent& e)
-{
-    if (isAltDown) {
-        for (int i = 0; i < root->getModules()->size(); i++) {
-
-            Module* m = root->getModules()->at(i);
-
-            if (m->isSelected()) {
-                m->setEditing(true);
-                break;
-            }
-        }
-    }
-    else {
-        for (int i = 0; i < root->getModules()->size(); i++) {
-
-            Module* m = root->getModules()->at(i);
-
-            if (m->isPrefab() && m->getBounds().contains(e.getPosition())) {
-                
-                SamplerModule*sm = dynamic_cast<SamplerModule*>(m);
-                
-                if (sm != NULL) {
-                    openSampleEditor(sm);
-                }
-                
-                PluginModule *pm = dynamic_cast<PluginModule*>(m);
-                
-                if (pm != NULL) {
-                    pm->openPluginWindow();
-                }
-                
-                StepSequencerModule *ssm = dynamic_cast<StepSequencerModule*>(m);
-                
-                if (ssm != NULL) {
-                    openStepSequencer(ssm);
-                }
-            
-                AudioRecorderModule *arm = dynamic_cast<AudioRecorderModule*>(m);
-                
-                if (arm != NULL) {
-                    openRecorder(arm);
-                }
-                
-            }
-            else {
-                if (m->isSelected() && m->isEditable()) {
-                    openEditor(m);
-                }
-            }
-        }
-    }
-    /*
-    if (selectionModel.getSelectedModules().size() == 0) {
-        showContextMenu(e.getPosition());
-    }
-	*/
-    //[/UserCode_mouseDoubleClick]
-}
 
 float SynthEditor::getSampleRate() {
     return _sampleRate;
@@ -988,12 +1030,10 @@ Module* SynthEditor::loadModule() {
 
         Module* module = ModuleUtils::loadFromXml(v, this);
         module->setName(v.getProperty("name"));
-        
-        
         module->setTopLeftPosition(mouseX,mouseY);
         
-        addAndMakeVisible(module);
-        getModule()->getModules()->push_back(module);
+        this->addAndMakeVisible(module);
+        this->getModule()->getModules()->push_back(module);
         
         module->setSelected(true);
         module->savePosition();
@@ -1552,6 +1592,7 @@ bool SynthEditor::perform (const InvocationInfo& info) {
         setRunning(true);
         return true;
     }
+    /*
     else if(info.commandID == SynthEditor::CommandIds::LOAD_MODULE) {
         setRunning(false);
         Module* m = loadModule();
@@ -1559,6 +1600,7 @@ bool SynthEditor::perform (const InvocationInfo& info) {
         if (m != nullptr)
             return true;
     }
+     */
     else if(info.commandID == SynthEditor::CommandIds::SAVE_MODULE) {
         saveModule(selectionModel.getSelectedModule());
         return true;

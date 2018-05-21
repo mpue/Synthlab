@@ -19,10 +19,11 @@ using juce::ImageCache;
 //==============================================================================
 AndModule::AndModule()
 {
-    setSize(120,140);
+    setSize(110,70);
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(18,2);
     setName("And");
+    nameLabel->setVisible(false);
     editable = false;
     prefab = true;
 }
@@ -51,7 +52,7 @@ void AndModule::configurePins() {
 
 void AndModule::paint(juce::Graphics &g) {
     Module::paint(g);
-    g.drawImageAt(ImageCache::getFromMemory(BinaryData::logic_and_png, BinaryData::logic_and_pngSize),25,40);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::logic_and_png, BinaryData::logic_and_pngSize),getWidth()/2 - 32,getHeight() / 2  - 32);
 }
 
 void AndModule::process() {
