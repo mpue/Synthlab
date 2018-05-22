@@ -43,11 +43,16 @@ void AndModule::configurePins() {
     
     Pin* p3 = new Pin(Pin::Type::VALUE);
     p3->direction = Pin::Direction::OUT;
-    p3->setName("C");
-    
+    p3->setName("Out");
+
+    Pin* p4 = new Pin(Pin::Type::VALUE);
+    p4->direction = Pin::Direction::OUT;
+    p4->setName("Not");
+
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::IN,p2);
     addPin(Pin::Direction::OUT,p3);
+    addPin(Pin::Direction::OUT,p4);
 }
 
 void AndModule::paint(juce::Graphics &g) {
@@ -60,6 +65,7 @@ void AndModule::process() {
     float a = 0;
     float b = 0;
     float c = 0;
+    float d = 0;
     
     if (pins.at(0)->getConnections().size() > 0) {
         a = pins.at(0)->getConnections().at(0)->getValue();
@@ -70,12 +76,15 @@ void AndModule::process() {
     
     if (a > 0 && b > 0) {
         c = 1;
+        d = 0;
     }
     else {
         c = 0;
+        d = 1;
     }
     
     pins.at(2)->setValue(c);
+    pins.at(3)->setValue(d);
     
 }
 

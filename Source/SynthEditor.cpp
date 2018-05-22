@@ -546,6 +546,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
             if (module->isEditable()) {
                 m->addItem(1, "Add input");
                 m->addItem(2, "Add output");
+                m->addItem(4, "Duplicate");
                 m->addItem(6, "Save module");
 
             }
@@ -572,6 +573,9 @@ void SynthEditor::showContextMenu(Point<int> position) {
             
             else if (result == 3) {
                 k->setLearning(true);
+            }
+            else if (result == 4) {
+                duplicateSelected();
             }
             else if (result == 6) {
                 saveModule(selectionModel.getSelectedModule());
@@ -1504,7 +1508,7 @@ ApplicationCommandTarget* SynthEditor::getNextCommandTarget() {
 void SynthEditor::getAllCommands (Array<CommandID>& commands) {
     commands.add({ SynthEditor::CommandIds::NEW });
     // commands.add({ SynthEditor::CommandIds::ADD_MODULE });
-    commands.add({ SynthEditor::CommandIds::DUPLICATE });
+    // commands.add({ SynthEditor::CommandIds::DUPLICATE });
     commands.add({ SynthEditor::CommandIds::DELETE_SELECTED });
     commands.add({ SynthEditor::CommandIds::SAVE });
     commands.add({ SynthEditor::CommandIds::LOAD });
@@ -1615,10 +1619,12 @@ bool SynthEditor::perform (const InvocationInfo& info) {
         saveScreenShot();
         return true;
     }
+    /*
     else if (info.commandID == SynthEditor::CommandIds::DUPLICATE) {
         duplicateSelected();
         return true;
     }
+     */
     else if(info.commandID == SynthEditor::CommandIds::DELETE_SELECTED) {
         RemoveSelectedAction* rsa = new RemoveSelectedAction(this);
         Project::getInstance()->getUndoManager()->beginNewTransaction();
