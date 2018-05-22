@@ -30,8 +30,6 @@ Connection::Connection(Module* source, Pin* a, Module* target, Pin* b) {
 
 Connection::~Connection()
 {
-    a->getConnections().clear();
-    b->getConnections().clear();
     
     for (std::vector<Pin*>::iterator it = a->getConnections().begin(); it != a->getConnections().end();it++) {
         (*it)->invalidate();
@@ -39,7 +37,8 @@ Connection::~Connection()
     for (std::vector<Pin*>::iterator it = b->getConnections().begin(); it != b->getConnections().end();it++) {
         (*it)->invalidate();
     }
-     
+    a->getConnections().clear();
+    b->getConnections().clear();
 }
 
 Path Connection::getPath() {
@@ -57,7 +56,7 @@ void Connection::resized() {
     linePath.cubicTo ( p1.x + (p2.x - p1.x) * 0.5f, p1.y + (p2.y - p1.y) * 0.5f,
                        p2.x - (p2.x - p1.x) * 0.25, p2.y ,
                        p2.x,p2.y  );
-    PathStrokeType wideStroke (2.0f);
+    PathStrokeType wideStroke (3.0f);
     wideStroke.createStrokedPath (linePath, linePath);
     
 }

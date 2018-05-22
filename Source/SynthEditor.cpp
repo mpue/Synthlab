@@ -216,6 +216,12 @@ void SynthEditor::mouseDown (const MouseEvent& e)
 
     mouseDownX = e.getPosition().getX();
     mouseDownY = e.getPosition().getY();
+    
+    lineStartX = mouseDownX;
+    lineStartY = mouseDownY;
+    
+    lineStopX = lineStartX;
+    lineStopY = lineStartY;
 
 	if (e.mods.isLeftButtonDown()) {
 		isLeftMouseDown = true;
@@ -1477,13 +1483,13 @@ void SynthEditor::changeListenerCallback(juce::ChangeBroadcaster *source) {
         if (f->getFullPathName().endsWith("slb") || f->getFullPathName().endsWith("xml")) {
             FileInputStream *fis = new FileInputStream(*f);
             String data = fis->readEntireStreamAsString();
+            updateProject(*f);
             delete fis;
             delete f;
             setRunning(false);
             cleanUp();
             newFile();
             loadFromString(data);
-            updateProject(*f);
             Project::getInstance()->setNewFile(false);
             setRunning(true);
         }
@@ -1753,6 +1759,7 @@ void SynthEditor::updateProject(File file) {
             
             if (editor != nullptr && editor == this) {
                 tab->setTabName(i, Project::getInstance()->getCurrentFileName());
+                break;
             }
         }
     }
