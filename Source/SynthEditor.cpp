@@ -86,8 +86,6 @@ SynthEditor::SynthEditor (double sampleRate, int buffersize)
     linePath = Path();
     
     Project::getInstance()->getCommandManager()->registerAllCommandsForTarget(this);
-
-   
 }
 
 SynthEditor::~SynthEditor()
@@ -967,6 +965,7 @@ void SynthEditor::newFile() {
     root = new Module("Root");
     selectionModel = SelectionModel();
     selectionModel.setRoot(root);
+    updateProject(File());
     repaint();
 }
 
@@ -1123,17 +1122,23 @@ void SynthEditor::saveFile() {
         }
     }
     
-    XmlElement* xml = v->createXml();
-    xml->writeToFile(file, "");
+    if (fileValid) {
+        XmlElement* xml = v->createXml();
+        xml->writeToFile(file, "");
+        
+        delete xml;
+        delete v;
+        
+        setDirty(false);
+        
+        Project::getInstance()->setNewFile(false);
+        updateProject(file);
+    }
     
-    delete xml;
-    delete v;
+
 
 #endif
-    setDirty(false);
-    
-    Project::getInstance()->setNewFile(false);
-    updateProject(file);
+
 }
 
 void SynthEditor::openEditor(Module *m) {
@@ -1482,6 +1487,7 @@ void SynthEditor::changeListenerCallback(juce::ChangeBroadcaster *source) {
     ExtendedFileBrowser* efb = dynamic_cast<ExtendedFileBrowser*>(source);
     
     if (efb != nullptr) {
+        
         File* f = efb->getSelectedFile();
         
         if (f->getFullPathName().endsWith("slb") || f->getFullPathName().endsWith("xml")) {
@@ -1752,6 +1758,7 @@ void SynthEditor::resetGUIPosition() {
 }
 
 void SynthEditor::updateProject(File file) {
+    
     Project::getInstance()->setCurrentFilePath(file.getFullPathName());
     Project::getInstance()->setCurrentFileName(file.getFileName());
     
@@ -1764,7 +1771,13 @@ void SynthEditor::updateProject(File file) {
             SynthEditor* editor = dynamic_cast<SynthEditor*>(view->getViewedComponent());
             
             if (editor != nullptr && editor == this) {
-                tab->setTabName(i, Project::getInstance()->getCurrentFileName());
+                if (!file.exists()) {
+                    tab->setTabName(i, "untitled");
+                }
+                else {
+                    tab->setTabName(i, Project::getInstance()->getCurrentFileName());
+                }
+                
                 break;
             }
         }

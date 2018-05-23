@@ -323,7 +323,7 @@ void MainComponent::createStudioLayout() {
 #if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
     pluginMenu = PluginManager::getInstance()->buildPluginMenu();
 #endif
-    
+    editor->updateProject(File());
 }
 
 void MainComponent::createPlayerLayout() {
