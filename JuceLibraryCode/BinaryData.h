@@ -45,7 +45,7 @@ namespace BinaryData
     const int            step2_slbSize = 2961;
 
     extern const char*   step3_slb;
-    const int            step3_slbSize = 3956;
+    const int            step3_slbSize = 4419;
 
     extern const char*   gtestparamtest_h_pump;
     const int            gtestparamtest_h_pumpSize = 20042;
@@ -241,9 +241,9 @@ namespace BinaryData
 
     // If you provide the name of one of the binary resource variables above, this function will
     // return the corresponding data and its size (or a null pointer if the name isn't found).
-    const char* getNamedResource (const char* resourceNameUTF8, int& dataSizeInBytes) noexcept;
+    const char* getNamedResource (const char* resourceNameUTF8, int& dataSizeInBytes);
 
     // If you provide the name of one of the binary resource variables above, this function will
     // return the corresponding original, non-mangled filename (or a null pointer if the name isn't found).
-    const char* getNamedResourceOriginalFilename (const char* resourceNameUTF8) noexcept;
+    const char* getNamedResourceOriginalFilename (const char* resourceNameUTF8);
 }

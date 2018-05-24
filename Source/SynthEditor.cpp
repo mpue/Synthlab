@@ -126,30 +126,33 @@ void SynthEditor::paint (Graphics& g)
             g.drawRect(selectionFrame);
         }
 	}
-
+    
     if (currentLayer == Module::Layer::ALL) {
-        for (int i = 0; i < root->getConnections()->size(); i++) {
-            Connection* c = root->getConnections()->at(i);
-            
-            if (c->source != NULL && c->target != NULL) {
-                
-                if (c->selected) {
-                    g.setColour(juce::Colours::orange);
-                }
-                else {
-                    g.setColour(juce::Colours::lightgrey);
-                }
-                
-                // g.drawLine(x1,y1,x2,y2);
-                c->toFront(false);
-                c->paint(g);
-            }
-            
-        }
-
+        drawConnections(g);
     }
 
 
+}
+
+void SynthEditor::drawConnections(Graphics& g) {
+    for (int i = 0; i < root->getConnections()->size(); i++) {
+        Connection* c = root->getConnections()->at(i);
+        
+        if (c->source != NULL && c->target != NULL) {
+            
+            if (c->selected) {
+                g.setColour(juce::Colours::orange);
+            }
+            else {
+                g.setColour(juce::Colours::lightgrey);
+            }
+            
+            // g.drawLine(x1,y1,x2,y2);
+            c->toFront(false);
+            c->paint(g);
+        }
+        
+    }
 }
 
 void SynthEditor::resized()
@@ -582,6 +585,7 @@ void SynthEditor::showContextMenu(Point<int> position) {
         else {
             m->addItem(1, "Add control");
             m->addItem(2, "Add constant");
+            m->addItem(3, "Add terminal");
             
             const int result = m->show();
             
@@ -590,70 +594,13 @@ void SynthEditor::showContextMenu(Point<int> position) {
                 // user dismissed the menu without picking anything
             }
             else if (result == 1) {
-                Knob* k = dynamic_cast<Knob*>(PrefabFactory::getInstance()->getPrefab(69, _sampleRate, bufferSize));
-                addChangeListener(k);
-                k->setValue(1);
-                k->setName(module->getPins().at(pinIndex)->getName());
-                Point<int> pos = module->getPinPosition(pinIndex);
-                k->setTopLeftPosition(pos.getX() - 150, mouseY - k->getHeight() / 2);
-                module->pins.at(pinIndex)->getConnections().push_back(k->getPins().at(0));
-                addAndMakeVisible(k);
-                Connection* con = new Connection();
-                con->a = k->getPins().at(0);
-                con->b = module->pins.at(pinIndex);
-                con->source = k;
-                con->target = module;
-                root->getConnections()->push_back(con);
-                root->getModules()->push_back(k);
-                selectionModel.clearSelection();
-                k->setSelected(true);
-                
-                if (module->getName().contains("Filter")) {
-                    k->setMinimum(100);
-                    k->setMaximum(15000);
-                    k->setStepSize(10);
-                }
-                if (module->getName().contains("Mixer")){
-                    k->setMinimum(0);
-                    k->setMaximum(1);
-                    k->setStepSize(0.01);
-                }
-                if (module->getName().contains("ADSR")){
-                    
-                    k->setMinimum(0);
-                    
-                    if (module->getPins().at(pinIndex)->getName() == "S"){
-                        k->setMaximum(1);
-                    }
-                    else {
-                        k->setMaximum(10);
-                    }
-                    
-                    k->setStepSize(0.01);
-                }
-                
-                selectionModel.getSelectedModules().push_back(k);
-                repaint();
-                resized();
+                addControl(module, pinIndex);
             }
             else if (result == 2) {
-                Constant* c = dynamic_cast<Constant*>(PrefabFactory::getInstance()->getPrefab(67, _sampleRate, bufferSize));
-                addChangeListener(c);
-                c->setValue(1);
-                c->setName(module->getPins().at(pinIndex)->getName());
-                Point<int> pos = module->getPinPosition(pinIndex);
-                c->setTopLeftPosition(pos.getX() - 150, mouseY - c->getHeight() / 2);
-                module->pins.at(pinIndex)->getConnections().push_back(c->getPins().at(0));
-                addAndMakeVisible(c);
-                Connection* con = new Connection();
-                con->a = c->getPins().at(0);
-                con->b = module->pins.at(pinIndex);
-                con->source = c;
-                con->target = module;
-                root->getConnections()->push_back(con);
-                root->getModules()->push_back(c);
-                repaint();
-                resized();
+                addConstant(module, pinIndex);
+            }
+            else if (result == 3) {
+                addTerminal(module, pinIndex);
             }
             
         }
@@ -786,6 +733,115 @@ void SynthEditor::showContextMenu(Point<int> position) {
     m->setLookAndFeel(nullptr);
     delete m;
 
+}
+
+void SynthEditor::connect(Module* root, Module* c, Module* module , int pinIndex, int mouseY ) {
+    
+    Point<int> pos = module->getPinPosition(pinIndex);
+    c->setTopLeftPosition(pos.getX() - 150, mouseY - c->getHeight() / 2);
+    
+    module->pins.at(pinIndex)->getConnections().push_back(c->getPins().at(0));
+    addAndMakeVisible(c);
+    
+    Connection* con = new Connection();
+    con->a = c->getPins().at(0);
+    con->b = module->pins.at(pinIndex);
+    con->source = c;
+    con->target = module;
+    
+    root->getConnections()->push_back(con);
+    root->getModules()->push_back(c);
+    
+    repaint();
+    resized();
+    
+}
+void SynthEditor::addControl(Module* module, int pinIndex) {
+    Knob* k = dynamic_cast<Knob*>(PrefabFactory::getInstance()->getPrefab(69, _sampleRate, bufferSize));
+    addChangeListener(k);
+    k->setValue(1);
+    k->setName(module->getPins().at(pinIndex)->getName());
+    
+    connect(root, k, module, pinIndex, mouseY);
+    
+    selectionModel.clearSelection();
+    k->setSelected(true);
+    
+    if (module->getName().contains("Filter")) {
+        k->setMinimum(100);
+        k->setMaximum(15000);
+        k->setStepSize(10);
+    }
+    if (module->getName().contains("Mixer")){
+        k->setMinimum(0);
+        k->setMaximum(1);
+        k->setStepSize(0.01);
+    }
+    if (module->getName().contains("ADSR")){
+        
+        k->setMinimum(0);
+        
+        if (module->getPins().at(pinIndex)->getName() == "S"){
+            k->setMaximum(1);
+        }
+        else {
+            k->setMaximum(10);
+        }
+        
+        k->setStepSize(0.01);
+    }
+    
+    selectionModel.getSelectedModules().push_back(k);
+    repaint();
+    resized();
+}
+
+void SynthEditor::addConstant(Module *module, int pinIndex) {
+    Constant* c = dynamic_cast<Constant*>(PrefabFactory::getInstance()->getPrefab(67, _sampleRate, bufferSize));
+    addChangeListener(c);
+    c->setValue(1);
+    c->setName(module->getPins().at(pinIndex)->getName());
+    connect(root, c, module, pinIndex, mouseY);
+
+}
+
+void SynthEditor::addTerminal(Module *module, int pinIndex) {
+    
+    Pin* targetPin = module->pins.at(pinIndex);
+    
+    TerminalModule* t = nullptr;
+
+    if (targetPin->getDirection() == TerminalModule::Direction::IN) {
+        t = dynamic_cast<TerminalModule*>(PrefabFactory::getInstance()->getPrefab(83, getSampleRate(), getBufferSize()));
+       
+    }
+    else {
+        t = dynamic_cast<TerminalModule*>(PrefabFactory::getInstance()->getPrefab(84, getSampleRate(), getBufferSize()));
+        
+    }
+    
+    t->setType(targetPin->getType());
+    Pin* p = new Pin(targetPin->getType());
+    t->getPins().at(0)->setTerminal(p);
+    p->listeners.push_back(t);
+    p->setName(t->getName());
+    t->addChangeListener(p);
+    if (t->getDirection() == TerminalModule::Direction::IN) {
+        getModule()->addPin(Pin::Direction::IN, p);
+    }
+    else {
+        getModule()->addPin(Pin::Direction::OUT, p);
+    }
+    t->setIndex(p->index);
+    
+    // ModuleUtils::connectModules(t, module, pinIndex);
+    
+    connect(root, t, module, pinIndex, mouseY);
+    
+    addAndMakeVisible(t);
+    
+    getModule()->repaint();
+    
 }
 
 void SynthEditor::itemDropped (const SourceDetails& dragSourceDetails)  {
@@ -965,6 +1021,7 @@ void SynthEditor::newFile() {
     root = new Module("Root");
     selectionModel = SelectionModel();
     selectionModel.setRoot(root);
+    setLocked(false);
     updateProject(File());
     repaint();
 }
@@ -1414,9 +1471,7 @@ void SynthEditor::notifyListeners() {
         }
     }
     
-    for (int i = 0;i < listener.size();i++) {
-        listener.at(i)->fileChanged("");
-    }
+
     
     
 }
@@ -1781,5 +1836,9 @@ void SynthEditor::updateProject(File file) {
                 break;
             }
         }
+    }
+    
+    for (int i = 0;i < listener.size();i++) {
+        listener.at(i)->fileChanged(file.getFullPathName());
     }
 }

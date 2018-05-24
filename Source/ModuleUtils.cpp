@@ -864,7 +864,7 @@ bool ModuleUtils::connectModules(Module* source, Module* target, int pin) {
             return connectModuleEvents(source, target, pin);
             break;
         case Terminal::AUDIO:
-            return connectModuleAutio(source, target, pin);
+            return connectModuleAudio(source, target, pin);
             break;
             
         default:
@@ -881,19 +881,32 @@ bool ModuleUtils::connectModuleValues(Module* source, Module* target, int inputP
         return false;
     }
     
-    Pin* sourePin = source->getValueOutputPin();
+    Pin* sourcePin = source->getValueOutputPin();
     
-    if(nullptr != sourePin)
+    if(nullptr != sourcePin)
     {
-        target->getPins().at(inputPin)->getConnections().push_back(sourePin);
+        target->getPins().at(inputPin)->getConnections().push_back(sourcePin);
         return true;
     }
         
     return false;
 }
 
-bool ModuleUtils::connectModuleAutio(Module* source, Module* target, int pin)
+bool ModuleUtils::connectModuleAudio(Module* source, Module* target, int inputPin)
 {
+    if(Terminal::Direction::IN != target->getPins().at(inputPin)->getDirection())
+    {
+        return false;
+    }
+    
+    Pin* sourcePin = source->getValueOutputPin();
+    
+    if(nullptr != sourcePin)
+    {
+        target->getPins().at(inputPin)->getConnections().push_back(sourcePin);
+        return true;
+    }
+    
     return false;
 }
 

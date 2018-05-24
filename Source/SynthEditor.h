@@ -73,6 +73,7 @@ public:
     int getCurrentLayer();
     void duplicateSelected();
     void setLocked(bool lock) {
+        this->locked = lock;
         setModuleLocked(this->getModule(), lock);
     }
     
@@ -94,10 +95,17 @@ public:
         }
     }
     
+    void drawConnections(Graphics& g);
+    
     int snap(int location, int raster);
     void dragSelection();
     void moveSelection(const MouseEvent& e);
     void checkForConnectionDrag();
+    
+    void addControl(Module* module, int pinIndex);
+    void addConstant(Module* module, int pinIndex);
+    void addTerminal(Module* module, int pinIndex);
+    void connect(Module* root, Module* c, Module* module , int pinIndex, int mouseY);
     
     // drag and drop
     
@@ -122,6 +130,8 @@ public:
     virtual void getAllCommands (Array<CommandID>& commands) override;
     void getCommandInfo (CommandID commandID, ApplicationCommandInfo& result) override;
     virtual bool perform (const InvocationInfo& info) override;
+    
+    
     
     enum CommandIds {
         ADD_MODULE = 1,

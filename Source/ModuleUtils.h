@@ -115,7 +115,7 @@ public:
 private:
     static bool connectModuleValues(Module* source, Module* target, int pin);
     
-    static bool connectModuleAutio(Module* source, Module* target, int pin);
+    static bool connectModuleAudio(Module* source, Module* target, int pin);
     
     static bool connectModuleEvents(Module* source, Module* target, int pin);
  
