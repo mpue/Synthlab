@@ -94,11 +94,15 @@ void DistortionModule::paint(juce::Graphics &g) {
 void DistortionModule::process() {
     
     if (pins.at(0)->getConnections().size() == 1 ) {
-        const float* in = pins.at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
         
-        for (int i = 0; i < buffersize;i++){
-            buffer[i] = distortion->processSample(in[i]);
-            pins.at(1)->getAudioBuffer()->setSample(0, i,buffer[i]);
+        if (pins.at(0)->getConnections().at(0)->getAudioBuffer() != nullptr) {
+            
+            const float* in = pins.at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
+            
+            for (int i = 0; i < buffersize;i++){
+                buffer[i] = distortion->processSample(in[i]);
+                pins.at(1)->getAudioBuffer()->setSample(0, i,buffer[i]);
+            }
         }
     }
     

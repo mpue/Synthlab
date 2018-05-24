@@ -109,12 +109,31 @@ void DelayModule::paint(juce::Graphics &g) {
 void DelayModule::process() {
     
     if (pins.at(0)->getConnections().size() == 1 && pins.at(1)->getConnections().size() == 1) {
-        const float* inL = pins.at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
-        const float* inR = pins.at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
+        
+        const float* inL = nullptr;
+        const float* inR = nullptr;
+        
+        if (pins.at(0)->getConnections().at(0)->getAudioBuffer() != nullptr) {
+            inL = pins.at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
+        }
+        
+        if (pins.at(1)->getConnections().at(0)->getAudioBuffer() != nullptr) {
+            inR = pins.at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
+        }
         
         for (int i = 0; i < buffersize;i++){
-            bufferLeft[i] = inL[i];
-            bufferRight[i] = inR[i];
+            if (inL != nullptr) {
+                bufferLeft[i] = inL[i];
+            }
+            else {
+                bufferLeft[i] = 0;
+            }
+            if (inR != nullptr) {
+                bufferRight[i] = inR[i];
+            }
+            else {
+                bufferRight[i] = 0;
+            }
         }
         
         delay->processStereo(bufferLeft, bufferRight, buffersize);

@@ -75,6 +75,10 @@ void MixerModule::paint(juce::Graphics &g) {
 
 void MixerModule::process() {
     
+    if (out == nullptr || out->getAudioBuffer() == nullptr) {
+        return;
+    }
+    
     float* pOut = out->getAudioBuffer()->getWritePointer(0);
 
     for (int j = 0; j < buffersize;j++) {
