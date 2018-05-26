@@ -75,6 +75,8 @@ public:
     void setLocked(bool lock) {
         this->locked = lock;
         setModuleLocked(this->getModule(), lock);
+        selectionModel.clearSelection();
+        repaint();
     }
     
     bool isLocked() {
@@ -183,7 +185,7 @@ private:
     void notifyListeners();
     void notifyDirtyListeners();
     
-    bool snapToGrid = false;
+    bool snapToGrid = true;
                          
     bool isAltDown = false;
     bool isCtrlDown = false;

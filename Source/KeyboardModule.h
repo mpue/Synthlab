@@ -52,6 +52,9 @@ public:
         this->locked = locked;
         this->keyboard->setEnabled(locked);
         setInterceptsMouseClicks(locked, locked);
+        resizer->setEnabled(!locked);
+        resizer->setVisible(!locked);
+        repaint();
     }
     
     void resized() override;

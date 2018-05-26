@@ -109,7 +109,7 @@ void RandomModule::process() {
         if (pins.at(2)->getAudioBuffer() != nullptr && pins.at(2)->getAudioBuffer()->getNumChannels() > 0)
             pins.at(2)->getAudioBuffer()->setSample(0,i ,value);
 
-        pins.at(3)->setValue(abs(value + 1));
+        pins.at(4)->setValue(abs(value + 1));
     }
     
 }

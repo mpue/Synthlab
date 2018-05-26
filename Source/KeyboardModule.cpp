@@ -116,7 +116,9 @@ void KeyboardModule::setCurrentLayer(Module::Layer layer) {
 }
 
 void KeyboardModule::paint(juce::Graphics &g) {
-    Module::paint(g);
+    if (currentLayer == Module::Layer::ALL) {
+        Module::paint(g);
+    }
     if (selected) {
         g.setColour(Colours::orange);
         g.drawRect(0,0,getWidth(),getHeight());
@@ -128,7 +130,12 @@ void KeyboardModule::resized() {
         resizer->setTopLeftPosition(getWidth() - 10, getHeight() - 10);
     }
     if (keyboard != nullptr) {
-        keyboard->setSize(getWidth() - 15, getHeight());
+        if (currentLayer == Module::Layer::ALL) {
+            keyboard->setSize(getWidth() - 15, getHeight());
+        }
+        else {
+            keyboard->setSize(getWidth(), getHeight());
+        }
     }
     
     if (pins.size() == 2) {
