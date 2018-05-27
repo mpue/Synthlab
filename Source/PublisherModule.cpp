@@ -25,7 +25,7 @@ PublisherModule::PublisherModule()
     
     setSize(120,30);
     nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(2,2);
+    nameLabel->setTopLeftPosition(18,2);
     
     editable = false;
     prefab = true;

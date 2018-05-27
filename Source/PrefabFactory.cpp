@@ -54,6 +54,7 @@
 #include "OrModule.h"
 #include "NotModule.h"
 #include "TriggerTimerModule.h"
+#include "SliderModule.h"
 
 using juce::Image;
 
@@ -223,6 +224,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Trigger timer") {
         m = new TriggerTimerModule();
+    }
+    else if (prefabs[id].getName() == "Slider") {
+        m = new SliderModule();
     }
     
     m->setIndex(id + pow(10,prefabs[id].getNumInstances() + 1));

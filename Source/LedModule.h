@@ -33,6 +33,9 @@ public:
         return "Debug";
     }
     
+    virtual Layer getLayer() override {
+        return Layer::GUI;
+    };
     
 private:
     float value = 0;

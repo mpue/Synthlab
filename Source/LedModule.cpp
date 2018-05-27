@@ -37,7 +37,11 @@ void LedModule::configurePins() {
 }
 
 void LedModule::paint(juce::Graphics &g) {
-    Module::paint(g);
+    
+    if (currentLayer == Module::Layer::ALL) {
+        Module::paint(g);
+    }
+    
     if (value > 0) {
         g.drawImageAt(ImageCache::getFromMemory(BinaryData::led_on_png, BinaryData::led_on_pngSize).rescaled(32,32),8,8);
     }
