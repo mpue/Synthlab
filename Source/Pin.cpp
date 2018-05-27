@@ -31,13 +31,10 @@ Pin::~Pin() {
         audioBuffer->clear();
         delete audioBuffer;
     }
-
     
 }
 
 void Pin::sendEvent(Event *e) {
-    
-    // Logger::writeToLog("received event : "+e->getName() + " value "+String(e->getValue()));
     
     for (int i = 0; i < connections.size();i++) {
         connections.at(i)->sendEvent(new Event(e));
