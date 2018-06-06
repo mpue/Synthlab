@@ -89,7 +89,7 @@ public:
      * @parem offset the value to add to the existing indices;
      */
     
-    static void updateIndices(ValueTree& v, int offset);
+    static void updateIndices(ValueTree& v, long offset);
     
     /**
      * Creates an exact copy of an existing module just diffreing in the indices.

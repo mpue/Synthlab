@@ -229,11 +229,16 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
         m = new SliderModule();
     }
     
-    m->setIndex(id + pow(10,prefabs[id].getNumInstances() + 1));
+    m->setIndex(lastModuleIndex);
     m->setId(id);
     prefabs[id].addInstance();
     m->configurePins();
     numPrefabInstances++;
+    
+    // remember the last index in order to get a new one when creating an empty module
+    lastModuleIndex++;
+    
+    
     return m;
 }
 
@@ -241,9 +246,14 @@ int PrefabFactory::getNumInstances(int id) {
     return prefabs[id].getNumInstances();
 }
 
+long PrefabFactory::getNextModuleIndex() {
+    return ++lastModuleIndex;
+}
+
 void PrefabFactory::reset() {
     for (std::map<int,Prefab>::iterator it = prefabs.begin();it != prefabs.end();) {
         (*it).second.reset();
         it++;
     }
+    lastModuleIndex = 0;
 }

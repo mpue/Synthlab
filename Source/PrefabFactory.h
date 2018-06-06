@@ -75,7 +75,7 @@ public:
     static void destroy() {
         delete instance;
     }
-    
+
     
     juce::Image getImage(int prefabId) {
         return prefabImages[prefabId];
@@ -86,6 +86,7 @@ public:
     std::map<int,Prefab> getPrefabNames() {return prefabs;};
     juce::StringArray* getCategories() { return categories;};
     int getNumInstances(int id);
+    long getNextModuleIndex();
     void reset();
 private:
     static PrefabFactory* instance;
@@ -217,6 +218,7 @@ private:
     
     
     int numPrefabInstances = 0;
+    long lastModuleIndex = 0;
 };
 
 #endif /* PrefabFactory_hpp */

@@ -636,7 +636,7 @@ void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Conn
     
 }
 
-void ModuleUtils::updateIndices(juce::ValueTree &v, int offset) {
+void ModuleUtils::updateIndices(juce::ValueTree &v, long offset) {
      for(int i = 0; i < v.getNumChildren();i++) {
          if (v.getChild(i).hasProperty("index")) {
              v.getChild(i).setProperty("index", v.getChild(i).getProperty("index").toString().getLargeIntValue()+offset,nullptr);
@@ -667,7 +667,7 @@ Module* ModuleUtils::createCopy(Module *original, ChangeBroadcaster* broadcaster
     m = new Module(original->getName());
     saveStructure(original->getModules(),original->getConnections(), &cloneTree);
     savePins(original, cloneTree);
-    updateIndices(cloneTree, Time::getMillisecondCounter());
+    updateIndices(cloneTree, PrefabFactory::getInstance()->getNextModuleIndex());
     loadPins(m, cloneTree);
     loadStructure(m->getModules(), m->getConnections(),&cloneTree, broadcaster);
 
