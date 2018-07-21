@@ -93,7 +93,7 @@ void DelayModule::configurePins() {
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::IN,p2);
     addPin(Pin::Direction::OUT,p3);
-    addPin(Pin::Direction::OUT,p4);
+    addPin(Pin::Dir/Users/mpue/Documents/devel/Synthlab/Source/HPFilterModule.cppection::OUT,p4);
     addPin(Pin::Direction::IN,p5);
     addPin(Pin::Direction::IN,p6);
     addPin(Pin::Direction::IN,p7);

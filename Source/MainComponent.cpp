@@ -903,6 +903,7 @@ void MainComponent::buttonClicked (Button* b)
             Project::getInstance()->getUndoManager()->perform(rma);
         }
         else if(tb->getItemId() == toolbarFactory->doc_new) {
+            Project::getInstance()->setNewFile(true);
             editor->setRunning(false);
             editor->cleanUp();
             editor->newFile();

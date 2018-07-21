@@ -55,6 +55,7 @@
 #include "NotModule.h"
 #include "TriggerTimerModule.h"
 #include "SliderModule.h"
+#include "TextInputModule.h"
 
 using juce::Image;
 
@@ -227,6 +228,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Slider") {
         m = new SliderModule();
+    }
+    else if (prefabs[id].getName() == "TextInput") {
+        m = new TextInputModule();
     }
     
     m->setIndex(lastModuleIndex);

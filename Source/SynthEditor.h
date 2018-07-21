@@ -178,7 +178,7 @@ public:
     
     void resetGUIPosition();
     void updateProject(File file);
-    
+    void updateProject(URL url);
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
 

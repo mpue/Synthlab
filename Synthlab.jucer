@@ -389,6 +389,10 @@
                 file="Source/ToolbarComboBox.h"/>
         </GROUP>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
+          <FILE id="fnPBLV" name="TextInputModule.cpp" compile="1" resource="0"
+                file="Source/TextInputModule.cpp"/>
+          <FILE id="hSUZQM" name="TextInputModule.h" compile="0" resource="0"
+                file="Source/TextInputModule.h"/>
           <FILE id="ykqMag" name="SliderModule.cpp" compile="1" resource="0"
                 file="Source/SliderModule.cpp"/>
           <FILE id="gc1RlA" name="SliderModule.h" compile="0" resource="0" file="Source/SliderModule.h"/>

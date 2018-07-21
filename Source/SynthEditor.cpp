@@ -1119,7 +1119,7 @@ void SynthEditor::saveFile() {
     File path = File::getSpecialLocation(File::userApplicationDataDirectory);
     File outputDir = File(path.getFullPathName()+"/structure.xml");
     
-    URL file;
+    URL* file = nullptr;
     
     ValueTree* v = new ValueTree("Synth");
     
@@ -1133,7 +1133,8 @@ void SynthEditor::saveFile() {
         FileChooser chooser("Select target file...",outputDir, "*");
 
         if (chooser.browseForFileToSave(true)) {
-            file = chooser.getURLResult();
+            URL url = chooser.getURLResult();
+            file = &url;
         }
         
     }
@@ -1141,7 +1142,7 @@ void SynthEditor::saveFile() {
         file = new URL(Project::getInstance()->getCurrentFilePath());
     }
     
-    OutputStream* os = file.createOutputStream();
+    OutputStream* os = file->createOutputStream();
     XmlElement* xml = v->createXml();
     xml->writeToStream(*os, "");
     
@@ -1330,7 +1331,11 @@ void SynthEditor::openFile() {
         
         xml = nullptr;
         
+#if JUCE_IOS
+        updateProject(url);
+#else
         updateProject(file);
+#endif
         
         setRunning(true);
     }
@@ -1810,6 +1815,37 @@ void SynthEditor::resetGUIPosition() {
      for (int i = 0; i < selectionModel.getSelectedModules().size();i++) {
          selectionModel.getSelectedModules().at(i)->resetUIPosition();
      }
+}
+
+void SynthEditor::updateProject(URL url) {
+    
+    Project::getInstance()->setCurrentFilePath(url.toString(false));
+    Project::getInstance()->setCurrentFileName(url.getFileName());
+    
+    for (int i = 0; i < tab->getNumTabs();i++) {
+        
+        Viewport* view = dynamic_cast<Viewport*>(tab->getTabContentComponent(i));
+        
+        if (view != nullptr) {
+            
+            SynthEditor* editor = dynamic_cast<SynthEditor*>(view->getViewedComponent());
+            
+            if (editor != nullptr && editor == this) {
+                if (url.isEmpty()) {
+                    tab->setTabName(i, "untitled");
+                }
+                else {
+                    tab->setTabName(i, Project::getInstance()->getCurrentFileName());
+                }
+                
+                break;
+            }
+        }
+    }
+    
+    for (int i = 0;i < listener.size();i++) {
+        listener.at(i)->fileChanged(url.toString(false));
+    }
 }
 
 void SynthEditor::updateProject(File file) {
