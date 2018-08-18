@@ -100,7 +100,6 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
         m = new MidiClock();
         m->setName("Clock");
     }
-    
     else if (prefabs[id].getName() == "Pad") {
         m = new PadModule();
         m->setName("Pad");
@@ -242,6 +241,7 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     // remember the last index in order to get a new one when creating an empty module
     lastModuleIndex++;
     
+        
     
     return m;
 }
@@ -251,7 +251,7 @@ int PrefabFactory::getNumInstances(int id) {
 }
 
 long PrefabFactory::getNextModuleIndex() {
-    return ++lastModuleIndex;
+    return lastModuleIndex++;
 }
 
 void PrefabFactory::reset() {

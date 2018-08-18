@@ -81,7 +81,7 @@ public:
 
     virtual void setSelected(bool selected);
     bool isSelected();
-
+    
 	long getIndex();
 	void setIndex(long index);
 	virtual void setEditing(bool editing);
@@ -114,6 +114,9 @@ public:
     
     virtual int getId() { return id;};
     virtual void setId(int id) {this->id = id;};
+    
+    virtual juce::String getUuid() { return uuid;};
+    virtual void setUuid(juce::String uuid) {this->uuid = uuid;};
     
     virtual void configurePins() {};
     
@@ -200,14 +203,14 @@ protected:
     
     //[/UserVariables]
 
-
-    
     //==============================================================================
     juce::ScopedPointer<juce::TextEditor> nameEditor;
     juce::ScopedPointer<juce::Label> nameLabel;
     juce::Image cachedImage_materialicons_301_viewmodule_64_0_ffffff_none_png_1;
 
     int id = 0;
+    
+    juce::String uuid;
     
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Module)

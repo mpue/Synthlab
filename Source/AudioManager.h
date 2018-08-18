@@ -64,14 +64,18 @@ public:
     }
     
     void setupChannels() {
-        juce::BigInteger activeInputChannels = deviceManager->getCurrentAudioDevice()->getActiveInputChannels();
-        juce::BigInteger activeOutputChannels = deviceManager->getCurrentAudioDevice()->getActiveOutputChannels();
         
-        numInputChannels = deviceManager->getCurrentAudioDevice()->getInputChannelNames().size();
-        numOutputChannels = deviceManager->getCurrentAudioDevice()->getOutputChannelNames().size();
+        if (deviceManager->getCurrentAudioDevice() != NULL  ) {
+            juce::BigInteger activeInputChannels = deviceManager->getCurrentAudioDevice()->getActiveInputChannels();
+            juce::BigInteger activeOutputChannels = deviceManager->getCurrentAudioDevice()->getActiveOutputChannels();
+            
+            numInputChannels = deviceManager->getCurrentAudioDevice()->getInputChannelNames().size();
+            numOutputChannels = deviceManager->getCurrentAudioDevice()->getOutputChannelNames().size();
+            
+            numActiveInputs = getNumActiveChannels(activeInputChannels.toInteger());
+            numActiveOutputs = getNumActiveChannels(activeOutputChannels.toInteger());
+        }
         
-        numActiveInputs = getNumActiveChannels(activeInputChannels.toInteger());
-        numActiveOutputs = getNumActiveChannels(activeOutputChannels.toInteger());
     }
     
     juce::StringArray getInputChannelNames() {

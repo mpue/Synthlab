@@ -134,41 +134,45 @@ void ChorusModule::process() {
     
     if (pins.at(0)->getConnections().size() == 1 && pins.at(1)->getConnections().size() == 1) {
         
-        const float* inL = pins.at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
-        const float* inR = pins.at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
-
-        for (int i = 0; i < buffersize; i++) {
+        if (pins.at(0)->getConnections().at(0)->getAudioBuffer() != nullptr &&
+            pins.at(1)->getConnections().at(0)->getAudioBuffer() != nullptr) {
             
-            float leftMod = (leftOsc->getOutput()+1.01) * modulation* 100;
-            float rightMod = (leftOsc->getOutput()+1.01) * modulation* 100;
+            const float* inL = pins.at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
+            const float* inR = pins.at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
             
-            leftDelayTime = (delay * 200) + leftMod + .002;
-            rightDelayTime = (delay * 220) + rightMod + .0015;
-            
-            float l_xn = inL[i];
-            float r_xn = inR[i];
-            
-            float l_combined;
-            float r_combined;
-
-            float l_yn;
-            float r_yn;
-            
-            l_yn = leftBuffer->getSample(leftDelayTime);
-            r_yn = rightBuffer->getSample(rightDelayTime);
-            
-            l_combined = l_xn + r_yn * feedback;
-            r_combined = r_xn + l_yn * feedback;
-            
-            
-            leftBuffer->addSample(l_combined);
-            rightBuffer->addSample(r_combined);
-            
-            pins.at(2)->getAudioBuffer()->getWritePointer(0)[i] = (l_xn * (1-mix) + l_yn * mix);
-            pins.at(3)->getAudioBuffer()->getWritePointer(0)[i] = (r_xn * (1-mix) + r_yn * mix);
-         
-            leftOsc->process();
-            rightOsc->process();
+            for (int i = 0; i < buffersize; i++) {
+                
+                float leftMod = (leftOsc->getOutput()+1.01) * modulation* 100;
+                float rightMod = (leftOsc->getOutput()+1.01) * modulation* 100;
+                
+                leftDelayTime = (delay * 200) + leftMod + .002;
+                rightDelayTime = (delay * 220) + rightMod + .0015;
+                
+                float l_xn = inL[i];
+                float r_xn = inR[i];
+                
+                float l_combined;
+                float r_combined;
+                
+                float l_yn;
+                float r_yn;
+                
+                l_yn = leftBuffer->getSample(leftDelayTime);
+                r_yn = rightBuffer->getSample(rightDelayTime);
+                
+                l_combined = l_xn + r_yn * feedback;
+                r_combined = r_xn + l_yn * feedback;
+                
+                
+                leftBuffer->addSample(l_combined);
+                rightBuffer->addSample(r_combined);
+                
+                pins.at(2)->getAudioBuffer()->getWritePointer(0)[i] = (l_xn * (1-mix) + l_yn * mix);
+                pins.at(3)->getAudioBuffer()->getWritePointer(0)[i] = (r_xn * (1-mix) + r_yn * mix);
+                
+                leftOsc->process();
+                rightOsc->process();
+            }
         }
         
     }

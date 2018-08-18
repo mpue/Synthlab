@@ -122,6 +122,7 @@ template<typename T> OscillatorModule<T>::OscillatorModule(double sampleRate, in
 
 template<typename T> OscillatorModule<T>::~OscillatorModule()
 {
+    out = nullptr;
     
     for (int i = 0; i < 128;i++){
         if (oscillator[i] != nullptr)
@@ -301,8 +302,12 @@ template<typename T> void OscillatorModule<T>::process() {
                         value += oscillator[j]->process();
                 }
             }
-            if (out != nullptr && out->getNumChannels() > 0)
-                out->setSample(0,i ,value);
+            if (out != nullptr) {
+                if (out->getNumChannels() > 0) {
+                    out->setSample(0,i ,value);
+                }
+            }
+      
             
             
             

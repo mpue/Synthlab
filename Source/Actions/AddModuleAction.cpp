@@ -63,8 +63,13 @@ bool AddModuleAction::perform() {
     AudioManager* audioManager = AudioManager::getInstance();
     AudioOut* out;
     
+    // If the module is an audio input, output or aux we need to take special care
+    // in all three cases we add connections to the mixer
+    
     if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
+
         int numCurrentOutputs = static_cast<int>(editor->getMixer()->getInputChannels().size()) * 2;
+
         // take care! we have N input channels but from the audio interfaces point of view we have twice as much channels!
         
         bool useDefaultOutput = false;
@@ -73,13 +78,17 @@ bool AddModuleAction::perform() {
             String channelName = audioManager->getOutputChannelNames().getReference(0);
             useDefaultOutput = true;
         }
+
+        // audio out found, the mixer needs an audio out object
         
         if (numCurrentOutputs < audioManager->getNumActiveInputs() || (useDefaultOutput && numCurrentOutputs == 0)) {
             editor->getMixer()->getOutputChannels().push_back(out);
+            // guess the channel name
             String channelName = audioManager->getOutputChannelNames().getReference(static_cast<int>(editor->getMixer()->getOutputChannels().size()) - 1);
             int channelIndex = editor->addChannel(channelName, Mixer::Channel::Type::OUT);
             out->setChannelIndex(channelIndex);
             m->setName(channelName);
+            // set default volumes
             editor->getMixer()->setVolume(channelIndex, out->getVolume());
             editor->getMixer()->setModule(channelIndex, out);
             if (!editor->isRunning()) {
@@ -90,13 +99,13 @@ bool AddModuleAction::perform() {
             delete m;
             return false;
         }
-        
-        
 
     }
 
+    // add an aux channel, which is routable
     
     AuxOut* aux;
+    
     if ((aux = dynamic_cast<AuxOut*>(m)) != NULL) {
         editor->getMixer()->getAuxChannels().push_back(aux);
         String channelName = "Aux "+ String(editor->getMixer()->getAuxChannels().size());

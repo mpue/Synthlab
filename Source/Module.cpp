@@ -409,13 +409,12 @@ bool Module::isMouseOverPin(int pin, juce::Point<int> pos) {
 juce::Point<int> Module::getPinPosition(int i) {
     return juce::Point<int>(pins.at(i)->x + getX(), pins.at(i)->x + getX());
 }
+void Module::setIndex(long index) {
+    this->index = index;
+}
 
 long Module::getIndex() {
 	return index;
-}
-
-void Module::setIndex(long index) {
-	this->index = index;
 }
 
 void Module::textEditorReturnKeyPressed(juce::TextEditor &) {

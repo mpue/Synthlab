@@ -15,6 +15,8 @@
 #include "PropertyView.h"
 #include "Module.h"
 
+// The project class hold all project relevant stuff
+
 class Project {
 public:
     
@@ -94,10 +96,15 @@ private:
             }
             it = openWindows.erase(it);
         }
+        
+        // check if supplemental tab is still open (tab at the bottom side)
+        
         if (supplementalTab != nullptr) {
             supplementalTab->clearTabs();
             delete supplementalTab;
         }
+        
+        // finally delete the according resources
 
         delete undoManager;
         delete lookAndFeel;

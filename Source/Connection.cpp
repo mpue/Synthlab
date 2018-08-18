@@ -32,10 +32,10 @@ Connection::~Connection()
 {
     
     for (std::vector<Pin*>::iterator it = a->getConnections().begin(); it != a->getConnections().end();it++) {
-        (*it)->invalidate();
+        // (*it)->invalidate();
     }
     for (std::vector<Pin*>::iterator it = b->getConnections().begin(); it != b->getConnections().end();it++) {
-        (*it)->invalidate();
+        // (*it)->invalidate();
     }
     a->getConnections().clear();
     b->getConnections().clear();
