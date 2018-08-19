@@ -203,13 +203,13 @@ template<typename T> void OscillatorModule<T>::setPitch(int pitch) {
 }
 
 template<typename T> void OscillatorModule<T>::setFine(float fine) {
-    if (this->fine != fine) {
+    //if (this->fine != fine) {
         this->fine = fine;
         for (int i = 0; i < 128;i++){
             if (oscillator[i] != nullptr)
                 this->oscillator[i]->setFine(fine);
         }
-    }
+    //}
 }
 
 template<typename T> void OscillatorModule<T>::setAmplitude(float amplitude) {
