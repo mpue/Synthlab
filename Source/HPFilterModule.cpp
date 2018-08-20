@@ -29,7 +29,7 @@ HPFilterModule::HPFilterModule(double sampleRate, int buffersize)
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(18,2);
     
-    setName("LP Filter");
+    setName("HP Filter");
 
     editable = false;
     prefab = true;

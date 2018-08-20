@@ -69,6 +69,15 @@ void PadModule::configurePins() {
 
 void PadModule::paint(juce::Graphics &g) {
     
+    if (buttonDown) {
+        button->setColour(juce::TextButton::buttonColourId, juce::Colours::green);
+        button->setColour(juce::TextButton::buttonOnColourId, juce::Colours::orange);
+    }
+    else {
+        button->setColour(juce::TextButton::buttonColourId, juce::Colours::orange.darker());
+        button->setColour(juce::TextButton::buttonOnColourId, juce::Colours::orange.darker());
+    }
+    
     if (currentLayer == Layer::ALL) {
         Module::paint(g);
     }
@@ -163,6 +172,7 @@ bool PadModule::isHold() {
 
 void PadModule::setHold(bool hold){
     this->holdMode = hold;
+    this->holdValue->setValue(hold);
 }
 
 void PadModule::buttonClicked (Button*)
@@ -179,6 +189,7 @@ void PadModule::buttonStateChanged (Button* button)
             if(buttonDown)
             {
                 gateOn(64, note);
+                
             }
             else {
                 gateOff(note);

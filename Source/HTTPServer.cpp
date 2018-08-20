@@ -34,16 +34,15 @@ void HTTPServer::run() {
     
     while(running) {
 
-        if (clientSocket == nullptr)        
+        if (clientSocket == nullptr) {
             clientSocket = socket->waitForNextConnection();
-        
-        
-        if (clientSocket != nullptr) {
-            clientSocket->connect("127.0.0.1", port);
-            
-            
-            Logger::getCurrentLogger()->writeToLog("Client connected");
-            if (clientSocket->isConnected()) {
+        }
+        else {
+            if (!clientSocket->isConnected()) {
+                clientSocket->connect("127.0.0.1", port);
+                Logger::getCurrentLogger()->writeToLog("Client connected");
+            }
+            else {
                 clientSocket->waitUntilReady(false, 10000);
                 int bytes = clientSocket->read(buffer, 256, false);
                 if (bytes > 0) {
