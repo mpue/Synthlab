@@ -14,7 +14,7 @@
 #include "AudioManager.h"
 #include "Plugins/PluginManager.h"
 #include <gtest.h>
-
+#include "HTTPServer.h"
 using juce::JUCEApplication;
 using juce::String;
 using juce::Logger;
@@ -40,6 +40,9 @@ public:
         // This method is where you should put your application's initialisation code..
 
         Logger::writeToLog(commandLine);
+        
+        server = new HTTPServer(8080);
+        server->startThread();
         
         if (commandLine.contains("runTests")) {
             //juce::UnitTestRunner runner;
@@ -69,7 +72,8 @@ public:
 #endif
         AudioManager::getInstance()->destroy();
         
-        
+        server->stop();
+        delete server;
     }
 
     //==============================================================================
@@ -143,6 +147,7 @@ public:
 
 private:
     MainWindow* mainWindow = nullptr;
+    HTTPServer* server = nullptr;
 };
 
 //==============================================================================

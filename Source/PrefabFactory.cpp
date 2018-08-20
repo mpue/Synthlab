@@ -259,5 +259,5 @@ void PrefabFactory::reset() {
         (*it).second.reset();
         it++;
     }
-    lastModuleIndex = 0;
+    lastModuleIndex = 1;
 }

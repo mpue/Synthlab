@@ -68,7 +68,7 @@ bool AddModuleAction::perform() {
     
     if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
 
-        int numCurrentOutputs = static_cast<int>(editor->getMixer()->getInputChannels().size()) * 2;
+        int numCurrentOutputs = static_cast<int>(editor->getMixer()->getOutputChannels().size()) * 2;
 
         // take care! we have N input channels but from the audio interfaces point of view we have twice as much channels!
         
@@ -81,7 +81,7 @@ bool AddModuleAction::perform() {
 
         // audio out found, the mixer needs an audio out object
         
-        if (numCurrentOutputs < audioManager->getNumActiveInputs() || (useDefaultOutput && numCurrentOutputs == 0)) {
+        if (numCurrentOutputs < audioManager->getNumActiveOutputs() || (useDefaultOutput && numCurrentOutputs == 0)) {
             editor->getMixer()->getOutputChannels().push_back(out);
             // guess the channel name
             String channelName = audioManager->getOutputChannelNames().getReference(static_cast<int>(editor->getMixer()->getOutputChannels().size()) - 1);

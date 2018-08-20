@@ -105,6 +105,7 @@ void SawtoothModule::setPitch(int pitch) {
 }
 
 void SawtoothModule::setFine(float fine) {
+    std::cout << "Fine : " << fine << std::endl;
     if (this->fine != fine) {
         this->fine = fine;
         for (int i = 0; i < 128;i++){
@@ -161,7 +162,7 @@ void SawtoothModule::process() {
         gatePin = pins.at(2)->getConnections().at(0);
     }
     if (pins.at(2)->getConnections().size() == 1) {
-        for (int i = 0; i < buffersize; i++) {
+         for (int i = 0; i < buffersize; i++) {
             float value = 0;
             
             if (mono) {

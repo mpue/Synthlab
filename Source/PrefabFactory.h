@@ -220,7 +220,7 @@ private:
     
     
     int numPrefabInstances = 0;
-    long lastModuleIndex = 0;
+    long lastModuleIndex = 1;
 };
 
 #endif /* PrefabFactory_hpp */

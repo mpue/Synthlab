@@ -157,6 +157,10 @@
       <FILE id="EJ4uon" name="whitenoise.png" compile="0" resource="1" file="Images/whitenoise.png"/>
     </GROUP>
     <GROUP id="{CA20D122-1EA5-3A93-F1F8-F6EE53DA457E}" name="Source">
+      <GROUP id="{5AE00788-8DD0-B80C-C433-5E1588E70C5C}" name="Server">
+        <FILE id="p8msgg" name="HTTPServer.cpp" compile="1" resource="0" file="Source/HTTPServer.cpp"/>
+        <FILE id="cq00hn" name="HTTPServer.h" compile="0" resource="0" file="Source/HTTPServer.h"/>
+      </GROUP>
       <GROUP id="{1C1CC707-767F-0A14-4BBC-FC07D9A8C470}" name="MessageBus">
         <FILE id="xxFait" name="BusListener.h" compile="0" resource="0" file="Source/MessageBus/BusListener.h"/>
         <FILE id="Ukzbap" name="MessageBus.cpp" compile="1" resource="0" file="Source/MessageBus/MessageBus.cpp"/>
