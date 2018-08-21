@@ -39,3 +39,12 @@ void MessageBus::updateTopic(juce::String name, float value) {
     
 }
 
+juce::StringArray MessageBus::getTopics() {
+    StringArray topicList = StringArray();
+    
+    for(std::map<String,Topic*>::iterator it = topics.begin(); it != topics.end();++it) {
+        topicList.add(it->first);
+    }
+    
+    return topicList;
+}

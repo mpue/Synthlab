@@ -14,7 +14,7 @@
 #include "Topic.h"
 #include "BusListener.h"
 #include <map>
-
+#include <vector>
 
 class MessageBus {
 public:
@@ -32,6 +32,7 @@ public:
     }
     
     Topic* getTopic(juce::String name);
+    juce::StringArray getTopics();
 
     void updateTopic(String name, float value);
     void addListener(String name, BusListener* listener);
