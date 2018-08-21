@@ -73,6 +73,7 @@ public:
         AudioManager::getInstance()->destroy();
         
         server->stop();
+        server->stopThread(2000);
         delete server;
     }
 

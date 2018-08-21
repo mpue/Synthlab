@@ -22,17 +22,19 @@ HTTPServer::HTTPServer(int port) : juce::Thread("Server") {
     socket->bindToPort(port);
     socket->createListener(port);
     Logger::getCurrentLogger()->writeToLog("Server startup");
+    running = true;
 }
 
 HTTPServer::~HTTPServer() {
     stop();
-    socket->close();
+    if (clientSocket != nullptr) {
+        delete clientSocket;
+    }
     delete socket;
 }
 
 void HTTPServer::run() {
     
-    running = true;
     
     while(running) {
 
