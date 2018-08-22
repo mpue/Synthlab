@@ -183,6 +183,11 @@ int MixerPanel::getNextFreeChannelIndex() {
 }
 
 void MixerPanel::removeChannel(int index) {
+
+	if (channels.size() <= 0) {
+		return;
+	}
+
     for (std::vector<MasterChannelPanel*>::iterator it = channels.begin();it != channels.end();) {
         if((*it)->getIndex() == index) {
             (*it)->setLookAndFeel(nullptr);
