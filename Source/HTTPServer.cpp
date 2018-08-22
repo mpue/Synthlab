@@ -49,7 +49,7 @@ void HTTPServer::run() {
             }
             else {
                 clientSocket->waitUntilReady(false, 10000);
-                int bytes = clientSocket->read(buffer, 256, false);
+                int bytes = clientSocket->read(buffer, 1024, false);
                 
                 juce::String request = juce::String(buffer,bytes);
                 
@@ -108,6 +108,7 @@ void HTTPServer::run() {
                         
 
                     }
+
                     else {
                         juce::String responseHeader = "HTTP/1.1 200 OK\r\n";
                         responseHeader += "Content-Type:text/html\r\n";
@@ -120,6 +121,28 @@ void HTTPServer::run() {
                         
                         clientSocket->write(response.toRawUTF8(),response.length());
                     }
+                    
+                }
+                else if (resources.getReference(0).equalsIgnoreCase("PUT")) {
+                    juce::String resource = resources.getReference(1);
+                    
+                    if (resource.startsWith("/topics")) {
+                        juce::StringArray path;
+                        path.addTokens (request, "/");
+                        
+                        String item = path.getReference(1);
+                        
+                        juce::StringArray pathResources;
+                        pathResources.addTokens (item, "/","");
+                        
+                        String data = tokens.getReference(tokens.size() - 1);
+                        
+                        juce::String propName = JSON::parse(data).getDynamicObject()->getProperties().getName(0).toString();
+                        float value = JSON::parse(data).getDynamicObject()->getProperty(propName).toString().getFloatValue();
+                        MessageBus::getInstance()->updateTopic(propName,value);
+                        
+                    }
+                    
                     
                 }
                 

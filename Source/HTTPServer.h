@@ -27,5 +27,5 @@ private:
     int port;
     bool running = false;
     bool connected = false;
-    char buffer[256] = { 0 };
+    char buffer[1024] = { 0 };
 };

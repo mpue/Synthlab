@@ -30,12 +30,18 @@ void MessageBus::addListener(juce::String name, BusListener* listener) {
 }
 
 void MessageBus::updateTopic(juce::String name, float value) {
-    Topic* t = getTopic(name);
-    t->setValue(value);
     
-    for (int i = 0; i < listener[name].size();i++) {
-        listener[name].at(i)->topicChanged(t);
+    Topic* t = getTopic(name);
+    
+    if (t->getValue() != value) {
+        t->setValue(value);
+        
+        for (int i = 0; i < listener[name].size();i++) {
+            listener[name].at(i)->topicChanged(t);
+        }
     }
+    
+
     
 }
 
