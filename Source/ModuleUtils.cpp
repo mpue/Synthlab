@@ -34,6 +34,7 @@
 #include "SubscriberModule.h"
 #include "PublisherModule.h"
 #include "MessageBus/MessageBus.h"
+#include "CompareModule.h"
 
 void ModuleUtils::loadStructure(std::vector<Module *>* modules, std::vector<Connection*>* connections,juce::ValueTree *v, ChangeBroadcaster* broadcaster) {
     ValueTree mods = v->getChildWithName("Modules");
@@ -193,6 +194,12 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
             label->setName(mod.getProperty("name"));
         }
         
+        CompareModule* cm;
+        
+        if ((cm = dynamic_cast<CompareModule*>(m)) != NULL) {
+            cm->setMode(mod.getProperty("mode").toString().getIntValue());
+        }
+        
         TerminalModule* t;
         
         if ((t = dynamic_cast<TerminalModule*>(m)) != NULL) {
@@ -336,6 +343,12 @@ void ModuleUtils::configureModule(Module *m, ValueTree& mod, ChangeBroadcaster* 
     
     if ((gate = dynamic_cast<MidiGate*>(m)) != NULL) {
         gate->setChannel(mod.getProperty("channel").toString().getIntValue());
+    }
+    
+    CompareModule* cm;
+    
+    if ((cm = dynamic_cast<CompareModule*>(m)) != NULL) {
+        cm->setMode(mod.getProperty("mode").toString().getIntValue());
     }
     
     ADSRModule* adsr;
@@ -499,6 +512,12 @@ void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Conn
         
         if ((c = dynamic_cast<Constant*>((*it))) != NULL) {
             file.setProperty("value", c->getValue(), nullptr);
+        }
+        
+        CompareModule* cm;
+        
+        if ((cm = dynamic_cast<CompareModule*>(*it)) != NULL) {
+           file.setProperty("mode", cm->getMode(), nullptr);
         }
         
         MidiGate* gate = nullptr;

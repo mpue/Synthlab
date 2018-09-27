@@ -393,6 +393,9 @@
                 file="Source/ToolbarComboBox.h"/>
         </GROUP>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
+          <FILE id="kztzNJ" name="CompareModule.cpp" compile="1" resource="0"
+                file="Source/CompareModule.cpp"/>
+          <FILE id="ZblTFg" name="CompareModule.h" compile="0" resource="0" file="Source/CompareModule.h"/>
           <FILE id="fnPBLV" name="TextInputModule.cpp" compile="1" resource="0"
                 file="Source/TextInputModule.cpp"/>
           <FILE id="hSUZQM" name="TextInputModule.h" compile="0" resource="0"

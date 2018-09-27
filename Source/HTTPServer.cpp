@@ -40,7 +40,7 @@ void HTTPServer::run() {
 
         if (clientSocket == nullptr) {
             clientSocket = socket->waitForNextConnection();
-            sleep(100);
+            sleep(10);
         }
         else {
             if (!clientSocket->isConnected()) {
@@ -117,11 +117,27 @@ void HTTPServer::run() {
                         
                         responseHeader += "Content-Length:"+juce::String(defaultDocument.length())+"\r\n\r\n";
                         
+                        
                         juce::String response = responseHeader + defaultDocument;
                         
                         clientSocket->write(response.toRawUTF8(),response.length());
                     }
                     
+                }
+                else if (resources.getReference(0).equalsIgnoreCase("OPTIONS")) {
+                    String responseBody = "";
+                    juce::String responseHeader = "HTTP/1.1 200 OK\r\n";
+                    responseHeader += "Content-Type:application/json\r\n";
+                    responseHeader += "Access-Control-Allow-Origin: *\r\n";
+                    responseHeader += "Access-Control-Allow-Methods: PUT, OPTIONS\r\n";
+                    responseHeader += "Access-Control-Allow-Headers: Content-Type\r\n";
+                    responseHeader += "Access-Control-Request-Method: PUT\r\n";
+                    responseHeader += "Access-Control-Request-Headers:X-PINGOTHER, Content-Type\r\n";
+                    responseHeader += "Access-Control-Max-Age: 1728000\r\n";
+                    responseHeader += "Connection: keep-alive\r\n";
+                    responseHeader += "Content-Length:"+juce::String(responseBody.length())+"\r\n\r\n";
+                    juce::String response = responseHeader + responseBody;
+                    clientSocket->write(response.toRawUTF8(),response.length());
                 }
                 else if (resources.getReference(0).equalsIgnoreCase("PUT")) {
                     juce::String resource = resources.getReference(1);
@@ -141,6 +157,16 @@ void HTTPServer::run() {
                         float value = JSON::parse(data).getDynamicObject()->getProperty(propName).toString().getFloatValue();
                         MessageBus::getInstance()->updateTopic(propName,value);
                         
+                        String responseBody = data;
+                        juce::String responseHeader = "HTTP/1.1 200 OK\r\n";
+                        responseHeader += "Content-Type:application/json\r\n";
+                        responseHeader += "Access-Control-Allow-Origin: *\r\n";
+                        responseHeader += "Access-Control-Allow-Methods: PUT\r\n";
+                        responseHeader += "Access-Control-Allow-Headers: Content-Type\r\n";
+                        responseHeader += "Access-Control-Max-Age: 1728000\r\n";
+                        responseHeader += "Content-Length:"+juce::String(responseBody.length())+"\r\n\r\n";
+                        juce::String response = responseHeader + responseBody;
+                        clientSocket->write(response.toRawUTF8(),response.length());
                     }
                     
                     
@@ -153,7 +179,7 @@ void HTTPServer::run() {
             }
         }
 
-        sleep(100);
+        sleep(10);
     
     }
         
