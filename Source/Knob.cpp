@@ -277,7 +277,7 @@ bool Knob::isMidiController() {
 
 void Knob::setController(int num) {
     this->controllerNum = num;
-    this->controllerValue->setValue(controllerValue);
+    this->controllerValue->setValue(num);
 }
 
 int Knob::getController() {
