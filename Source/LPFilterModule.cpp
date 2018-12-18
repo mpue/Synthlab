@@ -109,6 +109,7 @@ void LPFilterModule::process() {
         
         if (this->frequency != pins.at(0)->getConnections().at(0)->getValue()) {
             this->frequency =  pins.at(0)->getConnections().at(0)->getValue();
+            frequency = std::max(0.0f, std::min(frequency, 20000.0f));
             filter->coefficients(sampleRate, frequency, resonance);
         }
         

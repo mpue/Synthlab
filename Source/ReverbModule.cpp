@@ -115,31 +115,40 @@ void ReverbModule::process() {
     
     if (pins.at(4)->getConnections().size() ==  1) {
         if (getDamping() != pins.at(4)->getConnections().at(0)->getValue()) {
-            setDamping(pins.at(4)->getConnections().at(0)->getValue());
+            damping = pins.at(4)->getConnections().at(0)->getValue();
+            setDamping(damping);
             reverb->setParameters(params);
         }
     }
     if (pins.at(5)->getConnections().size() ==  1) {
         if (getWetLevel() != pins.at(5)->getConnections().at(0)->getValue()) {
-            setWetLevel(pins.at(5)->getConnections().at(0)->getValue());
+            wetLevel = (pins.at(5)->getConnections().at(0)->getValue());
+            wetLevel = std::max(0.0f, std::min(wetLevel, 1.0f));
+            setWetLevel(wetLevel);
             reverb->setParameters(params);
         }
     }
     if (pins.at(6)->getConnections().size() ==  1) {
         if (getDryLevel() != pins.at(6)->getConnections().at(0)->getValue()) {
-            setDryLevel(pins.at(6)->getConnections().at(0)->getValue());
+            dryLevel = (pins.at(5)->getConnections().at(0)->getValue());
+            dryLevel = std::max(0.0f, std::min(dryLevel, 1.0f));
+            setDryLevel(dryLevel);
             reverb->setParameters(params);
         }
     }
     if (pins.at(7)->getConnections().size() ==  1) {
         if (getRoomSize() != pins.at(7)->getConnections().at(0)->getValue()) {
-            setRoomSize(pins.at(7)->getConnections().at(0)->getValue());
+            roomSize = pins.at(7)->getConnections().at(0)->getValue();
+            roomSize = std::max(0.0f, std::min(roomSize, 1.0f));
+            setRoomSize(roomSize);
             reverb->setParameters(params);
         }
     }
     if (pins.at(8)->getConnections().size() ==  1) {
         if (getFeedbackLevel() != pins.at(8)->getConnections().at(0)->getValue()) {
-            setFeedbackLevel(pins.at(8)->getConnections().at(0)->getValue());
+            freezeMode = pins.at(8)->getConnections().at(0)->getValue();
+            freezeMode = std::max(0.0f, std::min(freezeMode, 1.0f));
+            setFeedbackLevel(freezeMode);
             reverb->setParameters(params);
         }
     }
@@ -158,6 +167,15 @@ void ReverbModule::process() {
         pins.at(2)->getAudioBuffer()->copyFrom(0, 0, bufferLeft, buffersize);
         pins.at(3)->getAudioBuffer()->copyFrom(0, 0, bufferRight, buffersize);
         
+    }
+    else {
+        for (int i = 0; i < buffersize;i++){
+            bufferLeft[i] = 0;
+            bufferRight[i] = 0;
+        }
+        
+        pins.at(2)->getAudioBuffer()->copyFrom(0, 0, bufferLeft, buffersize);
+        pins.at(3)->getAudioBuffer()->copyFrom(0, 0, bufferRight, buffersize);
     }
     
 }
