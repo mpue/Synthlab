@@ -3,6 +3,7 @@
 <JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.3.2" bundleIdentifier="de.pueski.SynthlabX"
               version="1.0.1" companyName="Pueski" id="JWX8Tz">
   <MAINGROUP id="CKGTaZ" name="Synthlab">
+    <FILE id="wzbw0c" name="README.md" compile="0" resource="1" file="README.md"/>
     <GROUP id="{9F42F092-AC3C-70BC-861B-ED2885470C98}" name="Regression">
       <FILE id="jOfdml" name="2osc_gate.slb" compile="0" resource="1" file="Regression/2osc_gate.slb"/>
       <FILE id="FCpfyi" name="3osc_broad.slb" compile="0" resource="1" file="Regression/3osc_broad.slb"/>
@@ -90,6 +91,15 @@
     </GROUP>
     <GROUP id="{76D84681-B72F-D5A2-9B1D-2A847D7CEA82}" name="Synths"/>
     <GROUP id="{4B823972-67BB-E3BB-E219-7A6E1BDAC3BE}" name="docs">
+      <GROUP id="{2228D79F-4ABA-34CF-4950-C562AC354670}" name="images">
+        <FILE id="MAAAtL" name="synthlab1.jpeg" compile="0" resource="0" file="docs/images/synthlab1.jpeg"
+              xcodeResource="0"/>
+        <FILE id="DnWJrg" name="synthlab2.jpeg" compile="0" resource="0" file="docs/images/synthlab2.jpeg"
+              xcodeResource="0"/>
+        <FILE id="rLvOSe" name="synthlab3.jpeg" compile="0" resource="0" file="docs/images/synthlab3.jpeg"
+              xcodeResource="0"/>
+        <FILE id="vhcjTO" name="synthlab4.jpeg" compile="0" resource="0" file="docs/images/synthlab4.jpeg"/>
+      </GROUP>
       <FILE id="Z3Znri" name="adsr.txt" compile="0" resource="1" file="docs/adsr.txt"/>
       <FILE id="IcVqhD" name="highpass.txt" compile="0" resource="1" file="docs/highpass.txt"/>
       <FILE id="cSWvxL" name="lowpass.txt" compile="0" resource="1" file="docs/lowpass.txt"/>

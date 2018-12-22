@@ -3,6 +3,10 @@ Modular Synthesizer Studio
 
 Synthlab is in fact a simple Reaktor clone. It allows you to build synthesisers in a graphical manner.
 
+Currenly Synthlab is intended as a standalone application. We probably provide a plugin in the future.
+
+![Screenshot 1](docs/images/synthlab1.jpeg)
+
 It's a JUCE project, so simply go to juce.com and download the framework. 
 Then start the projucer and open the project file in order to generate your platform configuration.
 
@@ -13,3 +17,4 @@ To get the thing running you can use the projucer. But if you would like to have
 But do not hesitate to dig into the code and make Synthlab a better place. ;)
 
 Feel free to contact me for questions.
+
