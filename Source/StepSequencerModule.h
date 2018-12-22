@@ -36,7 +36,7 @@ public:
 
     
 private:
-    
+    bool sync = false;
     float tempo = 120;
     SequenceEditor* editor = nullptr;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (StepSequencerModule)

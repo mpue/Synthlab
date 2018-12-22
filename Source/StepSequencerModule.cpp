@@ -84,13 +84,22 @@ void StepSequencerModule::eventReceived(Event *e) {
         }
     }
     else if (e->getType() == Event::Type::CLOCK) {
+        editor->setTempo(tempo);
+        if (!sync && editor->isRunning()) {
+            sync = true;
+            editor->setRunning(false);
+            editor->setRunning(true);
+        }
         editor->triggerNextStep();
+
     }
     else if (e->getType() == Event::Type::CLOCK_START) {
+        
         editor->setRunning(true);
     }
     else if (e->getType() == Event::Type::CLOCK_STOP) {
         editor->setRunning(false);
+        sync = false;
     }
 }
 

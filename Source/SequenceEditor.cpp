@@ -1,5 +1,6 @@
 #include <iomanip>
 #include "SequenceEditor.h"
+#include "AudioManager.h"
 
 using juce::String;
 using juce::TextButton;
@@ -29,6 +30,8 @@ int SequenceEditor::gridHeight = 6;
 SequenceEditor::SequenceEditor (Pin* output)
 {
     this->output = output;
+
+    thread = new TimeSliceThread("Bad motherfucker");
     
     addAndMakeVisible (playButton = new TextButton ("Play"));
     playButton->setButtonText (TRANS("Play"));
@@ -92,6 +95,8 @@ SequenceEditor::~SequenceEditor()
     clearButton = nullptr;
     lengthSlider = nullptr;
     delete view;
+    thread->removeAllClients();
+    delete thread;
 }
 
 //==============================================================================
@@ -114,7 +119,7 @@ void SequenceEditor::buttonClicked (Button* buttonThatWasClicked)
     if (buttonThatWasClicked == playButton)
     {
         if (syncMode == SyncMode::INTERNAL) {
-            startTimer(((float)60 / tempo) * (float)1000 / (float)4);
+            thread->addTimeSliceClient(this);
         }
         running = true;
 
@@ -122,7 +127,7 @@ void SequenceEditor::buttonClicked (Button* buttonThatWasClicked)
     else if (buttonThatWasClicked == recordButton)
     {
         if (syncMode == SyncMode::INTERNAL) {
-            stopTimer();
+            thread->removeTimeSliceClient(this);
         }
         else {
             running = false;
@@ -213,11 +218,11 @@ bool SequenceEditor::keyPressed (const KeyPress& key)
 
     if (key.getKeyCode() == KeyPress::spaceKey) {
         if (!running) {
-            startTimer(((float)60 / tempo) * (float)1000 / (float)4);
+            thread->addTimeSliceClient(this);
             running = true;
         }
         else {
-            stopTimer();
+            thread->removeTimeSliceClient(this);
             running = false;
         }
     }
@@ -398,13 +403,36 @@ void SequenceEditor::handlePartialSysexMessage (MidiInput* source,
 }
 
 
-void SequenceEditor::timerCallback() {
+int SequenceEditor::useTimeSlice() {
+    
+    CriticalSection& c = AudioManager::getInstance()->getDeviceManager()->getAudioCallbackLock();
+    
+    Time t;
+    
+    int start = t.getMilliseconds();
+    
+    c.enter();
     triggerNextStep();
+    c.exit();
+
+    int stop = t.getMilliseconds();
+    
+    int delta = stop - start;
+    
+    return (((float)60 / tempo) * 1000.0f / 4.0f) - delta;
 }
 
 void SequenceEditor::setRunning(bool running) {
     this->running = running;
     this->currentStep = 0;
+    std::function<void(void)> changeLambda =
+    [=]() {  content->repaint(); };
+    juce::MessageManager::callAsync(changeLambda);
+}
+
+void SequenceEditor::reset() {
+
+
 }
 
 void SequenceEditor::triggerNextStep() {

@@ -984,7 +984,7 @@ void MainComponent::handleIncomingMidiMessage(juce::MidiInput *source, const juc
             sendMidiStartMessage(editor->getModule()->getModules()->at(i), message.getChannel());
         }
     }
-    else if (message.isMidiMachineControlMessage()) {
+    else if (message.isMidiStop()) {
         for (int i = 0; i < editor->getModule()->getModules()->size();i++) {
             sendMidiStopMessage(editor->getModule()->getModules()->at(i), message.getChannel());
         }

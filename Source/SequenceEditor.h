@@ -7,7 +7,7 @@
 
 class SequenceEditor  : public juce::Component,
                         public juce::AudioProcessorPlayer,
-                        public juce::Timer,
+                        public juce::TimeSliceClient,
                         public juce::Button::Listener,
                         public juce::Slider::Listener
 {
@@ -31,7 +31,7 @@ public:
 
     void sendConfig();
     int getConfigLength();
-    void timerCallback() override;
+    int useTimeSlice () override;
     void paint (juce::Graphics& g) override;
     void resized() override;
     void buttonClicked (juce::Button* buttonThatWasClicked) override;
@@ -49,6 +49,17 @@ public:
     void setRunning(bool running);
     
     void triggerNextStep();
+    
+    void reset();
+    
+    void setTempo(float tempo) {
+        this->tempo = tempo;
+    }
+    
+    
+    bool isRunning() {
+        return running;
+    }
     
     struct SequencePanel : public juce::Component {
         
@@ -136,6 +147,8 @@ private:
     int clockEventNum = 0;
     
     bool running = false;
+    
+    TimeSliceThread* thread;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SequenceEditor)
 };

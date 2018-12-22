@@ -81,7 +81,8 @@ void MidiClock::timerCallback() {
 
 void MidiClock::clock(juce::MidiMessage message) {
     Event* e = new Event("clock",Event::Type::CLOCK);
-    
+    double tempo = 60.0f / (message.getTempoSecondsPerQuarterNote() * 4);
+    e->setValue(tempo);
     for (int i = 0; i < pins.at(1)->getConnections().size();i++) {
         pins.at(1)->getConnections().at(i)->sendEvent(new Event(e));
     }
