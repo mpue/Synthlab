@@ -11,7 +11,7 @@
 #include "SynthEditor.h"
 #include "PropertyView.h"
 #include "MainTabbedComponent.h"
-#include "MasterChannelPanel.h"
+#include "Tracks/MasterChannelPanel.h"
 #include "MixerPanel.h"
 #include "ToolbarComboBox.h"
 #include "EditorComponent.h"

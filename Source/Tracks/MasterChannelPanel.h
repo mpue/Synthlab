@@ -7,23 +7,26 @@
   the "//[xyz]" and "//[/xyz]" sections will be retained when the file is loaded
   and re-saved.
 
-  Created with Projucer version: 5.2.1
+  Created with Projucer version: 4.3.0
 
   ------------------------------------------------------------------------------
 
-  The Projucer is part of the JUCE library.
-  Copyright (c) 2017 - ROLI Ltd.
+  The Projucer is part of the JUCE library - "Jules' Utility Class Extensions"
+  Copyright (c) 2015 - ROLI Ltd.
 
   ==============================================================================
 */
 
-#pragma once
+#ifndef __JUCE_HEADER_F8A62509C3ECE492__
+#define __JUCE_HEADER_F8A62509C3ECE492__
 
 //[Headers]     -- You can add your own extra header files here --
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "CustomLookAndFeel.h"
-#include "Mixer.h"
-#include "VolumeAdjustable.h"
+#include "Track.h"
+#include "../Mixer.h"
+#include "DragConstrainer.h"
+#include "../VolumeAdjustable.h"
 //[/Headers]
 
 
@@ -50,33 +53,31 @@ public:
     //==============================================================================
     //[UserMethods]     -- You can add your own custom methods in this section.
 
-
-
     enum MeterMode {
         RMS,
         MAGNITUDE
     };
 
-    void mouseDown (const juce::MouseEvent& e) override;
-    void mouseDrag (const juce::MouseEvent& e) override;
+    void mouseDown (const MouseEvent& e) override;
+    void mouseDrag (const MouseEvent& e) override;
 
-    virtual void changeListenerCallback(juce::ChangeBroadcaster * source) override;
-    void setName(juce::String name);
+    virtual void changeListenerCallback(ChangeBroadcaster * source) override;
+    void setName(String name);
     void setMagnitude(int channel, float magnitude);
     void setMute(bool mute);
     void setSolo(bool solo);
     bool getMute();
     bool getSolo();
     double getVolume();
-    void setVolume(float volume);
     double getPan();
+    void setVolume(float volume);
+    void setTrack(Track* t);
     int getIndex();
     void setIndex(int index);
     Mixer::Channel::Type getChannelType();
     void setChannelType(Mixer::Channel::Type type);
     void setChannel(Mixer::Channel* channel);
     void setModule(VolumeAdjustable* v);
-
     //[/UserMethods]
 
     void paint (Graphics& g) override;
@@ -106,6 +107,10 @@ private:
     double volume = 1.0f;
     double pan = 0.0f;
 
+    Track* track = NULL;
+
+    CustomLookAndFeel* clf;
+
     int index = 0;
     Mixer::Channel* channel;
     VolumeAdjustable* module;
@@ -130,3 +135,5 @@ private:
 
 //[EndFile] You can add extra defines here...
 //[/EndFile]
+
+#endif   // __JUCE_HEADER_F8A62509C3ECE492__

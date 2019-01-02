@@ -9,6 +9,8 @@
 #include "Mixer.h"
 #include <vector>
 
+Mixer *Mixer::instance = NULL;
+
 Mixer::Mixer() {
     
 }

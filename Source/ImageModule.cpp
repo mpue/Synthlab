@@ -44,12 +44,16 @@ ImageModule::ImageModule()
 void ImageModule::createProperties() {
     imageValue = new Value();
     imageListener = new ImageListener(*imageValue, this);
+    imagePathValue = new Value();
+    imagePathListener = new ImagePathListener(*imageValue, this);
 }
 
 ImageModule::~ImageModule()
 {
     delete imageValue;
     delete imageListener;
+    delete imagePathValue;
+    delete imagePathListener;
     
     if (image != nullptr) {
         delete image;
@@ -95,6 +99,7 @@ void ImageModule::setImage(String imagePath) {
     Image img = ImageFileFormat::loadFrom(imageFile);
     this->image = new Image(img);
     this->imagePath = imagePath;
+    this->imagePathValue->setValue(imagePath);
     
     originalImage = this->image;
     
@@ -105,8 +110,10 @@ juce::Array<PropertyComponent*>& ImageModule::getProperties() {
     
     properties = juce::Array<PropertyComponent*>();
     imageProp = new FileButtonPropertyComponent("Select image", *imageValue);
+    imagePathProp = new TextPropertyComponent(*imagePathValue,"Path",16, false,true);
 
     properties.add(imageProp);
+    properties.add(imagePathProp);
     
     return properties;
 }

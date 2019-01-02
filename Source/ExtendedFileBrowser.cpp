@@ -8,7 +8,7 @@
 
 #include "ExtendedFileBrowser.h"
 #include "../JuceLibraryCode/JuceHeader.h"
-#include "Project.h"
+#include "Project/Project.h"
 #include "AudioManager.h"
 
 using juce::File;

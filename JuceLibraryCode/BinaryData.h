@@ -9,7 +9,7 @@
 namespace BinaryData
 {
     extern const char*   README_md;
-    const int            README_mdSize = 695;
+    const int            README_mdSize = 1466;
 
     extern const char*   _2osc_gate_slb;
     const int            _2osc_gate_slbSize = 8449;
@@ -212,6 +212,9 @@ namespace BinaryData
     extern const char*   sine_png;
     const int            sine_pngSize = 2512;
 
+    extern const char*   snapshot_png;
+    const int            snapshot_pngSize = 1093;
+
     extern const char*   speaker_png;
     const int            speaker_pngSize = 4111;
 
@@ -234,7 +237,7 @@ namespace BinaryData
     const int            whitenoise_pngSize = 7446;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 75;
+    const int namedResourceListSize = 76;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

@@ -12,7 +12,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Connection.h"
-#include "Project.h"
+#include "Project/Project.h"
 #include "AudioManager.h"
 #include "AudioRecorderEditor.h"
 

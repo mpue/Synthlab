@@ -21,7 +21,7 @@
 
 //[Headers]     -- You can add your own extra header files here --
 #include "../JuceLibraryCode/JuceHeader.h"
-#include "MasterChannelPanel.h"
+#include "Tracks/MasterChannelPanel.h"
 #include "Mixer.h"
 #include "AuxOut.h"
 #include "AudioIn.h"

@@ -20,7 +20,7 @@
 #include "Actions/DuplicateModuleAction.h"
 #include "Actions/RemoveSelectedAction.h"
 #include "Actions/MoveSelectedAction.h"
-#include "Project.h"
+#include "Project/Project.h"
 #include "LabelModule.h"
 #include "SamplerModule.h"
 #include "OneShotTimer.h"

@@ -4,7 +4,7 @@
 #include "AudioThumbnailComponent.h"
 #include "SamplerModule.h"
 #include "AudioManager.h"
-#include "Project.h"
+#include "Project/Project.h"
 
 class SamplerModule;
 

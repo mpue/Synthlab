@@ -10,11 +10,22 @@
 #define Mixer_h
 
 #include "../JuceLibraryCode/JuceHeader.h"
+#include "Tracks/Track.h"
 
-
-class Mixer {
-  
+class 		Mixer : public ChangeListener, public ChangeBroadcaster {
+    
 public:
+
+    static Mixer* getInstance() {
+        if (instance == NULL) {
+            instance = new Mixer();
+        }
+        return instance;
+    }
+    
+    static void destroy() {
+        delete instance;
+    }
     
     class Channel {
         
@@ -36,8 +47,34 @@ public:
         int index;
     };
     
-    Mixer();
-    ~Mixer();
+
+    inline void addTrack(Track* track) {
+        this->tracks.push_back(track);
+        track->addChangeListener(this);
+        sendChangeMessage();
+    }
+    
+    vector<Track*> getTracks() {
+        return this->tracks;
+    }
+    
+    inline virtual void changeListenerCallback (ChangeBroadcaster* source) override {
+        
+        if (Track* t = dynamic_cast<Track*>(source)) {
+            lastModified = t;
+            sendChangeMessage();
+        }
+        
+    }
+    
+    Track* getLastModifiedTrack() {
+        return this->lastModified;
+    }
+    
+    
+    inline void addChangeListener (ChangeListener* listener) {
+        ChangeBroadcaster::addChangeListener(listener);
+    }
     
     std::vector<Channel*>& getChannels();
     void addChannel(Channel* channel);
@@ -52,8 +89,63 @@ public:
     int getNumInputs();
     int getNumAuxBusses();
     
+    void setAvailableInputChannelNames(StringArray channels) {
+        this->availableInputChannels = channels;
+    }
+    
+    StringArray getInputChannels() {
+        return this->availableInputChannels;
+    }
+    
+    void setAvailableOutputChannelNames(StringArray channels) {
+        this->availableOutputChannels = channels;
+    }
+    
+    StringArray getOutputChannels() {
+        return this->availableOutputChannels;
+    }
+    
+    vector<String> getMidiInputs() {
+        return midiInputs;
+    }
+    
+    vector<String> getMidiOutputs() {
+        return midiOutputs;
+    }
+    
+    void clearMidiInputs() {
+        this->midiInputs.clear();
+    }
+    
+    void clearMidiOutputs() {
+        this->midiOutputs.clear();
+    }
+    
+    void addMidiInput(String name) {
+        this->midiInputs.push_back(name);
+    }
+    
+    void addMidiOutput(String name) {
+        this->midiOutputs.push_back(name);
+    }
+    
 private:
+    
+    Mixer();
+    ~Mixer();
+    
+    static Mixer* instance;
+    
+    vector<Track*> tracks;
+    Track* lastModified = NULL;
+    
     std::vector<Channel*> channels;
+    
+    StringArray availableInputChannels;
+    StringArray availableOutputChannels;
+    
+    vector<String> midiInputs;
+    vector<String> midiOutputs;
 };
 
 #endif /* Mixer_hpp */

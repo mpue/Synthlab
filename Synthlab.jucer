@@ -158,6 +158,7 @@
       <FILE id="KRpZvz" name="sequence.png" compile="0" resource="1" file="Images/sequence.png"/>
       <FILE id="hyumdp" name="settings.png" compile="0" resource="1" file="Images/settings.png"/>
       <FILE id="q1YVvz" name="sine.png" compile="0" resource="1" file="Images/sine.png"/>
+      <FILE id="ox04YZ" name="snapshot.png" compile="0" resource="1" file="Images/snapshot.png"/>
       <FILE id="Grgqb1" name="speaker.png" compile="0" resource="1" file="Images/speaker.png"/>
       <FILE id="e6TDlD" name="stereodelay.png" compile="0" resource="1" file="Images/stereodelay.png"/>
       <FILE id="oa95Wx" name="stop.png" compile="0" resource="1" file="Images/stop.png"/>
@@ -167,6 +168,94 @@
       <FILE id="EJ4uon" name="whitenoise.png" compile="0" resource="1" file="Images/whitenoise.png"/>
     </GROUP>
     <GROUP id="{CA20D122-1EA5-3A93-F1F8-F6EE53DA457E}" name="Source">
+      <FILE id="j0wLxh" name="Session.cpp" compile="1" resource="0" file="Source/Session.cpp"/>
+      <FILE id="xr1D6n" name="Session.h" compile="0" resource="0" file="Source/Session.h"/>
+      <FILE id="a3Ycus" name="DragConstrainer.h" compile="0" resource="0"
+            file="Source/DragConstrainer.h"/>
+      <FILE id="eU4D9d" name="ImageToggleButton.cpp" compile="1" resource="0"
+            file="Source/ImageToggleButton.cpp"/>
+      <FILE id="RQjYkB" name="ImageToggleButton.h" compile="0" resource="0"
+            file="Source/ImageToggleButton.h"/>
+      <FILE id="FrxMcy" name="ResizeConstrainer.h" compile="0" resource="0"
+            file="Source/ResizeConstrainer.h"/>
+      <GROUP id="{4D7EAD10-981D-6F1E-0DC9-A21F1E92EE95}" name="Project">
+        <FILE id="D7xLcE" name="AudioClip.cpp" compile="1" resource="0" file="Source/Project/AudioClip.cpp"/>
+        <FILE id="pdXykI" name="AudioClip.h" compile="0" resource="0" file="Source/Project/AudioClip.h"/>
+        <FILE id="v2R6xe" name="AuxBusConfig.cpp" compile="1" resource="0"
+              file="Source/Project/AuxBusConfig.cpp"/>
+        <FILE id="XuVXbS" name="AuxBusConfig.h" compile="0" resource="0" file="Source/Project/AuxBusConfig.h"/>
+        <FILE id="NKEkOu" name="AuxSendConfig.cpp" compile="1" resource="0"
+              file="Source/Project/AuxSendConfig.cpp"/>
+        <FILE id="DHD0LR" name="AuxSendConfig.h" compile="0" resource="0" file="Source/Project/AuxSendConfig.h"/>
+        <FILE id="Fmimf5" name="EffectConfig.cpp" compile="1" resource="0"
+              file="Source/Project/EffectConfig.cpp"/>
+        <FILE id="lNaTCu" name="EffectConfig.h" compile="0" resource="0" file="Source/Project/EffectConfig.h"/>
+        <FILE id="rzQe7b" name="InstrumentConfig.cpp" compile="1" resource="0"
+              file="Source/Project/InstrumentConfig.cpp"/>
+        <FILE id="C2s23x" name="InstrumentConfig.h" compile="0" resource="0"
+              file="Source/Project/InstrumentConfig.h"/>
+        <FILE id="A6Vxyw" name="MixerConfig.cpp" compile="1" resource="0" file="Source/Project/MixerConfig.cpp"/>
+        <FILE id="vJ1xjd" name="MixerConfig.h" compile="0" resource="0" file="Source/Project/MixerConfig.h"/>
+        <FILE id="fqVd29" name="Project.cpp" compile="1" resource="0" file="Source/Project/Project.cpp"/>
+        <FILE id="rW9gNP" name="Project.h" compile="0" resource="0" file="Source/Project/Project.h"/>
+        <FILE id="DQbPpi" name="ProjectConfig.cpp" compile="1" resource="0"
+              file="Source/Project/ProjectConfig.cpp"/>
+        <FILE id="o2Im5s" name="ProjectConfig.h" compile="0" resource="0" file="Source/Project/ProjectConfig.h"/>
+        <FILE id="xvfOe6" name="RegionConfig.cpp" compile="1" resource="0"
+              file="Source/Project/RegionConfig.cpp"/>
+        <FILE id="Mr5aTY" name="RegionConfig.h" compile="0" resource="0" file="Source/Project/RegionConfig.h"/>
+        <FILE id="u1csxq" name="TrackConfig.cpp" compile="1" resource="0" file="Source/Project/TrackConfig.cpp"/>
+        <FILE id="oGwMW2" name="TrackConfig.h" compile="0" resource="0" file="Source/Project/TrackConfig.h"/>
+      </GROUP>
+      <GROUP id="{38D83862-585A-00E2-D1DD-47C4FF4AB77C}" name="Tracks">
+        <FILE id="QALREW" name="AudioRegion.cpp" compile="1" resource="0" file="Source/Tracks/AudioRegion.cpp"/>
+        <FILE id="TK7Jo6" name="AudioRegion.h" compile="0" resource="0" file="Source/Tracks/AudioRegion.h"/>
+        <FILE id="cvn2sy" name="DragConstrainer.h" compile="0" resource="0"
+              file="Source/Tracks/DragConstrainer.h"/>
+        <FILE id="z4EEOH" name="MasterChannelPanel.cpp" compile="1" resource="0"
+              file="Source/Tracks/MasterChannelPanel.cpp"/>
+        <FILE id="bpI5QU" name="MasterChannelPanel.h" compile="0" resource="0"
+              file="Source/Tracks/MasterChannelPanel.h"/>
+        <FILE id="LsmICx" name="MidiRegion.cpp" compile="1" resource="0" file="Source/Tracks/MidiRegion.cpp"/>
+        <FILE id="sjkfcd" name="MidiRegion.h" compile="0" resource="0" file="Source/Tracks/MidiRegion.h"/>
+        <FILE id="CDrety" name="MidiThumbnail.cpp" compile="1" resource="0"
+              file="Source/Tracks/MidiThumbnail.cpp"/>
+        <FILE id="SsVxnA" name="MidiThumbnail.h" compile="0" resource="0" file="Source/Tracks/MidiThumbnail.h"/>
+        <FILE id="vlMzgh" name="PositionMarker.cpp" compile="1" resource="0"
+              file="Source/Tracks/PositionMarker.cpp"/>
+        <FILE id="wG8hhE" name="PositionMarker.h" compile="0" resource="0"
+              file="Source/Tracks/PositionMarker.h"/>
+        <FILE id="DuT5uN" name="Region.cpp" compile="1" resource="0" file="Source/Tracks/Region.cpp"/>
+        <FILE id="eWkEAB" name="Region.h" compile="0" resource="0" file="Source/Tracks/Region.h"/>
+        <FILE id="xGzlF2" name="TimeLine.cpp" compile="1" resource="0" file="Source/Tracks/TimeLine.cpp"/>
+        <FILE id="S8HpxC" name="TimeLine.h" compile="0" resource="0" file="Source/Tracks/TimeLine.h"/>
+        <FILE id="mwM1UG" name="Track.cpp" compile="1" resource="0" file="Source/Tracks/Track.cpp"/>
+        <FILE id="xxiYsU" name="Track.h" compile="0" resource="0" file="Source/Tracks/Track.h"/>
+        <FILE id="rm7Vdu" name="TrackNavigator.cpp" compile="1" resource="0"
+              file="Source/Tracks/TrackNavigator.cpp"/>
+        <FILE id="qcRCEi" name="TrackNavigator.h" compile="0" resource="0"
+              file="Source/Tracks/TrackNavigator.h"/>
+        <FILE id="iE6cwy" name="TrackPropertyConstrainer.h" compile="0" resource="0"
+              file="Source/Tracks/TrackPropertyConstrainer.h"/>
+        <FILE id="BMHP9L" name="TrackPropertyPanel.cpp" compile="1" resource="0"
+              file="Source/Tracks/TrackPropertyPanel.cpp"/>
+        <FILE id="NToMfh" name="TrackPropertyPanel.h" compile="0" resource="0"
+              file="Source/Tracks/TrackPropertyPanel.h"/>
+        <FILE id="ZD244F" name="TrackPropertyView.cpp" compile="1" resource="0"
+              file="Source/Tracks/TrackPropertyView.cpp"/>
+        <FILE id="yI1fyn" name="TrackPropertyView.h" compile="0" resource="0"
+              file="Source/Tracks/TrackPropertyView.h"/>
+        <FILE id="rwNJCC" name="TrackResizer.h" compile="0" resource="0" file="Source/Tracks/TrackResizer.h"/>
+        <FILE id="uv3hYe" name="WaveSelector.cpp" compile="1" resource="0"
+              file="Source/Tracks/WaveSelector.cpp"/>
+        <FILE id="ZVVF10" name="WaveSelector.h" compile="0" resource="0" file="Source/Tracks/WaveSelector.h"/>
+      </GROUP>
+      <GROUP id="{42923399-C36E-5718-8223-3A3628A02212}" name="Mixer">
+        <FILE id="KjitXz" name="Mixer.cpp" compile="1" resource="0" file="Source/Mixer/Mixer.cpp"/>
+        <FILE id="y0Kf93" name="Mixer.h" compile="0" resource="0" file="Source/Mixer/Mixer.h"/>
+        <FILE id="mskGuu" name="MixerPanel.cpp" compile="1" resource="0" file="Source/Mixer/MixerPanel.cpp"/>
+        <FILE id="QJR2cx" name="MixerPanel.h" compile="0" resource="0" file="Source/Mixer/MixerPanel.h"/>
+      </GROUP>
       <GROUP id="{5AE00788-8DD0-B80C-C433-5E1588E70C5C}" name="Server">
         <FILE id="p8msgg" name="HTTPServer.cpp" compile="1" resource="0" file="Source/HTTPServer.cpp"/>
         <FILE id="cq00hn" name="HTTPServer.h" compile="0" resource="0" file="Source/HTTPServer.h"/>
@@ -240,6 +329,8 @@
               file="Source/Actions/RemoveSelectedAction.h"/>
       </GROUP>
       <GROUP id="{A79C9093-D329-37A0-AEE1-CF7BDC5C60DE}" name="AudioEngine">
+        <FILE id="MPP9NX" name="WaveTable.cpp" compile="1" resource="0" file="Source/AudioEngine/WaveTable.cpp"/>
+        <FILE id="y3dN6B" name="WaveTable.h" compile="0" resource="0" file="Source/AudioEngine/WaveTable.h"/>
         <FILE id="r72Pun" name="FractionalDelayBuffer.cpp" compile="1" resource="0"
               file="Source/AudioEngine/FractionalDelayBuffer.cpp"/>
         <FILE id="RHMY06" name="FractionalDelayBuffer.h" compile="0" resource="0"
@@ -314,8 +405,6 @@
         <FILE id="NWNJTZ" name="AudioManager.h" compile="0" resource="0" file="Source/AudioManager.h"/>
         <FILE id="W9vONN" name="AudioManager.cpp" compile="1" resource="0"
               file="Source/AudioManager.cpp"/>
-        <FILE id="LTbDuF" name="Project.cpp" compile="1" resource="0" file="Source/Project.cpp"/>
-        <FILE id="WcR5ED" name="Project.h" compile="0" resource="0" file="Source/Project.h"/>
         <FILE id="NKE8pj" name="SelectionModel.cpp" compile="1" resource="0"
               file="Source/SelectionModel.cpp"/>
         <FILE id="RViUJy" name="SelectionModel.h" compile="0" resource="0"
@@ -652,6 +741,28 @@
         <MODULEPATH id="juce_audio_basics" path="../JUCE/modules"/>
       </MODULEPATHS>
     </ANDROIDSTUDIO>
+    <LINUX_MAKE targetFolder="Builds/LinuxMakefile">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug"/>
+        <CONFIGURATION isDebug="0" name="Release"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_video" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_opengl" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_cryptography" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_basics" path="../JUCE/modules"/>
+      </MODULEPATHS>
+    </LINUX_MAKE>
   </EXPORTFORMATS>
   <MODULES>
     <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>

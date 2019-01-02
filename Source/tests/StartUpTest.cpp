@@ -9,7 +9,7 @@
 */
 
 #include "../JuceLibraryCode/JuceHeader.h"
-#include "../Project.h"
+#include "../Project/Project.h"
 #include "../AudioManager.h"
 #include "../Plugins/PluginManager.h"
 #include "../MainComponent.h"

@@ -25,16 +25,17 @@ public:
     // are the ones we'll use in this demo.
     enum oolbarItemIds
     {
-        doc_new         = 1,
-        doc_open        = 2,
-        doc_save        = 3,
-        delete_element  = 4,
-        app_settings    = 5,
-        app_undo        = 6,
-        app_redo        = 7,
-        app_layer       = 8,
-        mod_sources     = 9
-        
+        doc_new          = 1,
+        doc_open         = 2,
+        doc_save         = 3,
+        delete_element   = 4,
+        app_settings     = 5,
+        app_undo         = 6,
+        app_redo         = 7,
+        app_layer        = 8,
+        app_snapshot     = 9,
+        app_snapshot_cam = 10,
+        mod_sources      = 11
         
     };
     
@@ -52,7 +53,10 @@ public:
         ids.add (app_undo);
         ids.add (app_redo);
         ids.add (app_layer);
+        ids.add (app_snapshot);
+        ids.add (app_snapshot_cam);
         ids.add (mod_sources);
+        
     }
     
     void getDefaultItemSet (juce::Array<int>& ids) override
@@ -68,7 +72,10 @@ public:
         ids.add (app_undo);
         ids.add (app_redo);
         ids.add (app_layer);
+        ids.add (app_snapshot);
+        ids.add (app_snapshot_cam);
         ids.add (mod_sources);
+       
     }
     
     juce::ToolbarItemComponent* createItem (int itemId) override
@@ -101,6 +108,12 @@ public:
             case app_layer:
                 b = new ToolbarComboBox(itemId);
                 return b;
+            case app_snapshot:
+                b = new ToolbarComboBox(itemId);
+                return b;
+            case app_snapshot_cam:
+                b = new juce::ToolbarButton(itemId,"Snapshot",getImage(itemId), getImage(itemId));
+                return b;
             case mod_sources:
                 b = new juce::ToolbarButton(itemId,"Sound sources",getImage(itemId), getImage(itemId));
                 return b;
@@ -116,27 +129,29 @@ public:
         
         juce::DrawableImage* di = new juce::DrawableImage();
         
-        if (itemId == 1)
+        if (itemId == doc_new)
             di->setImage(juce::ImageCache::getFromMemory(BinaryData::new_png, BinaryData::new_pngSize));
-        else if(itemId == 2)
+        else if(itemId == doc_open)
             di->setImage(juce::ImageCache::getFromMemory(BinaryData::open_png, BinaryData::open_pngSize));
-        else if(itemId == 3)
+        else if(itemId == doc_save)
             di->setImage(juce::ImageCache::getFromMemory(BinaryData::save_png, BinaryData::save_pngSize));
-        else if(itemId == 4)
+        else if(itemId == delete_element)
             di->setImage(juce::ImageCache::getFromMemory(BinaryData::delete_png, BinaryData::delete_pngSize));
-        else if(itemId == 5)
+        else if(itemId == app_settings)
             di->setImage(juce::ImageCache::getFromMemory(BinaryData::settings_png, BinaryData::settings_pngSize));
-        else if(itemId == 6)
+        else if(itemId == app_undo)
             di->setImage(juce::ImageCache::getFromMemory(BinaryData::undo_png, BinaryData::undo_pngSize));
-        else if(itemId == 7)
+        else if(itemId == app_redo)
             di->setImage(juce::ImageCache::getFromMemory(BinaryData::redo_png, BinaryData::redo_pngSize));
-        else if(itemId == 9)
+        else if(itemId == app_snapshot_cam)
+            di->setImage(juce::ImageCache::getFromMemory(BinaryData::snapshot_png, BinaryData::snapshot_pngSize));
+        else if(itemId == mod_sources)
             di->setImage(juce::ImageCache::getFromMemory(BinaryData::saw_png, BinaryData::saw_pngSize));
         return di;
     }
     
     int numItems() {
-        return 9;
+        return 10;
     }
     
 };

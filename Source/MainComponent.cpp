@@ -18,7 +18,7 @@
 #include "MidiGate.h"
 #include "MidiNote.h"
 #include "PrefabFactory.h"
-#include "Project.h"
+#include "Project/Project.h"
 #include "Knob.h"
 #include "Mixer.h"
 #include "Actions/RemoveSelectedAction.h"
@@ -172,7 +172,6 @@ MainComponent::~MainComponent()
         delete propertyView;
         delete toolbarFactory;
         delete editorView;
-        delete mixer;
         delete mixerPanel;
         delete lockButton;
     }
@@ -253,7 +252,7 @@ void MainComponent::createToolbar() {
     lockButton->setImages(false, true, true, normalImage, 1.0f, juce::Colours::white, normalImage, 1.0, juce::Colours::white, downImage, 1.0f, juce::Colours::white);
     lockButton->setClickingTogglesState(true);
     lockButton->setSize(24, 24);
-    lockButton->setTopLeftPosition(700,10);
+    lockButton->setTopLeftPosition(1000,10);
     toolbar->addAndMakeVisible(lockButton);
     
     lockButton->addListener(this);
@@ -329,7 +328,7 @@ void MainComponent::createStudioLayout() {
 void MainComponent::createPlayerLayout() {
     editor = new SynthEditor(sampleRate, buffersize);
     mixerPanel = new MixerPanel();
-    mixer = new Mixer();
+    mixer = Mixer::getInstance();
     mixerPanel->setMixer(mixer);
     editor->setMixer(mixerPanel);
     addAndMakeVisible(editor);

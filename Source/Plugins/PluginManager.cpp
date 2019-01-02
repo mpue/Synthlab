@@ -7,7 +7,7 @@
 //
 
 #include "PluginManager.h"
-#include "../Project.h"
+#include "../Project/Project.h"
 
 using juce::AudioPluginFormatManager;
 using juce::PropertiesFile;

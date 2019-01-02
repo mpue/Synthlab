@@ -12,7 +12,7 @@
 #include "EditorComponent.h"
 #include "SynthEditor.h"
 #include "Mixer.h"
-#include "Project.h"
+#include "Project/Project.h"
 
 using juce::Viewport;
 using juce::Colours;
@@ -41,7 +41,7 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize) : resizerBar 
     topTab->addTab("Editor", juce::Colours::grey, editorView, false);
     
     mixerPanel = new MixerPanel();
-    mixer = new Mixer();
+    mixer = Mixer::getInstance();
     mixerPanel->setMixer(mixer);
     
     mixerView = new Viewport();
@@ -80,7 +80,6 @@ EditorComponent::~EditorComponent()
 
     delete editor;
     delete editorView;
-    delete mixer;
     delete mixerPanel;
     delete mixerView;
     // delete topTab;

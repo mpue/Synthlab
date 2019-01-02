@@ -16,7 +16,8 @@
 #include "PrefabFactory.h"
 #include <vector>
 #include "MixerPanel.h"
-#include "Project.h"
+#include "Mixer.h"
+#include "Project/Project.h"
 #include "EditorListener.h"
 #include "IEditor.h"
 

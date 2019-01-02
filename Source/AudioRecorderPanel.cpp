@@ -18,7 +18,7 @@
 */
 
 //[Headers] You can add your own extra header files here...
-#include "Project.h"
+#include "Project/Project.h"
 //[/Headers]
 
 #include "AudioRecorderPanel.h"

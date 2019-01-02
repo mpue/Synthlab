@@ -180,12 +180,20 @@ template<typename T> void OscillatorModule<T>::configurePins() {
     
     p6->setDescription("Pitch bend input");
     
+    Pin* p7 = new Pin(Pin::Type::VALUE);
+    p7->direction = Pin::Direction::IN;
+    p7->listeners.push_back(this);
+    p7->setName("Mod");
+    
+    p7->setDescription("Shape modulation input");
+    
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::IN,p2);
     addPin(Pin::Direction::IN,p3);
     addPin(Pin::Direction::OUT,p4);
     addPin(Pin::Direction::OUT,p5);
     addPin(Pin::Direction::IN,p6);
+    addPin(Pin::Direction::IN,p7);
     
     createProperties();
     out = pins.at(3)->getAudioBuffer();

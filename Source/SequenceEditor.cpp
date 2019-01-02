@@ -102,15 +102,16 @@ SequenceEditor::~SequenceEditor()
 //==============================================================================
 void SequenceEditor::paint (Graphics& g)
 {
+
+}
+
+void SequenceEditor::resized()
+{
     if (content != nullptr && view != nullptr) {
         view->setTopLeftPosition(0,50);
         view->setSize(getWidth(), cellSize * 7);
         content->setSize(cellSize*32, cellSize * 6);
     }
-}
-
-void SequenceEditor::resized()
-{
 }
 
 void SequenceEditor::buttonClicked (Button* buttonThatWasClicked)
@@ -150,7 +151,9 @@ void SequenceEditor::mouseMove (const MouseEvent& e)
     mouseX = e.getPosition().getX();
     mouseY = e.getPosition().getY();
 
-    repaint();
+    std::function<void(void)> changeLambda =
+    [=]() {  content->repaint(); };
+    juce::MessageManager::callAsync(changeLambda);
 
 
 }
@@ -203,7 +206,9 @@ void SequenceEditor::mouseDrag (const MouseEvent& e)
 
     sendConfig();
 
-    repaint();
+    std::function<void(void)> changeLambda =
+    [=]() {  content->repaint(); };
+    juce::MessageManager::callAsync(changeLambda);
 
 
 }
@@ -441,24 +446,39 @@ void SequenceEditor::triggerNextStep() {
         return;
     }
 
-    if (clockEventNum % 6 == 0) {
-        currentStep = (currentStep + 1) % gridWidth;
-        
-        std::function<void(void)> changeLambda =
-        [=]() {  content->repaint(); };
-        juce::MessageManager::callAsync(changeLambda);
-        
-        
-        for (int y = 0; y < gridHeight;y++) {
+    std::function<void(void)> async =
+    [=]() {
+        if (clockEventNum % 6 == 0) {
+            currentStep = (currentStep + 1) % gridWidth;
             
-            Event* e = nullptr;
-            
-            if (grid[currentStep][y].isEnabled()) {
+            for (int y = 0; y < gridHeight;y++) {
                 
-                e = new Event("gate on",Event::Type::GATE);
+                Event* e = nullptr;
                 
-                e->setValue(grid[currentStep][y].getVelocity());
-                e->setNote(grid[currentStep][y].getNote());
+                if (grid[currentStep][y].isEnabled()) {
+                    
+                    e = new Event("gate on",Event::Type::GATE);
+                    
+                    e->setValue(grid[currentStep][y].getVelocity());
+                    e->setNote(grid[currentStep][y].getNote());
+                    
+                    if (output != nullptr) {
+                        
+                        for (int i = 0; i < output->getConnections().size();i++) {
+                            output->getConnections().at(i)->sendEvent(new Event(e));
+                        }
+                    }
+                }
+                e = new Event("gate off",Event::Type::GATE);
+                e->setValue(0);
+                
+                
+                if (currentStep > 0) {
+                    e->setNote(grid[currentStep - 1][y].getNote());
+                }
+                else {
+                    e->setNote(grid[gridWidth - 1][y].getNote());
+                }
                 
                 if (output != nullptr) {
                     
@@ -466,28 +486,20 @@ void SequenceEditor::triggerNextStep() {
                         output->getConnections().at(i)->sendEvent(new Event(e));
                     }
                 }
-            }
-            e = new Event("gate off",Event::Type::GATE);
-            e->setValue(0);
-            
-            
-            if (currentStep > 0) {
-                e->setNote(grid[currentStep - 1][y].getNote());
-            }
-            else {
-                e->setNote(grid[gridWidth - 1][y].getNote());
-            }
-            
-            if (output != nullptr) {
                 
-                for (int i = 0; i < output->getConnections().size();i++) {
-                    output->getConnections().at(i)->sendEvent(new Event(e));
-                }
             }
-            
         }
-    }
-    clockEventNum++;
+        clockEventNum++;
+    };
+    juce::MessageManager::callAsync(async);
+    
+
+    
+    std::function<void(void)> changeLambda =
+    [=]() {  content->repaint(); };
+    juce::MessageManager::callAsync(changeLambda);
+    
+
 
 }
 
