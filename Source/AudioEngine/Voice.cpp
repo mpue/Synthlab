@@ -16,7 +16,7 @@ Voice::Voice(float sampleRate) {
     this->sampleRate = sampleRate;
     this->calculateFrequencyTable();
     this->playing = false;
-    this->ampEnvelope = new ADSR();
+    this->ampEnvelope = new SynthLab::ADSR();
     this->modulator = 0;
     this->pitchBend = 1;
     
@@ -81,7 +81,7 @@ float Voice::process() {
     
     value = 0;
     
-    if(ampEnvelope->getState() != ADSR::env_idle) {
+    if(ampEnvelope->getState() != SynthLab::ADSR::env_idle) {
         
         float amplitude = (1.0f / (float) 127) * this->velocity;
 
@@ -176,7 +176,7 @@ float Voice::getSampleRate() {
     return this->sampleRate;
 }
 
-ADSR* Voice::getAmpEnvelope() {
+SynthLab::ADSR* Voice::getAmpEnvelope() {
     return ampEnvelope;
 }
 

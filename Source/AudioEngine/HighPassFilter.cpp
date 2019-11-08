@@ -47,9 +47,9 @@ void HighPassFilter::process(float *in, float *out, int numSamples) {
     if (this->modulator != 0) {
         
         
-        if (ADSR* env = dynamic_cast<ADSR*>(this->modulator)) {
+        if (SynthLab::ADSR* env = dynamic_cast<SynthLab::ADSR*>(this->modulator)) {
             
-            if(env->getState() != ADSR::env_idle) {
+            if(env->getState() != SynthLab::ADSR::env_idle) {
                 f =  this->frequency + (modulator->getOutput() * this->modAmount * (22000 - this->frequency));
             }
             else {

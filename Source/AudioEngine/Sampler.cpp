@@ -26,12 +26,13 @@ Sampler::Sampler(float sampleRate, int bufferSize) {
     this->interpolatorLeft = new CatmullRomInterpolator();
     this->interpolatorRight = new CatmullRomInterpolator();
     this->sampleBuffer = new AudioSampleBuffer(2,16384*1024);
-    this->samplerEnvelope = new ADSR();
+    this->samplerEnvelope = new SynthLab::ADSR();
     this->samplerEnvelope->setAttackRate(0.1 * sampleRate);
     this->samplerEnvelope->setReleaseRate(0.3 * sampleRate);
 }
 
 Sampler::~Sampler() {
+	stop();
     if(sampleBuffer != nullptr) {
         delete sampleBuffer;
     }
@@ -39,9 +40,11 @@ Sampler::~Sampler() {
         delete this->tempBufferLeft;
     if (tempBufferRight != nullptr)
         delete this->tempBufferRight;
-    
+
+	samplerEnvelope->reset();
     delete samplerEnvelope;
-    delete interpolatorLeft;
+	samplerEnvelope = NULL;
+	delete interpolatorLeft;
     delete interpolatorRight;
     
 }

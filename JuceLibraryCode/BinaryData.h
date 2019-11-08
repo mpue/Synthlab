@@ -9,7 +9,7 @@
 namespace BinaryData
 {
     extern const char*   README_md;
-    const int            README_mdSize = 1466;
+    const int            README_mdSize = 1510;
 
     extern const char*   _2osc_gate_slb;
     const int            _2osc_gate_slbSize = 8449;
@@ -51,7 +51,7 @@ namespace BinaryData
     const int            step3_slbSize = 4419;
 
     extern const char*   gtestparamtest_h_pump;
-    const int            gtestparamtest_h_pumpSize = 20042;
+    const int            gtestparamtest_h_pumpSize = 20552;
 
     extern const char*   boom_aif;
     const int            boom_aifSize = 1768430;
@@ -63,10 +63,10 @@ namespace BinaryData
     const int            highpass_txtSize = 644;
 
     extern const char*   lowpass_txt;
-    const int            lowpass_txtSize = 1363;
+    const int            lowpass_txtSize = 1367;
 
     extern const char*   oscillator_txt;
-    const int            oscillator_txtSize = 526;
+    const int            oscillator_txtSize = 528;
 
     extern const char*   adder_png;
     const int            adder_pngSize = 3242;

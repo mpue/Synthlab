@@ -150,7 +150,7 @@ void TrackNavigator::setPlaying(bool playing) {
     Session::getInstance()->setRecordingStartTime();
     sendChangeMessage();
     for (int i = 0; i < tracks.size();i++) {
-        for(int j = 0 ; j < tracks.at(i)->getRegions().size();j++) {
+       for(int j = 0 ; j < tracks.at(i)->getRegions().size();j++){
             tracks.at(i)->getRegions().at(j)->reset();
         }
     }

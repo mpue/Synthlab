@@ -82,12 +82,18 @@ void AudioRecorderModule::configurePins() {
     p4->direction = Pin::Direction::OUT;
     p4->listeners.push_back(this);
     p4->setName("R");
-    
+
+	Pin* p5 = new Pin(Pin::Type::EVENT);
+	p5->direction = Pin::Direction::IN;
+	p5->listeners.push_back(this);
+	p5->setName("Tr");
+
+
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::IN,p2);
     addPin(Pin::Direction::OUT,p3);
     addPin(Pin::Direction::OUT,p4);
-    
+	addPin(Pin::Direction::IN, p5);
 }
 
 void AudioRecorderModule::paint(juce::Graphics &g) {
@@ -131,12 +137,23 @@ void AudioRecorderModule::process() {
         
             if (inL != nullptr) {
                 editor->getBuffer()->setSample(0, currentRecordingSample,inL[i] * editor->getGain());
+				outL[i] = inL[i] * editor->getGain();
             }
+			else {
+				editor->getBuffer()->setSample(0, currentRecordingSample, 0);
+				outL[i] = 0;
+			}
             
             if (inR != nullptr) {
                 editor->getBuffer()->setSample(1, currentRecordingSample,inR[i] * editor->getGain());
+				outR[i] = inR[i] * editor->getGain();	
             }
+			else {
+				editor->getBuffer()->setSample(1, currentRecordingSample, 0);
+				outR[i] = 0;
+			}
         
+
             currentRecordingSample = (currentRecordingSample + 1);
             numRecordedSamples++;
             
@@ -166,11 +183,17 @@ void AudioRecorderModule::process() {
                 outL[i] = inL[i];
                 magnitudeL =  getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, buffersize) * editor->getGain();
             }
+			else {
+				outL[i] = 0;
+			}
             
             if (inR != nullptr) {
                 outR[i] = inR[i];
-                 magnitudeR = getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, buffersize) * editor->getGain();
+                magnitudeR = getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, buffersize) * editor->getGain();
             }
+			else {
+				outR[i] = 0;
+			}
         }
     }
     
@@ -260,6 +283,18 @@ void AudioRecorderModule::updateRecordingTime() {
     
     time += String(seconds);
     editor->setCurrentTime(time);
-    
-    
+     
+}
+
+void AudioRecorderModule::eventReceived(Event *e) {
+	if (e->getType() == Event::Type::GATE) {
+
+		if (e->getValue() > 0) {
+			getEditor()->toggleRecording();
+		}
+
+	}
+	if (e->getType() == Event::Type::CLOCK_START) {
+		getEditor()->toggleRecording();
+	}
 }

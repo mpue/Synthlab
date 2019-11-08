@@ -184,16 +184,7 @@ void AudioRecorderPanel::buttonClicked (Button* buttonThatWasClicked)
     if (buttonThatWasClicked == recordButton)
     {
         //[UserButtonCode_recordButton] -- add your button handler code here..
-        if (state == IDLE) {
-            state = RECORDING;
-            recordButton->setButtonText("Stop recording");
-        }
-        else {
-            state = IDLE;
-            recordButton->setButtonText("Start recording");
-        }
-        sendChangeMessage();
-
+		toggleRecording();
         //[/UserButtonCode_recordButton]
     }
     else if (buttonThatWasClicked == playButton)
@@ -285,6 +276,19 @@ bool AudioRecorderPanel::isMonitoring() {
 
 float AudioRecorderPanel::getGain() {
     return gain;
+}
+
+void AudioRecorderPanel::toggleRecording() {
+	if (state == IDLE) {
+		state = RECORDING;
+		recordButton->setButtonText("Stop recording");
+	}
+	else {
+		state = IDLE;
+		recordButton->setButtonText("Start recording");
+	}
+	sendChangeMessage();
+
 }
 
 //[/MiscUserCode]

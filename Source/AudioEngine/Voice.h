@@ -54,7 +54,7 @@ public:
     virtual void setModulator(Modulator* mod) override;
     virtual void setModAmount(float amount) override;
     
-    ADSR* getAmpEnvelope();
+	SynthLab::ADSR* getAmpEnvelope();
 
     float getSampleRate();
     
@@ -78,7 +78,7 @@ private:
     double midiNote[128];
     void calculateFrequencyTable();
     bool playing;
-    ADSR* ampEnvelope;
+	SynthLab::ADSR* ampEnvelope;
     Modulator* modulator;
     float pitchBend;
     float duration;

@@ -74,6 +74,10 @@ public:
     }
 
     float getOutput(int channel) {
+		if (!playing) {
+			return 0;
+		}
+
         return getCurrentSample(channel) * samplerEnvelope->process();
     }
     
@@ -109,5 +113,5 @@ private:
     juce::CatmullRomInterpolator* interpolatorLeft;
     juce::CatmullRomInterpolator* interpolatorRight;
     
-    ADSR* samplerEnvelope = nullptr;
+	SynthLab::ADSR* samplerEnvelope = nullptr;
 };

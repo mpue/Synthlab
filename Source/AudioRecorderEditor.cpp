@@ -158,3 +158,7 @@ int AudioRecorderEditor::getIndex() {
 void AudioRecorderEditor::setIndex(int index) {
     this->index = index;
 }
+
+void AudioRecorderEditor::toggleRecording() {
+	this->recorderPanel->toggleRecording();
+}

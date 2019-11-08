@@ -47,6 +47,8 @@ public:
     
     AudioRecorderEditor* getEditor();
     
+	void eventReceived(Event *e) override;
+
 private:
 
 

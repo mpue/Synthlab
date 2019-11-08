@@ -61,6 +61,9 @@ public:
     float getGain();
     void setMagnitude(int channel, float value);
     bool isMonitoring();
+
+	void toggleRecording();
+
     //[/UserMethods]
 
     void paint (Graphics& g) override;

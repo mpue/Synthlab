@@ -32,6 +32,7 @@ public:
     float getGain();
     int getIndex();
     void setIndex(int index);
+	void toggleRecording();
 private:
     
     AudioRecorderPanel* recorderPanel = nullptr;

@@ -41,6 +41,7 @@
 namespace ProjectInfo
 {
     const char* const  projectName    = "Synthlab";
+    const char* const  companyName    = "Pueski";
     const char* const  versionString  = "1.0.1";
     const int          versionNumber  = 0x10001;
 }

@@ -73,8 +73,8 @@ private:
     IsMonoListener* isMonoListener;
 
     juce::Image* image;
-    ADSR* envelope;
-    ADSR* envelopes[128];
+	SynthLab::ADSR* envelope;
+	SynthLab::ADSR* envelopes[128];
     int currentSample = 0;
     
     float attack = 0;

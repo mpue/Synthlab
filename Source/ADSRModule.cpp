@@ -41,11 +41,11 @@ ADSRModule::ADSRModule(double sampleRate, int buffersize)
 
     // Envelopes for polyphonic mode
     for (int i = 0; i < 128;i++){
-        this->envelopes[i] = new ADSR();
+        this->envelopes[i] = new SynthLab::ADSR();
     }
     
     // Single envelope for monophonic mode and modulation purposes
-    this->envelope = new ADSR();
+    this->envelope = new SynthLab::ADSR();
     
     editable = false;
     prefab = true;
@@ -206,7 +206,7 @@ void ADSRModule::process() {
         for (int i = 0; i < buffersize;i++){
             for (int j = 0; j < 128;j++) {
                 if (pins.at(5) != NULL) {
-                    if (this->envelopes[j]->getState() != ADSR::envState::env_idle) {
+                    if (this->envelopes[j]->getState() != SynthLab::ADSR::envState::env_idle) {
                         if (this->envelopes[j] != nullptr) {
                             pins.at(5)->data[j] = this->envelopes[j]->process();
                         }

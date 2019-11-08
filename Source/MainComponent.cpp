@@ -130,7 +130,9 @@ MainComponent::MainComponent() : resizerBar (&stretchableManager, 1, true)
 MainComponent::~MainComponent()
 {
     running = false;
-    
+
+	shutdownAudio();
+
     if(Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
         loadSlider->setLookAndFeel(nullptr);
         
@@ -185,7 +187,7 @@ MainComponent::~MainComponent()
     Project::getInstance()->destroy();
     
     // This shuts down the audio device and clears the audio source.
-    shutdownAudio();
+    
 }
 
 void MainComponent::createMenu() {
@@ -369,7 +371,7 @@ void MainComponent::timerCallback(){
     }
 
 }
-
+ /*
 void MainComponent::mouseDrag (const MouseEvent& event) {
     
     if(Project::getInstance()->getAppMode() == Project::AppMode::PLAYER) {
@@ -377,7 +379,7 @@ void MainComponent::mouseDrag (const MouseEvent& event) {
     }
     
     var description;
-    /*
+    
     TabBarButton* t = dynamic_cast<TabBarButton*>(event.originalComponent);
     
     if (t != nullptr) {
@@ -386,7 +388,7 @@ void MainComponent::mouseDrag (const MouseEvent& event) {
         startDragging(description,t->getParentComponent());
     }
     else {
-     */
+     
         description.append("property");
         startDragging(description,propertyView->getBrowser());
     //}
@@ -399,7 +401,7 @@ void MainComponent::dragOperationStarted (const DragAndDropTarget::SourceDetails
         return;
     }
     
-    /*
+    
     TabbedButtonBar* tbb = dynamic_cast<TabbedButtonBar*>(details.sourceComponent.get());
     
     if(tbb != nullptr) {
@@ -416,12 +418,13 @@ void MainComponent::dragOperationStarted (const DragAndDropTarget::SourceDetails
     
     
     else {
-     */
+     
         setDragImageForIndex(0, Image());
     // }
     
     
 }
+*/
 
 //==============================================================================
 void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRate)
@@ -988,6 +991,26 @@ void MainComponent::handleIncomingMidiMessage(juce::MidiInput *source, const juc
             sendMidiStopMessage(editor->getModule()->getModules()->at(i), message.getChannel());
         }
     }
+	else if (message.isMidiMachineControlMessage()) {
+
+		MidiMessage::MidiMachineControlCommand command = message.getMidiMachineControlCommand();
+
+		switch (command)
+		{
+		case MidiMessage::MidiMachineControlCommand::mmc_play:
+			Logger::writeToLog("mmc_play");
+			break;
+		case MidiMessage::MidiMachineControlCommand::mmc_stop:
+			Logger::writeToLog("mmc_stop");
+			break;
+
+		default:
+			break;
+		}
+
+
+		
+	}
     else {
         Logger::writeToLog(message.getDescription());
     }

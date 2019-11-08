@@ -26,6 +26,8 @@
 
 using namespace std;
 
+namespace SynthLab {
+
 
 class ADSR : public Modulator {
 public:
@@ -132,6 +134,7 @@ inline void ADSR::reset() {
 
 inline float ADSR::getOutput() {
 	return output;
+}
 }
 
 #endif

@@ -27,7 +27,7 @@ class MainComponent   : public juce::AudioAppComponent,
                         public juce::Button::Listener,
                         public juce::Timer,
                         public juce::AudioProcessorPlayer,
-                        public juce::DragAndDropContainer,
+                        // public juce::DragAndDropContainer,
                         public juce::ApplicationCommandManager,
                         public juce::ChangeListener,
                         public EditorListener,
@@ -78,8 +78,8 @@ public:
         return editor;
     }
     
-    void mouseDrag (const juce::MouseEvent& event) override;
-    virtual void dragOperationStarted (const juce::DragAndDropTarget::SourceDetails& details) override;
+    // void mouseDrag (const juce::MouseEvent& event) override;
+    // virtual void dragOperationStarted (const juce::DragAndDropTarget::SourceDetails& details) override;
     void timerCallback() override;
     virtual void changeListenerCallback (ChangeBroadcaster* source) override;
     

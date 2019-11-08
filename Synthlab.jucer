@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.3.2" bundleIdentifier="de.pueski.SynthlabX"
+<JUCERPROJECT name="Synthlab" projectType="guiapp" jucerVersion="5.4.3" bundleIdentifier="de.pueski.SynthlabX"
               version="1.0.1" companyName="Pueski" id="JWX8Tz">
   <MAINGROUP id="CKGTaZ" name="Synthlab">
     <FILE id="wzbw0c" name="README.md" compile="0" resource="1" file="README.md"/>
@@ -250,12 +250,7 @@
               file="Source/Tracks/WaveSelector.cpp"/>
         <FILE id="ZVVF10" name="WaveSelector.h" compile="0" resource="0" file="Source/Tracks/WaveSelector.h"/>
       </GROUP>
-      <GROUP id="{42923399-C36E-5718-8223-3A3628A02212}" name="Mixer">
-        <FILE id="KjitXz" name="Mixer.cpp" compile="1" resource="0" file="Source/Mixer/Mixer.cpp"/>
-        <FILE id="y0Kf93" name="Mixer.h" compile="0" resource="0" file="Source/Mixer/Mixer.h"/>
-        <FILE id="mskGuu" name="MixerPanel.cpp" compile="1" resource="0" file="Source/Mixer/MixerPanel.cpp"/>
-        <FILE id="QJR2cx" name="MixerPanel.h" compile="0" resource="0" file="Source/Mixer/MixerPanel.h"/>
-      </GROUP>
+      <GROUP id="{42923399-C36E-5718-8223-3A3628A02212}" name="Mixer"/>
       <GROUP id="{5AE00788-8DD0-B80C-C433-5E1588E70C5C}" name="Server">
         <FILE id="p8msgg" name="HTTPServer.cpp" compile="1" resource="0" file="Source/HTTPServer.cpp"/>
         <FILE id="cq00hn" name="HTTPServer.h" compile="0" resource="0" file="Source/HTTPServer.h"/>
@@ -453,10 +448,6 @@
                 file="Source/MainTabbedComponent.cpp"/>
           <FILE id="dUs9k8" name="MainTabbedComponent.h" compile="0" resource="0"
                 file="Source/MainTabbedComponent.h"/>
-          <FILE id="rdMmYA" name="MasterChannelPanel.cpp" compile="1" resource="0"
-                file="Source/MasterChannelPanel.cpp"/>
-          <FILE id="fVK3Hy" name="MasterChannelPanel.h" compile="0" resource="0"
-                file="Source/MasterChannelPanel.h"/>
           <FILE id="BU52xf" name="MixerPanel.cpp" compile="1" resource="0" file="Source/MixerPanel.cpp"/>
           <FILE id="wrBYlv" name="MixerPanel.h" compile="0" resource="0" file="Source/MixerPanel.h"/>
           <FILE id="j8BgnE" name="Module.cpp" compile="1" resource="0" file="Source/Module.cpp"/>
@@ -763,6 +754,28 @@
         <MODULEPATH id="juce_audio_basics" path="../JUCE/modules"/>
       </MODULEPATHS>
     </LINUX_MAKE>
+    <VS2017 targetFolder="Builds/VisualStudio2017">
+      <CONFIGURATIONS>
+        <CONFIGURATION isDebug="1" name="Debug" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest&#10;../../../ASIOSDK2.3.2/common/"/>
+        <CONFIGURATION isDebug="0" name="Release" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest&#10;../../../ASIOSDK2.3.2/common/"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_video" path="..\JUCE\modules"/>
+        <MODULEPATH id="juce_opengl" path="..\JUCE\modules"/>
+        <MODULEPATH id="juce_gui_extra" path="..\JUCE\modules"/>
+        <MODULEPATH id="juce_gui_basics" path="..\JUCE\modules"/>
+        <MODULEPATH id="juce_graphics" path="..\JUCE\modules"/>
+        <MODULEPATH id="juce_events" path="..\JUCE\modules"/>
+        <MODULEPATH id="juce_data_structures" path="..\JUCE\modules"/>
+        <MODULEPATH id="juce_cryptography" path="..\JUCE\modules"/>
+        <MODULEPATH id="juce_core" path="..\JUCE\modules"/>
+        <MODULEPATH id="juce_audio_utils" path="..\JUCE\modules"/>
+        <MODULEPATH id="juce_audio_processors" path="..\JUCE\modules"/>
+        <MODULEPATH id="juce_audio_formats" path="..\JUCE\modules"/>
+        <MODULEPATH id="juce_audio_devices" path="..\JUCE\modules"/>
+        <MODULEPATH id="juce_audio_basics" path="..\JUCE\modules"/>
+      </MODULEPATHS>
+    </VS2017>
   </EXPORTFORMATS>
   <MODULES>
     <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
@@ -784,5 +797,6 @@
                JUCE_USE_MP3AUDIOFORMAT="1" JUCE_USE_OGGVORBIS="1"/>
   <LIVE_SETTINGS>
     <OSX/>
+    <WINDOWS/>
   </LIVE_SETTINGS>
 </JUCERPROJECT>
