@@ -202,7 +202,7 @@ void MidiRecorderPanel::buttonClicked (Button* buttonThatWasClicked)
         if (chooser.browseForFileToSave(true)) {
             File file = chooser.getResult();
             MidiFile* midiFile = recorder->getFile();
-            ScopedPointer<FileOutputStream> fos = file.createOutputStream();
+            std::unique_ptr<FileOutputStream> fos = file.createOutputStream();
             midiFile->writeTo(*fos);
             delete midiFile;
         }

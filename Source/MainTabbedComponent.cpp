@@ -16,7 +16,6 @@ using juce::TabbedButtonBar;
 using juce::Button;
 using juce::TabbedButtonBar;
 using juce::Colour;
-using juce::Colours;
 using juce::PopupMenu;
 using juce::TabBarButton;
 using juce::String;

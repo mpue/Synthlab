@@ -124,6 +124,7 @@ public:
     virtual void timerCallback() override;
     virtual void eventReceived(Event *e) override;
     void loadSample(juce::InputStream* is, int sampler);
+    void loadSample(juce::File file, int sampler);
     void setSamplePath(juce::String sample, int sampler);
     juce::String getSamplePath(int i);
     void setPitch(float pitch, int samplerIndex);

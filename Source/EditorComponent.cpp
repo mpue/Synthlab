@@ -15,7 +15,6 @@
 #include "Project/Project.h"
 
 using juce::Viewport;
-using juce::Colours;
 using juce::Graphics;
 using juce::ResizableWindow;
 

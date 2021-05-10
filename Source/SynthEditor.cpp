@@ -1029,7 +1029,7 @@ void SynthEditor::newFile() {
 
 void SynthEditor::loadFromString(juce::String in){
     
-    ScopedPointer<XmlElement> xml = XmlDocument(in).getDocumentElement();
+    std::unique_ptr<XmlElement> xml = XmlDocument(in).getDocumentElement();
     
     ValueTree v = ValueTree::fromXml(*xml.get());
 
@@ -1071,10 +1071,10 @@ void SynthEditor::saveModule(Module* m) {
         
         File file = chooser.getResult();
         
-        XmlElement* xml = v->createXml();
-        xml->writeToFile(file, "");
-        
-        delete xml;
+        std::unique_ptr<XmlElement> xml = v->createXml();
+        xml->writeToFile(file, "");        
+        xml = nullptr;
+
         delete v;
         
     }
@@ -1087,7 +1087,7 @@ Module* SynthEditor::loadModule() {
     if (chooser.browseForFileToOpen()) {
         
         File file = chooser.getResult();
-        ScopedPointer<XmlElement> xml = XmlDocument(file).getDocumentElement();
+        std::unique_ptr<XmlElement> xml = XmlDocument(file).getDocumentElement();
         
         Project::getInstance()->addRecentFile(file.getFullPathName());
          ValueTree v = ValueTree::fromXml(*xml.get());
@@ -1181,10 +1181,10 @@ void SynthEditor::saveFile() {
     }
     
     if (fileValid) {
-        XmlElement* xml = v->createXml();
+        std::unique_ptr<XmlElement> xml = v->createXml();
         xml->writeToFile(file, "");
         
-        delete xml;
+        xml = nullptr;
         delete v;
         
         setDirty(false);
@@ -1305,7 +1305,7 @@ void SynthEditor::openFile() {
         ScopedPointer<XmlElement> xml = XmlDocument(data).getDocumentElement();
 #else
         File file = chooser.getResult();
-        ScopedPointer<XmlElement> xml = XmlDocument(file).getDocumentElement();
+        std::unique_ptr<XmlElement> xml = XmlDocument(file).getDocumentElement();
         
         Project::getInstance()->addRecentFile(file.getFullPathName());
 #endif

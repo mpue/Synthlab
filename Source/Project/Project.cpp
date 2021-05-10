@@ -60,14 +60,14 @@ void Project::addRecentFile(juce::String path) {
         v->addChild(child, i, nullptr);
     }
     
-    OutputStream* os = configFile.createOutputStream();
+    std::unique_ptr<OutputStream> os = configFile.createOutputStream();
     
-    XmlElement* xml = v->createXml();
+    std::unique_ptr<XmlElement> xml = v->createXml();
     
     xml->writeToStream(*os, "");
-    
-    delete os;
-    delete xml;
+
+    os = nullptr;
+    xml = nullptr;
     delete v;
     
 }
@@ -87,7 +87,7 @@ void Project::loadRecentFileList() {
     File configFile = File(userHome+"/.Synthlab/recent.xml");
     
     if (configFile.exists()) {
-        ScopedPointer<XmlElement> xml = XmlDocument(configFile).getDocumentElement();
+        std::unique_ptr<XmlElement> xml = XmlDocument(configFile).getDocumentElement();
         ValueTree v = ValueTree::fromXml(*xml.get());
         
         for (int i = 0 ;i < v.getNumChildren();i++) {

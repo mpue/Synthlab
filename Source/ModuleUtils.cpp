@@ -379,10 +379,10 @@ void ModuleUtils::configureModule(Module *m, ValueTree& mod, ChangeBroadcaster* 
                 sm->setSamplePath(path, note - 1);
                 File file = File(path);
                 if (file.exists()) {
-                    FileInputStream* is = new FileInputStream(file);
+                     
                     sm->setSamplePath(file.getFullPathName(), note - 1);
                     sm->selectSample(note - 1);
-                    sm->loadSample(is, note - 1);
+                    sm->loadSample(new FileInputStream(file), note - 1);
                     
                     long start = mod.getChild(i).getProperty("sampleStart").toString().getLargeIntValue();
                     sm->getSamplerAt(note - 1)->setStartPosition(start);

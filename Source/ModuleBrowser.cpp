@@ -5,7 +5,6 @@ using juce::Label;
 using juce::Font;
 using juce::Justification;
 using juce::TextEditor;
-using juce::Colours;
 using juce::Colour;
 using juce::DropShadow;
 using juce::Graphics;

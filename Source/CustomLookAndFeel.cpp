@@ -12,7 +12,6 @@
 
 using juce::Graphics;
 using juce::Slider;
-using juce::Colours;
 using juce::Time;
 using juce::ImageCache;
 using juce::Image;

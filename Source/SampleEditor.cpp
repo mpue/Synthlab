@@ -8,7 +8,6 @@ using juce::MidiKeyboardComponent;
 using juce::AudioDeviceManager;
 using juce::MidiInput;
 using juce::Graphics;
-using juce::Colours;
 using juce::MidiMessage;
 using juce::Logger;
 using juce::File;

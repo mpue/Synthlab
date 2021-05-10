@@ -233,14 +233,13 @@ void ExtendedFileBrowser::saveState(){
     child.setProperty("lastDirectory", model->getCurrentDir(), nullptr);
     v->addChild(child, -1, nullptr);
     
-    OutputStream* os = configFile.createOutputStream();
-    
-    XmlElement* xml = v->createXml();
-    
+    std::unique_ptr<OutputStream> os = configFile.createOutputStream();    
+    std::unique_ptr<XmlElement> xml = v->createXml();    
     xml->writeToStream(*os, "");
     
-    delete os;
-    delete xml;
+    os = nullptr;
+    xml = nullptr;
+
     delete v;
 }
 
@@ -256,7 +255,7 @@ void ExtendedFileBrowser::loadState() {
     File configFile = File(userHome+"/.Synthlab/state.xml");
     
     if (configFile.exists()) {
-        ScopedPointer<XmlElement> xml = XmlDocument(configFile).getDocumentElement();
+        std::unique_ptr<XmlElement> xml = XmlDocument(configFile).getDocumentElement();
         ValueTree v = ValueTree::fromXml(*xml.get());
         
         if (v.getNumChildren() > 0) {

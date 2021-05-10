@@ -15,6 +15,7 @@
 #include "Plugins/PluginManager.h"
 #include <gtest.h>
 #include "HTTPServer.h"
+
 using juce::JUCEApplication;
 using juce::String;
 using juce::Logger;
@@ -38,6 +39,8 @@ public:
     void initialise (const String& commandLine) override
     {
         // This method is where you should put your application's initialisation code..
+
+       
 
         Logger::writeToLog(commandLine);
         

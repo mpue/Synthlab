@@ -4,7 +4,8 @@
 #include "ModuleBrowserTable.h"
 
 class ModuleBrowser  : public juce::Component,
-                       public juce::TextEditor::Listener
+                       public juce::TextEditor::Listener,
+                       public juce::DragAndDropContainer
 
 {
 public:

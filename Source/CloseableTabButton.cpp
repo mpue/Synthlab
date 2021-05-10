@@ -13,7 +13,6 @@
 using juce::String;
 using juce::ImageButton;
 using juce::ImageCache;
-using juce::Colours;
 using juce::TabbedButtonBar;
 
 CloseableTabButton::CloseableTabButton(const String& name, TabbedButtonBar& ownerBar): juce::TabBarButton(name, ownerBar) {

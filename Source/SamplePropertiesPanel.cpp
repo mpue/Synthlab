@@ -30,7 +30,6 @@ using juce::Label;
 using juce::Font;
 using juce::Justification;
 using juce::TextEditor;
-using juce::Colours;
 using juce::Colour;
 using juce::ToggleButton;
 using juce::ImageCache;
@@ -317,10 +316,10 @@ void SamplePropertiesPanel::openSample() {
 
         // ScopedPointer<XmlElement> xml = XmlDocument(data).getDocumentElement();
 #else
-        File file = chooser.getResult();
-        FileInputStream* is = new FileInputStream(file);
+        const File file = chooser.getResult();
+        // FileInputStream* is = new FileInputStream(file);
         module->setSamplePath(file.getFullPathName(),module->getCurrentSamplerIndex());
-        module->loadSample(is, module->getCurrentSamplerIndex());
+        module->loadSample(file, module->getCurrentSamplerIndex());
         if (module->getBuffer() != nullptr) {
             thumb->setSampleBuffer(module->getBuffer());
         }

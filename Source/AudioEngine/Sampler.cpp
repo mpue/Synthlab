@@ -126,8 +126,9 @@ void Sampler::loadSample(File file) {
     loaded = true;
 }
 
-void Sampler::loadSample(InputStream* input) {
-    AudioFormatReader* reader = manager->createReaderFor(input);
+void Sampler::loadSample(juce::InputStream* input) {
+    /*
+    AudioFormatReader* reader = manager->createReaderFor(std::make_unique<juce::InputStream>(input));
     ScopedPointer<AudioFormatReaderSource> afr = new AudioFormatReaderSource(reader, true);
     sampleBuffer = new AudioSampleBuffer(2, static_cast<int>(reader->lengthInSamples));
     this->tempBufferLeft = new float[reader->lengthInSamples * 2];
@@ -138,6 +139,7 @@ void Sampler::loadSample(InputStream* input) {
     endPosition = sampleLength;
     startPosition = 0;
     loaded = true;
+    */
 }
 
 

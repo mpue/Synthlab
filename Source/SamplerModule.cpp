@@ -21,7 +21,6 @@ using juce::AudioSampleBuffer;
 using juce::Justification;
 using juce::ImageCache;
 using juce::Rectangle;
-using juce::Colours;
 using juce::String;
 using juce::Logger;
 using juce::WavAudioFormat;
@@ -78,9 +77,18 @@ SamplerModule::~SamplerModule()
     
 }
 
-void SamplerModule::loadSample(juce::InputStream *is, int samplerIndex) {
+void SamplerModule::loadSample(juce::InputStream* is, int samplerIndex) {
     
     sampler[samplerIndex]->loadSample(is);
+    this->thumbnail->reset(2, sampleRate);
+    thumbnail->addBlock(0, *sampler[samplerIndex]->getSampleBuffer(), 0, static_cast<int>(sampler[samplerIndex]->getSampleLength()));
+    repaint();
+
+}
+
+void SamplerModule::loadSample(juce::File file, int samplerIndex) {
+
+    sampler[samplerIndex]->loadSample(file);
     this->thumbnail->reset(2, sampleRate);
     thumbnail->addBlock(0, *sampler[samplerIndex]->getSampleBuffer(), 0, static_cast<int>(sampler[samplerIndex]->getSampleLength()));
     repaint();
@@ -323,9 +331,9 @@ void SamplerModule::stopRecording() {
         
         Logger::writeToLog("wrote file "+outputFile.getFullPathName());
             
-        FileOutputStream* outputTo = outputFile.createOutputStream();
+        std::unique_ptr<FileOutputStream> outputTo = outputFile.createOutputStream();
             
-        AudioFormatWriter* writer = wavFormat->createWriterFor(outputTo, sampleRate, 2, 16,NULL, 0);
+        AudioFormatWriter* writer = wavFormat->createWriterFor(outputTo.get(), sampleRate, 2, 16,NULL, 0);
         writer->writeFromAudioSampleBuffer(*recordingBuffer, 0,numRecordedSamples);
         delete writer;
         delete wavFormat;

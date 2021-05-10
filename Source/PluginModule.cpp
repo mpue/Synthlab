@@ -13,6 +13,8 @@
 #include "Connection.h"
 #include "AudioManager.h"
 #include "Plugins/PluginManager.h"
+#include "Project/Project.h"
+
 
 using juce::Justification;
 using juce::AudioBuffer;
@@ -58,12 +60,23 @@ PluginModule::~PluginModule()
     delete audioBuffer;
     delete pluginValue;
     delete pluginListener;
+    if (win != nullptr) {
+        win->setVisible(false);
+    }
+    properties.clear();
+    delete win;
+    delete plugin;
 }
 
 void PluginModule::openPluginWindow() {
-    win = PluginManager::getInstance()->getPluginWindow(pluginName);
-    if (win != nullptr) {
-        win->setVisible(true);
+    
+    auto editor = plugin->createEditorIfNeeded();
+    
+    if (win == nullptr) {
+        win = new PluginManager::PluginWindow(pluginName, editor);
+    }
+    else {
+        win->setVisible(true);        
     }
 }
 
@@ -71,15 +84,36 @@ void PluginModule::selectPlugin(String name) {
     if (name == pluginName) {
         return;
     }
-    // PluginManager::getInstance()->addPlugin(name, Project::getInstance()->getDeviceManager());
-    // plugin = PluginManager::getInstance()->getPlugin(name);
-    // PluginManager::getInstance()->openPluginWindow(name, Project::getInstance()->getDeviceManager());
-    PluginManager::getInstance()->addPlugin(name, AudioManager::getInstance()->getDeviceManager());
-    plugin = PluginManager::getInstance()->getPlugin(name);
-    plugin->prepareToPlay(sampleRate, buffersize);
+
+    AudioDeviceManager* manager = AudioManager::getInstance()->getDeviceManager();
+    juce::AudioIODevice* device = manager->getCurrentAudioDevice();
+
+    if (device == nullptr) {
+        return;
+    }
+   
+    if (plugin == nullptr) {
+        juce::String error = juce::String("Error");
+        PluginDescription pd;
+
+        juce::String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
+
+        File preset = File(userHome + "/.Synthlab/plugins/" + name);
+        std::unique_ptr<XmlElement> xml = XmlDocument(preset).getDocumentElement();
+        pd.loadFromXml(*xml.get());
+
+        double sampleRate = device->getCurrentSampleRate();
+        buffersize = device->getCurrentBufferSizeSamples();
+        plugin = PluginManager::getInstance()->apfm->createPluginInstance(pd, sampleRate, buffersize, error).release();
+        
+        plugin->prepareToPlay(sampleRate,buffersize);
+
+    }
+
+    
     pluginName = name;
     pluginValue->setValue(pluginName);
-    //PluginManager::getInstance()->getPluginWindow(name)->setVisible(true);
+    
 }
 
 String PluginModule::getPluginName() {

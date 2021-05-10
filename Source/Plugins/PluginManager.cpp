@@ -55,13 +55,13 @@ void PluginManager::scanPlugins() {
     File file = File(userHome+"/.Synthlab/plugin.properties");
     PropertiesFile* props = new PropertiesFile(file,options);
     
-    PluginListComponent* pluginListComponent = new PluginListComponent(*apfm,*pluginList,File(), props);
+    pluginListComponent = new PluginListComponent(*apfm,*pluginList,File(), props);
     pluginListComponent->setLookAndFeel(Project::getInstance()->getLookAndFeel());
-    
+
     DialogWindow::LaunchOptions launchOptions;
     launchOptions.dialogTitle = ("Manage Plugins");
     launchOptions.escapeKeyTriggersCloseButton = true;
-    launchOptions.resizable = true;
+    launchOptions.resizable = true;    
     launchOptions.useNativeTitleBar = false;
     launchOptions.useBottomRightCornerResizer = true;
     launchOptions.componentToCentreAround = nullptr;
@@ -77,7 +77,7 @@ void PluginManager::scanPlugins() {
     }
     
     for (int i = 0; i < pluginList->getNumTypes();i++) {
-        ScopedPointer<XmlElement> xml = pluginList->getType(i)->createXml();
+        std::unique_ptr<XmlElement> xml = pluginList->getType(i)->createXml();
         
         xml->writeToFile(File(userHome+"/.Synthlab/plugins/"+pluginList->getType(i)->name),"");
         xml = nullptr;
@@ -87,7 +87,6 @@ void PluginManager::scanPlugins() {
 
 }
 
-
 void PluginManager::configureBusLayout(AudioPluginInstance* plugin, AudioDeviceManager* deviceManager, AudioAppComponent* component) {
     juce::AudioProcessor::BusesLayout layout =  plugin->getBusesLayout();
     
@@ -95,8 +94,7 @@ void PluginManager::configureBusLayout(AudioPluginInstance* plugin, AudioDeviceM
     int numPluginOutputs = plugin->getBusCount(false) * 2;
     
     // check input and output bus configuration
-    
-    
+        
     juce::BigInteger activeInputChannels = deviceManager->getCurrentAudioDevice()->getActiveInputChannels();
     juce::BigInteger activeOutputChannels = deviceManager->getCurrentAudioDevice()->getActiveOutputChannels();
     
@@ -137,7 +135,7 @@ void PluginManager::updatePluginList() {
     ScopedPointer<DirectoryIterator> iter = new DirectoryIterator(presetPath, false);
     
     while(iter->next()) {
-        ScopedPointer<XmlElement> xml = XmlDocument(iter->getFile()).getDocumentElement();
+        std::unique_ptr<XmlElement> xml = XmlDocument(iter->getFile()).getDocumentElement();
         PluginDescription pd = PluginDescription();
         pd.loadFromXml(*xml);
         pluginList->addType(pd);
@@ -154,31 +152,24 @@ void PluginManager::addPlugin(juce::String name, AudioDeviceManager* deviceManag
     juce::String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
     
     File preset = File(userHome+"/.Synthlab/plugins/"+name);
-    ScopedPointer<XmlElement> xml = XmlDocument(preset).getDocumentElement();
+    std::unique_ptr<XmlElement> xml = XmlDocument(preset).getDocumentElement();
     pd.loadFromXml(*xml.get());
     
-    AudioPluginInstance* plugin = apfm->createPluginInstance(pd, deviceManager->getCurrentAudioDevice()->getCurrentSampleRate(),deviceManager->getCurrentAudioDevice()->getCurrentBufferSizeSamples(),error);
+    std::unique_ptr<AudioPluginInstance> plugin = apfm->createPluginInstance(pd, deviceManager->getCurrentAudioDevice()->getCurrentSampleRate(),deviceManager->getCurrentAudioDevice()->getCurrentBufferSizeSamples(),error);
     plugin->prepareToPlay(deviceManager->getCurrentAudioDevice()->getCurrentSampleRate(),deviceManager->getCurrentAudioDevice()->getCurrentBufferSizeSamples());
-    AudioProcessorEditor* editor = plugin->createEditorIfNeeded();
-    
+    pluginMap.insert(std::make_pair(name, plugin.get()));
+
     // configureBusLayout(plugin, deviceManager,component);
-    
-    
-    if ( pluginMap.find(name) == pluginMap.end() ) {
-        editorWindowMap[name] = editor;
-        pluginMap[name] = plugin;
+    if (pluginMap.find(name) != pluginMap.end()) {
+        // do we have an editor window?
 
     }
-    if (pluginWindowMap.find(name) == pluginWindowMap.end()) {
-        PluginWindow* win = new PluginWindow(name,editor);
-        pluginWindowMap[name] = win;
-    }
-
     
 }
 
 PluginManager::PluginWindow* PluginManager::getPluginWindow(juce::String name) {
-    return pluginWindowMap[name];
+    // no matching plugin
+    return nullptr;
 }
 
 AudioPluginInstance* PluginManager::getPlugin(juce::String name) {
@@ -216,7 +207,7 @@ PopupMenu* PluginManager::buildPluginMenu() {
         ScopedPointer<DirectoryIterator> iter = new DirectoryIterator(presets, false);
         
         while(iter->next()) {
-            ScopedPointer<XmlElement> xml = XmlDocument(iter->getFile()).getDocumentElement();
+            std::unique_ptr<XmlElement> xml = XmlDocument(iter->getFile()).getDocumentElement();
             PluginDescription pd = PluginDescription();
             pd.loadFromXml(*xml);
             
@@ -243,7 +234,7 @@ PopupMenu* PluginManager::buildPluginMenu() {
         ScopedPointer<DirectoryIterator> iter = new DirectoryIterator(presets, false);
         
         while(iter->next()) {
-            ScopedPointer<XmlElement> xml = XmlDocument(iter->getFile()).getDocumentElement();
+            std::unique_ptr<XmlElement> xml = XmlDocument(iter->getFile()).getDocumentElement();
             PluginDescription pd;
             pd.loadFromXml(*xml.get());
             
@@ -288,4 +279,11 @@ void PluginManager::openPluginWindow(juce::String name, AudioDeviceManager* mana
     // addPlugin(name,manager);
     // AudioPluginInstance* plugin = getPlugin(name);
     // getPluginWindow(name)->setVisible(true);
+}
+
+void PluginManager::mouseDown(const MouseEvent& event)
+{
+    if (pluginListComponent != nullptr) {
+
+    }
 }

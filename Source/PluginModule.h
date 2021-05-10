@@ -53,7 +53,8 @@ private:
         ~PluginValueListener()  {}  // no need to remove the listener
         
         void valueChanged (juce::Value& value) override {
-            m->selectPlugin(value.getValue().toString());
+            juce::String pname = value.getValue().toString();
+            m->selectPlugin(pname);
         }
         PluginModule* m;
         juce::Value value;
@@ -69,7 +70,7 @@ private:
     float* bufferLeft;
     float* bufferRight;
     
-    juce::AudioPluginInstance* plugin;
+    juce::AudioPluginInstance* plugin = nullptr;
     PluginManager::PluginWindow* win = nullptr;
     
     juce::String pluginName;
@@ -77,7 +78,7 @@ private:
     juce::MidiBuffer midiBuffer;
     
     juce::Value* pluginValue;
-    juce::PropertyComponent* pluginProp;
+    juce::PropertyComponent* pluginProp = nullptr;    
     PluginValueListener* pluginListener;
 
     

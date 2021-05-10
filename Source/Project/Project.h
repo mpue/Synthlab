@@ -160,9 +160,9 @@ public:
         }
         
         
-        XmlElement* xml = v.createXml();
+        std::unique_ptr<XmlElement> xml = v.createXml();
         xml->writeToFile(output, "");
-        delete xml;
+        xml = nullptr;
     }
     
     void save(File output) {
@@ -190,14 +190,14 @@ public:
         
         v.addChild(audioFiles, -1, nullptr);
         
-        XmlElement* xml = v.createXml();
+        std::unique_ptr<XmlElement> xml = v.createXml();
         xml->writeToFile(output, "");
-        delete xml;
+        xml = nullptr;
         
     }
     
     void load(File file) {
-        ScopedPointer<XmlElement> xml = XmlDocument(file).getDocumentElement();
+        std::unique_ptr<XmlElement> xml = XmlDocument(file).getDocumentElement();
         ValueTree v = ValueTree::fromXml(*xml.get());
         xml = nullptr;
         config->setConfig(v);

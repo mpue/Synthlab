@@ -12,7 +12,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include <map>
 
-class PluginManager {
+class PluginManager : MouseListener {
     
 public:
     static PluginManager* getInstance() {
@@ -42,9 +42,11 @@ public:
             //setVisible (true);
             
         }
+
+        // float getDesktopScaleFactor() const override { return 2.0f; }
         
         ~PluginWindow() {
-            delete plugin;
+            //delete plugin;
         }
         
         void closeButtonPressed() override
@@ -52,7 +54,7 @@ public:
             this->setVisible(false);
         }
         
-    private:
+	private:
             juce::AudioProcessorEditor* plugin;
     };
     
@@ -74,7 +76,8 @@ public:
     
     void updatePluginList();
     void openPluginWindow(juce::String name, juce::AudioDeviceManager* manager);
-    
+    void mouseDown(const MouseEvent& event) override;
+    juce::AudioPluginFormatManager* apfm;
 private:
     
     std::vector<juce::String> availableInstruments;
@@ -83,15 +86,14 @@ private:
     
     ~PluginManager(){
         for(std::map<juce::String, juce::AudioPluginInstance*>::iterator itr = pluginMap.begin(); itr != pluginMap.end(); itr++)
-        {
-      
+        {      
             juce::String name = itr->first;
             
             if (pluginMap[name] != nullptr) {
         
                 delete pluginWindowMap[name];
                 pluginMap[name]->releaseResources();
-                delete itr->second;
+                itr->second = nullptr;
             }
             
         }
@@ -113,7 +115,7 @@ private:
     juce::StringArray* plugins = nullptr;
     std::shared_ptr<juce::KnownPluginList> pluginList = nullptr;
     static PluginManager* instance;
-    juce::AudioPluginFormatManager* apfm;
+    PluginListComponent* pluginListComponent = nullptr;
 };
 
 #endif /* PluginManager_h */

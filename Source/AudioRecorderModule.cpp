@@ -23,7 +23,6 @@ using juce::AudioSampleBuffer;
 using juce::Justification;
 using juce::ImageCache;
 using juce::Rectangle;
-using juce::Colours;
 using juce::String;
 using juce::Logger;
 using juce::WavAudioFormat;

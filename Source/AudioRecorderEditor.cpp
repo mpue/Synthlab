@@ -104,10 +104,10 @@ void AudioRecorderEditor::saveRecording() {
     
     if (chooser.browseForFileToSave(true)) {
         File outputFile = chooser.getResult();
-        FileOutputStream* outputTo = outputFile.createOutputStream();
-        AudioFormatWriter* writer = wavFormat->createWriterFor(outputTo, sampleRate, 2, 16,NULL, 0);
+        std::unique_ptr<FileOutputStream> outputTo = outputFile.createOutputStream();
+        AudioFormatWriter* writer = wavFormat->createWriterFor(outputTo.get(), sampleRate, 2, 16,NULL, 0);
         writer->writeFromAudioSampleBuffer(*getSampler()->getSampleBuffer(), 0,numRecordedSamples);
-        delete writer;
+        writer = nullptr;
         delete wavFormat;
 
     }

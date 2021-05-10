@@ -41,7 +41,6 @@ using juce::XmlDocument;
 using juce::XmlElement;
 using juce::Toolbar;
 using juce::Colour;
-using juce::Colours;
 using juce::MouseEvent;
 using juce::ChoicePropertyComponent;
 using juce::MemoryBlock;
@@ -215,8 +214,8 @@ void MainComponent::createConfig() {
     File configFile = File(userHome+"/.Synthlab/config.xml");
     
     if (configFile.exists()) {
-        ScopedPointer<XmlElement> xml = XmlDocument(configFile).getDocumentElement();
-        deviceManager.initialise(2,2, xml, true);
+        std::unique_ptr<XmlElement> xml = XmlDocument(configFile).getDocumentElement();
+        deviceManager.initialise(2,2, xml.get(), true);
     }
 }
 
@@ -800,7 +799,7 @@ void MainComponent::openSettings() {
         AudioManager::getInstance()->setupChannels();
         refreshMidiInputs();        
         
-        XmlElement* config = deviceManager.createStateXml();
+        std::unique_ptr<XmlElement> config = deviceManager.createStateXml();
         
         String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
         
@@ -814,7 +813,7 @@ void MainComponent::openSettings() {
         
         if (config != NULL) {
             config->writeToFile(configFile,"");
-            delete config;
+            config = nullptr;
         }
     };
     

@@ -34,7 +34,6 @@ using juce::Label;
 using juce::Value;
 using juce::Graphics;
 using juce::Colour;
-using juce::Colours;
 using juce::MouseEvent;
 using juce::Font;
 using juce::Justification;

@@ -277,7 +277,7 @@ bool SliderModule::isMidiController() {
 
 void SliderModule::setController(int num) {
     this->controllerNum = num;
-    this->controllerValue->setValue(controllerValue);
+    // this->controllerValue->setValue(controllerValue);
 }
 
 int SliderModule::getController() {
