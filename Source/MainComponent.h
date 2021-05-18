@@ -12,6 +12,8 @@
 #include "PropertyView.h"
 #include "MainTabbedComponent.h"
 #include "Tracks/MasterChannelPanel.h"
+#include "Tracks/TrackNavigator.h"
+#include "Tracks/PositionMarker.h"
 #include "MixerPanel.h"
 #include "ToolbarComboBox.h"
 #include "EditorComponent.h"

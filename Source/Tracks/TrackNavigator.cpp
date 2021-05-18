@@ -21,7 +21,7 @@
 using namespace std;
 
 //==============================================================================
-TrackNavigator::TrackNavigator(PositionMarker* marker, AudioDeviceManager *deviceManager)
+TrackNavigator::TrackNavigator(AudioDeviceManager *deviceManager)
 {
     this->deviceManager = deviceManager;
     this->selector = new WaveSelector();
@@ -30,12 +30,14 @@ TrackNavigator::TrackNavigator(PositionMarker* marker, AudioDeviceManager *devic
     this->selector->setBounds(0, 0, getWidth(), getHeight());
     addAndMakeVisible(selector);
     this->zoom = Project::getInstance()->getTempo() / 4;
-    this->marker = marker;
+    this->marker = new PositionMarker(300);
 	this->position = 0;
     this->dragger = new MultiComponentDragger();
     Project::getInstance()->addChangeListener(this);
     addChangeListener(Mixer::getInstance());
-    
+    addAndMakeVisible(marker);
+    marker->setAlwaysOnTop(true);
+    marker->setBounds(0, 0, 2, getHeight());
     // setInterceptsMouseClicks(true, true);
 }
 
@@ -51,13 +53,7 @@ TrackNavigator::~TrackNavigator()
 
 void TrackNavigator::paint (Graphics& g)
 {
-
-    // g.fillAll (Colours::lightsalmon);
-    /*
-    for(int i = 0; i < tracks.size();i++) {		
-        tracks.at(i)->paint(g);
-    }
-     */
+    
 }
 
 void TrackNavigator::clearTracks() {
@@ -118,8 +114,15 @@ void TrackNavigator::adjustHeight()
 	for (int i = 0; i < tracks.size();i++) {
 		height += tracks.at(i)->getHeight();
 	}
+
+    this->marker->setBounds(0, 0, 2, getHeight());
     
     setSize(getWidth(), height);
+}
+
+void TrackNavigator::timerCallback()
+{
+    marker->setPosition(getPosition());
 }
 
 double TrackNavigator::getPosition() {
@@ -203,6 +206,17 @@ std::vector<Track*> TrackNavigator::getTracks() {
     return this->tracks;
 }
 
+StringArray TrackNavigator::getTrackList()
+{
+    StringArray trackList = StringArray();
+
+    for (int i = 0; i < tracks.size(); i++) {
+        trackList.add(tracks[i]->getName());
+    }
+
+    return trackList;
+}
+
 Track* TrackNavigator::addTrack(TrackConfig* tc) {
     
     Track::Type type;
@@ -240,7 +254,7 @@ Track* TrackNavigator::addTrack(TrackConfig* tc) {
     
     setBounds(getX(), getY(), getMaxLength() * this->zoom, height);
     
-    this->marker->setSize(2, getHeight());
+    this->marker->setSize(2, height);
     this->marker->setLength(getMaxLength());
     this->selector->setSize(getWidth(), getHeight());
     
@@ -400,10 +414,12 @@ bool TrackNavigator::keyPressed(const KeyPress& key, Component* originatingCompo
         if (isPlaying())
         {
             setPlaying(false);
+            stopTimer();
         }
         else
         {
             setPlaying(true);
+            startTimer(50);
         }
         
     }

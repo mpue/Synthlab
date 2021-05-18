@@ -38,7 +38,24 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize) : resizerBar 
     editorView->setMouseClickGrabsKeyboardFocus(false);
     
     topTab->addTab("Editor", juce::Colours::grey, editorView, false);
-    
+
+    navigator = new TrackNavigator(AudioManager::getInstance()->getDeviceManager());
+
+    addMouseListener(navigator, true);
+    addKeyListener(navigator);
+    trackView = new Viewport();
+
+    trackView->setSize(500, 200);
+    trackView->setViewedComponent(navigator);
+    trackView->setScrollBarsShown(true, true);
+    trackView->setScrollOnDragEnabled(false);
+    trackView->setWantsKeyboardFocus(false);
+    trackView->setMouseClickGrabsKeyboardFocus(false);
+
+    // navigator->addTrack()
+
+    topTab->addTab("Navigator", juce::Colours::grey, trackView, true);
+
     mixerPanel = new MixerPanel();
     mixer = Mixer::getInstance();
     mixerPanel->setMixer(mixer);
@@ -71,18 +88,32 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize) : resizerBar 
                                       -0.3);
 
     Project::getInstance()->setSupplemental(this->bottomTab);
-    
+    PrefabFactory::getInstance()->init(navigator);
+}
+
+
+void EditorComponent::ImportAudio() {
+
+    FileChooser chooser("Select a file to add...");
+
+    if (chooser.browseForFileToOpen()) {
+        File file = chooser.getResult();
+
+        if (file.getFileExtension() == ".wav" || file.getFileExtension() == ".aif" || file.getFileExtension() == ".mp3") {
+            navigator->getCurrentTrack()->addRegion(file.getFileNameWithoutExtension(), file, this->sampleRate);
+            Project::getInstance()->addAudioFile(file.getFileNameWithoutExtension(), file.getFullPathName());
+            navigator->repaint();
+        }
+
+    }
 }
 
 EditorComponent::~EditorComponent()
 {
-
     delete editor;
     delete editorView;
     delete mixerPanel;
-    delete mixerView;
-    // delete topTab;
-    // delete bottomTab;
+    delete mixerView;    
 }
 
 void EditorComponent::paint (Graphics& g)
@@ -112,6 +143,11 @@ void EditorComponent::resized()
 
 Mixer* EditorComponent::getMixer() {
     return mixer;
+}
+
+TrackNavigator* EditorComponent::getNavigator()
+{
+    return navigator;
 }
 
 MixerPanel* EditorComponent::getMixerPanel() {

@@ -86,6 +86,7 @@ SynthEditor::SynthEditor (double sampleRate, int buffersize)
     linePath = Path();
     
     Project::getInstance()->getCommandManager()->registerAllCommandsForTarget(this);
+   
 }
 
 SynthEditor::~SynthEditor()

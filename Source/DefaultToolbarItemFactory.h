@@ -34,7 +34,8 @@ public:
 		app_redo = 7,
 		app_layer = 8,
 		mod_sources = 9,
-		app_browser = 10
+		app_browser = 10,
+		app_import_audio = 11
 
 	};
 
@@ -54,6 +55,7 @@ public:
 		ids.add(app_layer);
 		ids.add(mod_sources);
 		ids.add(app_browser);
+		
 
 
 	}

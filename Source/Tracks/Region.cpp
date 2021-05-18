@@ -9,7 +9,7 @@
 #include "Region.h"
 
 Region::Region() {
-    
+    oldOffset = 0;
 }
 
 Region::~Region() {

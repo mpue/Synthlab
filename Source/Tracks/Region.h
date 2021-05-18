@@ -74,7 +74,7 @@ protected:
     float zoom = 30;
     String name;
     int offset = 0;
-    double sampleRate;
+    double sampleRate = 48000;
     long sampleOffset = 0;
     long oldOffset = 0;
     int loopCount = 1;

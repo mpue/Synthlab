@@ -10,6 +10,8 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Module.h"
+#include "Tracks/TrackNavigator.h"
+
 #include <map>
 
 class PrefabFactory {
@@ -88,6 +90,8 @@ public:
     int getNumInstances(int id);
     long getNextModuleIndex();
     void reset();
+    void init(TrackNavigator* navigator);
+
 private:
     static PrefabFactory* instance;
     
@@ -96,6 +100,8 @@ private:
     
     juce::StringArray* categories;
     
+    TrackNavigator* navigator;
+
     PrefabFactory() {
         prefabs[53] = Prefab("Sampler","Sound sources");
         prefabs[54] = Prefab("Label","Controls");
@@ -144,6 +150,7 @@ private:
         prefabs[97] = Prefab("Or","Logic");
         prefabs[98] = Prefab("Not","Logic");
         prefabs[50] = Prefab("TextInput","Controls");
+        prefabs[48] = Prefab("Track In", "Input / Output");
         prefabs[49] = Prefab("Compare","Math");
         prefabs[51] = Prefab("Trigger timer","MIDI");
         prefabs[52] = Prefab("Slider","Controls");
@@ -195,6 +202,7 @@ private:
         prefabImages[97] = juce::ImageCache::getFromMemory(BinaryData::logic_or_png, BinaryData::logic_or_pngSize);
         prefabImages[98] = juce::ImageCache::getFromMemory(BinaryData::logic_not_png, BinaryData::logic_not_pngSize);
         prefabImages[49] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[49] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[50] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[51] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[52] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
@@ -218,8 +226,6 @@ private:
         categories->clear();
         delete categories;
     };
-
-    
     
     int numPrefabInstances = 0;
     long lastModuleIndex = 1;

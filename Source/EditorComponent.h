@@ -15,8 +15,7 @@
 #include "MainTabbedComponent.h"
 #include "MixerPanel.h"
 #include "Mixer.h"
-
-
+#include "Tracks/TrackNavigator.h"
 //==============================================================================
 /*
 */
@@ -28,11 +27,11 @@ public:
 
     void paint (juce::Graphics&) override;
     void resized() override;
-
+    void ImportAudio();
     SynthEditor* getEditor();
     MixerPanel* getMixerPanel();
     Mixer* getMixer();
-    
+    TrackNavigator* getNavigator();
     MainTabbedComponent* getEditorTab();
     
     virtual void changeListenerCallback (juce::ChangeBroadcaster* source) override;
@@ -45,6 +44,7 @@ private:
     MixerPanel* mixerPanel = nullptr;
     juce::Viewport* editorView = nullptr;
     juce::Viewport* mixerView = nullptr;
+    juce::Viewport* trackView = nullptr;
     Mixer* mixer = nullptr;
     
     MainTabbedComponent* topTab = nullptr;
@@ -53,6 +53,7 @@ private:
     juce::StretchableLayoutManager stretchableManager;
     juce::StretchableLayoutResizerBar resizerBar;
 
+    TrackNavigator* navigator = nullptr;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EditorComponent)
 };

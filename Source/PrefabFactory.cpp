@@ -57,6 +57,7 @@
 #include "SliderModule.h"
 #include "TextInputModule.h"
 #include "CompareModule.h"
+#include "TrackIn.h"
 
 using juce::Image;
 
@@ -235,6 +236,14 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     else if (prefabs[id].getName() == "Compare") {
         m = new CompareModule();
     }
+    else if (prefabs[id].getName() == "Track In") {
+        TrackIn* ti  = new TrackIn(navigator,sampleRate, bufferSize);
+
+        Track* t = navigator->addTrack(Track::Type::AUDIO, 48000);
+        t->setName("Audio "+ String(navigator->getTracks().size()+1));
+        ti->setTrack(t);
+        m = ti;
+    }
 
     m->setIndex(lastModuleIndex);
     m->setId(id);
@@ -244,8 +253,6 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     
     // remember the last index in order to get a new one when creating an empty module
     lastModuleIndex++;
-    
-        
     
     return m;
 }
@@ -264,4 +271,8 @@ void PrefabFactory::reset() {
         it++;
     }
     lastModuleIndex = 1;
+}
+
+void PrefabFactory::init(TrackNavigator* navigator) {
+    this->navigator = navigator;
 }

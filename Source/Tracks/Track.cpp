@@ -518,10 +518,10 @@ double Track::getMaxLength() {
 void Track::paint (Graphics& g) {
     
 	if (selected) {
-		g.setColour(Colours::lightgrey.brighter());
+		g.setColour(Colours::darkgrey);
 	}
 	else {
-		g.setColour(Colours::lightgrey);
+		g.setColour(Colours::darkgrey.darker());
 	}
 	
     g.fillAll();
@@ -597,11 +597,19 @@ void Track::changeListenerCallback(ChangeBroadcaster * source) {
     
     if(AudioRegion* r = dynamic_cast<AudioRegion*>(source)){
         // cleanup old range first
-        audioBuffer->clear(r->getOldOffset(), r->getBuffer()->getNumSamples());
+        long oldoffset = r->getOldOffset();
+        if (oldoffset < 0) {
+            oldoffset = 0;
+        }
+        long sampleOffset = r->getSampleOffset();
+        if (sampleOffset < 0) {
+            sampleOffset = 0;
+        }
+        audioBuffer->clear(oldoffset, r->getBuffer()->getNumSamples());
         // copy data from region to tracks audio buffer
         long numSamples = r->getBuffer()->getNumSamples();
-        audioBuffer->copyFrom(0, r->getSampleOffset(), *r->getBuffer(), 0, 0, r->getNumSamples());
-        audioBuffer->copyFrom(1, r->getSampleOffset(), *r->getBuffer(), 1, 0, r->getNumSamples());
+        audioBuffer->copyFrom(0, sampleOffset, *r->getBuffer(), 0, 0, r->getNumSamples());
+        audioBuffer->copyFrom(1, sampleOffset, *r->getBuffer(), 1, 0, r->getNumSamples());
     }
     if(MasterChannelPanel* panel = dynamic_cast<MasterChannelPanel*>(source)){
         setVolume(panel->getVolume());
