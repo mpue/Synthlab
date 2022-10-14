@@ -73,7 +73,7 @@ double ProjectConfig::getSampleRate() {
     return sampleRate;
 }
 
-void ProjectConfig::setBufferSize(double bufferSize) {
+void ProjectConfig::setBufferSize(int bufferSize) {
     this->bufferSize = bufferSize;
 }
 

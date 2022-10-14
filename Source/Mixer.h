@@ -36,8 +36,8 @@ public:
             AUX
         };
         
-        float volume;
-        float pan;
+        double volume;
+        double pan;
         float magnitudeLeft = 0;
         float magnitudeRight = 0;
         bool mute = false;

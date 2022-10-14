@@ -163,7 +163,7 @@ void SamplerModule::setAmplitude(float amplitude) {
 }
 
 void SamplerModule::timerCallback() {
-    samplePosX = (100.0 / sampler[currentSampler]->getSampleLength())* currentSample + 20;
+    samplePosX = (100.0f / sampler[currentSampler]->getSampleLength())* currentSample + 20;
     repaint();
 }
 

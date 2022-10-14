@@ -20,8 +20,6 @@ using juce::AudioSampleBuffer;
 //==============================================================================
 AudioThumbnailComponent::AudioThumbnailComponent(int buffersize, float sampleRate)
 {
-
-    
     this->sampleRate = sampleRate;
     this->buffersize = buffersize;
     this->manager = AudioManager::getInstance()->getFormatManager();
@@ -42,7 +40,6 @@ AudioThumbnailComponent::~AudioThumbnailComponent()
 
 void AudioThumbnailComponent::paint (Graphics& g)
 {
-
     g.setColour(juce::Colours::black);
     g.fillRect(getBounds());
     
@@ -54,8 +51,8 @@ void AudioThumbnailComponent::paint (Graphics& g)
     g.setColour(juce::Colours::white);
     
     if (buffer != nullptr) {
-        int startx = (getWidth() / (float)buffer->getNumSamples()) * startPosition;
-        int endx = (getWidth() / (float)buffer->getNumSamples()) * endPosistion;
+        int startx = (getWidth() / (float)buffer->getNumSamples()) * currentPosition;
+        int endx = (getWidth() / (float)buffer->getNumSamples()) * currentPosition;
         
         g.drawLine(startx, 0, startx, getHeight());
         g.drawLine(endx, 0, endx, getHeight());
@@ -66,8 +63,7 @@ void AudioThumbnailComponent::paint (Graphics& g)
 }
 
 void AudioThumbnailComponent::resized()
-{
-    
+{    
     repaint();
 }
 
@@ -87,15 +83,24 @@ void AudioThumbnailComponent::setSampleBuffer(AudioSampleBuffer *buffer) {
 
 void AudioThumbnailComponent::setStartPosition(int position) {
     this->startPosition = position;
-    repaint();
+    std::function<void(void)> changeLambda =
+        [=]() {  repaint(); };
+    juce::MessageManager::callAsync(changeLambda);
+
 }
 
 void AudioThumbnailComponent::setEndPosition(int position) {
-    this->endPosistion = position;
-    repaint();
+    this->endPosition = position;
+    std::function<void(void)> changeLambda =
+        [=]() {  repaint(); };
+    juce::MessageManager::callAsync(changeLambda);
+
 }
 
 void AudioThumbnailComponent::setCurrentPosition(int position) {
     this->currentPosition = position;
-    repaint();
+    std::function<void(void)> changeLambda =
+        [=]() {  repaint(); };
+    juce::MessageManager::callAsync(changeLambda);
+
 }

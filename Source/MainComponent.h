@@ -133,8 +133,8 @@ private:
     volatile bool running = false;
     
     // default settings just in case
-    float sampleRate = 44100;
-    float buffersize = 512;
+    double sampleRate = 44100;
+    int buffersize = 512;
     
     bool keyStates[128] = { false };
     
@@ -158,7 +158,7 @@ private:
     bool isOptionPressed = false;
     
     Sampler* defaultSampler = nullptr;
-
+    TrackNavigator* navigator = nullptr;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

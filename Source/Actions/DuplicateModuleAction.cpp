@@ -50,8 +50,6 @@ bool DuplicateModuleAction::undo() {
 
 bool DuplicateModuleAction::perform() {
     
-
-    
     Module* m = nullptr;
     
     if (module != nullptr) {

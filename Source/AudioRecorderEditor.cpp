@@ -22,9 +22,7 @@ AudioRecorderEditor::AudioRecorderEditor(float sampleRate, int bufferSize , Audi
     addAndMakeVisible(recorderPanel);
     this->recorderPanel->addChangeListener(this);
     recorderPanel->setTopLeftPosition(0,8);
-
 }
-
 
 /*
  *  Method: AudioRecorderEditor::~AudioRecorderEditor()
@@ -37,16 +35,11 @@ AudioRecorderEditor::~AudioRecorderEditor() {
     delete recorderPanel;
 }
 
-
-
 /*
  *  Method: AudioRecorderEditor::resized()
  *   Descr: 
  */
 void AudioRecorderEditor::resized() {
-    
-    
-
     //setSize(proportionOfWidth (1.0000f),proportionOfHeight(1.0000f));
     /*
     if (getParentComponent() != nullptr) {
@@ -57,7 +50,6 @@ void AudioRecorderEditor::resized() {
 
 void AudioRecorderEditor::paint(juce::Graphics& g) {
 }
-
 
 void AudioRecorderEditor::changeListenerCallback(juce::ChangeBroadcaster *source) {
     AudioRecorderPanel* panel = dynamic_cast<AudioRecorderPanel*>(source);
@@ -79,6 +71,9 @@ void AudioRecorderEditor::changeListenerCallback(juce::ChangeBroadcaster *source
             sendChangeMessage();
         }
         else if (panel->getState() == AudioRecorderPanel::State::PLAYING) {
+            recorderPanel->setCurrentPosition(0);
+            sampler->setStartPosition(0);
+            sampler->reset();
             sendChangeMessage();
         }
         else if (panel->getState() == AudioRecorderPanel::State::SAVE) {
@@ -109,9 +104,7 @@ void AudioRecorderEditor::saveRecording() {
         writer->writeFromAudioSampleBuffer(*getSampler()->getSampleBuffer(), 0,numRecordedSamples);
         writer = nullptr;
         delete wavFormat;
-
-    }
-    
+    }    
 }
 
 Sampler* AudioRecorderEditor::getSampler() {
@@ -161,4 +154,9 @@ void AudioRecorderEditor::setIndex(int index) {
 
 void AudioRecorderEditor::toggleRecording() {
 	this->recorderPanel->toggleRecording();
+}
+
+void AudioRecorderEditor::setCurrentPosition(int position)
+{
+    recorderPanel->setCurrentPosition(position);
 }

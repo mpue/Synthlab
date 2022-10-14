@@ -237,22 +237,25 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
         m = new CompareModule();
     }
     else if (prefabs[id].getName() == "Track In") {
-        TrackIn* ti  = new TrackIn(navigator,sampleRate, bufferSize);
-
-        Track* t = navigator->addTrack(Track::Type::AUDIO, 48000);
-        t->setName("Audio "+ String(navigator->getTracks().size()+1));
-        ti->setTrack(t);
-        m = ti;
+        if (navigator != nullptr) {
+            TrackIn* ti  = new TrackIn(navigator,sampleRate, bufferSize);
+            Track* t = navigator->addTrack(Track::Type::AUDIO, 48000);
+            t->setName("Audio "+ String(navigator->getTracks().size()+1));
+            ti->setTrack(t);
+            m = ti;
+        }
     }
-
-    m->setIndex(lastModuleIndex);
-    m->setId(id);
-    prefabs[id].addInstance();
-    m->configurePins();
-    numPrefabInstances++;
     
-    // remember the last index in order to get a new one when creating an empty module
-    lastModuleIndex++;
+    if (m != nullptr) {
+        m->setIndex(lastModuleIndex);
+        m->setId(id);
+        prefabs[id].addInstance();
+        m->configurePins();
+        numPrefabInstances++;
+    
+        // remember the last index in order to get a new one when creating an empty module
+        lastModuleIndex++;
+    }
     
     return m;
 }

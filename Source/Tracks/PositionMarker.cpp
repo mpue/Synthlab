@@ -50,17 +50,17 @@ void PositionMarker::setLength(double lengthInSeconds) {
 }
 
 void PositionMarker::setPosition(double position) {
-	if (position < 0) {
+ 	if (position < 0) {
 		position = 0;
 	}
-
+    //Logger::getCurrentLogger()->writeToLog("Marker : " + String(position));
     this->audioPosition = position;
     repaint();
 }
 
 double PositionMarker::getDrawPosition() {
     this->drawPosition = (audioPosition / length) * this->width + this->x;
-    Logger::getCurrentLogger()->writeToLog("Marker : "+String(drawPosition));
+    // Logger::getCurrentLogger()->writeToLog("Marker : "+String(drawPosition));
     
     return drawPosition;
 }

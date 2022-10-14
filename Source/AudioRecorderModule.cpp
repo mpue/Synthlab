@@ -37,7 +37,7 @@ using juce::Time;
 //==============================================================================
 AudioRecorderModule::AudioRecorderModule(double sampleRate, int buffersize, AudioFormatManager* manager)
 {
-    this->sampleRate = sampleRate;
+    this->sampleRate = (float)sampleRate;
     this->buffersize = buffersize;
     
     setSize(120,140);
@@ -172,7 +172,7 @@ void AudioRecorderModule::process() {
             currentPlaybackSample = (currentPlaybackSample + 1) % numRecordedSamples;
             outL[i] = editor->getSampler()->getCurrentSample(0);
             outR[i] = editor->getSampler()->getCurrentSample(1);
-
+            editor->setCurrentPosition(currentPlaybackSample);
         }
 
     }

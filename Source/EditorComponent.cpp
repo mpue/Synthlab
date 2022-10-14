@@ -38,24 +38,8 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize) : resizerBar 
     editorView->setMouseClickGrabsKeyboardFocus(false);
     
     topTab->addTab("Editor", juce::Colours::grey, editorView, false);
-
-    navigator = new TrackNavigator(AudioManager::getInstance()->getDeviceManager());
-
-    addMouseListener(navigator, true);
-    addKeyListener(navigator);
-    trackView = new Viewport();
-
-    trackView->setSize(500, 200);
-    trackView->setViewedComponent(navigator);
-    trackView->setScrollBarsShown(true, true);
-    trackView->setScrollOnDragEnabled(false);
-    trackView->setWantsKeyboardFocus(false);
-    trackView->setMouseClickGrabsKeyboardFocus(false);
-
-    // navigator->addTrack()
-
-    topTab->addTab("Navigator", juce::Colours::grey, trackView, true);
-
+    
+    
     mixerPanel = new MixerPanel();
     mixer = Mixer::getInstance();
     mixerPanel->setMixer(mixer);
@@ -88,7 +72,7 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize) : resizerBar 
                                       -0.3);
 
     Project::getInstance()->setSupplemental(this->bottomTab);
-    PrefabFactory::getInstance()->init(navigator);
+ 
 }
 
 
@@ -160,6 +144,27 @@ SynthEditor* EditorComponent::getEditor() {
 
 MainTabbedComponent* EditorComponent::getEditorTab() {
     return topTab;
+}
+
+void EditorComponent::OpenTrackView()
+{
+    if (navigator == nullptr) {        
+        navigator = new TrackNavigator(AudioManager::getInstance()->getDeviceManager());
+        PrefabFactory::getInstance()->init(navigator);
+        addMouseListener(navigator, true);
+        addKeyListener(navigator);
+        trackView = new Viewport();
+
+        trackView->setSize(500, 200);
+        trackView->setViewedComponent(navigator);
+        trackView->setScrollBarsShown(true, true);
+        trackView->setScrollOnDragEnabled(false);
+        trackView->setWantsKeyboardFocus(false);
+        trackView->setMouseClickGrabsKeyboardFocus(false);
+
+    }
+    topTab->addTab("Navigator", juce::Colours::grey, trackView, false);
+
 }
 
 void EditorComponent::changeListenerCallback(juce::ChangeBroadcaster *source) {

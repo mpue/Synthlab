@@ -352,6 +352,17 @@ void Track::splitRegion() {
     
 }
 
+void Track::setSamplePosition(int position)
+{
+    this->samplePosition = position;
+    // sendChangeMessage();
+}
+
+int Track::getSamplePosition()
+{
+    return samplePosition;
+}
+
 void Track::setZoom(float zoom)
 {
     this->zoom = zoom;
@@ -579,7 +590,7 @@ AudioSampleBuffer * Track::getRecordingBuffer()
 
 void Track::setCurrentMarkerPosition(int position) {
     this->markerPosition = position;
-    Logger::getCurrentLogger()->writeToLog("Track " + String(midiChannel) + " marker : "+ String(position));
+    // Logger::getCurrentLogger()->writeToLog("Track " + String(midiChannel) + " marker : "+ String(position));
 }
 
 int Track::getMidiChannel() {
@@ -592,6 +603,8 @@ void Track::setMidiChannel(int channel, bool notify) {
         sendChangeMessage();
     }
 }
+
+
 
 void Track::changeListenerCallback(ChangeBroadcaster * source) {
     

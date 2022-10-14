@@ -219,7 +219,7 @@ void SliderModule::setValue(float value) {
 void SliderModule::sliderValueChanged(juce::Slider *slider) {
     
     if (slider == this->slider) {
-        this->value = slider->getValue();
+        this->value = (float)slider->getValue();
         this->valueValue->setValue(this->value);
         // this->nameLabel->setText(String(value),juce::NotificationType::dontSendNotification);
         this->pins.at(0)->setValue(value);

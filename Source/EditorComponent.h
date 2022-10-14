@@ -33,7 +33,7 @@ public:
     Mixer* getMixer();
     TrackNavigator* getNavigator();
     MainTabbedComponent* getEditorTab();
-    
+    void OpenTrackView();
     virtual void changeListenerCallback (juce::ChangeBroadcaster* source) override;
 private:
     

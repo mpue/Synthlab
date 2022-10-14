@@ -19,7 +19,7 @@
  //==============================================================================
  /*
   */
-class TrackIn : public Module, public VolumeAdjustable
+class TrackIn : public Module, public VolumeAdjustable, public ChangeListener
 {
 public:
     TrackIn(TrackNavigator* navigator, double sampleRate, int buffersize);
@@ -38,6 +38,8 @@ public:
     // this is needed to associate the channel with the mixer
     int getChannelIndex();
     void setChannelIndex(int index);
+
+    void setSamplePosition(int samples);
 
     Track* getTrack();
     void setTrack(Track* t);
@@ -60,7 +62,12 @@ public:
         ~TrackListener() {}  // no need to remove the listener
 
         void valueChanged(juce::Value& value) override {
-
+            for (int i = 0; i < a->navigator->getTracks().size(); i++) {
+                if (a->navigator->getTracks().at(i)->getName() == value.toString()) {
+                    a->setTrack(a->navigator->getTracks().at(i));
+                    break;
+                }
+            }
         }
         TrackIn* a;
         juce::Value value;
@@ -75,6 +82,8 @@ public:
     virtual juce::Array<juce::PropertyComponent*>& getProperties() override;
     virtual void createProperties() override;
 
+    void changeListenerCallback(ChangeBroadcaster* source);
+
 private:
     juce::Value* volumeValue;
     juce::PropertyComponent* volumeProp;
@@ -87,7 +96,7 @@ private:
     Track* track;
     TrackNavigator* navigator;
     int numSamples = 0;
-
+    int offset = 0;
     juce::AudioDeviceManager* deviceManager;
     int channelIndex;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TrackIn)

@@ -70,6 +70,9 @@ PluginModule::~PluginModule()
 
 void PluginModule::openPluginWindow() {
     
+    if (plugin == nullptr) {
+        return;
+    }
     auto editor = plugin->createEditorIfNeeded();
     
     if (win == nullptr) {
@@ -165,29 +168,41 @@ void PluginModule::process() {
     if (pins.at(0)->getConnections().size() == 1 && pins.at(1)->getConnections().size() == 1) {
         const float* inL = pins.at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
         const float* inR = pins.at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
-        
-        
-        for (int i = 0; i < buffersize;i++){
+
+
+        for (int i = 0; i < buffersize; i++) {
             bufferLeft[i] = inL[i];
             bufferRight[i] = inR[i];
         }
-        
-        if (plugin != nullptr) {
-            audioBuffer->copyFrom(0,0, *pins.at(0)->getConnections().at(0)->getAudioBuffer(), 0, 0, buffersize);
-            audioBuffer->copyFrom(1,0, *pins.at(1)->getConnections().at(0)->getAudioBuffer(), 0, 0, buffersize);
-            plugin->processBlock(*audioBuffer, midiBuffer);
-            pins.at(2)->getAudioBuffer()->copyFrom(0,0, *audioBuffer, 0, 0, buffersize);
-            pins.at(3)->getAudioBuffer()->copyFrom(0,0, *audioBuffer, 1, 0, buffersize);
-        }
-        
-        /*
-        for (int i = 0; i < buffersize;i++){
-            pins.at(2)->getAudioBuffer()->setSample(0, i,bufferLeft[i]);
-            pins.at(3)->getAudioBuffer()->setSample(0, i,bufferRight[i]);
-        }
-         */
-        currentSample = (currentSample+1) % buffersize;
     }
+    else {
+        for (int i = 0; i < buffersize; i++) {
+            bufferLeft[i] = 0;
+            bufferRight[i] = 0;
+        }
+
+    }
+    if (plugin != nullptr) {
+        if (pins.at(0)->getConnections().size() == 1 && pins.at(1)->getConnections().size() == 1) {
+            audioBuffer->copyFrom(0, 0, *pins.at(0)->getConnections().at(0)->getAudioBuffer(), 0, 0, buffersize);
+            audioBuffer->copyFrom(1, 0, *pins.at(1)->getConnections().at(0)->getAudioBuffer(), 0, 0, buffersize);
+        }
+        else {
+            audioBuffer->clear();
+        }
+        plugin->processBlock(*audioBuffer, midiBuffer);
+        pins.at(2)->getAudioBuffer()->copyFrom(0,0, *audioBuffer, 0, 0, buffersize);
+        pins.at(3)->getAudioBuffer()->copyFrom(0,0, *audioBuffer, 1, 0, buffersize);
+    }
+        
+    /*
+    for (int i = 0; i < buffersize;i++){
+        pins.at(2)->getAudioBuffer()->setSample(0, i,bufferLeft[i]);
+        pins.at(3)->getAudioBuffer()->setSample(0, i,bufferRight[i]);
+    }
+        */
+    currentSample = (currentSample+1) % buffersize;
+    
 
     
 }

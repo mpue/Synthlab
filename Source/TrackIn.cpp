@@ -53,6 +53,15 @@ void TrackIn::createProperties() {
 	trackListener = new TrackListener(*trackValue, this);
 }
 
+void TrackIn::changeListenerCallback(ChangeBroadcaster* source)
+{
+	//Track* track = dynamic_cast<Track*>(source);
+	//if (track != nullptr) {
+	//	offset = track->getSamplePosition();
+	//}
+
+}
+
 void TrackIn::configurePins() {
 	Pin* p1 = new Pin(Pin::Type::AUDIO);
 	p1->direction = Pin::Direction::IN;
@@ -80,7 +89,7 @@ void TrackIn::process() {
 		float gainLeft = cos((M_PI * (pan + 1) / 4));
 		float gainRight = sin((M_PI * (pan + 1) / 4));
 
-		for (int j = numSamples; j < numSamples + buffersize; j++) {
+		for (int j = track->getSamplePosition(); j <  buffersize + track->getSamplePosition(); j++) {
 
 			float sampleL = track->getSample(0, j) * track->getVolume() * gainLeft;
 			float sampleR = track->getSample(1, j) * track->getVolume() * gainRight;
@@ -88,12 +97,11 @@ void TrackIn::process() {
 			pins.at(0)->getAudioBuffer()->setSample(0, j % buffersize, sampleL);
 			pins.at(1)->getAudioBuffer()->setSample(0, j % buffersize, sampleR);
 		}
-		numSamples += buffersize;
+		// track->setSamplePosition(track->getSamplePosition() + buffersize);
+		// numSamples += buffersize;
 
-		track->setOffset(numSamples);
-		track->updateMagnitude(numSamples, buffersize, gainLeft, gainRight);
-		navigator->setPosition(numSamples / this->sampleRate);
-
+		track->updateMagnitude(track->getSamplePosition(), buffersize, gainLeft, gainRight);
+		
 	}
 	else {
 		pins.at(0)->getAudioBuffer()->clear();
@@ -107,6 +115,11 @@ void TrackIn::setChannelIndex(int index) {
 	this->channelIndex = index;
 }
 
+void TrackIn::setSamplePosition(int samples)
+{
+	offset = samples;
+}
+
 Track* TrackIn::getTrack()
 {
 	return track;
@@ -115,6 +128,7 @@ Track* TrackIn::getTrack()
 void TrackIn::setTrack(Track* t)
 {
 	this->track = t;
+	
 }
 
 int TrackIn::getChannelIndex() {

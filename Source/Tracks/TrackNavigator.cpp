@@ -122,7 +122,7 @@ void TrackNavigator::adjustHeight()
 
 void TrackNavigator::timerCallback()
 {
-    marker->setPosition(getPosition());
+    repaint();
 }
 
 double TrackNavigator::getPosition() {
@@ -130,7 +130,38 @@ double TrackNavigator::getPosition() {
 }
 
 void TrackNavigator::setPosition(double position) {
-    this->position = position;
+    stopTimer();
+    int pos = (int)position - (int)position % 2;
+    Logger::getCurrentLogger()->writeToLog("setPosition  : " + String(pos));
+    this->position = pos;
+    this->samplePosition = pos * 48000;//  Project::getInstance()->getSampleRate();
+    std::function<void(void)> changeLambda =
+        [=]() {  
+        marker->setPosition(pos);
+
+    };
+    juce::MessageManager::callAsync(changeLambda);
+    startTimer(50);
+}
+
+int TrackNavigator::getSamplePosition() {
+    return samplePosition;
+}
+
+void TrackNavigator::setSamplePosition(int position) {
+    stopTimer();
+    // Logger::getCurrentLogger()->writeToLog("setSamplePosition : " + String(position));
+    this->samplePosition = position;
+    for (int i = 0; i < tracks.size(); i++) {
+        tracks.at(i)->setSamplePosition(this->getSamplePosition());
+    }
+    this->position = (float)samplePosition / 48000.0f;//Project::getInstance()->getSampleRate();
+    std::function<void(void)> changeLambda =
+        [=]() {
+        marker->setPosition(this->position);
+        startTimer(50);
+    };
+    juce::MessageManager::callAsync(changeLambda);
 }
 
 double TrackNavigator::getMaxLength() {
@@ -151,12 +182,14 @@ double TrackNavigator::getMaxLength() {
 void TrackNavigator::setPlaying(bool playing) {
     this->playing = playing;
     Session::getInstance()->setRecordingStartTime();
-    sendChangeMessage();
     for (int i = 0; i < tracks.size();i++) {
        for(int j = 0 ; j < tracks.at(i)->getRegions().size();j++){
             tracks.at(i)->getRegions().at(j)->reset();
+            tracks.at(i)->setSamplePosition (position);
+            tracks.at(i)->setCurrentMarkerPosition(position);
         }
     }
+    sendChangeMessage();
 }
 
 bool TrackNavigator::isPlaying() {
@@ -166,7 +199,7 @@ bool TrackNavigator::isPlaying() {
 void TrackNavigator::setRecording(bool recording) {
     if (recording) {
         Session::getInstance()->setRecordingStartTime();
-        recordStart = marker->getPosition() * Project::getInstance()->getSampleRate();
+        recordStart = (long)marker->getPosition() * Project::getInstance()->getSampleRate();
         for (int i = 0; i < tracks.size();i++) {
             if (tracks.at(i)->isRecording()) {
                 
@@ -291,7 +324,7 @@ void TrackNavigator::addTrack(Track* track) {
     
     this->tracks.push_back(track);
     this->currentTrack = track;
-    
+
     addAndMakeVisible(track);
     
     track->addChangeListener(this);
@@ -391,7 +424,6 @@ WaveSelector* TrackNavigator::getSelector() {
 
 void TrackNavigator::changeListenerCallback(ChangeBroadcaster * source) 
 {
-    
 	updateTrackLayout(source);
 	
     if (source == Project::getInstance()) {
@@ -404,8 +436,6 @@ void TrackNavigator::changeListenerCallback(ChangeBroadcaster * source)
     if (Track* track = dynamic_cast<Track*>(source)){
         sendChangeMessage();
     }
-    
-
 }
 
 bool TrackNavigator::keyPressed(const KeyPress& key, Component* originatingComponent) {
@@ -501,16 +531,17 @@ void TrackNavigator::mouseDown (const MouseEvent& event) {
 
     int x = event.x;
     int y = event.y;
-    
-    
+        
     if (!event.mods.isCtrlDown() && event.mods.isRightButtonDown()) {
-        float pos = (float)dragger->snap(x,zoom/4) / getWidth();
+        int width = getWidth();
+        float pos = (float)dragger->snap(x,zoom/4) / width;
         double total = getMaxLength();
         double relative = total * pos;
         setPosition(relative);
-        marker->setPosition(position);
+        // marker->setPosition(position);
         for (int i = 0; i < tracks.size();i++) {
-            tracks.at(i)->setCurrentMarkerPosition(marker->getDrawPosition());
+            tracks.at(i)->setSamplePosition(samplePosition);
+            tracks.at(i)->setCurrentMarkerPosition(position);
         }
         sendChangeMessage();
     }
@@ -556,7 +587,5 @@ void TrackNavigator::mouseDown (const MouseEvent& event) {
             
         }
     }
-    
-    
     
 }

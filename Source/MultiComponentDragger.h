@@ -191,7 +191,7 @@ public:
             return;
         }
         
-        delta.x = snap(delta.x, raster);
+        delta.x = (int)snap(delta.x, raster);
 
         for (auto comp: selectedComponents)
         {

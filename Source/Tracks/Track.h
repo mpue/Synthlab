@@ -87,8 +87,11 @@ public:
     void duplicateRegion(Region* region);
     void splitRegion();
     
-    void setCurrentMarkerPosition(int position);
-    
+    void setSamplePosition(int position);
+    int getSamplePosition();
+
+    void setCurrentMarkerPosition(int pos);
+
     int getMidiChannel();
     void setMidiChannel(int channel, bool notify);
     
@@ -182,6 +185,7 @@ public:
         this->connectionId = connectionId;
     }
     
+
 private:
 
     AudioPluginInstance* plugin = nullptr;
@@ -202,6 +206,7 @@ private:
 	AudioSampleBuffer* audioBuffer;
     MidiBuffer* midiBuffer;
     int markerPosition = 0;
+    int samplePosition = 0;
     int bufferSize;
     int midiChannel = 1;
     virtual void changeListenerCallback(ChangeBroadcaster * source) override;

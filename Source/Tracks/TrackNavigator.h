@@ -58,6 +58,9 @@ public:
 	void setPosition(double position);
 	double getPosition();
 
+	void setSamplePosition(int position);
+	int getSamplePosition();
+
 	float getZoom();
 	void setZoom(float zoom);
 
@@ -88,6 +91,9 @@ private:
 	bool recording = false;
 	double position;
 	float zoom;
+
+	int samplePosition = 0;
+
 	// length of the track in seconds
 	long tracklength;
 	int mouseDeltaX = 0;

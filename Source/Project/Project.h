@@ -110,7 +110,7 @@ public:
         return sampleRate;
     }
     
-    void setBufferSize(double bufferSize) {
+    void setBufferSize(int bufferSize) {
         this->bufferSize = bufferSize;
     }
     

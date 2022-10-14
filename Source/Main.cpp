@@ -8,12 +8,14 @@
   ==============================================================================
 */
 
+#define _SILENCE_TR1_NAMESPACE_DEPRECATION_WARNING
+
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "MainComponent.h"
 #include "Project/Project.h"
 #include "AudioManager.h"
 #include "Plugins/PluginManager.h"
-#include <gtest.h>
+// #include <gtest.h>
 #include "HTTPServer.h"
 
 using juce::JUCEApplication;
@@ -48,16 +50,18 @@ public:
         server->startThread();
         
         if (commandLine.contains("runTests")) {
-            //juce::UnitTestRunner runner;
-            //runner.runAllTests();
+            juce::UnitTestRunner runner;
+            runner.runAllTests();
         }
         else if(commandLine.contains("runUnitTests"))
         {
+            /*
             int argc = 1;
             char* args = (char*)"";
             testing::InitGoogleTest(&argc, &args);
             (void) RUN_ALL_TESTS();
             juce::JUCEApplication::quit();
+            */
         }
         else {
             mainWindow = new MainWindow (getApplicationName());    

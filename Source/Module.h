@@ -193,7 +193,7 @@ protected:
     juce::Point<int> savedUIPosition;
     juce::Point<int> uiPosition;
     
-    float sampleRate;
+    double sampleRate;
     int buffersize;
     
     juce::DropShadow* shadow = nullptr;

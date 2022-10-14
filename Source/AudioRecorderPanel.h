@@ -61,8 +61,8 @@ public:
     float getGain();
     void setMagnitude(int channel, float value);
     bool isMonitoring();
-
 	void toggleRecording();
+    void setCurrentPosition(int position);
 
     //[/UserMethods]
 

@@ -33,6 +33,8 @@ public:
     int getIndex();
     void setIndex(int index);
 	void toggleRecording();
+    void setCurrentPosition(int position);
+
 private:
     
     AudioRecorderPanel* recorderPanel = nullptr;

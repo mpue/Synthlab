@@ -45,7 +45,7 @@ public:
     void setSampleRate(double sampleRate);
     double getSampleRate();
 
-    void setBufferSize(double bufferSize);
+    void setBufferSize(int bufferSize);
     double getBufferSize();
     
     float getTempo();

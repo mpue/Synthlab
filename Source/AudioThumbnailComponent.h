@@ -39,7 +39,7 @@ private:
     float sampleRate;
     int buffersize;
     int startPosition;
-    int endPosistion;
+    int endPosition;
     int currentPosition;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioThumbnailComponent)

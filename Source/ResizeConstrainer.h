@@ -49,7 +49,7 @@ public:
             width = maxWidth;
         }
         
-        width = snap(width,this->raster);
+        width = (int)snap(width,this->raster);
         
         bounds.setWidth(width);
     }

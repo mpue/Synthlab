@@ -60,7 +60,7 @@ void PitchBendModule::setPitch(int value) {
     float semitones = 4.0f;
     
     nPitch = (nPitch * semitones) / 12.0f;
-    nPitch = pow(2, nPitch);
+    nPitch = (float)pow(2, nPitch);
     
     for (int i = 0; i < 128;i++) {
         pins.at(0)->data[i] = nPitch;

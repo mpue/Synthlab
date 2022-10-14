@@ -64,7 +64,7 @@ public:
         juce::String name;
         juce::String category;
         juce::Image icon;
-        int prefabId;
+        int prefabId = 0;
     };
     
     static PrefabFactory* getInstance() {
@@ -100,7 +100,7 @@ private:
     
     juce::StringArray* categories;
     
-    TrackNavigator* navigator;
+    TrackNavigator* navigator = nullptr;
 
     PrefabFactory() {
         prefabs[53] = Prefab("Sampler","Sound sources");

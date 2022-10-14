@@ -51,6 +51,11 @@ void HTTPServer::run() {
                 clientSocket->waitUntilReady(false, 10000);
                 int bytes = clientSocket->read(buffer, 1024, false);
                 
+                if (bytes <= 0) {
+                    sleep(10);
+                    continue;
+                }
+
                 juce::String request = juce::String(buffer,bytes);
                 
                 juce::StringArray tokens;

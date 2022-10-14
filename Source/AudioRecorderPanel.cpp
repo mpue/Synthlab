@@ -228,7 +228,7 @@ void AudioRecorderPanel::sliderValueChanged (Slider* sliderThatWasMoved)
     if (sliderThatWasMoved == gainSlider)
     {
         //[UserSliderCode_gainSlider] -- add your slider handling code here..
-        gain = gainSlider->getValue();
+        gain = (float)gainSlider->getValue();
         //[/UserSliderCode_gainSlider]
     }
 
@@ -252,7 +252,6 @@ void AudioRecorderPanel::updateContent(AudioSampleBuffer *buffer, int numSamples
     this->component->setSampleBuffer(buffer);
     this->component->setStartPosition(0);
     this->component->setEndPosition(numSamples);
-
 }
 
 void AudioRecorderPanel::setCurrentTime(juce::String time) {
@@ -281,14 +280,28 @@ float AudioRecorderPanel::getGain() {
 void AudioRecorderPanel::toggleRecording() {
 	if (state == IDLE) {
 		state = RECORDING;
-		recordButton->setButtonText("Stop recording");
+        std::function<void(void)> changeLambda =
+            [=]() {  
+		        recordButton->setButtonText("Stop recording");
+             };
+        juce::MessageManager::callAsync(changeLambda);
+
 	}
 	else {
 		state = IDLE;
-		recordButton->setButtonText("Start recording");
+        std::function<void(void)> changeLambda =
+            [=]() {
+            recordButton->setButtonText("Start recording");
+        };
+        juce::MessageManager::callAsync(changeLambda);
+
 	}
 	sendChangeMessage();
 
+}
+
+void AudioRecorderPanel::setCurrentPosition(int position) {
+    component->setCurrentPosition(position);
 }
 
 //[/MiscUserCode]

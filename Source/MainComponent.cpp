@@ -22,11 +22,12 @@
 #include "Knob.h"
 #include "Mixer.h"
 #include "Actions/RemoveSelectedAction.h"
+#include "Actions/AddModuleAction.h"
 #include "ModuleBrowser.h"
 #include "PitchBendModule.h"
 #include "ModuleUtils.h"
 #include "MidiClock.h"
-
+#include "TrackIn.h"
 
 #ifndef M_PI
 #define M_PI       3.14159265358979323846 
@@ -324,6 +325,7 @@ void MainComponent::createStudioLayout() {
 	pluginMenu = PluginManager::getInstance()->buildPluginMenu();
 #endif
 	editor->updateProject(File());
+	
 }
 
 void MainComponent::createPlayerLayout() {
@@ -448,8 +450,8 @@ int MainComponent::getNumActiveChannels(int i) {
 
 void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill)
 {
-	lastTime = Time::getMillisecondCounterHiRes() - currentTime;
-	currentTime = Time::getMillisecondCounterHiRes();
+	lastTime = (long)Time::getMillisecondCounterHiRes() - currentTime;
+	currentTime = (long)Time::getMillisecondCounterHiRes();
 
 	long startTime = currentTime;
 
@@ -610,6 +612,14 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 	cpuLoad = ((float)duration / (float)lastTime) * 100;
 
 	currentSample = (currentSample + 1) % numSamples;
+
+	if (navigator == nullptr) {
+		navigator = editorView->getNavigator();
+	}
+	if (navigator != nullptr && navigator->isPlaying()) {
+		navigator->setSamplePosition(navigator->getSamplePosition() + numSamples);
+
+	}
 }
 
 void MainComponent::releaseResources()
@@ -699,6 +709,7 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 #if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
 		menu.addItem(200, "Manage plugins", true, false, nullptr);
 #endif
+		menu.addItem(201, "Tracks", true, false, nullptr);
 	}
 	else if (index == 2) {
 
@@ -714,6 +725,8 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 
 		alignMenu.addCommandItem(this, SynthEditor::CommandIds::ALIGN_X);
 		alignMenu.addCommandItem(this, SynthEditor::CommandIds::ALIGN_Y);
+
+		menu.addItem(8, "Add Audio Track", true, false, nullptr);
 
 		menu.addSubMenu("Align", alignMenu);
 	}
@@ -741,6 +754,28 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 		PluginManager::getInstance()->scanPlugins();
 	}
 #endif
+	else if (menuItemID == 201) {
+		editorView->OpenTrackView();
+		editorView->getNavigator()->addChangeListener(this);
+	}
+	else if (menuItemID == 8) {
+
+		if (editorView->getNavigator() == nullptr) {
+			editorView->OpenTrackView();
+			editorView->getNavigator()->addChangeListener(this);
+		}
+		TrackIn* ti = new TrackIn(editorView->getNavigator(), sampleRate, buffersize);
+		Track* t = editorView->getNavigator()->addTrack(Track::Type::AUDIO, 48000);
+		t->setName("Audio " + String(editorView->getNavigator()->getTracks().size() + 1));
+		ti->setTrack(t);
+		Point<int> pos = Point<int>(10, 10);
+
+		AddModuleAction* am = new AddModuleAction(editor,pos,48);
+		Project::getInstance()->getUndoManager()->beginNewTransaction();
+		Project::getInstance()->getUndoManager()->perform(am);
+
+	}
+
 	else if (menuItemID == 31) {
 		editor->duplicateSelected();
 
@@ -923,7 +958,7 @@ void MainComponent::buttonClicked(Button* b)
 			editor->setRunning(true);
 		}
 		else if (tb->getItemId() == toolbarFactory->doc_save) {
-			editor->saveFile();
+			editor->saveFile();						
 		}
 		else if (tb->getItemId() == toolbarFactory->doc_open) {
 			editor->setRunning(false);
@@ -1207,9 +1242,9 @@ void MainComponent::disableAllMidiInputs() {
 
 void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source) {
 
-	SynthEditor* editor = dynamic_cast<SynthEditor*>(source);
-	if (editor != nullptr) {
-
+	TrackNavigator* navigator  = dynamic_cast<TrackNavigator*>(source);
+	if (navigator != nullptr) {
+		currentSample = navigator->getSamplePosition();
 
 	}
 }
