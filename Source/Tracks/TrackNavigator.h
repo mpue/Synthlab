@@ -20,6 +20,8 @@
 #include "../Project/TrackConfig.h"
 #include <vector>
 #include <map>
+#include "TimeLine.h"
+
 //==============================================================================
 /*
 */
@@ -28,10 +30,11 @@ class TrackNavigator : public Component,
 	public ChangeBroadcaster,
 	public Timer,
 	public KeyListener,
-	public DragAndDropTarget
+	public DragAndDropTarget,
+	public ScrollBar::Listener
 {
 public:
-	TrackNavigator(AudioDeviceManager* manager);
+	TrackNavigator(AudioDeviceManager* manager, Viewport* view);
 	~TrackNavigator();
 
 	void paint(Graphics&) override;
@@ -80,6 +83,7 @@ public:
 	ValueTree* getConfiguration();
 
 	void setConfiguration(ValueTree* config);
+	void scrollBarMoved(ScrollBar* scrollBarThatHasMoved, double newRangeStart) override;
 
 private:
 
@@ -91,6 +95,8 @@ private:
 
 	Track* currentTrack = NULL;
 	PositionMarker* marker;
+	TimeLine* timeLine;
+	Viewport* view;
 
 	std::vector<Track*> tracks;
 	ScopedPointer<WaveSelector> selector;
@@ -108,6 +114,10 @@ private:
 
 	long recordStart = 0;
 	long recordStop = 0;
+
+	int timelineOffset = 25;
+
+	double scrollbarOffset = 0;
 
 	MidiMessage message;
 

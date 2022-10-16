@@ -141,7 +141,7 @@ void Track::duplicateRegion(Region *region) {
     
 }
 
-void Track::addRegion(String refId, File file, double sampleRate, long sampleOffset) {
+Region* Track::addRegion(String refId, File file, double sampleRate, long sampleOffset) {
     AudioRegion* region = new AudioRegion(file, refId, *manager, sampleRate);
     region->setDragger(dragger);
     Rectangle<int>* bounds = new Rectangle<int>(0, 0, region->getWidth() * zoom, getHeight());
@@ -180,7 +180,7 @@ void Track::addRegion(String refId, File file, double sampleRate, long sampleOff
     float x = (sampleOffset / (tracklen / (tracklen * zoom))) / sampleRate;
 
     region->setTopLeftPosition(Point<int>(x, region->getBounds().getY()));
-
+    return region;
 }
     
 void Track::addRegion(String refId, File file, double sampleRate) {

@@ -53,7 +53,7 @@ void PositionMarker::setPosition(double position) {
  	if (position < 0) {
 		position = 0;
 	}
-    //Logger::getCurrentLogger()->writeToLog("Marker : " + String(position));
+    Logger::getCurrentLogger()->writeToLog("Marker : " + String(position));
     this->audioPosition = position;
     repaint();
 }

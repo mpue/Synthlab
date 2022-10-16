@@ -39,7 +39,7 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
     setSize(length * this->zoom, other->getHeight());
     */
     
-    setSize((other->getBuffer()->getNumSamples() / sampleRate) * this->zoom, Project::DEFAULT_TRACK_HEIGHT);
+    setSize((other->getBuffer()->getNumSamples() / sampleRate) * this->zoom, Project::DEFAULT_TRACK_HEIGHT-25);
 
     this->offset = 0;
     

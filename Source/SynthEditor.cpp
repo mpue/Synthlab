@@ -1405,7 +1405,10 @@ void SynthEditor::openTracks()
 			for (int i = 0; i < regions.getNumChildren(); i++) {
 				ValueTree region = regions.getChild(i);
 				Logger::getCurrentLogger()->writeToLog(region.getProperty("clipRefId"));
-				t->addRegion(region.getProperty("clipRefId"), File(Project::getInstance()->getAudioPath(region.getProperty("clipRefId"))),48000.0, region.getProperty("sampleOffset").toString().getIntValue());
+				Region* r = t->addRegion(region.getProperty("clipRefId"), File(Project::getInstance()->getAudioPath(region.getProperty("clipRefId"))),48000.0, region.getProperty("sampleOffset").toString().getIntValue());
+				Rectangle<int> bounds = r->getBounds();
+				bounds.setWidth(region.getProperty("width"));
+				r->setBounds(bounds);
 			}		
 
 		}

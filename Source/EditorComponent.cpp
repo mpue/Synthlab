@@ -149,11 +149,11 @@ MainTabbedComponent* EditorComponent::getEditorTab() {
 void EditorComponent::OpenTrackView()
 {
     if (navigator == nullptr) {        
-        navigator = new TrackNavigator(AudioManager::getInstance()->getDeviceManager());
+        trackView = new Viewport();
+        navigator = new TrackNavigator(AudioManager::getInstance()->getDeviceManager(), trackView);
         PrefabFactory::getInstance()->init(navigator);
         addMouseListener(navigator, true);
         addKeyListener(navigator);
-        trackView = new Viewport();
         editor->setNavigator(navigator);
         trackView->setSize(500, 200);
         trackView->setViewedComponent(navigator);
@@ -161,7 +161,7 @@ void EditorComponent::OpenTrackView()
         trackView->setScrollOnDragEnabled(false);
         trackView->setWantsKeyboardFocus(false);
         trackView->setMouseClickGrabsKeyboardFocus(false);
-
+        
     }
     topTab->addTab("Navigator", juce::Colours::grey, trackView, false);
 
