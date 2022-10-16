@@ -54,7 +54,8 @@ public:
 	void setSelected(bool selected);
 	bool isSelected();
 	double getMaxLength();
-	void addRegion(String refId, File file, double sampleRate);
+	void addRegion(String refId, File file, double sampleRate, long samplePosition);
+    void addRegion(String refId, File file, double sampleRate);
     void addMidiRegion(double sampleRate, long samplePosition,long regionLength);
     void addRegion(AudioSampleBuffer* source, double sampleRate, long samplePosition, long regionLength);
     void addRegion(String refId, File file, double sampleRate, long samplePosition, long regionLength);

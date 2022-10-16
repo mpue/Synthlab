@@ -20,6 +20,7 @@
 #include "Project/Project.h"
 #include "EditorListener.h"
 #include "IEditor.h"
+#include "Tracks/TrackNavigator.h"
 
 class SamplerModule;
 
@@ -46,6 +47,7 @@ public:
     void newFile();
     void saveFile();
     void openFile();
+    void openTracks();
     void openSampleEditor(SamplerModule* sm);
     void openStepSequencer(StepSequencerModule* ssm);
     void openEditor(Module* m);
@@ -54,7 +56,7 @@ public:
     Module* loadModule();
     void saveModule(Module* m);
     void configureAudioModule(Module *m, ChangeBroadcaster* broadcaster);
-    
+    Track* createTrack();
     // audio processing
 
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate);
@@ -148,7 +150,8 @@ public:
         DELETE_SELECTED = 9,
         ALIGN_Y = 10,
         ALIGN_X = 11,
-        RESET_GUI_POS = 12
+        RESET_GUI_POS = 12,
+        LOAD_TRACKS = 13
     };
     
     // member access
@@ -180,6 +183,9 @@ public:
     void resetGUIPosition();
     void updateProject(File file);
     void updateProject(URL url);
+
+    void setNavigator(TrackNavigator* navigator);
+
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
 
@@ -229,8 +235,6 @@ private:
     SelectionModel::State state = SelectionModel::NONE;
     TabbedComponent* tab = nullptr;
     Rectangle<int> selectionFrame = Rectangle<int>(0, 0, 0, 0);
-
-
     
     static String defaultMidiInputName;
     static String defaultMidiOutputName;
@@ -260,6 +264,8 @@ private:
     std::vector<Viewport*> openViews;
     std::vector<EditorListener*> listener;
     
+    TrackNavigator* navigator = nullptr;
+
     //[/UserVariables]
 
     

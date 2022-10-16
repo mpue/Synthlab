@@ -17,6 +17,7 @@
 #include "../Mixer.h"
 #include <iterator>
 #include <iostream>
+#include "ExtendedFileBrowser.h"
 
 using namespace std;
 
@@ -120,9 +121,64 @@ void TrackNavigator::adjustHeight()
     setSize(getWidth(), height);
 }
 
+bool TrackNavigator::isInterestedInDragSource(const SourceDetails& dragSourceDetails)
+{
+    juce::String name = dragSourceDetails.description.toString();
+    if (name.endsWith(".wav")) {
+        return true;
+    }
+
+    return false;
+}
+
+void TrackNavigator::itemDropped(const SourceDetails& dragSourceDetails)
+{
+    for (int i = 0; i < tracks.size(); i++) {
+        if (tracks.at(i)->isSelected()) {
+            juce::File file = juce::File(dragSourceDetails.description.toString());
+            tracks.at(i)->addRegion(file.getFileNameWithoutExtension(), file, 48000);
+            Project::getInstance()->addAudioFile(file.getFileNameWithoutExtension(), file.getFullPathName());
+            repaint();
+        }
+    }
+
+    Logger::getCurrentLogger()->writeToLog(dragSourceDetails.description.toString());
+}
+
 void TrackNavigator::timerCallback()
 {
     repaint();
+}
+
+ValueTree* TrackNavigator::getConfiguration()
+{
+    ValueTree* v = new ValueTree("Tracks");
+
+    for (int i = 0; i < tracks.size(); i++) {
+
+        ValueTree track = ValueTree("Track");
+        track.setProperty("name", tracks.at(i)->getName(), nullptr);
+        ValueTree regions = ValueTree("Regions");
+        
+        for (int j = 0; j < tracks.at(i)->getRegions().size(); j++) {
+            ValueTree region = ValueTree("Region");
+            region.setProperty("name", tracks.at(i)->getRegions().at(j)->getName(),nullptr);
+            AudioRegion* ar = dynamic_cast<AudioRegion*>(tracks.at(i)->getRegions().at(j));
+            if (ar != nullptr) {
+                region.setProperty("clipRefId", ar->getClipRefid(), nullptr);
+                region.setProperty("sampleOffset", ar->getSampleOffset(), nullptr);
+            }
+            regions.addChild(region, j, nullptr);
+        }
+        track.addChild(regions,0,nullptr);
+
+        v->addChild(track, i, nullptr);
+    }
+    return v;
+}
+
+void TrackNavigator::setConfiguration(ValueTree* config)
+{
 }
 
 double TrackNavigator::getPosition() {

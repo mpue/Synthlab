@@ -24,6 +24,11 @@ public:
     void setModule(Module* m) {
         this->module = m;
     }
+
+    Module* getModule() {
+        return this->module;
+    }
+
     
 private:
     

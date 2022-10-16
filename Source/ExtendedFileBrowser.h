@@ -50,7 +50,13 @@ private:
 
 };
 
-class ExtendedFileBrowser : public juce::Component,  public juce::ChangeListener, public juce::Timer, public ChangeBroadcaster {
+class ExtendedFileBrowser : public juce::Component,  
+                            public juce::ChangeListener, 
+                            public juce::Timer, 
+                            public ChangeBroadcaster,
+                            public Button::Listener,
+                            public DragAndDropContainer
+{
     
     
 public:
@@ -67,6 +73,8 @@ public:
     void saveState();
     void loadState();
     
+    void focusLost(FocusChangeType cause) override;
+    
     juce::TableListBox* getTable() {
         return table;
     };
@@ -75,6 +83,8 @@ public:
         return model;
     }
     
+    void buttonClicked(Button* button) override;
+
     virtual void timerCallback() override;
     
 private:
@@ -86,5 +96,6 @@ private:
     juce::Viewport* view = nullptr;
     Sampler* sampler;
     bool playing = false;
+    std::vector<Button*> driveButtons;
 };
 

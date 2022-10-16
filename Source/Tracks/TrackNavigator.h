@@ -27,7 +27,8 @@ class TrackNavigator : public Component,
 	public ChangeListener,
 	public ChangeBroadcaster,
 	public Timer,
-	public KeyListener
+	public KeyListener,
+	public DragAndDropTarget
 {
 public:
 	TrackNavigator(AudioDeviceManager* manager);
@@ -67,11 +68,18 @@ public:
 	void updateTrackLayout(ChangeBroadcaster* source);
 	void adjustHeight();
 
+	bool isInterestedInDragSource(const SourceDetails& dragSourceDetails) override;
+	void itemDropped(const SourceDetails& dragSourceDetails) override;
+
 	inline void addChangeListener(ChangeListener* listener) {
 		ChangeBroadcaster::addChangeListener(listener);
 	}
 
 	void timerCallback() override;
+
+	ValueTree* getConfiguration();
+
+	void setConfiguration(ValueTree* config);
 
 private:
 

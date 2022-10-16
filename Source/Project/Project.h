@@ -212,6 +212,10 @@ public:
         projectAudio.insert(make_pair(id, path));
     }
     
+    String getAudioPath(String id) {
+        return projectAudio[id];
+    }
+
     static long DEFAULT_TRACK_LENGTH;
     static int  DEFAULT_TRACK_HEIGHT;
     static float DEFAULT_TEMPO;

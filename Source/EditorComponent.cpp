@@ -154,7 +154,7 @@ void EditorComponent::OpenTrackView()
         addMouseListener(navigator, true);
         addKeyListener(navigator);
         trackView = new Viewport();
-
+        editor->setNavigator(navigator);
         trackView->setSize(500, 200);
         trackView->setViewedComponent(navigator);
         trackView->setScrollBarsShown(true, true);

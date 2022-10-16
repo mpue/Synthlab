@@ -69,6 +69,10 @@ void Region::setSampleOffset(long offset, bool reminder, bool notify)
     
     this->sampleOffset = offset;
     
+    if (sampleOffset < 0) {
+        sampleOffset = 0;
+    }
+
     if (!reminder)
         this->oldOffset = this->sampleOffset;
     

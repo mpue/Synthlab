@@ -141,6 +141,48 @@ void Track::duplicateRegion(Region *region) {
     
 }
 
+void Track::addRegion(String refId, File file, double sampleRate, long sampleOffset) {
+    AudioRegion* region = new AudioRegion(file, refId, *manager, sampleRate);
+    region->setDragger(dragger);
+    Rectangle<int>* bounds = new Rectangle<int>(0, 0, region->getWidth() * zoom, getHeight());
+    region->setBounds(markerPosition, 0, region->getWidth(), getHeight());
+    region->setThumbnailBounds(bounds);
+    region->setLoopCount(0);
+
+    if (regions.size() == 0) {
+        setName(region->getName());
+    }
+
+    this->regions.push_back(region);
+    this->currentRegion = region;
+    region->addChangeListener(this);
+
+    this->currentRegion->toFront(true);
+    addAndMakeVisible(region);
+
+    clearSelection();
+    region->setSelected(true);
+    region->setDirty(true);
+
+    long sampleNum = (this->maxLength / (this->maxLength * zoom)) * markerPosition * sampleRate;
+    region->setSampleOffset(sampleOffset, false, false);
+    region->setOffset(markerPosition);
+
+    if (zoom > 0)
+        region->setZoom(zoom);
+
+    audioBuffer->copyFrom(0, region->getSampleOffset(), *region->getBuffer(), 0, 0, region->getBuffer()->getNumSamples());
+    audioBuffer->copyFrom(1, region->getSampleOffset(), *region->getBuffer(), 1, 0, region->getBuffer()->getNumSamples());
+
+    repaint();
+
+    long tracklen = Project::getInstance()->getTrackLength();          
+    float x = (sampleOffset / (tracklen / (tracklen * zoom))) / sampleRate;
+
+    region->setTopLeftPosition(Point<int>(x, region->getBounds().getY()));
+
+}
+    
 void Track::addRegion(String refId, File file, double sampleRate) {
 
 	AudioRegion* region = new AudioRegion(file, refId, *manager, sampleRate);
@@ -443,7 +485,15 @@ const float Track::getSample(int channel, long sample) {
     if (mute) {
         return 0;
     }
-    return audioBuffer->getSample(channel,sample);
+    currentRegion = getCurrentRegion(sample);
+
+    if (getCurrentRegion(sample) != nullptr) {
+        if (sample - currentRegion->getSampleOffset() < getBuffer()->getNumSamples() && sample - currentRegion->getSampleOffset() > 0) {
+            return getBuffer()->getSample(channel, sample - currentRegion->getSampleOffset());
+        }
+    }
+    return 0;
+    // return audioBuffer->getSample(channel,sample);
 }
 
 void Track::addMessage(MidiMessage* message,double time, int sampleNum) {
@@ -580,7 +630,7 @@ AudioSampleBuffer * Track::getBuffer()
         return region->getBuffer();
     }
     
-    return NULL;
+    return nullptr;
 }
 
 AudioSampleBuffer * Track::getRecordingBuffer()

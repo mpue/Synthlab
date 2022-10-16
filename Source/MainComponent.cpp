@@ -27,7 +27,6 @@
 #include "PitchBendModule.h"
 #include "ModuleUtils.h"
 #include "MidiClock.h"
-#include "TrackIn.h"
 
 #ifndef M_PI
 #define M_PI       3.14159265358979323846 
@@ -682,6 +681,7 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 	if (index == 0) {
 		menu.addCommandItem(this, SynthEditor::CommandIds::NEW);
 		menu.addCommandItem(this, SynthEditor::CommandIds::LOAD);
+		menu.addCommandItem(this, SynthEditor::CommandIds::LOAD_TRACKS);
 		menu.addCommandItem(this, SynthEditor::CommandIds::SAVE);
 		menu.addItem(5, "Settings", true, false, nullptr);
 		menu.addItem(6, "Import Audio", true, false, nullptr);
@@ -764,16 +764,8 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 			editorView->OpenTrackView();
 			editorView->getNavigator()->addChangeListener(this);
 		}
-		TrackIn* ti = new TrackIn(editorView->getNavigator(), sampleRate, buffersize);
-		Track* t = editorView->getNavigator()->addTrack(Track::Type::AUDIO, 48000);
-		t->setName("Audio " + String(editorView->getNavigator()->getTracks().size() + 1));
-		ti->setTrack(t);
-		Point<int> pos = Point<int>(10, 10);
-
-		AddModuleAction* am = new AddModuleAction(editor,pos,48);
-		Project::getInstance()->getUndoManager()->beginNewTransaction();
-		Project::getInstance()->getUndoManager()->perform(am);
-
+		editor->createTrack();
+		editor->repaint();
 	}
 
 	else if (menuItemID == 31) {

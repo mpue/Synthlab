@@ -33,8 +33,24 @@ ExtendedFileBrowser::ExtendedFileBrowser(const File& initialFileOrDirectory,cons
     table->getHeader().addColumn("File", 1, 350);
     table->getHeader().addColumn("Size", 2, 50);
     table->setModel(model);
+
+    juce::Array<juce::File> drives;
+
+    File::findFileSystemRoots(drives);
+
+    for (int i = 0; i < drives.size(); i++) {
+        juce::File f = drives.getReference(i);
+        TextButton* button = new TextButton(f.getFileName());
+        button->setSize(30, 20) ;
+        button->setTopLeftPosition(i * 35, 0);
+        driveButtons.push_back(button);
+        addAndMakeVisible(button);
+        button->addListener(this);
+    }
+
     this->model = model;
     view  = new Viewport();
+    view->setTopLeftPosition(0,25);
     view->setViewedComponent(table);
     addAndMakeVisible(view);
     
@@ -52,6 +68,10 @@ ExtendedFileBrowser::~ExtendedFileBrowser() {
     saveState();
     delete table;
     delete view;
+    for (int i = 0; i < driveButtons.size(); i++) {
+        delete driveButtons.at(i);
+    }
+        
 }
 
 void ExtendedFileBrowser::mouseDrag(const juce::MouseEvent &event) {
@@ -65,7 +85,7 @@ void ExtendedFileBrowser::mouseDrag(const juce::MouseEvent &event) {
 }
 
 void ExtendedFileBrowser::paint(juce::Graphics &g) {
-    g.fillAll (Colour (0xff222222));
+    g.fillAll (Colour (0xff333333));
     g.fillRect (getLocalBounds());
     // Component::paint(g);
 }
@@ -89,7 +109,10 @@ void ExtendedFileBrowser::mouseDown(const juce::MouseEvent &event) {
         if (f->exists()) {
             if (!f->isDirectory()) {
     
-                if (f->getFileExtension().toLowerCase().contains("wav") || f->getFileExtension().toLowerCase().contains("mp3") || f->getFileExtension().toLowerCase().contains("ogg")) {
+                if (f->getFileExtension().toLowerCase().contains("wav") || 
+                    f->getFileExtension().toLowerCase().contains("mp3") || 
+                    f->getFileExtension().toLowerCase().contains("aif") ||
+                    f->getFileExtension().toLowerCase().contains("ogg")) {
                      Project::getInstance()->getDefaultSampler()->stop();
                     Project::getInstance()->getDefaultSampler()->loadSample(*f);
                     Project::getInstance()->getDefaultSampler()->play();
@@ -123,6 +146,12 @@ void ExtendedFileBrowser::mouseDoubleClick(const juce::MouseEvent &event) {
         delete current;
     }
 
+}
+
+void ExtendedFileBrowser::buttonClicked(Button* button)
+{
+    juce::File* file = new juce::File(button->getButtonText() + "\\");
+    model->setCurrentDir(file);
 }
 
 void ExtendedFileBrowser::timerCallback() {
@@ -266,6 +295,12 @@ void ExtendedFileBrowser::loadState() {
         }
         xml = nullptr;
     }
+}
+
+void ExtendedFileBrowser::focusLost(FocusChangeType cause)
+{
+    Component::focusLost(cause);
+    Project::getInstance()->getDefaultSampler()->stop();
 }
 
 

@@ -5,6 +5,7 @@
 #include "MidiOut.h"
 #include "AudioOut.h"
 #include "AudioIn.h"
+#include "TrackIn.h"
 #include "AuxOut.h"
 #include "SawtoothModule.h"
 #include "NoiseModule.h"
@@ -1160,6 +1161,7 @@ void SynthEditor::saveFile() {
 
 	ValueTree* v = new ValueTree("Module");
 
+
 	v->setProperty("lock", isLocked(), nullptr);
 	v->setProperty("layer", static_cast<int>(currentLayer), nullptr);
 
@@ -1185,18 +1187,22 @@ void SynthEditor::saveFile() {
 	if (fileValid) {
 		std::unique_ptr<XmlElement> xml = v->createXml();
 		xml->writeToFile(file, "");
-
 		xml = nullptr;
 		delete v;
 
+		if (navigator != nullptr) {
+			ValueTree* tracks = navigator->getConfiguration();
+			xml = tracks->createXml();
+			xml->writeToFile(file.getParentDirectory().getFullPathName() + "\\" + file.getFileNameWithoutExtension() + "_tracks.xml", "");
+			xml = nullptr;
+			delete tracks;
+		}
+
 		setDirty(false);
-		Project::getInstance()->save(file.getParentDirectory().getFullPathName()+"\\"+file.getFileNameWithoutExtension() + "_audio.xml");
+		Project::getInstance()->save(file.getParentDirectory().getFullPathName() + "\\" + file.getFileNameWithoutExtension() + "_audio.xml");
 		Project::getInstance()->setNewFile(false);
 		updateProject(file);
 	}
-
-
-
 #endif
 
 }
@@ -1343,6 +1349,70 @@ void SynthEditor::openFile() {
 	}
 }
 
+void SynthEditor::openTracks()
+{
+	FileChooser chooser("Select file to open", File::getSpecialLocation(File::commonDocumentsDirectory), "*.xml", true, true);
+
+	if (chooser.browseForFileToOpen()) {
+		cleanUp();
+		newFile();
+
+#if JUCE_IOS
+		URL url = chooser.getURLResult();
+		InputStream* is = url.createInputStream(false);
+		String data = is->readEntireStreamAsString();
+		delete is;
+
+		ScopedPointer<XmlElement> xml = XmlDocument(data).getDocumentElement();
+#else
+		File file = chooser.getResult();
+		std::unique_ptr<XmlElement> xml = XmlDocument(file).getDocumentElement();
+
+		String path = file.getParentDirectory().getFullPathName();
+
+		Project::getInstance()->addRecentFile(file.getFullPathName());
+#endif
+
+		String audioDataFileName = file.getFileNameWithoutExtension();
+		audioDataFileName = path + "\\" + audioDataFileName.substring(0, audioDataFileName.lastIndexOf("_")) + "_audio.xml";
+
+		std::unique_ptr<XmlElement> audioXml = XmlDocument(File(audioDataFileName)).getDocumentElement();
+
+		ValueTree audio = ValueTree::fromXml(*audioXml.get());
+
+		audio = audio.getChild(0);
+
+		for (int i = 0; i < audio.getNumChildren(); i++) {
+			String path = audio.getChild(i).getProperty("path");
+			String id = audio.getChild(i).getProperty("refId");
+
+			Project::getInstance()->addAudioFile(id, path);
+		}
+
+		ValueTree v = ValueTree::fromXml(*xml.get());
+		setRunning(false);
+
+		for (int i = 0; i < v.getNumChildren(); i++) {
+
+			ValueTree track = v.getChild(i);
+
+			Track* t = createTrack();
+
+			t->setName(track.getProperty("name"));
+
+			ValueTree regions = track.getChild(0);
+
+			for (int i = 0; i < regions.getNumChildren(); i++) {
+				ValueTree region = regions.getChild(i);
+				Logger::getCurrentLogger()->writeToLog(region.getProperty("clipRefId"));
+				t->addRegion(region.getProperty("clipRefId"), File(Project::getInstance()->getAudioPath(region.getProperty("clipRefId"))),48000.0, region.getProperty("sampleOffset").toString().getIntValue());
+			}		
+
+		}
+
+	}
+}
+
 
 
 void SynthEditor::configureAudioModule(Module* m, ChangeBroadcaster* broadcaster) {
@@ -1387,6 +1457,84 @@ void SynthEditor::configureAudioModule(Module* m, ChangeBroadcaster* broadcaster
 	broadcaster->addChangeListener(m);
 
 
+}
+
+Track* SynthEditor::createTrack()
+{
+	Point<int> pos = Point<int>(10, 10);
+	AddModuleAction* am = new AddModuleAction(this, pos, 48);
+	Project::getInstance()->getUndoManager()->beginNewTransaction();
+	Project::getInstance()->getUndoManager()->perform(am);
+
+	TrackIn* ti = dynamic_cast<TrackIn*>(am->getModule());
+
+	Track* t = navigator->addTrack(Track::Type::AUDIO, 48000);
+	t->setName("Audio " + String(navigator->getTracks().size() + 1));
+	ti->setTrack(t);
+
+	Module* m = getModule();
+
+	pos.x += 160;
+
+	AudioOut* audioOut = nullptr;
+
+	// find audio out
+	for (int i = 0; i < m->getModules()->size(); i++) {
+		if (m->getModules()->at(i) != nullptr) {
+			audioOut = dynamic_cast<AudioOut*>(m->getModules()->at(i));
+			if (audioOut != nullptr) {
+				break;
+			}
+		}
+	}
+	// found one
+	if (audioOut != nullptr) {
+		// audio out is not connected, thus make some connections
+		if (audioOut->pins.at(0)->getConnections().size() == 0 && audioOut->pins.at(1)->getConnections().size() == 0) {
+			audioOut->pins.at(0)->getConnections().push_back(ti->pins.at(0));
+			audioOut->pins.at(1)->getConnections().push_back(ti->pins.at(1));
+			Connection* c1 = new Connection(ti, ti->pins.at(0), audioOut, audioOut->pins.at(0));
+			Connection* c2 = new Connection(ti, ti->pins.at(1), audioOut, audioOut->pins.at(1));
+			getModule()->getConnections()->push_back(c1);
+			getModule()->getConnections()->push_back(c2);
+		}
+		// already connected, create an aux out
+		else {
+			AddModuleAction* am = new AddModuleAction(this, pos, 77);
+			Project::getInstance()->getUndoManager()->beginNewTransaction();
+			Project::getInstance()->getUndoManager()->perform(am);
+			AuxOut* ao = dynamic_cast<AuxOut*>(am->getModule());
+			if (ao != nullptr) {
+				ao->pins.at(0)->getConnections().push_back(ti->pins.at(0));
+				ao->pins.at(1)->getConnections().push_back(ti->pins.at(1));
+				Connection* c1 = new Connection(ti, ti->pins.at(0), ao, ao->pins.at(0));
+				Connection* c2 = new Connection(ti, ti->pins.at(1), ao, ao->pins.at(1));
+				getModule()->getConnections()->push_back(c1);
+				getModule()->getConnections()->push_back(c2);
+
+			}
+
+		}
+	}
+	// no audio out, create one
+	else {
+
+		AddModuleAction* am = new AddModuleAction(this, pos, 66);
+		Project::getInstance()->getUndoManager()->beginNewTransaction();
+		Project::getInstance()->getUndoManager()->perform(am);
+		audioOut = dynamic_cast<AudioOut*>(am->getModule());
+
+		if (audioOut != nullptr) {
+			audioOut->pins.at(0)->getConnections().push_back(ti->pins.at(0));
+			audioOut->pins.at(1)->getConnections().push_back(ti->pins.at(1));
+			Connection* c1 = new Connection(ti, ti->pins.at(0), audioOut, audioOut->pins.at(0));
+			Connection* c2 = new Connection(ti, ti->pins.at(1), audioOut, audioOut->pins.at(1));
+			getModule()->getConnections()->push_back(c1);
+			getModule()->getConnections()->push_back(c2);
+
+		}
+	}
+	return t;
 }
 
 void SynthEditor::setTab(juce::TabbedComponent* t) {
@@ -1576,6 +1724,7 @@ void SynthEditor::getAllCommands(Array<CommandID>& commands) {
 	commands.add({ SynthEditor::CommandIds::DELETE_SELECTED });
 	commands.add({ SynthEditor::CommandIds::SAVE });
 	commands.add({ SynthEditor::CommandIds::LOAD });
+	commands.add({ SynthEditor::CommandIds::LOAD_TRACKS });
 	commands.add({ SynthEditor::CommandIds::LOAD_MODULE });
 	commands.add({ SynthEditor::CommandIds::SAVE_MODULE });
 	commands.add({ SynthEditor::CommandIds::SAVE_SCREENSHOT });
@@ -1629,7 +1778,12 @@ void SynthEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo& re
 	case SynthEditor::CommandIds::RESET_GUI_POS:
 		result.setInfo("Reset UI position", String(), String(), 0);
 		break;
+	case SynthEditor::CommandIds::LOAD_TRACKS:
+		result.setInfo("Load Tracks", String(), String(), 0);
+		break;
+
 	}
+
 };
 
 bool SynthEditor::perform(const InvocationInfo& info) {
@@ -1705,6 +1859,10 @@ bool SynthEditor::perform(const InvocationInfo& info) {
 	}
 	else if (info.commandID == SynthEditor::CommandIds::RESET_GUI_POS) {
 		resetGUIPosition();
+		return true;
+	}
+	else if (info.commandID == SynthEditor::CommandIds::LOAD_TRACKS) {
+		openTracks();
 		return true;
 	}
 
@@ -1844,6 +2002,11 @@ void SynthEditor::updateProject(URL url) {
 	for (int i = 0; i < listener.size(); i++) {
 		listener.at(i)->fileChanged(url.toString(false));
 	}
+}
+
+void SynthEditor::setNavigator(TrackNavigator* navigator)
+{
+	this->navigator = navigator;
 }
 
 void SynthEditor::updateProject(File file) {

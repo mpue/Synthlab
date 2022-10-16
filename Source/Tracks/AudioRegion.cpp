@@ -303,7 +303,8 @@ void AudioRegion::paint (Graphics& g)
     g.setColour(Colours::darkblue);
     g.setFont(14.0);
     g.drawText(name, 10, 10, 140, 20, juce::Justification::left);
-    
+    g.drawText(juce::String(sampleOffset), 10, 30, 140, 20, juce::Justification::left);
+
     if(loop) {
         for (int i = 1; i <= loopCount;i++) {
             g.setColour(Colours::steelblue);
@@ -369,7 +370,7 @@ void AudioRegion::componentMovedOrResized (Component& component, bool wasMoved, 
     
     if (wasMoved) {
         long tracklen = Project::getInstance()->getTrackLength();
-        double sampleRate = Project::getInstance()->getSampleRate();
+        double sampleRate = 48000; // Project::getInstance()->getSampleRate();
         
         long sampleNum = (tracklen / (tracklen * zoom)) * getBounds().getX() * getSampleRate();
         

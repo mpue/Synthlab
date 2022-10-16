@@ -21,7 +21,7 @@ using juce::OutputStream;
 
 Project *Project::instance = NULL;
 long  Project::DEFAULT_TRACK_LENGTH = 600;
-int   Project::DEFAULT_TRACK_HEIGHT = 280;
+int   Project::DEFAULT_TRACK_HEIGHT = 100;
 float Project::DEFAULT_TEMPO = 120.0f;
 
 void Project::addRecentFile(juce::String path) {
