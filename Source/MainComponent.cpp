@@ -236,10 +236,10 @@ void MainComponent::createToolbar() {
 		toolbar->addItem(*toolbarFactory, i + 1);
 		toolbar->getItemComponent(i)->addListener(this);
 
-		if (layerCombobox == NULL) {
+		if (layerCombobox == nullptr) {
 			layerCombobox = dynamic_cast<ToolbarComboBox*>(toolbar->getItemComponent(i));
 		}
-		if (layerCombobox != NULL) {
+		if (layerCombobox != nullptr) {
 
 			layerCombobox->getComboBox().addListener(this);
 		}
@@ -253,7 +253,7 @@ void MainComponent::createToolbar() {
 	lockButton->setImages(false, true, true, normalImage, 1.0f, juce::Colours::white, normalImage, 1.0, juce::Colours::white, downImage, 1.0f, juce::Colours::white);
 	lockButton->setClickingTogglesState(true);
 	lockButton->setSize(24, 24);
-	lockButton->setTopLeftPosition(1000, 10);
+	lockButton->setTopLeftPosition(1600, 10);
 	toolbar->addAndMakeVisible(lockButton);
 
 	lockButton->addListener(this);
@@ -287,6 +287,7 @@ void MainComponent::createStudioLayout() {
 	mixerPanel = editorView->getMixerPanel();
 
 	propertyView = new PropertyView();
+	editorView->setPropertyView(propertyView);
 #if JUCE_MAC
 
 #else
@@ -983,7 +984,21 @@ void MainComponent::buttonClicked(Button* b)
 			}
 
 		}
+		else if (tb->getItemId() == toolbarFactory->app_stop) {
+			if (navigator != nullptr)
+				navigator->setPlaying(false);
+		}
+		else if (tb->getItemId() == toolbarFactory->app_play) {
+			if (navigator != nullptr)
+				navigator->setPlaying(true);
+		}
+		else if (tb->getItemId() == toolbarFactory->app_fast_backwards) {
+			if (navigator != nullptr)
+				navigator->ResetMarkerPosition();
+		}
+
 	}
+
 
 	if (b == lockButton) {
 		editor->setLocked(lockButton->getToggleState());

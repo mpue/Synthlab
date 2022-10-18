@@ -110,12 +110,20 @@
       <FILE id="LYnUGD" name="adsr.png" compile="0" resource="1" file="Images/adsr.png"/>
       <FILE id="udjGbx" name="apicon.png" compile="0" resource="1" file="Images/apicon.png"/>
       <FILE id="Xwf0m7" name="auxmodule.png" compile="0" resource="1" file="Images/auxmodule.png"/>
+      <FILE id="IJUjr6" name="backward-solid.png" compile="0" resource="1"
+            file="Images/backward-solid.png"/>
       <FILE id="gW9OzU" name="clock.png" compile="0" resource="1" file="Images/clock.png"/>
       <FILE id="soAd9z" name="close.png" compile="0" resource="1" file="Images/close.png"/>
       <FILE id="Kxq8Ss" name="delete.png" compile="0" resource="1" file="Images/delete.png"/>
       <FILE id="pb7t0i" name="display.png" compile="0" resource="1" file="Images/display.png"/>
       <FILE id="rJlVP0" name="divider.png" compile="0" resource="1" file="Images/divider.png"/>
       <FILE id="GoPlKq" name="Fader.png" compile="0" resource="1" file="Images/Fader.png"/>
+      <FILE id="BSD44T" name="fast-backward-solid.png" compile="0" resource="1"
+            file="Images/fast-backward-solid.png"/>
+      <FILE id="JrSGPp" name="fast-forward-solid.png" compile="0" resource="1"
+            file="Images/fast-forward-solid.png"/>
+      <FILE id="oqoVtX" name="forward-solid.png" compile="0" resource="1"
+            file="Images/forward-solid.png"/>
       <FILE id="v1N5Vy" name="hp.png" compile="0" resource="1" file="Images/hp.png"/>
       <FILE id="MpStxg" name="inverter.png" compile="0" resource="1" file="Images/inverter.png"/>
       <FILE id="h83R3I" name="knob.png" compile="0" resource="1" file="Images/knob.png"/>
@@ -137,6 +145,8 @@
       <FILE id="trqee2" name="note.png" compile="0" resource="1" file="Images/note.png"/>
       <FILE id="WJV4UZ" name="open.png" compile="0" resource="1" file="Images/open.png"/>
       <FILE id="JmpZMp" name="p2f.png" compile="0" resource="1" file="Images/p2f.png"/>
+      <FILE id="vRxzm8" name="pause-solid.png" compile="0" resource="1" file="Images/pause-solid.png"/>
+      <FILE id="U83toZ" name="play-solid.png" compile="0" resource="1" file="Images/play-solid.png"/>
       <FILE id="xHNzRT" name="plugin.png" compile="0" resource="1" file="Images/plugin.png"/>
       <FILE id="oIx1Pf" name="pulse.png" compile="0" resource="1" file="Images/pulse.png"/>
       <FILE id="toz51A" name="random.png" compile="0" resource="1" file="Images/random.png"/>

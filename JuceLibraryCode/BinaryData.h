@@ -80,6 +80,9 @@ namespace BinaryData
     extern const char*   auxmodule_png;
     const int            auxmodule_pngSize = 4961;
 
+    extern const char*   backwardsolid_png;
+    const int            backwardsolid_pngSize = 752;
+
     extern const char*   clock_png;
     const int            clock_pngSize = 5554;
 
@@ -97,6 +100,15 @@ namespace BinaryData
 
     extern const char*   Fader_png;
     const int            Fader_pngSize = 19460;
+
+    extern const char*   fastbackwardsolid_png;
+    const int            fastbackwardsolid_pngSize = 793;
+
+    extern const char*   fastforwardsolid_png;
+    const int            fastforwardsolid_pngSize = 746;
+
+    extern const char*   forwardsolid_png;
+    const int            forwardsolid_pngSize = 707;
 
     extern const char*   hp_png;
     const int            hp_pngSize = 2941;
@@ -160,6 +172,12 @@ namespace BinaryData
 
     extern const char*   p2f_png;
     const int            p2f_pngSize = 3817;
+
+    extern const char*   pausesolid_png;
+    const int            pausesolid_pngSize = 557;
+
+    extern const char*   playsolid_png;
+    const int            playsolid_pngSize = 673;
 
     extern const char*   plugin_png;
     const int            plugin_pngSize = 20569;
@@ -237,7 +255,7 @@ namespace BinaryData
     const int            whitenoise_pngSize = 7446;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 76;
+    const int namedResourceListSize = 82;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

@@ -1339,6 +1339,8 @@ void SynthEditor::openFile() {
 
 		xml = nullptr;
 
+		openTracks(file);
+
 #if JUCE_IOS
 		updateProject(url);
 #else
@@ -1349,71 +1351,70 @@ void SynthEditor::openFile() {
 	}
 }
 
-void SynthEditor::openTracks()
+void SynthEditor::openTracks(File file)
 {
-	FileChooser chooser("Select file to open", File::getSpecialLocation(File::commonDocumentsDirectory), "*.xml", true, true);
 
-	if (chooser.browseForFileToOpen()) {
-		cleanUp();
-		newFile();
+	String path = file.getParentDirectory().getFullPathName();
+	
+	String audioDataFileName = file.getFileNameWithoutExtension() + "_audio.xml";
+	audioDataFileName = path + "\\" + audioDataFileName;
 
-#if JUCE_IOS
-		URL url = chooser.getURLResult();
-		InputStream* is = url.createInputStream(false);
-		String data = is->readEntireStreamAsString();
-		delete is;
+	std::unique_ptr<XmlElement> audioXml = XmlDocument(File(audioDataFileName)).getDocumentElement();
 
-		ScopedPointer<XmlElement> xml = XmlDocument(data).getDocumentElement();
-#else
-		File file = chooser.getResult();
-		std::unique_ptr<XmlElement> xml = XmlDocument(file).getDocumentElement();
+	ValueTree audio = ValueTree::fromXml(*audioXml.get());
 
-		String path = file.getParentDirectory().getFullPathName();
+	audio = audio.getChild(0);
 
-		Project::getInstance()->addRecentFile(file.getFullPathName());
-#endif
+	for (int i = 0; i < audio.getNumChildren(); i++) {
+		String path = audio.getChild(i).getProperty("path");
+		String id = audio.getChild(i).getProperty("refId");
 
-		String audioDataFileName = file.getFileNameWithoutExtension();
-		audioDataFileName = path + "\\" + audioDataFileName.substring(0, audioDataFileName.lastIndexOf("_")) + "_audio.xml";
+		Project::getInstance()->addAudioFile(id, path);
+	}
 
-		std::unique_ptr<XmlElement> audioXml = XmlDocument(File(audioDataFileName)).getDocumentElement();
+	String trackDataFileName = file.getFileNameWithoutExtension() + "_tracks.xml";
+	trackDataFileName = path + "\\" + trackDataFileName;
 
-		ValueTree audio = ValueTree::fromXml(*audioXml.get());
+	std::unique_ptr<XmlElement> xml = XmlDocument(File(trackDataFileName)).getDocumentElement();
 
-		audio = audio.getChild(0);
+	ValueTree v = ValueTree::fromXml(*xml.get());
+	setRunning(false);
 
-		for (int i = 0; i < audio.getNumChildren(); i++) {
-			String path = audio.getChild(i).getProperty("path");
-			String id = audio.getChild(i).getProperty("refId");
+	vector<TrackIn*> tracks = vector<TrackIn*>();
 
-			Project::getInstance()->addAudioFile(id, path);
+	for (int i = 0; i < getModule()->getModules()->size(); i++) {
+		
+		TrackIn* ti = dynamic_cast<TrackIn*>(getModule()->getModules()->at(i));
+
+		if (ti != nullptr) {
+			tracks.push_back(ti);
 		}
+	}
 
-		ValueTree v = ValueTree::fromXml(*xml.get());
-		setRunning(false);
+	for (int i = 0; i < v.getNumChildren(); i++) {
 
-		for (int i = 0; i < v.getNumChildren(); i++) {
+		ValueTree track = v.getChild(i);	
+		TrackIn* ti = tracks.at(i);
 
-			ValueTree track = v.getChild(i);
+		Track* t = navigator->addTrack(Track::Type::AUDIO, 48000);
+		t->setName("Audio " + String(navigator->getTracks().size() + 1));
+		ti->setTrack(t);
+		t->setName(track.getProperty("name"));
 
-			Track* t = createTrack();
+		ValueTree regions = track.getChild(0);
 
-			t->setName(track.getProperty("name"));
-
-			ValueTree regions = track.getChild(0);
-
-			for (int i = 0; i < regions.getNumChildren(); i++) {
-				ValueTree region = regions.getChild(i);
-				Logger::getCurrentLogger()->writeToLog(region.getProperty("clipRefId"));
-				Region* r = t->addRegion(region.getProperty("clipRefId"), File(Project::getInstance()->getAudioPath(region.getProperty("clipRefId"))),48000.0, region.getProperty("sampleOffset").toString().getIntValue());
-				Rectangle<int> bounds = r->getBounds();
-				bounds.setWidth(region.getProperty("width"));
-				r->setBounds(bounds);
-			}		
-
-		}
+		for (int i = 0; i < regions.getNumChildren(); i++) {
+			ValueTree region = regions.getChild(i);
+			Logger::getCurrentLogger()->writeToLog(region.getProperty("clipRefId"));
+			Region* r = t->addRegion(region.getProperty("clipRefId"), File(Project::getInstance()->getAudioPath(region.getProperty("clipRefId"))),48000.0, region.getProperty("sampleOffset").toString().getIntValue());
+			Rectangle<int> bounds = r->getBounds();
+			bounds.setWidth(region.getProperty("width"));
+			r->setBounds(bounds);
+		}		
 
 	}
+
+	setRunning(true);
 }
 
 
@@ -1474,6 +1475,8 @@ Track* SynthEditor::createTrack()
 	Track* t = navigator->addTrack(Track::Type::AUDIO, 48000);
 	t->setName("Audio " + String(navigator->getTracks().size() + 1));
 	ti->setTrack(t);
+
+	
 
 	Module* m = getModule();
 
@@ -1865,7 +1868,7 @@ bool SynthEditor::perform(const InvocationInfo& info) {
 		return true;
 	}
 	else if (info.commandID == SynthEditor::CommandIds::LOAD_TRACKS) {
-		openTracks();
+		// openTracks();
 		return true;
 	}
 

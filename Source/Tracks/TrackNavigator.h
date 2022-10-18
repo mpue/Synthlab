@@ -34,7 +34,7 @@ class TrackNavigator : public Component,
 	public ScrollBar::Listener
 {
 public:
-	TrackNavigator(AudioDeviceManager* manager, Viewport* view);
+	TrackNavigator(AudioDeviceManager* manager, Viewport* view, PropertyView* propertyView);
 	~TrackNavigator();
 
 	void paint(Graphics&) override;
@@ -64,6 +64,8 @@ public:
 
 	void setSamplePosition(int position);
 	int getSamplePosition();
+
+	void ResetMarkerPosition();
 
 	float getZoom();
 	void setZoom(float zoom);
@@ -118,8 +120,9 @@ private:
 	int timelineOffset = 25;
 
 	double scrollbarOffset = 0;
-
+	
 	MidiMessage message;
+	PropertyView* propertyView;
 
 	virtual void changeListenerCallback(ChangeBroadcaster* source) override;
 	virtual void mouseDown(const MouseEvent& event) override;

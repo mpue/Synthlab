@@ -186,8 +186,22 @@ public:
         this->connectionId = connectionId;
     }
     
+    juce::Array<juce::PropertyComponent*>& getProperties();
+    void createProperties();
+
 
 private:
+    struct NameListener : juce::Value::Listener
+    {
+        NameListener(juce::Value& v, Track* t) : track(t), value(v) { value.addListener(this); }
+        ~NameListener() {}  // no need to remove the listener
+
+        void valueChanged(juce::Value& value) override {
+            track->setName(value.toString());
+        }
+        Track* track;
+        juce::Value value;
+    };
 
     AudioPluginInstance* plugin = nullptr;
     
@@ -213,6 +227,9 @@ private:
     virtual void changeListenerCallback(ChangeBroadcaster * source) override;
     MultiComponentDragger* dragger = NULL;
     
+    ResizableEdgeComponent* resizer;
+    ResizeConstrainer* constrainer;
+
     bool recording = false;
     bool solo = false;
     bool mute = false;
@@ -233,6 +250,12 @@ private:
     
     // plugin connection id
     unsigned int connectionId;
+
+    NameListener* nameListener;
+    juce::Value* nameValue;
+
+    juce::PropertyComponent* nameProp;
+    juce::Array<juce::PropertyComponent*> properties;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Track)
 };

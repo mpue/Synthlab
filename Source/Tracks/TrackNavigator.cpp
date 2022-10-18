@@ -22,8 +22,9 @@
 using namespace std;
 
 //==============================================================================
-TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view)
+TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view, PropertyView* propertyView)
 {
+	this->propertyView = propertyView;
 	this->timeLine = new TimeLine(Project::getInstance()->getTrackLength());
 	this->timeLine->setBounds(0, 0, getWidth(), timelineOffset);
 	this->timeLine->setSize(getWidth(), timelineOffset);
@@ -222,6 +223,17 @@ int TrackNavigator::getSamplePosition() {
 	return samplePosition;
 }
 
+void TrackNavigator::ResetMarkerPosition()
+{
+	setPosition(0);
+	for (int i = 0; i < tracks.size(); i++) {
+		tracks.at(i)->setSamplePosition(0);
+		tracks.at(i)->setCurrentMarkerPosition(0);
+	}
+	sendChangeMessage();
+
+}
+
 void TrackNavigator::setSamplePosition(int position) {
 	stopTimer();
 	// Logger::getCurrentLogger()->writeToLog("setSamplePosition : " + String(position));
@@ -411,7 +423,7 @@ void TrackNavigator::addTrack(Track* track) {
 		track->setZoom(zoom);
 
 	track->setSelected(true);
-
+	propertyView->selectionChanged(track);
 	this->selector->toFront(false);
 
 	repaint();
@@ -634,7 +646,7 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 		r->setSelected(true);
 		currentTrack = r;
 		deviceManager->setDefaultMidiOutput(currentTrack->getMidiOutputDevice());
-
+		propertyView->selectionChanged(r);
 		sendChangeMessage();
 		repaint();
 	}
@@ -654,6 +666,7 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 						this->selector->setBounds(selectorBounds);
 						this->selector->setSelectedRange(0, 0);
 						tracks.at(i)->setSelected(true);
+						propertyView->selectionChanged(tracks.at(i));
 						sendChangeMessage();
 					}
 					else {

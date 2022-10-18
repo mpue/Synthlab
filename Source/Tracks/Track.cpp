@@ -17,18 +17,26 @@
 //==============================================================================
 Track::Track(Type type, double sampleRate, MultiComponentDragger* dragger)
 {
+    this->constrainer = new ResizeConstrainer(this->zoom / 4);
+    resizer = new ResizableEdgeComponent(this, constrainer, ResizableEdgeComponent::bottomEdge);
+    resizer->setSize(getWidth(),5);
+    constrainer->setMaxWidth(getWidth());
+    resizer->setTopLeftPosition(0,70);
     manager = Session::getInstance()->getAudioFormatManager();
     
     this->type = type;
 	this->sampleRate = sampleRate;
     this->maxLength = Project::getInstance()->getTrackLength();
-	this->name = "empty Track";
     this->volume = 1;
     this->pan = 0;
     this->audioBuffer = new AudioSampleBuffer(2,maxLength*sampleRate);
     this->dragger = dragger;
+    addAndMakeVisible(resizer);
+
     setHeight(Project::DEFAULT_TRACK_HEIGHT);
-    
+    resized();
+    createProperties();
+	setName("empty Track");
 }
 
 Track::~Track()
@@ -36,8 +44,12 @@ Track::~Track()
 	for (std::vector<Region*>::iterator it = regions.begin(); it != regions.end(); ++it) {
 		delete *it;
 	}
-
+    delete this->resizer;
+    delete this->constrainer;
 	delete this->audioBuffer;
+    delete nameListener;
+    delete nameValue;
+
 }
 
 void Track::setName(juce::String name ) {
@@ -512,6 +524,20 @@ void Track::addMessage(MidiMessage* message,double time, int sampleNum) {
     this->numSamples = sampleNum;
 }
 
+juce::Array<juce::PropertyComponent*>& Track::getProperties()
+{
+    nameProp = new TextPropertyComponent(*nameValue, "Name", 16, false, true);
+    properties = Array<PropertyComponent*>();
+    properties.add(nameProp);
+    return properties;
+}
+
+void Track::createProperties()
+{
+    nameValue = new Value();
+    nameListener = new NameListener(*nameValue, this);
+}
+
 MidiMessage* Track::getMessage(double time,int sampleNum) {
     
     Region* r = getCurrentRegion(sampleNum);
@@ -597,6 +623,9 @@ void Track::resized() {
         (*it)->setSize((*it)->getWidth(), getHeight());
         (*it)->setZoom(zoom);
     }
+    resizer->setSize(getWidth(), 5);
+    constrainer->setMaxWidth(getWidth());
+    resizer->setTopLeftPosition(0, getHeight() - 5);
 	sendChangeMessage();
 }
 
@@ -725,3 +754,5 @@ void Track::setMono(bool mono) {
 bool Track::isMono() {
     return mono;
 }
+
+

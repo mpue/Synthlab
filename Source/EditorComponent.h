@@ -16,6 +16,7 @@
 #include "MixerPanel.h"
 #include "Mixer.h"
 #include "Tracks/TrackNavigator.h"
+#include "PropertyView.h"
 //==============================================================================
 /*
 */
@@ -35,6 +36,7 @@ public:
     MainTabbedComponent* getEditorTab();
     void OpenTrackView();
     virtual void changeListenerCallback (juce::ChangeBroadcaster* source) override;
+    void setPropertyView(PropertyView* props);
 private:
     
     int bufferSize;
@@ -54,6 +56,7 @@ private:
     juce::StretchableLayoutResizerBar resizerBar;
 
     TrackNavigator* navigator = nullptr;
+    PropertyView* propertyView = nullptr;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EditorComponent)
 };

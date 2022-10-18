@@ -47,7 +47,7 @@ public:
     void newFile();
     void saveFile();
     void openFile();
-    void openTracks();
+    void openTracks(File file);
     void openSampleEditor(SamplerModule* sm);
     void openStepSequencer(StepSequencerModule* ssm);
     void openEditor(Module* m);

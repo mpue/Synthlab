@@ -239,7 +239,7 @@ void AudioRegion::setZoom(float zoom) {
     
     if (loop) {
         // setSize(this->thumbnail->getTotalLength() * (loopCount + 1) * this->zoom, getHeight());
-        setSize(getNumSamples() / sampleRate * (loopCount + 1) * this->zoom, getHeight());
+        setSize((getNumSamples() / sampleRate * (loopCount + 1)) * this->zoom, getHeight());
 
     }
     else {
@@ -261,8 +261,9 @@ void AudioRegion::setZoom(float zoom) {
     // resizerL->setTopLeftPosition(0, 0);
     
     // setBounds(0,0,this->thumbnail->getTotalLength() * this->zoom, 200);
-    this->thumbnailBounds->setSize(this->thumbnail->getTotalLength() * this->zoom, getHeight());
-    
+    this->thumbnailBounds->setSize(getWidth(), getHeight());
+    // this->thumbnailBounds->setBounds(getBounds().getX(),getBounds().getY(),getWidth(),getHeight());
+
     dragger->setRaster(this->zoom / 4);
     constrainer->setRaster(this->zoom / 4);
     constrainer->setMaxWidth((audioBuffer->getNumSamples() / sampleRate) * this->zoom);

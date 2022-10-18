@@ -152,6 +152,13 @@ void PropertyView::selectionChanged(Component* c) {
             
             // propertyPanel->addProperties(m->getProperties());
         }
+        else {
+            Track* t = dynamic_cast<Track*>(c);
+
+            if (t != nullptr) {
+                propertyPanel->addSection("Track settings", t->getProperties());
+            }
+        }
     }
 
 }

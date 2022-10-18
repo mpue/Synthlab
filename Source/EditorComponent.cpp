@@ -38,8 +38,7 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize) : resizerBar 
     editorView->setMouseClickGrabsKeyboardFocus(false);
     
     topTab->addTab("Editor", juce::Colours::grey, editorView, false);
-    
-    
+        
     mixerPanel = new MixerPanel();
     mixer = Mixer::getInstance();
     mixerPanel->setMixer(mixer);
@@ -150,7 +149,8 @@ void EditorComponent::OpenTrackView()
 {
     if (navigator == nullptr) {        
         trackView = new Viewport();
-        navigator = new TrackNavigator(AudioManager::getInstance()->getDeviceManager(), trackView);
+        navigator = new TrackNavigator(AudioManager::getInstance()->getDeviceManager(), trackView, propertyView);
+        
         PrefabFactory::getInstance()->init(navigator);
         addMouseListener(navigator, true);
         addKeyListener(navigator);
@@ -169,4 +169,9 @@ void EditorComponent::OpenTrackView()
 
 void EditorComponent::changeListenerCallback(juce::ChangeBroadcaster *source) {
     
+}
+
+void EditorComponent::setPropertyView(PropertyView* props)
+{
+    this->propertyView = props;
 }

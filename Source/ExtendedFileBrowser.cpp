@@ -48,6 +48,14 @@ ExtendedFileBrowser::ExtendedFileBrowser(const File& initialFileOrDirectory,cons
         button->addListener(this);
     }
 
+    TextButton* stopButton = new TextButton("STOP");
+    stopButton->setSize(35, 20);
+    stopButton->setTopLeftPosition(drives.size() * 35, 0);
+    driveButtons.push_back(stopButton);
+    addAndMakeVisible(stopButton);
+    stopButton->addListener(this);
+
+
     this->model = model;
     view  = new Viewport();
     view->setTopLeftPosition(0,25);
@@ -150,8 +158,14 @@ void ExtendedFileBrowser::mouseDoubleClick(const juce::MouseEvent &event) {
 
 void ExtendedFileBrowser::buttonClicked(Button* button)
 {
-    juce::File* file = new juce::File(button->getButtonText() + "\\");
-    model->setCurrentDir(file);
+    if (button->getButtonText() == "STOP") {
+        Project::getInstance()->getDefaultSampler()->stop();
+    }
+    else {
+        juce::File* file = new juce::File(button->getButtonText() + "\\");
+        model->setCurrentDir(file);
+    }
+
 }
 
 void ExtendedFileBrowser::timerCallback() {
@@ -204,8 +218,6 @@ void FileBrowserModel::paintCell (Graphics& g,
         g.setColour(juce::Colours::white);
         g.drawText(text, 0,0, width,height, juce::Justification::right);
     }
-
-    
     
 }
 
