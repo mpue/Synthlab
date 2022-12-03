@@ -152,6 +152,12 @@ void PropertyView::selectionChanged(Component* c) {
             
             // propertyPanel->addProperties(m->getProperties());
         }
+
+        AudioRegion* ar = dynamic_cast<AudioRegion*>(c);
+
+        if (ar != nullptr) {
+            propertyPanel->addSection("Region settings", ar->getProperties());
+        }
         else {
             Track* t = dynamic_cast<Track*>(c);
 

@@ -22,7 +22,7 @@
 class TrackIn : public Module, public VolumeAdjustable, public ChangeListener
 {
 public:
-    TrackIn(TrackNavigator* navigator, double sampleRate, int buffersize);
+    TrackIn(Track::Type trackType, TrackNavigator* navigator, double sampleRate, int buffersize);
     ~TrackIn();
 
     void paint(juce::Graphics& g) override;
@@ -99,6 +99,11 @@ private:
     int offset = 0;
     juce::AudioDeviceManager* deviceManager;
     int channelIndex;
+    Track::Type trackType;
+
+    int currentRecordingSample = 0;
+    int numRecordedSamples = 0;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TrackIn)
 };
 

@@ -19,8 +19,9 @@ using juce::Justification;
 using juce::ImageCache;
 
 //==============================================================================
-TrackIn::TrackIn(TrackNavigator* navigator, double sampleRate, int buffersize)
+TrackIn::TrackIn(Track::Type type,TrackNavigator* navigator, double sampleRate, int buffersize)
 {
+	this->trackType = type;
 	setSize(120, 140);
 
 	this->sampleRate = sampleRate;
@@ -64,15 +65,27 @@ void TrackIn::changeListenerCallback(ChangeBroadcaster* source)
 
 void TrackIn::configurePins() {
 	Pin* p1 = new Pin(Pin::Type::AUDIO);
-	p1->direction = Pin::Direction::IN;
+	p1->direction = Pin::Direction::OUT;
 	p1->setName("L");
 
 	Pin* p2 = new Pin(Pin::Type::AUDIO);
+	p2->direction = Pin::Direction::OUT;
+	p2->setName("R");
+
+	Pin* p3 = new Pin(Pin::Type::AUDIO);
+	p1->direction = Pin::Direction::IN;
+	p1->setName("L");
+
+	Pin* p4 = new Pin(Pin::Type::AUDIO);
 	p2->direction = Pin::Direction::IN;
 	p2->setName("R");
 
+
 	addPin(Pin::Direction::OUT, p1);
 	addPin(Pin::Direction::OUT, p2);
+	addPin(Pin::Direction::IN, p3);
+	addPin(Pin::Direction::IN, p4);
+
 }
 
 void TrackIn::paint(juce::Graphics& g) {
@@ -82,30 +95,84 @@ void TrackIn::paint(juce::Graphics& g) {
 
 void TrackIn::process() {
 
-	if (track != nullptr && navigator->isPlaying()) {
+	if (trackType == Track::Type::AUDIO) {
 
-		double pan = track->getPan();
+		float* outL = nullptr;
+		float* outR = nullptr;
 
-		float gainLeft = cos((M_PI * (pan + 1) / 4));
-		float gainRight = sin((M_PI * (pan + 1) / 4));
+		outL = getPins().at(0)->getAudioBuffer()->getWritePointer(0);
+		outR = getPins().at(1)->getAudioBuffer()->getWritePointer(0);
 
-		for (int j = track->getSamplePosition(); j <  buffersize + track->getSamplePosition(); j++) {
+		if (track != nullptr && navigator->isPlaying()) {
 
-			float sampleL = track->getSample(0, j) * track->getVolume() * gainLeft;
-			float sampleR = track->getSample(1, j) * track->getVolume() * gainRight;
+			double pan = track->getPan();
 
-			pins.at(0)->getAudioBuffer()->setSample(0, j % buffersize, sampleL);
-			pins.at(1)->getAudioBuffer()->setSample(0, j % buffersize, sampleR);
-		}
-		// track->setSamplePosition(track->getSamplePosition() + buffersize);
-		// numSamples += buffersize;
+			float gainLeft = cos((M_PI * (pan + 1) / 4));
+			float gainRight = sin((M_PI * (pan + 1) / 4));
 
-		track->updateMagnitude(track->getSamplePosition(), buffersize, gainLeft, gainRight);
+			for (int j = track->getSamplePosition(); j <  buffersize + track->getSamplePosition(); j++) {
+
+				float sampleL = track->getSample(0, j) * track->getVolume() * gainLeft;
+				float sampleR = track->getSample(1, j) * track->getVolume() * gainRight;
+
+				pins.at(0)->getAudioBuffer()->setSample(0, j % buffersize, sampleL);
+				pins.at(1)->getAudioBuffer()->setSample(0, j % buffersize, sampleR);
+			}
+			// track->setSamplePosition(track->getSamplePosition() + buffersize);
+			// numSamples += buffersize;
+
+			track->updateMagnitude(track->getSamplePosition(), buffersize, gainLeft, gainRight);
 		
+		}
+		else if (track != nullptr && navigator->isRecording()) {
+			const float* inL = nullptr;
+			const float* inR = nullptr;
+
+
+			if (getPins().at(2)->getConnections().size() >= 1) {
+				inL = getPins().at(2)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
+			}
+			if (getPins().at(3)->getConnections().size() >= 1) {
+				inR = getPins().at(3)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
+			}
+
+
+				for (int i = 0; i < buffersize; i++) {
+
+					if (inL != nullptr && track->getRecordingBuffer() != nullptr) {
+						track->setSample(0, currentRecordingSample, inL[i] * track->getVolume());							
+						outL[i] = inL[i] * track->getVolume();
+					}
+					else {
+
+						// track->getRecordingBuffer()->setSample(0, currentRecordingSample, 0);
+						outL[i] = 0;
+					}
+
+					if (inR != nullptr && track->getRecordingBuffer() != nullptr) {
+						track->setSample(1, currentRecordingSample, inR[i] * track->getVolume());
+						outR[i] = inR[i] * track->getVolume();
+					}
+					else {
+						// track->getRecordingBuffer()->setSample(1, currentRecordingSample, 0);
+						outR[i] = 0;
+					}
+
+					currentRecordingSample = (currentRecordingSample + 1);
+					numRecordedSamples++;
+					
+				}
+		}
+
+		else {
+			for (int i = 0; i < buffersize; i++) {
+				outL[i] = 0;
+				outR[i] = 0;
+			}
+		}
 	}
-	else {
-		pins.at(0)->getAudioBuffer()->clear();
-		pins.at(1)->getAudioBuffer()->clear();
+	else if (trackType == Track::Type::MIDI) {
+
 	}
 
 

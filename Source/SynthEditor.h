@@ -151,7 +151,7 @@ public:
         ALIGN_Y = 10,
         ALIGN_X = 11,
         RESET_GUI_POS = 12,
-        LOAD_TRACKS = 13
+        EXPORT_AUDIO = 13
     };
     
     // member access
@@ -185,6 +185,8 @@ public:
     void updateProject(URL url);
 
     void setNavigator(TrackNavigator* navigator);
+
+    void exportAudio();
 
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.

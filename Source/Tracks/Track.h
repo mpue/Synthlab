@@ -189,6 +189,7 @@ public:
     juce::Array<juce::PropertyComponent*>& getProperties();
     void createProperties();
 
+    void setSample(int channel, int sampleNum, float sample);
 
 private:
     struct NameListener : juce::Value::Listener
@@ -198,6 +199,18 @@ private:
 
         void valueChanged(juce::Value& value) override {
             track->setName(value.toString());
+        }
+        Track* track;
+        juce::Value value;
+    };
+
+    struct RecordingListener : juce::Value::Listener
+    {
+        RecordingListener(juce::Value& v, Track* t) : track(t), value(v) { value.addListener(this); }
+        ~RecordingListener() {}  // no need to remove the listener
+
+        void valueChanged(juce::Value& value) override {
+            track->setRecording(value.toString().getIntValue() > 0);
         }
         Track* track;
         juce::Value value;
@@ -253,10 +266,14 @@ private:
 
     NameListener* nameListener;
     juce::Value* nameValue;
-
     juce::PropertyComponent* nameProp;
+
+    RecordingListener* recordingListener;
+    juce::Value* recordingValue;
+    juce::PropertyComponent* recordingProp;
+
     juce::Array<juce::PropertyComponent*> properties;
-    
+  
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Track)
 };
 

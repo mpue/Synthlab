@@ -48,7 +48,8 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
     
     addComponentListener(this);
     dirty = false;
-    
+    setPitch(1);
+    createProperties();
 }
 
 
@@ -67,8 +68,11 @@ AudioRegion::AudioRegion(AudioSampleBuffer* source, AudioFormatManager& manager,
     this->thumbnail->addChangeListener(this);
     
     audioBuffer = new AudioSampleBuffer(2, sampleLength);
-    audioBuffer->copyFrom(0, 0, *source, 0, 0, sampleLength);
-    audioBuffer->copyFrom(1, 0, *source, 1, 0, sampleLength);
+    
+    if (source != nullptr) {
+        audioBuffer->copyFrom(0, 0, *source, 0, 0, sampleLength);
+        audioBuffer->copyFrom(1, 0, *source, 1, 0, sampleLength);
+    }
     
     this->thumbnail->reset(2, sampleRate);
     this->thumbnail->addBlock(0, *audioBuffer, 0, sampleLength);
@@ -90,6 +94,8 @@ AudioRegion::AudioRegion(AudioSampleBuffer* source, AudioFormatManager& manager,
     addComponentListener(this);
     
     dirty = false;
+    // setPitch(1);
+    createProperties();
 }
 
 AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double sampleRate) {
@@ -131,6 +137,9 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
     addComponentListener(this);
     
     dirty = false;
+
+    setPitch(1);
+    createProperties();
 }
 
 //==============================================================================
@@ -172,6 +181,8 @@ AudioRegion::AudioRegion(File file, String refId, AudioFormatManager& manager, d
     addAndMakeVisible(resizerR);
     
     dirty = false;
+    setPitch(1);
+    createProperties();
 }
 
 AudioRegion::~AudioRegion()
@@ -179,9 +190,11 @@ AudioRegion::~AudioRegion()
     delete this->thumbnailCache;
     delete this->thumbnail;
     delete this->audioBuffer;
+    delete this->audioBufferProcessed;
     // delete this->resizerL;
     delete this->resizerR;
     delete this->constrainer;
+    delete this->stretcher;   
 }
 
 void AudioRegion::timerCallback() {
@@ -192,6 +205,8 @@ void AudioRegion::timerCallback() {
 void AudioRegion::updateThumb()
 {
     // double length = this->thumbnail->getTotalLength();
+    this->thumbnail->reset(2, sampleRate);
+    this->thumbnail->addBlock(0, *audioBuffer, 0, audioBuffer->getNumSamples());
     double length = thumbnail->getTotalLength();
     setSize(length * this->zoom, getHeight());
     this->thumbnailBounds->setWidth(length * this->zoom);
@@ -280,8 +295,7 @@ Rectangle<int>*  AudioRegion::getThumbnailBounds() {
 };
 
 void AudioRegion::paint (Graphics& g)
-{
-    
+{  
     Rectangle<int> b = *this->thumbnailBounds;
     int effectiveWidth = getWidth() ;//(this->getNumSamples() / sampleRate) * this->zoom;
     
@@ -396,14 +410,91 @@ void AudioRegion::componentMovedOrResized (Component& component, bool wasMoved, 
     dirty = true;
 }
 
-void AudioRegion::setDirty(bool dirty) {
-    this->dirty = dirty;
-}
-
 void AudioRegion::setClipRefId(String id) {
     this->clipRefId = id;
 }
 
 String AudioRegion::getClipRefid() {
     return clipRefId;
+}
+
+float AudioRegion::getPitch() {
+    return pitch;
+}
+
+
+void AudioRegion::setPitch(float pitch) {
+
+    if (pitch < 0.1) {
+        pitch = 0.1;
+    }
+    if (pitch > 2) {
+        pitch = 2;
+    }
+
+    this->pitch = pitch;
+
+    if (stretcher == nullptr) {
+        stretcher = new RubberBand::RubberBandStretcher(48000, 2, RubberBand::RubberBandStretcher::OptionProcessRealTime);
+    }
+    stretcher->setPitchScale(this->pitch);
+    // stretcher->setTimeRatio(this->pitch);
+
+    stretcher->reset();
+    stretcher->process(audioBuffer->getArrayOfReadPointers(), audioBuffer->getNumSamples(), true);
+    stretcher->retrieve(audioBuffer->getArrayOfWritePointers(), audioBuffer->getNumSamples());
+    
+    this->thumbnail->reset(2, sampleRate);
+    this->thumbnail->addBlock(0, *audioBuffer, 0, audioBuffer->getNumSamples());
+    // updateThumb();
+
+    /*
+    if (audioBuffer != nullptr) 
+    {
+        if (this->tempBufferLeft == nullptr)
+            this->tempBufferLeft = new float[audioBuffer->getNumSamples() * 2];
+        if (this->tempBufferRight == nullptr)
+            this->tempBufferRight = new float[audioBuffer->getNumSamples() * 2];
+        interpolatorLeft->reset();
+        interpolatorRight->reset();
+        interpolatorLeft->process(this->pitch, audioBuffer->getReadPointer(0), tempBufferLeft, audioBuffer->getNumSamples()/this->pitch);
+        interpolatorRight->process(this->pitch, audioBuffer->getReadPointer(1), tempBufferRight, audioBuffer->getNumSamples() / this->pitch);
+        audioBufferProcessed = new AudioSampleBuffer(2,audioBuffer->getNumSamples()*2);
+        audioBufferProcessed->copyFrom(0, 0, tempBufferLeft, audioBuffer->getNumSamples() * 2);
+        audioBufferProcessed->copyFrom(1, 0, tempBufferRight, audioBuffer->getNumSamples() * 2);
+    }
+    */
+}
+
+
+
+juce::Array<juce::PropertyComponent*>& AudioRegion::getProperties()
+{
+    juce::Array<juce::PropertyComponent*> properties = Region::getProperties();
+
+    properties = Array<PropertyComponent*>();
+
+    pitchProp = new SliderPropertyComponent(*pitchValue, "Pitch", 0.1, 2.0f, 0.1, 1, true);
+    properties.add(pitchProp);
+    return properties;
+}
+
+void AudioRegion::createProperties()
+{
+    Region::createProperties();
+    pitchValue = new Value();
+    pitchListener = new PitchListener(*pitchValue, this);
+    pitchValue->setValue(pitch);
+}
+
+void AudioRegion::resizeAudio(int length)
+{
+    AudioSampleBuffer* temp = new AudioSampleBuffer(2, audioBuffer->getNumSamples() + length);
+    temp->copyFrom(0, 0, audioBuffer->getReadPointer(0), audioBuffer->getNumSamples());
+    temp->copyFrom(1, 0, audioBuffer->getReadPointer(1), audioBuffer->getNumSamples());
+
+    AudioSampleBuffer* tempToBeDeleted = audioBuffer;
+
+    audioBuffer->clear();
+    audioBuffer = temp;    
 }

@@ -281,13 +281,12 @@ void MainComponent::createCPUMeter() {
 }
 
 void MainComponent::createStudioLayout() {
-	editorView = new EditorComponent(sampleRate, buffersize);
+	propertyView = new PropertyView();
+	editorView = new EditorComponent(sampleRate, buffersize, propertyView);
 	editor = editorView->getEditor();
 	mixer = editorView->getMixer();
 	mixerPanel = editorView->getMixerPanel();
 
-	propertyView = new PropertyView();
-	editorView->setPropertyView(propertyView);
 #if JUCE_MAC
 
 #else
@@ -616,7 +615,7 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 	if (navigator == nullptr) {
 		navigator = editorView->getNavigator();
 	}
-	if (navigator != nullptr && navigator->isPlaying()) {
+	if (navigator != nullptr && (navigator->isPlaying() || navigator->isRecording())) {
 		navigator->setSamplePosition(navigator->getSamplePosition() + numSamples);
 
 	}
@@ -682,7 +681,7 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 	if (index == 0) {
 		menu.addCommandItem(this, SynthEditor::CommandIds::NEW);
 		menu.addCommandItem(this, SynthEditor::CommandIds::LOAD);
-		menu.addCommandItem(this, SynthEditor::CommandIds::LOAD_TRACKS);
+		menu.addCommandItem(this, SynthEditor::CommandIds::EXPORT_AUDIO);
 		menu.addCommandItem(this, SynthEditor::CommandIds::SAVE);
 		menu.addItem(5, "Settings", true, false, nullptr);
 		menu.addItem(6, "Import Audio", true, false, nullptr);
@@ -985,12 +984,24 @@ void MainComponent::buttonClicked(Button* b)
 
 		}
 		else if (tb->getItemId() == toolbarFactory->app_stop) {
-			if (navigator != nullptr)
-				navigator->setPlaying(false);
+			if (navigator != nullptr) {
+				if (navigator->isPlaying() || navigator->isRecording()) {
+					navigator->setPlaying(false);
+					navigator->setRecording(false);
+				}
+				else {
+					navigator->ResetMarkerPosition();
+				}
+			}
+
 		}
 		else if (tb->getItemId() == toolbarFactory->app_play) {
 			if (navigator != nullptr)
 				navigator->setPlaying(true);
+		}
+		else if (tb->getItemId() == toolbarFactory->app_record) {
+			if (navigator != nullptr)
+				navigator->setRecording(true);
 		}
 		else if (tb->getItemId() == toolbarFactory->app_fast_backwards) {
 			if (navigator != nullptr)

@@ -50,9 +50,6 @@ namespace BinaryData
     extern const char*   step3_slb;
     const int            step3_slbSize = 4419;
 
-    extern const char*   gtestparamtest_h_pump;
-    const int            gtestparamtest_h_pumpSize = 20552;
-
     extern const char*   boom_aif;
     const int            boom_aifSize = 1768430;
 
@@ -82,6 +79,9 @@ namespace BinaryData
 
     extern const char*   backwardsolid_png;
     const int            backwardsolid_pngSize = 752;
+
+    extern const char*   circlesolid_png;
+    const int            circlesolid_pngSize = 1012;
 
     extern const char*   clock_png;
     const int            clock_pngSize = 5554;

@@ -10,6 +10,7 @@
 
 Region::Region() {
     oldOffset = 0;
+    createProperties();
 }
 
 Region::~Region() {
@@ -17,7 +18,7 @@ Region::~Region() {
 }
 
 void Region::setName(juce::String name) {
-    this->name = name;
+    this->name = name;    
 }
 
 String Region::getName() {
@@ -147,4 +148,23 @@ void Region::mouseDrag(const MouseEvent & e)
 {
     if (dragger != NULL)
         dragger->handleMouseDrag(e);
+}
+
+juce::Array<juce::PropertyComponent*>& Region::getProperties()
+{
+    nameProp = new TextPropertyComponent(*nameValue, "Name", 16, false, true);
+    properties = Array<PropertyComponent*>();
+    properties.add(nameProp);
+    return properties;
+}
+
+void Region::createProperties()
+{
+    nameValue = new Value();
+    nameListener = new NameListener(*nameValue, this);
+    nameValue->setValue(name);
+}
+
+void Region::setDirty(bool dirty) {
+    this->dirty = dirty;
 }

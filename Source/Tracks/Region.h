@@ -65,12 +65,30 @@ public:
     // component dragger used to drag and drop regions
     void setDragger(MultiComponentDragger* dragger);
     
-    virtual void updateThumb() = 0;
-    
+    virtual void updateThumb() = 0;    
     virtual void componentMovedOrResized (Component& component,bool wasMoved, bool wasResized) override = 0;
     
+    virtual juce::Array<juce::PropertyComponent*>& getProperties();
+    virtual void createProperties();
+
+    void setDirty(bool dirty);
+
 protected:
     
+    struct NameListener : juce::Value::Listener
+    {
+        NameListener(juce::Value& v, Region* r) : region(r), value(v) { value.addListener(this); }
+        ~NameListener() {}  // no need to remove the listener
+
+        void valueChanged(juce::Value& value) override {
+            region->setName(value.toString());
+        }
+        Region* region;
+        juce::Value value;
+    };
+
+    bool dirty;
+
     float zoom = 30;
     String name;
     int offset = 0;
@@ -86,7 +104,13 @@ protected:
     ResizableEdgeComponent* resizerL;
     
     MultiComponentDragger* dragger = NULL;
-    
+
+    NameListener* nameListener;
+    juce::Value* nameValue;
+
+    juce::PropertyComponent* nameProp;
+    juce::Array<juce::PropertyComponent*> properties;
+
     
 };
 

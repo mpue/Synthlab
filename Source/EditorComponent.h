@@ -23,7 +23,7 @@
 class EditorComponent    : public juce::Component, public juce::ChangeListener
 {
 public:
-    EditorComponent(float sampleRate, int bufferSize);
+    EditorComponent(float sampleRate, int bufferSize, PropertyView* properties);
     ~EditorComponent();
 
     void paint (juce::Graphics&) override;
@@ -36,7 +36,7 @@ public:
     MainTabbedComponent* getEditorTab();
     void OpenTrackView();
     virtual void changeListenerCallback (juce::ChangeBroadcaster* source) override;
-    void setPropertyView(PropertyView* props);
+    
 private:
     
     int bufferSize;

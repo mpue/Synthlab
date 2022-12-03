@@ -36,10 +36,11 @@ public:
 		app_play = 11,
 		app_stop = 12,
 		app_pause = 13,
-		app_fast_backwards = 14,
-		app_backwards = 15,
-		app_forward = 16,
-		app_fast_forward = 17
+		app_record = 14,
+		app_fast_backwards = 15,
+		app_backwards = 16,
+		app_forward = 17,
+		app_fast_forward = 18
 
 	};
 
@@ -62,6 +63,7 @@ public:
 		ids.add(app_play);
 		ids.add(app_stop);
 		ids.add(app_pause);
+		ids.add(app_record);
 		ids.add(app_fast_backwards);
 		ids.add(app_backwards);
 		ids.add(app_forward);
@@ -87,6 +89,7 @@ public:
 		ids.add(app_play);
 		ids.add(app_stop);
 		ids.add(app_pause);
+		ids.add(app_record);
 		ids.add(app_fast_backwards);
 		ids.add(app_backwards);
 		ids.add(app_forward);
@@ -139,6 +142,9 @@ public:
 		case app_pause:
 			b = new juce::ToolbarButton(itemId, "Pause", getImage(itemId), getImage(itemId));
 			return b;
+		case app_record:
+			b = new juce::ToolbarButton(itemId, "Record", getImage(itemId), getImage(itemId));
+			return b;
 		case app_fast_backwards:
 			b = new juce::ToolbarButton(itemId, "Fast back", getImage(itemId), getImage(itemId));
 			return b;
@@ -189,6 +195,8 @@ public:
 			di->setImage(juce::ImageCache::getFromMemory(BinaryData::stop_png, BinaryData::stop_pngSize));
 		else if (itemId == app_pause)
 			di->setImage(juce::ImageCache::getFromMemory(BinaryData::pausesolid_png, BinaryData::pausesolid_pngSize));
+		else if (itemId == app_record)
+			di->setImage(juce::ImageCache::getFromMemory(BinaryData::circlesolid_png, BinaryData::circlesolid_pngSize));
 		else if (itemId == app_fast_backwards)
 			di->setImage(juce::ImageCache::getFromMemory(BinaryData::fastbackwardsolid_png, BinaryData::fastbackwardsolid_pngSize));
 		else if (itemId == app_fast_forward)
@@ -198,12 +206,11 @@ public:
 		else if (itemId == app_forward)
 			di->setImage(juce::ImageCache::getFromMemory(BinaryData::forwardsolid_png, BinaryData::forwardsolid_pngSize));
 
-
 		return di;
 	}
 
 	int numItems() {
-		return 17;
+		return 18;
 	}
 
 };

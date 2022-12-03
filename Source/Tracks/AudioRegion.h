@@ -15,7 +15,7 @@
 #include "MultiComponentDragger.h"
 #include "../ResizeConstrainer.h"
 #include "Region.h"
-
+#include "rubberband/RubberBandStretcher.h"
 
 //==============================================================================
 /*
@@ -58,24 +58,52 @@ public:
     
     void setClipRefId(String id);
     String getClipRefid();
-    
-    void setDirty(bool dirty);
-    
+       
+    float getPitch();
+    void setPitch(float pitch);
+
+    virtual juce::Array<juce::PropertyComponent*>& getProperties() override;
+    virtual void createProperties() override;
+
+    void resizeAudio(int length);
+
 private:
 
+    struct PitchListener : juce::Value::Listener
+    {
+        PitchListener(juce::Value& v, AudioRegion* r) : region(r), value(v) { value.addListener(this); }
+        ~PitchListener() {}  // no need to remove the listener
+
+        void valueChanged(juce::Value& value) override {
+            region->setPitch(value.toString().getFloatValue());
+        }
+        AudioRegion* region;
+        juce::Value value;
+    };
+
+
     AudioSampleBuffer* audioBuffer;
+    AudioSampleBuffer* audioBufferProcessed = nullptr;
     AudioThumbnail* thumbnail;
     AudioThumbnailCache* thumbnailCache;
     ScopedPointer<AudioFormatReaderSource> readerSource;
     ResizeConstrainer* constrainer;
-    
+
     Rectangle<int>* thumbnailBounds = NULL;
     virtual void changeListenerCallback(ChangeBroadcaster * source) override;
     
     // reference to original file
     String clipRefId;
-    
-    bool dirty;
+    float pitch = 1.0f;
+
+    RubberBand::RubberBandStretcher* stretcher = nullptr;
+
+    PitchListener* pitchListener;
+    juce::Value* pitchValue;
+    juce::PropertyComponent* pitchProp;
+
+    float* tempBufferLeft = nullptr;
+    float* tempBufferRight = nullptr;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioRegion)
 };

@@ -32,7 +32,7 @@ MidiOut::MidiOut()
     editable = false;
     prefab = true;
     this->deviceManager = AudioManager::getInstance()->getDeviceManager();
-    deviceManager->setDefaultMidiOutput("Ableton Push 2 Live Port");
+    // deviceManager->setDefaultMidiOutput("");
 }
 
 MidiOut::~MidiOut()
@@ -52,8 +52,14 @@ void MidiOut::configurePins() {
     p2->listeners.push_back(this);
     p2->setName("G");
     
+    Pin* p3 = new Pin(Pin::Type::VALUE);
+    p3->direction = Pin::Direction::IN;
+    p3->listeners.push_back(this);
+    p3->setName("V");
+
     addPin(Pin::Direction::IN,p1);
     addPin(Pin::Direction::IN,p2);
+    addPin(Pin::Direction::IN,p3);
 }
 
 void MidiOut::paint(juce::Graphics &g) {
@@ -93,8 +99,13 @@ void MidiOut::setDeviceManager(juce::AudioDeviceManager* manager) {
 
 void MidiOut::eventReceived(Event *e) {
     
-    if (e->getType() == Event::Type::GATE) {
+    if (e->getType() == Event::Type::CONTROLLER) {
         
+
+        int value = e->getValue();
+
+        deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage::controllerEvent(1, e->getNumber(), value));
+
         // float velocity = e->getValue()/127.0;
         //deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage::noteOn(1,e->getNote(), velocity));
         

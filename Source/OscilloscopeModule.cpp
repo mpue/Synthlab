@@ -12,6 +12,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Connection.h"
+#include <algorithm>
 
 using juce::Justification;
 using juce::Line;
@@ -27,7 +28,7 @@ OscilloscopeModule::OscilloscopeModule(double sampleRate, int buffersize)
     }
 
     
-    setSize(140,140);
+    setSize(320,200);
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(18,2);
     setName("Scope");
@@ -83,28 +84,33 @@ void OscilloscopeModule::configurePins() {
 void OscilloscopeModule::paint(juce::Graphics &g) {
     Module::paint(g);
     g.setColour(juce::Colours::black);
-    g.fillRect(10,25,getWidth() - 20 ,getHeight() - 40);
+    g.fillRect(25,25,getWidth() - 45 ,getHeight() - 45);
     g.setColour(juce::Colours::green);
     
     int sample = 0;
     
+    float step = (getWidth() - 45) / (buffersize * periods);
+    float x = 25;
+    float y1 = 0;
+    float y2 = 0;
     for (int i = 0; i < (buffersize*periods) - 1;i++) {
         sample = i % buffersize;
-        float x = 10 + (i * xscale);
-        
-        g.drawLine(Line<float>(x,buffer[sample] * yscale + getHeight() / 2,10 + (i * xscale),buffer[sample+1]*yscale + getHeight() / 2),2);
+        x += step;
+        y1 = buffer[sample] * yscale + getHeight() / 2,(float)getHeight()-45;
+        y2 = buffer[sample + 1] * yscale + getHeight() / 2;
+        g.drawLine(Line<float>(x,y1,x,y2),2);
     }
 }
 
 void OscilloscopeModule::setCurrentLayer(Module::Layer layer) {
     Module::setCurrentLayer(layer);
-    
-    if (currentLayer == Module::Layer::ALL) {
-        setInterceptsMouseClicks(false,false);
-    }
-    else {
-        setInterceptsMouseClicks(false,true);
-    }
+    //
+    //if (currentLayer == Module::Layer::ALL) {
+    //    setInterceptsMouseClicks(false,false);
+    //}
+    //else {
+    //    setInterceptsMouseClicks(false,true);
+    //}
 }
 
 void OscilloscopeModule::resized() {
@@ -125,7 +131,7 @@ void OscilloscopeModule::process() {
                 trigger = true;
             }
             
-            if (trigger || currentSample >=  buffersize) {
+            if (trigger && currentSample >=  buffersize) {
                 currentSample = 0;
                 trigger = false;
                 return;

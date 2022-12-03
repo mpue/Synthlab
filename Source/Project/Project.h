@@ -106,8 +106,9 @@ public:
         this->sampleRate = sampleRate;
     }
     
+    // TODO: where should this be set???
     double getSampleRate() {
-        return sampleRate;
+        return 48000;
     }
     
     void setBufferSize(int bufferSize) {

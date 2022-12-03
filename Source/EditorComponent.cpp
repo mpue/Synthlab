@@ -19,10 +19,11 @@ using juce::Graphics;
 using juce::ResizableWindow;
 
 //==============================================================================
-EditorComponent::EditorComponent(float sampleRate, int bufferSize) : resizerBar (&stretchableManager, 1, false)
+EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView* properties) : resizerBar (&stretchableManager, 1, false)
 {
     this->bufferSize = bufferSize;
     this->sampleRate = sampleRate;
+    this->propertyView = properties;
 
     topTab = new MainTabbedComponent();
     bottomTab = new MainTabbedComponent();
@@ -71,7 +72,7 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize) : resizerBar 
                                       -0.3);
 
     Project::getInstance()->setSupplemental(this->bottomTab);
- 
+    OpenTrackView();
 }
 
 
@@ -101,12 +102,8 @@ EditorComponent::~EditorComponent()
 
 void EditorComponent::paint (Graphics& g)
 {
-
-
     g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));   // clear the background
-
     g.setColour (Colours::grey);
-
 }
 
 void EditorComponent::resized()
@@ -169,9 +166,4 @@ void EditorComponent::OpenTrackView()
 
 void EditorComponent::changeListenerCallback(juce::ChangeBroadcaster *source) {
     
-}
-
-void EditorComponent::setPropertyView(PropertyView* props)
-{
-    this->propertyView = props;
 }

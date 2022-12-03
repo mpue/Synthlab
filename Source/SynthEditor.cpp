@@ -86,8 +86,7 @@ SynthEditor::SynthEditor(double sampleRate, int buffersize)
 
 	linePath = Path();
 
-	Project::getInstance()->getCommandManager()->registerAllCommandsForTarget(this);
-
+	Project::getInstance()->getCommandManager()->registerAllCommandsForTarget(this);	
 }
 
 SynthEditor::~SynthEditor()
@@ -1298,7 +1297,7 @@ void SynthEditor::openRecorder(AudioRecorderModule* arm) {
 }
 
 void SynthEditor::openFile() {
-	FileChooser chooser("Select file to open", File::getSpecialLocation(File::commonDocumentsDirectory), "*", true, true);
+	FileChooser chooser("Select file to open", File::getSpecialLocation(File::commonDocumentsDirectory), "*.xml;*.slb", true, true);
 
 	if (chooser.browseForFileToOpen()) {
 		cleanUp();
@@ -1339,6 +1338,8 @@ void SynthEditor::openFile() {
 
 		xml = nullptr;
 
+		
+
 		openTracks(file);
 
 #if JUCE_IOS
@@ -1353,7 +1354,7 @@ void SynthEditor::openFile() {
 
 void SynthEditor::openTracks(File file)
 {
-
+	
 	String path = file.getParentDirectory().getFullPathName();
 	
 	String audioDataFileName = file.getFileNameWithoutExtension() + "_audio.xml";
@@ -1391,27 +1392,29 @@ void SynthEditor::openTracks(File file)
 		}
 	}
 
-	for (int i = 0; i < v.getNumChildren(); i++) {
+	if (tracks.size() > 0) {
+		for (int i = 0; i < v.getNumChildren(); i++) {
 
-		ValueTree track = v.getChild(i);	
-		TrackIn* ti = tracks.at(i);
+			ValueTree track = v.getChild(i);	
+			TrackIn* ti = tracks.at(i);
 
-		Track* t = navigator->addTrack(Track::Type::AUDIO, 48000);
-		t->setName("Audio " + String(navigator->getTracks().size() + 1));
-		ti->setTrack(t);
-		t->setName(track.getProperty("name"));
+			Track* t = navigator->addTrack(Track::Type::AUDIO, 48000);
+			t->setName("Audio " + String(navigator->getTracks().size() + 1));
+			ti->setTrack(t);
+			t->setName(track.getProperty("name"));
 
-		ValueTree regions = track.getChild(0);
+			ValueTree regions = track.getChild(0);
 
-		for (int i = 0; i < regions.getNumChildren(); i++) {
-			ValueTree region = regions.getChild(i);
-			Logger::getCurrentLogger()->writeToLog(region.getProperty("clipRefId"));
-			Region* r = t->addRegion(region.getProperty("clipRefId"), File(Project::getInstance()->getAudioPath(region.getProperty("clipRefId"))),48000.0, region.getProperty("sampleOffset").toString().getIntValue());
-			Rectangle<int> bounds = r->getBounds();
-			bounds.setWidth(region.getProperty("width"));
-			r->setBounds(bounds);
-		}		
+			for (int i = 0; i < regions.getNumChildren(); i++) {
+				ValueTree region = regions.getChild(i);
+				Logger::getCurrentLogger()->writeToLog(region.getProperty("clipRefId"));
+				Region* r = t->addRegion(region.getProperty("clipRefId"), File(Project::getInstance()->getAudioPath(region.getProperty("clipRefId"))),48000.0, region.getProperty("sampleOffset").toString().getIntValue());
+				Rectangle<int> bounds = r->getBounds();
+				bounds.setWidth(region.getProperty("width"));
+				r->setBounds(bounds);
+			}		
 
+		}
 	}
 
 	setRunning(true);
@@ -1476,15 +1479,23 @@ Track* SynthEditor::createTrack()
 	t->setName("Audio " + String(navigator->getTracks().size() + 1));
 	ti->setTrack(t);
 
-	
-
 	Module* m = getModule();
 
 	pos.x += 160;
 
 	AudioOut* audioOut = nullptr;
+	AudioIn* audioIn = nullptr;
 
-	// find audio out
+	// find audio in
+	for (int i = 0; i < m->getModules()->size(); i++) {
+		if (m->getModules()->at(i) != nullptr) {
+			audioIn = dynamic_cast<AudioIn*>(m->getModules()->at(i));
+			if (audioIn != nullptr) {
+				break;
+			}
+		}
+	}
+	//  find audio out
 	for (int i = 0; i < m->getModules()->size(); i++) {
 		if (m->getModules()->at(i) != nullptr) {
 			audioOut = dynamic_cast<AudioOut*>(m->getModules()->at(i));
@@ -1517,7 +1528,6 @@ Track* SynthEditor::createTrack()
 				Connection* c2 = new Connection(ti, ti->pins.at(1), ao, ao->pins.at(1));
 				getModule()->getConnections()->push_back(c1);
 				getModule()->getConnections()->push_back(c2);
-
 			}
 
 		}
@@ -1730,7 +1740,7 @@ void SynthEditor::getAllCommands(Array<CommandID>& commands) {
 	commands.add({ SynthEditor::CommandIds::DELETE_SELECTED });
 	commands.add({ SynthEditor::CommandIds::SAVE });
 	commands.add({ SynthEditor::CommandIds::LOAD });
-	commands.add({ SynthEditor::CommandIds::LOAD_TRACKS });
+	commands.add({ SynthEditor::CommandIds::EXPORT_AUDIO });
 	commands.add({ SynthEditor::CommandIds::LOAD_MODULE });
 	commands.add({ SynthEditor::CommandIds::SAVE_MODULE });
 	commands.add({ SynthEditor::CommandIds::SAVE_SCREENSHOT });
@@ -1784,8 +1794,8 @@ void SynthEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo& re
 	case SynthEditor::CommandIds::RESET_GUI_POS:
 		result.setInfo("Reset UI position", String(), String(), 0);
 		break;
-	case SynthEditor::CommandIds::LOAD_TRACKS:
-		result.setInfo("Load Tracks", String(), String(), 0);
+	case SynthEditor::CommandIds::EXPORT_AUDIO:
+		result.setInfo("Export audio", String(), String(), 0);
 		break;
 
 	}
@@ -1867,8 +1877,8 @@ bool SynthEditor::perform(const InvocationInfo& info) {
 		resetGUIPosition();
 		return true;
 	}
-	else if (info.commandID == SynthEditor::CommandIds::LOAD_TRACKS) {
-		// openTracks();
+	else if (info.commandID == SynthEditor::CommandIds::EXPORT_AUDIO) {
+		exportAudio();
 		return true;
 	}
 
@@ -2013,6 +2023,10 @@ void SynthEditor::updateProject(URL url) {
 void SynthEditor::setNavigator(TrackNavigator* navigator)
 {
 	this->navigator = navigator;
+}
+
+void SynthEditor::exportAudio()
+{
 }
 
 void SynthEditor::updateProject(File file) {

@@ -49,7 +49,8 @@ Track::~Track()
 	delete this->audioBuffer;
     delete nameListener;
     delete nameValue;
-
+    delete recordingListener;
+    delete recordingValue;
 }
 
 void Track::setName(juce::String name ) {
@@ -138,19 +139,15 @@ void Track::duplicateRegion(Region *region) {
         duplicate->setOffset(region->getOffset() + region->getWidth());
         duplicate->setClipRefId(_region->getClipRefid());
         duplicate->addChangeListener(this);
-        
-        
+                
         if (zoom > 0)
             duplicate->setZoom(zoom);
-        
-        
+             
         audioBuffer->copyFrom(0, duplicate->getSampleOffset(), *_region->getBuffer(), 0, 0, _region->getNumSamples());
         audioBuffer->copyFrom(1, duplicate->getSampleOffset(), *_region->getBuffer(), 1, 0, _region->getNumSamples());
         
-        repaint();
-        
-    }
-    
+        repaint();        
+    }    
 }
 
 Region* Track::addRegion(String refId, File file, double sampleRate, long sampleOffset) {
@@ -223,14 +220,11 @@ void Track::addRegion(String refId, File file, double sampleRate) {
     region->setSampleOffset(sampleNum,false,false);
     region->setOffset(markerPosition);
     
-    
     if (zoom > 0)
         region->setZoom(zoom);
     
-    
     audioBuffer->copyFrom(0, region->getSampleOffset(), *region->getBuffer(), 0, 0, region->getBuffer()->getNumSamples());
     audioBuffer->copyFrom(1, region->getSampleOffset(), *region->getBuffer(), 1, 0, region->getBuffer()->getNumSamples());
-
     
 	repaint();
 }
@@ -257,19 +251,14 @@ void Track::addRegion(juce::String refId, juce::File file, double sampleRate, lo
     clearSelection();
     region->setSelected(true);
     
-    // region->setSampleOffset(sampleNum,false,false);
-    // region->setOffset(samplePosition);
-    
     region->setSampleOffset(samplePosition,false,false);
     region->setOffset(samplePosition / sampleRate);
     
     if (zoom > 0)
         region->setZoom(zoom);
     
-    
     audioBuffer->copyFrom(0, region->getSampleOffset(), *region->getBuffer(), 0, 0, region->getBuffer()->getNumSamples());
     audioBuffer->copyFrom(1, region->getSampleOffset(), *region->getBuffer(), 1, 0, region->getBuffer()->getNumSamples());
-    
     
     repaint();
 }
@@ -310,10 +299,11 @@ void Track::addRegion(AudioSampleBuffer* source, double sampleRate, long sampleP
     
     AudioRegion* region = new AudioRegion(source, *manager, samplePosition, regionLength, sampleRate);
     region->setDragger(dragger);
-    Rectangle<int>* bounds = new Rectangle<int>(0, 0, region->getThumbnail()->getTotalLength() * 20, getHeight());
-    region->setBounds(markerPosition, 0, region->getWidth(), getHeight());
+    Rectangle<int>* bounds = new Rectangle<int>(0, 0, (region->getBuffer()->getNumSamples() / sampleRate) * this->zoom , getHeight());
+    region->setBounds(markerPosition, 0, region->getBuffer()->getNumSamples() / sampleRate, getHeight());
     region->setThumbnailBounds(bounds);
     region->setLoopCount(0);
+    region->updateThumb();
     
     if (regions.size() == 0) {
         setName(region->getName());
@@ -337,7 +327,6 @@ void Track::addRegion(AudioSampleBuffer* source, double sampleRate, long sampleP
     
     audioBuffer->copyFrom(0, region->getSampleOffset(), *region->getBuffer(), 0, 0, region->getBuffer()->getNumSamples());
     audioBuffer->copyFrom(1, region->getSampleOffset(), *region->getBuffer(), 1, 0, region->getBuffer()->getNumSamples());
-    
     
     repaint();
 }
@@ -426,7 +415,6 @@ void Track::setZoom(float zoom)
     for (std::vector<Region*>::iterator it = regions.begin(); it != regions.end(); ++it) {
         (*it)->setZoom(zoom);
     }
-    
 }
 
 String Track::getName()
@@ -446,7 +434,6 @@ void Track::setGain(float gain)
 void Track::setVolume(float volume)
 {
 	this->volume = volume;
-    // sendChangeMessage();
 }
 
 float Track::getVolume()
@@ -457,7 +444,6 @@ float Track::getVolume()
 void Track::setPan(float pan)
 {
     this->pan = pan;
-    // sendChangeMessage();
 }
 
 float Track::getPan()
@@ -483,12 +469,6 @@ Region* Track::getCurrentRegion(long sample) {
         
     }
     
-    /*
-    if (current == NULL) {
-        Logger::getCurrentLogger()->writeToLog("No region found.");
-    }
-     */
-    
     return current;
     
 }
@@ -505,7 +485,6 @@ const float Track::getSample(int channel, long sample) {
         }
     }
     return 0;
-    // return audioBuffer->getSample(channel,sample);
 }
 
 void Track::addMessage(MidiMessage* message,double time, int sampleNum) {
@@ -526,9 +505,14 @@ void Track::addMessage(MidiMessage* message,double time, int sampleNum) {
 
 juce::Array<juce::PropertyComponent*>& Track::getProperties()
 {
-    nameProp = new TextPropertyComponent(*nameValue, "Name", 16, false, true);
     properties = Array<PropertyComponent*>();
+    
+    nameProp = new TextPropertyComponent(*nameValue, "Name", 16, false, true);
     properties.add(nameProp);
+    
+    recordingProp = new juce::BooleanPropertyComponent(*recordingValue, "recording", "Recording");
+    properties.add(recordingProp);
+
     return properties;
 }
 
@@ -536,6 +520,29 @@ void Track::createProperties()
 {
     nameValue = new Value();
     nameListener = new NameListener(*nameValue, this);
+
+    recordingValue = new Value();
+    recordingListener = new RecordingListener(*recordingValue, this);
+}
+
+void Track::setSample(int channel, int sampleNum, float sample)
+{
+    currentRegion = getCurrentRegion(sample);
+
+    if (currentRegion != nullptr) {
+        AudioSampleBuffer* buf = getBuffer();
+        if (buf != nullptr) {
+            if (sampleNum >= buf->getNumSamples()) {
+                AudioRegion* ar = dynamic_cast<AudioRegion*>(currentRegion);
+                // TODO : from card
+                ar->resizeAudio(256);
+            }
+            buf = getBuffer(); // reassign, because of resizing
+            buf->setSample(channel, sampleNum, sample);
+            currentRegion->setDirty(true);
+        }
+    }
+
 }
 
 MidiMessage* Track::getMessage(double time,int sampleNum) {
@@ -614,9 +621,7 @@ void Track::paint (Graphics& g) {
     g.fillAll();
     g.setColour(Colours::grey);
     g.drawLine(0,getHeight(),getWidth(),getHeight());
-    
 }
-               
 
 void Track::resized() {
     for (std::vector<Region*>::iterator it = regions.begin(); it != regions.end(); ++it) {
@@ -646,17 +651,13 @@ void Track::setHeight(int height)
     this->height = height;
 }
 
-/*
-int Track::getHeight()
-{
-    return this->height;
-}
-*/
 AudioSampleBuffer * Track::getBuffer()
 {
     if (type == AUDIO) {
         AudioRegion* region = static_cast<AudioRegion*>(currentRegion);
-        return region->getBuffer();
+        if (region != nullptr) {
+            return region->getBuffer();
+        }
     }
     
     return nullptr;
@@ -664,7 +665,7 @@ AudioSampleBuffer * Track::getBuffer()
 
 AudioSampleBuffer * Track::getRecordingBuffer()
 {
-    return this->audioBuffer;
+    return this->getBuffer();
 }
 
 void Track::setCurrentMarkerPosition(int position) {
@@ -682,8 +683,6 @@ void Track::setMidiChannel(int channel, bool notify) {
         sendChangeMessage();
     }
 }
-
-
 
 void Track::changeListenerCallback(ChangeBroadcaster * source) {
     
@@ -721,7 +720,6 @@ void Track::setTrackLength(long length) {
 
 void Track::setRecording(bool recording) {
     this->recording = recording;
-    // sendChangeMessage();
 }
 
 bool Track::isRecording() {
@@ -730,7 +728,6 @@ bool Track::isRecording() {
 
 void Track::setSolo(bool solo) {
     this->solo = solo;
-    // sendChangeMessage();
 }
 
 bool Track::isSolo() {
@@ -739,7 +736,6 @@ bool Track::isSolo() {
 
 void Track::setMute(bool mute) {
     this->mute = mute;
-    // sendChangeMessage();
 }
 
 bool Track::isMute() {
@@ -748,11 +744,8 @@ bool Track::isMute() {
 
 void Track::setMono(bool mono) {
     this->mono = mono;
-    // sendChangeMessage();
 }
 
 bool Track::isMono() {
     return mono;
 }
-
-

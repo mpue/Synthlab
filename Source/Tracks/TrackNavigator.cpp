@@ -284,31 +284,38 @@ bool TrackNavigator::isPlaying() {
 
 void TrackNavigator::setRecording(bool recording) {
 	if (recording) {
+		startTimer(50);
 		Session::getInstance()->setRecordingStartTime();
 		recordStart = (long)marker->getPosition() * Project::getInstance()->getSampleRate();
 		for (int i = 0; i < tracks.size(); i++) {
 			if (tracks.at(i)->isRecording()) {
-
+				
 				if (tracks.at(i)->getType() == Track::Type::MIDI) {
 					tracks.at(i)->addMidiRegion(Project::getInstance()->getSampleRate(), recordStart, 0);
 				}
 				else if (tracks.at(i)->getType() == Track::Type::AUDIO) {
-					tracks.at(i)->addRegion(tracks.at(i)->getRecordingBuffer(), Project::getInstance()->getSampleRate(), recordStart, 0);
+					AudioRegion* r = dynamic_cast<AudioRegion*>(tracks.at(i)->getCurrentRegion(recordStart));
+					if (r == nullptr) {
+						tracks.at(i)->addRegion(nullptr, Project::getInstance()->getSampleRate(), recordStart, 480000);
+					}
+					tracks.at(i)->getCurrentRegion(recordStart)->startRecording();
 				}
 
-				tracks.at(i)->getCurrentRecorder()->startRecording();
 			}
 		}
 	}
 	else {
+		stopTimer();
 		Session::getInstance()->setRecordingStopTime();
 		recordStop = marker->getPosition() * Project::getInstance()->getSampleRate();
 		for (int i = 0; i < tracks.size(); i++) {
 			if (tracks.at(i)->isRecording()) {
 				// tracks.at(i)->addRegion(tracks.at(i)->getRecordingBuffer(),Project::getInstance()->getSampleRate(), recordStart, recordStop - recordStart);
-
-
-				tracks.at(i)->getCurrentRecorder()->stopRecording();
+		
+				for (int j = 0; j < tracks.at(i)->getRegions().size(); j++) {					
+					AudioRegion* ar = dynamic_cast<AudioRegion*>(tracks.at(i)->getRegions().at(j));
+					ar->stopRecording();
+				}
 
 			}
 		}
@@ -667,6 +674,18 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 						this->selector->setSelectedRange(0, 0);
 						tracks.at(i)->setSelected(true);
 						propertyView->selectionChanged(tracks.at(i));
+																
+						for (int j = 0; j < tracks.at(i)->getRegions().size(); j++) {
+
+							if (tracks.at(i)->getRegions().at(j)->getBounds().contains(x, y)) {
+								tracks.at(i)->getRegions().at(j)->setSelected(true);
+								propertyView->selectionChanged(tracks.at(i)->getRegions().at(j));
+							}
+							else {
+								tracks.at(i)->getRegions().at(j)->setSelected(false);
+							}
+
+						}
 						sendChangeMessage();
 					}
 					else {

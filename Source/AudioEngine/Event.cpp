@@ -18,6 +18,7 @@ Event::Event(Event* e){
     this->type = e->getType();
     this->value = e->getValue();
     this->note = e->getNote();
+    this->number = e->getNumber();
 }
 
 Event::Event(String name, Type type) {

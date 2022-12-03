@@ -108,7 +108,13 @@ void SliderModule::configurePins(){
     p1->direction = Pin::Direction::OUT;
     p1->setName("V");
     addPin(Pin::Direction::OUT,p1);
-    
+
+    Pin* p2 = new Pin(Pin::Type::EVENT);
+    p2->direction = Pin::Direction::OUT;
+    p2->setName("E");
+    addPin(Pin::Direction::OUT, p2);
+
+
 }
 
 void SliderModule::paint(juce::Graphics &g) {
@@ -224,6 +230,13 @@ void SliderModule::sliderValueChanged(juce::Slider *slider) {
         // this->nameLabel->setText(String(value),juce::NotificationType::dontSendNotification);
         this->pins.at(0)->setValue(value);
         repaint();
+
+        Event* e = new Event("controller", Event::Type::CONTROLLER);
+        e->setNumber(this->controllerNum);
+        e->setValue(value);
+
+        pins.at(1)->sendEvent(e);
+
     }
     else {
         setValue(slider->getValue());
