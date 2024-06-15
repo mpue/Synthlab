@@ -24,6 +24,9 @@ LabelModule::LabelModule(String name) : Module(name)
     setSize(120,30);
     nameLabel->setJustificationType (Justification::centred);
     nameLabel->setTopLeftPosition(2,2);
+    // Schriftart einstellen
+    juce::Font font("Arial", 24.0f, juce::Font::bold);
+    nameLabel->setFont(font);
     
     editable = true;
     prefab = true;

@@ -714,7 +714,7 @@
       </MODULEPATHS>
     </VS2017>
     <VS2019 targetFolder="Builds/VisualStudio2019" vstLegacyFolder="..\vstsdk2.4"
-            externalLibraries="d:/devel/Synthlab/lib/librubberband-debug.lib">
+            externalLibraries="d:/devel/Synthlab/lib/librubberband.lib">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../../ASIOSDK2.3/common/"/>
         <CONFIGURATION isDebug="0" name="Release" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../../ASIOSDK2.3/common/&#10;"/>

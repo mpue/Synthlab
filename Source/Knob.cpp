@@ -22,11 +22,13 @@ using juce::BooleanPropertyComponent;
 //==============================================================================
 Knob::Knob()
 {
-    setSize(90,90);
+        
+    setSize(90,128);
     nameLabel->setJustificationType (Justification::left);
     nameLabel->setTopLeftPosition(30 ,2);
-    nameLabel->setFont(Font(9));
-    
+    juce::Font font("Arial", 12.0f, juce::Font::bold);
+    nameLabel->setFont(font);
+        
     valueLabel = new Label();
     valueLabel->setJustificationType (Justification::left);
     valueLabel->setTopLeftPosition(2,70);
@@ -187,7 +189,7 @@ void Knob::setCurrentLayer(Module::Layer layer) {
         setSize(90,90);
         slider->setSize(70,70);
         slider->setTopLeftPosition(10,10);
-        nameLabel->setFont(Font(9));
+        // nameLabel->setFont(Font(9));
         nameLabel->setTopLeftPosition(2 ,2);
         valueLabel->setVisible(true);
         setInterceptsMouseClicks(false,false);
