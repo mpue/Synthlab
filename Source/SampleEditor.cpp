@@ -61,14 +61,12 @@ SampleEditor::~SampleEditor()
 
 void SampleEditor::paint (Graphics& g)
 {
-
-    g.fillAll (Colours::darkgrey);
+        g.fillAll (Colours::darkgrey);
 
 }
 
 void SampleEditor::resized()
 {
-    
     component->setBounds (0, 0, proportionOfWidth (1.0000f), proportionOfHeight(0.4f));
     propertiesPanel->setBounds (0, proportionOfHeight(0.4f), proportionOfWidth (1.0000f), proportionOfHeight(0.4f));
     midiKeyboard->setBounds (0, proportionOfHeight(0.8), proportionOfWidth (1.0000f), proportionOfHeight(0.2f));
@@ -77,9 +75,11 @@ void SampleEditor::resized()
 void SampleEditor::handleIncomingMidiMessage (MidiInput* source, const MidiMessage& message) {
     if (message.isNoteOn()) {
         handleNoteOn(&state, message.getChannel(), message.getNoteNumber(), message.getVelocity());
+        state.noteOn(message.getChannel(), message.getNoteNumber(),(1.0/127.0) * message.getVelocity());
     }
     else if(message.isNoteOff()) {
         handleNoteOff(&state, message.getChannel(), message.getNoteNumber(), message.getVelocity());
+        state.noteOff(message.getChannel(), message.getNoteNumber(), (1.0 / 127.0) * message.getVelocity());
     }
 }
 
@@ -88,18 +88,15 @@ void SampleEditor::handleNoteOn(juce::MidiKeyboardState *source, int midiChannel
         return;
     }
     sampleModule->selectSample(midiNoteNumber);
-    // state.noteOn(midiChannel, midiNoteNumber,(1.0/127.0) * velocity);
     component->setSampleBuffer(sampleModule->getBuffer());
 
 }
 
 void SampleEditor::handleNoteOff(juce::MidiKeyboardState *source, int midiChannel, int midiNoteNumber, float velocity) {
-    //state.noteOff(midiChannel, midiNoteNumber, (1.0/127.0) * velocity);
-
 }
 
 bool SampleEditor::isInterestedInDragSource (const SourceDetails& dragSourceDetails) {
-    return false;
+    return true;
 }
 
 void SampleEditor::itemDropped (const SourceDetails& dragSourceDetails) {

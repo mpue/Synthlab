@@ -46,7 +46,7 @@ Knob::Knob()
     addAndMakeVisible(valueLabel);
     valueLabel->toFront(false);
     
-    setInterceptsMouseClicks(false,true);
+    setInterceptsMouseClicks(false,false);
     
     createProperties();
     

@@ -150,7 +150,7 @@ void MidiClock::setChannel(int channel) {
 void MidiClock::setInternal(bool isInternal) {
     if (isInternal) {
         
-        float t = ((60.0f/tempo) * 1000) / 24.0f;
+        float t = ((60.0f/tempo) * 1000) / 4.0f;
         
         if (!running){
             startTimer(t);

@@ -108,8 +108,8 @@ void PluginModule::selectPlugin(String name) {
         double sampleRate = device->getCurrentSampleRate();
         buffersize = device->getCurrentBufferSizeSamples();
         plugin = PluginManager::getInstance()->apfm->createPluginInstance(pd, sampleRate, buffersize, error).release();
-        
         plugin->prepareToPlay(sampleRate,buffersize);
+
 
     }
 
@@ -190,7 +190,9 @@ void PluginModule::process() {
         else {
             audioBuffer->clear();
         }
-        plugin->processBlock(*audioBuffer, midiBuffer);
+        if (plugin->getNumOutputChannels() > 0) {
+            plugin->processBlock(*audioBuffer, midiBuffer);
+        }
         pins.at(2)->getAudioBuffer()->copyFrom(0,0, *audioBuffer, 0, 0, buffersize);
         pins.at(3)->getAudioBuffer()->copyFrom(0,0, *audioBuffer, 1, 0, buffersize);
     }

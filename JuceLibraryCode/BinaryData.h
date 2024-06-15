@@ -120,7 +120,7 @@ namespace BinaryData
     const int            knob_pngSize = 5718;
 
     extern const char*   Knob_64_png;
-    const int            Knob_64_pngSize = 370323;
+    const int            Knob_64_pngSize = 495933;
 
     extern const char*   led_off_png;
     const int            led_off_pngSize = 5214;

@@ -993,11 +993,33 @@ void MainComponent::buttonClicked(Button* b)
 					navigator->ResetMarkerPosition();
 				}
 			}
+			for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
+
+				PluginModule* module = nullptr;
+				
+				// make sure we do not send this event to a plugin module
+				
+				if ((module = dynamic_cast<PluginModule*>(editor->getModule()->getModules()->at(i))) == NULL) {
+					sendMidiStopMessage(editor->getModule()->getModules()->at(i), 1);
+				}
+			}
 
 		}
 		else if (tb->getItemId() == toolbarFactory->app_play) {
 			if (navigator != nullptr)
 				navigator->setPlaying(true);
+
+			for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
+
+				PluginModule* module = nullptr;
+
+				// make sure we do not send this event to a plugin module
+
+				if ((module = dynamic_cast<PluginModule*>(editor->getModule()->getModules()->at(i))) == NULL) {
+					sendMidiStartMessage(editor->getModule()->getModules()->at(i), 1);
+				}
+			}
+
 		}
 		else if (tb->getItemId() == toolbarFactory->app_record) {
 			if (navigator != nullptr)
