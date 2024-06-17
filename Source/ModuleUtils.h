@@ -92,7 +92,7 @@ public:
     static void updateIndices(ValueTree& v, long offset);
     
     /**
-     * Creates an exact copy of an existing module just diffreing in the indices.
+     * Creates an exact copy of an existing module just differing in the indices.
      *
      * @param original The module to clone
      *

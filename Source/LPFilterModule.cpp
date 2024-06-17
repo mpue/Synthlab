@@ -127,7 +127,7 @@ void LPFilterModule::process() {
             this->mod =  pins.at(4)->getConnections().at(0)->getValue();
             if (this->mod < 0.1)
                 this->mod = 0.1;
-            filter->coefficients(sampleRate, frequency * mod, resonance);
+            filter->coefficients(sampleRate, 20000.0f * mod - (20000.0f - frequency), resonance);
         }
     }
     

@@ -15,7 +15,6 @@
 #include "AudioManager.h"
 #include "Knob.h"
 #include "LabelModule.h"
-#include "Knob.h"
 #include "MidiGate.h"
 #include "ADSRModule.h"
 #include "SineModule.h"
@@ -196,25 +195,25 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
         
         CompareModule* cm;
         
-        if ((cm = dynamic_cast<CompareModule*>(m)) != NULL) {
+        if ((cm = dynamic_cast<CompareModule*>(m)) != nullptr) {
             cm->setMode(mod.getProperty("mode").toString().getIntValue());
         }
         
         TerminalModule* t;
         
-        if ((t = dynamic_cast<TerminalModule*>(m)) != NULL) {
+        if ((t = dynamic_cast<TerminalModule*>(m)) != nullptr) {
             t->setName(mod.getProperty("name").toString());
         }
         
         Knob* k = nullptr;
         
-        if ((k = dynamic_cast<Knob*>(m)) != NULL) {
+        if ((k = dynamic_cast<Knob*>(m)) != nullptr) {
             k->setName(mod.getProperty("name").toString());
         }
         
         SubscriberModule* sm = nullptr;
         
-        if ((sm = dynamic_cast<SubscriberModule*>(m)) != NULL) {
+        if ((sm = dynamic_cast<SubscriberModule*>(m)) != nullptr) {
             sm->setTopic(mod.getProperty("topic").toString());
             MessageBus::getInstance()->addListener(sm->getTopic(), sm);
         }
@@ -222,13 +221,13 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
         
         PublisherModule* pm = nullptr;
         
-        if ((pm = dynamic_cast<PublisherModule*>(m)) != NULL) {
+        if ((pm = dynamic_cast<PublisherModule*>(m)) != nullptr) {
             pm->setTopic(mod.getProperty("topic").toString());
         }
         
         ImageModule* im = nullptr;
         
-        if ((im = dynamic_cast<ImageModule*>(m)) != NULL) {
+        if ((im = dynamic_cast<ImageModule*>(m)) != nullptr) {
             im->setImage(mod.getProperty("imagePath").toString());
             im->setSize(mod.getProperty("width").toString().getIntValue(), mod.getProperty("height").toString().getIntValue());
             im->toBack();
@@ -238,7 +237,7 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
         
         KeyboardModule* km = nullptr;
         
-        if ((km = dynamic_cast<KeyboardModule*>(m)) != NULL) {
+        if ((km = dynamic_cast<KeyboardModule*>(m)) != nullptr) {
             km->setChannel(mod.getProperty("channel").toString().getIntValue());
             km->setSize(mod.getProperty("width").toString().getIntValue(), mod.getProperty("height").toString().getIntValue());
         }
@@ -295,7 +294,7 @@ void ModuleUtils::connectTerminals(Module* m) {
         
         TerminalModule* t;
         
-        if ((t = dynamic_cast<TerminalModule*>(module)) != NULL) {
+        if ((t = dynamic_cast<TerminalModule*>(module)) != nullptr) {
             
             for (int j = 0; j < m->getPins().size();j++) {
                 if (m->getPins().at(j)->index == t->getIndex()) {
@@ -330,7 +329,7 @@ void ModuleUtils::configureModule(Module *m, ValueTree& mod, ChangeBroadcaster* 
 
     Knob* k;
     
-    if ((k = dynamic_cast<Knob*>(m)) != NULL) {
+    if ((k = dynamic_cast<Knob*>(m)) != nullptr) {
         k->setMaximum(mod.getProperty("maxvalue").toString().getFloatValue());
         k->setMinimum(mod.getProperty("minvalue").toString().getFloatValue());
         k->setStepSize(mod.getProperty("stepsize").toString().getFloatValue());
@@ -341,19 +340,19 @@ void ModuleUtils::configureModule(Module *m, ValueTree& mod, ChangeBroadcaster* 
     
     MidiGate* gate;
     
-    if ((gate = dynamic_cast<MidiGate*>(m)) != NULL) {
+    if ((gate = dynamic_cast<MidiGate*>(m)) != nullptr) {
         gate->setChannel(mod.getProperty("channel").toString().getIntValue());
     }
     
     CompareModule* cm;
     
-    if ((cm = dynamic_cast<CompareModule*>(m)) != NULL) {
+    if ((cm = dynamic_cast<CompareModule*>(m)) != nullptr) {
         cm->setMode(mod.getProperty("mode").toString().getIntValue());
     }
     
     ADSRModule* adsr;
     
-    if ((adsr = dynamic_cast<ADSRModule*>(m)) != NULL) {
+    if ((adsr = dynamic_cast<ADSRModule*>(m)) != nullptr) {
         broadcaster->addChangeListener(adsr);
         adsr->setAttack(mod.getProperty("attack").toString().getFloatValue());
         adsr->setDecay(mod.getProperty("decay").toString().getFloatValue());
@@ -363,13 +362,13 @@ void ModuleUtils::configureModule(Module *m, ValueTree& mod, ChangeBroadcaster* 
     }
     
     Constant* c = nullptr;
-    if ((c = dynamic_cast<Constant*>(m)) != NULL) {
+    if ((c = dynamic_cast<Constant*>(m)) != nullptr) {
         c->setValue(mod.getProperty("value").toString().getFloatValue());
     }
     
     SamplerModule* sm;
     
-    if ((sm = dynamic_cast<SamplerModule*>(m)) != NULL) {
+    if ((sm = dynamic_cast<SamplerModule*>(m)) != nullptr) {
         
         for(int i = 0; i < mod.getNumChildren();i++) {
             if (mod.getChild(i).hasProperty("samplePath")) {
@@ -400,25 +399,25 @@ void ModuleUtils::configureModule(Module *m, ValueTree& mod, ChangeBroadcaster* 
     
     Monophonic* monophonic;
     
-    if ((monophonic = dynamic_cast<Monophonic*>(m)) != NULL) {
+    if ((monophonic = dynamic_cast<Monophonic*>(m)) != nullptr) {
         monophonic->setMono(mod.getProperty("mono").toString().getIntValue() > 0);
     }
     
     TerminalModule* t;
     
-    if ((t = dynamic_cast<TerminalModule*>(m)) != NULL) {
+    if ((t = dynamic_cast<TerminalModule*>(m)) != nullptr) {
         t->setType(static_cast<Terminal::Type>(mod.getProperty("type").toString().getIntValue()));
     }
     
     VolumeAdjustable* v;
     
-    if ((v = dynamic_cast<VolumeAdjustable*>(m)) != NULL) {
+    if ((v = dynamic_cast<VolumeAdjustable*>(m)) != nullptr) {
         v->setVolume(mod.getProperty("volume").toString().getFloatValue());
     }
     
     PadModule* p;
     
-    if ((p = dynamic_cast<PadModule*>(m)) != NULL) {
+    if ((p = dynamic_cast<PadModule*>(m)) != nullptr) {
         p->setChannel(mod.getProperty("channel").toString().getIntValue());
         p->setNote(mod.getProperty("note").toString().getIntValue());
         p->setHold(mod.getProperty("hold").toString().getIntValue() > 0);
@@ -426,7 +425,7 @@ void ModuleUtils::configureModule(Module *m, ValueTree& mod, ChangeBroadcaster* 
     
     PluginModule* pm ;
     
-    if ((pm = dynamic_cast<PluginModule*>(m)) != NULL) {
+    if ((pm = dynamic_cast<PluginModule*>(m)) != nullptr) {
         pm->selectPlugin(mod.getProperty("plugin").toString());
         pm->setCurrentProgram(mod.getProperty("currentProgram").toString().getIntValue());
         pm->setPluginState(mod.getProperty("state").toString());
@@ -434,7 +433,7 @@ void ModuleUtils::configureModule(Module *m, ValueTree& mod, ChangeBroadcaster* 
     
     StepSequencerModule* ssm;
     
-    if ((ssm = dynamic_cast<StepSequencerModule*>(m)) != NULL) {
+    if ((ssm = dynamic_cast<StepSequencerModule*>(m)) != nullptr) {
         MemoryOutputStream* mos = new MemoryOutputStream();
         String dataString = mod.getProperty("config").toString();
         Base64::convertFromBase64(*mos, dataString);
@@ -444,27 +443,27 @@ void ModuleUtils::configureModule(Module *m, ValueTree& mod, ChangeBroadcaster* 
     
     ImageModule* im = nullptr;
     
-    if ((im = dynamic_cast<ImageModule*>(m)) != NULL) {
+    if ((im = dynamic_cast<ImageModule*>(m)) != nullptr) {
         im->setImage(mod.getProperty("imagePath").toString());
         im->setSize(mod.getProperty("width").toString().getIntValue(), mod.getProperty("height").toString().getIntValue());
     }
     
     KeyboardModule* km = nullptr;
     
-    if ((km = dynamic_cast<KeyboardModule*>(m)) != NULL) {
+    if ((km = dynamic_cast<KeyboardModule*>(m)) != nullptr) {
         km->setChannel(mod.getProperty("channel").toString().getIntValue());
         km->setSize(mod.getProperty("width").toString().getIntValue(), mod.getProperty("height").toString().getIntValue());
     }
     
     SubscriberModule* sum = nullptr;
     
-    if ((sum = dynamic_cast<SubscriberModule*>(m)) != NULL) {
+    if ((sum = dynamic_cast<SubscriberModule*>(m)) != nullptr) {
         sum->setTopic(mod.getProperty("topic").toString());
     }
     
     PublisherModule* pum = nullptr;
     
-    if ((pum = dynamic_cast<PublisherModule*>(m)) != NULL) {
+    if ((pum = dynamic_cast<PublisherModule*>(m)) != nullptr) {
         pum->setTopic(mod.getProperty("topic").toString());
     }
     
@@ -489,7 +488,7 @@ void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Conn
         
         Knob* k;
         
-        if ((k = dynamic_cast<Knob*>((*it))) != NULL) {
+        if ((k = dynamic_cast<Knob*>((*it))) != nullptr) {
             file.setProperty("minvalue",k->getMinimum(), nullptr);
             file.setProperty("maxvalue",k->getMaximum(), nullptr);
             file.setProperty("stepsize", k->getStepsize(), nullptr);
@@ -500,7 +499,7 @@ void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Conn
         
         ADSRModule* adsr;
         
-        if ((adsr = dynamic_cast<ADSRModule*>((*it))) != NULL) {
+        if ((adsr = dynamic_cast<ADSRModule*>((*it))) != nullptr) {
             file.setProperty("attack",adsr->getAttack(), nullptr);
             file.setProperty("decay",adsr->getDecay(), nullptr);
             file.setProperty("sustain", adsr->getSustain(), nullptr);
@@ -510,25 +509,25 @@ void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Conn
         
         Constant* c = nullptr;
         
-        if ((c = dynamic_cast<Constant*>((*it))) != NULL) {
+        if ((c = dynamic_cast<Constant*>((*it))) != nullptr) {
             file.setProperty("value", c->getValue(), nullptr);
         }
         
         CompareModule* cm;
         
-        if ((cm = dynamic_cast<CompareModule*>(*it)) != NULL) {
+        if ((cm = dynamic_cast<CompareModule*>(*it)) != nullptr) {
            file.setProperty("mode", cm->getMode(), nullptr);
         }
         
         MidiGate* gate = nullptr;
         
-        if ((gate = dynamic_cast<MidiGate*>((*it))) != NULL) {
+        if ((gate = dynamic_cast<MidiGate*>((*it))) != nullptr) {
             file.setProperty("channel",gate->getChannel() , nullptr);
         }
         
         SamplerModule* sm;
         
-        if ((sm = dynamic_cast<SamplerModule*>((*it))) != NULL) {
+        if ((sm = dynamic_cast<SamplerModule*>((*it))) != nullptr) {
             
             for (int i = 0; i < 128; i++) {
                 if (sm->hasSampleAt(i)) {
@@ -547,26 +546,26 @@ void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Conn
         
         Monophonic* monophonic;
         
-        if ((monophonic = dynamic_cast<Monophonic*>((*it))) != NULL) {
+        if ((monophonic = dynamic_cast<Monophonic*>((*it))) != nullptr) {
             file.setProperty("mono", monophonic->isMono(), nullptr);
         }
         
         TerminalModule* t;
         
         
-        if ((t = dynamic_cast<TerminalModule*>((*it))) != NULL) {
+        if ((t = dynamic_cast<TerminalModule*>((*it))) != nullptr) {
             file.setProperty("type", t->getType(), nullptr);
         }
         
         VolumeAdjustable* v;
         
-        if ((v = dynamic_cast<VolumeAdjustable*>((*it))) != NULL) {
+        if ((v = dynamic_cast<VolumeAdjustable*>((*it))) != nullptr) {
             file.setProperty("volume", v->getVolume(), nullptr);
         }
         
         PadModule* p;
         
-        if ((p = dynamic_cast<PadModule*>((*it))) != NULL) {
+        if ((p = dynamic_cast<PadModule*>((*it))) != nullptr) {
             file.setProperty("channel", p->getChannel(), nullptr);
             file.setProperty("note", p->getNote(), nullptr);
             file.setProperty("hold", p->isHold(),nullptr);
@@ -574,7 +573,7 @@ void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Conn
         
         PluginModule* pm;
         
-        if ((pm = dynamic_cast<PluginModule*>((*it))) != NULL) {
+        if ((pm = dynamic_cast<PluginModule*>((*it))) != nullptr) {
             file.setProperty("plugin", pm->getPluginName(), nullptr);
             file.setProperty("currentProgram", pm->getCurrentProgram(), nullptr);
             file.setProperty("state", pm->getPluginState() ,nullptr);
@@ -582,7 +581,7 @@ void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Conn
         
         StepSequencerModule* ssm;
         
-        if ((ssm = dynamic_cast<StepSequencerModule*>((*it))) != NULL) {
+        if ((ssm = dynamic_cast<StepSequencerModule*>((*it))) != nullptr) {
             MemoryOutputStream* mos = new MemoryOutputStream();
             uint8* config = ssm->getEditor()->getConfiguration();
             Base64::convertToBase64(*mos,config , ssm->getEditor()->getConfigLength());
@@ -594,7 +593,7 @@ void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Conn
         
         ImageModule* im = nullptr;
         
-        if ((im = dynamic_cast<ImageModule*>(*it)) != NULL) {
+        if ((im = dynamic_cast<ImageModule*>(*it)) != nullptr) {
             file.setProperty("imagePath", im->getImage(), nullptr);
             file.setProperty("width", im->getWidth(), nullptr);
             file.setProperty("height", im->getHeight(), nullptr);
@@ -602,7 +601,7 @@ void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Conn
         
         KeyboardModule* km = nullptr;
         
-        if ((km = dynamic_cast<KeyboardModule*>(*it)) != NULL) {
+        if ((km = dynamic_cast<KeyboardModule*>(*it)) != nullptr) {
             file.setProperty("channel", km->getChannel(), nullptr);
             file.setProperty("width", km->getWidth(), nullptr);
             file.setProperty("height", km->getHeight(), nullptr);
@@ -623,13 +622,13 @@ void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Conn
         
         SubscriberModule* sum = nullptr;
         
-        if ((sum = dynamic_cast<SubscriberModule*>(*it)) != NULL) {
+        if ((sum = dynamic_cast<SubscriberModule*>(*it)) != nullptr) {
             file.setProperty("topic", sum->getTopic(), nullptr);
         }
         
         PublisherModule* pum = nullptr;
         
-        if ((pum = dynamic_cast<PublisherModule*>(*it)) != NULL) {
+        if ((pum = dynamic_cast<PublisherModule*>(*it)) != nullptr) {
              file.setProperty("topic", pum->getTopic(), nullptr);
         }
         

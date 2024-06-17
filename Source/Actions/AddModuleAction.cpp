@@ -122,8 +122,9 @@ bool AddModuleAction::perform() {
     AudioIn* in;
     
     if ((in = dynamic_cast<AudioIn*>(m)) != NULL) {
-        
-        int numCurrentInputs = static_cast<int>(editor->getMixer()->getInputChannels().size()) * 2; // take care! we have N input channels but from the audio interfaces point of view we have twice as much channels!
+
+        // take care! we have N input channels but from the audio interfaces point of view we have twice as much channels!
+        int numCurrentInputs = static_cast<int>(editor->getMixer()->getInputChannels().size()) * 2; 
         
         if (numCurrentInputs < audioManager->getNumActiveInputs()) {
         
