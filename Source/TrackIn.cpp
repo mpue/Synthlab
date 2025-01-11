@@ -73,12 +73,12 @@ void TrackIn::configurePins() {
 	p2->setName("R");
 
 	Pin* p3 = new Pin(Pin::Type::AUDIO);
-	p1->direction = Pin::Direction::IN;
-	p1->setName("L");
+	p3->direction = Pin::Direction::IN;
+	p3->setName("L");
 
 	Pin* p4 = new Pin(Pin::Type::AUDIO);
-	p2->direction = Pin::Direction::IN;
-	p2->setName("R");
+	p3->direction = Pin::Direction::IN;
+	p3->setName("R");
 
 
 	addPin(Pin::Direction::OUT, p1);
@@ -99,6 +99,16 @@ void TrackIn::process() {
 
 		float* outL = nullptr;
 		float* outR = nullptr;
+
+		const float* inL = nullptr;
+		const float* inR = nullptr;
+
+		if (getPins().at(2)->getConnections().size() >= 1) {
+			inL = getPins().at(2)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
+		}
+		if (getPins().at(3)->getConnections().size() >= 1) {
+			inR = getPins().at(3)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
+		}
 
 		outL = getPins().at(0)->getAudioBuffer()->getWritePointer(0);
 		outR = getPins().at(1)->getAudioBuffer()->getWritePointer(0);
@@ -125,49 +135,43 @@ void TrackIn::process() {
 		
 		}
 		else if (track != nullptr && navigator->isRecording()) {
-			const float* inL = nullptr;
-			const float* inR = nullptr;
 
+			for (int i = 0; i < buffersize; i++) {
 
-			if (getPins().at(2)->getConnections().size() >= 1) {
-				inL = getPins().at(2)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
-			}
-			if (getPins().at(3)->getConnections().size() >= 1) {
-				inR = getPins().at(3)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
-			}
-
-
-				for (int i = 0; i < buffersize; i++) {
-
-					if (inL != nullptr && track->getRecordingBuffer() != nullptr) {
-						track->setSample(0, currentRecordingSample, inL[i] * track->getVolume());							
-						outL[i] = inL[i] * track->getVolume();
-					}
-					else {
-
-						// track->getRecordingBuffer()->setSample(0, currentRecordingSample, 0);
-						outL[i] = 0;
-					}
-
-					if (inR != nullptr && track->getRecordingBuffer() != nullptr) {
-						track->setSample(1, currentRecordingSample, inR[i] * track->getVolume());
-						outR[i] = inR[i] * track->getVolume();
-					}
-					else {
-						// track->getRecordingBuffer()->setSample(1, currentRecordingSample, 0);
-						outR[i] = 0;
-					}
-
-					currentRecordingSample = (currentRecordingSample + 1);
-					numRecordedSamples++;
-					
+				if (inL != nullptr && track != nullptr) {
+					track->setSample(0, currentRecordingSample, inL[i] * track->getVolume());							
+					outL[i] = inL[i] * track->getVolume();
 				}
+				else {
+
+					// track->getRecordingBuffer()->setSample(0, currentRecordingSample, 0);
+					outL[i] = 0;
+				}
+
+				if (inR != nullptr && track != nullptr) {
+					track->setSample(1, currentRecordingSample, inR[i] * track->getVolume());
+					outR[i] = inR[i] * track->getVolume();
+				}
+				else {
+					// track->getRecordingBuffer()->setSample(1, currentRecordingSample, 0);
+					outR[i] = 0;
+				}
+
+				currentRecordingSample = (currentRecordingSample + 1);
+				numRecordedSamples++;
+					
+			}
 		}
 
 		else {
 			for (int i = 0; i < buffersize; i++) {
-				outL[i] = 0;
-				outR[i] = 0;
+				
+				if (inL != nullptr && outL != nullptr) {
+					outL[i] = inL[i];
+				}
+				if (inR != nullptr && outR != nullptr) {
+					outR[i] = inR[i];
+				}
 			}
 		}
 	}

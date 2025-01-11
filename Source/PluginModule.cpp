@@ -109,10 +109,7 @@ void PluginModule::selectPlugin(String name) {
         buffersize = device->getCurrentBufferSizeSamples();
         plugin = PluginManager::getInstance()->apfm->createPluginInstance(pd, sampleRate, buffersize, error).release();
         plugin->prepareToPlay(sampleRate,buffersize);
-
-
     }
-
     
     pluginName = name;
     pluginValue->setValue(pluginName);
@@ -204,9 +201,6 @@ void PluginModule::process() {
     }
         */
     currentSample = (currentSample+1) % buffersize;
-    
-
-    
 }
 
 void PluginModule::eventReceived(Event *e) {
@@ -272,8 +266,7 @@ void PluginModule::setCurrentProgram(int program) {
     
     if (plugin != nullptr) {
         plugin->setCurrentProgram(currentProgram);
-    }
-    
+    }    
 }
 
 void PluginModule::setPluginState(juce::String state) {

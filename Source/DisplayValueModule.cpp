@@ -50,8 +50,8 @@ void DisplayValueModule::paint(juce::Graphics &g) {
     g.setFont(16);
     g.setColour(juce::Colours::white);
     g.drawText("Value :"+String(value), getWidth() / 3  , getHeight() / 3, getWidth() * 0.8, getHeight() / 3, juce::Justification::centred);
-    g.drawText("Vel :" + String(velocity), getWidth() / 3  , getHeight() / 4, getWidth() * 0.8, getHeight() / 3, juce::Justification::centred);
-    g.drawText("Note : "+String(note), getWidth() / 3  , getHeight() / 5, getWidth() * 0.8, getHeight() / 3, juce::Justification::centred);
+    // g.drawText("Vel :" + String(velocity), getWidth() / 3  , getHeight() / 4, getWidth() * 0.8, getHeight() / 3, juce::Justification::centred);
+    // g.drawText("Note : "+String(note), getWidth() / 3  , getHeight() / 5, getWidth() * 0.8, getHeight() / 3, juce::Justification::centred);
 }
 
 void DisplayValueModule::process() {

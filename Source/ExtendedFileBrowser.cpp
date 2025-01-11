@@ -116,14 +116,15 @@ void ExtendedFileBrowser::mouseDown(const juce::MouseEvent &event) {
         File* f = new File(model->getDirectoryList()->getFile(table->getSelectedRow()));
         if (f->exists()) {
             if (!f->isDirectory()) {
-    
-                if (f->getFileExtension().toLowerCase().contains("wav") || 
-                    f->getFileExtension().toLowerCase().contains("mp3") || 
-                    f->getFileExtension().toLowerCase().contains("aif") ||
-                    f->getFileExtension().toLowerCase().contains("ogg")) {
-                     Project::getInstance()->getDefaultSampler()->stop();
-                    Project::getInstance()->getDefaultSampler()->loadSample(*f);
-                    Project::getInstance()->getDefaultSampler()->play();
+                if (!f->getFileNameWithoutExtension().startsWith(".")) {
+                    if (f->getFileExtension().toLowerCase().contains("wav") || 
+                        f->getFileExtension().toLowerCase().contains("mp3") || 
+                        f->getFileExtension().toLowerCase().contains("aif") ||
+                        f->getFileExtension().toLowerCase().contains("ogg")) {
+                         Project::getInstance()->getDefaultSampler()->stop();
+                        Project::getInstance()->getDefaultSampler()->loadSample(*f);
+                        Project::getInstance()->getDefaultSampler()->play();
+                    }
                 }
             }
             

@@ -8,6 +8,10 @@
  ==============================================================================
  */
 
+#include <cstdlib>
+#include <chrono>
+#include <thread>
+
 #include "AndModule.h"
 #include "../JuceLibraryCode/JuceHeader.h"
 
@@ -15,7 +19,8 @@
 
 using juce::Justification;
 using juce::ImageCache;
-
+using namespace std::this_thread; // sleep_for, sleep_until
+using namespace std::chrono; // nanoseconds, system_clock, seconds
 //==============================================================================
 AndModule::AndModule()
 {
@@ -62,6 +67,8 @@ void AndModule::paint(juce::Graphics &g) {
 
 void AndModule::process() {
     
+    sleep_for(nanoseconds(rand() % 101));
+
     float a = 0;
     float b = 0;
     float c = 0;
