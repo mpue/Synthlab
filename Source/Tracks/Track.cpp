@@ -22,8 +22,7 @@ Track::Track(Type type, double sampleRate, MultiComponentDragger* dragger)
     resizer->setSize(getWidth(),5);
     constrainer->setMaxWidth(getWidth());
     resizer->setTopLeftPosition(0,70);
-    manager = Session::getInstance()->getAudioFormatManager();
-    
+    manager = Session::getInstance()->getAudioFormatManager();    
     this->type = type;
 	this->sampleRate = sampleRate;
     this->maxLength = Project::getInstance()->getTrackLength();
@@ -554,6 +553,8 @@ juce::Array<juce::PropertyComponent*>& Track::getProperties()
 
     typeProp = new juce::ChoicePropertyComponent(*typeValue, "Type", getTypeNames(), getTypeValues());
     properties.add(typeProp);
+
+    typeValue->setValue(getTypeValues().indexOf(type));
 
     return properties;
 }

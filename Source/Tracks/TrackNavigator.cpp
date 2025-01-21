@@ -295,7 +295,12 @@ void TrackNavigator::setRecording(bool recording) {
 			if (tracks.at(i)->isRecording()) {
 				
 				if (tracks.at(i)->getType() == Track::Type::MIDI) {
-					tracks.at(i)->addMidiRegion(Project::getInstance()->getSampleRate(), recordStart, 0);
+
+					MidiRegion* r = dynamic_cast<MidiRegion*>(tracks.at(i)->getCurrentRegion(recordStart));
+					if (r == nullptr) {
+						tracks.at(i)->addMidiRegion(Project::getInstance()->getSampleRate(), recordStart, 480000);
+					}
+					tracks.at(i)->getCurrentRegion(recordStart)->startRecording();
 				}
 				else if (tracks.at(i)->getType() == Track::Type::AUDIO) {
 					AudioRegion* r = dynamic_cast<AudioRegion*>(tracks.at(i)->getCurrentRegion(recordStart));
@@ -314,12 +319,30 @@ void TrackNavigator::setRecording(bool recording) {
 		recordStop = marker->getPosition() * Project::getInstance()->getSampleRate();
 		for (int i = 0; i < tracks.size(); i++) {
 			if (tracks.at(i)->isRecording()) {
-				// tracks.at(i)->addRegion(tracks.at(i)->getRecordingBuffer(),Project::getInstance()->getSampleRate(), recordStart, recordStop - recordStart);
-		
-				for (int j = 0; j < tracks.at(i)->getRegions().size(); j++) {					
-					AudioRegion* ar = dynamic_cast<AudioRegion*>(tracks.at(i)->getRegions().at(j));
-					ar->stopRecording();
+				if (tracks.at(i)->getType() == Track::Type::MIDI) {
+					for (int j = 0; j < tracks.at(i)->getRegions().size(); j++) {
+
+						MidiRegion* mr = dynamic_cast<MidiRegion*>(tracks.at(i)->getRegions().at(j));
+
+						if (mr != nullptr)	{
+							mr->stopRecording();
+						}
+
+					}
+
 				}
+				else if (tracks.at(i)->getType() == Track::Type::AUDIO) {
+					for (int j = 0; j < tracks.at(i)->getRegions().size(); j++) {					
+						
+						AudioRegion* ar = dynamic_cast<AudioRegion*>(tracks.at(i)->getRegions().at(j));
+
+						if (ar != nullptr) {
+							ar->stopRecording();
+						}
+					}
+				}
+
+		
 
 			}
 		}
@@ -688,7 +711,6 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 							else {
 								tracks.at(i)->getRegions().at(j)->setSelected(false);
 							}
-
 						}
 						sendChangeMessage();
 					}

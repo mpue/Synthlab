@@ -28,8 +28,8 @@ public:
     void paint(juce::Graphics& g) override;
     void setDeviceManager(juce::AudioDeviceManager* manager);
     virtual void process() override;
-
     virtual void configurePins() override;
+    void eventReceived(Event* e) override;
 
     virtual juce::String getCategory() override {
         return "Input / Output";

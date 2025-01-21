@@ -17,7 +17,8 @@ MidiRegion::MidiRegion(long startSample, long sampleLength, double sampleRate) {
     this->sampleOffset = startSample;
     this->name = "new";
     this->zoom = 20;
-    double length = this->midiThumbnail->getTotalLength();
+    this->numSamples = sampleLength;
+    double length = sampleLength / sampleRate; // this->midiThumbnail->getTotalLength();
     setSize(length * this->zoom, Project::DEFAULT_TRACK_HEIGHT);
     this->offset = 0;
     this->sequence = new MidiMessageSequence();
@@ -34,7 +35,7 @@ MidiRegion::MidiRegion(MidiBuffer* buffer, double sampleRate)
     setSize(length * this->zoom, Project::DEFAULT_TRACK_HEIGHT);
     this->offset = 0;
     this->sequence = new MidiMessageSequence();
-
+    
 }
 
 MidiRegion::~MidiRegion() {
@@ -48,10 +49,10 @@ void MidiRegion::paint (Graphics& g) {
     Rectangle<int> b = *this->thumbnailBounds;
     
     if (dragger->isSelected(this)) {
-        g.setColour(Colours::steelblue.brighter());
+        g.setColour(Colours::orange.brighter());
     }
     else {
-        g.setColour(Colours::steelblue);
+        g.setColour(Colours::orange.brighter());
     }
     
     g.fillRoundedRectangle(b.getX(),b.getY(),b.getWidth(),b.getHeight(),10);
@@ -231,17 +232,19 @@ void MidiRegion::clear() {
 }
 
 void MidiRegion::addMessage(MidiMessage* m, double time, int sampleNum) {
-    Logger::getCurrentLogger()->writeToLog("Adding message at time "+String(time)+ " "+ m->getDescription());
+    Logger::getCurrentLogger()->writeToLog("Adding message at time "+String(sampleNum)+ " "+ m->getDescription());
     // midiMessages.insert(std::make_pair(timeElapsed,m));
     //sequence->addEvent(*m);
 
     // mSamples = sampleNum;
-    m->setTimeStamp(time);
+    m->setTimeStamp(sampleNum);
     // midiBuffer->addEvent(*m, sampleNum);
     
     midiMessageList.push_back(m);
     numSamples = sampleNum;
-    this->midiThumbnail->addMessage(time  * Project::getInstance()->getSampleRate(),m);
+    this->midiThumbnail->addMessage(sampleNum,m);
+
+    repaint();
 }
 
 MidiMessage* MidiRegion::getMessage(double time, int sampleNum) {

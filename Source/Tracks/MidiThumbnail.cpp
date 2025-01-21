@@ -38,7 +38,7 @@ void MidiThumbnail::paint (Graphics& g)
     g.setColour (Colours::grey);
     g.drawRect (getLocalBounds(), 1);   // draw an outline around the component
 
-    g.setColour (Colours::lightblue);
+    g.setColour (Colours::orange);
     g.setFont (14.0f);
     g.drawText ("MidiThumbnail", getLocalBounds(),
                 Justification::centred, true);   // draw some placeholder text
@@ -63,7 +63,7 @@ void MidiThumbnail::drawChannels (Graphics& g, const Rectangle<int>& area, doubl
     
     MidiBuffer::Iterator* iterator = new MidiBuffer::Iterator(*midiBuffer);
    
-    g.setColour(Colours::white);
+    g.setColour(Colours::black);
     
     int notelen = 0;
     int start = 0;
@@ -71,9 +71,10 @@ void MidiThumbnail::drawChannels (Graphics& g, const Rectangle<int>& area, doubl
     
     
     while(iterator->getNextEvent(message, sampleNum)) {
+
         if (message.isNoteOn()) {
-            notelen = 0;
             start = sampleNum;
+            notelen = 0;
         }
         else if (message.isNoteOff()) {
             end = sampleNum;

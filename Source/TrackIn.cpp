@@ -80,18 +80,40 @@ void TrackIn::configurePins() {
 	p3->direction = Pin::Direction::IN;
 	p3->setName("R");
 
+	Pin* p5 = new Pin(Pin::Type::EVENT);
+	p5->direction = Pin::Direction::IN;
+	p5->setName("G");
 
 	addPin(Pin::Direction::OUT, p1);
 	addPin(Pin::Direction::OUT, p2);
 	addPin(Pin::Direction::IN, p3);
 	addPin(Pin::Direction::IN, p4);
+	addPin(Pin::Direction::IN, p5);
 
+	p5->listeners.push_back(this);
+}
+
+void TrackIn::eventReceived(Event* e)
+{
+	if (trackType == Track::Type::MIDI) {
+		MidiRegion* r = dynamic_cast<MidiRegion*>(track->getCurrentRegion(track->getSamplePosition()));
+		if (r != nullptr) {
+			MidiMessage* m = new MidiMessage(e->getMessage(), track->getSamplePosition());
+			r->addMessage(m, Time::getMillisecondCounterHiRes() / 1000, track->getSamplePosition());
+		}
+	}
 }
 
 void TrackIn::paint(juce::Graphics& g) {
 	Module::paint(g);
-	g.drawImageAt(ImageCache::getFromMemory(BinaryData::micro_png, BinaryData::micro_pngSize), 25, 40);
+	if (trackType == Track::Type::AUDIO) {
+		g.drawImageAt(ImageCache::getFromMemory(BinaryData::micro_png, BinaryData::micro_pngSize), 25, 40);
+	}
+	else if (trackType == Track::Type::MIDI) {
+		g.drawImageAt(ImageCache::getFromMemory(BinaryData::midiin_png, BinaryData::midiin_pngSize), 25, 40);
+	}
 }
+
 
 void TrackIn::process() {
 
@@ -175,10 +197,6 @@ void TrackIn::process() {
 			}
 		}
 	}
-	else if (trackType == Track::Type::MIDI) {
-
-	}
-
 
 }
 
@@ -199,7 +217,7 @@ Track* TrackIn::getTrack()
 void TrackIn::setTrack(Track* t)
 {
 	this->track = t;
-	
+	trackType = t->getType();	
 }
 
 int TrackIn::getChannelIndex() {

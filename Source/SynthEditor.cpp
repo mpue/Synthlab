@@ -1543,6 +1543,22 @@ Track* SynthEditor::createAudioTrack()
 	return t;
 }
 
+Track* SynthEditor::createMIDITrack()
+{
+	Point<int> pos = Point<int>(10, 10);
+	AddModuleAction* am = new AddModuleAction(this, pos, 48);
+	Project::getInstance()->getUndoManager()->beginNewTransaction();
+	Project::getInstance()->getUndoManager()->perform(am);
+
+	TrackIn* ti = dynamic_cast<TrackIn*>(am->getModule());
+	
+	Track* t = navigator->addTrack(Track::Type::MIDI, 48000);
+	t->setName("MIDI " + String(navigator->getTracks().size() + 1));
+	ti->setTrack(t);	
+
+	return t;
+}
+
 void SynthEditor::setTab(juce::TabbedComponent* t) {
 	this->tab = t;
 }
