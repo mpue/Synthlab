@@ -11,39 +11,42 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 
 class Event {
-  
+
 public:
-    
-    enum Type {
-        GATE,
-        NOTE,
-        CONTROLLER,
-        PITCH,
-        CLOCK,
-        CLOCK_START,
-        CLOCK_STOP
-    };
-    
-    Event();
-    Event(Event* e);
-    Event(juce::String name, Type type);
-    ~Event();
-    
-  juce::String getName();
-    Type getType();
-    int getValue();
-    void setValue(int value);
-    int getNote();
-    void setNote(int note);
-    int getNumber();
-    void setNumber(int num);
+
+	enum Type {
+		GATE,
+		NOTE,
+		CONTROLLER,
+		PITCH,
+		CLOCK,
+		CLOCK_START,
+		CLOCK_STOP
+	};
+
+	Event();
+	Event(Event* e);
+	Event(juce::String name, Type type);
+	~Event();
+
+	juce::String getName();
+	void setType(Type type);
+	Type getType();
+	int getValue();
+	void setValue(int value);
+	int getNote();
+	void setNote(int note);
+	int getNumber();
+	void setNumber(int num);
+	void setMessage(MidiMessage message);
+	MidiMessage getMessage();
 private:
-    
-    Type type;
-    juce::String name;
-    int number = 1;
-    int value = 0;
-    int note = 0;
+	MidiMessage message;
+	Type type;
+	juce::String name;
+	int number = 1;
+	int value = 0;
+	int note = 0;
 };
 
 

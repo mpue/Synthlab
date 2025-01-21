@@ -25,23 +25,31 @@ public:
     void handleIncomingMidiMessage (juce::MidiInput* source, const juce::MidiMessage& message) override;
     void timerCallback() override;
     
-    bool isRecording();
+    bool isRecording() const;
     void startRecording();
     void stopRecording();
     
-    bool isPlaying();
+    bool isPlaying() const;
     void startPlaying();
     void stopPlaying();
+
+    float getTempo();
+    void setTempo(float tempo);
 
     void setDeviceManager(juce::AudioDeviceManager* manager);
     void addListener(RecordListener* listener);
     void clear();
     
+    juce::MidiMessage getCurrentMessage();
     juce::MidiFile* getFile();
     std::vector<juce::MidiMessage> getMessages();
-    
+    MidiBuffer* getBuffer() {
+        return midiBuffer;
+    };
+
 private:
-    
+
+    float tempo; // Standardtempo in BPM
     MidiTools::Logger* logger;
     bool recording = false;
     bool playing = false;

@@ -98,6 +98,8 @@ EditorComponent::~EditorComponent()
     delete editorView;
     delete mixerPanel;
     delete mixerView;    
+    delete navigator;
+    delete trackView;
 }
 
 void EditorComponent::paint (Graphics& g)

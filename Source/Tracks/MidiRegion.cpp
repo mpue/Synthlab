@@ -23,6 +23,20 @@ MidiRegion::MidiRegion(long startSample, long sampleLength, double sampleRate) {
     this->sequence = new MidiMessageSequence();
 }
 
+MidiRegion::MidiRegion(MidiBuffer* buffer, double sampleRate)
+{
+    this->midiBuffer = buffer;
+    this->midiThumbnail = new MidiThumbnail(sampleRate);
+    this->sampleRate = sampleRate;
+    this->name = "copy";
+    this->zoom = 20;
+    double length = this->midiThumbnail->getTotalLength();
+    setSize(length * this->zoom, Project::DEFAULT_TRACK_HEIGHT);
+    this->offset = 0;
+    this->sequence = new MidiMessageSequence();
+
+}
+
 MidiRegion::~MidiRegion() {
     delete midiThumbnail;
     delete midiBuffer;

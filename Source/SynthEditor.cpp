@@ -1456,7 +1456,7 @@ void SynthEditor::configureAudioModule(Module* m, ChangeBroadcaster* broadcaster
 
 }
 
-Track* SynthEditor::createTrack()
+Track* SynthEditor::createAudioTrack()
 {
 	Point<int> pos = Point<int>(10, 10);
 	AddModuleAction* am = new AddModuleAction(this, pos, 48);
@@ -1466,7 +1466,7 @@ Track* SynthEditor::createTrack()
 	TrackIn* ti = dynamic_cast<TrackIn*>(am->getModule());
 
 	Track* t = navigator->addTrack(Track::Type::AUDIO, 48000);
-	t->setName("Audio " + String(navigator->getTracks().size() + 1));
+	t->setName("Audio " + String(navigator->getTracks().size() + 1));	
 	ti->setTrack(t);
 
 	Module* m = getModule();

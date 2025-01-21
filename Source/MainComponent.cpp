@@ -27,6 +27,7 @@
 #include "PitchBendModule.h"
 #include "ModuleUtils.h"
 #include "MidiClock.h"
+#include "MidiRecorderModule.h"
 
 #ifndef M_PI
 #define M_PI       3.14159265358979323846 
@@ -181,6 +182,7 @@ MainComponent::~MainComponent()
 		delete defaultSampler;
 	}
 
+	stopTimer();
 
 	PrefabFactory::getInstance()->destroy();
 	Project::getInstance()->destroy();
@@ -727,6 +729,7 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		alignMenu.addCommandItem(this, SynthEditor::CommandIds::ALIGN_Y);
 
 		menu.addItem(8, "Add Audio Track", true, false, nullptr);
+		menu.addItem(8, "Add MIDI Track", true, false, nullptr);
 
 		menu.addSubMenu("Align", alignMenu);
 	}
@@ -764,7 +767,7 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 			editorView->OpenTrackView();
 			editorView->getNavigator()->addChangeListener(this);
 		}
-		editor->createTrack();
+		editor->createAudioTrack();
 		editor->repaint();
 	}
 
@@ -1040,6 +1043,16 @@ void MainComponent::buttonClicked(Button* b)
 }
 
 void MainComponent::handleIncomingMidiMessage(juce::MidiInput* source, const juce::MidiMessage& message) {
+
+	for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
+		
+		MidiRecorderModule* recorder = dynamic_cast<MidiRecorderModule*>(editor->getModule()->getModules()->at(i));
+
+		if (recorder != nullptr) {
+			recorder->handleIncomingMidiMessage(source, message);
+		}
+
+	}
 
 	if (message.isNoteOn() && message.getNoteNumber() > 7) {
 		for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {

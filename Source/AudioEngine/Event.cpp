@@ -19,6 +19,7 @@ Event::Event(Event* e){
     this->value = e->getValue();
     this->note = e->getNote();
     this->number = e->getNumber();
+    this->message = e->getMessage();
 }
 
 Event::Event(String name, Type type) {
@@ -32,6 +33,11 @@ Event::~Event() {
 
 String Event::getName() {
     return name;
+}
+
+void Event::setType(Type type)
+{
+    this->type = type;
 }
 
 Event::Type Event::getType() {
@@ -56,6 +62,16 @@ int Event::getNote(){
 
 void Event::setNumber(int num) {
     this->number = num;
+}
+
+void Event::setMessage(MidiMessage message)
+{   
+    this->message = message;
+}
+
+MidiMessage Event::getMessage()
+{
+    return message;
 }
 
 int Event::getNumber() {

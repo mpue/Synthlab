@@ -58,6 +58,8 @@ TrackNavigator::~TrackNavigator()
 		delete* it;
 	}
 	delete dragger;
+	delete marker;
+
 }
 
 void TrackNavigator::paint(Graphics& g)
@@ -283,6 +285,8 @@ bool TrackNavigator::isPlaying() {
 }
 
 void TrackNavigator::setRecording(bool recording) {
+	
+
 	if (recording) {
 		startTimer(50);
 		Session::getInstance()->setRecordingStartTime();

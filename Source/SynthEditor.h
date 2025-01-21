@@ -56,7 +56,7 @@ public:
     Module* loadModule();
     void saveModule(Module* m);
     void configureAudioModule(Module *m, ChangeBroadcaster* broadcaster);
-    Track* createTrack();
+    Track* createAudioTrack();
     // audio processing
 
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate);

@@ -58,6 +58,8 @@
 #include "TextInputModule.h"
 #include "CompareModule.h"
 #include "TrackIn.h"
+#include "MidiRecorderModule.h"
+
 
 using juce::Image;
 
@@ -245,7 +247,11 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
             m = ti;
         }
     }
-    
+    else if (prefabs[id].getName() == "Midi Recorder") {
+		m = new MidiRecorderModule();
+	}
+
+
     if (m != nullptr) {
         m->setIndex(lastModuleIndex);
         m->setId(id);

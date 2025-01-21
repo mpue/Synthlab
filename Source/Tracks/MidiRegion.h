@@ -25,6 +25,8 @@ class MidiRegion : public Region {
 public:
     
     MidiRegion(long startSample, long sampleLength, double sampleRate);
+    MidiRegion(MidiBuffer* buffer, double sampleRate);
+    
     virtual ~MidiRegion();
     
     virtual void paint (Graphics&) override;

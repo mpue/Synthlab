@@ -81,7 +81,7 @@ void MidiClock::timerCallback() {
 
 void MidiClock::clock(juce::MidiMessage message) {
     Event* e = new Event("clock",Event::Type::CLOCK);
-    double tempo = 60.0f / (message.getTempoSecondsPerQuarterNote() * 4);
+    double tempo = 60.0f / (message.getTempoSecondsPerQuarterNote() * 16);
     e->setValue(tempo);
     for (int i = 0; i < pins.at(1)->getConnections().size();i++) {
         pins.at(1)->getConnections().at(i)->sendEvent(new Event(e));
@@ -150,7 +150,7 @@ void MidiClock::setChannel(int channel) {
 void MidiClock::setInternal(bool isInternal) {
     if (isInternal) {
         
-        float t = ((60.0f/tempo) * 1000) / 4.0f;
+        float t = ((60.0f/tempo) * 1000) / 16.0f;
         
         if (!running){
             startTimer(t);
@@ -178,6 +178,7 @@ bool MidiClock::isInternal() {
 void MidiClock::setTempo(float tempo) {
     this->tempo = tempo;
     this->tempoValue->setValue(tempo);
+    this->setInternal(tempo);
 }
 
 float MidiClock::getTempo() {

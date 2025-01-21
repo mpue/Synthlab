@@ -205,6 +205,10 @@ void PluginModule::process() {
 
 void PluginModule::eventReceived(Event *e) {
     
+    stringstream ss;
+    ss << "Received event in plugin module: " << e->getMessage().getTimeStamp();
+    Logger::getCurrentLogger()->writeToLog(ss.str());
+        
     if (e->getType() == Event::Type::GATE) {
     
         float velocity = (1.0/127) * e->getValue();

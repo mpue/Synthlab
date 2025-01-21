@@ -18,7 +18,7 @@ using juce::MidiMessageSequence;
 
 MidiRecorder::MidiRecorder(MidiTools::Logger* logger) {
     this->logger = logger;
-
+    this->midiBuffer = new juce::MidiBuffer();
 }
 
 MidiRecorder::~MidiRecorder() {
@@ -26,40 +26,43 @@ MidiRecorder::~MidiRecorder() {
 }
 
 void MidiRecorder::handleIncomingMidiMessage(juce::MidiInput *source, const juce::MidiMessage &message) {
-    //Logger->log(message.getDescription());
-
-    MidiMessage m = message.withTimeStamp(Time::getMillisecondCounterHiRes() * 0.001 - startTime);
-    
+    //Logger->log(message.getDescription());       
     if (recording) {
-        midiMessages.push_back(MidiMessage(m));
+        MidiMessage m = message.withTimeStamp(Time::getMillisecondCounterHiRes() * 0.001 - startTime);
+        midiBuffer->addEvent(m, m.getTimeStamp());
+        for (int i = 0; i < listeners.size();i++) {
+            listeners.at(i)->incomingMessage(&m);
+        }
+
     }
-    deviceManager->getDefaultMidiOutput()->sendMessageNow(message);
+    // deviceManager->getDefaultMidiOutput()->sendMessageNow(message);
     
-    for (int i = 0; i < listeners.size();i++) {
-        listeners.at(i)->incomingMessage(&m);
-    }
     
 }
 
 void MidiRecorder::timerCallback() {
-    
-    
+
+        
+
+    /*
     if (midiMessages.size() > 0 && midiMessages.at(currentMessageIndex).getTimeStamp() <= Time::getMillisecondCounterHiRes() * 0.001 - startTime) {
-        deviceManager->getDefaultMidiOutput()->sendMessageNow(midiMessages.at(currentMessageIndex));
+        // deviceManager->getDefaultMidiOutput()->sendMessageNow(midiMessages.at(currentMessageIndex));
         
         if (currentMessageIndex < midiMessages.size() - 1) {
             currentMessageIndex++;
+            Logger::getCurrentLogger()->writeToLog("Playing message "+juce::String(currentMessageIndex));
         }
         else {
             currentMessageIndex = 0;
             stopPlaying();
-        }
-    
+        }    
     }
-
+    */
 }
 
-bool MidiRecorder::isRecording() {
+
+
+bool MidiRecorder::isRecording() const{
     return recording;
 }
 
@@ -72,6 +75,7 @@ void MidiRecorder::stopRecording() {
 }
 
 void MidiRecorder::startRecording(){
+    midiBuffer->clear();
     midiMessages.clear();
     recording = true;
     startTime = Time::getMillisecondCounterHiRes() * 0.001;
@@ -81,12 +85,12 @@ void MidiRecorder::startRecording(){
     notifyListeners(&change);
 }
 
-bool MidiRecorder::isPlaying(){
+bool MidiRecorder::isPlaying() const {
     return playing;
 }
 
 void MidiRecorder::stopPlaying(){
-    deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage::allNotesOff(1));
+    // deviceManager->getDefaultMidiOutput()->sendMessageNow(MidiMessage::allNotesOff(1));
     stopTimer();
     playing = false;
     
@@ -96,12 +100,24 @@ void MidiRecorder::stopPlaying(){
     notifyListeners(&change);
 }
 
+float MidiRecorder::getTempo()
+{
+    return tempo;
+}
+
+void MidiRecorder::setTempo(float tempo) 
+{
+    this->tempo = tempo;
+}
+
 void MidiRecorder::startPlaying(){
     playing = true;
     startTime = Time::getMillisecondCounterHiRes() * 0.001;
-    startTimer(120/(60*64));
+    // startTimer(120/(60*64));
     currentMessageIndex = 0;
     
+
+
     RecordListener::StateChange change;
     change.newState = RecordListener::PLAYING_STARTED;
     
@@ -126,6 +142,13 @@ void MidiRecorder::notifyListeners(RecordListener::StateChange *change) {
 void MidiRecorder::clear() {
     midiMessages.clear();
 }
+
+juce::MidiMessage MidiRecorder::getCurrentMessage()
+{
+    return midiMessages.at(currentMessageIndex);
+}
+
+
 
 MidiFile* MidiRecorder::getFile() {
     MidiFile* midiFile = new MidiFile();

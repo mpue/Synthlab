@@ -51,6 +51,8 @@ Track::~Track()
     delete nameValue;
     delete recordingListener;
     delete recordingValue;
+    delete typeListener;
+    delete typeValue;
 }
 
 void Track::setName(juce::String name ) {
@@ -63,6 +65,11 @@ void Track::clearSelection() {
     for (std::vector<Region*>::iterator it = regions.begin(); it != regions.end(); ++it) {
         (*it)->setSelected(false);
     }
+}
+
+MidiBuffer* Track::getMidiBuffer()
+{
+    return this->midiBuffer;
 }
 
 void Track::toggleLoopSelection() {
@@ -295,6 +302,38 @@ void Track::addMidiRegion(double sampleRate, long samplePosition,long regionLeng
     repaint();
 }
 
+void Track::addMidiRegion(juce::MidiBuffer* source, double sampleRate)
+{
+    MidiRegion* region = new MidiRegion(source, (long)sampleRate);
+	region->setDragger(dragger);
+	Rectangle<int>* bounds = new Rectangle<int>(0, 0, region->getThumbnail()->getTotalLength() * 20, getHeight());
+	region->setBounds(markerPosition, 0, region->getWidth(), getHeight());
+	region->setThumbnailBounds(bounds);
+	region->setLoopCount(0);
+	
+	if (regions.size() == 0) {
+		setName(region->getName());
+	}
+	
+	this->regions.push_back(region);
+	this->currentRegion = region;
+	region->addChangeListener(this);
+	
+	this->currentRegion->toFront(true);
+	addAndMakeVisible(region);
+	
+	clearSelection();
+	region->setSelected(true);
+	
+	region->setSampleOffset(0,false,false);
+	region->setOffset(0);
+	
+	if (zoom > 0)
+		region->setZoom(zoom);
+	
+	repaint();
+}
+
 void Track::addRegion(AudioSampleBuffer* source, double sampleRate, long samplePosition,long regionLength) {
     
     AudioRegion* region = new AudioRegion(source, *manager, samplePosition, regionLength, sampleRate);
@@ -513,6 +552,9 @@ juce::Array<juce::PropertyComponent*>& Track::getProperties()
     recordingProp = new juce::BooleanPropertyComponent(*recordingValue, "recording", "Recording");
     properties.add(recordingProp);
 
+    typeProp = new juce::ChoicePropertyComponent(*typeValue, "Type", getTypeNames(), getTypeValues());
+    properties.add(typeProp);
+
     return properties;
 }
 
@@ -523,6 +565,9 @@ void Track::createProperties()
 
     recordingValue = new Value();
     recordingListener = new RecordingListener(*recordingValue, this);
+
+    typeValue = new Value();
+    typeListener = new TypeListener(*typeValue, this);
 }
 
 void Track::setSample(int channel, int sampleNum, float sample)

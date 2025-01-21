@@ -424,7 +424,7 @@ int SequenceEditor::useTimeSlice() {
     
     int delta = stop - start;
     
-    return (((float)60 / tempo) * 1000.0f) - delta;
+    return ((60.0f / tempo) * 1000.0f - delta) / 16;
 }
 
 void SequenceEditor::setRunning(bool running) {

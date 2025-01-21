@@ -57,6 +57,7 @@ public:
 	Region* addRegion(String refId, File file, double sampleRate, long samplePosition);
     void addRegion(String refId, File file, double sampleRate);
     void addMidiRegion(double sampleRate, long samplePosition,long regionLength);
+    void addMidiRegion(juce::MidiBuffer* source, double sampleRate);
     void addRegion(AudioSampleBuffer* source, double sampleRate, long samplePosition, long regionLength);
     void addRegion(String refId, File file, double sampleRate, long samplePosition, long regionLength);
         
@@ -75,6 +76,8 @@ public:
     void toggleLoopSelection();
     void clearSelection();
     
+    MidiBuffer* getMidiBuffer();
+
 	AudioSampleBuffer* getBuffer();
   	AudioSampleBuffer* getRecordingBuffer();
     
@@ -192,6 +195,30 @@ public:
     void setSample(int channel, int sampleNum, float sample);
 
 private:
+
+    juce::StringArray getTypeNames() const
+    {
+        return { "AUDIO", "MIDI" };
+    }
+
+    juce::Array<var> getTypeValues() const
+    {
+        return { Type::AUDIO, Type::MIDI };
+    }
+
+    struct TypeListener : juce::Value::Listener
+    {
+        TypeListener(juce::Value& v, Track* t) : track(t), value(v) { value.addListener(this); }
+        ~TypeListener() {}  // no need to remove the listener
+
+        void valueChanged(juce::Value& value) override {
+            track->setType((Track::Type)value.toString().getIntValue());
+        }
+        Track* track;
+        juce::Value value;
+    };
+
+
     struct NameListener : juce::Value::Listener
     {
         NameListener(juce::Value& v, Track* t) : track(t), value(v) { value.addListener(this); }
@@ -267,6 +294,10 @@ private:
     NameListener* nameListener;
     juce::Value* nameValue;
     juce::PropertyComponent* nameProp;
+
+    TypeListener* typeListener;
+    juce::Value* typeValue;
+    juce::PropertyComponent* typeProp;
 
     RecordingListener* recordingListener;
     juce::Value* recordingValue;
