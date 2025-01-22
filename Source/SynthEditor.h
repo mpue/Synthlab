@@ -57,7 +57,10 @@ public:
     void saveModule(Module* m);
     void configureAudioModule(Module *m, ChangeBroadcaster* broadcaster);
     Track* createAudioTrack();
+    void ConnectAudioOut(AudioOut*& audioOut, Module* m, const juce::Point<int>& pos, int leftSourcePin, int rightSourcePin);
+    
     Track* createMIDITrack();
+    void createVirtualInstrumentTrack();
     // audio processing
 
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate);

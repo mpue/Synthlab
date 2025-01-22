@@ -31,7 +31,9 @@ class TrackNavigator : public Component,
 	public Timer,
 	public KeyListener,
 	public DragAndDropTarget,
-	public ScrollBar::Listener
+	public ScrollBar::Listener,
+	public EventListener
+
 {
 public:
 	TrackNavigator(AudioDeviceManager* manager, Viewport* view, PropertyView* propertyView);
@@ -43,6 +45,8 @@ public:
 	WaveSelector* getSelector();
 
 	void clearTracks();
+
+	void eventReceived(Event* e) override;
 
 	Track* addTrack(TrackConfig* tc);
 	void addTrack(Track* t);
@@ -86,6 +90,8 @@ public:
 
 	void setConfiguration(ValueTree* config);
 	void scrollBarMoved(ScrollBar* scrollBarThatHasMoved, double newRangeStart) override;
+
+	
 
 private:
 

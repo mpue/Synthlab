@@ -730,6 +730,7 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 
 		menu.addItem(8, "Add Audio Track", true, false, nullptr);
 		menu.addItem(9, "Add MIDI Track", true, false, nullptr);
+		menu.addItem(10, "Add Instrument Track", true, false, nullptr);
 
 		menu.addSubMenu("Align", alignMenu);
 	}
@@ -776,6 +777,14 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 			editorView->getNavigator()->addChangeListener(this);
 		}
 		editor->createMIDITrack();
+		editor->repaint();
+	}
+	else if (menuItemID == 10) {
+		if (editorView->getNavigator() == nullptr) {
+			editorView->OpenTrackView();
+			editorView->getNavigator()->addChangeListener(this);
+		}
+		editor->createVirtualInstrumentTrack();
 		editor->repaint();
 	}
 

@@ -72,7 +72,7 @@ void MidiGate::gateOn(int velocity, int note) {
     e->setValue(velocity);
     e->setNote(note);
 
-    MidiMessage m = MidiMessage::noteOn(1,note,(uint8)velocity);
+    MidiMessage m = MidiMessage::noteOn(channel,note,(uint8)velocity);
     e->setMessage(m);
 
     for (int i = 0; i < pins.at(1)->getConnections().size();i++) {
@@ -89,7 +89,7 @@ void MidiGate::gateOff(int note) {
     e->setValue(0);
     e->setNote(note);
 
-    MidiMessage m = MidiMessage::noteOff(1, note);
+    MidiMessage m = MidiMessage::noteOff(channel, note);
     e->setMessage(m);
 
     for (int i = 0; i < pins.at(1)->getConnections().size();i++) {

@@ -50,7 +50,7 @@ public:
     virtual void startRecording() override;
     
     void clear();
-    MidiMessage* getMessage(double time, int sampleNum);
+    MidiMessage* getMessage(int sampleNum);
     void addMessage(MidiMessage* m, double time, int sampleNum);
     
     // component dragger used to drag and drop regions

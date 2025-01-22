@@ -396,6 +396,8 @@
                 file="Source/MultiComponentDragger.h"/>
           <FILE id="forMne" name="Pin.cpp" compile="1" resource="0" file="Source/Pin.cpp"/>
           <FILE id="NJudCk" name="Pin.h" compile="0" resource="0" file="Source/Pin.h"/>
+          <FILE id="sndREu" name="PluginSelectorDialog.h" compile="0" resource="0"
+                file="Source/PluginSelectorDialog.h"/>
           <FILE id="wdEhY6" name="PropertyView.cpp" compile="1" resource="0"
                 file="Source/PropertyView.cpp"/>
           <FILE id="yeeY5O" name="PropertyView.h" compile="0" resource="0" file="Source/PropertyView.h"/>

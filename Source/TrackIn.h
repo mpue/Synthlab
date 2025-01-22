@@ -104,6 +104,9 @@ private:
     int currentRecordingSample = 0;
     int numRecordedSamples = 0;
 
+    int currentPlaybackSample = 0;
+    int numPlayedSamples = 0;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TrackIn)
 };
 

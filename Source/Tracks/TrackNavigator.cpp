@@ -74,6 +74,10 @@ void TrackNavigator::clearTracks() {
 	tracks.clear();
 }
 
+void TrackNavigator::eventReceived(Event* e)
+{
+}
+
 float TrackNavigator::getZoom()
 {
 	return this->zoom;
@@ -424,6 +428,8 @@ Track* TrackNavigator::addTrack(TrackConfig* tc) {
 }
 
 void TrackNavigator::addTrack(Track* track) {
+
+	track->setNavigator(this);
 
 	// deselect all tracks before adding a new one
 

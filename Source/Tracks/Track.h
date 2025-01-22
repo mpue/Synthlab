@@ -18,11 +18,14 @@
 #include <vector>
 #include "MultiComponentDragger.h"
 
+
 //==============================================================================
 /*
 */
 
 using namespace std;
+
+class TrackNavigator;
 
 class Track : public Component, public ChangeBroadcaster, public ChangeListener
 {
@@ -37,6 +40,9 @@ public:
     Track(Type type,double sampleRate, MultiComponentDragger* dragger);
     ~Track();
     
+
+    void AddEventListener(EventListener* listener);
+    void notifyListeners(Event* e);
 	void setZoom(float zoom);
 	String getName();
     void setName(String name);
@@ -81,6 +87,14 @@ public:
 	AudioSampleBuffer* getBuffer();
   	AudioSampleBuffer* getRecordingBuffer();
     
+    void setNavigator(TrackNavigator* navigator) {
+        this->navigator = navigator;
+    }
+
+    TrackNavigator* getNavigator() {
+		return this->navigator;
+	}
+
     void updateMagnitude(int sample, int buffersize, float gainLeft, float gainRight);
 
     Region* getCurrentRegion(long sample);
@@ -298,13 +312,15 @@ private:
     TypeListener* typeListener;
     juce::Value* typeValue;
     juce::PropertyComponent* typeProp;
-
+    std::vector<EventListener*> listeners;
     RecordingListener* recordingListener;
     juce::Value* recordingValue;
     juce::PropertyComponent* recordingProp;
 
     juce::Array<juce::PropertyComponent*> properties;
   
+    TrackNavigator* navigator;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Track)
 };
 
