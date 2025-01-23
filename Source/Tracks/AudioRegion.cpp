@@ -309,7 +309,7 @@ void AudioRegion::paint (Graphics& g)
     g.fillRoundedRectangle(b.getX(),b.getY(),effectiveWidth,b.getHeight(),10);
     g.setColour(Colours::white);
     
-    const double audioLength(this->thumbnail->getTotalLength());
+    double audioLength = this->thumbnail->getTotalLength();
     this->thumbnail->drawChannels(g, b, 0.0, audioLength, 1.0f);
     
     g.setColour(Colours::steelblue.darker());    
@@ -327,7 +327,7 @@ void AudioRegion::paint (Graphics& g)
             g.fillRoundedRectangle(b.getX() + i * effectiveWidth / (loopCount + 1) ,b.getY(),effectiveWidth,b.getHeight(),10);
             g.setColour(Colours::grey);
 
-            const double audioLength(this->thumbnail->getTotalLength());
+            audioLength = this->thumbnail->getTotalLength();
             this->thumbnail->drawChannels(g, loopBounds,0.0,audioLength, 1.0f);
         }
     }
@@ -493,8 +493,7 @@ void AudioRegion::resizeAudio(int length)
     temp->copyFrom(0, 0, audioBuffer->getReadPointer(0), audioBuffer->getNumSamples());
     temp->copyFrom(1, 0, audioBuffer->getReadPointer(1), audioBuffer->getNumSamples());
 
-    AudioSampleBuffer* tempToBeDeleted = audioBuffer;
-
     audioBuffer->clear();
     audioBuffer = temp;    
+
 }

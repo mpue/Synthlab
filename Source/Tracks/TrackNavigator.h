@@ -11,16 +11,19 @@
 #ifndef WAVENAVIGATOR_H_INCLUDED
 #define WAVENAVIGATOR_H_INCLUDED
 
+#include <vector>
+#include <map>
+
 #include "../JuceLibraryCode/JuceHeader.h"
+
 #include "WaveSelector.h"
 #include "PositionMarker.h"
 #include "Track.h"
 #include "DragConstrainer.h"
 #include "MultiComponentDragger.h"
 #include "../Project/TrackConfig.h"
-#include <vector>
-#include <map>
 #include "TimeLine.h"
+#include "UITools.h"
 
 //==============================================================================
 /*

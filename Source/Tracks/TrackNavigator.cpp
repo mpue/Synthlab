@@ -376,16 +376,14 @@ StringArray TrackNavigator::getTrackList()
 
 Track* TrackNavigator::addTrack(TrackConfig* tc) {
 
-	Track::Type type;
+	Track* track = nullptr;
 
-	if (tc->getType() == "audio") {
-		type = Track::Type::AUDIO;
+	if (tc->getType() == "audio") {	
+		track = new Track(Track::Type::AUDIO, Project::getInstance()->getSampleRate(), this->dragger);
 	}
-	else if (tc->getType() == "midi") {
-		type = Track::Type::MIDI;
+	else {
+		track = new Track(Track::Type::MIDI, Project::getInstance()->getSampleRate(), this->dragger);
 	}
-
-	Track* track = new Track(type, Project::getInstance()->getSampleRate(), this->dragger);
 
 	track->setName(tc->getName());
 	track->setMidiOutputDevice(tc->getMidiInputDevice());
@@ -537,7 +535,7 @@ Track* TrackNavigator::getCurrentTrack()
 
 void TrackNavigator::resized()
 {
-	int numOfTracks = tracks.size();
+	int numOfTracks = (int)tracks.size();
 
 	if (numOfTracks == 0) {
 		numOfTracks = 1;
@@ -647,8 +645,8 @@ void TrackNavigator::mouseUp(const MouseEvent& event) {
 void TrackNavigator::mouseDrag(const MouseEvent& event) {
 	if (event.mods.isLeftButtonDown() && event.mods.isAltDown()) {
 
-		int start = dragger->snap(event.getMouseDownPosition().getX(), zoom / 4);
-		int end = dragger->snap(event.getOffsetFromDragStart().getX(), zoom / 4);
+		int start = UITools::snap(event.getMouseDownPosition().getX(), zoom / 4, 2);
+		int end = UITools::snap(event.getOffsetFromDragStart().getX(), zoom / 4, 2);
 
 		getSelector()->setSelectedRange(start, end);
 	}
@@ -660,7 +658,7 @@ void TrackNavigator::mouseMove(const juce::MouseEvent& event) {
 
 void TrackNavigator::mouseDown(const MouseEvent& event) {
 	
-	int x = event.x; + scrollbarOffset;
+	int x = event.x + scrollbarOffset;
 	int y = event.y;
 
 	if (!event.mods.isCtrlDown() && event.mods.isRightButtonDown()) {

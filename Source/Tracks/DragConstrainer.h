@@ -46,33 +46,7 @@ public:
         }
         bounds.setX(snap(bounds.getX(),this->raster));
     }
-    
-    double snap(double location, double raster) {
         
-        int toleranceWindow = (raster / tolerance);
-        
-        if (location > 0) {
-            
-            
-            if ((fmod(location,raster )) > toleranceWindow) {
-                location = location + (raster - (fmod(location,raster)));
-            }
-            else {
-                location = location - (fmod(location,raster));
-            }
-        }
-        else {
-            if ((fmod(location,raster)) < toleranceWindow) {
-                location = location + (raster - (fmod(location,raster))) - raster;
-            }
-            else {
-                location = location - (fmod(location, raster)) - raster;
-            }
-        }
-        
-        return location;
-    }
-    
     void setRaster(int raster) {
         this->raster = raster;
     }

@@ -13,6 +13,7 @@
 
 
 #include "../JuceLibraryCode/JuceHeader.h"
+#include "UITools.h"
 
 /**
  * MultiComponentDragger allows the user to select objects and drag them around the
@@ -191,7 +192,7 @@ public:
             return;
         }
         
-        delta.x = (int)snap(delta.x, raster);
+        delta.x = (int)UITools::snap(delta.x, raster, tolerance);
 
         for (auto comp: selectedComponents)
         {
@@ -207,32 +208,6 @@ public:
 
         
         totalDragDelta += delta;
-    }
-
-    double snap(double location, double raster) {
-        
-        int toleranceWindow = (raster / tolerance);
-        
-        if (location > 0) {
-            
-            
-            if ((fmod(location,raster )) > toleranceWindow) {
-                location = location + (raster - (fmod(location,raster)));
-            }
-            else {
-                location = location - (fmod(location,raster));
-            }
-        }
-        else {
-            if ((fmod(location,raster)) < toleranceWindow) {
-                location = location + (raster - (fmod(location,raster))) - raster;
-            }
-            else {
-                location = location - (fmod(location, raster)) - raster;
-            }
-        }
-        
-        return location;
     }
     
     void setRaster(int raster) {

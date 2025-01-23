@@ -22,7 +22,9 @@
 #define DRAGCONSTRAINER_H_INCLUDED
 
 #include "../JuceLibraryCode/JuceHeader.h"
+
 #include <math.h>
+#include "UITools.h"
 
 class ResizeConstrainer : public ComponentBoundsConstrainer {
     
@@ -49,36 +51,11 @@ public:
             width = maxWidth;
         }
         
-        width = (int)snap(width,this->raster);
+        width = UITools::snap(width,this->raster,4);
         
         bounds.setWidth(width);
     }
     
-    double snap(double location, double raster) {
-        
-        int toleranceWindow = (raster / tolerance);
-        
-        if (location > 0) {
-            
-            
-            if ((fmod(location,raster )) > toleranceWindow) {
-                location = location + (raster - (fmod(location,raster)));
-            }
-            else {
-                location = location - (fmod(location,raster));
-            }
-        }
-        else {
-            if ((fmod(location,raster)) < toleranceWindow) {
-                location = location + (raster - (fmod(location,raster))) - raster;
-            }
-            else {
-                location = location - (fmod(location, raster)) - raster;
-            }
-        }
-        
-        return location;
-    }
     
     void setRaster(int raster) {
         this->raster = raster;

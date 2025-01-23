@@ -18,8 +18,8 @@ using juce::XmlElement;
 using juce::XmlDocument;
 using juce::OutputStream;
 
+Project *Project::instance = nullptr;
 
-Project *Project::instance = NULL;
 long  Project::DEFAULT_TRACK_LENGTH = 600;
 int   Project::DEFAULT_TRACK_HEIGHT = 75;
 float Project::DEFAULT_TEMPO = 100.0f;
@@ -60,8 +60,7 @@ void Project::addRecentFile(juce::String path) {
         v->addChild(child, i, nullptr);
     }
     
-    std::unique_ptr<OutputStream> os = configFile.createOutputStream();
-    
+    std::unique_ptr<OutputStream> os = configFile.createOutputStream();    
     std::unique_ptr<XmlElement> xml = v->createXml();
     
     xml->writeToStream(*os, "");

@@ -90,23 +90,17 @@ public:
 private:
     
     AudioManager() {
-
         manager = new juce::AudioFormatManager();
         manager->registerBasicFormats();
     
    }
     
     ~AudioManager() {
-
         delete manager;
-
     }
     
-    
-    
-    
     static AudioManager* instance;
-    juce::AudioDeviceManager* deviceManager;
+    juce::AudioDeviceManager* deviceManager = nullptr;
     
     int numInputChannels = 0;
     int numOutputChannels = 0;

@@ -19,7 +19,7 @@
  //==============================================================================
  /*
   */
-class TrackIn : public Module, public VolumeAdjustable, public ChangeListener
+class TrackIn : public Module, public VolumeAdjustable
 {
 public:
     TrackIn(Track::Type trackType, TrackNavigator* navigator, double sampleRate, int buffersize);

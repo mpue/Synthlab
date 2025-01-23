@@ -57,10 +57,10 @@ void ModuleUtils::loadStructure(std::vector<Module *>* modules, std::vector<Conn
         }
         connectTerminals(m);
         
-        VolumeAdjustable* v;
+        VolumeAdjustable* _v;
         
-        if ((v = dynamic_cast<VolumeAdjustable*>(m)) != nullptr) {
-            v->setVolume(mod.getProperty("volume").toString().getFloatValue());
+        if ((_v = dynamic_cast<VolumeAdjustable*>(m)) != nullptr) {
+            _v->setVolume(mod.getProperty("volume").toString().getFloatValue());
         }
     }
     
@@ -531,15 +531,15 @@ void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Conn
             
             for (int i = 0; i < 128; i++) {
                 if (sm->hasSampleAt(i)) {
-                    ValueTree v = ValueTree("sample");
-                    v.setProperty("sampleStart",String(sm->getSamplerAt(i)->getStartPosition()),nullptr);
-                    v.setProperty("sampleEnd",String(sm->getSamplerAt(i)->getEndPosition()), nullptr);
-                    v.setProperty("sampleLength",String(sm->getSamplerAt(i)->getSampleLength()), nullptr);
-                    v.setProperty("loop",sm->getSamplerAt(i)->isLoop(), nullptr);
-                    v.setProperty("samplePath", sm->getSamplePath(i),nullptr);
-                    v.setProperty("note", i + 1 , nullptr);
+                    ValueTree _v = ValueTree("sample");
+                    _v.setProperty("sampleStart",String(sm->getSamplerAt(i)->getStartPosition()),nullptr);
+                    _v.setProperty("sampleEnd",String(sm->getSamplerAt(i)->getEndPosition()), nullptr);
+                    _v.setProperty("sampleLength",String(sm->getSamplerAt(i)->getSampleLength()), nullptr);
+                    _v.setProperty("loop",sm->getSamplerAt(i)->isLoop(), nullptr);
+                    _v.setProperty("samplePath", sm->getSamplePath(i),nullptr);
+                    _v.setProperty("note", i + 1 , nullptr);
                     
-                    file.addChild(v,-1,nullptr);
+                    file.addChild(_v,-1,nullptr);
                 }
             }
         }
@@ -557,10 +557,10 @@ void ModuleUtils::saveStructure(std::vector<Module *>* modules, std::vector<Conn
             file.setProperty("type", t->getType(), nullptr);
         }
         
-        VolumeAdjustable* v;
+        VolumeAdjustable* _v;
         
-        if ((v = dynamic_cast<VolumeAdjustable*>((*it))) != nullptr) {
-            file.setProperty("volume", v->getVolume(), nullptr);
+        if ((_v = dynamic_cast<VolumeAdjustable*>((*it))) != nullptr) {
+            file.setProperty("volume", _v->getVolume(), nullptr);
         }
         
         PadModule* p;
@@ -889,7 +889,7 @@ bool ModuleUtils::connectModules(Module* source, Module* target, int pin) {
             return false;
             break;
     }
-    return false;
+   
 }
 
 bool ModuleUtils::connectModuleValues(Module* source, Module* target, int inputPin)

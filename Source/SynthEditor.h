@@ -1,6 +1,5 @@
 #pragma once
 
-//[Headers]     -- You can add your own extra header files here --
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "MultiComponentDragger.h"
 #include "Module.h"
@@ -21,6 +20,7 @@
 #include "EditorListener.h"
 #include "IEditor.h"
 #include "Tracks/TrackNavigator.h"
+#include "UITools.h"
 
 class SamplerModule;
 
@@ -74,39 +74,14 @@ public:
 
     int addChannel(String name, Mixer::Channel::Type channeltype);
     void addConnection(const MouseEvent& e, Module* m);
-    bool connectionExists(std::vector<Connection*> connections, Connection* c);
     SelectionModel& getSelectionModel();
     void setCurrentLayer(int layer);
     int getCurrentLayer();
     void duplicateSelected();
-    void setLocked(bool lock) {
-        this->locked = lock;
-        setModuleLocked(this->getModule(), lock);
-        selectionModel.clearSelection();
-        repaint();
-    }
-    
-    bool isLocked() {
-        return this->locked;
-    }
-    
-    void setModuleLocked(Module* m, bool locked) {
-        
-        if (m != nullptr) {
-            
-            m->setLocked(locked);
-            
-            for (int i = 0; i< m->getModules()->size();i++) {
-                if (m->getModules()->at(i) != nullptr) {
-                    m->getModules()->at(i)->setLocked(locked);
-                }
-            }
-        }
-    }
-    
-    void drawConnections(Graphics& g);
-    
-    int snap(int location, int raster);
+    void setLocked(bool lock);
+    bool isLocked();
+    void setModuleLocked(Module* m, bool locked);    
+    void drawConnections(Graphics& g);    
     void dragSelection();
     void moveSelection(const MouseEvent& e);
     void checkForConnectionDrag();
@@ -140,8 +115,6 @@ public:
     void getCommandInfo (CommandID commandID, ApplicationCommandInfo& result) override;
     virtual bool perform (const InvocationInfo& info) override;
     
-    
-    
     enum CommandIds {
         ADD_MODULE = 1,
         SAVE = 2,
@@ -157,12 +130,11 @@ public:
         RESET_GUI_POS = 12,
         EXPORT_AUDIO = 13
     };
-    
+
     // member access
     
     int getIndex();
-    void setIndex(int index);
-    
+    void setIndex(int index);    
     void setTab(TabbedComponent* t);
     void setModule(Module * m, bool deleteWhenRemoved);
     Module* getModule();
@@ -182,9 +154,9 @@ public:
     void saveScreenShot();
     
     void alignSelectedY();
-    void alignSelectedX();
-    
+    void alignSelectedX();    
     void resetGUIPosition();
+
     void updateProject(File file);
     void updateProject(URL url);
 
@@ -197,9 +169,16 @@ private:
 
     void notifyListeners();
     void notifyDirtyListeners();
+    void drawCurrentConnection();
     
+    int currentSample = 0;
+    int bufferSize;
+    double _sampleRate;
+    bool running = false;
+    bool locked = false;
+    bool dragHasStarted = false;
     bool snapToGrid = true;
-                         
+                             
     bool isAltDown = false;
     bool isCtrlDown = false;
     bool isLeftShiftDown = false;
@@ -236,7 +215,7 @@ private:
 
     Pin* startPin = nullptr;
 
-    void drawCurrentConnection();
+    
     
     SelectionModel::State state = SelectionModel::NONE;
     TabbedComponent* tab = nullptr;
@@ -247,14 +226,7 @@ private:
     
     bool dirty = false;
                          
-    int currentSample = 0;
-    int bufferSize;
-    double _sampleRate;
-    bool running = false;
-    bool locked = false;
-    bool dragHasStarted = false;
-    Module::Layer currentLayer = Module::Layer::ALL;
-    
+    Module::Layer currentLayer = Module::Layer::ALL;    
     SelectionModel selectionModel;
   
     MixerPanel* mixer = nullptr;
@@ -271,16 +243,7 @@ private:
     std::vector<EditorListener*> listener;
     
     TrackNavigator* navigator = nullptr;
-
-    //[/UserVariables]
-
     
-    //==============================================================================
-
-
-    //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SynthEditor)
 };
 
-//[EndFile] You can add extra defines here...
-//[/EndFile]

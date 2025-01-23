@@ -91,7 +91,7 @@ void HTTPServer::run() {
                             
                             String item = path.getReference(1);
                             
-                            juce::StringArray resources;
+                            resources.clear();
                             resources.addTokens (item, "/","");
                             
                             DynamicObject obj = DynamicObject();

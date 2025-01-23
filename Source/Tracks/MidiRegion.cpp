@@ -58,7 +58,7 @@ void MidiRegion::paint(Graphics& g) {
 	g.fillRoundedRectangle(b.getX(), b.getY(), b.getWidth(), b.getHeight(), 10);
 	g.setColour(Colours::lightgrey);
 
-	const double audioLength(this->midiThumbnail->getTotalLength());
+	double audioLength = this->midiThumbnail->getTotalLength();
 	this->midiThumbnail->drawChannels(g, b, 0.0, audioLength, 1.0f);
 
 	g.setColour(Colours::steelblue.darker());
@@ -75,7 +75,7 @@ void MidiRegion::paint(Graphics& g) {
 			g.fillRoundedRectangle(b.getX() + i * getWidth() / (loopCount + 1), b.getY(), b.getWidth(), b.getHeight(), 10);
 			g.setColour(Colours::grey);
 
-			const double audioLength(this->midiThumbnail->getTotalLength());
+			audioLength = this->midiThumbnail->getTotalLength();
 			this->midiThumbnail->drawChannels(g, loopBounds, 0.0, audioLength, 1.0f);
 		}
 	}
@@ -170,25 +170,11 @@ void MidiRegion::stopRecording() {
 	timeElapsed = 0;
 	stopTimer();
 	MidiMessage message;
-	int sampleNumber;
 
 	if (iterator == NULL) {
 		iterator = new MidiBuffer::Iterator(*midiBuffer);
 	}
 	currentMessageNum = 0;
-	/*
-	while(iterator->getNextEvent(message, sampleNumber)) {
-
-		MidiMessage* m = new MidiMessage(message);
-
-		// m->setTimeStamp(dragger->snap(m->getTimeStamp(),Project::getInstance()->getBufferSize()));
-
-		if (m->getRawDataSize() > 0)
-			midiMessages.insert(std::make_pair(sampleNumber,m ));
-
-	}
-	sequence->updateMatchedPairs();
-	 */
 }
 
 void MidiRegion::setDragger(MultiComponentDragger* dragger) {
@@ -204,8 +190,6 @@ void MidiRegion::updateThumb() {
 		repaint();
 		};
 	juce::MessageManager::callAsync(changeLambda);
-
-
 }
 
 void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bool wasResized) {

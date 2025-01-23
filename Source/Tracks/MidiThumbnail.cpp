@@ -68,8 +68,7 @@ void MidiThumbnail::drawChannels (Graphics& g, const Rectangle<int>& area, doubl
     int notelen = 0;
     int start = 0;
     int end = 0;
-    
-    
+        
     while(iterator->getNextEvent(message, sampleNum)) {
 
         if (message.isNoteOn()) {
@@ -79,7 +78,7 @@ void MidiThumbnail::drawChannels (Graphics& g, const Rectangle<int>& area, doubl
         else if (message.isNoteOff()) {
             end = sampleNum;
             int x = ((double)area.getWidth() / (double)totalSamples) * start;
-            int notelen = ((double)area.getWidth() / (double)totalSamples) * (end - start);
+            notelen = ((double)area.getWidth() / (double)totalSamples) * (end - start);
             g.fillRect(x, area.getHeight()  - (area.getHeight() / 127 * message.getNoteNumber()), notelen, 3);
         }
     

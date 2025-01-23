@@ -11,9 +11,12 @@
 #ifndef DRAGCONSTRAINER_H_INCLUDED
 #define DRAGCONSTRAINER_H_INCLUDED
 
-#include "../JuceLibraryCode/JuceHeader.h"
-#include <iostream>
 #include <math.h>
+#include <iostream>
+
+#include "../JuceLibraryCode/JuceHeader.h"
+
+#include "UITools.h"
 
 class DragConstrainer : public ComponentBoundsConstrainer {
 
@@ -44,33 +47,7 @@ public:
 
             bounds.setX(maxX - bounds.getWidth());
         }
-        bounds.setX(snap(bounds.getX(),this->raster));
-    }
-    
-    double snap(double location, double raster) {
-        
-        int toleranceWindow = (raster / tolerance);
-        
-        if (location > 0) {
-            
-            
-            if ((fmod(location,raster )) > toleranceWindow) {
-                location = location + (raster - (fmod(location,raster)));
-            }
-            else {
-                location = location - (fmod(location,raster));
-            }
-        }
-        else {
-            if ((fmod(location,raster)) < toleranceWindow) {
-                location = location + (raster - (fmod(location,raster))) - raster;
-            }
-            else {
-                location = location - (fmod(location, raster)) - raster;
-            }
-        }
-        
-        return location;
+        bounds.setX(UITools::snap(bounds.getX(),this->raster,4));
     }
     
     void setRaster(int raster) {

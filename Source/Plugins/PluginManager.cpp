@@ -179,7 +179,7 @@ AudioPluginInstance* PluginManager::getPlugin(juce::String name) {
 long PluginManager::getNextPluginId() {
     
     // first 10 ids are reserved for default channels
-    return pluginMap.size() + 10;
+    return (long)pluginMap.size() + 10;
 }
 
 

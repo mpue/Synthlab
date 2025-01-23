@@ -179,7 +179,7 @@ Region* Track::addRegion(String refId, File file, double sampleRate, long sample
 	region->setSelected(true);
 	region->setDirty(true);
 
-	long sampleNum = (this->maxLength / (this->maxLength * zoom)) * markerPosition * sampleRate;
+	// long sampleNum = (this->maxLength / (this->maxLength * zoom)) * markerPosition * sampleRate;
 	region->setSampleOffset(sampleOffset, false, false);
 	region->setOffset(markerPosition);
 
@@ -789,8 +789,8 @@ void Track::changeListenerCallback(ChangeBroadcaster* source) {
 		audioBuffer->clear(oldoffset, r->getBuffer()->getNumSamples());
 		// copy data from region to tracks audio buffer
 		long numSamples = r->getBuffer()->getNumSamples();
-		audioBuffer->copyFrom(0, sampleOffset, *r->getBuffer(), 0, 0, r->getNumSamples());
-		audioBuffer->copyFrom(1, sampleOffset, *r->getBuffer(), 1, 0, r->getNumSamples());
+		audioBuffer->copyFrom(0, sampleOffset, *r->getBuffer(), 0, 0, numSamples);
+		audioBuffer->copyFrom(1, sampleOffset, *r->getBuffer(), 1, 0, numSamples);
 	}
 	if (MasterChannelPanel* panel = dynamic_cast<MasterChannelPanel*>(source)) {
 		setVolume(panel->getVolume());
