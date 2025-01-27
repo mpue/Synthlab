@@ -178,22 +178,83 @@ ValueTree* TrackNavigator::getConfiguration()
 		ValueTree regions = ValueTree("Regions");
 
 		for (int j = 0; j < tracks.at(i)->getRegions().size(); j++) {
+			
 			ValueTree region = ValueTree("Region");
+			
 			region.setProperty("name", tracks.at(i)->getRegions().at(j)->getName(), nullptr);
-			AudioRegion* ar = dynamic_cast<AudioRegion*>(tracks.at(i)->getRegions().at(j));
-			if (ar != nullptr) {
-				region.setProperty("clipRefId", ar->getClipRefid(), nullptr);
-				region.setProperty("sampleOffset", ar->getSampleOffset(), nullptr);
-				region.setProperty("numSamples", ar->getNumSamples(), nullptr);
-				region.setProperty("width", ar->getWidth(), nullptr);
-			}
-			regions.addChild(region, j, nullptr);
-		}
-		track.addChild(regions, 0, nullptr);
 
+			if (tracks.at(i)->getType() == Track::AUDIO) {
+				track.setProperty("type", "audio", nullptr);
+				AudioRegion* ar = dynamic_cast<AudioRegion*>(tracks.at(i)->getRegions().at(j));
+				if (ar != nullptr) {
+					region.setProperty("clipRefId", ar->getClipRefid(), nullptr);
+					region.setProperty("sampleOffset", ar->getSampleOffset(), nullptr);
+					region.setProperty("numSamples", ar->getNumSamples(), nullptr);
+					region.setProperty("width", ar->getWidth(), nullptr);
+					regions.addChild(region, -1, nullptr);
+				}
+
+			}
+			else if (tracks.at(i)->getType() == Track::MIDI) {
+
+				track.setProperty("type", "instrument", nullptr);
+				MidiRegion* mr = dynamic_cast<MidiRegion*>(tracks.at(i)->getRegions().at(j));
+
+				if (mr != nullptr) {			
+
+					region.setProperty("sampleOffset", mr->getSampleOffset(), nullptr);
+					region.setProperty("numSamples", mr->getNumSamples(), nullptr);
+					region.setProperty("width", mr->getWidth(), nullptr);
+					regions.addChild(region, -1, nullptr);
+
+					ValueTree events = ValueTree("Events");
+
+					for (int k = 0; k < mr->getNumMessages(); k++) {
+
+						ValueTree e = ValueTree("Event");
+						MidiMessage* msg = mr->getMessageAt(k);
+
+						if (msg != nullptr) {
+							if (msg->isNoteOn()) {
+								e.setProperty("type", "noteon", nullptr);
+								e.setProperty("note", msg->getNoteNumber(), nullptr);
+							}
+							if (msg->isNoteOff()) {
+								e.setProperty("note", msg->getNoteNumber(), nullptr);
+								e.setProperty("type", "noteoff", nullptr);
+							}
+							if (msg->isController()) {
+								e.setProperty("type", "control", nullptr);
+								e.setProperty("controller", msg->getControllerNumber(), nullptr);						
+								e.setProperty("value", msg->getControllerValue(), nullptr);
+							}
+							if (msg->isPitchWheel()) {
+								e.setProperty("type", "pitch", nullptr);
+								e.setProperty("pitch", msg->getPitchWheelValue(), nullptr);							
+								e.setProperty("pitch", msg->getPitchWheelValue(), nullptr);							
+							}	
+						
+							e.setProperty("channel", msg->getChannel(), nullptr);
+							e.setProperty("velocity", msg->getVelocity(), nullptr);
+							e.setProperty("timestamp", msg->getTimeStamp(), nullptr);
+
+							events.addChild(e, -1, nullptr);
+
+						}
+
+					}
+
+					region.addChild(events, -1, nullptr);
+				}
+			}
+		}
+
+		track.addChild(regions, 0, nullptr);
 		v->addChild(track, i, nullptr);
 	}
+
 	return v;
+
 }
 
 void TrackNavigator::setConfiguration(ValueTree* config)
@@ -214,7 +275,7 @@ void TrackNavigator::setPosition(double position) {
 	//int pos = (int)position - (int)position % 2;
 	this->position = position;
 	this->samplePosition = position * 48000;//  Project::getInstance()->getSampleRate();
-	this->samplePosition = (int)samplePosition - (int)samplePosition % 256;
+	this->samplePosition = (int)samplePosition;
 	Logger::getCurrentLogger()->writeToLog("samplePosition  : " + String(samplePosition));
 	std::function<void(void)> changeLambda =
 		[=]() {
@@ -290,11 +351,13 @@ bool TrackNavigator::isPlaying() {
 
 void TrackNavigator::setRecording(bool recording) {
 	
-
 	if (recording) {
 		startTimer(50);
 		Session::getInstance()->setRecordingStartTime();
 		recordStart = (long)marker->getPosition() * Project::getInstance()->getSampleRate();
+		if (recordStart < 0) {
+			recordStart = 0;
+		}
 		for (int i = 0; i < tracks.size(); i++) {
 			if (tracks.at(i)->isRecording()) {
 				
@@ -302,14 +365,14 @@ void TrackNavigator::setRecording(bool recording) {
 
 					MidiRegion* r = dynamic_cast<MidiRegion*>(tracks.at(i)->getCurrentRegion(recordStart));
 					if (r == nullptr) {
-						tracks.at(i)->addMidiRegion(Project::getInstance()->getSampleRate(), recordStart, 480000);
+						tracks.at(i)->addMidiRegion(Project::getInstance()->getSampleRate(), recordStart, 480000*4);
 					}
 					tracks.at(i)->getCurrentRegion(recordStart)->startRecording();
 				}
 				else if (tracks.at(i)->getType() == Track::Type::AUDIO) {
 					AudioRegion* r = dynamic_cast<AudioRegion*>(tracks.at(i)->getCurrentRegion(recordStart));
 					if (r == nullptr) {
-						tracks.at(i)->addRegion(nullptr, Project::getInstance()->getSampleRate(), recordStart, 480000);
+						tracks.at(i)->addRegion(nullptr, Project::getInstance()->getSampleRate(), recordStart, 480000*4);
 					}
 					tracks.at(i)->getCurrentRegion(recordStart)->startRecording();
 				}
@@ -622,6 +685,13 @@ bool TrackNavigator::keyPressed(const KeyPress& key, Component* originatingCompo
 		else if (key.getKeyCode() == 68) { // D
 			for (int i = 0; i < tracks.size(); i++) {
 				tracks.at(i)->duplicateSelectedRegions();
+			}
+		}
+		else if (key.getKeyCode() == 73) { // I
+			for (int i = 0; i < tracks.size(); i++) {
+				for (int j = 0; j < tracks.at(i)->getRegions().size();j++) {					
+					Logger::getCurrentLogger()->writeToLog(String(tracks.at(i)->getRegions().at(j)->getSampleOffset()));									
+				}								
 			}
 		}
 		else if (key.getKeyCode() == 88) { // X

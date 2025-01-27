@@ -115,6 +115,9 @@
       <FILE id="EJ4uon" name="whitenoise.png" compile="0" resource="1" file="Images/whitenoise.png"/>
     </GROUP>
     <GROUP id="{CA20D122-1EA5-3A93-F1F8-F6EE53DA457E}" name="Source">
+      <FILE id="HVUNoB" name="MidiProcessor.cpp" compile="1" resource="0"
+            file="Source/MidiProcessor.cpp"/>
+      <FILE id="fTHaS5" name="MidiProcessor.h" compile="0" resource="0" file="Source/MidiProcessor.h"/>
       <FILE id="feLR7z" name="UITools.h" compile="0" resource="0" file="Source/UITools.h"/>
       <GROUP id="{B7C33A19-23F0-17A9-B061-BBB991E079B2}" name="rubberband">
         <FILE id="csvtr7" name="RubberBandStretcher.h" compile="0" resource="0"

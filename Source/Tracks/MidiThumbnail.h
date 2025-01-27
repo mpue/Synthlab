@@ -34,7 +34,7 @@ public:
 
     double getTotalLength();
     
-    void drawChannels (Graphics& g, const Rectangle<int>& area, double startTimeSeconds, double endTimeSeconds, float verticalZoomFactor);
+    void drawChannels (Graphics& g, double startTimeSeconds, double endTimeSeconds, float verticalZoomFactor);
     
     void addMessage(int sampleNum, MidiMessage* message);
     

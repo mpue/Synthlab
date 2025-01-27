@@ -16,6 +16,7 @@
 #include "Region.h"
 #include "MidiThumbnail.h"
 #include "../Project/Project.h"
+#include "ResizeConstrainer.h"
 
 #include <map>
 #include <vector>
@@ -24,16 +25,14 @@ class MidiRegion : public Region {
     
 public:
     
-    MidiRegion(long startSample, long sampleLength, double sampleRate);
+    MidiRegion(long startSample, long sampleLength, double sampleRate, MultiComponentDragger* dragger);
     MidiRegion(MidiBuffer* buffer, double sampleRate);
     
     virtual ~MidiRegion();
     
     virtual void paint (Graphics&) override;
     virtual void resized() override;
-
-    virtual void setThumbnailBounds(Rectangle<int>* bounds) override;
-    virtual Rectangle<int>* getThumbnailBounds() override;
+  
     void setNumSamples(int numSamples);
     virtual int getNumSamples() override;
     
@@ -41,6 +40,12 @@ public:
     MidiMessageSequence* getSequence();
     MidiThumbnail* getThumbnail();
     
+    virtual void setThumbnailBounds(Rectangle<int>* bounds) override {
+    };
+    virtual Rectangle<int>* getThumbnailBounds() override {
+		return nullptr;
+    };
+
     virtual void setZoom(float zoom) override;
     virtual void setLoop(bool loop) override;
     
@@ -48,11 +53,19 @@ public:
     virtual void timerCallback() override;    
     virtual void stopRecording() override;
     virtual void startRecording() override;
-    
+   
+    virtual void setSampleOffset(long offset, bool reminder, bool notify) override;
+
     void clear();
     MidiMessage* getMessage(int sampleNum);
     void addMessage(MidiMessage* m, double time, int sampleNum);
-    
+    long getNumMessages() {
+        return midiMessageList.size();
+    }
+    MidiMessage* getMessageAt(int index) {
+        return midiMessageList.at(index);
+    }
+
     // component dragger used to drag and drop regions
     void setDragger(MultiComponentDragger* dragger);
     
@@ -65,15 +78,15 @@ public:
     
 private:
     MidiBuffer* midiBuffer;
-    Rectangle<int>* thumbnailBounds = NULL;
     virtual void changeListenerCallback(ChangeBroadcaster * source) override;
-    MidiThumbnail* midiThumbnail;
+    MidiThumbnail* midiThumbnail = nullptr;
     int numSamples = 0;
     MidiBuffer::Iterator* iterator = NULL;
     MidiMessage message;
     std::map<double, MidiMessage*> midiMessages;
     std::vector<MidiMessage*> midiMessageList;
     MidiMessageSequence* sequence;
+    ResizeConstrainer* constrainer = nullptr;
     int lastIndex = -1;
     long timeElapsed = 0;
     int currentMessageNum = 0;

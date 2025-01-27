@@ -42,14 +42,17 @@ PropertyView::PropertyView () : TimeSliceThread("PropertyWatcher")
     //[Constructor_pre] You can add your own custom stuff here..
     //[/Constructor_pre]
 
-    addAndMakeVisible (propertyTab = new MainTabbedComponent (TabbedButtonBar::TabsAtTop));
+    propertyTab = std::make_unique<MainTabbedComponent>(TabbedButtonBar::TabsAtTop);
+
+    addAndMakeVisible (propertyTab.get());
     propertyTab->setTabBarDepth (30);
     propertyTab->setCurrentTabIndex (-1);
 
-    addAndMakeVisible (tabbedComponent = new MainTabbedComponent (TabbedButtonBar::TabsAtTop));
+    tabbedComponent = std::make_unique<MainTabbedComponent>(TabbedButtonBar::TabsAtTop);
+
+    addAndMakeVisible (tabbedComponent.get());
     tabbedComponent->setTabBarDepth (30);
     tabbedComponent->setCurrentTabIndex (-1);
-
 
     //[UserPreSize]
     //[/UserPreSize]
@@ -65,7 +68,7 @@ PropertyView::PropertyView () : TimeSliceThread("PropertyWatcher")
     propertyPanel->setMessageWhenEmpty("Nothing to display.");
     propertyPanel->setColour(juce::PropertyComponent::labelTextColourId, juce::Colours::white);
     
-    descriptionEditor = new TextEditor();
+    descriptionEditor = std::make_unique<TextEditor>("Description");
     descriptionEditor->setMultiLine(true);
     descriptionEditor->setReadOnly(true);
     descriptionEditor->setJustification(juce::Justification::horizontallyJustified);
@@ -74,11 +77,11 @@ PropertyView::PropertyView () : TimeSliceThread("PropertyWatcher")
     directoryContents = new DirectoryContentsList(filter,*this);
     directoryContents->setIgnoresHiddenFiles(false);
     File initialDir = File::getSpecialLocation(File::SpecialLocationType::userHomeDirectory).getFullPathName()+"/Documents/samples";
-    FileBrowserModel* model = new FileBrowserModel(directoryContents, initialDir);
-    browser  = new ExtendedFileBrowser(File::getSpecialLocation(File::userHomeDirectory),filter,model);
-    directoryContents->addChangeListener(browser);
-    tabbedComponent->addTab("Browser",juce::Colours::grey, browser, false);
-    tabbedComponent->addTab("Description",juce::Colours::grey, descriptionEditor, false);
+    model = new FileBrowserModel(directoryContents, initialDir);
+    browser = std::make_unique<ExtendedFileBrowser>(File::getSpecialLocation(File::userHomeDirectory), filter, model);
+    directoryContents->addChangeListener(browser.get());
+    tabbedComponent->addTab("Browser",juce::Colours::grey, browser.get(), false);
+    tabbedComponent->addTab("Description",juce::Colours::grey, descriptionEditor.get(), false);
 
     startThread();
 
@@ -92,14 +95,16 @@ PropertyView::~PropertyView()
 
     propertyTab = nullptr;
     tabbedComponent = nullptr;
-    // descriptionEditor = nullptr;
+    descriptionEditor = nullptr;
+    browser = nullptr;
 
     //[Destructor]. You can add your own custom destruction code here..
     removeTimeSliceClient(this);
-    delete browser;
     stopThread(100);
     delete directoryContents;
     delete filter;
+    delete model;
+
     //[/Destructor]
 }
 
@@ -178,7 +183,7 @@ int PropertyView::useTimeSlice() {
 }
 
 ExtendedFileBrowser* PropertyView::getBrowser() {
-    return browser;
+    return browser.get();
 }
 
 //[/MiscUserCode]

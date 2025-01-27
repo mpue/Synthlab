@@ -35,7 +35,9 @@ public:
     
     void setChannel(int channel);
     int getChannel();
-    
+
+    void eventReceived(Event* e) override;
+
     virtual juce::Array<juce::PropertyComponent*>& getProperties() override;
     virtual void createProperties() override;
     

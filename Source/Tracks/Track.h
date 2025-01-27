@@ -62,8 +62,8 @@ public:
 	double getMaxLength();
 	Region* addRegion(String refId, File file, double sampleRate, long samplePosition);
     void addRegion(String refId, File file, double sampleRate);
-    void addMidiRegion(double sampleRate, long samplePosition,long regionLength);
-    void addMidiRegion(juce::MidiBuffer* source, double sampleRate);
+    MidiRegion* addMidiRegion(double sampleRate, long samplePosition,long regionLength);
+    void addMidiRegion(juce::MidiBuffer* source, double sampleRate, long samplePosition);
     void addRegion(AudioSampleBuffer* source, double sampleRate, long samplePosition, long regionLength);
     void addRegion(String refId, File file, double sampleRate, long samplePosition, long regionLength);
         

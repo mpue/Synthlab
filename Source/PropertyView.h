@@ -62,16 +62,18 @@ private:
     //[UserVariables]   -- You can add your own custom variables in this section.
 
     juce::PropertyPanel* propertyPanel = nullptr;
-    juce::ScopedPointer<juce::TextEditor> descriptionEditor;
+    std::unique_ptr<juce::TextEditor> descriptionEditor;
     juce::DirectoryContentsList* directoryContents = nullptr;
     juce::WildcardFileFilter* filter = nullptr;
-    ExtendedFileBrowser* browser = nullptr;
+    std::unique_ptr<ExtendedFileBrowser> browser = nullptr;
+    FileBrowserModel* model = nullptr;
     //[/UserVariables]
 
     //==============================================================================
-    juce::ScopedPointer<MainTabbedComponent> propertyTab;
-    juce::ScopedPointer<MainTabbedComponent> tabbedComponent;
+    std::unique_ptr<MainTabbedComponent> propertyTab = nullptr;
+    std::unique_ptr<MainTabbedComponent> tabbedComponent = nullptr;
 
+    
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PropertyView)

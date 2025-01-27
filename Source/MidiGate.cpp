@@ -69,10 +69,12 @@ void MidiGate::gateOn(int velocity, int note) {
     pins.at(0)->setNote(note);
     
     Event* e = new Event("gate on",Event::Type::GATE);
+    // Logger::getCurrentLogger()->writeToLog("Note on " + String(note) + " at time " + String(Time::getMillisecondCounter()));
     e->setValue(velocity);
     e->setNote(note);
 
     MidiMessage m = MidiMessage::noteOn(channel,note,(uint8)velocity);
+    m.setTimeStamp(Time::getMillisecondCounter());
     e->setMessage(m);
 
     for (int i = 0; i < pins.at(1)->getConnections().size();i++) {
@@ -82,14 +84,19 @@ void MidiGate::gateOn(int velocity, int note) {
     delete e;
 }
 
+
+
 void MidiGate::gateOff(int note) {
+    
     pins.at(0)->setValue(0);
     pins.at(0)->setNote(note);
     Event* e = new Event("gate off",Event::Type::GATE);
+    // Logger::getCurrentLogger()->writeToLog("Note off " + String(note) + " at time " + String(Time::getMillisecondCounter()));
     e->setValue(0);
     e->setNote(note);
 
     MidiMessage m = MidiMessage::noteOff(channel, note);
+    m.setTimeStamp(Time::getMillisecondCounter());
     e->setMessage(m);
 
     for (int i = 0; i < pins.at(1)->getConnections().size();i++) {
@@ -115,6 +122,14 @@ juce::Array<PropertyComponent*>& MidiGate::getProperties() {
 
 int MidiGate::getChannel() {
     return channel;
+}
+
+void MidiGate::eventReceived(Event* e)
+{
+    for (int i = 0; i < pins.at(1)->getConnections().size(); i++) {
+        pins.at(1)->getConnections().at(i)->sendEvent(new Event(e));
+    }
+    delete e;
 }
 
 void MidiGate::setChannel(int channel) {

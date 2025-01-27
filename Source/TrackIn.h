@@ -84,6 +84,8 @@ public:
 
     void changeListenerCallback(ChangeBroadcaster* source);
 
+    CriticalSection lock;
+
 private:
     juce::Value* volumeValue;
     juce::PropertyComponent* volumeProp;

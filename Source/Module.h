@@ -177,7 +177,7 @@ protected:
     juce::Value* nameValue;
 
     juce::PropertyComponent* nameProp;
-    juce::Array<juce::PropertyComponent*> properties;
+    juce::Array <juce::PropertyComponent*> properties;
     
     bool selected = false;
 	long index;

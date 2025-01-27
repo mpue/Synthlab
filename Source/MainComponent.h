@@ -21,14 +21,15 @@
 #include "ModuleBrowser.h"
 #include "AudioEngine/ADSR.h"
 #include <map>
+#include "MidiProcessor.h"
+
 //==============================================================================
 
 class MainComponent   : public juce::AudioAppComponent,
                         public juce::MenuBarModel,
                         public juce::KeyListener,
                         public juce::Button::Listener,
-                        public juce::Timer,
-                        public juce::AudioProcessorPlayer,
+                        public juce::Timer,                        
                         // public juce::DragAndDropContainer,
                         public juce::ApplicationCommandManager,
                         public juce::ChangeListener,
@@ -61,21 +62,9 @@ public:
     virtual void dirtyChanged(bool dirty) override;
     virtual void comboBoxChanged (ComboBox* comboBoxThatHasChanged) override;
     
-    void handleIncomingMidiMessage (juce::MidiInput* source, const juce::MidiMessage& message) override;
-    void sendGateMessage(Module* module, int channel, int velocity,int note,bool on);
-    void sendNoteMessage(Module* module, int channel, int note);
-    void sendClockMessage(Module* module, int channel);
-    void sendMidiStartMessage(Module* module, int channel);
-    void sendMidiStopMessage(Module* module, int channel);
-    void sendControllerMessage(Module* module, int channel, int controller, float value);
-    void sendPitchBendMessage(Module *module, int channel, int pitch);
     void processModule(Module* m);
     int getNumActiveChannels(int i);
-    
-    void refreshMidiInputs();
-    void enableAllMidiInputs();
-    void disableAllMidiInputs();
-    
+
     SynthEditor* getEditor() {
         return editor;
     }
@@ -159,6 +148,10 @@ private:
     
     Sampler* defaultSampler = nullptr;
     TrackNavigator* navigator = nullptr;
+    CriticalSection lock;
     
+    MidiProcessor* midiProcessor = nullptr;
+
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

@@ -167,8 +167,6 @@ void SequenceEditor::mouseDown (const MouseEvent& e)
 
 void SequenceEditor::mouseDrag (const MouseEvent& e)
 {
-
-
     int delta = - e.getDistanceFromDragStartY() / 20;
 
     if (!showVelocity) {
@@ -209,18 +207,14 @@ void SequenceEditor::mouseDrag (const MouseEvent& e)
     std::function<void(void)> changeLambda =
     [=]() {  content->repaint(); };
     juce::MessageManager::callAsync(changeLambda);
-
-
 }
 
 void SequenceEditor::mouseUp (const MouseEvent& e)
 {
-
 }
 
 bool SequenceEditor::keyPressed (const KeyPress& key)
 {
-
     if (key.getKeyCode() == KeyPress::spaceKey) {
         if (!running) {
             thread->addTimeSliceClient(this);
@@ -255,7 +249,6 @@ bool SequenceEditor::keyPressed (const KeyPress& key)
                 selectedRow--;
             }
         }
-
     }
     if (key.getKeyCode() == KeyPress::downKey) {
 
@@ -278,7 +271,6 @@ bool SequenceEditor::keyPressed (const KeyPress& key)
                 selectedRow++;
             }
         }
-
     }
     if (key.getKeyCode() == KeyPress::leftKey) {
         if (selectedCol > 0) {
@@ -290,7 +282,6 @@ bool SequenceEditor::keyPressed (const KeyPress& key)
             selectedCol++;
         }
     }
-
 
     sendConfig();
     repaint();

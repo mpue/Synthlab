@@ -10,7 +10,8 @@
 
 #include "MidiRegion.h"
 
-MidiRegion::MidiRegion(long startSample, long sampleLength, double sampleRate) {
+MidiRegion::MidiRegion(long startSample, long sampleLength, double sampleRate, MultiComponentDragger* dragger) {
+	this->dragger = dragger;
 	this->midiBuffer = new MidiBuffer();
 	this->midiThumbnail = new MidiThumbnail(sampleRate);
 	this->sampleRate = sampleRate;
@@ -22,6 +23,12 @@ MidiRegion::MidiRegion(long startSample, long sampleLength, double sampleRate) {
 	setSize(length * this->zoom, Project::DEFAULT_TRACK_HEIGHT);
 	this->offset = 0;
 	this->sequence = new MidiMessageSequence();
+	this->constrainer = new ResizeConstrainer(1000000);
+	resizerR = new ResizableEdgeComponent(this, constrainer, ResizableEdgeComponent::rightEdge);
+	resizerR->setSize(5, getHeight());
+	addAndMakeVisible(resizerR);
+	resizerR->setTopLeftPosition(getWidth() - 5, 0);
+	addComponentListener(this);
 }
 
 MidiRegion::MidiRegion(MidiBuffer* buffer, double sampleRate)
@@ -35,10 +42,11 @@ MidiRegion::MidiRegion(MidiBuffer* buffer, double sampleRate)
 	setSize(length * this->zoom, Project::DEFAULT_TRACK_HEIGHT);
 	this->offset = 0;
 	this->sequence = new MidiMessageSequence();
-
+	addComponentListener(this);
 }
 
 MidiRegion::~MidiRegion() {
+	removeComponentListener(this);
 	delete midiThumbnail;
 	delete midiBuffer;
 	delete sequence;
@@ -46,23 +54,21 @@ MidiRegion::~MidiRegion() {
 
 void MidiRegion::paint(Graphics& g) {
 
-	Rectangle<int> b = *this->thumbnailBounds;
-
 	if (dragger->isSelected(this)) {
-		g.setColour(Colours::orange.brighter());
+		g.setColour(Colours::orange.brighter().brighter());
 	}
 	else {
 		g.setColour(Colours::orange.brighter());
 	}
 
-	g.fillRoundedRectangle(b.getX(), b.getY(), b.getWidth(), b.getHeight(), 10);
+	g.fillRoundedRectangle(getX(), getY(),getWidth(), getHeight(), 10);
 	g.setColour(Colours::lightgrey);
 
 	double audioLength = this->midiThumbnail->getTotalLength();
-	this->midiThumbnail->drawChannels(g, b, 0.0, audioLength, 1.0f);
+	this->midiThumbnail->drawChannels(g, 0.0, audioLength, 1.0f);
 
 	g.setColour(Colours::steelblue.darker());
-	g.drawRoundedRectangle(b.getX(), b.getY(), b.getWidth(), b.getHeight(), 10, 1.0f);
+	g.drawRoundedRectangle(getX(), getY(), getWidth(), getHeight(), 10, 1.0f);
 
 	g.setColour(Colours::darkblue);
 	g.setFont(14.0);
@@ -71,28 +77,30 @@ void MidiRegion::paint(Graphics& g) {
 	if (loop) {
 		for (int i = 1; i <= loopCount; i++) {
 			g.setColour(Colours::steelblue);
-			Rectangle<int> loopBounds(b.getX() + i * getWidth() / (loopCount + 1), b.getY(), b.getWidth(), b.getHeight());
-			g.fillRoundedRectangle(b.getX() + i * getWidth() / (loopCount + 1), b.getY(), b.getWidth(), b.getHeight(), 10);
+			Rectangle<int> loopBounds(getX() + i * getWidth() / (loopCount + 1), getY(), getWidth(), getHeight());
+			g.fillRoundedRectangle(getX() + i * getWidth() / (loopCount + 1), getY(),getWidth(), getHeight(), 10);
 			g.setColour(Colours::grey);
 
 			audioLength = this->midiThumbnail->getTotalLength();
-			this->midiThumbnail->drawChannels(g, loopBounds, 0.0, audioLength, 1.0f);
+			this->midiThumbnail->drawChannels(g, 0.0, audioLength, 1.0f);
 		}
 	}
 }
 
 void MidiRegion::resized() {
-	if (this->thumbnailBounds != NULL)
-		this->thumbnailBounds->setHeight(getHeight());
-}
+	if (this->midiThumbnail != nullptr) {
+		Rectangle<int> bounds = this->midiThumbnail->getBounds().withHeight(getHeight());
+		this->midiThumbnail->setBounds(bounds);
+	}
 
-void MidiRegion::setThumbnailBounds(Rectangle<int>* bounds) {
-	this->thumbnailBounds = bounds;
-}
+	if (constrainer != nullptr) {
+		constrainer->setMaxWidth(Project::getInstance()->getTrackLength()*sampleRate);
+	}
 
-Rectangle<int>* MidiRegion::getThumbnailBounds() {
-	return new Rectangle<int>(*this->thumbnailBounds);
-};
+	if (resizerR != NULL)
+		resizerR->setTopLeftPosition(getWidth() - 5, 0);
+		
+}
 
 void MidiRegion::setNumSamples(int numSamples) {
 	this->numSamples = numSamples;
@@ -104,6 +112,11 @@ int MidiRegion::getNumSamples() {
 
 MidiBuffer* MidiRegion::getBuffer() {
 	return midiBuffer;
+}
+
+MidiMessageSequence* MidiRegion::getSequence()
+{
+	return sequence;
 }
 
 MidiThumbnail* MidiRegion::getThumbnail() {
@@ -122,18 +135,9 @@ void MidiRegion::setZoom(float zoom) {
 
 	int newOffset = (this->sampleOffset / this->sampleRate) * zoom;
 	this->setOffset(newOffset);
-
 	this->setTopLeftPosition(newOffset, 0);
 
-	/*
-	 resizerR->setSize(5, getHeight());
-	 resizerR->setTopLeftPosition(getWidth() - 5, 0);
-
-	 resizerL->setSize(5, getHeight());
-	 resizerL->setTopLeftPosition(0, 0);
-	 */
-	 // setBounds(0,0,this->thumbnail->getTotalLength() * this->zoom, 200);
-	this->thumbnailBounds->setSize(this->midiThumbnail->getTotalLength() * this->zoom, getHeight());
+	this->midiThumbnail->setSize(this->midiThumbnail->getTotalLength() * this->zoom, getHeight());
 
 	dragger->setRaster(this->zoom / 4);
 
@@ -160,8 +164,22 @@ void MidiRegion::timerCallback() {
 
 void MidiRegion::startRecording() {
 	startTimer(100);
-	midiMessageList.clear();
 	currentMessageNum = 0;
+}
+
+void MidiRegion::setSampleOffset(long offset, bool reminder, bool notify)
+{
+	int delta = getSampleOffset() - offset;
+
+	Region::setSampleOffset(offset, reminder, notify);
+
+	//for each (auto message in midiMessageList)
+	//{
+	//	void setSampleOffset(long offset, bool reminder, bool notify);
+	//	{
+	//		message->setTimeStamp(message->getTimeStamp() - delta);
+	//	}
+	//}
 }
 
 void MidiRegion::stopRecording() {
@@ -184,15 +202,18 @@ void MidiRegion::setDragger(MultiComponentDragger* dragger) {
 void MidiRegion::updateThumb() {
 	std::function<void(void)> changeLambda =
 		[=]() {
-		double length = this->midiThumbnail->getTotalLength();
+		double length = this->getNumSamples() / sampleRate;
 		setSize(length * this->zoom, getHeight());
-		this->thumbnailBounds->setWidth(length * this->zoom);
+		setBounds(0, 0, length * this->zoom, getHeight());
+		Rectangle<int> bounds = this->midiThumbnail->getBounds().withWidth(length * this->zoom);
+		this->midiThumbnail->setBounds(bounds);
 		repaint();
 		};
 	juce::MessageManager::callAsync(changeLambda);
 }
 
 void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bool wasResized) {
+	/*
 	if (wasMoved) {
 		long tracklen = Project::getInstance()->getTrackLength();
 		double sampleRate = Project::getInstance()->getSampleRate();
@@ -209,6 +230,8 @@ void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bo
 
 		Logger::getCurrentLogger()->writeToLog("MidiRegion sampleOffset " + String(sampleOffset));
 	}
+	*/
+	updateThumb();
 }
 
 void MidiRegion::changeListenerCallback(ChangeBroadcaster* source) {
@@ -227,7 +250,7 @@ void MidiRegion::addMessage(MidiMessage* m, double time, int sampleNum) {
 	//sequence->addEvent(*m);
 
 	// mSamples = sampleNum;
-	m->setTimeStamp(sampleNum - getSampleOffset());
+	// m->setTimeStamp(sampleNum); //  -getSampleOffset());
 	// midiBuffer->addEvent(*m, sampleNum);
 
 	midiMessageList.push_back(m);
@@ -249,10 +272,10 @@ MidiMessage* MidiRegion::getMessage(int sampleNum) {
 
 				m = midiMessageList.at(i);
 
-				if (m->isNoteOn() || m->isNoteOff()) {
-					Logger::getCurrentLogger()->writeToLog("Getting message at sample " + String(sampleNum) + " " + m->getDescription());
+				// if (m->isNoteOn() || m->isNoteOff()) {
+					// Logger::getCurrentLogger()->writeToLog("Getting message at sample " + String(sampleNum) + " " + m->getDescription());
 					return m;
-				}
+				// }
 
 
 			}

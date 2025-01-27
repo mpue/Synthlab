@@ -20,7 +20,7 @@ Track::Track(Type type, double sampleRate, MultiComponentDragger* dragger)
 	this->constrainer = new ResizeConstrainer(this->zoom / 4);
 	resizer = new ResizableEdgeComponent(this, constrainer, ResizableEdgeComponent::bottomEdge);
 	resizer->setSize(getWidth(), 5);
-	constrainer->setMaxWidth(getWidth());
+	constrainer->setMaxWidth(1000);
 	resizer->setTopLeftPosition(0, 70);
 	manager = Session::getInstance()->getAudioFormatManager();
 	this->type = type;
@@ -269,16 +269,12 @@ void Track::addRegion(juce::String refId, juce::File file, double sampleRate, lo
 	repaint();
 }
 
-void Track::addMidiRegion(double sampleRate, long samplePosition, long regionLength) {
+MidiRegion* Track::addMidiRegion(double sampleRate, long samplePosition, long regionLength) {
 
-	MidiRegion* region = new MidiRegion(samplePosition, regionLength, sampleRate);
-	region->setDragger(dragger);
+	Logger::getCurrentLogger()->writeToLog("Adding MidiRegion at " + String(samplePosition) + " with length " + String(regionLength));
 
-	int width = 1000;
-
-	Rectangle<int>* bounds = new Rectangle<int>(0, 0, width, getHeight());
-	region->setBounds(markerPosition, 0, region->getWidth(), getHeight());
-	region->setThumbnailBounds(bounds);
+	MidiRegion* region = new MidiRegion(samplePosition, regionLength, sampleRate, dragger);
+	
 	region->setLoopCount(0);
 
 	if (regions.size() == 0) {
@@ -295,23 +291,24 @@ void Track::addMidiRegion(double sampleRate, long samplePosition, long regionLen
 	clearSelection();
 	region->setSelected(true);
 
-	region->setSampleOffset(samplePosition, false, false);
-	region->setOffset(samplePosition / sampleRate);
-
+	/*
 	if (zoom > 0)
 		region->setZoom(zoom);
+	*/
 
 	region->updateThumb();
 
 	repaint();
+
+	return region;
 }
 
-void Track::addMidiRegion(juce::MidiBuffer* source, double sampleRate)
+void Track::addMidiRegion(juce::MidiBuffer* source, double sampleRate, long startPosition)
 {
 	MidiRegion* region = new MidiRegion(source, (long)sampleRate);
 	region->setDragger(dragger);
 	Rectangle<int>* bounds = new Rectangle<int>(0, 0, region->getThumbnail()->getTotalLength() * 20, getHeight());
-	region->setBounds(markerPosition, 0, region->getWidth(), getHeight());
+	region->setBounds(startPosition, 0, region->getWidth(), getHeight());
 	region->setThumbnailBounds(bounds);
 	region->setLoopCount(0);
 
@@ -331,7 +328,7 @@ void Track::addMidiRegion(juce::MidiBuffer* source, double sampleRate)
 
 	region->setSampleOffset(0, false, false);
 	region->setOffset(0);
-
+	region->repaint();
 	if (zoom > 0)
 		region->setZoom(zoom);
 
@@ -447,7 +444,7 @@ void Track::setSamplePosition(int position)
 		if (r != nullptr) {
 			MidiMessage* m = r->getMessage(position - r->getSampleOffset());
 			if (m != nullptr) {
-
+				Logger::getCurrentLogger()->writeToLog("Midi message at " + String(position) + " : " + String(m->getDescription()));
 				Event* e = new Event();
 				e->setMessage(*m);
 				e->setType(Event::Type::GATE);
@@ -456,12 +453,6 @@ void Track::setSamplePosition(int position)
 					m->setVelocity(127);
 				}
 				e->setValue(m->isNoteOn() ? m->getVelocity() : 0);
-				if (m->isNoteOn()) {
-					Logger::getCurrentLogger()->writeToLog("Sending event note on at position");
-				}
-				else if (m->isNoteOff()) {
-					Logger::getCurrentLogger()->writeToLog("Sending event note off");
-				}
 				// send event to all connected pins
 				notifyListeners(e);
 			}
@@ -545,7 +536,7 @@ Region* Track::getCurrentRegion(long sample) {
 		long offset = r->getSampleOffset();
 
 		if (sample >= offset && sample < (offset + len)) {
-			current = r;
+ 			current = r;
 			break;
 		}
 

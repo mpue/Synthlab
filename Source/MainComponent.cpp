@@ -105,8 +105,10 @@ MainComponent::MainComponent() : resizerBar(&stretchableManager, 1, true)
 
 	Project::getInstance()->setMain(this);
 	
-	startTimer(20);
-	enableAllMidiInputs();
+	startTimer(40);
+
+	midiProcessor = new MidiProcessor(editor,&deviceManager);
+	midiProcessor->enableAllMidiInputs();
 
 	addMouseListener(this, true);
 	editor->addKeyListener(getKeyMappings());
@@ -143,7 +145,7 @@ MainComponent::~MainComponent()
 
 	editor->removeAllChangeListeners();
 
-	disableAllMidiInputs();
+	midiProcessor->disableAllMidiInputs();
 
 	if (moduleBrowser != nullptr) {
 		if (moduleBrowser->isVisible()) {
@@ -183,6 +185,8 @@ MainComponent::~MainComponent()
 	}
 
 	stopTimer();
+
+	delete midiProcessor;
 
 	PrefabFactory::getInstance()->destroy();
 	Project::getInstance()->destroy();
@@ -451,6 +455,7 @@ int MainComponent::getNumActiveChannels(int i) {
 
 void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill)
 {
+	
 	lastTime = (long)Time::getMillisecondCounterHiRes() - currentTime;
 	currentTime = (long)Time::getMillisecondCounterHiRes();
 
@@ -621,6 +626,7 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 		navigator->setSamplePosition(navigator->getSamplePosition() + numSamples);
 
 	}
+	
 }
 
 void MainComponent::releaseResources()
@@ -635,7 +641,6 @@ void MainComponent::paint(Graphics& g)
 
 void MainComponent::resized()
 {
-
 	if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
 		auto r = getLocalBounds().reduced(4).removeFromBottom(getHeight() - 55);
 
@@ -673,11 +678,10 @@ void MainComponent::resized()
 			editorView->getEditor()->resized();
 		}
 	}
-
-
 }
 
 PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
+
 	PopupMenu menu;
 
 	if (index == 0) {
@@ -731,7 +735,7 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addItem(8, "Add Audio Track", true, false, nullptr);
 		menu.addItem(9, "Add MIDI Track", true, false, nullptr);
 		menu.addItem(10, "Add Instrument Track", true, false, nullptr);
-
+		menu.addItem(11, "Add MIDI Clip", true, false, nullptr);
 		menu.addSubMenu("Align", alignMenu);
 	}
 
@@ -784,8 +788,12 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 			editorView->OpenTrackView();
 			editorView->getNavigator()->addChangeListener(this);
 		}
-		editor->createVirtualInstrumentTrack();
+		editor->addVirtualInstrumentTrack();
 		editor->repaint();
+	}
+	else if (menuItemID == 11)		
+	{
+		editorView->getNavigator()->getCurrentTrack()->addMidiRegion(48000, editorView->getNavigator()->getSamplePosition(), 480000);
 	}
 
 	else if (menuItemID == 31) {
@@ -856,7 +864,7 @@ void MainComponent::openSettings() {
 		deviceManager.getAudioDeviceSetup(setup);
 		deviceManager.restartLastAudioDevice();
 		AudioManager::getInstance()->setupChannels();
-		refreshMidiInputs();
+		midiProcessor->refreshMidiInputs();
 
 		std::unique_ptr<XmlElement> config = deviceManager.createStateXml();
 
@@ -876,7 +884,6 @@ void MainComponent::openSettings() {
 		}
 	};
 
-
 	ModalComponentManager::Callback* callback = ModalCallbackFunction::create(lambda);
 	ModalComponentManager::getInstance()->attachCallback(window, callback);
 
@@ -886,6 +893,9 @@ void MainComponent::openSettings() {
 
 bool MainComponent::keyStateChanged(bool isKeyDown, juce::Component* originatingComponent) {
 
+	// TODO : If we provide Keyboard INput for play, we shoukd clean this up!
+
+	/*
 	for (std::map<int, int>::iterator it = keyCodeMidiNote.begin(); it != keyCodeMidiNote.end(); it++) {
 		if (KeyPress::isKeyCurrentlyDown((*it).first)) {
 			if (!keyStates[(*it).second]) {
@@ -901,6 +911,7 @@ bool MainComponent::keyStateChanged(bool isKeyDown, juce::Component* originating
 			}
 		}
 	}
+	*/
 	return true;
 }
 
@@ -1020,7 +1031,7 @@ void MainComponent::buttonClicked(Button* b)
 				// make sure we do not send this event to a plugin module
 				
 				if ((module = dynamic_cast<PluginModule*>(editor->getModule()->getModules()->at(i))) == NULL) {
-					sendMidiStopMessage(editor->getModule()->getModules()->at(i), 1);
+					midiProcessor->sendMidiStopMessage(editor->getModule()->getModules()->at(i), 1);
 				}
 			}
 
@@ -1036,7 +1047,7 @@ void MainComponent::buttonClicked(Button* b)
 				// make sure we do not send this event to a plugin module
 
 				if ((module = dynamic_cast<PluginModule*>(editor->getModule()->getModules()->at(i))) == NULL) {
-					sendMidiStartMessage(editor->getModule()->getModules()->at(i), 1);
+					midiProcessor->sendMidiStartMessage(editor->getModule()->getModules()->at(i), 1);
 				}
 			}
 
@@ -1052,223 +1063,10 @@ void MainComponent::buttonClicked(Button* b)
 
 	}
 
-
 	if (b == lockButton) {
 		editor->setLocked(lockButton->getToggleState());
 	}
 
-}
-
-void MainComponent::handleIncomingMidiMessage(juce::MidiInput* source, const juce::MidiMessage& message) {
-
-	for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
-		
-		MidiRecorderModule* recorder = dynamic_cast<MidiRecorderModule*>(editor->getModule()->getModules()->at(i));
-
-		if (recorder != nullptr) {
-			recorder->handleIncomingMidiMessage(source, message);
-		}
-
-	}
-
-	if (message.isNoteOn() && message.getNoteNumber() > 7) {
-		for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
-			sendNoteMessage(editor->getModule()->getModules()->at(i), message.getChannel(), message.getNoteNumber());
-			sendGateMessage(editor->getModule()->getModules()->at(i), message.getChannel(), message.getVelocity(), message.getNoteNumber(), true);
-		}
-	}
-	else if (message.isNoteOff() && message.getNoteNumber() > 7) {
-		for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
-			sendGateMessage(editor->getModule()->getModules()->at(i), message.getChannel(), message.getVelocity(), message.getNoteNumber(), false);
-		}
-	}
-	else if (message.isController()) {
-		for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
-			sendControllerMessage(editor->getModule()->getModules()->at(i), message.getChannel(), message.getControllerNumber(), message.getControllerValue());
-		}
-	}
-	else if (message.isPitchWheel()) {
-		for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
-			sendPitchBendMessage(editor->getModule()->getModules()->at(i), message.getChannel(), message.getPitchWheelValue());
-		}
-	}
-	else if (message.isMidiClock()) {
-		for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
-			sendClockMessage(editor->getModule()->getModules()->at(i), message.getChannel());
-		}
-	}
-	else if (message.isMidiStart()) {
-		for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
-			sendMidiStartMessage(editor->getModule()->getModules()->at(i), message.getChannel());
-		}
-	}
-	else if (message.isMidiStop()) {
-		for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
-			sendMidiStopMessage(editor->getModule()->getModules()->at(i), message.getChannel());
-		}
-	}
-	else if (message.isMidiMachineControlMessage()) {
-
-		MidiMessage::MidiMachineControlCommand command = message.getMidiMachineControlCommand();
-
-		switch (command)
-		{
-		case MidiMessage::MidiMachineControlCommand::mmc_play:
-			Logger::writeToLog("mmc_play");
-			break;
-		case MidiMessage::MidiMachineControlCommand::mmc_stop:
-			Logger::writeToLog("mmc_stop");
-			break;
-
-		default:
-			break;
-		}
-
-
-
-	}
-	else {
-		Logger::writeToLog(message.getDescription());
-	}
-
-	// deviceManager.getDefaultMidiOutput()->sendMessageNow(message);
-}
-
-void MainComponent::sendGateMessage(Module* module, int channel, int velocity, int note, bool on) {
-
-	MidiGate* gate;
-
-	if ((gate = dynamic_cast<MidiGate*>(module)) != NULL) {
-		if (gate->getChannel() == channel) {
-			if (on) {
-				if (velocity > 0)
-					gate->gateOn(velocity, note);
-			}
-			else {
-				gate->gateOff(note);
-			}
-		}
-
-	}
-
-	for (int i = 0; i < module->getModules()->size(); i++) {
-
-		if ((gate = dynamic_cast<MidiGate*>(module->getModules()->at(i))) != NULL) {
-			if (gate->getChannel() == channel) {
-				if (on) {
-					gate->gateOn(velocity, note);
-				}
-				else {
-					gate->gateOff(note);
-				}
-
-				sendGateMessage(module->getModules()->at(i), channel, velocity, note, on);
-			}
-		}
-	}
-
-}
-
-void MainComponent::sendNoteMessage(Module* module, int channel, int note) {
-
-	MidiNote* midiNote;
-
-	if ((midiNote = dynamic_cast<MidiNote*>(module)) != NULL) {
-		if (note > 0)
-			midiNote->note(note);
-	}
-
-	for (int i = 0; i < module->getModules()->size(); i++) {
-
-		if ((midiNote = dynamic_cast<MidiNote*>(module->getModules()->at(i))) != NULL) {
-			sendNoteMessage(module->getModules()->at(i), channel, note);
-		}
-	}
-}
-
-void MainComponent::sendClockMessage(Module* module, int channel) {
-
-	MidiClock* midiClock;
-
-	if ((midiClock = dynamic_cast<MidiClock*>(module)) != NULL) {
-		midiClock->clock(MidiMessage::midiClock());
-	}
-
-	for (int i = 0; i < module->getModules()->size(); i++) {
-
-		if ((midiClock = dynamic_cast<MidiClock*>(module->getModules()->at(i))) != NULL) {
-			sendClockMessage(module->getModules()->at(i), channel);
-		}
-	}
-}
-
-void MainComponent::sendMidiStartMessage(Module* module, int channel) {
-
-	MidiClock* midiClock;
-
-	if ((midiClock = dynamic_cast<MidiClock*>(module)) != NULL) {
-		midiClock->midiStart();
-	}
-
-	for (int i = 0; i < module->getModules()->size(); i++) {
-
-		if ((midiClock = dynamic_cast<MidiClock*>(module->getModules()->at(i))) != NULL) {
-			sendMidiStartMessage(module->getModules()->at(i), channel);
-		}
-	}
-}
-
-void MainComponent::sendMidiStopMessage(Module* module, int channel) {
-
-	MidiClock* midiClock;
-
-	if ((midiClock = dynamic_cast<MidiClock*>(module)) != NULL) {
-		midiClock->midiStop();
-	}
-
-	for (int i = 0; i < module->getModules()->size(); i++) {
-
-		if ((midiClock = dynamic_cast<MidiClock*>(module->getModules()->at(i))) != NULL) {
-			sendMidiStopMessage(module->getModules()->at(i), channel);
-		}
-	}
-}
-
-void MainComponent::sendPitchBendMessage(Module* module, int channel, int pitch) {
-
-	PitchBendModule* pbm;
-
-	if ((pbm = dynamic_cast<PitchBendModule*>(module)) != NULL) {
-		pbm->setPitch(pitch);
-	}
-
-	for (int i = 0; i < module->getModules()->size(); i++) {
-		if ((pbm = dynamic_cast<PitchBendModule*>(module->getModules()->at(i))) != NULL) {
-			sendPitchBendMessage(module->getModules()->at(i), channel, pitch);
-		}
-	}
-}
-
-void MainComponent::sendControllerMessage(Module* module, int channel, int controller, float value) {
-
-	Knob* k;
-
-	if ((k = dynamic_cast<Knob*>(module)) != NULL) {
-		if (k->isLearning()) {
-			k->setIsMidicontroller(true);
-			k->setController(controller);
-			k->setLearning(false);
-		}
-		if (k->getController() == controller) {
-			k->setValue(value);
-		}
-
-	}
-	for (int i = 0; i < module->getModules()->size(); i++) {
-		if ((k = dynamic_cast<Knob*>(module->getModules()->at(i))) != NULL) {
-			sendControllerMessage(module->getModules()->at(i), channel, controller, value);
-		}
-	}
 }
 
 void MainComponent::processModule(Module* m) {
@@ -1285,30 +1083,7 @@ void MainComponent::processModule(Module* m) {
 	}
 }
 
-void MainComponent::refreshMidiInputs() {
-	for (int i = 0; i < MidiInput::getDevices().size(); i++) {
-		if (deviceManager.isMidiInputEnabled(MidiInput::getDevices().getReference(i))) {
-			deviceManager.removeMidiInputCallback(MidiInput::getDevices().getReference(i), this);
-			deviceManager.addMidiInputCallback(MidiInput::getDevices().getReference(i), this);
-		}
-	}
-}
 
-void MainComponent::enableAllMidiInputs() {
-	for (int i = 0; i < MidiInput::getDevices().size(); i++) {
-		if (deviceManager.isMidiInputEnabled(MidiInput::getDevices().getReference(i))) {
-			deviceManager.addMidiInputCallback(MidiInput::getDevices().getReference(i), this);
-		}
-	}
-}
-
-void MainComponent::disableAllMidiInputs() {
-	for (int i = 0; i < MidiInput::getDevices().size(); i++) {
-		if (deviceManager.isMidiInputEnabled(MidiInput::getDevices().getReference(i))) {
-			deviceManager.removeMidiInputCallback(MidiInput::getDevices().getReference(i), this);
-		}
-	}
-}
 
 void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source) {
 

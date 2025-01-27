@@ -103,24 +103,21 @@
 	{
 		// recording case, send event to current region of track and to event out pin
 		// this is necessary to update the midi region in the timeline and to pass the event to the next module
+		const ScopedLock sl(lock);
 
-		if (trackType == Track::Type::MIDI && e->getType() == Event::GATE) {
-			if (track != nullptr && track->isRecording()) {
-				MidiRegion* r = dynamic_cast<MidiRegion*>(track->getCurrentRegion(track->getNavigator()->getSamplePosition()));
-				if (r != nullptr) {
-					MidiMessage* m = new MidiMessage(e->getMessage(), track->getNavigator()->getSamplePosition());
-					if (m->isNoteOn()) {
-						Logger::getCurrentLogger()->writeToLog("Received event note on");
-					}
-					else if (m->isNoteOff()) {
-						Logger::getCurrentLogger()->writeToLog("Received event note off");
-					}
-					// add message to region
-					r->addMessage(m, Time::getMillisecondCounterHiRes() / 1000, track->getNavigator()->getSamplePosition());
-				}
-			}			
-			getPins().at(5)->getConnections().at(0)->sendEvent(e);
+		//if (trackType == Track::Type::MIDI && e->getType() == Event::GATE) {
+		if (track != nullptr && track->isRecording()) {
+			MidiRegion* r = dynamic_cast<MidiRegion*>(track->getCurrentRegion(track->getNavigator()->getSamplePosition()));
+			if (r != nullptr) {
+				MidiMessage* m = new MidiMessage(e->getMessage(), track->getNavigator()->getSamplePosition());
+				// add message to region
+				r->addMessage(m, Time::getMillisecondCounterHiRes() / 1000, track->getNavigator()->getSamplePosition());
+			}
 		}
+			//}			
+		getPins().at(5)->getConnections().at(0)->sendEvent(e);
+			
+		// }
 	}
 
 	void TrackIn::paint(juce::Graphics& g) {
@@ -243,6 +240,7 @@
 		this->track = t;
 		trackType = t->getType();	
 		t->AddEventListener(this);
+		
 	}
 
 	int TrackIn::getChannelIndex() {
@@ -261,9 +259,9 @@
 
 		properties = juce::Array<PropertyComponent*>();
 		volumeProp = new SliderPropertyComponent(*volumeValue, "Volume", 0, 1, 0.01, 1.0, true);
-		trackProp = new ChoicePropertyComponent(*trackValue, "Track", navigator->getTrackList(), values);
+		// trackProp = new ChoicePropertyComponent(*trackValue, "Track", navigator->getTrackList(), values);
 		properties.add(volumeProp);
-		properties.add(trackProp);
+		// properties.add(trackProp);
 		return properties;
 	}
 

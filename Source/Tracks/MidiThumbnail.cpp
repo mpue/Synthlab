@@ -56,9 +56,9 @@ double MidiThumbnail::getTotalLength()
     return sampleRate > 0 ? (totalSamples / sampleRate) : 0;
 }
 
-void MidiThumbnail::drawChannels (Graphics& g, const Rectangle<int>& area, double startTimeSeconds, double endTimeSeconds, float verticalZoomFactor) {
+void MidiThumbnail::drawChannels (Graphics& g, double startTimeSeconds, double endTimeSeconds, float verticalZoomFactor) {
 
-    int sampleNum;
+    int sampleNum = 0;
     MidiMessage message;
     
     MidiBuffer::Iterator* iterator = new MidiBuffer::Iterator(*midiBuffer);
@@ -77,9 +77,9 @@ void MidiThumbnail::drawChannels (Graphics& g, const Rectangle<int>& area, doubl
         }
         else if (message.isNoteOff()) {
             end = sampleNum;
-            int x = ((double)area.getWidth() / (double)totalSamples) * start;
-            notelen = ((double)area.getWidth() / (double)totalSamples) * (end - start);
-            g.fillRect(x, area.getHeight()  - (area.getHeight() / 127 * message.getNoteNumber()), notelen, 3);
+            int x = ((double)getBounds().getWidth() / (double)totalSamples) * start;
+            notelen = ((double)getBounds().getWidth() / (double)totalSamples)* (end - start);
+            g.fillRect(x, getBounds().getHeight() - (getBounds().getHeight() / 127 * message.getNoteNumber()), notelen, 3);
         }
     
     }

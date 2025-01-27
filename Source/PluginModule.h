@@ -81,6 +81,7 @@ private:
     juce::PropertyComponent* pluginProp = nullptr;    
     PluginValueListener* pluginListener;
 
+    CriticalSection lock;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PluginModule)
 };

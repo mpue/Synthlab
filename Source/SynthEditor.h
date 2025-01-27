@@ -60,12 +60,14 @@ public:
     void ConnectAudioOut(AudioOut*& audioOut, Module* m, const juce::Point<int>& pos, int leftSourcePin, int rightSourcePin);
     
     Track* createMIDITrack();
-    void createVirtualInstrumentTrack();
+    void addVirtualInstrumentTrack();
+    Track* createVirtualInstrumentTrack(juce::String name, Point<int> pos);
+    
     // audio processing
 
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate);
-    void showContextMenu(Point<int> position);
 
+    void showContextMenu(Point<int> position);
     bool isRunning();
     void setRunning(bool running);
     void timerCallback() override;

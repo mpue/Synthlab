@@ -161,80 +161,94 @@ void PluginModule::paint(juce::Graphics &g) {
 
 
 void PluginModule::process() {
-    
-    if (pins.at(0)->getConnections().size() == 1 && pins.at(1)->getConnections().size() == 1) {
+    // Überprüfen, ob die Pins gültige Verbindungen haben
+    bool hasValidConnections =
+        pins.size() >= 4 &&
+        pins.at(0)->getConnections().size() == 1 &&
+        pins.at(1)->getConnections().size() == 1;
+
+    // Verarbeite die Eingabepuffer oder setze sie auf Null
+    if (hasValidConnections) {
         const float* inL = pins.at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
         const float* inR = pins.at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
 
-
-        for (int i = 0; i < buffersize; i++) {
-            bufferLeft[i] = inL[i];
-            bufferRight[i] = inR[i];
-        }
+        std::copy(inL, inL + buffersize, bufferLeft);
+        std::copy(inR, inR + buffersize, bufferRight);
     }
     else {
-        for (int i = 0; i < buffersize; i++) {
-            bufferLeft[i] = 0;
-            bufferRight[i] = 0;
-        }
-
+        std::fill(bufferLeft, bufferLeft + buffersize, 0.0f);
+        std::fill(bufferRight, bufferRight + buffersize, 0.0f);
     }
+
+    // Verarbeite den Audio-Block, falls ein Plugin vorhanden ist
     if (plugin != nullptr) {
-        if (pins.at(0)->getConnections().size() == 1 && pins.at(1)->getConnections().size() == 1) {
+        if (hasValidConnections) {
             audioBuffer->copyFrom(0, 0, *pins.at(0)->getConnections().at(0)->getAudioBuffer(), 0, 0, buffersize);
             audioBuffer->copyFrom(1, 0, *pins.at(1)->getConnections().at(0)->getAudioBuffer(), 0, 0, buffersize);
         }
         else {
             audioBuffer->clear();
         }
+
+        // Prozessiere den Block nur, wenn es Ausgabekanäle gibt
         if (plugin->getNumOutputChannels() > 0) {
             plugin->processBlock(*audioBuffer, midiBuffer);
         }
-        pins.at(2)->getAudioBuffer()->copyFrom(0,0, *audioBuffer, 0, 0, buffersize);
-        pins.at(3)->getAudioBuffer()->copyFrom(0,0, *audioBuffer, 1, 0, buffersize);
+
+        // Ausgabe auf die Pins 2 und 3 kopieren
+        pins.at(2)->getAudioBuffer()->copyFrom(0, 0, *audioBuffer, 0, 0, buffersize);
+        pins.at(3)->getAudioBuffer()->copyFrom(0, 0, *audioBuffer, 1, 0, buffersize);
     }
-        
-    /*
-    for (int i = 0; i < buffersize;i++){
-        pins.at(2)->getAudioBuffer()->setSample(0, i,bufferLeft[i]);
-        pins.at(3)->getAudioBuffer()->setSample(0, i,bufferRight[i]);
-    }
-        */
-    currentSample = (currentSample+1) % buffersize;
+
+    // Aktualisiere den aktuellen Sample-Index
+    currentSample = (currentSample + 1) % buffersize;
 }
+
 
 void PluginModule::eventReceived(Event *e) {
     
-    stringstream ss;
-    ss << "Received event in plugin module: " << e->getMessage().getTimeStamp();
-    Logger::getCurrentLogger()->writeToLog(ss.str());
-        
-    if (e->getType() == Event::Type::GATE) {
-    
-        float velocity = (1.0/127) * e->getValue();
-        
-        if (e->getValue() > 0) {
-            MidiMessage start = MidiMessage::midiStart();
-            start.setTimeStamp(Time::getMillisecondCounter());
-            midiBuffer.addEvent(start,currentSample);
-            MidiMessage* m = new MidiMessage(MidiMessage::noteOn((int)1, (int)e->getNote(), velocity));
-            m->setTimeStamp(Time::getMillisecondCounter());
-            midiBuffer.addEvent(*m, currentSample);
-            
-        }
-        else {
-            midiBuffer.addEvent(MidiMessage::midiStop(),currentSample);
-            MidiMessage* m = new MidiMessage(MidiMessage::noteOff((int)1, (int)e->getNote(), velocity));
-            m->setTimeStamp(Time::getMillisecondCounter());
-            midiBuffer.addEvent(*m, currentSample);
-        }
+    /*
+    if (e->getMessage().isNoteOn()) {
+		Logger::getCurrentLogger()->writeToLog("Received note on");
+	}
+    else if (e->getMessage().isNoteOff()) {
+        Logger::getCurrentLogger()->writeToLog("Received note off");
     }
-    else if (e->getType() == Event::Type::CLOCK) {
+	else {
+		Logger::getCurrentLogger()->writeToLog("Received event");
+	}
+    */
+    ScopedLock(*lock);
+    e->getMessage().setTimeStamp(currentSample);
+    midiBuffer.addEvent(e->getMessage(), currentSample);
+    //if (e->getType() == Event::Type::GATE) {
+    //
+    //    float velocity = (1.0/127) * e->getValue();
+    //    
+    //    if (e->getMessage().isNoteOn()) {
+    //        // MidiMessage start = MidiMessage::midiStart();
+    //        // start.setTimeStamp(Time::getMillisecondCounter());
+    //        // midiBuffer.addEvent(start,currentSample);
+    //        MidiMessage* m = new MidiMessage(MidiMessage::noteOn((int)1, (int)e->getNote(), velocity));
+    //        m->setTimeStamp(Time::getMillisecondCounter());
+    //        midiBuffer.addEvent(*m, currentSample);
+    //        
+    //    }
+    //    else if (e->getMessage().isNoteOff()) {
+    //        // midiBuffer.addEvent(MidiMessage::midiStop(),currentSample);
+    //        MidiMessage* m = new MidiMessage(MidiMessage::noteOff((int)1, (int)e->getNote(), velocity));
+    //        m->setTimeStamp(Time::getMillisecondCounter());
+    //        midiBuffer.addEvent(*m, currentSample);
+    //    }
+    //}
+    //
+    //else if (e->getType() == Event::Type::CLOCK) {
 
-        MidiMessage* m = new MidiMessage(MidiMessage::midiClock());
-        m->setTimeStamp(Time::getMillisecondCounter());
-        midiBuffer.addEvent(*m, currentSample);
-    }
+    //    MidiMessage* m = new MidiMessage(MidiMessage::midiClock());
+    //    m->setTimeStamp(Time::getMillisecondCounter());
+    //    midiBuffer.addEvent(*m, currentSample);
+    //}    
+    
 }
 
 void PluginModule::createProperties() {

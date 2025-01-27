@@ -43,7 +43,7 @@ public:
     int getLoopCount();
     
     long getSampleOffset();
-    void setSampleOffset(long offset,bool reminder, bool notify);
+    virtual void setSampleOffset(long offset,bool reminder, bool notify);
     
     long getOldOffset();
     
@@ -100,8 +100,8 @@ protected:
     bool loop = false;
     virtual void changeListenerCallback(ChangeBroadcaster * source) override = 0;
 
-    ResizableEdgeComponent* resizerR;
-    ResizableEdgeComponent* resizerL;
+    ResizableEdgeComponent* resizerR = nullptr;
+    ResizableEdgeComponent* resizerL = nullptr;
     
     MultiComponentDragger* dragger = NULL;
 

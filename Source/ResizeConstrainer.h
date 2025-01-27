@@ -51,7 +51,7 @@ public:
             width = maxWidth;
         }
         
-        width = UITools::snap(width,this->raster,4);
+        // width = UITools::snap(width,this->raster,4);
         
         bounds.setWidth(width);
     }
@@ -73,7 +73,7 @@ public:
 private:
     int raster = 1;
     int tolerance = 4;
-    int maxWidth = 0;
+    int maxWidth = 1000;
     
 };
 
