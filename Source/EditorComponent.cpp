@@ -19,7 +19,7 @@ using juce::Graphics;
 using juce::ResizableWindow;
 
 //==============================================================================
-EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView* properties) : resizerBar (&stretchableManager, 1, false)
+EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView* properties, CommandParser& parser) : resizerBar (&stretchableManager, 1, false)
 {
     this->bufferSize = bufferSize;
     this->sampleRate = sampleRate;
@@ -55,7 +55,10 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView*
     editor->addChangeListener(this);
     
     bottomTab->addTab("Mixer", Colours::darkgrey, mixerView, false);
-    
+
+    console = new ShellConsoleComponent(parser);
+    bottomTab->addTab("Console", Colours::darkgrey, console, false);
+
     addAndMakeVisible(topTab);
     addAndMakeVisible(resizerBar);
     addAndMakeVisible(bottomTab);
@@ -100,6 +103,7 @@ EditorComponent::~EditorComponent()
     delete mixerView;    
     delete navigator;
     delete trackView;
+    delete console;
 }
 
 void EditorComponent::paint (Graphics& g)

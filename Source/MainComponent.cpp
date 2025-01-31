@@ -104,10 +104,10 @@ MainComponent::MainComponent() : resizerBar(&stretchableManager, 1, true)
 	}
 
 	Project::getInstance()->setMain(this);
-	
+
 	startTimer(40);
 
-	midiProcessor = new MidiProcessor(editor,&deviceManager);
+	midiProcessor = new MidiProcessor(editor, &deviceManager);
 	midiProcessor->enableAllMidiInputs();
 
 	addMouseListener(this, true);
@@ -288,10 +288,118 @@ void MainComponent::createCPUMeter() {
 
 void MainComponent::createStudioLayout() {
 	propertyView = new PropertyView();
-	editorView = new EditorComponent(sampleRate, buffersize, propertyView);
+	parser = new CommandParser();
+	editorView = new EditorComponent(sampleRate, buffersize, propertyView, *parser);
 	editor = editorView->getEditor();
 	mixer = editorView->getMixer();
 	mixerPanel = editorView->getMixerPanel();
+
+	parser->registerCommand("help", [this](const std::vector<std::string>&) -> std::string {
+		return parser->displayHelp();
+		}, "Show help.");
+
+
+	parser->registerCommand("scan", [](const std::vector<std::string>&) -> std::string {
+		PluginManager::getInstance()->scanPlugins();
+		return "Plugin scan started.";
+		}, "Start plugin scan.");
+
+	parser->registerCommand("add", [this](const std::vector<std::string>& args) -> std::string {
+		if (args.empty()) {
+			return "Error: No arguments provided.";
+		}
+
+		Point<int> pos = Point<int>(100, 100);
+
+		if (args[0] == "instrument") {
+			if (args.size() < 2) return "Error: Missing instrument name.";
+			editor->createVirtualInstrumentTrack(args.at(1), pos);
+			return "Instrument track added.";
+		}
+		if (args[0] == "midi") {
+			editor->createMIDITrack();
+			return "MIDI track added.";
+		}
+		if (args[0] == "audio") {
+			editor->createAudioTrack();
+			return "Audio track added.";
+		}
+		if (args[0] == "midiregion") {
+			if (args.size() < 3) return "Error: Missing arguments for MIDI region.";
+			navigator->getCurrentTrack()->addMidiRegion(48000, juce::String(args[1]).getIntValue(), juce::String(args[2]).getIntValue());
+			return "MIDI region added.";
+		}
+
+		return "Error: Unknown argument.";
+		}, "Add instrument");
+
+	parser->registerCommand("list", [this](const std::vector<std::string>& args) -> std::string {
+		if (args.empty()) {
+			return "Error: No arguments provided.";
+		}
+
+		if (args[0] == "regions") {
+			std::stringstream ss;
+
+			if (navigator->getCurrentTrack() == nullptr) {
+				return "Error: No track selected.";
+			}
+
+			for (auto region : navigator->getCurrentTrack()->getRegions()) {
+				ss << "Region " << region->getSampleOffset() << " - " << region->getNumSamples() << "\n";
+			}
+
+			return ss.str();
+		}
+
+		return "Error: Unknown argument.";
+		}, "List regions of current track.");
+
+	parser->registerCommand("set", [this](const std::vector<std::string>& args) -> std::string {
+		if (args.size() < 2) return "Error: Missing arguments.";
+
+		Region* r = navigator->getCurrentTrack()->getRegionAt(juce::String(args[0]).getIntValue());
+		if (!r) return "Error: Region not found.";
+
+		r->setSampleOffset(juce::String(args[1]).getIntValue(), false, false);
+		return "Region updated.";
+		}, "Set a value.");
+
+	parser->registerCommand("get", [this](const std::vector<std::string>& args) -> std::string {
+		if (args.empty()) {
+			return "Error: No arguments provided.";
+		}
+
+		std::stringstream ss;
+
+		if (args[0] == "region") {
+			if (args.size() < 2) return "Error: Missing region index.";
+
+			Region* r = navigator->getCurrentTrack()->getRegionAt(juce::String(args[1]).getIntValue());
+			if (r != nullptr) {
+				ss << "Region " << r->getSampleOffset() << " - " << r->getNumSamples();
+			}
+			else {
+				return "Error: Region not found.";
+			}
+			}
+		else if (args[0] == "currentregion") {
+			Region* r = navigator->getCurrentTrack()->getCurrentRegion();
+			if (r != nullptr) {
+				ss << "Region " << r->getSampleOffset() << " - " << r->getNumSamples();
+			}
+			else {
+				return "Error: Current region not found.";
+			}
+		}
+		else {
+			return "Error: Unknown argument.";
+		}
+
+		return ss.str();
+		}, "Gets a value.");
+
+
 
 #if JUCE_MAC
 
@@ -330,8 +438,8 @@ void MainComponent::createStudioLayout() {
 	pluginMenu = PluginManager::getInstance()->buildPluginMenu();
 #endif
 	editor->updateProject(File());
-	
-}
+
+		}
 
 void MainComponent::createPlayerLayout() {
 	editor = new SynthEditor(sampleRate, buffersize);
@@ -452,10 +560,9 @@ int MainComponent::getNumActiveChannels(int i) {
 	return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
 }
 
-
 void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill)
 {
-	
+
 	lastTime = (long)Time::getMillisecondCounterHiRes() - currentTime;
 	currentTime = (long)Time::getMillisecondCounterHiRes();
 
@@ -624,9 +731,8 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 	}
 	if (navigator != nullptr && (navigator->isPlaying() || navigator->isRecording())) {
 		navigator->setSamplePosition(navigator->getSamplePosition() + numSamples);
-
 	}
-	
+
 }
 
 void MainComponent::releaseResources()
@@ -791,7 +897,7 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 		editor->addVirtualInstrumentTrack();
 		editor->repaint();
 	}
-	else if (menuItemID == 11)		
+	else if (menuItemID == 11)
 	{
 		editorView->getNavigator()->getCurrentTrack()->addMidiRegion(48000, editorView->getNavigator()->getSamplePosition(), 480000);
 	}
@@ -882,7 +988,7 @@ void MainComponent::openSettings() {
 			config->writeToFile(configFile, "");
 			config = nullptr;
 		}
-	};
+		};
 
 	ModalComponentManager::Callback* callback = ModalCallbackFunction::create(lambda);
 	ModalComponentManager::getInstance()->attachCallback(window, callback);
@@ -981,7 +1087,7 @@ void MainComponent::buttonClicked(Button* b)
 			editor->setRunning(true);
 		}
 		else if (tb->getItemId() == toolbarFactory->doc_save) {
-			editor->saveFile();						
+			editor->saveFile();
 		}
 		else if (tb->getItemId() == toolbarFactory->doc_open) {
 			editor->setRunning(false);
@@ -1027,9 +1133,9 @@ void MainComponent::buttonClicked(Button* b)
 			for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
 
 				PluginModule* module = nullptr;
-				
+
 				// make sure we do not send this event to a plugin module
-				
+
 				if ((module = dynamic_cast<PluginModule*>(editor->getModule()->getModules()->at(i))) == NULL) {
 					midiProcessor->sendMidiStopMessage(editor->getModule()->getModules()->at(i), 1);
 				}
@@ -1087,7 +1193,7 @@ void MainComponent::processModule(Module* m) {
 
 void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source) {
 
-	TrackNavigator* navigator  = dynamic_cast<TrackNavigator*>(source);
+	TrackNavigator* navigator = dynamic_cast<TrackNavigator*>(source);
 	if (navigator != nullptr) {
 		currentSample = navigator->getSamplePosition();
 

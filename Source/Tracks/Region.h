@@ -89,7 +89,7 @@ protected:
 
     bool dirty;
 
-    float zoom = 30;
+    float zoom = 20;
     String name;
     int offset = 0;
     double sampleRate = 48000;

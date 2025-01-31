@@ -1,59 +1,50 @@
 /*
-  ==============================================================================
-
+  ==============================================================================\n
     TimeLine.cpp
     Created: 25 Nov 2016 10:54:33am
     Author:  pueskma
 
-  ==============================================================================
-*/
+  ==============================================================================\n*/
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "TimeLine.h"
 #include <sstream>
 #include <iostream>
 
-//==============================================================================
+  //==============================================================================
 TimeLine::TimeLine(double lengthInSeconds)
 {
     this->length = lengthInSeconds;
-    dropShadow = new DropShadow(Colour::fromFloatRGBA(0,0,0,0.5),3,Point<int>(3,3));
-    dropShadower = new DropShadower(*dropShadow);
+    dropShadow = std::make_unique<DropShadow>(Colour::fromFloatRGBA(0, 0, 0, 0.5), 3, Point<int>(3, 3));
+    dropShadower = std::make_unique<DropShadower>(*dropShadow);
     dropShadower->setOwner(this);
 }
 
-TimeLine::~TimeLine()
+TimeLine::~TimeLine() {}
+
+void TimeLine::paint(Graphics& g)
 {
-    dropShadower = nullptr;
-    dropShadow = nullptr;
-}
+    g.fillAll(Colours::darkgrey);
+    g.setColour(Colours::black);
+    g.drawRect(getLocalBounds(), 1);
+    g.setColour(Colours::white);
 
-void TimeLine::paint (Graphics& g)
-{
-    g.fillAll (Colours::darkgrey);   // clear the background
-	g.setColour(Colours::black);
-	g.drawRect(getLocalBounds(), 1);   // draw an outline around the component
-	g.setColour(Colours::white);
-	if (this->length > 0) {
+    if (this->length > 0)
+    {
+        const double stepSize = getWidth() / this->length;
 
-		double stepSize = getWidth() / this->length;
+        for (int second = 1; second < this->length; ++second)
+        {
+            const float xPos = static_cast<float>(stepSize * second + offset);
 
-		for (int second = 1; second < this->length;second++) {
-			
-			if (second % 5 == 0) {
-				g.drawLine(stepSize * second + offset, 0, stepSize * second + offset, getHeight() / 2);
-			}
-			else {
-				g.drawLine(stepSize * second + offset, 0, stepSize * second + offset, getHeight() / 3);
-			}
+            g.drawLine(xPos, 0.0f, xPos, (second % 5 == 0) ? getHeight() / 2.0f : getHeight() / 3.0f);
 
-			if (second % 10 == 0 && second > 0) {
-				g.drawText(secondsToTime(second), stepSize * (second - 1) + offset, 15,30,10, juce::Justification::bottomRight, false);
-			}
-		}
-
-	}
-
+            if (second % 10 == 0)
+            {
+                g.drawText(secondsToTime(second), static_cast<int>(stepSize * (second - 1) + offset), 15, 30, 10, juce::Justification::bottomRight, false);
+            }
+        }
+    }
 }
 
 void TimeLine::setLength(double length) {
@@ -61,47 +52,31 @@ void TimeLine::setLength(double length) {
     repaint();
 }
 
-void TimeLine::resized()
-{
-    // This method is where you should set the bounds of any child
-    // components that your component contains..
+void TimeLine::resized() {}
 
-}
-
-
-void TimeLine::changeListenerCallback(ChangeBroadcaster * source)
-{
-
-
-}
+void TimeLine::changeListenerCallback(ChangeBroadcaster* source) {}
 
 String TimeLine::secondsToTime(int seconds)
 {
-	int min = (seconds % 3600) / 60;
+    int min = (seconds % 3600) / 60;
 
-	std::stringstream out;
+    std::stringstream out;
 
-	/*
-	if (min < 10) {
-		out << "0";
-	}
-	*/
+    out << min << ":";
 
-	out << min << ":";
+    int sec = (seconds % 3600) % 60;
 
-	int sec = (seconds % 3600) % 60;
+    if (sec < 10) {
+        out << "0";
+    }
 
-	if (sec < 10) {
-		out << "0";
-	}
+    out << sec;
 
-	out << sec;
-
-	return String(out.str());
+    return String(out.str());
 }
 
 void TimeLine::setOffset(int offset)
 {
-	this->offset = offset;
-	repaint();
+    this->offset = offset;
+    repaint();
 }

@@ -105,7 +105,7 @@ void PluginModule::selectPlugin(String name) {
         std::unique_ptr<XmlElement> xml = XmlDocument(preset).getDocumentElement();
         pd.loadFromXml(*xml.get());
 
-        double sampleRate = device->getCurrentSampleRate();
+         double sampleRate = device->getCurrentSampleRate();
         buffersize = device->getCurrentBufferSizeSamples();
         plugin = PluginManager::getInstance()->apfm->createPluginInstance(pd, sampleRate, buffersize, error).release();
         plugin->prepareToPlay(sampleRate,buffersize);

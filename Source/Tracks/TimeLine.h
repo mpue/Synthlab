@@ -32,8 +32,8 @@ private:
 	virtual void changeListenerCallback(ChangeBroadcaster * source) override;
 	double length;
 	int offset = 0;
-    ScopedPointer<DropShadow> dropShadow;
-    ScopedPointer<DropShadower> dropShadower;
+    std::unique_ptr<DropShadow> dropShadow;
+    std::unique_ptr<DropShadower> dropShadower;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TimeLine)
 };

@@ -102,16 +102,17 @@
 	void TrackIn::eventReceived(Event* e)
 	{
 		// recording case, send event to current region of track and to event out pin
-		// this is necessary to update the midi region in the timeline and to pass the event to the next module
+		// this is necessary to update the midi regions in the timeline and to pass the event to the next module
 		const ScopedLock sl(lock);
 
 		//if (trackType == Track::Type::MIDI && e->getType() == Event::GATE) {
 		if (track != nullptr && track->isRecording()) {
-			MidiRegion* r = dynamic_cast<MidiRegion*>(track->getCurrentRegion(track->getNavigator()->getSamplePosition()));
+			MidiRegion* r = dynamic_cast<MidiRegion*>(track->getCurrentRegion());
 			if (r != nullptr) {
-				MidiMessage* m = new MidiMessage(e->getMessage(), track->getNavigator()->getSamplePosition());
+				long samplePosition = track->getNavigator()->getSamplePosition();
+				MidiMessage* m = new MidiMessage(e->getMessage(), samplePosition);
 				// add message to region
-				r->addMessage(m, Time::getMillisecondCounterHiRes() / 1000, track->getNavigator()->getSamplePosition());
+				r->addMessage(m, Time::getMillisecondCounterHiRes() / 1000, samplePosition);
 			}
 		}
 			//}			

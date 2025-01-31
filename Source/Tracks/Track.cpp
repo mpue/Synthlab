@@ -375,7 +375,7 @@ void Track::splitRegion() {
 
 	long sampleNum = (this->maxLength / (this->maxLength * zoom)) * markerPosition * sampleRate;
 
-	if (AudioRegion* region = dynamic_cast<AudioRegion*>(getCurrentRegion(sampleNum))) {
+	if (AudioRegion* region = dynamic_cast<AudioRegion*>(getRegionAt(sampleNum))) {
 
 		if (region == NULL) {
 			return;
@@ -440,7 +440,7 @@ void Track::setSamplePosition(int position)
 
 	if (type == MIDI && position != samplePosition) {
 			
-		MidiRegion* r = dynamic_cast<MidiRegion*>(getCurrentRegion(position));
+		MidiRegion* r = dynamic_cast<MidiRegion*>(getRegionAt(position));
 		if (r != nullptr) {
 			MidiMessage* m = r->getMessage(position - r->getSampleOffset());
 			if (m != nullptr) {
@@ -524,7 +524,7 @@ float Track::getPan()
 	return pan;
 }
 
-Region* Track::getCurrentRegion(long sample) {
+Region* Track::getRegionAt(long sample) {
 
 	Region* current = NULL;
 
@@ -546,13 +546,20 @@ Region* Track::getCurrentRegion(long sample) {
 
 }
 
+Region* Track::getCurrentRegion()
+{
+	Region* current = nullptr;
+	current = getRegionAt(samplePosition);
+	return current;
+}
+
 const float Track::getSample(int channel, long sample) {
 	if (mute) {
 		return 0;
 	}
-	currentRegion = getCurrentRegion(sample);
+	currentRegion = getRegionAt(sample);
 
-	if (getCurrentRegion(sample) != nullptr) {
+	if (getRegionAt(sample) != nullptr) {
 		if (sample - currentRegion->getSampleOffset() < getBuffer()->getNumSamples() && sample - currentRegion->getSampleOffset() > 0) {
 			return getBuffer()->getSample(channel, sample - currentRegion->getSampleOffset());
 		}
@@ -568,10 +575,10 @@ void Track::addMessage(MidiMessage* message, double time, int sampleNum) {
 		r = regions.at(0);
 	}
 	else {
-		r = getCurrentRegion(sampleNum);
+		r = getRegionAt(sampleNum);
 	}
 
-	MidiRegion* midiRegion = static_cast<MidiRegion*>(r);
+	MidiRegion* midiRegion = dynamic_cast<MidiRegion*>(r);
 	midiRegion->addMessage(message, time, sampleNum);
 	this->numSamples = sampleNum;
 }
@@ -608,7 +615,7 @@ void Track::createProperties()
 
 void Track::setSample(int channel, int sampleNum, float sample)
 {
-	currentRegion = getCurrentRegion(sample);
+	currentRegion = getRegionAt(sample);
 
 	if (currentRegion != nullptr) {
 		AudioSampleBuffer* buf = getBuffer();
@@ -628,7 +635,7 @@ void Track::setSample(int channel, int sampleNum, float sample)
 
 MidiMessage* Track::getMessage(double time, int sampleNum) {
 
-	Region* r = getCurrentRegion(sampleNum);
+	Region* r = getRegionAt(sampleNum);
 
 	if (r == NULL) {
 		return NULL;
@@ -710,8 +717,8 @@ void Track::resized() {
 		(*it)->setZoom(zoom);
 	}
 	resizer->setSize(getWidth(), 5);
-	constrainer->setMaxWidth(getWidth());
 	resizer->setTopLeftPosition(0, getHeight() - 5);
+	constrainer->setMaxWidth(getWidth());
 	sendChangeMessage();
 }
 

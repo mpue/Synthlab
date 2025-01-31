@@ -53,9 +53,7 @@ public:
     virtual void timerCallback() override;    
     virtual void stopRecording() override;
     virtual void startRecording() override;
-   
-    virtual void setSampleOffset(long offset, bool reminder, bool notify) override;
-
+  
     void clear();
     MidiMessage* getMessage(int sampleNum);
     void addMessage(MidiMessage* m, double time, int sampleNum);
@@ -65,9 +63,6 @@ public:
     MidiMessage* getMessageAt(int index) {
         return midiMessageList.at(index);
     }
-
-    // component dragger used to drag and drop regions
-    void setDragger(MultiComponentDragger* dragger);
     
     virtual void updateThumb() override;
     virtual void componentMovedOrResized (Component& component,bool wasMoved, bool wasResized) override;
@@ -90,6 +85,8 @@ private:
     int lastIndex = -1;
     long timeElapsed = 0;
     int currentMessageNum = 0;
+
+    int lastX = 0;
 };
 
 

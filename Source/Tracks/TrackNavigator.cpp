@@ -363,18 +363,18 @@ void TrackNavigator::setRecording(bool recording) {
 				
 				if (tracks.at(i)->getType() == Track::Type::MIDI) {
 
-					MidiRegion* r = dynamic_cast<MidiRegion*>(tracks.at(i)->getCurrentRegion(recordStart));
+					MidiRegion* r = dynamic_cast<MidiRegion*>(tracks.at(i)->getRegionAt(recordStart));
 					if (r == nullptr) {
 						tracks.at(i)->addMidiRegion(Project::getInstance()->getSampleRate(), recordStart, 480000*4);
 					}
-					tracks.at(i)->getCurrentRegion(recordStart)->startRecording();
+					tracks.at(i)->getRegionAt(recordStart)->startRecording();
 				}
 				else if (tracks.at(i)->getType() == Track::Type::AUDIO) {
-					AudioRegion* r = dynamic_cast<AudioRegion*>(tracks.at(i)->getCurrentRegion(recordStart));
+					AudioRegion* r = dynamic_cast<AudioRegion*>(tracks.at(i)->getRegionAt(recordStart));
 					if (r == nullptr) {
 						tracks.at(i)->addRegion(nullptr, Project::getInstance()->getSampleRate(), recordStart, 480000*4);
 					}
-					tracks.at(i)->getCurrentRegion(recordStart)->startRecording();
+					tracks.at(i)->getRegionAt(recordStart)->startRecording();
 				}
 
 			}

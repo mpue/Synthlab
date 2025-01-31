@@ -1601,7 +1601,6 @@ Track* SynthEditor::createMIDITrack()
 		values.add(PluginManager::getInstance()->getPlugins().getReference(i));
 	}
 
-
 	return t;
 }
 
@@ -1625,7 +1624,6 @@ void SynthEditor::addVirtualInstrumentTrack()
 
 Track* SynthEditor::createVirtualInstrumentTrack(juce::String name, Point<int> pos)
 {
-
 	AddModuleAction* am = new AddModuleAction(this, pos, 61);
 	Project::getInstance()->getUndoManager()->beginNewTransaction();
 	Project::getInstance()->getUndoManager()->perform(am);

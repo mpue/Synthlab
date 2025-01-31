@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <map>
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "SynthEditor.h"
 #include "PropertyView.h"
@@ -20,8 +21,8 @@
 #include "DefaultToolbarItemFactory.h"
 #include "ModuleBrowser.h"
 #include "AudioEngine/ADSR.h"
-#include <map>
 #include "MidiProcessor.h"
+#include "CommandParser.h"
 
 //==============================================================================
 
@@ -95,9 +96,10 @@ private:
     juce::PopupMenu* pluginMenu = nullptr;
     
     EditorComponent* editorView = nullptr;
-    
     ImageButton* lockButton = nullptr;
-    
+
+    CommandParser* parser = nullptr;
+
     virtual juce::StringArray getMenuBarNames() override;
     virtual juce::PopupMenu getMenuForIndex(int index, const juce::String & menuName) override;
     virtual void menuItemSelected(int menuItemID, int topLevelMenuIndex) override;

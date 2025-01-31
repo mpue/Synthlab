@@ -115,6 +115,7 @@
       <FILE id="EJ4uon" name="whitenoise.png" compile="0" resource="1" file="Images/whitenoise.png"/>
     </GROUP>
     <GROUP id="{CA20D122-1EA5-3A93-F1F8-F6EE53DA457E}" name="Source">
+      <FILE id="o8rkDp" name="CommandParser.h" compile="0" resource="0" file="Source/CommandParser.h"/>
       <FILE id="HVUNoB" name="MidiProcessor.cpp" compile="1" resource="0"
             file="Source/MidiProcessor.cpp"/>
       <FILE id="fTHaS5" name="MidiProcessor.h" compile="0" resource="0" file="Source/MidiProcessor.h"/>
@@ -416,6 +417,8 @@
                 file="Source/SequenceEditor.cpp"/>
           <FILE id="JcpA9U" name="SequenceEditor.h" compile="0" resource="0"
                 file="Source/SequenceEditor.h"/>
+          <FILE id="zcDpOw" name="ShellConsoleComponent.h" compile="0" resource="0"
+                file="Source/ShellConsoleComponent.h"/>
           <FILE id="SU8eIE" name="SynthEditor.cpp" compile="1" resource="0" file="Source/SynthEditor.cpp"/>
           <FILE id="ZyXyBq" name="SynthEditor.h" compile="0" resource="0" file="Source/SynthEditor.h"/>
           <FILE id="VXsCEb" name="ToolbarComboBox.cpp" compile="1" resource="0"

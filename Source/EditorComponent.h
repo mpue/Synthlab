@@ -17,13 +17,15 @@
 #include "Mixer.h"
 #include "Tracks/TrackNavigator.h"
 #include "PropertyView.h"
+#include "ShellConsoleComponent.h"
+#include "CommandParser.h"
 //==============================================================================
 /*
 */
 class EditorComponent    : public juce::Component, public juce::ChangeListener
 {
 public:
-    EditorComponent(float sampleRate, int bufferSize, PropertyView* properties);
+    EditorComponent(float sampleRate, int bufferSize, PropertyView* properties, CommandParser& parser);
     ~EditorComponent();
 
     void paint (juce::Graphics&) override;
@@ -58,5 +60,8 @@ private:
     TrackNavigator* navigator = nullptr;
     PropertyView* propertyView = nullptr;
     
+    ShellConsoleComponent* console = nullptr;
+    
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EditorComponent)
 };

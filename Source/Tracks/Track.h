@@ -97,8 +97,9 @@ public:
 
     void updateMagnitude(int sample, int buffersize, float gainLeft, float gainRight);
 
-    Region* getCurrentRegion(long sample);
-    
+    Region* getRegionAt(long sample);
+    Region* getCurrentRegion();
+
     void removeSelectedRegions(bool clear);
     void duplicateSelectedRegions();
     void copySelectedRegions();
