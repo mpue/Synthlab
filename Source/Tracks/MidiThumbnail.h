@@ -45,6 +45,8 @@ private:
     MidiBuffer* midiBuffer;
     ReadState state = NOTE_START;
     
+    CriticalSection lock;
+
     long maxSampleNum = 0;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MidiThumbnail)

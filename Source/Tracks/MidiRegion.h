@@ -64,16 +64,18 @@ public:
         return midiMessageList.at(index);
     }
     
+    std::vector<MidiMessage*> getMessages() {
+		return midiMessageList;
+	}
+
     virtual void updateThumb() override;
     virtual void componentMovedOrResized (Component& component,bool wasMoved, bool wasResized) override;
 
-    virtual void reset() override {
-        currentMessageNum = 0;
-    }
+    virtual void reset() override;
     
 private:
     MidiBuffer* midiBuffer;
-    virtual void changeListenerCallback(ChangeBroadcaster * source) override;
+
     MidiThumbnail* midiThumbnail = nullptr;
     int numSamples = 0;
     MidiBuffer::Iterator* iterator = NULL;

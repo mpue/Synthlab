@@ -19,75 +19,83 @@ MidiRegion::MidiRegion(long startSample, long sampleLength, double sampleRate, M
     this->name = "new";
     this->zoom = 30;
     this->numSamples = sampleLength;
-    
-    double length = this->midiThumbnail->getTotalLength();
-    setSize(length * this->zoom, Project::DEFAULT_TRACK_HEIGHT);
-    
+
+    double lengthInSeconds = numSamples / sampleRate;
+    setBounds(sampleOffset / sampleRate * zoom, 0, lengthInSeconds * zoom, Project::DEFAULT_TRACK_HEIGHT);
+
     this->offset = 0;
     this->sequence = new MidiMessageSequence();
-    this->constrainer = new ResizeConstrainer(1000000);
-    
+
+    this->constrainer = new ResizeConstrainer();
+    constrainer->setMinimumWidth(20);
+    constrainer->setMaximumWidth(1000000);
+
     resizerR = new ResizableEdgeComponent(this, constrainer, ResizableEdgeComponent::rightEdge);
     resizerR->setSize(5, getHeight());
     addAndMakeVisible(resizerR);
-    resizerR->setTopLeftPosition(getWidth() - 5, 0);
-    
+
     addComponentListener(this);
 }
 
-MidiRegion::MidiRegion(MidiBuffer* buffer, double sampleRate)
-{
+MidiRegion::MidiRegion(MidiBuffer* buffer, double sampleRate) {
     this->midiBuffer = buffer;
     this->midiThumbnail = new MidiThumbnail(sampleRate);
     this->sampleRate = sampleRate;
     this->name = "copy";
     this->zoom = 20;
-    double length = this->midiThumbnail->getTotalLength();
-    setSize(length * this->zoom, Project::DEFAULT_TRACK_HEIGHT);
+    this->numSamples = buffer->getNumEvents();
+
+    double lengthInSeconds = numSamples / sampleRate;
+    setBounds(0, 0, lengthInSeconds * zoom, Project::DEFAULT_TRACK_HEIGHT);
+
     this->offset = 0;
     this->sequence = new MidiMessageSequence();
+
+    this->constrainer = new ResizeConstrainer();
+    constrainer->setMinimumWidth(20);
+    constrainer->setMaximumWidth(1000000);
+
+    resizerR = new ResizableEdgeComponent(this, constrainer, ResizableEdgeComponent::rightEdge);
+    resizerR->setSize(5, getHeight());
+    addAndMakeVisible(resizerR);
+
     addComponentListener(this);
 }
 
-
 MidiRegion::~MidiRegion() {
+    // delete midi messages
+
+    for (auto* m : midiMessageList) {
+		delete m;
+	}
+
     removeComponentListener(this);
     delete midiThumbnail;
     delete midiBuffer;
     delete sequence;
 }
 
-void MidiRegion::changeListenerCallback(ChangeBroadcaster* source) {
-}
-
-
 void MidiRegion::paint(Graphics& g) {
-    if (dragger->isSelected(this)) {
-        g.setColour(Colours::orange.brighter().brighter());
-    } else {
-        g.setColour(Colours::orange.brighter());
-    }
-    
+    g.setColour(dragger->isSelected(this) ? Colours::orange.brighter().brighter() : Colours::orange.brighter());
     g.fillRoundedRectangle(getLocalBounds().toFloat(), 10);
     g.setColour(Colours::lightgrey);
-    
-    double audioLength = this->midiThumbnail->getTotalLength();
-    this->midiThumbnail->drawChannels(g, 0.0, audioLength, 1.0f);
+    midiThumbnail->drawChannels(g, 0.0, getNumSamples() / sampleRate, 1.0f);
 }
 
 void MidiRegion::resized() {
-    if (this->midiThumbnail != nullptr) {
-        this->midiThumbnail->setBounds(getLocalBounds());
+    if (midiThumbnail != nullptr) {
+        midiThumbnail->setBounds(getLocalBounds());
     }
     if (resizerR != nullptr) {
-        resizerR->setTopLeftPosition(getWidth() - 5, 0);
+        resizerR->setBounds(getWidth() - 5, 0, 5, getHeight());
     }
 }
 
 void MidiRegion::updateThumb() {
     std::function<void(void)> changeLambda = [=]() {
-        double length = this->getNumSamples() / sampleRate;
-        setSize(length * this->zoom, getHeight());
+        double lengthInSeconds = getNumSamples() / sampleRate;
+        midiThumbnail->setBounds(sampleOffset / sampleRate * zoom, getY(), lengthInSeconds * zoom, getHeight());
+        resized();
         repaint();
     };
     juce::MessageManager::callAsync(changeLambda);
@@ -95,23 +103,17 @@ void MidiRegion::updateThumb() {
 
 void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bool wasResized) {
     if (wasMoved) {
-        // calculate the delta in samples
-
         float delta = (getBounds().getX() - lastX) / zoom;
-        Logger::getCurrentLogger()->getCurrentLogger()->writeToLog("Delta : " + String(delta));
-        sampleOffset += delta * sampleRate;
-        if (sampleOffset < 0) {
-            sampleOffset = 0;
-        }
-        Logger::getCurrentLogger()->getCurrentLogger()->writeToLog("Sample offset: " + String(sampleOffset));
+        sampleOffset += delta * sampleRate;       
+        Logger::getCurrentLogger()->writeToLog("Midi Region sample offset: " + String(sampleOffset));
         lastX = getBounds().getX();
-
     }
     updateThumb();
 }
 
 void MidiRegion::setNumSamples(int numSamples) {
     this->numSamples = numSamples;
+    updateThumb();
 }
 
 int MidiRegion::getNumSamples() {
@@ -132,8 +134,7 @@ MidiThumbnail* MidiRegion::getThumbnail() {
 
 void MidiRegion::setZoom(float zoom) {
     this->zoom = zoom;
-    setSize(this->midiThumbnail->getTotalLength() * this->zoom, getHeight());
-    repaint();
+    updateThumb();
 }
 
 void MidiRegion::setLoop(bool loop) {
@@ -146,30 +147,23 @@ void MidiRegion::clear() {
     sequence->clear();
 }
 
-
 void MidiRegion::addMessage(MidiMessage* m, double time, int sampleNum) {
+    
     Logger::getCurrentLogger()->writeToLog("Adding message at sample " + String(sampleNum) + " offset :" + String(getSampleOffset()));
     midiMessageList.push_back(m);
-    numSamples = sampleNum;
-    this->midiThumbnail->addMessage(sampleNum - getSampleOffset(), m);
+    
+    if (numSamples < sampleNum) {
+		numSamples = sampleNum;
+	}
+   
+    midiThumbnail->addMessage(sampleNum - getSampleOffset(), m);
     updateThumb();
 }
 
 MidiMessage* MidiRegion::getMessage(int sampleNum) {
-
-    MidiMessage* m = nullptr;
-
-    for (int i = 0; i < midiMessageList.size(); i++) {
-
-        if (midiMessageList.at(i) != NULL) {
-            
-            m = midiMessageList.at(i);
-
-            if (abs(sampleNum - m->getTimeStamp()) < 1 && m->getRawDataSize() < 5) {
-                m = midiMessageList.at(i);
-                return m;
-            }
-
+    for (auto* m : midiMessageList) {
+        if (m != nullptr && abs(sampleNum - m->getTimeStamp()) < 1 && m->getRawDataSize() < 5) {
+            return m;
         }
     }
     return nullptr;
@@ -182,10 +176,13 @@ void MidiRegion::startRecording() {
 
 void MidiRegion::stopRecording() {
     stopTimer();
-    MidiMessage m = MidiMessage::allNotesOff(1);
-    midiBuffer->addEvent(m, numSamples);
+    midiBuffer->addEvent(MidiMessage::allNotesOff(1), numSamples);
 }
 
 void MidiRegion::timerCallback() {
     updateThumb();
+}
+
+void MidiRegion::reset() {
+    currentMessageNum = 0;
 }

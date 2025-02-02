@@ -331,7 +331,7 @@ void MainComponent::createStudioLayout() {
 		}
 
 		return "Error: Unknown argument.";
-		}, "Add instrument");
+		}, "Add tracks and regions\n.Available options are midi, audio and midiregion.\nAdding a midi region requires 2 arguments samplepos and position in samples.");
 
 	parser->registerCommand("list", [this](const std::vector<std::string>& args) -> std::string {
 		if (args.empty()) {
@@ -351,19 +351,67 @@ void MainComponent::createStudioLayout() {
 
 			return ss.str();
 		}
+		if (args[0] == "messages") {
 
+			if (navigator->getCurrentTrack() == nullptr) {
+				return "Error: No track selected.";
+			}
+			if (navigator->getCurrentTrack()->getCurrentRegion() == nullptr) {
+				return "Error: No region found.";
+			}
+
+			MidiRegion* r = dynamic_cast<MidiRegion*>(navigator->getCurrentTrack()->getCurrentRegion());
+
+			std::stringstream ss;
+
+			for (auto message : r->getMessages()) {
+				ss << "Message at " << String(message->getTimeStamp()) << " - " << message->getDescription() << std::endl;
+			}
+
+			return ss.str();
+		}
 		return "Error: Unknown argument.";
 		}, "List regions of current track.");
 
 	parser->registerCommand("set", [this](const std::vector<std::string>& args) -> std::string {
 		if (args.size() < 2) return "Error: Missing arguments.";
 
-		Region* r = navigator->getCurrentTrack()->getRegionAt(juce::String(args[0]).getIntValue());
-		if (!r) return "Error: Region not found.";
+		if (args[0] == "track") {
+			if (args[1] == "volume") 
+			{
+				float value = juce::String(args[2]).getFloatValue();
+				mixerPanel->getChannels().at(0)->setVolume(value);
+			}
+			else if (args[1] == "pan") {
+				float value = juce::String(args[2]).getFloatValue();
+				mixer->getChannel(Mixer::Channel::Type::OUT, 0)->pan = value;
+			}
+			else if (args[1] == "mute") {
+				bool value = juce::String(args[2]).getIntValue() == 1 ? true : false;
+				mixer->getChannel(Mixer::Channel::Type::OUT, 0)->mute = value;
+			}
+			else if (args[1] == "solo") {
+				bool value = juce::String(args[2]).getIntValue() == 1 ? true : false;
+				mixer->getChannel(Mixer::Channel::Type::OUT, 0)->solo = value;
+			}
+			else {
+				return "Error: Unknown argument.";
+			}
+		}
+		else if (args[0] == "region")
+		{
+			if (args[1] == "offset") {
 
-		r->setSampleOffset(juce::String(args[1]).getIntValue(), false, false);
-		return "Region updated.";
-		}, "Set a value.");
+				Region* r = navigator->getCurrentTrack()->getRegionAt(juce::String(args[2]).getIntValue());
+				if (r == nullptr) {
+					return "Error: Region not found.";
+				}
+				r->setSampleOffset(juce::String(args[1]).getIntValue(), false, false);
+				return "Region updated.";
+
+			}
+		}
+		}, "set [sample in region][samplepos]");
 
 	parser->registerCommand("get", [this](const std::vector<std::string>& args) -> std::string {
 		if (args.empty()) {
@@ -382,7 +430,7 @@ void MainComponent::createStudioLayout() {
 			else {
 				return "Error: Region not found.";
 			}
-			}
+		}
 		else if (args[0] == "currentregion") {
 			Region* r = navigator->getCurrentTrack()->getCurrentRegion();
 			if (r != nullptr) {
@@ -397,7 +445,7 @@ void MainComponent::createStudioLayout() {
 		}
 
 		return ss.str();
-		}, "Gets a value.");
+			}, "Gets a value.");
 
 
 
@@ -931,7 +979,7 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 		editor->loadFromString(xmlData);
 		editor->setRunning(true);
 	}
-}
+	}
 
 StringArray MainComponent::getMenuBarNames() {
 

@@ -98,7 +98,7 @@ protected:
     int loopCount = 1;
     bool selected = false;
     bool loop = false;
-    virtual void changeListenerCallback(ChangeBroadcaster * source) override = 0;
+    virtual void changeListenerCallback(ChangeBroadcaster* source) override {};
 
     ResizableEdgeComponent* resizerR = nullptr;
     ResizableEdgeComponent* resizerL = nullptr;

@@ -167,7 +167,7 @@ void EditorComponent::OpenTrackView()
         
     }
     topTab->addTab("Navigator", juce::Colours::grey, trackView, false);
-
+    topTab->setCurrentTabIndex(1);
 }
 
 void EditorComponent::changeListenerCallback(juce::ChangeBroadcaster *source) {

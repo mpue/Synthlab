@@ -567,22 +567,6 @@ const float Track::getSample(int channel, long sample) {
 	return 0;
 }
 
-void Track::addMessage(MidiMessage* message, double time, int sampleNum) {
-
-	Region* r;
-
-	if (regions.size() == 1) {
-		r = regions.at(0);
-	}
-	else {
-		r = getRegionAt(sampleNum);
-	}
-
-	MidiRegion* midiRegion = dynamic_cast<MidiRegion*>(r);
-	midiRegion->addMessage(message, time, sampleNum);
-	this->numSamples = sampleNum;
-}
-
 juce::Array<juce::PropertyComponent*>& Track::getProperties()
 {
 	properties = Array<PropertyComponent*>();
@@ -630,19 +614,6 @@ void Track::setSample(int channel, int sampleNum, float sample)
 			currentRegion->setDirty(true);
 		}
 	}
-
-}
-
-MidiMessage* Track::getMessage(double time, int sampleNum) {
-
-	Region* r = getRegionAt(sampleNum);
-
-	if (r == NULL) {
-		return NULL;
-	}
-
-	MidiRegion* midiRegion = static_cast<MidiRegion*>(r);
-	return midiRegion->getMessage(sampleNum);
 
 }
 

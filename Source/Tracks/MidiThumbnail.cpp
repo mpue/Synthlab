@@ -24,78 +24,86 @@ MidiThumbnail::~MidiThumbnail()
     delete midiBuffer;
 }
 
-void MidiThumbnail::paint (Graphics& g)
+void MidiThumbnail::paint(Graphics& g)
 {
-    /* This demo code just fills the component's background and
-       draws some placeholder text to get you started.
-
-       You should replace everything in this method with your own
-       drawing code..
-    */
-
-    g.fillAll (Colours::white);   // clear the background
-
-    g.setColour (Colours::grey);
-    g.drawRect (getLocalBounds(), 1);   // draw an outline around the component
-
-    g.setColour (Colours::orange);
-    g.setFont (14.0f);
-    g.drawText ("MidiThumbnail", getLocalBounds(),
-                Justification::centred, true);   // draw some placeholder text
+    g.fillAll(Colours::white);   // clear the background
+    g.setColour(Colours::grey);
+    g.drawRect(getLocalBounds(), 1);   // draw an outline around the component
+    g.setColour(Colours::orange);
+    g.setFont(14.0f);
+    g.drawText("MidiThumbnail", getLocalBounds(), Justification::centred, true);
 }
 
 void MidiThumbnail::resized()
 {
-    // This method is where you should set the bounds of any child
-    // components that your component contains..
-
+    // No child components to resize
 }
 
-double MidiThumbnail::getTotalLength() 
+double MidiThumbnail::getTotalLength()
 {
     return sampleRate > 0 ? (totalSamples / sampleRate) : 0;
 }
 
-void MidiThumbnail::drawChannels (Graphics& g, double startTimeSeconds, double endTimeSeconds, float verticalZoomFactor) {
+void MidiThumbnail::drawChannels(Graphics& g, double startTimeSeconds, double endTimeSeconds, float verticalZoomFactor)
+{
+    if (totalSamples == 0) return;
 
     int sampleNum = 0;
     MidiMessage message;
-    
-    MidiBuffer::Iterator* iterator = new MidiBuffer::Iterator(*midiBuffer);
-   
+    MidiBuffer::Iterator iterator(*midiBuffer);
+
     g.setColour(Colours::black);
-    
-    int notelen = 0;
+
     int start = 0;
     int end = 0;
-        
-    while(iterator->getNextEvent(message, sampleNum)) {
+    int notelen = 0;
+
+    double totalTimeSeconds = totalSamples / sampleRate;
+    double timeRange = endTimeSeconds - startTimeSeconds;
+
+    if (timeRange <= 0) return;
+
+    int width = getBounds().getWidth();
+    int height = getBounds().getHeight();
+
+    while (iterator.getNextEvent(message, sampleNum)) {
+        double eventTime = sampleNum / sampleRate;  // Zeit in Sekunden
+
+        if (eventTime < startTimeSeconds || eventTime > endTimeSeconds) {
+            continue;  // Event liegt auﬂerhalb des sichtbaren Bereichs
+        }
+
+        double relativePosition = (eventTime - startTimeSeconds) / timeRange;
+        int x = static_cast<int>(relativePosition * width);
 
         if (message.isNoteOn()) {
-            start = sampleNum;
+            start = x;
             notelen = 0;
         }
         else if (message.isNoteOff()) {
-            end = sampleNum;
-            int x = ((double)getBounds().getWidth() / (double)totalSamples) * start;
-            notelen = ((double)getBounds().getWidth() / (double)totalSamples)* (end - start);
-            g.fillRect(x, getBounds().getHeight() - (getBounds().getHeight() / 127 * message.getNoteNumber()), notelen, 3);
+            end = x;
+            notelen = end - start;
+
+            int noteHeight = juce::jlimit(0, 127, message.getNoteNumber());
+            int y = height - static_cast<int>((height / 127.0) * noteHeight);
+
+            g.fillRect(start, y, notelen, 3);
         }
-    
     }
-    
 }
 
-void MidiThumbnail::addMessage(int sampleNum, MidiMessage* message) {
+
+void MidiThumbnail::addMessage(int sampleNum, MidiMessage* message)
+{
+    juce::ScopedLock lock(lock);
     midiBuffer->addEvent(*message, sampleNum);
-    
+
     if (sampleNum > maxSampleNum) {
         maxSampleNum = sampleNum;
     }
-    
-    totalSamples = maxSampleNum;
-    std::function<void(void)> changeLambda =
-    [this]() { repaint(); };
-    juce::MessageManager::callAsync(changeLambda);
 
+    totalSamples = maxSampleNum;
+
+    std::function<void(void)> changeLambda = [this]() { repaint(); };
+    juce::MessageManager::callAsync(changeLambda);
 }

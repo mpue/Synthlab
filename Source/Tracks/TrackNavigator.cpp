@@ -520,6 +520,8 @@ void TrackNavigator::addTrack(Track* track) {
 
 	Mixer::getInstance()->addTrack(track);
 
+	track->setSamplePosition(samplePosition);
+
 	if (zoom > 0)
 		track->setZoom(zoom);
 
@@ -552,6 +554,8 @@ Track* TrackNavigator::addTrack(Track::Type type, double sampleRate) {
 	this->timeLine->setBounds(0, 0, getWidth(), timelineOffset);
 	this->timeLine->setSize(getWidth(), timelineOffset);
 	
+	track->setVolume(1.0f);
+
 	// constrainer.setRaster(this->zoom / 4);
 	// constrainer.setMaxX(getMaxLength() * this->zoom);
 

@@ -103,7 +103,7 @@
 	{
 		// recording case, send event to current region of track and to event out pin
 		// this is necessary to update the midi regions in the timeline and to pass the event to the next module
-		const ScopedLock sl(lock);
+		// const ScopedLock sl(lock);
 
 		//if (trackType == Track::Type::MIDI && e->getType() == Event::GATE) {
 		if (track != nullptr && track->isRecording()) {
@@ -114,6 +114,10 @@
 				// add message to region
 				r->addMessage(m, Time::getMillisecondCounterHiRes() / 1000, samplePosition);
 			}
+			else {
+				Logger::writeToLog("No region found at " + String(track->getSamplePosition()));
+			}
+		
 		}
 			//}			
 		getPins().at(5)->getConnections().at(0)->sendEvent(e);

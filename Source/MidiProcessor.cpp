@@ -259,10 +259,5 @@ void MidiProcessor::sendMidiMessage(Module* module, const juce::MidiMessage& mes
 		Event* e = new Event();
 		e->setMessage(message);
 		gate->eventReceived(e);
-
-		if (message.isNoteOff()) {
-			
-		}
-
 	}
 }
