@@ -107,6 +107,22 @@ void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bo
         sampleOffset += delta * sampleRate;       
         Logger::getCurrentLogger()->writeToLog("Midi Region sample offset: " + String(sampleOffset));
         lastX = getBounds().getX();
+        
+        // Update the timestamp for all MIDI events when region is moved
+        for (auto* m : midiMessageList) {
+            if (m != nullptr) {
+                // We don't modify the actual MidiMessage as it's const, but we update the thumbnail
+                midiThumbnail->removeAllMessages();
+                
+                // Re-add all messages with updated positions
+                for (auto* msg : midiMessageList) {
+                    if (msg != nullptr) {
+                        double timestamp = msg->getTimeStamp();
+                        midiThumbnail->addMessage(timestamp - getSampleOffset(), msg);
+                    }
+                }
+            }
+        }
     }
     updateThumb();
 }
@@ -156,6 +172,7 @@ void MidiRegion::addMessage(MidiMessage* m, double time, int sampleNum) {
 		numSamples = sampleNum;
 	}
    
+    // Store message with timestamps relative to region start
     midiThumbnail->addMessage(sampleNum - getSampleOffset(), m);
     updateThumb();
 }
@@ -176,7 +193,10 @@ void MidiRegion::startRecording() {
 
 void MidiRegion::stopRecording() {
     stopTimer();
-    midiBuffer->addEvent(MidiMessage::allNotesOff(1), numSamples);
+    // Send all-notes-off for all 16 MIDI channels
+    for (int channel = 1; channel <= 16; channel++) {
+        midiBuffer->addEvent(MidiMessage::allNotesOff(channel), numSamples);
+    }
 }
 
 void MidiRegion::timerCallback() {

@@ -70,7 +70,7 @@ void MidiThumbnail::drawChannels(Graphics& g, double startTimeSeconds, double en
         double eventTime = sampleNum / sampleRate;  // Zeit in Sekunden
 
         if (eventTime < startTimeSeconds || eventTime > endTimeSeconds) {
-            continue;  // Event liegt außerhalb des sichtbaren Bereichs
+            continue;  // Event liegt auï¿½erhalb des sichtbaren Bereichs
         }
 
         double relativePosition = (eventTime - startTimeSeconds) / timeRange;
@@ -104,6 +104,17 @@ void MidiThumbnail::addMessage(int sampleNum, MidiMessage* message)
 
     totalSamples = maxSampleNum;
 
+    std::function<void(void)> changeLambda = [this]() { repaint(); };
+    juce::MessageManager::callAsync(changeLambda);
+}
+
+void MidiThumbnail::removeAllMessages()
+{
+    juce::ScopedLock lock(lock);
+    midiBuffer->clear();
+    maxSampleNum = 0;
+    totalSamples = 0;
+    
     std::function<void(void)> changeLambda = [this]() { repaint(); };
     juce::MessageManager::callAsync(changeLambda);
 }

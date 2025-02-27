@@ -231,7 +231,6 @@ ValueTree* TrackNavigator::getConfiguration()
 							if (msg->isPitchWheel()) {
 								e.setProperty("type", "pitch", nullptr);
 								e.setProperty("pitch", msg->getPitchWheelValue(), nullptr);							
-								e.setProperty("pitch", msg->getPitchWheelValue(), nullptr);							
 							}	
 						
 							e.setProperty("channel", msg->getChannel(), nullptr);
@@ -274,7 +273,7 @@ void TrackNavigator::setPosition(double position) {
 	stopTimer();
 	//int pos = (int)position - (int)position % 2;
 	this->position = position;
-	this->samplePosition = position * 48000;//  Project::getInstance()->getSampleRate();
+	this->samplePosition = position * Project::getInstance()->getSampleRate();
 	this->samplePosition = (int)samplePosition;
 	Logger::getCurrentLogger()->writeToLog("samplePosition  : " + String(samplePosition));
 	std::function<void(void)> changeLambda =
@@ -308,7 +307,7 @@ void TrackNavigator::setSamplePosition(int position) {
 	for (int i = 0; i < tracks.size(); i++) {
 		tracks.at(i)->setSamplePosition(this->getSamplePosition());
 	}
-	this->position = (float)samplePosition / 48000.0f;//Project::getInstance()->getSampleRate();
+	this->position = (float)samplePosition / Project::getInstance()->getSampleRate();
 	std::function<void(void)> changeLambda =
 		[=]() {
 		marker->setPosition(this->position);

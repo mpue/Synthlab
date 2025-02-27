@@ -37,6 +37,7 @@ public:
     void drawChannels (Graphics& g, double startTimeSeconds, double endTimeSeconds, float verticalZoomFactor);
     
     void addMessage(int sampleNum, MidiMessage* message);
+    void removeAllMessages();
     
 private:
     
