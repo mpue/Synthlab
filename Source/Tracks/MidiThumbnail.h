@@ -39,13 +39,17 @@ public:
     void addMessage(int sampleNum, MidiMessage* message);
     void removeAllMessages();
     
+    void setZoom(float zoom) {
+		this->zoom = zoom;
+	}
+
 private:
     
     double sampleRate;
     long totalSamples;
     MidiBuffer* midiBuffer;
     ReadState state = NOTE_START;
-    
+    float zoom;
     CriticalSection lock;
 
     long maxSampleNum = 0;

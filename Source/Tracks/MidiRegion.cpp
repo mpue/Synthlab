@@ -94,38 +94,37 @@ void MidiRegion::resized() {
 void MidiRegion::updateThumb() {
     std::function<void(void)> changeLambda = [=]() {
         double lengthInSeconds = getNumSamples() / sampleRate;
-        midiThumbnail->setBounds(sampleOffset / sampleRate * zoom, getY(), lengthInSeconds * zoom, getHeight());
+        midiThumbnail->setBounds(sampleOffset / sampleRate * zoom, getY(), lengthInSeconds, getHeight());
+        midiThumbnail->setZoom(zoom);
+        midiThumbnail->repaint();
         resized();
         repaint();
     };
     juce::MessageManager::callAsync(changeLambda);
 }
-
 void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bool wasResized) {
     if (wasMoved) {
-        float delta = (getBounds().getX() - lastX) / zoom;
-        sampleOffset += delta * sampleRate;       
-        Logger::getCurrentLogger()->writeToLog("Midi Region sample offset: " + String(sampleOffset));
+        // Berechne den exakten Sample-Offset
+        long newSampleOffset = std::round((getBounds().getX() / zoom) * sampleRate);
+
+        // Berechne die Differenz
+        long delta = newSampleOffset - sampleOffset;
+        sampleOffset = newSampleOffset;
+
+        Logger::getCurrentLogger()->writeToLog(
+            "Moved! Bounds X: " + String(getBounds().getX()) +
+            ", Zoom: " + String(zoom) +
+            ", SampleRate: " + String(sampleRate) +
+            ", New SampleOffset: " + String(newSampleOffset) +
+            ", Delta: " + String(delta)
+        );
+
         lastX = getBounds().getX();
-        
-        // Update the timestamp for all MIDI events when region is moved
-        for (auto* m : midiMessageList) {
-            if (m != nullptr) {
-                // We don't modify the actual MidiMessage as it's const, but we update the thumbnail
-                midiThumbnail->removeAllMessages();
-                
-                // Re-add all messages with updated positions
-                for (auto* msg : midiMessageList) {
-                    if (msg != nullptr) {
-                        double timestamp = msg->getTimeStamp();
-                        midiThumbnail->addMessage(timestamp - getSampleOffset(), msg);
-                    }
-                }
-            }
-        }
+
+        updateThumb();
     }
-    updateThumb();
 }
+
 
 void MidiRegion::setNumSamples(int numSamples) {
     this->numSamples = numSamples;
@@ -150,6 +149,7 @@ MidiThumbnail* MidiRegion::getThumbnail() {
 
 void MidiRegion::setZoom(float zoom) {
     this->zoom = zoom;
+    this->midiThumbnail->setZoom(zoom);
     updateThumb();
 }
 
@@ -165,7 +165,12 @@ void MidiRegion::clear() {
 
 void MidiRegion::addMessage(MidiMessage* m, double time, int sampleNum) {
     
-    Logger::getCurrentLogger()->writeToLog("Adding message at sample " + String(sampleNum) + " offset :" + String(getSampleOffset()));
+    ScopedLock c(lock);
+
+    // Logger::getCurrentLogger()->writeToLog("Adding message at sample " + String(sampleNum) + " offset :" + String(getSampleOffset()));
+    
+    m->setTimeStamp(sampleNum - getSampleOffset());
+
     midiMessageList.push_back(m);
     
     if (numSamples < sampleNum) {
@@ -173,8 +178,8 @@ void MidiRegion::addMessage(MidiMessage* m, double time, int sampleNum) {
 	}
    
     // Store message with timestamps relative to region start
-    midiThumbnail->addMessage(sampleNum - getSampleOffset(), m);
-    updateThumb();
+    // midiThumbnail->addMessage(sampleNum - getSampleOffset(), m);
+    // updateThumb();
 }
 
 MidiMessage* MidiRegion::getMessage(int sampleNum) {

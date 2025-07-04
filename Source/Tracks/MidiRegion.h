@@ -87,6 +87,7 @@ private:
     int lastIndex = -1;
     long timeElapsed = 0;
     int currentMessageNum = 0;
+    CriticalSection lock;
 
     int lastX = 0;
 };

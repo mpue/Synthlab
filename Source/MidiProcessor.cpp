@@ -52,9 +52,10 @@ void MidiProcessor::handleIncomingMidiMessage(juce::MidiInput* source, const juc
 		}
 	}
 	else if (message.isMidiClock()) {
-		for (int i = 0; i < this->editor->getModule()->getModules()->size(); i++) {
-			sendClockMessage(this->editor->getModule()->getModules()->at(i), message.getChannel());
-		}
+		return;
+		//for (int i = 0; i < this->editor->getModule()->getModules()->size(); i++) {
+		//	sendClockMessage(this->editor->getModule()->getModules()->at(i), message.getChannel());
+		//}
 	}
 	else if (message.isMidiStart()) {
 		for (int i = 0; i < this->editor->getModule()->getModules()->size(); i++) {

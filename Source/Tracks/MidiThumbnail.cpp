@@ -54,43 +54,31 @@ void MidiThumbnail::drawChannels(Graphics& g, double startTimeSeconds, double en
 
     g.setColour(Colours::black);
 
-    int start = 0;
-    int end = 0;
-    int notelen = 0;
-
     double totalTimeSeconds = totalSamples / sampleRate;
     double timeRange = endTimeSeconds - startTimeSeconds;
-
     if (timeRange <= 0) return;
 
     int width = getBounds().getWidth();
     int height = getBounds().getHeight();
 
+    // Berechnung des Verhältnisses zwischen Zeit und Pixeln
+    float pixelsPerUnit = (width / timeRange) * zoom;
+
     while (iterator.getNextEvent(message, sampleNum)) {
         double eventTime = sampleNum / sampleRate;  // Zeit in Sekunden
-
-        if (eventTime < startTimeSeconds || eventTime > endTimeSeconds) {
-            continue;  // Event liegt au�erhalb des sichtbaren Bereichs
-        }
+        if (eventTime < startTimeSeconds || eventTime > endTimeSeconds) continue;
 
         double relativePosition = (eventTime - startTimeSeconds) / timeRange;
-        int x = static_cast<int>(relativePosition * width);
+        int x = static_cast<int>(relativePosition * (width / pixelsPerUnit)); // Berücksichtigung von Zoom
 
         if (message.isNoteOn()) {
-            start = x;
-            notelen = 0;
-        }
-        else if (message.isNoteOff()) {
-            end = x;
-            notelen = end - start;
-
             int noteHeight = juce::jlimit(0, 127, message.getNoteNumber());
             int y = height - static_cast<int>((height / 127.0) * noteHeight);
-
-            g.fillRect(start, y, notelen, 3);
+            g.fillRect(x, y, 2, 3); // Event als kleiner Strich oder Block
         }
     }
 }
+
 
 
 void MidiThumbnail::addMessage(int sampleNum, MidiMessage* message)

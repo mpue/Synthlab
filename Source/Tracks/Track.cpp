@@ -444,7 +444,7 @@ void Track::setSamplePosition(int position)
 		if (r != nullptr) {
 			MidiMessage* m = r->getMessage(position - r->getSampleOffset());
 			if (m != nullptr) {
-				Logger::getCurrentLogger()->writeToLog("Midi message at " + String(position) + " : " + String(m->getDescription()));
+				// Logger::getCurrentLogger()->writeToLog("Midi message at " + String(position) + " : " + String(m->getDescription()));
 				Event* e = new Event();
 				e->setMessage(*m);
 				e->setType(Event::Type::GATE);
@@ -526,24 +526,17 @@ float Track::getPan()
 
 Region* Track::getRegionAt(long sample) {
 
-	Region* current = NULL;
-
 	for (std::vector<Region*>::iterator it = regions.begin(); it != regions.end(); ++it) {
-
 		Region* r = *it;
-
 		long len = r->getNumSamples();
 		long offset = r->getSampleOffset();
 
 		if (sample >= offset && sample < (offset + len)) {
- 			current = r;
-			break;
+			return r;
 		}
-
 	}
 
-	return current;
-
+	return nullptr;
 }
 
 Region* Track::getCurrentRegion()

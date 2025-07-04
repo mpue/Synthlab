@@ -110,7 +110,7 @@
 			MidiRegion* r = dynamic_cast<MidiRegion*>(track->getCurrentRegion());
 			if (r != nullptr) {
 				long samplePosition = track->getNavigator()->getSamplePosition();
-				MidiMessage* m = new MidiMessage(e->getMessage(), samplePosition);
+				MidiMessage* m = new MidiMessage(e->getMessage(), samplePosition - r->getSampleOffset());
 				// add message to region
 				r->addMessage(m, Time::getMillisecondCounterHiRes() / 1000, samplePosition);
 			}
@@ -120,7 +120,11 @@
 		
 		}
 			//}			
-		getPins().at(5)->getConnections().at(0)->sendEvent(e);
+
+		// check if pin is connected
+		if (getPins().at(5)->getConnections().size() > 0) {
+			getPins().at(5)->getConnections().at(0)->sendEvent(e);
+		}
 			
 		// }
 	}
