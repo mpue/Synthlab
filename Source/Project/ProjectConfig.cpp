@@ -9,7 +9,7 @@
 */
 
 #include "ProjectConfig.h"
-#include "Tracks/AudioRegion.h"
+#include "../Tracks/AudioRegion.h"
 
 ProjectConfig::ProjectConfig() {
     

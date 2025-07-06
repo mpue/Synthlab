@@ -617,7 +617,8 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 	long startTime = currentTime;
 
 	int numSamples = bufferToFill.numSamples;
-	float** outputChannelData = bufferToFill.buffer->getArrayOfWritePointers();
+	auto* writableBuffer = const_cast<juce::AudioBuffer<float>*>(bufferToFill.buffer);
+	float** outputChannelData = const_cast<float**>(writableBuffer->getArrayOfWritePointers());
 
 	if (outputChannelData == NULL) {
 		return;

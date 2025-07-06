@@ -83,7 +83,7 @@ void MidiThumbnail::drawChannels(Graphics& g, double startTimeSeconds, double en
 
 void MidiThumbnail::addMessage(int sampleNum, MidiMessage* message)
 {
-    juce::ScopedLock lock(lock);
+    juce::ScopedLock lock(_lock);
     midiBuffer->addEvent(*message, sampleNum);
 
     if (sampleNum > maxSampleNum) {
@@ -98,7 +98,7 @@ void MidiThumbnail::addMessage(int sampleNum, MidiMessage* message)
 
 void MidiThumbnail::removeAllMessages()
 {
-    juce::ScopedLock lock(lock);
+    juce::ScopedLock lock(_lock);
     midiBuffer->clear();
     maxSampleNum = 0;
     totalSamples = 0;

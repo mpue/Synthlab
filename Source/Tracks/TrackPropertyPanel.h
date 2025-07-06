@@ -23,10 +23,10 @@
 //[Headers]     -- You can add your own extra header files here --
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Track.h"
-#include "CustomLookAndFeel.h"
+#include "../CustomLookAndFeel.h"
 #include "TrackPropertyConstrainer.h"
 #include "TrackResizer.h"
-#include "ImageToggleButton.h"
+#include "../ImageToggleButton.h"
 //[/Headers]
 
 

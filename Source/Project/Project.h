@@ -14,11 +14,11 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 
 #include "ProjectConfig.h"
-#include "CustomLookAndFeel.h"
-#include "MainTabbedComponent.h"
-#include "AudioEngine/Sampler.h"
-#include "PropertyView.h"
-#include "Module.h"
+#include "../MainTabbedComponent.h"
+#include "../AudioEngine/Sampler.h"
+#include "../PropertyView.h"
+#include "../Module.h"
+#include "../CustomLookAndFeel.h"
 
 #include <vector>
 #include <map>

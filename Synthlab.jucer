@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <JUCERPROJECT name="Synthlab" projectType="guiapp" bundleIdentifier="de.pueski.SynthlabX"
-              version="1.0.1" companyName="Pueski" id="JWX8Tz" jucerFormatVersion="1">
+              version="1.0.1" companyName="Pueski" id="JWX8Tz" jucerFormatVersion="1"
+              cppLanguageStandard="20">
   <MAINGROUP id="CKGTaZ" name="Synthlab">
     <FILE id="wzbw0c" name="README.md" compile="0" resource="1" file="README.md"/>
     <GROUP id="{9F42F092-AC3C-70BC-861B-ED2885470C98}" name="Regression">
@@ -594,69 +595,47 @@
         <CONFIGURATION isDebug="0" name="Release" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
-        <MODULEPATH id="juce_core" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_events" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_graphics" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_data_structures" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_gui_basics" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_gui_extra" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_cryptography" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_video" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_opengl" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_basics" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_devices" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_formats" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_processors" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_utils" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_core" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_events" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_graphics" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_data_structures" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_gui_basics" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_gui_extra" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_cryptography" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_video" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_opengl" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_audio_basics" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_audio_devices" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_audio_formats" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_audio_processors" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_audio_utils" path="..\JUCE8\modules"/>
       </MODULEPATHS>
     </XCODE_MAC>
-    <VS2015 targetFolder="Builds/VisualStudio2015" vst3Folder="f:\devel\VST3SDK\">
-      <CONFIGURATIONS>
-        <CONFIGURATION isDebug="1" name="Debug" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest&#10;../../../ASIOSDK2.3/common/"/>
-        <CONFIGURATION isDebug="0" name="Release" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest&#10;../../../ASIOSDK2.3/common/"/>
-      </CONFIGURATIONS>
-      <MODULEPATHS>
-        <MODULEPATH id="juce_video" path="..\JUCE\modules"/>
-        <MODULEPATH id="juce_opengl" path="..\JUCE\modules"/>
-        <MODULEPATH id="juce_gui_extra" path="..\JUCE\modules"/>
-        <MODULEPATH id="juce_gui_basics" path="..\JUCE\modules"/>
-        <MODULEPATH id="juce_graphics" path="..\JUCE\modules"/>
-        <MODULEPATH id="juce_events" path="..\JUCE\modules"/>
-        <MODULEPATH id="juce_data_structures" path="..\JUCE\modules"/>
-        <MODULEPATH id="juce_cryptography" path="..\JUCE\modules"/>
-        <MODULEPATH id="juce_core" path="..\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_utils" path="..\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_processors" path="..\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_formats" path="..\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_devices" path="..\JUCE\modules"/>
-        <MODULEPATH id="juce_audio_basics" path="..\JUCE\modules"/>
-      </MODULEPATHS>
-    </VS2015>
     <XCODE_IPHONE targetFolder="Builds/iOS" iPadScreenOrientation="UIInterfaceOrientationLandscapeLeft,UIInterfaceOrientationLandscapeRight"
                   smallIcon="udjGbx" bigIcon="udjGbx" iosDevelopmentTeamID="8M4G4EW8QQ"
                   extraDefs="IOS_APP" microphonePermissionNeeded="1" UIFileSharingEnabled="1"
                   UISupportsDocumentBrowser="1" iCloudPermissions="1" keepCustomXcodeSchemes="1">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest&#10;"
-                       iosCompatibility="10.3"/>
+                       iosCompatibility="10.3" iosDeploymentTarget="10.3"/>
         <CONFIGURATION isDebug="0" name="Release" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest&#10;"
-                       iosCompatibility="10.3"/>
+                       iosCompatibility="10.3" iosDeploymentTarget="10.3"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
-        <MODULEPATH id="juce_video" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_opengl" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_gui_extra" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_gui_basics" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_graphics" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_events" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_data_structures" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_cryptography" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_core" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_utils" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_processors" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_formats" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_devices" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_basics" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_video" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_opengl" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_gui_extra" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_gui_basics" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_graphics" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_events" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_data_structures" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_cryptography" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_core" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_audio_utils" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_audio_processors" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_audio_formats" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_audio_devices" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_audio_basics" path="..\JUCE8\modules"/>
       </MODULEPATHS>
     </XCODE_IPHONE>
     <ANDROIDSTUDIO targetFolder="Builds/Android" androidSDKPath="" androidNDKPath=""
@@ -666,20 +645,20 @@
         <CONFIGURATION isDebug="0" name="Release" androidArchitectures="armeabi-v7a "/>
       </CONFIGURATIONS>
       <MODULEPATHS>
-        <MODULEPATH id="juce_video" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_opengl" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_gui_extra" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_gui_basics" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_graphics" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_events" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_data_structures" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_cryptography" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_core" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_utils" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_processors" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_formats" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_devices" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_basics" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_video" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_opengl" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_gui_extra" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_gui_basics" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_graphics" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_events" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_data_structures" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_cryptography" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_core" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_audio_utils" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_audio_processors" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_audio_formats" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_audio_devices" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_audio_basics" path="..\JUCE8\modules"/>
       </MODULEPATHS>
     </ANDROIDSTUDIO>
     <LINUX_MAKE targetFolder="Builds/LinuxMakefile">
@@ -688,20 +667,20 @@
         <CONFIGURATION isDebug="0" name="Release"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
-        <MODULEPATH id="juce_video" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_opengl" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_gui_extra" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_gui_basics" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_graphics" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_events" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_data_structures" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_cryptography" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_core" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_utils" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_processors" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_formats" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_devices" path="../JUCE/modules"/>
-        <MODULEPATH id="juce_audio_basics" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_video" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_opengl" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_gui_extra" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_gui_basics" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_graphics" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_events" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_data_structures" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_cryptography" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_core" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_audio_utils" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_audio_processors" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_audio_formats" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_audio_devices" path="..\JUCE8\modules"/>
+        <MODULEPATH id="juce_audio_basics" path="..\JUCE8\modules"/>
       </MODULEPATHS>
     </LINUX_MAKE>
     <VS2017 targetFolder="Builds/VisualStudio2017">
@@ -726,29 +705,29 @@
         <MODULEPATH id="juce_audio_basics" path="..\JUCE\modules"/>
       </MODULEPATHS>
     </VS2017>
-    <VS2019 targetFolder="Builds/VisualStudio2019" vstLegacyFolder="..\vstsdk2.4"
-            externalLibraries="d:/devel/Synthlab/lib/librubberband-debug.lib">
+    <VS2022 targetFolder="Builds/VisualStudio2022" externalLibraries="d:/devel/Synthlab/lib/librubberband-debug.lib"
+            vstLegacyFolder="d:\devel\vstsdk2.4\" extraDefs="JUCE_MODAL_LOOPS_PERMITTED=1">
       <CONFIGURATIONS>
-        <CONFIGURATION isDebug="1" name="Debug" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../../ASIOSDK2.3/common/"/>
-        <CONFIGURATION isDebug="0" name="Release" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../../ASIOSDK2.3/common/&#10;"/>
+        <CONFIGURATION isDebug="1" name="Debug" headerPath="d:\devel\ASIOSDK2.3\common\&#10;d:\devel\VST_SDK3.7\"/>
+        <CONFIGURATION isDebug="0" name="Release" headerPath="d:\devel\ASIOSDK2.3\common\&#10;d:\devel\VST_SDK3.7\"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
-        <MODULEPATH id="juce_video"/>
-        <MODULEPATH id="juce_opengl"/>
-        <MODULEPATH id="juce_gui_extra"/>
-        <MODULEPATH id="juce_gui_basics"/>
-        <MODULEPATH id="juce_graphics"/>
-        <MODULEPATH id="juce_events"/>
-        <MODULEPATH id="juce_data_structures"/>
-        <MODULEPATH id="juce_cryptography"/>
-        <MODULEPATH id="juce_core"/>
-        <MODULEPATH id="juce_audio_utils"/>
-        <MODULEPATH id="juce_audio_processors"/>
-        <MODULEPATH id="juce_audio_formats"/>
-        <MODULEPATH id="juce_audio_devices"/>
-        <MODULEPATH id="juce_audio_basics"/>
+        <MODULEPATH id="juce_audio_basics" path="D:\devel\JUCE8\modules"/>
+        <MODULEPATH id="juce_audio_devices" path="D:\devel\JUCE8"/>
+        <MODULEPATH id="juce_audio_formats" path="D:\devel\JUCE8"/>
+        <MODULEPATH id="juce_audio_processors" path="D:\devel\JUCE8"/>
+        <MODULEPATH id="juce_audio_utils" path="D:\devel\JUCE8"/>
+        <MODULEPATH id="juce_core" path="D:\devel\JUCE8"/>
+        <MODULEPATH id="juce_cryptography" path="D:\devel\JUCE8"/>
+        <MODULEPATH id="juce_data_structures" path="D:\devel\JUCE8"/>
+        <MODULEPATH id="juce_events" path="D:\devel\JUCE8"/>
+        <MODULEPATH id="juce_graphics" path="D:\devel\JUCE8"/>
+        <MODULEPATH id="juce_gui_basics" path="D:\devel\JUCE8"/>
+        <MODULEPATH id="juce_gui_extra" path="D:\devel\JUCE8"/>
+        <MODULEPATH id="juce_opengl" path="D:\devel\JUCE8"/>
+        <MODULEPATH id="juce_video" path="D:\devel\JUCE8"/>
       </MODULEPATHS>
-    </VS2019>
+    </VS2022>
   </EXPORTFORMATS>
   <MODULES>
     <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>

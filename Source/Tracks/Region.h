@@ -10,7 +10,7 @@
 #define Region_h
 
 #include "../JuceLibraryCode/JuceHeader.h"
-#include "MultiComponentDragger.h"
+#include "../MultiComponentDragger.h"
 
 class Region : public Component,  public ChangeListener, public ChangeBroadcaster, public ComponentListener, public Timer {
     

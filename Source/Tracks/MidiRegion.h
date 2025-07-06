@@ -12,11 +12,11 @@
 #define MIDIREGION_H_INCLUDED
 
 #include "../JuceLibraryCode/JuceHeader.h"
-#include "MultiComponentDragger.h"
+#include "../MultiComponentDragger.h"
 #include "Region.h"
 #include "MidiThumbnail.h"
 #include "../Project/Project.h"
-#include "ResizeConstrainer.h"
+#include "../ResizeConstrainer.h"
 
 #include <map>
 #include <vector>

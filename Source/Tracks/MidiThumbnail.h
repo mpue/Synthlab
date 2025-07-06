@@ -50,7 +50,7 @@ private:
     MidiBuffer* midiBuffer;
     ReadState state = NOTE_START;
     float zoom;
-    CriticalSection lock;
+    CriticalSection _lock;
 
     long maxSampleNum = 0;
     

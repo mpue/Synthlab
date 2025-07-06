@@ -18,10 +18,10 @@
 */
 
 //[Headers] You can add your own extra header files here...
-#include "CustomLookAndFeel.h"
+#include "../CustomLookAndFeel.h"
 #include "../Mixer.h"
 #include "../Project/Project.h"
-#include "Session.h"
+#include "../Session.h"
 //[/Headers]
 
 #include "MasterChannelPanel.h"

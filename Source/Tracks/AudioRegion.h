@@ -12,10 +12,10 @@
 #define AUDIOREGION_H_INCLUDED
 
 #include "../JuceLibraryCode/JuceHeader.h"
-#include "MultiComponentDragger.h"
+#include "../MultiComponentDragger.h"
 #include "../ResizeConstrainer.h"
 #include "Region.h"
-#include "rubberband/RubberBandStretcher.h"
+#include "../rubberband/RubberBandStretcher.h"
 
 //==============================================================================
 /*

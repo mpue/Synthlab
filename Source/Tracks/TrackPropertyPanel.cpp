@@ -19,10 +19,10 @@
 
 //[Headers] You can add your own extra header files here...
 #include "MasterChannelPanel.h"
-#include "ImageToggleButton.h"
+#include "../ImageToggleButton.h"
 #include "../Project/Project.h"
 #include "../Mixer.h"
-#include "Session.h"
+#include "../Session.h"
 //[/Headers]
 
 #include "TrackPropertyPanel.h"

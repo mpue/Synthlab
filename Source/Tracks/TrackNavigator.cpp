@@ -13,11 +13,11 @@
 #include "AudioRegion.h"
 #include "MidiRegion.h"
 #include "../Project/Project.h"
-#include "Session.h"
+#include "../Session.h"
 #include "../Mixer.h"
 #include <iterator>
 #include <iostream>
-#include "ExtendedFileBrowser.h"
+#include "../ExtendedFileBrowser.h"
 
 using namespace std;
 
@@ -188,7 +188,7 @@ ValueTree* TrackNavigator::getConfiguration()
 				AudioRegion* ar = dynamic_cast<AudioRegion*>(tracks.at(i)->getRegions().at(j));
 				if (ar != nullptr) {
 					region.setProperty("clipRefId", ar->getClipRefid(), nullptr);
-					region.setProperty("sampleOffset", ar->getSampleOffset(), nullptr);
+					region.setProperty("sampleOffset", (int)ar->getSampleOffset(), nullptr);
 					region.setProperty("numSamples", ar->getNumSamples(), nullptr);
 					region.setProperty("width", ar->getWidth(), nullptr);
 					regions.addChild(region, -1, nullptr);
@@ -202,7 +202,7 @@ ValueTree* TrackNavigator::getConfiguration()
 
 				if (mr != nullptr) {			
 
-					region.setProperty("sampleOffset", mr->getSampleOffset(), nullptr);
+					region.setProperty("sampleOffset", (int)mr->getSampleOffset(), nullptr);
 					region.setProperty("numSamples", mr->getNumSamples(), nullptr);
 					region.setProperty("width", mr->getWidth(), nullptr);
 					regions.addChild(region, -1, nullptr);

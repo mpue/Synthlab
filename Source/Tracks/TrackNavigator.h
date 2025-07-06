@@ -20,10 +20,10 @@
 #include "PositionMarker.h"
 #include "Track.h"
 #include "DragConstrainer.h"
-#include "MultiComponentDragger.h"
+#include "../MultiComponentDragger.h"
 #include "../Project/TrackConfig.h"
 #include "TimeLine.h"
-#include "UITools.h"
+#include "../UITools.h"
 
 //==============================================================================
 /*

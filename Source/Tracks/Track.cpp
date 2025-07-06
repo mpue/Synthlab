@@ -10,7 +10,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Track.h"
-#include "Session.h"
+#include "../Session.h"
 #include "MasterChannelPanel.h"
 #include <iostream>
 

@@ -16,7 +16,7 @@
 #include "MidiRegion.h"
 #include "Region.h"
 #include <vector>
-#include "MultiComponentDragger.h"
+#include "../MultiComponentDragger.h"
 
 
 //==============================================================================

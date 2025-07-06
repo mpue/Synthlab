@@ -98,7 +98,10 @@ void HTTPServer::run() {
                             obj.setProperty(resources.getReference(2),MessageBus::getInstance()->getTopic(resources.getReference(2))->getValue());
 
                             MemoryOutputStream* mos = new MemoryOutputStream();
-                            obj.writeAsJSON(*mos, 0, false, 3);
+
+							//  TODO : check if the HTTP server is still needed
+
+                            // obj.writeAsJSON(*mos, 0, false, 3);
                             
                             mos->flush();
                             String responseBody = mos->toUTF8();

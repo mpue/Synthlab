@@ -22,7 +22,7 @@
 
 //[Headers]     -- You can add your own extra header files here --
 #include "../JuceLibraryCode/JuceHeader.h"
-#include "CustomLookAndFeel.h"
+#include "../CustomLookAndFeel.h"
 #include "Track.h"
 #include "../Mixer.h"
 #include "DragConstrainer.h"
