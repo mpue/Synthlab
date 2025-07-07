@@ -59,7 +59,7 @@ private:
     juce::PropertyComponent* channelProp;
     ChannelListener* channelListener;
 
-    int channel = 1;
+    int channel { 1 };
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MidiGate)
 };

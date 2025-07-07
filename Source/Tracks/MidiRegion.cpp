@@ -1,4 +1,4 @@
-/*
+﻿/*
   ==============================================================================
 
     MidiRegion.cpp
@@ -42,7 +42,7 @@ MidiRegion::MidiRegion(MidiBuffer* buffer, double sampleRate) {
     this->midiThumbnail = new MidiThumbnail(sampleRate);
     this->sampleRate = sampleRate;
     this->name = "copy";
-    this->zoom = 20;
+    this->zoom = 1;
     this->numSamples = buffer->getNumEvents();
 
     double lengthInSeconds = numSamples / sampleRate;
@@ -79,7 +79,8 @@ void MidiRegion::paint(Graphics& g) {
     g.setColour(dragger->isSelected(this) ? Colours::orange.brighter().brighter() : Colours::orange.brighter());
     g.fillRoundedRectangle(getLocalBounds().toFloat(), 10);
     g.setColour(Colours::lightgrey);
-    midiThumbnail->drawChannels(g, 0.0, getNumSamples() / sampleRate, 1.0f);
+    double visibleTime = (getNumSamples() / sampleRate);
+    midiThumbnail->drawChannels(g, 0.0, visibleTime, 1.0f);
 }
 
 void MidiRegion::resized() {
@@ -104,10 +105,7 @@ void MidiRegion::updateThumb() {
 }
 void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bool wasResized) {
     if (wasMoved) {
-        // Berechne den exakten Sample-Offset
         long newSampleOffset = std::round((getBounds().getX() / zoom) * sampleRate);
-
-        // Berechne die Differenz
         long delta = newSampleOffset - sampleOffset;
         sampleOffset = newSampleOffset;
 
@@ -121,9 +119,11 @@ void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bo
 
         lastX = getBounds().getX();
 
+		rebuildThumbnail();
         updateThumb();
     }
 }
+
 
 
 void MidiRegion::setNumSamples(int numSamples) {
@@ -178,8 +178,8 @@ void MidiRegion::addMessage(MidiMessage* m, double time, int sampleNum) {
 	}
    
     // Store message with timestamps relative to region start
-    // midiThumbnail->addMessage(sampleNum - getSampleOffset(), m);
-    // updateThumb();
+    midiThumbnail->addMessage(sampleNum - getSampleOffset(), m);
+    updateThumb();
 }
 
 MidiMessage* MidiRegion::getMessage(int sampleNum) {
@@ -194,6 +194,16 @@ MidiMessage* MidiRegion::getMessage(int sampleNum) {
 void MidiRegion::startRecording() {
     startTimer(100);
     currentMessageNum = 0;
+}
+
+void MidiRegion::rebuildThumbnail() {
+    midiThumbnail->removeAllMessages();
+    for (auto* m : midiMessageList) {
+        if (m != nullptr) {
+            int relSample = static_cast<int>(m->getTimeStamp());
+            midiThumbnail->addMessage(relSample, m);
+        }
+    }
 }
 
 void MidiRegion::stopRecording() {

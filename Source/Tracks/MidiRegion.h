@@ -39,6 +39,7 @@ public:
     MidiBuffer* getBuffer();
     MidiMessageSequence* getSequence();
     MidiThumbnail* getThumbnail();
+    void rebuildThumbnail();
     
     virtual void setThumbnailBounds(Rectangle<int>* bounds) override {
     };

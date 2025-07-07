@@ -20,7 +20,7 @@
 #include "Module.h"
 #include "SynthEditor.h"
 
-class MidiProcessor : public juce::AudioProcessorPlayer
+class MidiProcessor : public juce::MidiInputCallback
 {
 public:
 
@@ -34,12 +34,16 @@ public:
 	void sendClockMessage(Module* module, int channel);
 	void sendMidiStartMessage(Module* module, int channel);
 	void sendMidiStopMessage(Module* module, int channel);
-	void sendControllerMessage(Module* module, int channel, int controller, float value);
+	void sendControllerMessage(Module* module, int channel, int controller, float value, int midiInChannel);
 	void sendPitchBendMessage(Module* module, int channel, int pitch);
 
 	void refreshMidiInputs();
 	void enableAllMidiInputs();
 	void disableAllMidiInputs();
+
+	void setActiveChannel(int channel) {
+		activeChannel = channel;
+	}
 
 	void sendMidiMessage(Module* module, const juce::MidiMessage& message);
 
@@ -47,5 +51,5 @@ private:
 	CriticalSection lock;
 	SynthEditor* editor;
 	AudioDeviceManager* deviceManager;
-
+	int activeChannel = 1;
 };

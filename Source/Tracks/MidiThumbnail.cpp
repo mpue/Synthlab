@@ -1,21 +1,10 @@
-/*
-  ==============================================================================
-
-    MidiThumbnail.cpp
-    Created: 28 Dec 2016 7:03:57pm
-    Author:  Matthias Pueski
-
-  ==============================================================================
-*/
-
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "MidiThumbnail.h"
 #include "../Project/Project.h"
 
-//==============================================================================
 MidiThumbnail::MidiThumbnail(double sampleRate)
+    : sampleRate(sampleRate), zoom(1.0f), verticalZoom(1.0f)    
 {
-    this->sampleRate = sampleRate;
     midiBuffer = new MidiBuffer();
 }
 
@@ -26,9 +15,9 @@ MidiThumbnail::~MidiThumbnail()
 
 void MidiThumbnail::paint(Graphics& g)
 {
-    g.fillAll(Colours::white);   // clear the background
+    g.fillAll(Colours::white);
     g.setColour(Colours::grey);
-    g.drawRect(getLocalBounds(), 1);   // draw an outline around the component
+    g.drawRect(getLocalBounds(), 1);
     g.setColour(Colours::orange);
     g.setFont(14.0f);
     g.drawText("MidiThumbnail", getLocalBounds(), Justification::centred, true);
@@ -36,7 +25,7 @@ void MidiThumbnail::paint(Graphics& g)
 
 void MidiThumbnail::resized()
 {
-    // No child components to resize
+    // nothing to resize
 }
 
 double MidiThumbnail::getTotalLength()
@@ -46,54 +35,70 @@ double MidiThumbnail::getTotalLength()
 
 void MidiThumbnail::drawChannels(Graphics& g, double startTimeSeconds, double endTimeSeconds, float verticalZoomFactor)
 {
-    if (totalSamples == 0) return;
+    if (totalSamples == 0 || sampleRate <= 0.0)
+        return;
 
-    int sampleNum = 0;
     MidiMessage message;
+    int sampleNum = 0;
     MidiBuffer::Iterator iterator(*midiBuffer);
 
     g.setColour(Colours::black);
 
-    double totalTimeSeconds = totalSamples / sampleRate;
     double timeRange = endTimeSeconds - startTimeSeconds;
-    if (timeRange <= 0) return;
+    if (timeRange <= 0)
+        return;
 
-    int width = getBounds().getWidth();
-    int height = getBounds().getHeight();
+    int width = getWidth();
+    int height = getHeight();
+    float pixelsPerSecond = (width / timeRange);
 
-    // Berechnung des Verhältnisses zwischen Zeit und Pixeln
-    float pixelsPerUnit = (width / timeRange) * zoom;
+    std::map<int, int> activeNotes;
 
     while (iterator.getNextEvent(message, sampleNum)) {
-        double eventTime = sampleNum / sampleRate;  // Zeit in Sekunden
-        if (eventTime < startTimeSeconds || eventTime > endTimeSeconds) continue;
-
-        double relativePosition = (eventTime - startTimeSeconds) / timeRange;
-        int x = static_cast<int>(relativePosition * (width / pixelsPerUnit)); // Berücksichtigung von Zoom
+        double eventTime = sampleNum / sampleRate;
 
         if (message.isNoteOn()) {
-            int noteHeight = juce::jlimit(0, 127, message.getNoteNumber());
-            int y = height - static_cast<int>((height / 127.0) * noteHeight);
-            g.fillRect(x, y, 2, 3); // Event als kleiner Strich oder Block
+            activeNotes[message.getNoteNumber()] = sampleNum;
+        }
+        else if (message.isNoteOff()) {
+            int note = message.getNoteNumber();
+            auto it = activeNotes.find(note);
+            if (it != activeNotes.end()) {
+                int startSample = it->second;
+                int endSample = sampleNum;
+                double startTime = startSample / sampleRate;
+                double endTime = endSample / sampleRate;
+
+                if (endTime < startTimeSeconds || startTime > endTimeSeconds) {
+                    activeNotes.erase(it);
+                    continue;
+                }
+
+                int x = static_cast<int>((startTime - startTimeSeconds) * pixelsPerSecond);
+                int w = static_cast<int>((endTime - startTime) * pixelsPerSecond);
+                w = std::max(2, w); // at least 2 pixels wide
+
+                float normNote = static_cast<float>(note) / 127.0f;
+                int y = static_cast<int>((1.0f - normNote) * height * verticalZoomFactor);
+
+                g.fillRect(x, y, w, 4);
+                activeNotes.erase(it);
+            }
         }
     }
 }
-
-
 
 void MidiThumbnail::addMessage(int sampleNum, MidiMessage* message)
 {
     juce::ScopedLock lock(_lock);
     midiBuffer->addEvent(*message, sampleNum);
 
-    if (sampleNum > maxSampleNum) {
+    if (sampleNum > maxSampleNum)
         maxSampleNum = sampleNum;
-    }
 
     totalSamples = maxSampleNum;
 
-    std::function<void(void)> changeLambda = [this]() { repaint(); };
-    juce::MessageManager::callAsync(changeLambda);
+    juce::MessageManager::callAsync([this]() { repaint(); });
 }
 
 void MidiThumbnail::removeAllMessages()
@@ -102,7 +107,18 @@ void MidiThumbnail::removeAllMessages()
     midiBuffer->clear();
     maxSampleNum = 0;
     totalSamples = 0;
-    
-    std::function<void(void)> changeLambda = [this]() { repaint(); };
-    juce::MessageManager::callAsync(changeLambda);
+
+    juce::MessageManager::callAsync([this]() { repaint(); });
+}
+
+void MidiThumbnail::setZoom(float newZoom)
+{
+    zoom = newZoom;
+    repaint();
+}
+
+void MidiThumbnail::setVerticalZoom(float newZoom)
+{
+    verticalZoom = newZoom;
+    repaint();
 }

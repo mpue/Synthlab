@@ -30,8 +30,8 @@ Track::Track(Type type, double sampleRate, MultiComponentDragger* dragger)
 	this->pan = 0;
 	this->audioBuffer = new AudioSampleBuffer(2, maxLength * sampleRate);
 	this->dragger = dragger;
-	addAndMakeVisible(resizer);
-
+	this->midiChannel = 1;
+	addAndMakeVisible(resizer);	
 	setHeight(Project::DEFAULT_TRACK_HEIGHT);
 	resized();
 	createProperties();
@@ -52,6 +52,8 @@ Track::~Track()
 	delete recordingValue;
 	delete typeListener;
 	delete typeValue;
+	delete channelListener;
+	delete channelValue;
 }
 
 void Track::setName(juce::String name) {
@@ -437,7 +439,6 @@ void Track::splitRegion() {
 
 void Track::setSamplePosition(int position)
 {
-
 	if (type == MIDI && position != samplePosition) {
 			
 		MidiRegion* r = dynamic_cast<MidiRegion*>(getRegionAt(position));
@@ -573,6 +574,9 @@ juce::Array<juce::PropertyComponent*>& Track::getProperties()
 	typeProp = new juce::ChoicePropertyComponent(*typeValue, "Type", getTypeNames(), getTypeValues());
 	properties.add(typeProp);
 
+	channelProp = new SliderPropertyComponent(*channelValue, "channel", 1.0f, 16.0f, 1, 1, true);
+	properties.add(channelProp);
+
 	typeValue->setValue(getTypeValues().indexOf(type));
 
 	return properties;
@@ -588,6 +592,10 @@ void Track::createProperties()
 
 	typeValue = new Value();
 	typeListener = new TypeListener(*typeValue, this);
+
+	channelValue = new Value();
+	channelValue->setValue(midiChannel);
+	channelListener = new MIdiChannelListener(*channelValue, this);
 }
 
 void Track::setSample(int channel, int sampleNum, float sample)

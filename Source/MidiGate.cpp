@@ -69,7 +69,7 @@ void MidiGate::gateOn(int velocity, int note) {
     pins.at(0)->setNote(note);
     
     Event* e = new Event("gate on",Event::Type::GATE);
-    // Logger::getCurrentLogger()->writeToLog("Note on " + String(note) + " at time " + String(Time::getMillisecondCounter()));
+    Logger::getCurrentLogger()->writeToLog("Note on " + String(note) + " at gate channel " + String(channel));
     e->setValue(velocity);
     e->setNote(note);
 
@@ -108,6 +108,7 @@ void MidiGate::gateOff(int note) {
 
 void MidiGate::createProperties() {
     channelValue = new Value();
+    channelValue->setValue(1);
     channelListener = new ChannelListener(*channelValue, this);
 }
 
@@ -115,7 +116,7 @@ juce::Array<PropertyComponent*>& MidiGate::getProperties() {
     
     properties = juce::Array<PropertyComponent*>();
     
-    channelProp = new SliderPropertyComponent(*channelValue,"channel",1,16,1,1,true);
+    channelProp = new SliderPropertyComponent(*channelValue,"channel",1.0f,16.0f,1,1,true);
     properties.add(channelProp);
     return properties;
 }
@@ -126,17 +127,30 @@ int MidiGate::getChannel() {
 
 void MidiGate::eventReceived(Event* e)
 {
-    for (int i = 0; i < pins.at(1)->getConnections().size(); i++) {
-        pins.at(1)->getConnections().at(i)->sendEvent(new Event(e));
+    // Only forward the event if the channel matches this MidiGate's channel
+    int eventChannel = 1; // Default to 1 if not found
+    if (e != nullptr) {
+        MidiMessage msg = e->getMessage();
+        if (msg.isNoteOn() || msg.isNoteOff() || msg.isController() || msg.isPitchWheel()) {
+            eventChannel = msg.getChannel();
+        }
+    }
+    if (eventChannel == channel) {
+        for (int i = 0; i < pins.at(1)->getConnections().size(); i++) {
+            pins.at(1)->getConnections().at(i)->sendEvent(new Event(e));
+        }
     }
     delete e;
 }
 
 void MidiGate::setChannel(int channel) {
-    if (channel < 1) {
+    if (channel < 1)
         channel = 1;
-    }
+
     this->channel = channel;
-    this->channelValue->setValue(channel);
+
+    if (channelValue != nullptr) {
+        channelValue->setValue(channel);
+    }
 }
 

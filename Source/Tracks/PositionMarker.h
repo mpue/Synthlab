@@ -28,6 +28,7 @@ public:
     void setPosition(double position);
     double getPosition();
     double getDrawPosition();
+	void updatePosition();
     
     void setDrawingBounds(int x, int y, int width, int height);
     

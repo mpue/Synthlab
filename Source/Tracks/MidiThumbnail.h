@@ -39,18 +39,22 @@ public:
     void addMessage(int sampleNum, MidiMessage* message);
     void removeAllMessages();
     
-    void setZoom(float zoom) {
-		this->zoom = zoom;
-	}
+    void setZoom(float newZoom);
+    void setVerticalZoom(float newZoom);
 
 private:
-    
-    double sampleRate;
-    long totalSamples;
+    struct ActiveNote {
+        int note;
+        int startSample;
+    };
+
     MidiBuffer* midiBuffer;
-    ReadState state = NOTE_START;
-    float zoom;
-    CriticalSection _lock;
+    double sampleRate;
+    int totalSamples = 0;    
+    juce::CriticalSection _lock;
+
+    float zoom = 1.0f;
+    float verticalZoom = 1.0f;
 
     long maxSampleNum = 0;
     

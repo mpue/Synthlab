@@ -294,6 +294,11 @@ void MainComponent::createStudioLayout() {
 	mixer = editorView->getMixer();
 	mixerPanel = editorView->getMixerPanel();
 
+	if (navigator == nullptr) {
+		navigator = editorView->getNavigator();
+		navigator->addChangeListener(this);
+	}
+
 	parser->registerCommand("help", [this](const std::vector<std::string>&) -> std::string {
 		return parser->displayHelp();
 		}, "Show help.");
@@ -599,7 +604,6 @@ void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate
 	if (editor != nullptr) {
 		editor->prepareToPlay(samplesPerBlockExpected, sampleRate);
 	}
-
 }
 
 int MainComponent::getNumActiveChannels(int i) {
@@ -610,7 +614,6 @@ int MainComponent::getNumActiveChannels(int i) {
 
 void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill)
 {
-
 	lastTime = (long)Time::getMillisecondCounterHiRes() - currentTime;
 	currentTime = (long)Time::getMillisecondCounterHiRes();
 
@@ -663,7 +666,6 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 			input->magnitudeLeft = inputChannels.at(k)->pins.at(0)->getAudioBuffer()->getMagnitude(0, bufferToFill.startSample, numSamples);
 			input->magnitudeRight = inputChannels.at(k)->pins.at(1)->getAudioBuffer()->getMagnitude(0, bufferToFill.startSample, numSamples);
 		}
-
 	}
 
 	// mute if there are no channels
@@ -775,9 +777,6 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 
 	currentSample = (currentSample + 1) % numSamples;
 
-	if (navigator == nullptr) {
-		navigator = editorView->getNavigator();
-	}
 	if (navigator != nullptr && (navigator->isPlaying() || navigator->isRecording())) {
 		navigator->setSamplePosition(navigator->getSamplePosition() + numSamples);
 	}
@@ -1238,15 +1237,14 @@ void MainComponent::processModule(Module* m) {
 	}
 }
 
-
-
 void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source) {
 
 	TrackNavigator* navigator = dynamic_cast<TrackNavigator*>(source);
 	if (navigator != nullptr) {
 		currentSample = navigator->getSamplePosition();
-
 	}
+	midiProcessor->setActiveChannel(navigator->getCurrentTrack()->getMidiChannel());
+
 }
 
 void MainComponent::comboBoxChanged(juce::ComboBox* comboBoxThatHasChanged) {

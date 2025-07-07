@@ -254,6 +254,19 @@ private:
         juce::Value value;
     };
 
+
+    struct MIdiChannelListener : juce::Value::Listener
+    {
+        MIdiChannelListener(juce::Value& v, Track* t) : track(t), value(v) { value.addListener(this); }
+        ~MIdiChannelListener() {}  // no need to remove the listener
+
+        void valueChanged(juce::Value& value) override {
+            track->setMidiChannel(value.toString().getIntValue(), false);
+        }
+        Track* track;
+        juce::Value value;
+    };
+
     AudioPluginInstance* plugin = nullptr;
     
 	float zoom = 30;
@@ -308,11 +321,18 @@ private:
 
     TypeListener* typeListener;
     juce::Value* typeValue;
+    
     juce::PropertyComponent* typeProp;
     std::vector<EventListener*> listeners;
+    
     RecordingListener* recordingListener;
     juce::Value* recordingValue;
     juce::PropertyComponent* recordingProp;
+
+    MIdiChannelListener* channelListener;
+    juce::Value* channelValue;
+	juce::PropertyComponent* channelProp;
+
 
     juce::Array<juce::PropertyComponent*> properties;
   

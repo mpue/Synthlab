@@ -105,8 +105,12 @@
 		// this is necessary to update the midi regions in the timeline and to pass the event to the next module
 		// const ScopedLock sl(lock);
 
+
 		//if (trackType == Track::Type::MIDI && e->getType() == Event::GATE) {
 		if (track != nullptr && track->isRecording()) {
+			if (e->getMessage().getChannel() != track->getMidiChannel()) {
+				return;
+			}
 			MidiRegion* r = dynamic_cast<MidiRegion*>(track->getCurrentRegion());
 			if (r != nullptr) {
 				long samplePosition = track->getNavigator()->getSamplePosition();
@@ -120,6 +124,10 @@
 		
 		}
 			//}			
+
+		if (e->getMessage().getChannel() != track->getMidiChannel()) {
+			return;
+		}
 
 		// check if pin is connected
 		if (getPins().at(5)->getConnections().size() > 0) {
@@ -268,9 +276,9 @@
 
 		properties = juce::Array<PropertyComponent*>();
 		volumeProp = new SliderPropertyComponent(*volumeValue, "Volume", 0, 1, 0.01, 1.0, true);
-		// trackProp = new ChoicePropertyComponent(*trackValue, "Track", navigator->getTrackList(), values);
+		trackProp = new ChoicePropertyComponent(*trackValue, "Track", navigator->getTrackList(), values);
 		properties.add(volumeProp);
-		// properties.add(trackProp);
+		properties.add(trackProp);
 		return properties;
 	}
 
