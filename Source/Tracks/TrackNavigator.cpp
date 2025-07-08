@@ -46,7 +46,7 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 	marker->setBounds(0, 0, 2, getHeight());
 	this->view = view;
 	view->getHorizontalScrollBar().addListener(this);
-	// setInterceptsMouseClicks(true, true);
+	// setInterceptsMouseClicks(true, true);	
 }
 
 TrackNavigator::~TrackNavigator()
@@ -167,93 +167,93 @@ void TrackNavigator::timerCallback()
 	repaint();
 }
 
-ValueTree* TrackNavigator::getConfiguration()
+ValueTree TrackNavigator::getConfiguration()
 {
-	ValueTree* v = new ValueTree("Tracks");
+	ValueTree v("Tracks");
 
 	for (int i = 0; i < tracks.size(); i++) {
 
-		ValueTree track = ValueTree("Track");
+		ValueTree track("Track");
 		track.setProperty("name", tracks.at(i)->getName(), nullptr);
-		ValueTree regions = ValueTree("Regions");
+
+		// Setze den Typ unabhängig von den Regionen
+		if (tracks.at(i)->getType() == Track::AUDIO) {
+			track.setProperty("type", "audio", nullptr);
+		}
+		else if (tracks.at(i)->getType() == Track::INSTRUMENT) {
+			track.setProperty("type", "instrument", nullptr);
+			track.setProperty("midiChannel", tracks.at(i)->getMidiChannel(), nullptr);
+			track.setProperty("plugin", tracks.at(i)->getInstrumentName(), nullptr);
+		}
+		else {
+			track.setProperty("type", "unknown", nullptr); // Fallback
+		}
+
+		ValueTree regions("Regions");
 
 		for (int j = 0; j < tracks.at(i)->getRegions().size(); j++) {
-			
-			ValueTree region = ValueTree("Region");
-			
+
+			ValueTree region("Region");
 			region.setProperty("name", tracks.at(i)->getRegions().at(j)->getName(), nullptr);
 
 			if (tracks.at(i)->getType() == Track::AUDIO) {
-				track.setProperty("type", "audio", nullptr);
-				AudioRegion* ar = dynamic_cast<AudioRegion*>(tracks.at(i)->getRegions().at(j));
-				if (ar != nullptr) {
+				if (auto* ar = dynamic_cast<AudioRegion*>(tracks.at(i)->getRegions().at(j))) {
 					region.setProperty("clipRefId", ar->getClipRefid(), nullptr);
 					region.setProperty("sampleOffset", (int)ar->getSampleOffset(), nullptr);
 					region.setProperty("numSamples", ar->getNumSamples(), nullptr);
 					region.setProperty("width", ar->getWidth(), nullptr);
-					regions.addChild(region, -1, nullptr);
 				}
-
 			}
 			else if (tracks.at(i)->getType() == Track::MIDI) {
-
-				track.setProperty("type", "instrument", nullptr);
-				MidiRegion* mr = dynamic_cast<MidiRegion*>(tracks.at(i)->getRegions().at(j));
-
-				if (mr != nullptr) {			
-
+				if (auto* mr = dynamic_cast<MidiRegion*>(tracks.at(i)->getRegions().at(j))) {
 					region.setProperty("sampleOffset", (int)mr->getSampleOffset(), nullptr);
 					region.setProperty("numSamples", mr->getNumSamples(), nullptr);
 					region.setProperty("width", mr->getWidth(), nullptr);
-					regions.addChild(region, -1, nullptr);
 
-					ValueTree events = ValueTree("Events");
+					ValueTree events("Events");
 
 					for (int k = 0; k < mr->getNumMessages(); k++) {
+						if (auto* msg = mr->getMessageAt(k)) {
+							ValueTree e("Event");
 
-						ValueTree e = ValueTree("Event");
-						MidiMessage* msg = mr->getMessageAt(k);
-
-						if (msg != nullptr) {
 							if (msg->isNoteOn()) {
 								e.setProperty("type", "noteon", nullptr);
 								e.setProperty("note", msg->getNoteNumber(), nullptr);
 							}
-							if (msg->isNoteOff()) {
-								e.setProperty("note", msg->getNoteNumber(), nullptr);
+							else if (msg->isNoteOff()) {
 								e.setProperty("type", "noteoff", nullptr);
+								e.setProperty("note", msg->getNoteNumber(), nullptr);
 							}
-							if (msg->isController()) {
+							else if (msg->isController()) {
 								e.setProperty("type", "control", nullptr);
-								e.setProperty("controller", msg->getControllerNumber(), nullptr);						
+								e.setProperty("controller", msg->getControllerNumber(), nullptr);
 								e.setProperty("value", msg->getControllerValue(), nullptr);
 							}
-							if (msg->isPitchWheel()) {
+							else if (msg->isPitchWheel()) {
 								e.setProperty("type", "pitch", nullptr);
-								e.setProperty("pitch", msg->getPitchWheelValue(), nullptr);							
-							}	
-						
+								e.setProperty("pitch", msg->getPitchWheelValue(), nullptr);
+							}
+
 							e.setProperty("channel", msg->getChannel(), nullptr);
 							e.setProperty("velocity", msg->getVelocity(), nullptr);
 							e.setProperty("timestamp", msg->getTimeStamp(), nullptr);
 
 							events.addChild(e, -1, nullptr);
-
 						}
-
 					}
 
 					region.addChild(events, -1, nullptr);
 				}
 			}
+
+			regions.addChild(region, -1, nullptr);
 		}
 
-		track.addChild(regions, 0, nullptr);
-		v->addChild(track, i, nullptr);
+		track.addChild(regions, -1, nullptr);
+		v.addChild(track, -1, nullptr);
 	}
 
 	return v;
-
 }
 
 void TrackNavigator::setConfiguration(ValueTree* config)
@@ -360,7 +360,7 @@ void TrackNavigator::setRecording(bool recording) {
 		for (int i = 0; i < tracks.size(); i++) {
 			if (tracks.at(i)->isRecording()) {
 				
-				if (tracks.at(i)->getType() == Track::Type::MIDI) {
+				if (tracks.at(i)->getType() == Track::Type::MIDI || tracks.at(i)->getType() == Track::Type::INSTRUMENT) {
 
 					MidiRegion* r = dynamic_cast<MidiRegion*>(tracks.at(i)->getRegionAt(recordStart));
 					if (r == nullptr) {
@@ -385,7 +385,7 @@ void TrackNavigator::setRecording(bool recording) {
 		recordStop = marker->getPosition() * Project::getInstance()->getSampleRate();
 		for (int i = 0; i < tracks.size(); i++) {
 			if (tracks.at(i)->isRecording()) {
-				if (tracks.at(i)->getType() == Track::Type::MIDI) {
+				if (tracks.at(i)->getType() == Track::Type::MIDI || tracks.at(i)->getType() == Track::Type::INSTRUMENT) {
 					for (int j = 0; j < tracks.at(i)->getRegions().size(); j++) {
 
 						MidiRegion* mr = dynamic_cast<MidiRegion*>(tracks.at(i)->getRegions().at(j));

@@ -132,6 +132,7 @@ public:
             Rectangle<int> r = Desktop::getInstance().getDisplays().getMainDisplay().userArea;
 	        centreWithSize (r.getWidth(), r.getHeight());
             setVisible (true);
+			toFront(true);
         }
 
         void closeButtonPressed() override {

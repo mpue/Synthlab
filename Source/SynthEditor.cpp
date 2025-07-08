@@ -1171,11 +1171,10 @@ void SynthEditor::saveFile() {
 		delete v;
 
 		if (navigator != nullptr) {
-			ValueTree* tracks = navigator->getConfiguration();
-			xml = tracks->createXml();
+			ValueTree tracks = navigator->getConfiguration();
+			xml = tracks.createXml();
 			xml->writeToFile(file.getParentDirectory().getFullPathName() + "\\" + file.getFileNameWithoutExtension() + "_tracks.xml", "");
-			xml = nullptr;
-			delete tracks;
+			xml = nullptr;		
 		}
 
 		setDirty(false);
@@ -1241,7 +1240,6 @@ void SynthEditor::openSampleEditor(SamplerModule* sm) {
 				return;
 			}
 		}
-
 	}
 
 	Project::getInstance()->getSupplemental()->addTab("Sample editor", Colours::darkgrey, sm->getEditor(), false);
@@ -1395,9 +1393,10 @@ void SynthEditor::openTracks(File file)
 			}
 			else if (track.getProperty("type") == "instrument") {
 				juce::Point<int> pos = juce::Point<int>(10, 10);
-				Track* t = TrackUtil::createVirtualInstrumentTrack(track.getProperty("name"),pos, navigator, this);								
-				ti->setTrack(t);				
+				Track* t = navigator->addTrack(Track::Type::INSTRUMENT, 48000);
 
+				ti->setTrack(t);				
+				t->setMidiChannel(track.getProperty("midiChannel").toString().getIntValue(),false);
 				ValueTree regions = track.getChild(0);
 
 				for (int j = 0; j < regions.getNumChildren(); j++) {

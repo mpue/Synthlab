@@ -297,8 +297,11 @@ void MainComponent::createStudioLayout() {
 
 	if (navigator == nullptr) {
 		navigator = editorView->getNavigator();
-		navigator->addChangeListener(this);
 	}
+
+	navigator->addChangeListener(this);
+	addKeyListener(navigator);
+	navigator->setWantsKeyboardFocus(true);
 
 	parser->registerCommand("help", [this](const std::vector<std::string>&) -> std::string {
 		return parser->displayHelp();

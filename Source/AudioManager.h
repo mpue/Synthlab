@@ -96,6 +96,7 @@ private:
    }
     
     ~AudioManager() {
+		manager->clearFormats();
         delete manager;
     }
     

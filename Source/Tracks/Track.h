@@ -95,6 +95,14 @@ public:
 		return this->navigator;
 	}
 
+    juce::String getInstrumentName() {
+        return instrumentName;
+    }
+
+    void setInstrumentName(juce::String name) {
+        instrumentName = name;
+	}
+
     void updateMagnitude(int sample, int buffersize, float gainLeft, float gainRight);
 
     Region* getRegionAt(long sample);
@@ -209,12 +217,12 @@ private:
 
     juce::StringArray getTypeNames() const
     {
-        return { "AUDIO", "MIDI" };
+        return { "AUDIO", "MIDI", "INSTRUMENT" };
     }
 
     juce::Array<var> getTypeValues() const
     {
-        return { Type::AUDIO, Type::MIDI };
+        return { Type::AUDIO, Type::MIDI, Type::INSTRUMENT };
     }
 
     struct TypeListener : juce::Value::Listener
@@ -308,6 +316,8 @@ private:
     String midiInputDevice;
     String midiOutputDevice;
     
+	String instrumentName;
+
     Type type = AUDIO;
     
     int height = Project::DEFAULT_TRACK_HEIGHT;

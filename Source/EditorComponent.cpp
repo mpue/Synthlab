@@ -155,8 +155,7 @@ void EditorComponent::OpenTrackView()
         navigator = new TrackNavigator(AudioManager::getInstance()->getDeviceManager(), trackView, propertyView);
         
         PrefabFactory::getInstance()->init(navigator);
-        addMouseListener(navigator, true);
-        addKeyListener(navigator);
+        addMouseListener(navigator, true);       
         editor->setNavigator(navigator);
         trackView->setSize(500, 200);
         trackView->setViewedComponent(navigator);
@@ -168,6 +167,7 @@ void EditorComponent::OpenTrackView()
     }
     topTab->addTab("Navigator", juce::Colours::grey, trackView, false);
     topTab->setCurrentTabIndex(1);
+
 }
 
 void EditorComponent::changeListenerCallback(juce::ChangeBroadcaster *source) {

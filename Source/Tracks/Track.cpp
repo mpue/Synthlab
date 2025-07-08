@@ -439,7 +439,7 @@ void Track::splitRegion() {
 
 void Track::setSamplePosition(int position)
 {
-	if (type == MIDI && position != samplePosition) {
+	if ((type == MIDI || type == INSTRUMENT) && position != samplePosition) {
 			
 		MidiRegion* r = dynamic_cast<MidiRegion*>(getRegionAt(position));
 		if (r != nullptr) {

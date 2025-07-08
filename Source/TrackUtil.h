@@ -46,7 +46,11 @@ public:
 		Project::getInstance()->getUndoManager()->perform(am1);
 		TrackIn* ti = dynamic_cast<TrackIn*>(am1->getModule());
 
-		Track* t = navigator->addTrack(Track::Type::MIDI, 48000);
+		Track* t = navigator->addTrack(Track::Type::INSTRUMENT, 48000);
+		t->setType(Track::Type::INSTRUMENT);
+		t->setInstrumentName(name);
+
+		// Set the name of the track based on the number of existing tracks
 		t->setName("MIDI " + String(navigator->getTracks().size() + 1));
 		ti->setTrack(t);
 		t->setVolume(1.0f);

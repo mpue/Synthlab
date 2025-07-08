@@ -1,4 +1,4 @@
- /*
+ï»¿ /*
  ==============================================================================
  
  SawtoothModule
@@ -161,7 +161,7 @@ void PluginModule::paint(juce::Graphics &g) {
 
 
 void PluginModule::process() {
-    // Überprüfen, ob die Pins gültige Verbindungen haben
+    // ÃœberprÃ¼fen, ob die Pins gÃ¼ltige Verbindungen haben
     bool hasValidConnections =
         pins.size() >= 4 &&
         pins.at(0)->getConnections().size() == 1 &&
@@ -190,14 +190,21 @@ void PluginModule::process() {
             audioBuffer->clear();
         }
 
-        // Prozessiere den Block nur, wenn es Ausgabekanäle gibt
+        // Prozessiere den Block nur, wenn es AusgabekanÃ¤le gibt
         if (plugin->getNumOutputChannels() > 0) {
             plugin->processBlock(*audioBuffer, midiBuffer);
         }
 
+
         // Ausgabe auf die Pins 2 und 3 kopieren
         pins.at(2)->getAudioBuffer()->copyFrom(0, 0, *audioBuffer, 0, 0, buffersize);
         pins.at(3)->getAudioBuffer()->copyFrom(0, 0, *audioBuffer, 1, 0, buffersize);
+        
+        juce::AudioBuffer<float>* leftOut = pins.at(2)->getAudioBuffer();;
+        juce::AudioBuffer<float>* rightOut = pins.at(3)->getAudioBuffer();;
+        float masterGain = Decibels::decibelsToGain(12.0f);
+        leftOut->applyGain(masterGain);
+        rightOut->applyGain(masterGain);
     }
 
     // Aktualisiere den aktuellen Sample-Index

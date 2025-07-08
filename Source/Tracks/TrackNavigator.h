@@ -89,7 +89,7 @@ public:
 
 	void timerCallback() override;
 
-	ValueTree* getConfiguration();
+	ValueTree getConfiguration();
 
 	void setConfiguration(ValueTree* config);
 	void scrollBarMoved(ScrollBar* scrollBarThatHasMoved, double newRangeStart) override;
