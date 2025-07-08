@@ -39,6 +39,7 @@
 #include "ImageModule.h"
 #include "AudioRecorderEditor.h"
 #include "PluginSelectorDialog.h"
+#include "TrackUtil.h"
 
 class SampleEditor;
 
@@ -1394,7 +1395,7 @@ void SynthEditor::openTracks(File file)
 			}
 			else if (track.getProperty("type") == "instrument") {
 				juce::Point<int> pos = juce::Point<int>(10, 10);
-				Track* t = createVirtualInstrumentTrack(track.getProperty("name"),pos);								
+				Track* t = TrackUtil::createVirtualInstrumentTrack(track.getProperty("name"),pos, navigator, this);								
 				ti->setTrack(t);				
 
 				ValueTree regions = track.getChild(0);
@@ -1479,131 +1480,6 @@ void SynthEditor::configureAudioModule(Module* m, ChangeBroadcaster* broadcaster
 
 }
 
-Track* SynthEditor::createAudioTrack()
-{
-	Point<int> pos = Point<int>(10, 10);
-	AddModuleAction* am = new AddModuleAction(this, pos, 48);
-	Project::getInstance()->getUndoManager()->beginNewTransaction();
-	Project::getInstance()->getUndoManager()->perform(am);
-
-	TrackIn* ti = dynamic_cast<TrackIn*>(am->getModule());
-
-	Track* t = navigator->addTrack(Track::Type::AUDIO, 48000);
-	t->setName("Audio " + String(navigator->getTracks().size() + 1));
-	ti->setTrack(t);
-
-	Module* m = getModule();
-
-	pos.x += 160;
-
-	AudioOut* audioOut = nullptr;
-	AudioIn* audioIn = nullptr;
-
-	// find audio in
-	for (int i = 0; i < m->getModules()->size(); i++) {
-		if (m->getModules()->at(i) != nullptr) {
-			audioIn = dynamic_cast<AudioIn*>(m->getModules()->at(i));
-			if (audioIn != nullptr) {
-				break;
-			}
-		}
-	}
-	//  find audio out
-	for (int i = 0; i < m->getModules()->size(); i++) {
-		if (m->getModules()->at(i) != nullptr) {
-			audioOut = dynamic_cast<AudioOut*>(m->getModules()->at(i));
-			if (audioOut != nullptr) {
-				break;
-			}
-		}
-	}
-	// found one
-	ConnectAudioOut(audioOut, ti, pos, 0, 1);
-	return t;
-}
-
-void SynthEditor::ConnectAudioOut(AudioOut*& audioOut, Module* m, const juce::Point<int>& pos, int leftSourcePin, int rightSourcePin)
-{
-	if (audioOut != nullptr) {
-		// audio out is not connected, thus make some connections
-		if (audioOut->pins.at(0)->getConnections().size() == 0 && audioOut->pins.at(1)->getConnections().size() == 0) {
-			audioOut->pins.at(0)->getConnections().push_back(m->pins.at(leftSourcePin));
-			audioOut->pins.at(1)->getConnections().push_back(m->pins.at(rightSourcePin));
-			Connection* c1 = new Connection(m, m->pins.at(0), audioOut, audioOut->pins.at(0));
-			Connection* c2 = new Connection(m, m->pins.at(1), audioOut, audioOut->pins.at(1));
-			getModule()->getConnections()->push_back(c1);
-			getModule()->getConnections()->push_back(c2);
-			audioOut->setVolume(1.0f);
-		}
-		// already connected, create an aux out
-		else {
-			AddModuleAction* am = new AddModuleAction(this, pos, 77);
-			Project::getInstance()->getUndoManager()->beginNewTransaction();
-			Project::getInstance()->getUndoManager()->perform(am);
-			AuxOut* ao = dynamic_cast<AuxOut*>(am->getModule());
-			if (ao != nullptr) {
-				ao->pins.at(0)->getConnections().push_back(m->pins.at(leftSourcePin));
-				ao->pins.at(1)->getConnections().push_back(m->pins.at(rightSourcePin));
-				Connection* c1 = new Connection(m, m->pins.at(leftSourcePin), ao, ao->pins.at(0));
-				Connection* c2 = new Connection(m, m->pins.at(rightSourcePin), ao, ao->pins.at(1));
-				getModule()->getConnections()->push_back(c1);
-				getModule()->getConnections()->push_back(c2);
-			}
-
-		}
-	}
-	// no audio out, create one
-	else {
-
-		AddModuleAction* am = new AddModuleAction(this, pos, 66);
-		Project::getInstance()->getUndoManager()->beginNewTransaction();
-		Project::getInstance()->getUndoManager()->perform(am);
-		audioOut = dynamic_cast<AudioOut*>(am->getModule());
-
-		if (audioOut != nullptr) {
-			audioOut->pins.at(0)->getConnections().push_back(m->pins.at(leftSourcePin));
-			audioOut->pins.at(1)->getConnections().push_back(m->pins.at(rightSourcePin));
-			Connection* c1 = new Connection(m, m->pins.at(leftSourcePin), audioOut, audioOut->pins.at(0));
-			Connection* c2 = new Connection(m, m->pins.at(rightSourcePin), audioOut, audioOut->pins.at(1));
-			getModule()->getConnections()->push_back(c1);
-			getModule()->getConnections()->push_back(c2);
-			audioOut->setVolume(1.0f);
-		}
-	}
-}
-
-Track* SynthEditor::createMIDITrack()
-{
-	Point<int> pos = Point<int>(10, 10);
-
-	AddModuleAction* am = new AddModuleAction(this, pos, 61);
-	Project::getInstance()->getUndoManager()->beginNewTransaction();
-	Project::getInstance()->getUndoManager()->perform(am);
-	MidiGate* gate = dynamic_cast<MidiGate*>(am->getModule());
-
-	pos.x += 160;
-	AddModuleAction* am1 = new AddModuleAction(this, pos, 48);
-	Project::getInstance()->getUndoManager()->beginNewTransaction();
-	Project::getInstance()->getUndoManager()->perform(am1);
-	TrackIn* ti = dynamic_cast<TrackIn*>(am1->getModule());
-
-	Track* t = navigator->addTrack(Track::Type::MIDI, 48000);
-	t->setName("MIDI " + String(navigator->getTracks().size() + 1));
-	ti->setTrack(t);
-
-	Connection* c1 = new Connection(ti, ti->pins.at(4), gate, gate->pins.at(1));
-	getModule()->getConnections()->push_back(c1);
-	gate->pins.at(1)->getConnections().push_back(ti->pins.at(4));
-
-	Array<var> values = Array<var>();
-
-	for (int i = 0; i < PluginManager::getInstance()->getPlugins().size(); i++) {
-		values.add(PluginManager::getInstance()->getPlugins().getReference(i));
-	}
-
-	return t;
-}
-
 void SynthEditor::addVirtualInstrumentTrack()
 {
 	Array<var> values = Array<var>();
@@ -1616,53 +1492,10 @@ void SynthEditor::addVirtualInstrumentTrack()
 	{
 		Point<int> pos = Point<int>(10, 10);
 
-		Track* t = createVirtualInstrumentTrack(selectedPlugin, pos);
+		Track* t = TrackUtil::createVirtualInstrumentTrack(selectedPlugin, pos,navigator, this);
 		// t->addMidiRegion(48000, 0, 960000);
 	});
 
-}
-
-Track* SynthEditor::createVirtualInstrumentTrack(juce::String name, Point<int> pos)
-{
-	AddModuleAction* am = new AddModuleAction(this, pos, 61);
-	Project::getInstance()->getUndoManager()->beginNewTransaction();
-	Project::getInstance()->getUndoManager()->perform(am);
-	MidiGate* gate = dynamic_cast<MidiGate*>(am->getModule());
-
-	pos.x += 160;
-
-	AddModuleAction* am1 = new AddModuleAction(this, pos, 48);
-	Project::getInstance()->getUndoManager()->beginNewTransaction();
-	Project::getInstance()->getUndoManager()->perform(am1);
-	TrackIn* ti = dynamic_cast<TrackIn*>(am1->getModule());
-
-	Track* t = navigator->addTrack(Track::Type::MIDI, 48000);
-	t->setName("MIDI " + String(navigator->getTracks().size() + 1));
-	ti->setTrack(t);
-	t->setVolume(1.0f);
-
-	Connection* c1 = new Connection(ti, ti->pins.at(4), gate, gate->pins.at(1));
-	getModule()->getConnections()->push_back(c1);
-	gate->pins.at(1)->getConnections().push_back(ti->pins.at(4));
-
-	pos.x += 160;
-
-	AddModuleAction* am2 = new AddModuleAction(this, pos, 79);
-	Project::getInstance()->getUndoManager()->beginNewTransaction();
-	Project::getInstance()->getUndoManager()->perform(am2);
-	PluginModule* pm = dynamic_cast<PluginModule*>(am2->getModule());
-	pm->selectPlugin(name);
-
-	Connection* c2 = new Connection(pm, pm->pins.at(4), ti, ti->pins.at(5));
-	getModule()->getConnections()->push_back(c2);
-	ti->pins.at(5)->getConnections().push_back(pm->pins.at(4));
-
-	AudioOut* audioOut = nullptr;
-
-	pos.x += 160;
-
-	ConnectAudioOut(audioOut, pm, pos, 2, 3);
-	return t;
 }
 
 void SynthEditor::setTab(juce::TabbedComponent* t) {

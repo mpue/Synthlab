@@ -28,6 +28,7 @@
 #include "ModuleUtils.h"
 #include "MidiClock.h"
 #include "MidiRecorderModule.h"
+#include "TrackUtil.h"
 
 #ifndef M_PI
 #define M_PI       3.14159265358979323846 
@@ -318,15 +319,15 @@ void MainComponent::createStudioLayout() {
 
 		if (args[0] == "instrument") {
 			if (args.size() < 2) return "Error: Missing instrument name.";
-			editor->createVirtualInstrumentTrack(args.at(1), pos);
+			TrackUtil::createVirtualInstrumentTrack(args.at(1), pos,navigator, editor);
 			return "Instrument track added.";
 		}
 		if (args[0] == "midi") {
-			editor->createMIDITrack();
+			TrackUtil::createMIDITrack(editor, navigator,editor->getModule());
 			return "MIDI track added.";
 		}
 		if (args[0] == "audio") {
-			editor->createAudioTrack();
+			TrackUtil::createAudioTrack(editor, navigator, editor->getModule());
 			return "Audio track added.";
 		}
 		if (args[0] == "midiregion") {
@@ -926,7 +927,7 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 			editorView->OpenTrackView();
 			editorView->getNavigator()->addChangeListener(this);
 		}
-		editor->createAudioTrack();
+		TrackUtil::createAudioTrack(editor, editorView->getNavigator(), editor->getModule());
 		editor->repaint();
 	}
 	else if (menuItemID == 9) {
@@ -934,7 +935,7 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 			editorView->OpenTrackView();
 			editorView->getNavigator()->addChangeListener(this);
 		}
-		editor->createMIDITrack();
+		TrackUtil::createMIDITrack(editor, editorView->getNavigator(), editor->getModule());
 		editor->repaint();
 	}
 	else if (menuItemID == 10) {
@@ -1243,7 +1244,10 @@ void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source) {
 	if (navigator != nullptr) {
 		currentSample = navigator->getSamplePosition();
 	}
-	midiProcessor->setActiveChannel(navigator->getCurrentTrack()->getMidiChannel());
+	if (midiProcessor != nullptr) {
+		if (navigator != nullptr && navigator->getCurrentTrack() != nullptr) 
+			midiProcessor->setActiveChannel(navigator->getCurrentTrack()->getMidiChannel());
+	}
 
 }
 
