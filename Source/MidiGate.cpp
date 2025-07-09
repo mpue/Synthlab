@@ -1,35 +1,22 @@
 /*
   ==============================================================================
-
-    MidiGate.cpp
-    Created: 4 Apr 2018 3:48:23pm
-    Author:  Matthias Pueski
-
+   MidiGate.cpp – polyphon-sicher (2025-07-09)
   ==============================================================================
 */
-
-#include "../JuceLibraryCode/JuceHeader.h"
 #include "MidiGate.h"
 #include "Connection.h"
-#include "MidiOut.h"
 
-using juce::Justification;
-using juce::ImageCache;
-using juce::Value;
-using juce::PropertyComponent;
-using juce::SliderPropertyComponent;
-using juce::Array;
+using namespace juce;
 
 //==============================================================================
+// Konstruktor / Destruktor
+//------------------------------------------------------------------------------
 MidiGate::MidiGate()
-{   
-    setSize(120,140);
-    
-    nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(2,2);
-    editable = false;
-    prefab = true;
-    
+{
+    setSize(120, 140);
+    nameLabel->setJustificationType(Justification::left);
+    nameLabel->setTopLeftPosition(2, 2);
+    editable = false;  prefab = true;
     createProperties();
 }
 
@@ -37,120 +24,119 @@ MidiGate::~MidiGate()
 {
     delete channelValue;
     delete channelListener;
-    // delete channelProp;
 }
 
-void MidiGate::configurePins() {
+//==============================================================================
+// Pins
+void MidiGate::configurePins()
+{
+    // VALUE-Ausgang (Gate-Spannung / Velocity)
+    auto* pValue = new Pin(Pin::Type::VALUE);
+    pValue->direction = Pin::Direction::OUT;
+    pValue->setName("G");
+    addPin(Pin::Direction::OUT, pValue);
 
-    
-    Pin* p1 = new Pin(Pin::Type::VALUE);
-    p1->direction = Pin::Direction::OUT;
-    p1->listeners.push_back(this);
-    p1->setName("G");
-    p1->setDescription("Gate value out. Contains velocity and note value as well.");
-    addPin(Pin::Direction::OUT,p1);
-    
-    Pin* p2 = new Pin(Pin::Type::EVENT);
-    p2->direction = Pin::Direction::OUT;
-    p2->listeners.push_back(this);
-    p2->setName("E");
-    p2->setDescription("Event out. Contains the velocity and note values of all 128 notes as well.");
-    addPin(Pin::Direction::OUT,p2);
+    // EVENT-Ausgang (Note-Events)
+    auto* pEvent = new Pin(Pin::Type::EVENT);
+    pEvent->direction = Pin::Direction::OUT;
+    pEvent->setName("E");
+    addPin(Pin::Direction::OUT, pEvent);
 }
 
-void MidiGate::paint(juce::Graphics &g) {
+//==============================================================================
+// Zeichenroutine
+void MidiGate::paint(Graphics& g)
+{
     Module::paint(g);
-    g.drawImageAt(ImageCache::getFromMemory(BinaryData::midiin_png, BinaryData::midiin_pngSize),25,40);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::midiin_png,
+        BinaryData::midiin_pngSize),
+        25, 40);
 }
 
-void MidiGate::gateOn(int velocity, int note) {
-    
+//==============================================================================
+// Gate-Logik  ---------------------------------------------------------------
+
+void MidiGate::gateOn(int velocity, int note)
+{
+    activeNotes.insert(note);               // Note merken
+    gateActive = true;                       // Mind. eine Note aktiv
+
+    // VALUE-Pin aktualisieren
     pins.at(0)->setValue(velocity);
     pins.at(0)->setNote(note);
-    
-    Event* e = new Event("gate on",Event::Type::GATE);
-    Logger::getCurrentLogger()->writeToLog("Note on " + String(note) + " at gate channel " + String(channel));
-    e->setValue(velocity);
-    e->setNote(note);
 
-    MidiMessage m = MidiMessage::noteOn(channel,note,(uint8)velocity);
-    m.setTimeStamp(Time::getMillisecondCounter());
-    e->setMessage(m);
+    // EVENT erzeugen und an alle Verbindungen senden
+    Event e("gate on", Event::Type::GATE);
+    e.setValue(velocity);
+    e.setNote(note);
+    e.setMessage(MidiMessage::noteOn(channel, note, (uint8)velocity));
 
-    for (int i = 0; i < pins.at(1)->getConnections().size();i++) {
-        pins.at(1)->getConnections().at(i)->sendEvent(new Event(e));
+    for (auto* conn : pins.at(1)->getConnections())
+        conn->sendEvent(new Event(e));
+}
+
+void MidiGate::gateOff(int note)
+{
+    activeNotes.erase(note);                // Note entfernen
+
+    // Immer Note-Off-Event weitergeben (wichtig für Synth-Stimmen)
+    Event e("gate off", Event::Type::GATE);
+    e.setValue(0);
+    e.setNote(note);
+    e.setMessage(MidiMessage::noteOff(channel, note));
+
+    for (auto* conn : pins.at(1)->getConnections())
+        conn->sendEvent(new Event(e));
+
+    // Gate-Signal erst auf 0 setzen, wenn wirklich KEINE Note mehr aktiv
+    if (activeNotes.empty() && gateActive)
+    {
+        pins.at(0)->setValue(0);
+        gateActive = false;
     }
-    
+}
+
+//==============================================================================
+// Event-Passthrough (nur wenn Kanal passt)
+void MidiGate::eventReceived(Event* e)
+{
+    if (!e) return;
+
+    int msgChannel = 1; // Fallback-Kanal
+    const auto& msg = e->getMessage();
+
+    if (msg.isNoteOn() || msg.isNoteOff() || msg.isController() || msg.isPitchWheel())
+        msgChannel = msg.getChannel();
+
+    if (msgChannel == channel)
+        for (auto* conn : pins.at(1)->getConnections())
+            conn->sendEvent(new Event(*e));
+
     delete e;
 }
 
-
-
-void MidiGate::gateOff(int note) {
-    
-    pins.at(0)->setValue(0);
-    pins.at(0)->setNote(note);
-    Event* e = new Event("gate off",Event::Type::GATE);
-    // Logger::getCurrentLogger()->writeToLog("Note off " + String(note) + " at time " + String(Time::getMillisecondCounter()));
-    e->setValue(0);
-    e->setNote(note);
-
-    MidiMessage m = MidiMessage::noteOff(channel, note);
-    m.setTimeStamp(Time::getMillisecondCounter());
-    e->setMessage(m);
-
-    for (int i = 0; i < pins.at(1)->getConnections().size();i++) {
-        pins.at(1)->getConnections().at(i)->sendEvent(new Event(e));
-    }
-    
-    delete e;
-}
-
-void MidiGate::createProperties() {
-    channelValue = new Value();
-    channelValue->setValue(1);
+//==============================================================================
+// Properties
+void MidiGate::createProperties()
+{
+    channelValue = new Value(1);
     channelListener = new ChannelListener(*channelValue, this);
 }
 
-juce::Array<PropertyComponent*>& MidiGate::getProperties() {
-    
-    properties = juce::Array<PropertyComponent*>();
-    
-    channelProp = new SliderPropertyComponent(*channelValue,"channel",1.0f,16.0f,1,1,true);
+Array<PropertyComponent*>& MidiGate::getProperties()
+{
+    properties.clear();
+    channelProp = new SliderPropertyComponent(*channelValue,
+        "channel",
+        1, 16, 1, 1, true);
     properties.add(channelProp);
     return properties;
 }
 
-int MidiGate::getChannel() {
-    return channel;
-}
-
-void MidiGate::eventReceived(Event* e)
+//==============================================================================
+// Sonstiges
+void MidiGate::setChannel(int newChannel)
 {
-    // Only forward the event if the channel matches this MidiGate's channel
-    int eventChannel = 1; // Default to 1 if not found
-    if (e != nullptr) {
-        MidiMessage msg = e->getMessage();
-        if (msg.isNoteOn() || msg.isNoteOff() || msg.isController() || msg.isPitchWheel()) {
-            eventChannel = msg.getChannel();
-        }
-    }
-    if (eventChannel == channel) {
-        for (int i = 0; i < pins.at(1)->getConnections().size(); i++) {
-            pins.at(1)->getConnections().at(i)->sendEvent(new Event(e));
-        }
-    }
-    delete e;
+    channel = jmax(1, newChannel);
+    if (channelValue) channelValue->setValue(channel);
 }
-
-void MidiGate::setChannel(int channel) {
-    if (channel < 1)
-        channel = 1;
-
-    this->channel = channel;
-
-    if (channelValue != nullptr) {
-        channelValue->setValue(channel);
-    }
-}
-

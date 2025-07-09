@@ -9,8 +9,11 @@
 
 using juce::String;
 
+static int nextId = 1;
+int id = nextId++;
+
 Event::Event() {
-    
+
 }
 
 Event::Event(Event* e){

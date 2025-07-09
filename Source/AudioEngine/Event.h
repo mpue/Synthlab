@@ -46,7 +46,7 @@ private:
 	juce::String name;
 	int number = 1;
 	int value = 0;
-	int note = 0;
+	int note = 0;	
 };
 
 

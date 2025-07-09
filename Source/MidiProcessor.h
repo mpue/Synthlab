@@ -1,55 +1,75 @@
-/*
-  ==============================================================================
-
-	MidiTools.h
-	Created: 24 Jan 2025 9:59:33pm
-	Author:  mpue
-
-  ==============================================================================
-*/
-
+﻿/*  MidiProcessor.h
+ *  Thread-safe, queue-based MIDI processor for JUCE
+ *  © 2025 Matthias Püski
+ */
 #pragma once
 
+#include <vector>
+#include <mutex>
 #include "../JuceLibraryCode/JuceHeader.h"
-#include "MidiRecorderModule.h"
-#include "MidiNote.h"
-#include "MidiGate.h"
-#include "MidiClock.h"
-#include "PitchBendModule.h"
-#include "Knob.h"
-#include "Module.h"
-#include "SynthEditor.h"
 
-class MidiProcessor : public juce::MidiInputCallback
+ // Forward declarations
+class SynthEditor;
+class Module;
+class MidiRecorderModule;
+
+/* Lightweight wrapper that keeps the raw message and the original timestamp.
+ * You can extend this later (e.g. add source device name). */
+struct QueuedMidiMessage
+{
+    juce::MidiMessage msg;
+    double            timestampSec;
+
+    QueuedMidiMessage(const juce::MidiMessage& m,
+        double tsSeconds) : msg(m), timestampSec(tsSeconds) {
+    }
+};
+
+class MidiProcessor : public juce::MidiInputCallback,
+    private juce::Timer
 {
 public:
+    MidiProcessor(SynthEditor* root,
+        juce::AudioDeviceManager* deviceManager);
+    ~MidiProcessor() override = default;
 
-	MidiProcessor(SynthEditor* editor, AudioDeviceManager* deviceManager);
-	~MidiProcessor();
+    /* JUCE: called on high-priority MIDI thread; we *only* enqueue here. */
+    void handleIncomingMidiMessage(juce::MidiInput*,
+        const juce::MidiMessage&) override;
 
-	virtual void handleIncomingMidiMessage(MidiInput* source, const MidiMessage& message)override;
+    /* Re-scans device list while app is running. */
+    void refreshMidiInputs();
+    void enableAllMidiInputs();
+    void disableAllMidiInputs();
 
-	void sendGateMessage(Module* module, int channel, int velocity, int note, bool on);
-	void sendNoteMessage(Module* module, int channel, int note);
-	void sendClockMessage(Module* module, int channel);
-	void sendMidiStartMessage(Module* module, int channel);
-	void sendMidiStopMessage(Module* module, int channel);
-	void sendControllerMessage(Module* module, int channel, int controller, float value, int midiInChannel);
-	void sendPitchBendMessage(Module* module, int channel, int pitch);
+    /* Exposed so GUI / navigator can change active target. */
+    void setActiveChannel(int channel) { activeChannel.store(channel); }
 
-	void refreshMidiInputs();
-	void enableAllMidiInputs();
-	void disableAllMidiInputs();
-
-	void setActiveChannel(int channel) {
-		activeChannel = channel;
-	}
-
-	void sendMidiMessage(Module* module, const juce::MidiMessage& message);
-
+    void sendGateMessage(Module*, int channel, int velocity,int note, bool on);
+    void sendNoteMessage(Module*, int channel, int note);
+    void sendPitchBendMessage(Module*, int channel, int pitch);
+    void sendControllerMessage(Module*, int targetChannel, int controller,float value, int midiInChannel);
+    void sendMidiStartMessage(Module*, int channel);
+    void sendMidiStopMessage(Module*, int channel);
+    void sendMidiClockMessage(Module*, int channel);
 private:
-	CriticalSection lock;
-	SynthEditor* editor;
-	AudioDeviceManager* deviceManager;
-	int activeChannel = 1;
+    /** Called on the Timer thread (default: every 5 ms).
+        Takes queued messages and processes them in a non-realtime context. */
+    void timerCallback() override;
+
+    /* The original routing / broadcasting logic – now thread-safe. */
+    void processMidiMessage(const juce::MidiMessage& message);
+
+    /* ↓↓↓ your old helper functions (unchanged) ↓↓↓ */
+
+    // ---------------------------------------------------------------------
+
+    SynthEditor* editor{ nullptr };
+    juce::AudioDeviceManager* deviceManager{ nullptr };
+
+    std::mutex                           queueMutex;
+    std::vector<QueuedMidiMessage>       midiQueue;   // guarded by queueMutex
+    std::atomic<int>                     activeChannel{ 1 };
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiProcessor)
 };

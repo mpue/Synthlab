@@ -70,12 +70,14 @@ void MidiClock::paint(juce::Graphics &g) {
 
 void MidiClock::timerCallback() {
         
-    Event* e = new Event("clock",Event::Type::CLOCK);
-    
-    for (int i = 0; i < pins.at(1)->getConnections().size();i++) {
+    Event* e = new Event("clock", Event::Type::CLOCK);
+    MidiMessage m = MidiMessage::midiClock();
+    e->setMessage(m);
+    double tempo = 60.0f / (m.getTempoSecondsPerQuarterNote() * 16);
+    e->setValue(tempo);
+    for (int i = 0; i < pins.at(1)->getConnections().size(); i++) {
         pins.at(1)->getConnections().at(i)->sendEvent(new Event(e));
-    }
-    
+    }    
     delete e;
 }
 

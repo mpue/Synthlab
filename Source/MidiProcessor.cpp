@@ -1,77 +1,110 @@
-﻿#include "MidiProcessor.h"
+﻿/*  MidiProcessor.cpp
+ *  Queue-based implementation
+ */
 
-MidiProcessor::MidiProcessor(SynthEditor* root, AudioDeviceManager* deviceManager)
+#include "MidiProcessor.h"
+#include "SynthEditor.h"          // your own header
+#include "Module.h"               // base module
+#include "MidiRecorderModule.h"   // recorder
+#include "MidiGate.h"
+#include "MidiNote.h"
+#include "PitchBendModule.h"
+#include "MidiClock.h"
+#include "Knob.h"                // for MIDI controller knobs
+
+
+using namespace juce;
+
+MidiProcessor::MidiProcessor(SynthEditor* root,
+	AudioDeviceManager* dm)
+	: editor(root),
+	deviceManager(dm)
 {
-	this->editor = root;
-	this->deviceManager = deviceManager;
+	// 5 ms period ⇒ 200 Hz; adjust if needed
+	startTimer(2);
 }
 
-MidiProcessor::~MidiProcessor() {}
+/* 1) High-priority MIDI callback – enqueue only, never heavy work! */
+void MidiProcessor::handleIncomingMidiMessage(MidiInput* /*source*/,
+	const MidiMessage& message)
+{
+	const double tsSec = Time::getMillisecondCounterHiRes() * 0.001;
 
-void MidiProcessor::handleIncomingMidiMessage(juce::MidiInput* source, const juce::MidiMessage& message) {
-	ScopedLock cl(lock);
+	std::lock_guard<std::mutex> g(queueMutex);
+	midiQueue.emplace_back(message, tsSec);
+}
 
-	const int midiInChannel = message.getChannel(); // Eingehender MIDI-Kanal
-	const int targetChannel = activeChannel;        // Ziel-Track-Kanal (per TrackNavigator gesetzt)
+/* 2) Timer thread – dequeues and calls the original routing logic. */
+void MidiProcessor::timerCallback()
+{
+	std::vector<QueuedMidiMessage> local;
+	{
+		std::lock_guard<std::mutex> g(queueMutex);
+		std::swap(local, midiQueue);
+	}
 
+	for (const auto& qm : local)
+		processMidiMessage(qm.msg);
+}
+
+void MidiProcessor::processMidiMessage(const juce::MidiMessage& msg)
+{
+	const int targetChannel = activeChannel.load();
 	auto* modules = editor->getModule()->getModules();
 
-	// 🎹 Alle Recorder-Module bekommen IMMER alles
-	for (auto* mod : *modules) {
-		if (auto* recorder = dynamic_cast<MidiRecorderModule*>(mod)) {
-			recorder->handleIncomingMidiMessage(source, message);
+	// Recorder first (unverändert)
+	for (auto* mod : *modules)
+		if (auto* rec = dynamic_cast<MidiRecorderModule*>(mod))
+			rec->handleIncomingMidiMessage(nullptr, msg);
+
+	//------------------------------------------------------------------
+	// 1.  NOTE-ON  (Velocity > 0)
+	//------------------------------------------------------------------
+	if (msg.isNoteOn() && msg.getVelocity() > 0.0f && msg.getNoteNumber() > 7)
+	{
+		for (auto* mod : *modules)
+		{
+			sendNoteMessage(mod, targetChannel, msg.getNoteNumber());
+			sendGateMessage(mod, targetChannel, msg.getVelocity(),
+				msg.getNoteNumber(), /*on=*/true);
 		}
+		return; // fertig
 	}
 
-	if (message.isNoteOn() && message.getNoteNumber() > 7) {
-		for (auto* mod : *modules) {
-			Logger::writeToLog("Note ON " + String(message.getNoteNumber()) + " to channel " + String(targetChannel));
-			sendNoteMessage(mod, targetChannel, message.getNoteNumber());
-			sendGateMessage(mod, targetChannel, message.getVelocity(), message.getNoteNumber(), true);
-		}
+	//------------------------------------------------------------------
+	// 2.  NOTE-OFF  (klassisch)  **oder**  NOTE-ON mit Vel == 0
+	//------------------------------------------------------------------
+	if ((msg.isNoteOff() || (msg.isNoteOn() && msg.getVelocity() == 0.0f))
+		&& msg.getNoteNumber() > 7)
+	{
+		for (auto* mod : *modules)
+			sendGateMessage(mod, targetChannel, msg.getVelocity(),
+				msg.getNoteNumber(), /*on=*/false);
+		return; // fertig
 	}
-	else if (message.isNoteOff() && message.getNoteNumber() > 7) {
-		for (auto* mod : *modules) {
-			sendGateMessage(mod, targetChannel, message.getVelocity(), message.getNoteNumber(), false);
-		}
-	}
-	else if (message.isController()) {
-		for (auto* mod : *modules) {
-			// 🎛 Controller wird gezielt an Ziel-Track (activeChannel) geschickt
-			sendControllerMessage(mod, targetChannel, message.getControllerNumber(), message.getControllerValue(), midiInChannel);
-		}
-	}
-	else if (message.isPitchWheel()) {
-		for (auto* mod : *modules) {
-			sendPitchBendMessage(mod, targetChannel, message.getPitchWheelValue());
-		}
-	}
-	else if (message.isMidiStart()) {
-		for (auto* mod : *modules) {
+
+	//------------------------------------------------------------------
+	// 3.  CONTROLLER / PITCH / CLOCK / START / STOP  (unverändert)
+	//------------------------------------------------------------------
+	if (msg.isController())
+		for (auto* mod : *modules)
+			sendControllerMessage(mod, targetChannel,
+				msg.getControllerNumber(),
+				msg.getControllerValue(),
+				msg.getChannel());
+
+	else if (msg.isPitchWheel())
+		for (auto* mod : *modules)
+			sendPitchBendMessage(mod, targetChannel,
+				msg.getPitchWheelValue());
+
+	else if (msg.isMidiStart())
+		for (auto* mod : *modules)
 			sendMidiStartMessage(mod, targetChannel);
-		}
-	}
-	else if (message.isMidiStop()) {
-		for (auto* mod : *modules) {
+
+	else if (msg.isMidiStop())
+		for (auto* mod : *modules)
 			sendMidiStopMessage(mod, targetChannel);
-		}
-	}
-	else if (message.isMidiMachineControlMessage()) {
-		auto command = message.getMidiMachineControlCommand();
-		switch (command) {
-		case MidiMessage::MidiMachineControlCommand::mmc_play:
-			Logger::writeToLog("mmc_play");
-			break;
-		case MidiMessage::MidiMachineControlCommand::mmc_stop:
-			Logger::writeToLog("mmc_stop");
-			break;
-		default:
-			break;
-		}
-	}
-	else {
-		Logger::writeToLog(message.getDescription());
-	}
 }
 
 void MidiProcessor::sendGateMessage(Module* module, int channel, int velocity, int note, bool on) {
@@ -142,6 +175,13 @@ void MidiProcessor::sendMidiStopMessage(Module* module, int channel) {
 	}
 	for (auto* sub : *module->getModules()) {
 		sendMidiStopMessage(sub, channel);
+	}
+}
+
+void MidiProcessor::sendMidiClockMessage(Module* module, int channel)
+{
+	if (auto* midiClock = dynamic_cast<MidiClock*>(module)) {
+		midiClock->clock(MidiMessage::midiClock());
 	}
 }
 

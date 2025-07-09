@@ -98,7 +98,7 @@ private:
     juce::PropertyComponent* tempoProp;
     TempoListener* tempoListener;
     
-    int channel = 1;
+    int channel = { 1 };
     
     bool internalClock = false;
     float tempo = 120.0f;
