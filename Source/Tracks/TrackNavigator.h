@@ -64,6 +64,7 @@ public:
 
 	bool isRecording();
 	void setRecording(bool recording);
+	void noteOffForAll();
 
 	double getMaxLength();
 	void setPosition(double position);

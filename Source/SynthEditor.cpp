@@ -1412,19 +1412,19 @@ void SynthEditor::openTracks(File file)
 						Logger::getCurrentLogger()->writeToLog(event.getProperty("type"));
 						if (event.getProperty("type") == "noteon") {
 							MidiMessage msg = MidiMessage::noteOn(event.getProperty("channel").toString().getIntValue(), event.getProperty("note"), event.getProperty("velocity").toString().getFloatValue()/127.0f);		
-							mr->addMessage(&msg, Time::getMillisecondCounterHiRes() / 1000, event.getProperty("timestamp").toString().getIntValue());
+							mr->addMessage(new MidiMessage(msg), Time::getMillisecondCounterHiRes() / 1000, event.getProperty("timestamp").toString().getIntValue());
 						}
 						else if (event.getProperty("type") == "noteoff") {
 							MidiMessage msg = MidiMessage::noteOff(event.getProperty("channel").toString().getIntValue(), event.getProperty("note").toString().getIntValue(), (float)0);
-							mr->addMessage(&msg, Time::getMillisecondCounterHiRes()/1000, event.getProperty("timestamp").toString().getIntValue());
+							mr->addMessage(new MidiMessage(msg), Time::getMillisecondCounterHiRes()/1000, event.getProperty("timestamp").toString().getIntValue());
 						}
 						else if (event.getProperty("type") == "control") {
 							MidiMessage msg = MidiMessage::controllerEvent(event.getProperty("channel").toString().getIntValue(), event.getProperty("controller").toString().getIntValue(), event.getProperty("value").toString().getIntValue());
-							mr->addMessage(&msg, Time::getMillisecondCounterHiRes() / 1000, event.getProperty("timestamp").toString().getIntValue());
+							mr->addMessage(new MidiMessage(msg), Time::getMillisecondCounterHiRes() / 1000, event.getProperty("timestamp").toString().getIntValue());
 						}
 						else if (event.getProperty("type") == "pitch") {
 							MidiMessage msg = MidiMessage::pitchWheel(event.getProperty("channel").toString().getIntValue(), event.getProperty("pitch").toString().getIntValue());
-							mr->addMessage(&msg, Time::getMillisecondCounterHiRes() / 1000, event.getProperty("timestamp").toString().getIntValue());
+							mr->addMessage(new MidiMessage(msg), Time::getMillisecondCounterHiRes() / 1000, event.getProperty("timestamp").toString().getIntValue());
 						}
 					}
 				}

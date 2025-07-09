@@ -275,7 +275,6 @@ void TrackNavigator::setPosition(double position) {
 	//int pos = (int)position - (int)position % 2;
 	this->position = position;
 	this->samplePosition = position * Project::getInstance()->getSampleRate();
-	this->samplePosition = (int)samplePosition;
 	Logger::getCurrentLogger()->writeToLog("samplePosition  : " + String(samplePosition));
 	std::function<void(void)> changeLambda =
 		[=]() {
@@ -349,9 +348,15 @@ bool TrackNavigator::isPlaying() {
 	return playing;
 }
 
-void TrackNavigator::setRecording(bool recording) {
-	
+void TrackNavigator::noteOffForAll() {
+
+
+}
+
+void TrackNavigator::setRecording(bool recording) {	
+
 	if (recording) {
+		noteOffForAll();
 		startTimer(50);
 		Session::getInstance()->setRecordingStartTime();
 		recordStart = (long)marker->getPosition() * Project::getInstance()->getSampleRate();

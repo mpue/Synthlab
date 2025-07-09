@@ -1177,6 +1177,19 @@ void MainComponent::buttonClicked(Button* b)
 				if (navigator->isPlaying() || navigator->isRecording()) {
 					navigator->setPlaying(false);
 					navigator->setRecording(false);
+
+					// Iterate through all modules of the editor and if it's a MIDI Gate,
+					// send a note off message to all channels
+
+					for (int i = 0; i < editor->getModule()->getModules()->size();i++ ) {
+						Module* module = editor->getModule()->getModules()->at(i);
+						MidiGate* gate = dynamic_cast<MidiGate*>(module);
+						if (gate != nullptr) {
+							for (int i = 0; i < 128; i++) {
+								gate->gateOff(i);
+							}								
+						}						
+					}
 				}
 				else {
 					navigator->ResetMarkerPosition();
