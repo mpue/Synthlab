@@ -53,7 +53,9 @@ public:
 	float getVolume();
     float getPan();
     void setPan(float pan);
-    
+    void setBufferSize(int bufferSize) {
+        this->bufferSize = bufferSize;
+	}
 	const float* getReadBuffer(int channel);
     const float getSample(int channel, long sample);
 	int getNumSamples();

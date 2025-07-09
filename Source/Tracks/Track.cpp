@@ -31,6 +31,7 @@ Track::Track(Type type, double sampleRate, MultiComponentDragger* dragger)
 	this->audioBuffer = new AudioSampleBuffer(2, maxLength * sampleRate);
 	this->dragger = dragger;
 	this->midiChannel = 1;
+	this->bufferSize = Project::getInstance()->getBufferSize();
 	addAndMakeVisible(resizer);	
 	setHeight(Project::DEFAULT_TRACK_HEIGHT);
 	resized();
@@ -443,7 +444,7 @@ void Track::setSamplePosition(int position)
 			
 		MidiRegion* r = dynamic_cast<MidiRegion*>(getRegionAt(position));
 		if (r != nullptr) {
-			MidiMessage* m = r->getMessage(position - r->getSampleOffset(),2);
+			MidiMessage* m = r->getMessage(position - r->getSampleOffset(),64);
 			if (m != nullptr) {
 				// Logger::getCurrentLogger()->writeToLog("Midi message at " + String(position) + " : " + String(m->getDescription()));
 				Event* e = new Event();
