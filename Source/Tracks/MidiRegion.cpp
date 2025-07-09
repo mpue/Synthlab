@@ -17,7 +17,7 @@ MidiRegion::MidiRegion(long startSample, long sampleLength, double sampleRate, M
     this->sampleRate = sampleRate;
     this->sampleOffset = startSample;
     this->name = "new";
-    this->zoom = 30;
+    this->zoom = 40;
     this->numSamples = sampleLength;
 
     double lengthInSeconds = numSamples / sampleRate;
@@ -123,8 +123,6 @@ void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bo
         updateThumb();
     }
 }
-
-
 
 void MidiRegion::setNumSamples(int numSamples) {
     this->numSamples = numSamples;

@@ -66,7 +66,7 @@ bool AddModuleAction::perform() {
     // If the module is an audio input, output or aux we need to take special care
     // in all three cases we add connections to the mixer
     
-    if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
+    if ((out = dynamic_cast<AudioOut*>(m)) != nullptr) {
 
         int numCurrentOutputs = static_cast<int>(editor->getMixer()->getOutputChannels().size()) * 2;
 

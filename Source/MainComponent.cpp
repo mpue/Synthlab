@@ -300,7 +300,7 @@ void MainComponent::createStudioLayout() {
 	}
 
 	navigator->addChangeListener(this);
-	addKeyListener(navigator);
+	getTopLevelComponent()->addKeyListener(navigator);
 	navigator->setWantsKeyboardFocus(true);
 
 	parser->registerCommand("help", [this](const std::vector<std::string>&) -> std::string {

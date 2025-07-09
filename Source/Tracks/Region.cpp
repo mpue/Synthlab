@@ -126,7 +126,7 @@ void Region::setZoom(float zoom) {
      */
     // setBounds(0,0,this->thumbnail->getTotalLength() * this->zoom, 200);
 
-    
+    this->updateThumb();
     dragger->setRaster(this->zoom / 4);
     
     repaint();

@@ -35,7 +35,7 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 	this->selector->setSize(getWidth(), getHeight());
 	this->selector->setBounds(0, 0, getWidth(), getHeight());
 	addAndMakeVisible(selector);
-	this->zoom = Project::getInstance()->getTempo() / 4;
+	this->zoom = 40.0f;
 	this->marker = new PositionMarker(300);
 	this->position = 0;
 	this->dragger = new MultiComponentDragger();
@@ -47,6 +47,7 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 	this->view = view;
 	view->getHorizontalScrollBar().addListener(this);
 	// setInterceptsMouseClicks(true, true);	
+	setWantsKeyboardFocus(true);
 }
 
 TrackNavigator::~TrackNavigator()
@@ -204,7 +205,7 @@ ValueTree TrackNavigator::getConfiguration()
 					region.setProperty("width", ar->getWidth(), nullptr);
 				}
 			}
-			else if (tracks.at(i)->getType() == Track::MIDI) {
+			else if (tracks.at(i)->getType() == Track::MIDI || tracks.at(i)->getType() == Track::INSTRUMENT) {
 				if (auto* mr = dynamic_cast<MidiRegion*>(tracks.at(i)->getRegions().at(j))) {
 					region.setProperty("sampleOffset", (int)mr->getSampleOffset(), nullptr);
 					region.setProperty("numSamples", mr->getNumSamples(), nullptr);

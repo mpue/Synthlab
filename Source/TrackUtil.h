@@ -72,11 +72,34 @@ public:
 		editor->getModule()->getConnections()->push_back(c2);
 		ti->pins.at(5)->getConnections().push_back(pm->pins.at(4));
 
-		AuxOut* audioOut = nullptr;
+
+		//find the audio out
+
+		AudioOut* audioOut = nullptr;
+
+		for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
+			if (editor->getModule()->getModules()->at(i) != nullptr) {
+				audioOut = dynamic_cast<AudioOut*>(editor->getModule()->getModules()->at(i));
+				if (audioOut != nullptr) {
+					break;
+				}
+			}
+		}
+
+		if (audioOut == nullptr) {
+			// no audio out found, create one
+			AddModuleAction* am3 = new AddModuleAction(editor, pos, 66);
+			Project::getInstance()->getUndoManager()->beginNewTransaction();
+			Project::getInstance()->getUndoManager()->perform(am3);
+			audioOut = dynamic_cast<AudioOut*>(am3->getModule());
+		}
+			
+
+		AuxOut* auxOut = nullptr;
 
 		pos.x += 160;
 
-		ConnectAudioOut(audioOut, pm, pos, 2, 3, editor->getModule(), editor);
+		ConnectAudioOut(auxOut, pm, pos, 2, 3, editor->getModule(), editor);
 		return t;
 	}
 

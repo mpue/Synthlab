@@ -12,6 +12,7 @@
 #include "EditorComponent.h"
 #include "SynthEditor.h"
 #include "Mixer.h"
+#include "Actions/AddModuleAction.h"
 #include "Project/Project.h"
 
 using juce::Viewport;
@@ -75,6 +76,7 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView*
                                       -0.3);
 
     Project::getInstance()->setSupplemental(this->bottomTab);
+
     OpenTrackView();
 }
 
@@ -163,10 +165,14 @@ void EditorComponent::OpenTrackView()
         trackView->setScrollOnDragEnabled(false);
         trackView->setWantsKeyboardFocus(false);
         trackView->setMouseClickGrabsKeyboardFocus(false);
+		getTopLevelComponent()->addKeyListener(navigator);
+        navigator->setMouseClickGrabsKeyboardFocus(true);
+        navigator->setWantsKeyboardFocus(true);
         
     }
     topTab->addTab("Navigator", juce::Colours::grey, trackView, false);
     topTab->setCurrentTabIndex(1);
+
 
 }
 

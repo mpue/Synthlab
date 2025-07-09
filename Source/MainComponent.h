@@ -149,7 +149,7 @@ private:
     bool isOptionPressed = false;
     
     Sampler* defaultSampler = nullptr;
-    TrackNavigator* navigator = nullptr;
+     TrackNavigator* navigator = nullptr;
     CriticalSection lock;
     
     MidiProcessor* midiProcessor = nullptr;
