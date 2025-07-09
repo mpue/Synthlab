@@ -36,7 +36,10 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 	this->selector->setBounds(0, 0, getWidth(), getHeight());
 	addAndMakeVisible(selector);
 	this->zoom = 40.0f;
-	this->marker = new PositionMarker(300);
+	int64 lengthInSamples = Project::getInstance()->getTrackLength() * Project::getInstance()->getSampleRate();
+	this->marker = new PositionMarker(lengthInSamples);
+	this->marker->setSampleRate(Project::getInstance()->getSampleRate());
+	marker->setZoom(zoom); // Zoom gleich mitgeben	
 	this->position = 0;
 	this->dragger = new MultiComponentDragger();
 	Project::getInstance()->addChangeListener(this);
@@ -278,7 +281,7 @@ void TrackNavigator::setPosition(double position) {
 	Logger::getCurrentLogger()->writeToLog("samplePosition  : " + String(samplePosition));
 	std::function<void(void)> changeLambda =
 		[=]() {
-		marker->setPosition(position);
+		marker->setSamplePosition(samplePosition);
 
 	};
 	juce::MessageManager::callAsync(changeLambda);
@@ -310,7 +313,7 @@ void TrackNavigator::setSamplePosition(int position) {
 	this->position = (float)samplePosition / Project::getInstance()->getSampleRate();
 	std::function<void(void)> changeLambda =
 		[=]() {
-		marker->setPosition(this->position);
+		marker->setSamplePosition(this->samplePosition);
 		startTimer(50);
 	};
 	juce::MessageManager::callAsync(changeLambda);
@@ -359,7 +362,7 @@ void TrackNavigator::setRecording(bool recording) {
 		noteOffForAll();
 		startTimer(50);
 		Session::getInstance()->setRecordingStartTime();
-		recordStart = (long)marker->getPosition() * Project::getInstance()->getSampleRate();
+		recordStart = (long)marker->getSamplePosition() * Project::getInstance()->getSampleRate();
 		if (recordStart < 0) {
 			recordStart = 0;
 		}
@@ -388,7 +391,7 @@ void TrackNavigator::setRecording(bool recording) {
 	else {
 		stopTimer();
 		Session::getInstance()->setRecordingStopTime();
-		recordStop = marker->getPosition() * Project::getInstance()->getSampleRate();
+		recordStop = marker->getSamplePosition() * Project::getInstance()->getSampleRate();
 		for (int i = 0; i < tracks.size(); i++) {
 			if (tracks.at(i)->isRecording()) {
 				if (tracks.at(i)->getType() == Track::Type::MIDI || tracks.at(i)->getType() == Track::Type::INSTRUMENT) {
@@ -478,7 +481,7 @@ Track* TrackNavigator::addTrack(TrackConfig* tc) {
 	setBounds(getX(), getY(), getMaxLength() * this->zoom, height);
 
 	this->marker->setSize(2, height);
-	this->marker->setLength(getMaxLength());
+	this->marker->setSampleLength(getMaxLength()*300);
 	this->selector->setSize(getWidth(), getHeight());
 	this->timeLine->setBounds(0, 0, getWidth(), timelineOffset);
 	this->timeLine->setSize(getWidth(), timelineOffset);
@@ -533,6 +536,7 @@ void TrackNavigator::addTrack(Track* track) {
 	track->setSelected(true);
 	propertyView->selectionChanged(track);
 	this->selector->toFront(false);
+	marker->setZoom(zoom);
 
 	repaint();
 }
@@ -554,7 +558,7 @@ Track* TrackNavigator::addTrack(Track::Type type, double sampleRate) {
 	setBounds(getX(), getY(), getMaxLength() * this->zoom, height);
 
 	this->marker->setSize(2, getHeight());
-	this->marker->setLength(getMaxLength());
+	this->marker->setSampleLength(getMaxLength() * 300);
 	this->selector->setSize(getWidth(), getHeight());
 	this->timeLine->setBounds(0, 0, getWidth(), timelineOffset);
 	this->timeLine->setSize(getWidth(), timelineOffset);
@@ -746,7 +750,7 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 		double total = getMaxLength();
 		double relative = total * x  / width;
 		setPosition(relative);
-		// marker->setPosition(position);
+		marker->setSamplePosition(samplePosition);
 		for (int i = 0; i < tracks.size(); i++) {
 			tracks.at(i)->setSamplePosition(samplePosition);
 			tracks.at(i)->setCurrentMarkerPosition(position);

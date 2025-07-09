@@ -443,7 +443,7 @@ void Track::setSamplePosition(int position)
 			
 		MidiRegion* r = dynamic_cast<MidiRegion*>(getRegionAt(position));
 		if (r != nullptr) {
-			MidiMessage* m = r->getMessage(position - r->getSampleOffset());
+			MidiMessage* m = r->getMessage(position - r->getSampleOffset(),2);
 			if (m != nullptr) {
 				// Logger::getCurrentLogger()->writeToLog("Midi message at " + String(position) + " : " + String(m->getDescription()));
 				Event* e = new Event();

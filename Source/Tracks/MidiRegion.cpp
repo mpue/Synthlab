@@ -180,14 +180,22 @@ void MidiRegion::addMessage(MidiMessage* m, double time, int sampleNum) {
     updateThumb();
 }
 
-MidiMessage* MidiRegion::getMessage(int sampleNum) {
-    for (auto* m : midiMessageList) {
-        if (m != nullptr && abs(sampleNum - m->getTimeStamp()) < 1 && m->getRawDataSize() < 5) {
+MidiMessage* MidiRegion::getMessage(int sampleNum, int tolerance = 2)
+{
+    for (auto* m : midiMessageList)
+    {
+        if (m != nullptr &&
+            std::abs(sampleNum - m->getTimeStamp()) <= tolerance &&
+            m->isNoteOnOrOff()) // oder eine eigene sinnvollere Bedingung
+        {
+            Logger::getCurrentLogger()->writeToLog(
+                "Found message at sample " + String(sampleNum) + ": " + m->getDescription());
             return m;
         }
     }
     return nullptr;
 }
+
 
 void MidiRegion::startRecording() {
     startTimer(100);

@@ -1336,7 +1336,10 @@ void SynthEditor::openTracks(File file)
 	String path = file.getParentDirectory().getFullPathName();
 
 	String audioDataFileName = file.getFileNameWithoutExtension() + "_audio.xml";
+	String trackDataFileName = file.getFileNameWithoutExtension() + "_tracks.xml";
+
 	audioDataFileName = path + "\\" + audioDataFileName;
+	trackDataFileName = path + "\\" + trackDataFileName;
 
 	std::unique_ptr<XmlElement> audioXml = XmlDocument(File(audioDataFileName)).getDocumentElement();
 
@@ -1351,8 +1354,6 @@ void SynthEditor::openTracks(File file)
 		Project::getInstance()->addAudioFile(id, path);
 	}
 
-	String trackDataFileName = file.getFileNameWithoutExtension() + "_tracks.xml";
-	trackDataFileName = path + "\\" + trackDataFileName;
 
 	std::unique_ptr<XmlElement> xml = XmlDocument(File(trackDataFileName)).getDocumentElement();
 

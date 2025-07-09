@@ -1,50 +1,87 @@
-/*
-  ==============================================================================
-
-    PositionMarker.h
-    Created: 24 Nov 2016 11:00:23am
-    Author:  Matthias Pueski
-
-  ==============================================================================
-*/
-
-#ifndef POSITIONMARKER_H_INCLUDED
-#define POSITIONMARKER_H_INCLUDED
+#pragma once
 
 #include "../JuceLibraryCode/JuceHeader.h"
 
 //==============================================================================
-/*
-*/
-class PositionMarker    : public Component
+
+class PositionMarker : public Component
 {
 public:
-    PositionMarker(double lengthInSeconds);
-    ~PositionMarker();
+    PositionMarker(int64 sampleLength)
+        : sampleLength(sampleLength), samplePosition(0), zoom(40.0)
+    {
+        setInterceptsMouseClicks(false, false);
+    }
 
-    void paint (Graphics&) override;
-    void resized() override;
-    void setLength(double lengthInSeconds);
-    void setPosition(double position);
-    double getPosition();
-    double getDrawPosition();
-	void updatePosition();
+    void paint(Graphics& g) override
+    {
+        g.setColour(Colours::green);
+        g.fillRect(0, 0, 2, getHeight());
+    }
     
-    void setDrawingBounds(int x, int y, int width, int height);
-    
-    void setSize(int width, int height);
-    
+    inline int  timeToSamples(double sec, double sr) { return (int)(sec * sr + 0.5); }
+    inline double samplesToTime(int smp, double sr) { return smp / sr; }
+
+    void setDrawingBounds(int x, int y, int width, int height)
+    {
+        this->x = x;
+        this->y = y;
+        this->width = width;
+        this->height = height;
+        updatePosition();
+        setSize(2, height);
+    }
+
+    void setSampleLength(int64 samples)
+    {
+        this->sampleLength = samples;
+        updatePosition();
+        repaint();
+    }
+
+    void setSamplePosition(int64 samples)
+    {
+        samplePosition = std::max<int64>(0, samples);
+        updatePosition();
+        repaint();
+    }
+
+    int64 getSamplePosition() const
+    {
+        return samplePosition;
+    }
+
+    void setZoom(double newZoom)
+    {
+        zoom = newZoom;
+        updatePosition();
+    }
+
+    void setSampleRate(double rate) {
+        sampleRate = rate;
+        updatePosition();
+    }
+
 private:
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PositionMarker)
-    double length;
-	double audioPosition;
-	double drawPosition;
-    bool playing;
-    int x;
-    int y;
-    int width;
-    int height;
+    void updatePosition()
+    {
+        if (sampleLength > 0 && sampleRate > 0.0)
+        {
+            const double seconds = (double)samplePosition / sampleRate;
+            const int newX = static_cast<int>(seconds * zoom);
+            setTopLeftPosition(newX, y);
+        }
+    }
+
+
+    int64 sampleLength = 0;
+    int64 samplePosition = 0;
+
+    double zoom = 40.0;
+
+    int x = 0;
+    int y = 0;
+    int width = 0;
+    int height = 0;
+    double sampleRate = 44100.0;
 };
-
-
-#endif  // POSITIONMARKER_H_INCLUDED

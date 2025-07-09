@@ -1185,8 +1185,8 @@ void MainComponent::buttonClicked(Button* b)
 						Module* module = editor->getModule()->getModules()->at(i);
 						MidiGate* gate = dynamic_cast<MidiGate*>(module);
 						if (gate != nullptr) {
-							for (int i = 0; i < 128; i++) {
-								gate->gateOff(i);
+							for (int j = 0; j < 128; j++) {
+								gate->gateOff(j);
 							}								
 						}						
 					}

@@ -1,80 +1,73 @@
-/*
-  ==============================================================================
-
-    PositionMarker.cpp
-    Created: 24 Nov 2016 11:00:23am
-    Author:  Matthias Pueski
-
-  ==============================================================================
-*/
+#pragma once
 
 #include "../JuceLibraryCode/JuceHeader.h"
-#include "PositionMarker.h"
-#include "../MainComponent.h"
 
 //==============================================================================
-PositionMarker::PositionMarker(double lengthInSeconds)
+
+class PositionMarker : public Component
 {
-    this->length = lengthInSeconds;
-    this->audioPosition = 0;
-    this->drawPosition = 0;
-    setInterceptsMouseClicks(false, false);
-}
-
-PositionMarker::~PositionMarker()
-{
-}
-
-void PositionMarker::paint(Graphics& g)
-{
-    g.setColour(Colours::green);
-    g.fillRect(0, 0, 2, getHeight());
-}
-
-void PositionMarker::setSize(int width, int height) {
-    Component::setSize(2, height);
-}
-
-void PositionMarker::resized()
-{
-}
-
-void PositionMarker::setLength(double lengthInSeconds) {
-    this->length = lengthInSeconds;
-    updatePosition();
-    repaint();
-}
-
-void PositionMarker::setPosition(double position) {
-    if (position < 0) {
-        position = 0;
+public:
+    PositionMarker(int64 sampleLength)
+        : sampleLength(sampleLength), samplePosition(0), zoom(40.0)
+    {
+        setInterceptsMouseClicks(false, false);
     }
-    this->audioPosition = position;
-    updatePosition();
-    repaint();
-}
 
-void PositionMarker::updatePosition() {
-    if (length > 0) {
-        int newX = static_cast<int>((audioPosition / length) * width) + x;
+    void paint(Graphics& g) override
+    {
+        g.setColour(Colours::green);
+        g.fillRect(0, 0, 2, getHeight());
+    }
+
+    void setDrawingBounds(int x, int y, int width, int height)
+    {
+        this->x = x;
+        this->y = y;
+        this->width = width;
+        this->height = height;
+        updatePosition();
+        setSize(2, height);
+    }
+
+    void setSampleLength(int64 samples)
+    {
+        this->sampleLength = samples;
+        updatePosition();
+        repaint();
+    }
+
+    void setSamplePosition(int64 samples)
+    {
+        samplePosition = std::max<int64>(0, samples);
+        updatePosition();
+        repaint();
+    }
+
+    int64 getSamplePosition() const
+    {
+        return samplePosition;
+    }
+
+    void setZoom(double newZoom)
+    {
+        zoom = newZoom;
+        updatePosition();
+    }
+
+private:
+    void updatePosition()
+    {
+        const int newX = static_cast<int>((double)samplePosition / zoom);
         setTopLeftPosition(newX, y);
     }
-}
 
-double PositionMarker::getDrawPosition() {
-    drawPosition = (audioPosition / length) * width + x;
-    return drawPosition;
-}
+    int64 sampleLength = 0;
+    int64 samplePosition = 0;
 
-double PositionMarker::getPosition() {
-    return audioPosition;
-}
+    double zoom = 40.0;
 
-void PositionMarker::setDrawingBounds(int x, int y, int width, int height) {
-    this->x = x;
-    this->y = y;
-    this->width = width;
-    this->height = height;
-    updatePosition();
-    setSize(2, height);
-}
+    int x = 0;
+    int y = 0;
+    int width = 0;
+    int height = 0;
+};
