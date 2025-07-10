@@ -85,7 +85,10 @@ void MidiRegion::paint(Graphics& g) {
 
 void MidiRegion::resized() {
     if (midiThumbnail != nullptr) {
-        midiThumbnail->setBounds(getLocalBounds());
+        int x = (int)((sampleOffset / sampleRate) * zoom);
+        int w = (int)((getNumSamples() / sampleRate) * zoom);
+        midiThumbnail->setBounds(x, getY(), w, getHeight());
+        midiThumbnail->setZoom(zoom);
     }
     if (resizerR != nullptr) {
         resizerR->setBounds(getWidth() - 5, 0, 5, getHeight());
