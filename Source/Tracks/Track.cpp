@@ -1,4 +1,4 @@
-/*
+﻿/*
   ==============================================================================
 
 	Track.cpp
@@ -155,6 +155,20 @@ void Track::duplicateRegion(Region* region) {
 		audioBuffer->copyFrom(0, duplicate->getSampleOffset(), *_region->getBuffer(), 0, 0, _region->getNumSamples());
 		audioBuffer->copyFrom(1, duplicate->getSampleOffset(), *_region->getBuffer(), 1, 0, _region->getNumSamples());
 
+		repaint();
+	}
+	else if (MidiRegion* mregion = dynamic_cast<MidiRegion*>(region)) {
+		long newOffset = mregion->getSampleOffset() + mregion->getNumSamples();
+		MidiRegion* clone = mregion->clone(newOffset);
+		clone->setDragger(dragger);
+		clone->setBounds(region->getX() + region->getWidth(), 0, region->getWidth(), getHeight());
+		clone->addChangeListener(this);
+
+		this->regions.push_back(clone);
+		this->currentRegion = clone;
+		addAndMakeVisible(clone);
+		clearSelection();
+		dragger->setSelected(clone, true);
 		repaint();
 	}
 }
@@ -376,9 +390,13 @@ void Track::addRegion(AudioSampleBuffer* source, double sampleRate, long sampleP
 
 void Track::splitRegion() {
 
-	long sampleNum = (this->maxLength / (this->maxLength * zoom)) * markerPosition * sampleRate;
+	long sampleNum = getSamplePosition();
+	
+	Region* baseRegion = getRegionAt(sampleNum);
+	if (!baseRegion || !baseRegion->isSelected())
+		return;
 
-	if (AudioRegion* region = dynamic_cast<AudioRegion*>(getRegionAt(sampleNum))) {
+	if (AudioRegion* region = dynamic_cast<AudioRegion*>(baseRegion)) {
 
 		if (region == NULL) {
 			return;
@@ -412,11 +430,14 @@ void Track::splitRegion() {
 			addAndMakeVisible(leftRegion);
 			addAndMakeVisible(rightRegion);
 
+			if (dragger->isSelected(region))
+				dragger->setSelected(region, false);
+
 			leftRegion->setSampleOffset(region->getSampleOffset(), false, false);
 			leftRegion->setOffset(region->getOffset());
 
 			rightRegion->setSampleOffset(sampleNum, false, false);
-			rightRegion->setOffset(markerPosition);
+			rightRegion->setOffset((double)sampleNum / sampleRate);
 
 			if (zoom > 0) {
 				leftRegion->setZoom(zoom);
@@ -435,6 +456,50 @@ void Track::splitRegion() {
 		}
 
 	}
+	
+	if (MidiRegion* region = dynamic_cast<MidiRegion*>(baseRegion)) {
+		auto [leftRegion, rightRegion] = region->splitAt(sampleNum, dragger);
+		if (!leftRegion || !rightRegion)
+			return;
+
+		const int leftX = region->getX(); // Original X bleibt
+		const int rightX = (int)((sampleNum / sampleRate) * zoom);  // ✅ korrekt berechnetes X
+
+		const int leftW = (int)((leftRegion->getNumSamples() / sampleRate) * zoom);
+		const int rightW = (int)((rightRegion->getNumSamples() / sampleRate) * zoom);
+
+		leftRegion->setBounds(leftX, 0, leftW, getHeight());
+		rightRegion->setBounds(rightX, 0, rightW, getHeight());
+
+		leftRegion->setDragger(dragger);
+		rightRegion->setDragger(dragger);
+
+		if (dragger->isSelected(region))
+			dragger->setSelected(region, false);
+
+		// Entferne alte Region
+		auto it = std::find(regions.begin(), regions.end(), region);
+		if (it != regions.end()) {
+			region->removeAllChangeListeners();
+			removeChildComponent(region);
+			delete region;
+			regions.erase(it);
+		}
+
+		// Sichtbar machen und registrieren
+		leftRegion->addChangeListener(this);
+		rightRegion->addChangeListener(this);
+		addAndMakeVisible(leftRegion);
+		addAndMakeVisible(rightRegion);
+		regions.push_back(leftRegion);
+		regions.push_back(rightRegion);
+
+		clearSelection();
+		dragger->setSelected(leftRegion, true);
+		dragger->setSelected(rightRegion, true);
+		repaint();
+	}
+
 
 }
 

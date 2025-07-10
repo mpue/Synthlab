@@ -73,7 +73,9 @@ public:
     virtual void componentMovedOrResized (Component& component,bool wasMoved, bool wasResized) override;
 
     virtual void reset() override;
-    
+    MidiRegion* clone(long newOffset);
+    std::pair<MidiRegion*, MidiRegion*> splitAt(long splitSample, MultiComponentDragger* dragger);
+
 private:
     MidiBuffer* midiBuffer;
 

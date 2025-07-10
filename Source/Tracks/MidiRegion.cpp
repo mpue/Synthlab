@@ -94,8 +94,9 @@ void MidiRegion::resized() {
 
 void MidiRegion::updateThumb() {
     std::function<void(void)> changeLambda = [=]() {
-        double lengthInSeconds = getNumSamples() / sampleRate;
-        midiThumbnail->setBounds(sampleOffset / sampleRate * zoom, getY(), lengthInSeconds, getHeight());
+        int x = (int)((sampleOffset / sampleRate) * zoom);
+        int w = (int)((getNumSamples() / sampleRate) * zoom);
+        midiThumbnail->setBounds(x, getY(), w, getHeight());
         midiThumbnail->setZoom(zoom);
         midiThumbnail->repaint();
         resized();
@@ -227,3 +228,66 @@ void MidiRegion::timerCallback() {
 void MidiRegion::reset() {
     currentMessageNum = 0;
 }
+
+MidiRegion* MidiRegion::clone(long newOffset) {
+    auto* copy = new MidiRegion(newOffset, this->numSamples, this->sampleRate, this->dragger);
+    for (auto* msg : midiMessageList) {
+        if (msg) {
+            auto* clonedMsg = new MidiMessage(*msg);
+            clonedMsg->setTimeStamp(clonedMsg->getTimeStamp());
+            copy->addMessage(clonedMsg, 0, (int)(clonedMsg->getTimeStamp() + newOffset));
+        }
+    }
+    copy->setZoom(this->zoom);
+    copy->updateThumb();
+    return copy;
+}
+
+std::pair<MidiRegion*, MidiRegion*> MidiRegion::splitAt(long splitSample, MultiComponentDragger* dragger) {
+    long relativeSplit = splitSample - sampleOffset;
+    if (relativeSplit <= 0 || relativeSplit >= numSamples)
+        return { nullptr, nullptr };
+
+    // Neue Regionen
+    auto* left = new MidiRegion(sampleOffset, relativeSplit, sampleRate, dragger);
+    auto* right = new MidiRegion(splitSample, numSamples - relativeSplit, sampleRate, dragger);
+
+    // Note-On-Tracking für Pairing (nicht zwingend notwendig hier, aber für saubere Zukunft)
+    std::map<int, MidiMessage*> openNotes;
+
+    for (auto* msg : midiMessageList) {
+        if (!msg) continue;
+        int t = static_cast<int>(msg->getTimeStamp());
+
+        // ----------- LEFT REGION -----------
+        if (t < relativeSplit) {
+            auto* copy = new MidiMessage(*msg);
+            copy->setTimeStamp(t); // Timestamp relativ zur linken Region
+            left->addMessage(copy, 0, t + sampleOffset);
+        }
+
+        // ----------- RIGHT REGION -----------
+        else {
+            int newRel = t - relativeSplit;
+            auto* copy = new MidiMessage(*msg);
+            copy->setTimeStamp(newRel); // Timestamp relativ zur rechten Region
+            right->addMessage(copy, 0, newRel + splitSample);
+        }
+    }
+
+    // Zoom und Längen setzen
+    left->setZoom(zoom);
+    right->setZoom(zoom);
+
+    left->setNumSamples(relativeSplit);
+    right->setNumSamples(numSamples - relativeSplit);
+
+    left->rebuildThumbnail();
+    right->rebuildThumbnail();
+
+    left->updateThumb();
+    right->updateThumb();
+
+    return { left, right };
+}
+
