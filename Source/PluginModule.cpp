@@ -115,14 +115,25 @@ void PluginModule::process()
 {
     const bool hasInputs =
         pins.size() >= 4 &&
-        pins.at(0)->getConnections().size() == 1 &&
-        pins.at(1)->getConnections().size() == 1;
+        pins.at(0)->getConnections().size() > 0 &&
+        pins.at(1)->getConnections().size() > 0 &&
+        pins.at(0)->getConnections()[0]->getAudioBuffer() != nullptr &&
+        pins.at(1)->getConnections()[0]->getAudioBuffer() != nullptr;
+
 
     if (plugin)
     {
         const ScopedLock sl(lock);
 
-        if (hasInputs)
+        // absichern: wie viele Eingänge/Outputs erwartet das Plugin?
+        const int numIn = plugin->getTotalNumInputChannels();
+        const int numOut = plugin->getTotalNumOutputChannels();
+
+        // stelle sicher, dass audioBuffer korrekt dimensioniert ist
+        if (audioBuffer->getNumChannels() != jmax(numIn, numOut) || audioBuffer->getNumSamples() != buffersize)
+            audioBuffer->setSize(jmax(numIn, numOut), buffersize, false, false, true);
+
+        if (hasInputs && numIn >= 2)
         {
             audioBuffer->copyFrom(0, 0, *pins.at(0)->getConnections()[0]->getAudioBuffer(), 0, 0, buffersize);
             audioBuffer->copyFrom(1, 0, *pins.at(1)->getConnections()[0]->getAudioBuffer(), 0, 0, buffersize);
@@ -134,14 +145,20 @@ void PluginModule::process()
 
         plugin->processBlock(*audioBuffer, midiBuffer);
 
-        auto* leftOut = pins.at(2)->getAudioBuffer();
-        auto* rightOut = pins.at(3)->getAudioBuffer();
-        leftOut->copyFrom(0, 0, *audioBuffer, 0, 0, buffersize);
-        rightOut->copyFrom(0, 0, *audioBuffer, 1, 0, buffersize);
+        if (numOut >= 2 && pins.size() >= 4)
+        {
+            auto* leftOut = pins.at(2)->getAudioBuffer();
+            auto* rightOut = pins.at(3)->getAudioBuffer();
+            if (leftOut && rightOut)
+            {
+                leftOut->copyFrom(0, 0, *audioBuffer, 0, 0, buffersize);
+                rightOut->copyFrom(0, 0, *audioBuffer, 1, 0, buffersize);
 
-        float gain = Decibels::decibelsToGain(12.0f);
-        leftOut->applyGain(gain);
-        rightOut->applyGain(gain);
+                float gain = Decibels::decibelsToGain(12.0f);
+                leftOut->applyGain(gain);
+                rightOut->applyGain(gain);
+            }
+        }
     }
 
     currentSample = (currentSample + 1) % buffersize;
@@ -156,10 +173,11 @@ void PluginModule::eventReceived(Event* e)
     auto msg = e->getMessage();
 
     // Handle NoteOn with velocity 0 as NoteOff
-    if (msg.isNoteOn() && msg.getVelocity() == 0)
+    if (msg.isNoteOn() && msg.getVelocity() == 0) {
         msg = MidiMessage::noteOff(msg.getChannel(), msg.getNoteNumber());
-
-    msg.setTimeStamp(currentSample);
+    }
+    msg.setTimeStamp(currentSample);     
+	
     midiBuffer.addEvent(msg, currentSample);
     delete e;
 }
