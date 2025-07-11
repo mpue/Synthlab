@@ -322,11 +322,11 @@ void MainComponent::createStudioLayout() {
 
 		if (args[0] == "instrument") {
 			if (args.size() < 2) return "Error: Missing instrument name.";
-			TrackUtil::createVirtualInstrumentTrack(args.at(1), pos,navigator, editor);
+			TrackUtil::createVirtualInstrumentTrack(args.at(1), pos, navigator, editor);
 			return "Instrument track added.";
 		}
 		if (args[0] == "midi") {
-			TrackUtil::createMIDITrack(editor, navigator,editor->getModule());
+			TrackUtil::createMIDITrack(editor, navigator, editor->getModule());
 			return "MIDI track added.";
 		}
 		if (args[0] == "audio") {
@@ -386,7 +386,7 @@ void MainComponent::createStudioLayout() {
 		if (args.size() < 2) return "Error: Missing arguments.";
 
 		if (args[0] == "track") {
-			if (args[1] == "volume") 
+			if (args[1] == "volume")
 			{
 				float value = juce::String(args[2]).getFloatValue();
 				mixerPanel->getChannels().at(0)->setVolume(value);
@@ -454,7 +454,7 @@ void MainComponent::createStudioLayout() {
 		}
 
 		return ss.str();
-			}, "Gets a value.");
+		}, "Gets a value.");
 
 
 
@@ -496,7 +496,7 @@ void MainComponent::createStudioLayout() {
 #endif
 	editor->updateProject(File());
 
-		}
+}
 
 void MainComponent::createPlayerLayout() {
 	editor = new SynthEditor(sampleRate, buffersize);
@@ -896,6 +896,10 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addItem(11, "Add MIDI Clip", true, false, nullptr);
 		menu.addSubMenu("Align", alignMenu);
 	}
+	else if (index == 4) {
+
+		menu.addItem(41, "Quantize", true, false, nullptr);
+	}
 
 	return menu;
 }
@@ -972,6 +976,10 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 
 	}
 #endif
+
+	else if (menuItemID == 41) {
+		navigator->getCurrentTrack()->getCurrentRegion()->quantize(96);
+	}
 	else if (menuItemID == 999) {
 		JUCEApplication::getInstance()->shutdown();
 	}
@@ -983,12 +991,12 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 		editor->loadFromString(xmlData);
 		editor->setRunning(true);
 	}
-	}
+}
 
 StringArray MainComponent::getMenuBarNames() {
 
 #if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
-	const char* const names[] = { "File", "View","Plugins", "Edit", nullptr };
+	const char* const names[] = { "File", "View","Plugins", "Edit", "Region", nullptr };
 #else
 	const char* const names[] = { "File", "View", "Edit", nullptr };
 #endif
@@ -1181,14 +1189,14 @@ void MainComponent::buttonClicked(Button* b)
 					// Iterate through all modules of the editor and if it's a MIDI Gate,
 					// send a note off message to all channels
 
-					for (int i = 0; i < editor->getModule()->getModules()->size();i++ ) {
+					for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
 						Module* module = editor->getModule()->getModules()->at(i);
 						MidiGate* gate = dynamic_cast<MidiGate*>(module);
 						if (gate != nullptr) {
 							for (int j = 0; j < 128; j++) {
 								gate->gateOff(j);
-							}								
-						}						
+							}
+						}
 					}
 				}
 				else {
@@ -1261,7 +1269,7 @@ void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source) {
 		currentSample = navigator->getSamplePosition();
 	}
 	if (midiProcessor != nullptr) {
-		if (navigator != nullptr && navigator->getCurrentTrack() != nullptr) 
+		if (navigator != nullptr && navigator->getCurrentTrack() != nullptr)
 			midiProcessor->setActiveChannel(navigator->getCurrentTrack()->getMidiChannel());
 	}
 

@@ -186,7 +186,7 @@ void Module::paint (Graphics& g)
 
     g.setColour(Colour(0xff434242));
 
-    g.fillRect(0,0,getWidth(), getHeight());
+    g.fillRoundedRectangle(0,0,getWidth(), getHeight(),8);
 
     if (selected) {
         g.setColour(juce::Colours::orange);
@@ -194,7 +194,7 @@ void Module::paint (Graphics& g)
     else {
         g.setColour(juce::Colours::grey);
     }
-    g.drawRect(0, 0, getWidth(), getHeight());
+    g.drawRoundedRectangle(0, 0, getWidth(), getHeight(),8,2);
 
 
     for (int i = 0; i < pins.size();i++) {

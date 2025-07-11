@@ -294,3 +294,69 @@ std::pair<MidiRegion*, MidiRegion*> MidiRegion::splitAt(long splitSample, MultiC
     return { left, right };
 }
 
+void MidiRegion::quantize(int quantizeGridSamples)
+{
+    const ScopedLock sl(lock);
+
+    std::map<int, MidiMessage*> noteOns;
+    std::vector<MidiMessage*> quantizedMessages;
+
+    for (auto* msg : midiMessageList)
+    {
+        if (!msg)
+            continue;
+
+        if (msg->isNoteOn())
+        {
+            int note = msg->getNoteNumber();
+            int originalTime = (int)msg->getTimeStamp();
+            int quantizedTime = ((originalTime + quantizeGridSamples / 2) / quantizeGridSamples) * quantizeGridSamples;
+
+            auto* quantized = new MidiMessage(*msg);
+            quantized->setTimeStamp(quantizedTime);
+            quantizedMessages.push_back(quantized);
+
+            noteOns[note] = quantized;
+        }
+        else if (msg->isNoteOff())
+        {
+            int note = msg->getNoteNumber();
+            int originalTime = (int)msg->getTimeStamp();
+
+            auto it = noteOns.find(note);
+            if (it != noteOns.end())
+            {
+                int noteOnTime = (int)it->second->getTimeStamp();
+                int duration = originalTime - (int)msg->getTimeStamp() + noteOnTime;
+
+                auto* quantized = new MidiMessage(*msg);
+                quantized->setTimeStamp(noteOnTime + duration);
+                quantizedMessages.push_back(quantized);
+            }
+            else
+            {
+                auto* quantized = new MidiMessage(*msg);
+                quantized->setTimeStamp(((originalTime + quantizeGridSamples / 2) / quantizeGridSamples) * quantizeGridSamples);
+                quantizedMessages.push_back(quantized);
+            }
+        }
+        else
+        {
+            // andere Messages übernehmen
+            auto* quantized = new MidiMessage(*msg);
+            quantized->setTimeStamp(((int)msg->getTimeStamp() + quantizeGridSamples / 2) / quantizeGridSamples * quantizeGridSamples);
+            quantizedMessages.push_back(quantized);
+        }
+    }
+
+    // Alte löschen
+    for (auto* msg : midiMessageList)
+        delete msg;
+
+    midiMessageList = quantizedMessages;
+
+    rebuildThumbnail();
+    updateThumb();
+}
+
+

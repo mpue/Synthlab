@@ -67,6 +67,10 @@ public:
 
     void resizeAudio(int length);
 
+    void quantize(int quantizeGridSamples) override {
+		// empty implementation, audio regions are not quantized
+    }
+
 private:
 
     struct PitchListener : juce::Value::Listener

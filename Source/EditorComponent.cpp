@@ -60,6 +60,10 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView*
     console = new ShellConsoleComponent(parser);
     bottomTab->addTab("Console", Colours::darkgrey, console, false);
 
+	sequence = std::make_unique<juce::MidiMessageSequence>();
+	pianoRoll = std::make_unique<PianoRollComponent>(*sequence);
+	bottomTab->addTab("Piano Roll", Colours::darkgrey, pianoRoll.get(), false);
+
     addAndMakeVisible(topTab);
     addAndMakeVisible(resizerBar);
     addAndMakeVisible(bottomTab);

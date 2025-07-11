@@ -337,6 +337,10 @@
         <FILE id="RO3JEM" name="WhiteNoise.h" compile="0" resource="0" file="Source/AudioEngine/WhiteNoise.h"/>
       </GROUP>
       <GROUP id="{F7A67158-9DD4-9E2C-0BDC-1B58ED967D9B}" name="Editor">
+        <FILE id="Rt5n54" name="PianoRollComponent.cpp" compile="1" resource="0"
+              file="Source/PianoRollComponent.cpp"/>
+        <FILE id="YcYe7m" name="PianoRollComponent.h" compile="0" resource="0"
+              file="Source/PianoRollComponent.h"/>
         <FILE id="OEVoMu" name="ModuleUtils.cpp" compile="1" resource="0" file="Source/ModuleUtils.cpp"/>
         <FILE id="BiTdjT" name="ModuleUtils.h" compile="0" resource="0" file="Source/ModuleUtils.h"/>
         <FILE id="NWNJTZ" name="AudioManager.h" compile="0" resource="0" file="Source/AudioManager.h"/>
@@ -707,7 +711,7 @@
       </MODULEPATHS>
     </VS2017>
     <VS2022 targetFolder="Builds/VisualStudio2022" externalLibraries="d:/devel/Synthlab/lib/librubberband-debug.lib"
-            vstLegacyFolder="d:\devel\vstsdk2.4\" extraDefs="JUCE_MODAL_LOOPS_PERMITTED=1">
+            extraDefs="JUCE_MODAL_LOOPS_PERMITTED=1">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" headerPath="d:\devel\ASIOSDK2.3\common\&#10;d:\devel\VST_SDK3.7\"/>
         <CONFIGURATION isDebug="0" name="Release" headerPath="d:\devel\ASIOSDK2.3\common\&#10;d:\devel\VST_SDK3.7\"/>

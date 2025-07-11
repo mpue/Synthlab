@@ -19,6 +19,7 @@
 #include "PropertyView.h"
 #include "ShellConsoleComponent.h"
 #include "CommandParser.h"
+#include "PianoRollComponent.h"
 //==============================================================================
 /*
 */
@@ -62,6 +63,9 @@ private:
     
     ShellConsoleComponent* console = nullptr;
     
+	std::unique_ptr<PianoRollComponent> pianoRoll = nullptr;
+    std::unique_ptr<juce::MidiMessageSequence> sequence = nullptr;
+
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EditorComponent)
 };

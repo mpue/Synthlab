@@ -76,6 +76,8 @@ public:
     MidiRegion* clone(long newOffset);
     std::pair<MidiRegion*, MidiRegion*> splitAt(long splitSample, MultiComponentDragger* dragger);
 
+	void quantize(int quantizeGridSamples) override;
+
 private:
     MidiBuffer* midiBuffer;
 

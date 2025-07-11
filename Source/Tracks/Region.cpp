@@ -116,16 +116,6 @@ void Region::setZoom(float zoom) {
     
     this->setOffset(newOffset);
     this->setTopLeftPosition(newOffset, 0);
-    
-    /*
-     resizerR->setSize(5, getHeight());
-     resizerR->setTopLeftPosition(getWidth() - 5, 0);
-     
-     resizerL->setSize(5, getHeight());
-     resizerL->setTopLeftPosition(0, 0);
-     */
-    // setBounds(0,0,this->thumbnail->getTotalLength() * this->zoom, 200);
-
     this->updateThumb();
     dragger->setRaster(this->zoom / 4);
     
@@ -134,19 +124,19 @@ void Region::setZoom(float zoom) {
 
 void Region::mouseDown(const MouseEvent & e)
 {
-    if (dragger != NULL)
+    if (dragger != nullptr)
         dragger->handleMouseDown(this, e);
 }
 
 void Region::mouseUp(const MouseEvent & e)
 {
-    if (dragger != NULL)
+    if (dragger != nullptr)
         dragger->handleMouseUp(this, e);
 }
 
 void Region::mouseDrag(const MouseEvent & e)
 {
-    if (dragger != NULL)
+    if (dragger != nullptr)
         dragger->handleMouseDrag(e);
 }
 
@@ -168,3 +158,4 @@ void Region::createProperties()
 void Region::setDirty(bool dirty) {
     this->dirty = dirty;
 }
+
