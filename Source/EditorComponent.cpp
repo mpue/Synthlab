@@ -26,47 +26,59 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView*
     this->sampleRate = sampleRate;
     this->propertyView = properties;
 
-    topTab = new MainTabbedComponent();
-    bottomTab = new MainTabbedComponent();
+    topTab = std::make_unique<MainTabbedComponent>();
+    bottomTab = std::make_unique<MainTabbedComponent>();
     
-    editor = new SynthEditor(sampleRate,bufferSize);
-    editorView = new Viewport();
+    editor = std::make_unique<SynthEditor>(sampleRate,bufferSize);
+	editorView = std::make_unique<Viewport>();
     
     editorView->setSize(500,200);
-    editorView->setViewedComponent(editor);
+    editorView->setViewedComponent(editor.get());
     editorView->setScrollBarsShown(true,true);
     editorView->setScrollOnDragEnabled(false);
     editorView->setWantsKeyboardFocus(false);
     editorView->setMouseClickGrabsKeyboardFocus(false);
     
-    topTab->addTab("Editor", juce::Colours::grey, editorView, false);
+    topTab->addTab("Editor", juce::Colours::grey, editorView.get(), false);
         
-    mixerPanel = new MixerPanel();
+    mixerPanel = std::make_unique<MixerPanel>();
     mixer = Mixer::getInstance();
     mixerPanel->setMixer(mixer);
     
-    mixerView = new Viewport();
-    mixerView->setViewedComponent(mixerPanel);
+    mixerView = std::make_unique<Viewport>();
+    mixerView->setViewedComponent(mixerPanel.get());
     mixerView->setScrollBarsShown(true,true);
     mixerView->setScrollOnDragEnabled(false);
     mixerView->setWantsKeyboardFocus(false);
     mixerView->setMouseClickGrabsKeyboardFocus(false);
     
-    editor->setMixer(mixerPanel);
+    editor->setMixer(mixerPanel.get());
     editor->addChangeListener(this);
     
-    bottomTab->addTab("Mixer", Colours::darkgrey, mixerView, false);
+    bottomTab->addTab("Mixer", Colours::darkgrey, mixerView.get(), false);
 
-    console = new ShellConsoleComponent(parser);
-    bottomTab->addTab("Console", Colours::darkgrey, console, false);
+    console = std::make_unique<ShellConsoleComponent>(parser);
+    bottomTab->addTab("Console", Colours::darkgrey, console.get(), false);
 
 	sequence = std::make_unique<juce::MidiMessageSequence>();
 	pianoRoll = std::make_unique<PianoRollComponent>(*sequence);
-	bottomTab->addTab("Piano Roll", Colours::darkgrey, pianoRoll.get(), false);
 
-    addAndMakeVisible(topTab);
+	pianoView = std::make_unique<Viewport>();
+
+    pianoView->setViewedComponent(pianoRoll.get());
+    pianoView->setScrollBarsShown(true, true);
+    pianoView->setScrollOnDragEnabled(false);
+    pianoView->setWantsKeyboardFocus(false);
+    pianoView->setMouseClickGrabsKeyboardFocus(false);
+    
+    pianoRoll->setSize(2000, 800);
+	pianoRoll->setGridResolution(16);
+
+	bottomTab->addTab("Piano Roll", Colours::darkgrey, pianoView.get(), false);
+
+    addAndMakeVisible(topTab.get());
     addAndMakeVisible(resizerBar);
-    addAndMakeVisible(bottomTab);
+    addAndMakeVisible(bottomTab.get());
     
     stretchableManager.setItemLayout (0,            // for the properties
                                       -0.1, -0.9,   // must be between 50 pixels and 90% of the available space
@@ -79,7 +91,7 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView*
                                       -0.1, -0.9,   // size must be between 50 pixels and 90% of the available space
                                       -0.3);
 
-    Project::getInstance()->setSupplemental(this->bottomTab);
+    Project::getInstance()->setSupplemental(this->bottomTab.get());
 
     OpenTrackView();
 }
@@ -103,13 +115,16 @@ void EditorComponent::ImportAudio() {
 
 EditorComponent::~EditorComponent()
 {
-    delete editor;
-    delete editorView;
-    delete mixerPanel;
-    delete mixerView;    
-    delete navigator;
-    delete trackView;
-    delete console;
+    editor = nullptr;
+    editorView = nullptr;
+    mixerPanel = nullptr;
+    mixerView =  nullptr;    
+    navigator = nullptr;
+    trackView = nullptr;
+    console = nullptr;
+	pianoRoll = nullptr;
+	pianoView = nullptr;
+	sequence = nullptr;
 }
 
 void EditorComponent::paint (Graphics& g)
@@ -124,7 +139,7 @@ void EditorComponent::resized()
     auto r = getLocalBounds();
     
     // make a list of two of our child components that we want to reposition
-    juce::Component* comps[] = { topTab, &resizerBar, bottomTab };
+    juce::Component* comps[] = { topTab.get(), &resizerBar, bottomTab.get()};
     
     // this will position the 3 components, one above the other, to fit
     // vertically into the rectangle provided.
@@ -139,42 +154,42 @@ Mixer* EditorComponent::getMixer() {
 
 TrackNavigator* EditorComponent::getNavigator()
 {
-    return navigator;
+    return navigator.get();
 }
 
 MixerPanel* EditorComponent::getMixerPanel() {
-    return mixerPanel;
+    return mixerPanel.get();
 }
 
 SynthEditor* EditorComponent::getEditor() {
-    return editor;
+    return editor.get();
 }
 
 MainTabbedComponent* EditorComponent::getEditorTab() {
-    return topTab;
+    return topTab.get();
 }
 
 void EditorComponent::OpenTrackView()
 {
     if (navigator == nullptr) {        
-        trackView = new Viewport();
-        navigator = new TrackNavigator(AudioManager::getInstance()->getDeviceManager(), trackView, propertyView);
+        trackView = std::make_unique<Viewport>();
+        navigator = std::make_unique<TrackNavigator>(AudioManager::getInstance()->getDeviceManager(), trackView.get(), propertyView);
         
-        PrefabFactory::getInstance()->init(navigator);
-        addMouseListener(navigator, true);       
-        editor->setNavigator(navigator);
+        PrefabFactory::getInstance()->init(navigator.get());
+        addMouseListener(navigator.get(), true);
+        editor->setNavigator(navigator.get());
         trackView->setSize(500, 200);
-        trackView->setViewedComponent(navigator);
+        trackView->setViewedComponent(navigator.get());
         trackView->setScrollBarsShown(true, true);
         trackView->setScrollOnDragEnabled(false);
         trackView->setWantsKeyboardFocus(false);
         trackView->setMouseClickGrabsKeyboardFocus(false);
-		getTopLevelComponent()->addKeyListener(navigator);
+		getTopLevelComponent()->addKeyListener(navigator.get());
         navigator->setMouseClickGrabsKeyboardFocus(true);
         navigator->setWantsKeyboardFocus(true);
         
     }
-    topTab->addTab("Navigator", juce::Colours::grey, trackView, false);
+    topTab->addTab("Navigator", juce::Colours::grey, trackView.get(), false);
     topTab->setCurrentTabIndex(1);
 
 
