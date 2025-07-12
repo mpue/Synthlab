@@ -20,7 +20,7 @@ using juce::Graphics;
 using juce::ResizableWindow;
 
 //==============================================================================
-EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView* properties, CommandParser& parser) : resizerBar (&stretchableManager, 1, false)
+EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView* properties, CommandParser& parser) : resizerBar(&stretchableManager, 1, false), parser(parser)
 {
     this->bufferSize = bufferSize;
     this->sampleRate = sampleRate;
@@ -33,7 +33,7 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView*
 	editorView = std::make_unique<Viewport>();
     
     editorView->setSize(500,200);
-    editorView->setViewedComponent(editor.get());
+    editorView->setViewedComponent(editor.get(),false);
     editorView->setScrollBarsShown(true,true);
     editorView->setScrollOnDragEnabled(false);
     editorView->setWantsKeyboardFocus(false);
@@ -41,38 +41,32 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView*
     
     topTab->addTab("Editor", juce::Colours::grey, editorView.get(), false);
         
-    mixerPanel = std::make_unique<MixerPanel>();
-    mixer = Mixer::getInstance();
-    mixerPanel->setMixer(mixer);
+    mixerPanel = std::make_shared<MixerPanel>();
+    
     
     mixerView = std::make_unique<Viewport>();
-    mixerView->setViewedComponent(mixerPanel.get());
+    mixerView->setViewedComponent(mixerPanel.get(),false);
     mixerView->setScrollBarsShown(true,true);
     mixerView->setScrollOnDragEnabled(false);
     mixerView->setWantsKeyboardFocus(false);
     mixerView->setMouseClickGrabsKeyboardFocus(false);
     
-    editor->setMixer(mixerPanel.get());
+    editor->setMixer(mixerPanel);
     editor->addChangeListener(this);
     
     bottomTab->addTab("Mixer", Colours::darkgrey, mixerView.get(), false);
 
-    console = std::make_unique<ShellConsoleComponent>(parser);
-    bottomTab->addTab("Console", Colours::darkgrey, console.get(), false);
 
-	sequence = std::make_unique<juce::MidiMessageSequence>();
-	pianoRoll = std::make_unique<PianoRollComponent>(*sequence);
+	//pianoView = std::make_unique<Viewport>();
 
-	pianoView = std::make_unique<Viewport>();
-
-    pianoView->setViewedComponent(pianoRoll.get());
-    pianoView->setScrollBarsShown(true, true);
-    pianoView->setScrollOnDragEnabled(false);
-    pianoView->setWantsKeyboardFocus(false);
-    pianoView->setMouseClickGrabsKeyboardFocus(false);
+ //   pianoView->setViewedComponent(pianoRoll.get());
+ //   pianoView->setScrollBarsShown(true, true);
+ //   pianoView->setScrollOnDragEnabled(false);
+ //   pianoView->setWantsKeyboardFocus(false);
+ //   pianoView->setMouseClickGrabsKeyboardFocus(false);
     
-    pianoRoll->setSize(2000, 800);
-	pianoRoll->setGridResolution(16);
+ //   pianoRoll->setSize(2000, 800);
+	//pianoRoll->setGridResolution(16);
 
 	bottomTab->addTab("Piano Roll", Colours::darkgrey, pianoView.get(), false);
 
@@ -115,16 +109,16 @@ void EditorComponent::ImportAudio() {
 
 EditorComponent::~EditorComponent()
 {
+    editor->setTab(nullptr);
     editor = nullptr;
-    editorView = nullptr;
-    mixerPanel = nullptr;
-    mixerView =  nullptr;    
-    navigator = nullptr;
-    trackView = nullptr;
-    console = nullptr;
-	pianoRoll = nullptr;
-	pianoView = nullptr;
-	sequence = nullptr;
+    Project::getInstance()->setSupplemental(nullptr);
+ //   editorView = nullptr;
+ //   mixerPanel = nullptr;
+ //   mixerView =  nullptr;    
+ //   navigator = nullptr;
+ //   trackView = nullptr;
+ //   console = nullptr;
+	//sequence = nullptr;
 }
 
 void EditorComponent::paint (Graphics& g)
@@ -148,17 +142,13 @@ void EditorComponent::resized()
                                          true, true);
 }
 
-Mixer* EditorComponent::getMixer() {
-    return mixer;
-}
-
 TrackNavigator* EditorComponent::getNavigator()
 {
     return navigator.get();
 }
 
-MixerPanel* EditorComponent::getMixerPanel() {
-    return mixerPanel.get();
+std::shared_ptr<MixerPanel>EditorComponent::getMixerPanel() {
+    return mixerPanel;
 }
 
 SynthEditor* EditorComponent::getEditor() {
@@ -167,6 +157,11 @@ SynthEditor* EditorComponent::getEditor() {
 
 MainTabbedComponent* EditorComponent::getEditorTab() {
     return topTab.get();
+}
+
+void EditorComponent::openConsole() {
+    console = std::make_unique<ShellConsoleComponent>(parser);
+    bottomTab->addTab("Console", Colours::darkgrey, console.get(), false);
 }
 
 void EditorComponent::OpenTrackView()

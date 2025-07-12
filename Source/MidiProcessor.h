@@ -7,6 +7,7 @@
 #include <vector>
 #include <mutex>
 #include "../JuceLibraryCode/JuceHeader.h"
+#include "Tracks/TrackNavigator.h"       // for TrackNavigator
 
  // Forward declarations
 class SynthEditor;
@@ -52,6 +53,10 @@ public:
     void sendMidiStartMessage(Module*, int channel);
     void sendMidiStopMessage(Module*, int channel);
     void sendMidiClockMessage(Module*, int channel);
+
+    void processBlock(int numSamples, TrackNavigator* navigator);
+    
+
 private:
     /** Called on the Timer thread (default: every 5 ms).
         Takes queued messages and processes them in a non-realtime context. */

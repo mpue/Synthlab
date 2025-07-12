@@ -12,7 +12,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Tracks/Track.h"
 
-class 		Mixer : public ChangeListener, public ChangeBroadcaster {
+class Mixer : public ChangeListener, public ChangeBroadcaster {
 
 public:
 
@@ -71,7 +71,6 @@ public:
 		return this->lastModified;
 	}
 
-
 	inline void addChangeListener(ChangeListener* listener) {
 		ChangeBroadcaster::addChangeListener(listener);
 	}
@@ -82,8 +81,6 @@ public:
 	void removeAllChannels();
 
 	Channel* getChannel(Mixer::Channel::Type type, int index);
-
-
 
 	int getNumOutputs();
 	int getNumInputs();

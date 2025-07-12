@@ -50,7 +50,7 @@ SynthEditor::SynthEditor() {
 
 	setSize(1280, 800);
 
-	root = new Module("Root");
+	root = std::make_unique<Module>("Root");
 
 	selectionModel = SelectionModel();
 
@@ -58,7 +58,7 @@ SynthEditor::SynthEditor() {
 	setMouseClickGrabsKeyboardFocus(true);
 	//setWantsKeyboardFocus(true);
 
-	addChildComponent(root);
+	addChildComponent(root.get());
 }
 
 
@@ -71,17 +71,17 @@ SynthEditor::SynthEditor(double sampleRate, int buffersize)
 
 	setSize(1280, 800);
 
-	root = new Module("Root");
+	root = std::make_unique<Module>("Root");
 
 	// only the topmost module can be root
 	if (Project::getInstance()->getRoot() == nullptr) {
-		Project::getInstance()->setRoot(root);
+		Project::getInstance()->setRoot(root.get());
 	}
 
-	selectionModel.setRoot(root);
+	selectionModel.setRoot(root.get());
 
 	setRepaintsOnMouseActivity(true);
-	addChildComponent(root);
+	addChildComponent(root.get());
 
 	linePath = Path();
 
@@ -95,7 +95,7 @@ SynthEditor::~SynthEditor()
 	if (isRoot && deleteModuleWhenRemoved) {
 
 		cleanUp();
-		delete root;
+		root = nullptr;
 		if (tab != nullptr) {
 			tab->clearTabs();
 			delete tab;
@@ -745,7 +745,7 @@ void SynthEditor::addControl(Module* module, int pinIndex) {
 	k->setValue(1);
 	k->setName(module->getPins().at(pinIndex)->getName());
 
-	connect(root, k, module, pinIndex, mouseY);
+	connect(root.get(), k, module, pinIndex, mouseY);
 
 	selectionModel.clearSelection();
 	k->setSelected(true);
@@ -784,7 +784,7 @@ void SynthEditor::addConstant(Module* module, int pinIndex) {
 	addChangeListener(c);
 	c->setValue(1);
 	c->setName(module->getPins().at(pinIndex)->getName());
-	connect(root, c, module, pinIndex, mouseY);
+	connect(root.get(), c, module, pinIndex, mouseY);
 
 }
 
@@ -819,7 +819,7 @@ void SynthEditor::addTerminal(Module* module, int pinIndex) {
 
 	// ModuleUtils::connectModules(t, module, pinIndex);
 
-	connect(root, t, module, pinIndex, mouseY);
+	connect(root.get(), t, module, pinIndex, mouseY);
 
 	addAndMakeVisible(t);
 
@@ -906,11 +906,11 @@ SelectionModel& SynthEditor::getSelectionModel() {
 	return selectionModel;
 }
 
-void SynthEditor::setMixer(MixerPanel* mixer) {
+void SynthEditor::setMixer(std::shared_ptr<MixerPanel> mixer) {
 	this->mixer = mixer;
 }
 
-MixerPanel* SynthEditor::getMixer() {
+std::shared_ptr<MixerPanel> SynthEditor::getMixer() {
 	return mixer;
 }
 
@@ -947,7 +947,7 @@ void SynthEditor::modifierKeysChanged(const ModifierKeys& modifiers)
 void SynthEditor::cleanUp() {
 	mixer->removeAllChannels();
 	for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); it++) {
-		ModuleUtils::removeModule(root, (*it), getMixer(), this);
+		ModuleUtils::removeModule(root.get(), (*it), getMixer().get(), this);
 	}
 	for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end();) {
 		for (std::vector<Connection*>::iterator it2 = (*it)->getConnections()->begin(); it2 != (*it)->getConnections()->end();) {
@@ -964,7 +964,6 @@ void SynthEditor::cleanUp() {
 
 	PrefabFactory::getInstance()->reset();
 
-	delete root;
 	root = nullptr;
 	//deleteSelected(true);
 	selectionModel.getSelectedModules().clear();
@@ -1001,9 +1000,9 @@ void SynthEditor::cleanUp() {
 }
 
 void SynthEditor::newFile() {
-	root = new Module("Root");
+	root = std::make_unique<Module>("Root");
 	selectionModel = SelectionModel();
-	selectionModel.setRoot(root);
+	selectionModel.setRoot(root.get());
 	setLocked(true);
 	updateProject(File());
 	setLocked(false);
@@ -1217,7 +1216,8 @@ void SynthEditor::openEditor(Module* m) {
 	editorView->setScrollOnDragEnabled(false);
 	editorView->setWantsKeyboardFocus(false);
 	editorView->setMouseClickGrabsKeyboardFocus(false);
-	editor->setModule(m, false);
+	std::unique_ptr<Module> ptr(m);
+	editor->setModule(std::move(ptr), false);
 	editor->setIndex(static_cast<int>(m->getIndex()));
 	editor->setTab(tab);
 	editor->addEditorListener(Project::getInstance()->getPropertyView());
@@ -1511,15 +1511,13 @@ void SynthEditor::addConnection(const MouseEvent& e, Module* source) {
 	repaint();
 }
 
-void SynthEditor::setModule(Module* m, bool deleteWhenRemoved) {
+void SynthEditor::setModule(std::unique_ptr<Module> m, bool deleteWhenRemoved) {
 
 	if (root != nullptr) {
-		delete root;
+		root = nullptr;
 	}
-
-	this->root = m;
-
-	selectionModel.setRoot(m);
+	selectionModel.setRoot(m.get());
+	this->root = std::move(m);
 	isRoot = false;
 	this->deleteModuleWhenRemoved = deleteWhenRemoved;
 	for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
@@ -1530,7 +1528,7 @@ void SynthEditor::setModule(Module* m, bool deleteWhenRemoved) {
 }
 
 Module* SynthEditor::getModule() {
-	return root;
+	return root.get();
 }
 
 
@@ -1973,6 +1971,7 @@ void SynthEditor::setNavigator(TrackNavigator* navigator)
 
 void SynthEditor::exportAudio()
 {
+
 }
 
 void SynthEditor::updateProject(File file) {

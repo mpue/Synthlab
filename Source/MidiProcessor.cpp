@@ -13,6 +13,7 @@
 #include "Knob.h"                // for MIDI controller knobs
 
 
+
 using namespace juce;
 
 MidiProcessor::MidiProcessor(SynthEditor* root,
@@ -212,3 +213,30 @@ void MidiProcessor::disableAllMidiInputs() {
 		}
 	}
 }
+
+void MidiProcessor::processBlock(int numSamples, TrackNavigator* navigator)
+{
+
+	const int currentSamplePos = navigator->getSamplePosition();
+	const auto& tracks = navigator->getTracks();
+
+	for (auto* track : tracks)
+	{
+		if (track == nullptr)
+			continue;
+
+		for (auto* region : track->getRegions())
+		{
+			auto* midiRegion = dynamic_cast<MidiRegion*>(region);
+			
+			if (midiRegion == nullptr)
+				continue;
+
+			MidiMessage* message = midiRegion->getMessage(currentSamplePos, numSamples);
+
+			if (message != nullptr)
+				processMidiMessage(*message);
+		}
+	}
+}
+

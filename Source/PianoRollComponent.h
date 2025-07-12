@@ -7,7 +7,8 @@ class PianoRollComponent : public juce::Component,
     public juce::MouseListener
 {
 public:
-    PianoRollComponent(juce::MidiMessageSequence& sequence);
+    PianoRollComponent(juce::MidiMessageSequence* sequence, double sampLeRate);
+    ~PianoRollComponent();
 
     void paint(juce::Graphics& g) override;
     void resized() override;
@@ -20,13 +21,14 @@ public:
     bool keyPressed(const juce::KeyPress& key, juce::Component* originatingComponent) override;
 
     void setGridResolution(int denominator);
+    double secondsToBeats(double seconds) const;
 
 private:
     void drawGrid(juce::Graphics& g);
     void drawPiano(juce::Graphics& g);
     void drawNotes(juce::Graphics& g);
 
-    void drawNote(juce::Graphics& g, const juce::MidiMessage& msg, double duration, bool selected);
+    void drawNote(juce::Graphics& g, const juce::MidiMessage& msg, double duration);
     bool isBlackKey(int noteNumber);
     int getPitchAtY(int y);
     double getTimeAtX(int x);
@@ -35,7 +37,7 @@ private:
 
     juce::Rectangle<int> getNoteRect(const juce::MidiMessage& msg, double duration);
 
-    juce::MidiMessageSequence& midiSequence;
+    juce::MidiMessageSequence* midiSequence;
     std::set<int> selectedIndices;
 
     float xZoom = 100.0f;
@@ -47,6 +49,12 @@ private:
     bool isResizing = false;
     int resizingIndex = -1;
     double originalDuration = 0.0;
+    double sampleRate = 44100;
+
+    juce::Point<float> panOffset = { 0, 0 };
+    juce::Point<int> panStart;
+    bool isPanning = false;
+
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PianoRollComponent)
 };

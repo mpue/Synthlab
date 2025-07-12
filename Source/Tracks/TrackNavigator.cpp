@@ -18,6 +18,7 @@
 #include <iterator>
 #include <iostream>
 #include "../ExtendedFileBrowser.h"
+#include "../PianoRollComponent.h"
 
 using namespace std;
 
@@ -112,7 +113,7 @@ void TrackNavigator::updateTrackLayout(ChangeBroadcaster* source)
 		for (int i = index + 1; i < tracks.size(); i++) {
 			if (i == 0)
 				tracks.at(i)->setTopLeftPosition(tracks.at(i - 1)->getX(), tracks.at(i - 1)->getPosition().getY() + tracks.at(i - 1)->getHeight() + timelineOffset);
-			else 
+			else
 				tracks.at(i)->setTopLeftPosition(tracks.at(i - 1)->getX(), tracks.at(i - 1)->getPosition().getY() + tracks.at(i - 1)->getHeight());
 		}
 
@@ -139,7 +140,7 @@ void TrackNavigator::adjustHeight()
 
 	this->marker->setBounds(0, 0, 2, getHeight());
 
-	setSize(getWidth(), height+timelineOffset);
+	setSize(getWidth(), height + timelineOffset);
 }
 
 bool TrackNavigator::isInterestedInDragSource(const SourceDetails& dragSourceDetails)
@@ -283,7 +284,7 @@ void TrackNavigator::setPosition(double position) {
 		[=]() {
 		marker->setSamplePosition(samplePosition);
 
-	};
+		};
 	juce::MessageManager::callAsync(changeLambda);
 	startTimer(50);
 }
@@ -315,7 +316,7 @@ void TrackNavigator::setSamplePosition(int position) {
 		[=]() {
 		marker->setSamplePosition(this->samplePosition);
 		startTimer(50);
-	};
+		};
 	juce::MessageManager::callAsync(changeLambda);
 }
 
@@ -356,7 +357,7 @@ void TrackNavigator::noteOffForAll() {
 
 }
 
-void TrackNavigator::setRecording(bool recording) {	
+void TrackNavigator::setRecording(bool recording) {
 
 	if (recording) {
 		noteOffForAll();
@@ -368,19 +369,19 @@ void TrackNavigator::setRecording(bool recording) {
 		}
 		for (int i = 0; i < tracks.size(); i++) {
 			if (tracks.at(i)->isRecording()) {
-				
+
 				if (tracks.at(i)->getType() == Track::Type::MIDI || tracks.at(i)->getType() == Track::Type::INSTRUMENT) {
 
 					MidiRegion* r = dynamic_cast<MidiRegion*>(tracks.at(i)->getRegionAt(recordStart));
 					if (r == nullptr) {
-						tracks.at(i)->addMidiRegion(Project::getInstance()->getSampleRate(), recordStart, 480000*4);
+						tracks.at(i)->addMidiRegion(Project::getInstance()->getSampleRate(), recordStart, 480000 * 4);
 					}
 					tracks.at(i)->getRegionAt(recordStart)->startRecording();
 				}
 				else if (tracks.at(i)->getType() == Track::Type::AUDIO) {
 					AudioRegion* r = dynamic_cast<AudioRegion*>(tracks.at(i)->getRegionAt(recordStart));
 					if (r == nullptr) {
-						tracks.at(i)->addRegion(nullptr, Project::getInstance()->getSampleRate(), recordStart, 480000*4);
+						tracks.at(i)->addRegion(nullptr, Project::getInstance()->getSampleRate(), recordStart, 480000 * 4);
 					}
 					tracks.at(i)->getRegionAt(recordStart)->startRecording();
 				}
@@ -399,7 +400,7 @@ void TrackNavigator::setRecording(bool recording) {
 
 						MidiRegion* mr = dynamic_cast<MidiRegion*>(tracks.at(i)->getRegions().at(j));
 
-						if (mr != nullptr)	{
+						if (mr != nullptr) {
 							mr->stopRecording();
 						}
 
@@ -407,8 +408,8 @@ void TrackNavigator::setRecording(bool recording) {
 
 				}
 				else if (tracks.at(i)->getType() == Track::Type::AUDIO) {
-					for (int j = 0; j < tracks.at(i)->getRegions().size(); j++) {					
-						
+					for (int j = 0; j < tracks.at(i)->getRegions().size(); j++) {
+
 						AudioRegion* ar = dynamic_cast<AudioRegion*>(tracks.at(i)->getRegions().at(j));
 
 						if (ar != nullptr) {
@@ -417,7 +418,7 @@ void TrackNavigator::setRecording(bool recording) {
 					}
 				}
 
-		
+
 
 			}
 		}
@@ -445,11 +446,37 @@ StringArray TrackNavigator::getTrackList()
 	return trackList;
 }
 
+void TrackNavigator::openPianoRoll(MidiRegion* r)
+{
+	PianoRollComponent* pr = new PianoRollComponent(r->getMidiMessageSequence(), Project::getInstance()->getSampleRate());
+
+	Viewport* pianoView = new Viewport();
+
+	pianoView->setViewedComponent(pr);
+	pianoView->setScrollBarsShown(true, true);
+	pianoView->setScrollOnDragEnabled(false);
+	pianoView->setWantsKeyboardFocus(false);
+	pianoView->setMouseClickGrabsKeyboardFocus(false);
+
+	pr->setSize(2000, 800);
+	pr->setGridResolution(16);
+
+	Project::getInstance()->getSupplemental()->addTab("Piano roll", Colours::darkgrey, pianoView, false);
+	Project::getInstance()->getSupplemental()->setCurrentTabIndex(Project::getInstance()->getSupplemental()->getNumTabs() - 1);
+
+}
+
+double PianoRollComponent::secondsToBeats(double time) const
+{
+	return (Project::getInstance()->getTempo() / 60) * time;
+}
+
+
 Track* TrackNavigator::addTrack(TrackConfig* tc) {
 
 	Track* track = nullptr;
 
-	if (tc->getType() == "audio") {	
+	if (tc->getType() == "audio") {
 		track = new Track(Track::Type::AUDIO, Project::getInstance()->getSampleRate(), this->dragger);
 	}
 	else {
@@ -481,7 +508,7 @@ Track* TrackNavigator::addTrack(TrackConfig* tc) {
 	setBounds(getX(), getY(), getMaxLength() * this->zoom, height);
 
 	this->marker->setSize(2, height);
-	this->marker->setSampleLength(getMaxLength()*300);
+	this->marker->setSampleLength(getMaxLength() * 300);
 	this->selector->setSize(getWidth(), getHeight());
 	this->timeLine->setBounds(0, 0, getWidth(), timelineOffset);
 	this->timeLine->setSize(getWidth(), timelineOffset);
@@ -562,7 +589,7 @@ Track* TrackNavigator::addTrack(Track::Type type, double sampleRate) {
 	this->selector->setSize(getWidth(), getHeight());
 	this->timeLine->setBounds(0, 0, getWidth(), timelineOffset);
 	this->timeLine->setSize(getWidth(), timelineOffset);
-	
+
 	track->setVolume(1.0f);
 
 	// constrainer.setRaster(this->zoom / 4);
@@ -700,11 +727,14 @@ bool TrackNavigator::keyPressed(const KeyPress& key, Component* originatingCompo
 				tracks.at(i)->duplicateSelectedRegions();
 			}
 		}
+		else if (key.getKeyCode() == 69) { // E
+			openPianoRoll(dynamic_cast<MidiRegion*>(tracks.at(0)->getCurrentRegion()));
+		}
 		else if (key.getKeyCode() == 73) { // I
 			for (int i = 0; i < tracks.size(); i++) {
-				for (int j = 0; j < tracks.at(i)->getRegions().size();j++) {					
-					Logger::getCurrentLogger()->writeToLog(String(tracks.at(i)->getRegions().at(j)->getSampleOffset()));									
-				}								
+				for (int j = 0; j < tracks.at(i)->getRegions().size(); j++) {
+					Logger::getCurrentLogger()->writeToLog(String(tracks.at(i)->getRegions().at(j)->getSampleOffset()));
+				}
 			}
 		}
 		else if (key.getKeyCode() == 88) { // X
@@ -740,7 +770,7 @@ void TrackNavigator::mouseMove(const juce::MouseEvent& event) {
 }
 
 void TrackNavigator::mouseDown(const MouseEvent& event) {
-	
+
 	int x = event.x + scrollbarOffset;
 	int y = event.y;
 
@@ -748,7 +778,7 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 		int width = getWidth();
 		// float pos = (float)dragger->snap(x, zoom / 16) / width;
 		double total = getMaxLength();
-		double relative = total * x  / width;
+		double relative = total * x / width;
 		setPosition(relative);
 		marker->setSamplePosition(samplePosition);
 		for (int i = 0; i < tracks.size(); i++) {
@@ -788,7 +818,7 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 						this->selector->setSelectedRange(0, 0);
 						tracks.at(i)->setSelected(true);
 						propertyView->selectionChanged(tracks.at(i));
-																
+
 						for (int j = 0; j < tracks.at(i)->getRegions().size(); j++) {
 
 							if (tracks.at(i)->getRegions().at(j)->getBounds().contains(x, y)) {

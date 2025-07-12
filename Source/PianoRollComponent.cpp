@@ -1,12 +1,13 @@
-﻿// PianoRollComponent.cpp
-#include "PianoRollComponent.h"
+﻿#include "PianoRollComponent.h"
 
-PianoRollComponent::PianoRollComponent(juce::MidiMessageSequence& seq)
-    : midiSequence(seq)
+PianoRollComponent::PianoRollComponent(juce::MidiMessageSequence* seq, double sampleRate)
+    : midiSequence(seq), sampleRate(sampleRate)
 {
     setWantsKeyboardFocus(true);
     addKeyListener(this);
 }
+
+PianoRollComponent::~PianoRollComponent() = default;
 
 void PianoRollComponent::paint(juce::Graphics& g)
 {
@@ -28,10 +29,12 @@ void PianoRollComponent::drawGrid(juce::Graphics& g)
     g.fillAll(juce::Colours::darkgrey);
     auto bounds = getLocalBounds();
 
+    int gridSpacingSamples = 1000;
+
     for (int i = 0; i < bounds.getWidth(); ++i)
     {
-        double beat = (i - pianoWidth) / xZoom;
-        if (beat >= 0.0 && fmod(beat, gridResolution) < 0.01)
+        double sample = (i - pianoWidth - panOffset.x) / xZoom;
+        if (sample >= 0.0 && fmod(sample, gridSpacingSamples) < 1.0)
         {
             g.setColour(juce::Colours::white.withAlpha(0.1f));
             g.drawLine((float)i, 0, (float)i, (float)bounds.getHeight());
@@ -60,26 +63,27 @@ void PianoRollComponent::drawPiano(juce::Graphics& g)
 
 void PianoRollComponent::drawNotes(juce::Graphics& g)
 {
-    for (int i = 0; i < midiSequence.getNumEvents(); ++i)
+    for (int i = 0; i < midiSequence->getNumEvents(); ++i)
     {
-        auto* e = midiSequence.getEventPointer(i);
+        auto* e = midiSequence->getEventPointer(i);
         if (!e || !e->message.isNoteOn()) continue;
 
-        int offIndex = midiSequence.getIndexOfMatchingKeyUp(i);
-        if (offIndex < 0 || offIndex >= midiSequence.getNumEvents()) continue;
+        int offIndex = midiSequence->getIndexOfMatchingKeyUp(i);
+        if (offIndex < 0 || offIndex >= midiSequence->getNumEvents()) continue;
 
         double start = e->message.getTimeStamp();
-        double duration = midiSequence.getEventPointer(offIndex)->message.getTimeStamp() - start;
+        double duration = midiSequence->getEventPointer(offIndex)->message.getTimeStamp() - start;
+
         if (duration <= 0.0) continue;
 
-        drawNote(g, e->message, duration, selectedIndices.count(i) > 0);
+        drawNote(g, e->message, duration);
     }
 }
 
-void PianoRollComponent::drawNote(juce::Graphics& g, const juce::MidiMessage& msg, double duration, bool selected)
+void PianoRollComponent::drawNote(juce::Graphics& g, const juce::MidiMessage& msg, double duration)
 {
     auto rect = getNoteRect(msg, duration);
-    g.setColour(selected ? juce::Colours::orange : juce::Colours::lightblue);
+    g.setColour(juce::Colours::lightblue);
     g.fillRect(rect);
     g.setColour(juce::Colours::black);
     g.drawRect(rect);
@@ -93,22 +97,22 @@ bool PianoRollComponent::isBlackKey(int n)
 
 int PianoRollComponent::getYForPitch(int pitch)
 {
-    return (int)((127 - pitch) * yZoom);
-}
-
-double PianoRollComponent::getTimeAtX(int x)
-{
-    return (x - pianoWidth) / xZoom;
+    return (int)(((127 - pitch) * yZoom) + panOffset.y);
 }
 
 int PianoRollComponent::getPitchAtY(int y)
 {
-    return 127 - (int)(y / yZoom);
+    return 127 - (int)((y - panOffset.y) / yZoom);
 }
 
-int PianoRollComponent::getXForTime(double time)
+int PianoRollComponent::getXForTime(double sampleTime)
 {
-    return pianoWidth + (int)(time * xZoom);
+    return pianoWidth + (int)(sampleTime * xZoom + panOffset.x);
+}
+
+double PianoRollComponent::getTimeAtX(int x)
+{
+    return (x - pianoWidth - panOffset.x) / xZoom;
 }
 
 juce::Rectangle<int> PianoRollComponent::getNoteRect(const juce::MidiMessage& msg, double duration)
@@ -122,24 +126,30 @@ juce::Rectangle<int> PianoRollComponent::getNoteRect(const juce::MidiMessage& ms
 
 void PianoRollComponent::mouseDown(const juce::MouseEvent& e)
 {
+    if (e.mods.isMiddleButtonDown())
+    {
+        isPanning = true;
+        panStart = e.getPosition();
+        return;
+    }
+
     if (e.getNumberOfClicks() == 2 && e.getPosition().getX() > pianoWidth)
     {
         int pitch = getPitchAtY(e.y);
         double start = getTimeAtX(e.x);
-        double duration = 0.25; // 1/4 Note
+        double duration = sampleRate * (60.0 / 120) / 4.0; // = 1/16 Note
 
         juce::MidiMessage on = juce::MidiMessage::noteOn(1, pitch, (juce::uint8)100);
         juce::MidiMessage off = juce::MidiMessage::noteOff(1, pitch);
         on.setTimeStamp(start);
         off.setTimeStamp(start + duration);
 
-        midiSequence.addEvent(on);
-        midiSequence.addEvent(off);
-
-		midiSequence.updateMatchedPairs();
+        midiSequence->addEvent(on);
+        midiSequence->addEvent(off);
+        midiSequence->updateMatchedPairs();
 
         repaint();
-        return; // Kein Drag/Resize nach Doppelklick
+        return;
     }
 
     dragStart = e.getPosition();
@@ -147,16 +157,16 @@ void PianoRollComponent::mouseDown(const juce::MouseEvent& e)
     selectedIndices.clear();
     resizingIndex = -1;
 
-    for (int i = 0; i < midiSequence.getNumEvents(); ++i)
+    for (int i = 0; i < midiSequence->getNumEvents(); ++i)
     {
-        auto* ev = midiSequence.getEventPointer(i);
+        auto* ev = midiSequence->getEventPointer(i);
         if (!ev || !ev->message.isNoteOn()) continue;
 
-        int offIndex = midiSequence.getIndexOfMatchingKeyUp(i);
-        if (offIndex < 0 || offIndex >= midiSequence.getNumEvents()) continue;
+        int offIndex = midiSequence->getIndexOfMatchingKeyUp(i);
+        if (offIndex < 0 || offIndex >= midiSequence->getNumEvents()) continue;
 
-        double duration = midiSequence.getEventPointer(offIndex)->message.getTimeStamp() - ev->message.getTimeStamp();
-        auto rect = getNoteRect(ev->message, duration);
+        double duration = midiSequence->getEventPointer(offIndex)->message.getTimeStamp() - ev->message.getTimeStamp();
+        auto rect = getNoteRect(ev->message, duration * (60.0 / 120) / 4.0);
 
         if (rect.contains(dragStart))
         {
@@ -176,21 +186,28 @@ void PianoRollComponent::mouseDown(const juce::MouseEvent& e)
 
 void PianoRollComponent::mouseDrag(const juce::MouseEvent& e)
 {
-    isDragging = true;
+    if (isPanning)
+    {
+        auto delta = e.getPosition() - panStart;
+        panOffset += delta.toFloat();
+        panStart = e.getPosition();
+        repaint();
+        return;
+    }
 
+    isDragging = true;
     auto delta = e.getPosition() - dragStart;
     double deltaTime = delta.x / xZoom;
     double deltaPitchF = -(delta.y / yZoom);
 
-    // Runden und speichern nur bei ganzzahligen Tonhöhenänderungen
     if (isResizing && resizingIndex >= 0)
     {
-        int offIndex = midiSequence.getIndexOfMatchingKeyUp(resizingIndex);
-        if (offIndex < 0 || offIndex >= midiSequence.getNumEvents()) return;
+        int offIndex = midiSequence->getIndexOfMatchingKeyUp(resizingIndex);
+        if (offIndex < 0 || offIndex >= midiSequence->getNumEvents()) return;
 
         double newDuration = originalDuration + deltaTime;
-        double newOffTime = midiSequence.getEventTime(resizingIndex) + std::max(0.05, newDuration);
-        midiSequence.getEventPointer(offIndex)->message.setTimeStamp(newOffTime);
+        double newOffTime = midiSequence->getEventTime(resizingIndex) + std::max(10.0, newDuration); // min 10 samples
+        midiSequence->getEventPointer(offIndex)->message.setTimeStamp(newOffTime);
     }
     else
     {
@@ -200,13 +217,13 @@ void PianoRollComponent::mouseDrag(const juce::MouseEvent& e)
         {
             for (int i : selectedIndices)
             {
-                auto* noteOnEvent = midiSequence.getEventPointer(i);
+                auto* noteOnEvent = midiSequence->getEventPointer(i);
                 if (!noteOnEvent) continue;
 
-                int offIndex = midiSequence.getIndexOfMatchingKeyUp(i);
-                if (offIndex < 0 || offIndex >= midiSequence.getNumEvents()) continue;
+                int offIndex = midiSequence->getIndexOfMatchingKeyUp(i);
+                if (offIndex < 0 || offIndex >= midiSequence->getNumEvents()) continue;
 
-                auto* noteOffEvent = midiSequence.getEventPointer(offIndex);
+                auto* noteOffEvent = midiSequence->getEventPointer(offIndex);
                 if (!noteOffEvent) continue;
 
                 double newStart = noteOnEvent->message.getTimeStamp() + deltaTime;
@@ -228,10 +245,9 @@ void PianoRollComponent::mouseDrag(const juce::MouseEvent& e)
     repaint();
 }
 
-
 void PianoRollComponent::mouseUp(const juce::MouseEvent& e)
 {
-
+    isPanning = false;
     isResizing = false;
     repaint();
 }
@@ -255,8 +271,8 @@ bool PianoRollComponent::keyPressed(const juce::KeyPress& key, juce::Component*)
         std::vector<int> toRemove;
         for (int i : selectedIndices)
         {
-            int offIndex = midiSequence.getIndexOfMatchingKeyUp(i);
-            if (offIndex >= 0 && offIndex < midiSequence.getNumEvents())
+            int offIndex = midiSequence->getIndexOfMatchingKeyUp(i);
+            if (offIndex >= 0 && offIndex < midiSequence->getNumEvents())
             {
                 toRemove.push_back(offIndex);
                 toRemove.push_back(i);
@@ -265,7 +281,7 @@ bool PianoRollComponent::keyPressed(const juce::KeyPress& key, juce::Component*)
 
         std::sort(toRemove.begin(), toRemove.end(), std::greater<int>());
         for (int i : toRemove)
-            midiSequence.deleteEvent(i, false);
+            midiSequence->deleteEvent(i, false);
 
         selectedIndices.clear();
         repaint();

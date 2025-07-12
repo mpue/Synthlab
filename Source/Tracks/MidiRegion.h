@@ -78,6 +78,10 @@ public:
 
 	void quantize(int quantizeGridSamples) override;
 
+    MidiMessageSequence* getMidiMessageSequence();
+
+    void setMidiMessageSequence(const MidiMessageSequence& seq);
+
 private:
     MidiBuffer* midiBuffer;
 

@@ -33,11 +33,11 @@ public:
     void resized() override;
     void ImportAudio();
     SynthEditor* getEditor();
-    MixerPanel* getMixerPanel();
-    Mixer* getMixer();
+    std::shared_ptr<MixerPanel> getMixerPanel();
     TrackNavigator* getNavigator();
     MainTabbedComponent* getEditorTab();
     void OpenTrackView();
+	void openConsole();
     virtual void changeListenerCallback (juce::ChangeBroadcaster* source) override;
     
 private:
@@ -45,12 +45,13 @@ private:
     int bufferSize;
     float sampleRate;
 
+	CommandParser& parser;
+
     std::unique_ptr<SynthEditor> editor = nullptr;
-    std::unique_ptr<MixerPanel> mixerPanel = nullptr;
+    std::shared_ptr<MixerPanel> mixerPanel = nullptr;
     std::unique_ptr<juce::Viewport> editorView = nullptr;
     std::unique_ptr<juce::Viewport> mixerView = nullptr;
     std::unique_ptr<juce::Viewport> trackView = nullptr;
-    Mixer* mixer = nullptr;
     
     std::unique_ptr<MainTabbedComponent> topTab = nullptr;
     std::unique_ptr<MainTabbedComponent> bottomTab = nullptr;
@@ -62,8 +63,7 @@ private:
     PropertyView* propertyView = nullptr;
     
     std::unique_ptr<ShellConsoleComponent> console = nullptr;
-    
-	std::unique_ptr<PianoRollComponent> pianoRoll = nullptr;
+    	
     std::unique_ptr<juce::MidiMessageSequence> sequence = nullptr;
 	std::unique_ptr<juce::Viewport> pianoView = nullptr;
 

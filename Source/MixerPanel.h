@@ -58,7 +58,6 @@ public:
     void changeListenerCallback (juce::ChangeBroadcaster* source)  override;
     int addChannel(juce::String name, Mixer::Channel::Type channeltype);
     void removeChannel(int index);
-    void setMixer(Mixer* mixer);
     int getNextFreeChannelIndex();
     void setVolume(int channelIndex, float volume);
     void setModule(int chnnelIndex, VolumeAdjustable* v);
@@ -77,7 +76,6 @@ public:
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
     std::vector<MasterChannelPanel*> channels;
-    Mixer* mixer;
     juce::Viewport* mixerView = nullptr;
 
     

@@ -59,6 +59,8 @@ public:
 	std::vector<Track*> getTracks();
 	StringArray getTrackList();
 
+	void openPianoRoll(MidiRegion* r);
+
 	bool isPlaying();
 	void setPlaying(bool playing);
 

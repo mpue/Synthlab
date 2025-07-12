@@ -121,10 +121,6 @@ void MixerPanel::changeListenerCallback (ChangeBroadcaster* source) {
     
 }
 
-void MixerPanel::setMixer(Mixer *mixer) {
-    this->mixer = mixer;
-}
-
 int MixerPanel::addChannel(String name, Mixer::Channel::Type channeltype) {
 
     int index = getNextFreeChannelIndex();
@@ -137,7 +133,7 @@ int MixerPanel::addChannel(String name, Mixer::Channel::Type channeltype) {
 
     Mixer::Channel* channel = new Mixer::Channel();
     channel->index = panel->getIndex();
-    mixer->addChannel(channel);
+    Mixer::getInstance()->addChannel(channel);
     channel->channelType = channeltype;
     panel->setChannel(channel);
     
@@ -189,7 +185,7 @@ void MixerPanel::removeChannel(int index) {
             (*it)->removeAllChangeListeners();
             delete (*it);
             it = channels.erase(it);
-            mixer->removeChannel(index);
+            Mixer::getInstance()->removeChannel(index);
         }
         else {
             ++it;
@@ -200,7 +196,7 @@ void MixerPanel::removeChannel(int index) {
 }
 
 void MixerPanel::removeAllChannels() {
-    mixer->removeAllChannels();
+    Mixer::getInstance()->removeAllChannels();
     for (std::vector<MasterChannelPanel*>::iterator it = channels.begin();it != channels.end();) {
         (*it)->setLookAndFeel(nullptr);
         (*it)->removeAllChangeListeners();

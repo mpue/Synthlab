@@ -163,7 +163,7 @@ MainComponent::~MainComponent()
 		delete menu;
 		delete toolbar;
 		delete toolbarFactory;
-		delete editorView;
+		editorView = nullptr;
 #if defined(JUCE_PLUGINHOST_AU)
 		delete pluginMenu;
 #endif
@@ -176,8 +176,8 @@ MainComponent::~MainComponent()
 		delete tab;
 		delete propertyView;
 		delete toolbarFactory;
-		delete editorView;
-		delete mixerPanel;
+		editorView = nullptr;
+		mixerPanel = nullptr;
 		delete lockButton;
 	}
 
@@ -290,9 +290,8 @@ void MainComponent::createCPUMeter() {
 void MainComponent::createStudioLayout() {
 	propertyView = new PropertyView();
 	parser = new CommandParser();
-	editorView = new EditorComponent(sampleRate, buffersize, propertyView, *parser);
-	editor = editorView->getEditor();
-	mixer = editorView->getMixer();
+	editorView = std::make_unique<EditorComponent>(sampleRate, buffersize, propertyView, *parser);
+	editor = editorView.get()->getEditor();
 	mixerPanel = editorView->getMixerPanel();
 
 	if (navigator == nullptr) {
@@ -393,15 +392,15 @@ void MainComponent::createStudioLayout() {
 			}
 			else if (args[1] == "pan") {
 				float value = juce::String(args[2]).getFloatValue();
-				mixer->getChannel(Mixer::Channel::Type::OUT, 0)->pan = value;
+				Mixer::getInstance()->getChannel(Mixer::Channel::Type::OUT, 0)->pan = value;
 			}
 			else if (args[1] == "mute") {
 				bool value = juce::String(args[2]).getIntValue() == 1 ? true : false;
-				mixer->getChannel(Mixer::Channel::Type::OUT, 0)->mute = value;
+				Mixer::getInstance()->getChannel(Mixer::Channel::Type::OUT, 0)->mute = value;
 			}
 			else if (args[1] == "solo") {
 				bool value = juce::String(args[2]).getIntValue() == 1 ? true : false;
-				mixer->getChannel(Mixer::Channel::Type::OUT, 0)->solo = value;
+				Mixer::getInstance()->getChannel(Mixer::Channel::Type::OUT, 0)->solo = value;
 			}
 			else {
 				return "Error: Unknown argument.";
@@ -456,6 +455,15 @@ void MainComponent::createStudioLayout() {
 		return ss.str();
 		}, "Gets a value.");
 
+	parser->registerCommand("export", [this](const std::vector<std::string>& args) -> std::string {
+		if (args.empty()) {
+			return "Error: No arguments provided.";
+		}
+
+		bounceToWave(juce::File(args[0]),240);
+
+		return "Error: Unknown argument.";
+		}, "Export track as audio.");
 
 
 #if JUCE_MAC
@@ -470,7 +478,7 @@ void MainComponent::createStudioLayout() {
 
 	addAndMakeVisible(propertyView);
 	addAndMakeVisible(resizerBar);
-	addAndMakeVisible(editorView);
+	addAndMakeVisible(editorView.get());
 	editor->setTab(editorView->getEditorTab());
 	editorView->getEditorTab()->addChangeListener(this);
 	editor->addEditorListener(this);
@@ -500,20 +508,18 @@ void MainComponent::createStudioLayout() {
 
 void MainComponent::createPlayerLayout() {
 	editor = new SynthEditor(sampleRate, buffersize);
-	mixerPanel = new MixerPanel();
-	mixer = Mixer::getInstance();
-	mixerPanel->setMixer(mixer);
+	mixerPanel = std::make_shared<MixerPanel>();
 	editor->setMixer(mixerPanel);
 	addAndMakeVisible(editor);
-	addChildComponent(mixerPanel);
+	addChildComponent(mixerPanel.get());
 }
 
 void MainComponent::timerCallback() {
 
 	if (mixerPanel != nullptr) {
-		for (int i = 0; i < mixer->getChannels().size(); i++) {
-			mixerPanel->getChannels().at(i)->setMagnitude(0, mixer->getChannels().at(i)->magnitudeLeft);
-			mixerPanel->getChannels().at(i)->setMagnitude(1, mixer->getChannels().at(i)->magnitudeRight);
+		for (int i = 0; i < Mixer::getInstance()->getChannels().size(); i++) {
+			mixerPanel->getChannels().at(i)->setMagnitude(0, Mixer::getInstance()->getChannels().at(i)->magnitudeLeft);
+			mixerPanel->getChannels().at(i)->setMagnitude(1, Mixer::getInstance()->getChannels().at(i)->magnitudeRight);
 		}
 	}
 
@@ -652,9 +658,9 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 	std::vector<AudioIn*> inputChannels = editor->getMixer()->getInputChannels();
 	std::vector<AuxOut*> auxChannels = editor->getMixer()->getAuxChannels();
 
-	for (int k = 0; k < mixer->getNumInputs(); k++) {
+	for (int k = 0; k < Mixer::getInstance()->getNumInputs(); k++) {
 
-		Mixer::Channel* input = mixer->getChannel(Mixer::Channel::Type::IN, k);
+		Mixer::Channel* input = Mixer::getInstance()->getChannel(Mixer::Channel::Type::IN, k);
 
 		if (input != nullptr) {
 
@@ -673,7 +679,7 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 	}
 
 	// mute if there are no channels
-	if (mixer->getNumOutputs() == 0) {
+	if (Mixer::getInstance()->getNumOutputs() == 0) {
 
 		if (defaultSampler != nullptr && defaultSampler->isPlaying()) {
 		}
@@ -692,7 +698,7 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 	}
 	else {
 
-		Mixer::Channel* outputChannel = mixer->getChannel(Mixer::Channel::Type::OUT, 0);
+		Mixer::Channel* outputChannel = Mixer::getInstance()->getChannel(Mixer::Channel::Type::OUT, 0);
 		float channelVolume = outputChannel->mute ? 0 : outputChannel->volume;
 		double pan = outputChannel->pan;
 
@@ -712,7 +718,7 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 				if (editor->getMixer()->auxChannelIsValid(k, 0)) {
 					const float* auxL = auxChannels.at(k)->getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
 
-					Mixer::Channel* channel = mixer->getChannel(Mixer::Channel::Type::AUX, k);
+					Mixer::Channel* channel = Mixer::getInstance()->getChannel(Mixer::Channel::Type::AUX, k);
 					if (channel != NULL) {
 						float auxVolume = channel->mute ? 0 : channel->volume;
 						double auxpan = channel->pan;
@@ -743,7 +749,7 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 				if (editor->getMixer()->auxChannelIsValid(k, 1)) {
 					const float* auxR = auxChannels.at(k)->getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
 
-					Mixer::Channel* channel = mixer->getChannel(Mixer::Channel::Type::AUX, k);
+					Mixer::Channel* channel = Mixer::getInstance()->getChannel(Mixer::Channel::Type::AUX, k);
 
 					if (channel != nullptr) {
 
@@ -806,7 +812,7 @@ void MainComponent::resized()
 			toolbar->setSize(getLocalBounds().getWidth(), 50);
 
 		// make a list of two of our child components that we want to reposition
-		Component* comps[] = { propertyView, &resizerBar, editorView };
+		Component* comps[] = { propertyView, &resizerBar, editorView.get()};
 
 		// this will position the 3 components, one above the other, to fit
 		// vertically into the rectangle provided.
@@ -874,6 +880,8 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addItem(200, "Manage plugins", true, false, nullptr);
 #endif
 		menu.addItem(201, "Tracks", true, false, nullptr);
+		menu.addItem(202, "Console", true, false, nullptr);
+
 	}
 	else if (index == 2) {
 
@@ -928,6 +936,10 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 		editorView->OpenTrackView();
 		editorView->getNavigator()->addChangeListener(this);
 	}
+	else if (menuItemID == 202) {
+		editorView->openConsole();
+	}
+
 	else if (menuItemID == 8) {
 
 		if (editorView->getNavigator() == nullptr) {
@@ -1293,3 +1305,70 @@ void MainComponent::fileChanged(juce::String name) {
 void MainComponent::dirtyChanged(bool dirty) {
 
 }
+
+void MainComponent::bounceToWave(const juce::File& outputFile, double durationInSeconds)
+{
+	const int sampleRate = 44100;
+	const int numChannels = 2;
+	const int blockSize = 512;
+	const int totalSamples = (int)(durationInSeconds * sampleRate);
+
+	juce::AudioBuffer<float> buffer(numChannels, totalSamples);
+	buffer.clear();
+
+	// Set up internal state
+	prepareToPlay(blockSize, sampleRate);
+	if (editor != nullptr)
+		editor->prepareToPlay(blockSize, sampleRate);
+
+	if (navigator != nullptr) {
+		navigator->ResetMarkerPosition();
+		navigator->setSamplePosition(0);
+		navigator->setPlaying(true); // wichtig für MIDI-Regionen
+	}
+
+	// Loop über das Projekt in Blöcken
+	for (int position = 0; position < totalSamples; position += blockSize)
+	{
+		const int numSamples = std::min(blockSize, totalSamples - position);
+		juce::AudioBuffer<float> blockBuffer(numChannels, numSamples);
+		blockBuffer.clear();
+
+		juce::AudioSourceChannelInfo block(&blockBuffer, 0, numSamples);
+
+		// Wichtig: Sample-Position setzen, damit MIDI auch im Navigator korrekt verarbeitet wird
+		if (navigator != nullptr)
+			navigator->setSamplePosition(position);
+
+		// MIDI-Verarbeitung (nur wenn kein echter Timer läuft)
+		if (midiProcessor != nullptr)
+			midiProcessor->processBlock(numSamples, navigator);
+
+		// Synth und Audio-Verarbeitung
+		getNextAudioBlock(block);
+
+		// In Hauptbuffer schreiben
+		for (int ch = 0; ch < numChannels; ++ch)
+			buffer.addFrom(ch, position, blockBuffer, ch, 0, numSamples);
+	}
+
+	if (navigator != nullptr)
+		navigator->setPlaying(false);
+
+	releaseResources();
+
+	// Schreiben in WAV-Datei
+	juce::WavAudioFormat wavFormat;
+	std::unique_ptr<juce::FileOutputStream> stream(outputFile.createOutputStream());
+
+	if (stream != nullptr)
+	{
+		std::unique_ptr<juce::AudioFormatWriter> writer(wavFormat.createWriterFor(stream.get(), sampleRate, numChannels, 16, {}, 0));
+		if (writer != nullptr)
+		{
+			stream.release(); // writer owns the stream now
+			writer->writeFromAudioSampleBuffer(buffer, 0, totalSamples);
+		}
+	}
+}
+

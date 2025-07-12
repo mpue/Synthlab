@@ -133,10 +133,10 @@ public:
     int getIndex();
     void setIndex(int index);    
     void setTab(TabbedComponent* t);
-    void setModule(Module * m, bool deleteWhenRemoved);
+    void setModule(std::unique_ptr<Module> m, bool deleteWhenRemoved);
     Module* getModule();
-    void setMixer(MixerPanel* mixer);
-    MixerPanel* getMixer();
+    void setMixer(std::shared_ptr<MixerPanel> mixer);
+    std::shared_ptr<MixerPanel> getMixer();
 
     bool isDirty() override;
     void setDirty(bool dirty) override;
@@ -183,7 +183,7 @@ private:
 	bool isMovingModule = true;
 	bool isDraggingConnection = false;
 
-    Module* root = nullptr;
+    std::unique_ptr <Module> root = nullptr;
     
     bool isRoot = true;;
 
@@ -226,7 +226,7 @@ private:
     Module::Layer currentLayer = Module::Layer::ALL;    
     SelectionModel selectionModel;
   
-    MixerPanel* mixer = nullptr;
+    std::shared_ptr<MixerPanel> mixer = nullptr;
     
     bool deleteModuleWhenRemoved = true;
     

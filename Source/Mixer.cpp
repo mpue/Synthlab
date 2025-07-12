@@ -77,8 +77,7 @@ Mixer::Channel* Mixer::getChannel(Mixer::Channel::Type type, int index) {
                 return channels.at(i);
             }
             channelNum++;
-        }
-       
+        }       
     }
     return nullptr;
 }
@@ -92,15 +91,12 @@ void  Mixer::removeChannel(int index) {
         else {
             ++it;
         }
-
     }
 }
 
-void Mixer::removeAllChannels() {
-   
-    
+void Mixer::removeAllChannels() {   
     for (std::vector<Channel*>::iterator it = channels.begin();it != channels.end();) {
         delete (*it);
-        it = channels.erase(it);
+        it = this->channels.erase(it);
     }
 }

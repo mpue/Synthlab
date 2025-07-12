@@ -298,9 +298,11 @@ void MidiRegion::quantize(int quantizeGridSamples)
 {
     const ScopedLock sl(lock);
 
-    std::map<int, MidiMessage*> noteOns;
+    std::multimap<int, MidiMessage*> noteOnMap;
     std::vector<MidiMessage*> quantizedMessages;
+    std::vector<std::pair<MidiMessage*, MidiMessage*>> notePairs;
 
+    // Schritt 1: Paare aus Note-On und Note-Off bilden
     for (auto* msg : midiMessageList)
     {
         if (!msg)
@@ -308,48 +310,56 @@ void MidiRegion::quantize(int quantizeGridSamples)
 
         if (msg->isNoteOn())
         {
-            int note = msg->getNoteNumber();
-            int originalTime = (int)msg->getTimeStamp();
-            int quantizedTime = ((originalTime + quantizeGridSamples / 2) / quantizeGridSamples) * quantizeGridSamples;
-
-            auto* quantized = new MidiMessage(*msg);
-            quantized->setTimeStamp(quantizedTime);
-            quantizedMessages.push_back(quantized);
-
-            noteOns[note] = quantized;
+            noteOnMap.insert({ msg->getNoteNumber(), msg });
         }
         else if (msg->isNoteOff())
         {
             int note = msg->getNoteNumber();
-            int originalTime = (int)msg->getTimeStamp();
-
-            auto it = noteOns.find(note);
-            if (it != noteOns.end())
+            auto range = noteOnMap.equal_range(note);
+            for (auto it = range.first; it != range.second; ++it)
             {
-                int noteOnTime = (int)it->second->getTimeStamp();
-                int duration = originalTime - (int)msg->getTimeStamp() + noteOnTime;
-
-                auto* quantized = new MidiMessage(*msg);
-                quantized->setTimeStamp(noteOnTime + duration);
-                quantizedMessages.push_back(quantized);
-            }
-            else
-            {
-                auto* quantized = new MidiMessage(*msg);
-                quantized->setTimeStamp(((originalTime + quantizeGridSamples / 2) / quantizeGridSamples) * quantizeGridSamples);
-                quantizedMessages.push_back(quantized);
+                if (it->second != nullptr)
+                {
+                    notePairs.emplace_back(it->second, msg);
+                    noteOnMap.erase(it);
+                    break;
+                }
             }
         }
         else
         {
-            // andere Messages übernehmen
+            // Andere MIDI-Nachrichten direkt quantisieren
             auto* quantized = new MidiMessage(*msg);
-            quantized->setTimeStamp(((int)msg->getTimeStamp() + quantizeGridSamples / 2) / quantizeGridSamples * quantizeGridSamples);
+            int originalTime = (int)msg->getTimeStamp();
+            int quantizedTime = ((originalTime + quantizeGridSamples / 2) / quantizeGridSamples) * quantizeGridSamples;
+            quantized->setTimeStamp(quantizedTime);
             quantizedMessages.push_back(quantized);
         }
     }
 
-    // Alte löschen
+    // Schritt 2: Note-Paare gemeinsam quantisieren
+    for (auto& pair : notePairs)
+    {
+        auto* originalOn = pair.first;
+        auto* originalOff = pair.second;
+
+        int originalOnTime = (int)originalOn->getTimeStamp();
+        int originalOffTime = (int)originalOff->getTimeStamp();
+        int duration = originalOffTime - originalOnTime;
+
+        int quantizedOnTime = ((originalOnTime + quantizeGridSamples / 2) / quantizeGridSamples) * quantizeGridSamples;
+
+        auto* quantizedOn = new MidiMessage(*originalOn);
+        auto* quantizedOff = new MidiMessage(*originalOff);
+
+        quantizedOn->setTimeStamp(quantizedOnTime);
+        quantizedOff->setTimeStamp(quantizedOnTime + duration);
+
+        quantizedMessages.push_back(quantizedOn);
+        quantizedMessages.push_back(quantizedOff);
+    }
+
+    // Alte Nachrichten löschen
     for (auto* msg : midiMessageList)
         delete msg;
 
@@ -358,5 +368,47 @@ void MidiRegion::quantize(int quantizeGridSamples)
     rebuildThumbnail();
     updateThumb();
 }
+
+MidiMessageSequence* MidiRegion::getMidiMessageSequence() 
+{
+    MidiMessageSequence* seq = new MidiMessageSequence();
+    for (auto* msg : midiMessageList)
+    {
+        if (msg != nullptr) {
+            seq->addEvent(*msg);
+        }
+            
+    }
+	Logger::getCurrentLogger()->writeToLog("MidiRegion::getMidiMessageSequence: " + String(seq->getNumEvents()) + " events");
+
+	seq->updateMatchedPairs();
+
+    return seq;
+}
+
+void MidiRegion::setMidiMessageSequence(const MidiMessageSequence& seq)
+{
+    const ScopedLock sl(lock);
+
+    // Alte Nachrichten löschen
+    for (auto* msg : midiMessageList)
+        delete msg;
+
+    midiMessageList.clear();
+
+    for (int i = 0; i < seq.getNumEvents(); ++i)
+    {
+        const MidiMessageSequence::MidiEventHolder* ev = seq.getEventPointer(i);
+        if (ev != nullptr)
+        {
+            MidiMessage* copied = new MidiMessage(ev->message);
+            midiMessageList.push_back(copied);
+        }
+    }
+
+    rebuildThumbnail();
+    updateThumb();
+}
+
 
 

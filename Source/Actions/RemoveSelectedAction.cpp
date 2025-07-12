@@ -38,7 +38,7 @@ void RemoveSelectedAction::removeSelectedItem() {
     
     for(std::vector<Module*>::iterator it = editor->getModule()->getModules()->begin();it != editor->getModule()->getModules()->end();it++) {
         if ((*it)->isSelected())
-            ModuleUtils::removeModule(editor->getModule(), (*it),editor->getMixer(), editor);
+            ModuleUtils::removeModule(editor->getModule(), (*it),editor->getMixer().get(), editor);
     }
     for(std::vector<Module*>::iterator it = editor->getModule()->getModules()->begin();it != editor->getModule()->getModules()->end();) {
         if ((*it)->isSelected()) {

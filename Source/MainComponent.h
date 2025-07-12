@@ -75,6 +75,7 @@ public:
     void timerCallback() override;
     virtual void changeListenerCallback (ChangeBroadcaster* source) override;
     
+    void bounceToWave(const juce::File& outputFile, double durationInSeconds);
 private:
     //==============================================================================
 
@@ -91,11 +92,10 @@ private:
     juce::Label* cpuLoadLabel = nullptr;
     juce::Slider* loadSlider = nullptr;
 
-    MixerPanel* mixerPanel = nullptr;
-    Mixer* mixer = nullptr;
+    std::shared_ptr<MixerPanel> mixerPanel = nullptr;
     juce::PopupMenu* pluginMenu = nullptr;
     
-    EditorComponent* editorView = nullptr;
+    std::unique_ptr<EditorComponent> editorView = nullptr;
     ImageButton* lockButton = nullptr;
 
     CommandParser* parser = nullptr;
