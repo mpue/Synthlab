@@ -23,6 +23,9 @@ MidiProcessor::MidiProcessor(SynthEditor* root,
 {
 	// 5 ms period ⇒ 200 Hz; adjust if needed
 	startTimer(2);
+	setMidiClockBPM(120.0);
+	startMidiClock();
+
 }
 
 /* 1) High-priority MIDI callback – enqueue only, never heavy work! */
@@ -46,6 +49,22 @@ void MidiProcessor::timerCallback()
 
 	for (const auto& qm : local)
 		processMidiMessage(qm.msg);
+
+	// MIDI-Clock-Tick senden, wenn aktiv
+	if (clockRunning)
+	{
+		const auto now = Time::getMillisecondCounter();
+		if (now - lastClockTimeMs >= clockIntervalMs)
+		{
+			for (auto* mod : *editor->getModule()->getModules())
+			{
+				sendMidiClockMessage(mod, activeChannel.load());
+
+			}
+			lastClockTimeMs = now;
+		}
+	}
+
 }
 
 void MidiProcessor::processMidiMessage(const juce::MidiMessage& msg)
@@ -214,6 +233,29 @@ void MidiProcessor::disableAllMidiInputs() {
 	}
 }
 
+void MidiProcessor::startMidiClock()
+{
+	clockRunning = true;
+	lastClockTimeMs = Time::getMillisecondCounter();
+}
+
+void MidiProcessor::stopMidiClock()
+{
+	clockRunning = false;
+}
+
+void MidiProcessor::setMidiClockBPM(double bpm)
+{
+	clockBPM = bpm;
+	clockIntervalMs = static_cast<int>(60000.0 / (24.0 * clockBPM));
+}
+
+bool MidiProcessor::isMidiClockRunning() const
+{
+	return clockRunning;
+}
+
+
 void MidiProcessor::processBlock(int numSamples, TrackNavigator* navigator)
 {
 
@@ -232,10 +274,14 @@ void MidiProcessor::processBlock(int numSamples, TrackNavigator* navigator)
 			if (midiRegion == nullptr)
 				continue;
 
-			MidiMessage* message = midiRegion->getMessage(currentSamplePos, numSamples);
+			vector <MidiMessage*> messages = midiRegion->getMessages(currentSamplePos, numSamples);
 
-			if (message != nullptr)
-				processMidiMessage(*message);
+			for (auto* message : messages)
+			{
+				if (message != nullptr)
+					processMidiMessage(*message);
+			}
+
 		}
 	}
 }

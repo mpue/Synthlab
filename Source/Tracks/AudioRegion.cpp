@@ -11,6 +11,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "AudioRegion.h"
 #include "../Project/Project.h"
+#include "../AudioEngine/SmartSample.h"
 
 AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double sampleRate, long startSample, long numSamples) {
 
@@ -145,7 +146,7 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
 //==============================================================================
 AudioRegion::AudioRegion(File file, String refId, AudioFormatManager& manager, double sampleRate)
 {
-    this->zoom = Project::getInstance()->getTempo() / 4;
+    this->zoom = 40;
     this->constrainer = new ResizeConstrainer(this->zoom / 4);
 
     resizerR = new ResizableEdgeComponent(this,constrainer,ResizableEdgeComponent::rightEdge);
@@ -153,23 +154,22 @@ AudioRegion::AudioRegion(File file, String refId, AudioFormatManager& manager, d
 
 	this->sampleRate = sampleRate;
 
-    AudioFormatReader* reader = manager.createReaderFor(file);
-    ScopedPointer<AudioFormatReaderSource> afr = new AudioFormatReaderSource(reader, true);
+	SmartSample* smartSample = new SmartSample();
+	smartSample->loadFromFile(file, sampleRate);
 
     this->thumbnailCache = new AudioThumbnailCache(1);
-    this->thumbnail = new AudioThumbnail(512, manager, *this->thumbnailCache);
+    this->thumbnail = new AudioThumbnail(1, manager, *this->thumbnailCache);
     this->thumbnail->addChangeListener(this);
     
-    audioBuffer = new AudioSampleBuffer(2, reader->lengthInSamples);
-    reader->read(audioBuffer, 0, reader->lengthInSamples, 0, true, true);
+    audioBuffer = new AudioSampleBuffer(smartSample->getBuffer());
 
     this->thumbnail->reset(2, sampleRate);
-    this->thumbnail->addBlock(0, *audioBuffer, 0,reader->lengthInSamples);
+    this->thumbnail->addBlock(0, *audioBuffer, 0,smartSample->getLengthInSamples());
      
     this->name = file.getFileNameWithoutExtension();
     this->clipRefId = refId;
 
-    setSize((audioBuffer->getNumSamples() / sampleRate) * this->zoom, Project::DEFAULT_TRACK_HEIGHT);
+    setSize((smartSample->getLengthInSamples() / sampleRate) * this->zoom, Project::DEFAULT_TRACK_HEIGHT);
     //  Logger::getCurrentLogger()->writeToLog(getThumbnailBounds()->toString());
     Logger::getCurrentLogger()->writeToLog(getBounds().toString());
     
@@ -183,6 +183,7 @@ AudioRegion::AudioRegion(File file, String refId, AudioFormatManager& manager, d
     dirty = false;
     setPitch(1);
     createProperties();
+	delete smartSample;
 }
 
 AudioRegion::~AudioRegion()

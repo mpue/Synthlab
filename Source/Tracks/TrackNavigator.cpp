@@ -93,6 +93,7 @@ void TrackNavigator::setZoom(float zoom) {
 	for (int i = 0; i < tracks.size(); i++) {
 		tracks.at(i)->setZoom(zoom);
 	}
+	marker->setZoom(zoom);
 	// constrainer.setRaster(this->zoom / 4);
 	// constrainer.setMaxX(getMaxLength() * this->zoom);
 }

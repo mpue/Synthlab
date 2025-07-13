@@ -90,7 +90,7 @@ private:
     
     float volume = 0.5;
     
-    juce::AudioSampleBuffer *sampleBuffer = nullptr;
+    juce::AudioSampleBuffer* sampleBuffer;
     
     long currentSample = 0;
     

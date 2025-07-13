@@ -56,6 +56,10 @@ public:
 
     void processBlock(int numSamples, TrackNavigator* navigator);
     
+    void startMidiClock();
+    void stopMidiClock();
+    void setMidiClockBPM(double bpm);
+    bool isMidiClockRunning() const;
 
 private:
     /** Called on the Timer thread (default: every 5 ms).
@@ -75,6 +79,11 @@ private:
     std::mutex                           queueMutex;
     std::vector<QueuedMidiMessage>       midiQueue;   // guarded by queueMutex
     std::atomic<int>                     activeChannel{ 1 };
+
+    std::atomic<bool> clockRunning{ false };
+    double clockBPM = 120.0;
+    int clockIntervalMs = 0;
+    juce::int64 lastClockTimeMs = 0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiProcessor)
 };

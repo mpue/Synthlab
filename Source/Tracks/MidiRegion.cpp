@@ -184,20 +184,22 @@ void MidiRegion::addMessage(MidiMessage* m, double time, int sampleNum) {
     updateThumb();
 }
 
-MidiMessage* MidiRegion::getMessage(int sampleNum, int tolerance = 2)
+vector<MidiMessage*> MidiRegion::getMessages(int sampleNum, int tolerance = 2)
 {
+	vector<MidiMessage*> foundMessages;
+
     for (auto* m : midiMessageList)
     {
         if (m != nullptr &&
             std::abs(sampleNum - m->getTimeStamp()) <= tolerance &&
-            m->isNoteOnOrOff()) // oder eine eigene sinnvollere Bedingung
+            (m->isNoteOnOrOff() || m->isMidiClock() || m->isController()))// oder eine eigene sinnvollere Bedingung
         {
             Logger::getCurrentLogger()->writeToLog(
                 "Found message at sample " + String(sampleNum) + ": " + m->getDescription());
-            return m;
+			foundMessages.push_back(m);
         }
     }
-    return nullptr;
+    return foundMessages;
 }
 
 

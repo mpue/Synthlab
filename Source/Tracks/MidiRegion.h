@@ -56,7 +56,7 @@ public:
     virtual void startRecording() override;
   
     void clear();
-    MidiMessage* getMessage(int sampleNum, int tolerance);
+    vector<MidiMessage*> getMessages(int sampleNum, int tolerance);
     void addMessage(MidiMessage* m, double time, int sampleNum);
     long getNumMessages() {
         return midiMessageList.size();

@@ -220,12 +220,21 @@
 
 			else {
 				for (int i = 0; i < buffersize; i++) {
-				
-					if (inL != nullptr && outL != nullptr) {
-						outL[i] = inL[i];
+					if (navigator->isRecording()) {					
+						if (inL != nullptr && outL != nullptr) {
+							outL[i] = inL[i];
+						}
+						if (inR != nullptr && outR != nullptr) {
+							outR[i] = inR[i];
+						}
 					}
-					if (inR != nullptr && outR != nullptr) {
-						outR[i] = inR[i];
+					else {
+						if (outL != nullptr) {
+							outL[i] = 0;
+						}
+						if (outR != nullptr) {
+							outR[i] = 0;
+						}
 					}
 				}
 			}

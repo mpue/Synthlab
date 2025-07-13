@@ -459,10 +459,11 @@ void MainComponent::createStudioLayout() {
 		if (args.empty()) {
 			return "Error: No arguments provided.";
 		}
+		String size = args[1];
 
-		bounceToWave(juce::File(args[0]),240);
+		bounceToWave(juce::File(args[0]),size.getIntValue());
 
-		return "Error: Unknown argument.";
+		return "Export finished.";
 		}, "Export track as audio.");
 
 
@@ -624,10 +625,13 @@ int MainComponent::getNumActiveChannels(int i) {
 
 void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill)
 {
-	lastTime = (long)Time::getMillisecondCounterHiRes() - currentTime;
-	currentTime = (long)Time::getMillisecondCounterHiRes();
+	long startTime = 0;
 
-	long startTime = currentTime;
+	if (!bouncing) {
+		lastTime = (long)Time::getMillisecondCounterHiRes() - currentTime;
+		currentTime = (long)Time::getMillisecondCounterHiRes();
+		startTime = currentTime;
+	}
 
 	int numSamples = bufferToFill.numSamples;
 	auto* writableBuffer = const_cast<juce::AudioBuffer<float>*>(bufferToFill.buffer);
@@ -782,8 +786,10 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 			outputChannel->magnitudeRight = channelVolume * gainRight * outputChannels.at(0)->getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
 	}
 
-	long duration = Time::getMillisecondCounterHiRes() - startTime;
-	cpuLoad = ((float)duration / (float)lastTime) * 100;
+	if (!bouncing) {
+		long duration = Time::getMillisecondCounterHiRes() - startTime;
+		cpuLoad = ((float)duration / (float)lastTime) * 100;
+	}
 
 	currentSample = (currentSample + 1) % numSamples;
 
@@ -1308,18 +1314,20 @@ void MainComponent::dirtyChanged(bool dirty) {
 
 void MainComponent::bounceToWave(const juce::File& outputFile, double durationInSeconds)
 {
+	bouncing = true;
+	running = true;
+
 	const int sampleRate = 44100;
 	const int numChannels = 2;
-	const int blockSize = 512;
 	const int totalSamples = (int)(durationInSeconds * sampleRate);
 
 	juce::AudioBuffer<float> buffer(numChannels, totalSamples);
 	buffer.clear();
 
 	// Set up internal state
-	prepareToPlay(blockSize, sampleRate);
+	prepareToPlay(buffersize, sampleRate);
 	if (editor != nullptr)
-		editor->prepareToPlay(blockSize, sampleRate);
+		editor->prepareToPlay(buffersize, sampleRate);
 
 	if (navigator != nullptr) {
 		navigator->ResetMarkerPosition();
@@ -1328,9 +1336,9 @@ void MainComponent::bounceToWave(const juce::File& outputFile, double durationIn
 	}
 
 	// Loop über das Projekt in Blöcken
-	for (int position = 0; position < totalSamples; position += blockSize)
+	for (int position = 0; position < totalSamples; position += buffersize)
 	{
-		const int numSamples = std::min(blockSize, totalSamples - position);
+		const int numSamples = std::min(buffersize, totalSamples - position);
 		juce::AudioBuffer<float> blockBuffer(numChannels, numSamples);
 		blockBuffer.clear();
 
@@ -1370,5 +1378,7 @@ void MainComponent::bounceToWave(const juce::File& outputFile, double durationIn
 			writer->writeFromAudioSampleBuffer(buffer, 0, totalSamples);
 		}
 	}
+
+	bouncing = false;
 }
 

@@ -509,19 +509,22 @@ void Track::setSamplePosition(int position)
 			
 		MidiRegion* r = dynamic_cast<MidiRegion*>(getRegionAt(position));
 		if (r != nullptr) {
-			MidiMessage* m = r->getMessage(position - r->getSampleOffset(),64);
-			if (m != nullptr) {
-				// Logger::getCurrentLogger()->writeToLog("Midi message at " + String(position) + " : " + String(m->getDescription()));
-				Event* e = new Event();
-				e->setMessage(*m);
-				e->setType(Event::Type::GATE);
-				e->setNote(m->getNoteNumber());
-				if (m->getVelocity() > 127) {
-					m->setVelocity(127);
+			vector<MidiMessage*> messages = r->getMessages(position - r->getSampleOffset(), 64);
+			
+			for (auto* m : messages) {
+				if (m != nullptr) {
+					// Logger::getCurrentLogger()->writeToLog("Midi message at " + String(position) + " : " + String(m->getDescription()));
+					Event* e = new Event();
+					e->setMessage(*m);
+					e->setType(Event::Type::GATE);
+					e->setNote(m->getNoteNumber());
+					if (m->getVelocity() > 127) {
+						m->setVelocity(127);
+					}
+					e->setValue(m->isNoteOn() ? m->getVelocity() : 0);
+					// send event to all connected pins
+					notifyListeners(e);					
 				}
-				e->setValue(m->isNoteOn() ? m->getVelocity() : 0);
-				// send event to all connected pins
-				notifyListeners(e);
 			}
 		}
 	}

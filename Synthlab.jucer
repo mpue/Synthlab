@@ -266,6 +266,7 @@
               file="Source/Actions/RemoveSelectedAction.h"/>
       </GROUP>
       <GROUP id="{A79C9093-D329-37A0-AEE1-CF7BDC5C60DE}" name="AudioEngine">
+        <FILE id="bSIaiX" name="SmartSample.h" compile="0" resource="0" file="Source/AudioEngine/SmartSample.h"/>
         <FILE id="MPP9NX" name="WaveTable.cpp" compile="1" resource="0" file="Source/AudioEngine/WaveTable.cpp"/>
         <FILE id="y3dN6B" name="WaveTable.h" compile="0" resource="0" file="Source/AudioEngine/WaveTable.h"/>
         <FILE id="r72Pun" name="FractionalDelayBuffer.cpp" compile="1" resource="0"
@@ -710,7 +711,7 @@
         <MODULEPATH id="juce_audio_basics" path="..\JUCE\modules"/>
       </MODULEPATHS>
     </VS2017>
-    <VS2022 targetFolder="Builds/VisualStudio2022" externalLibraries="d:/devel/Synthlab/lib/librubberband-debug.lib"
+    <VS2022 targetFolder="Builds/VisualStudio2022" externalLibraries="d:/devel/Synthlab/lib/librubberband.lib"
             extraDefs="JUCE_MODAL_LOOPS_PERMITTED=1">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" headerPath="d:\devel\ASIOSDK2.3\common\&#10;d:\devel\VST_SDK3.7\"/>

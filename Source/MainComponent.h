@@ -154,6 +154,7 @@ private:
     
     MidiProcessor* midiProcessor = nullptr;
 
+    bool bouncing = false;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

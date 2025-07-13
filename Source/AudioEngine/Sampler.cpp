@@ -10,6 +10,7 @@
 
 #include "Sampler.h"
 #include "../AudioManager.h"
+#include "SmartSample.h"
 
 using juce::CatmullRomInterpolator;
 using juce::AudioSampleBuffer;
@@ -33,9 +34,6 @@ Sampler::Sampler(float sampleRate, int bufferSize) {
 
 Sampler::~Sampler() {
 	stop();
-    if(sampleBuffer != nullptr) {
-        delete sampleBuffer;
-    }
     if (tempBufferLeft != nullptr)
         delete this->tempBufferLeft;
     if (tempBufferRight != nullptr)
@@ -86,7 +84,7 @@ void Sampler::stop() {
 
 float Sampler::getCurrentSample(int channel){
     
-    if (sampleBuffer != nullptr && sampleLength > 0 && !isDone()) {
+    if (sampleLength > 0 && !isDone()) {
 
         if (pitch != 1) {
             if (channel == 0) {
@@ -113,13 +111,14 @@ float Sampler::getSampleAt(int channel, long pos){
 }
 
 void Sampler::loadSample(File file) {
-    AudioFormatReader* reader = manager->createReaderFor(file);
-    ScopedPointer<AudioFormatReaderSource> afr = new AudioFormatReaderSource(reader, true);
-    sampleBuffer = new AudioSampleBuffer(2, static_cast<int>(reader->lengthInSamples));
-    this->tempBufferLeft = new float[reader->lengthInSamples * 2];
-    this->tempBufferRight = new float[reader->lengthInSamples * 2];
-    reader->read(sampleBuffer, 0, static_cast<int>(reader->lengthInSamples), 0, true, true);
-    sampleLength = reader->lengthInSamples;
+    SmartSample sample;
+    sample.loadFromFile(file, sampleRate);
+
+    if (sampleBuffer != nullptr)
+        delete sampleBuffer;
+
+    sampleBuffer = new AudioSampleBuffer(sample.getBuffer());
+    sampleLength = sample.getLengthInSamples();
     endPosition = sampleLength;
     startPosition = 0;
     currentSample = 0;
@@ -198,10 +197,6 @@ void Sampler::setPitch(float pitch) {
 
 }
 
-
-
-
-
 bool Sampler::isLoop() {
     return this->loop;
 }
@@ -210,7 +205,7 @@ void Sampler::setVolume(float volume) {
     this->volume = volume;
 }
 
-AudioSampleBuffer* Sampler::getSampleBuffer(){
+AudioSampleBuffer* Sampler::getSampleBuffer() {
     return sampleBuffer;
 }
 bool Sampler::hasSample() {
