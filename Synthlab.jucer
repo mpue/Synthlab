@@ -432,6 +432,10 @@
                 file="Source/ToolbarComboBox.cpp"/>
           <FILE id="lExpGC" name="ToolbarComboBox.h" compile="0" resource="0"
                 file="Source/ToolbarComboBox.h"/>
+          <FILE id="xcXbwT" name="TransportDisplayComponent.cpp" compile="1"
+                resource="0" file="Source/TransportDisplayComponent.cpp"/>
+          <FILE id="Tu9uw9" name="TransportDisplayComponent.h" compile="0" resource="0"
+                file="Source/TransportDisplayComponent.h"/>
         </GROUP>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
           <FILE id="r2Ct45" name="MidiRecorderModule.cpp" compile="1" resource="0"
@@ -711,7 +715,7 @@
         <MODULEPATH id="juce_audio_basics" path="..\JUCE\modules"/>
       </MODULEPATHS>
     </VS2017>
-    <VS2022 targetFolder="Builds/VisualStudio2022" externalLibraries="d:/devel/Synthlab/lib/librubberband.lib"
+    <VS2022 targetFolder="Builds/VisualStudio2022" externalLibraries="d:/devel/Synthlab/lib/librubberband-debug.lib"
             extraDefs="JUCE_MODAL_LOOPS_PERMITTED=1">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" headerPath="d:\devel\ASIOSDK2.3\common\&#10;d:\devel\VST_SDK3.7\"/>

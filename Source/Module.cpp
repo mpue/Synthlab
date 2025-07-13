@@ -182,6 +182,15 @@ void Module::paint (Graphics& g)
                            false);
     }
 
+    // Schlagschatten zeichnen
+    {
+        const int shadowOffset = 4;
+        juce::DropShadow shadow(juce::Colours::black.withAlpha(0.3f), 6, { shadowOffset, shadowOffset });
+        juce::Rectangle<int> shadowArea = getLocalBounds().withSizeKeepingCentre(getWidth()+4, getHeight()+4);
+        shadow.drawForRectangle(g, shadowArea);
+    }
+
+
     //[UserPaint] Add your own custom painting code here..
 
     g.setColour(Colour(0xff434242));

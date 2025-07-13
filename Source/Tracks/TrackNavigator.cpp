@@ -23,8 +23,9 @@
 using namespace std;
 
 //==============================================================================
-TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view, PropertyView* propertyView)
+TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view, PropertyView* propertyView, TransportDisplayComponent* transport)
 {
+	this->transportDisplay = transport;
 	this->propertyView = propertyView;
 	this->timeLine = new TimeLine(Project::getInstance()->getTrackLength());
 	this->timeLine->setBounds(0, 0, getWidth(), timelineOffset);
@@ -283,8 +284,8 @@ void TrackNavigator::setPosition(double position) {
 	Logger::getCurrentLogger()->writeToLog("samplePosition  : " + String(samplePosition));
 	std::function<void(void)> changeLambda =
 		[=]() {
-		marker->setSamplePosition(samplePosition);
-
+			marker->setSamplePosition(samplePosition);			
+			transportDisplay->setTransportState(samplePosition, Project::getInstance()->getSampleRate(), Project::getInstance()->getTempo(), 4, 4);
 		};
 	juce::MessageManager::callAsync(changeLambda);
 	startTimer(50);
@@ -316,6 +317,7 @@ void TrackNavigator::setSamplePosition(int position) {
 	std::function<void(void)> changeLambda =
 		[=]() {
 		marker->setSamplePosition(this->samplePosition);
+		transportDisplay->setTransportState(samplePosition, Project::getInstance()->getSampleRate(), Project::getInstance()->getTempo(), 4, 4);
 		startTimer(50);
 		};
 	juce::MessageManager::callAsync(changeLambda);

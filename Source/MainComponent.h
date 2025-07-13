@@ -23,6 +23,7 @@
 #include "AudioEngine/ADSR.h"
 #include "MidiProcessor.h"
 #include "CommandParser.h"
+#include "TransportDisplayComponent.h"
 
 //==============================================================================
 
@@ -97,7 +98,6 @@ private:
     
     std::unique_ptr<EditorComponent> editorView = nullptr;
     ImageButton* lockButton = nullptr;
-
     CommandParser* parser = nullptr;
 
     virtual juce::StringArray getMenuBarNames() override;
@@ -149,10 +149,12 @@ private:
     bool isOptionPressed = false;
     
     Sampler* defaultSampler = nullptr;
-     TrackNavigator* navigator = nullptr;
+    TrackNavigator* navigator = nullptr;
     CriticalSection lock;
     
     MidiProcessor* midiProcessor = nullptr;
+
+	std::unique_ptr<TransportDisplayComponent> transportDisplay = nullptr;
 
     bool bouncing = false;
 

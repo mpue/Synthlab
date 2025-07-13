@@ -20,11 +20,12 @@ using juce::Graphics;
 using juce::ResizableWindow;
 
 //==============================================================================
-EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView* properties, CommandParser& parser) : resizerBar(&stretchableManager, 1, false), parser(parser)
+EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView* properties, CommandParser& parser, TransportDisplayComponent* transport) : resizerBar(&stretchableManager, 1, false), parser(parser)
 {
     this->bufferSize = bufferSize;
     this->sampleRate = sampleRate;
     this->propertyView = properties;
+	this->transportDisplay = transport;
 
     topTab = std::make_unique<MainTabbedComponent>();
     bottomTab = std::make_unique<MainTabbedComponent>();
@@ -168,7 +169,7 @@ void EditorComponent::OpenTrackView()
 {
     if (navigator == nullptr) {        
         trackView = std::make_unique<Viewport>();
-        navigator = std::make_unique<TrackNavigator>(AudioManager::getInstance()->getDeviceManager(), trackView.get(), propertyView);
+        navigator = std::make_unique<TrackNavigator>(AudioManager::getInstance()->getDeviceManager(), trackView.get(), propertyView, transportDisplay);
         
         PrefabFactory::getInstance()->init(navigator.get());
         addMouseListener(navigator.get(), true);

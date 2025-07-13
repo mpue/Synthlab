@@ -127,8 +127,7 @@ MainComponent::MainComponent() : resizerBar(&stretchableManager, 1, true)
 		editor->setCurrentLayer(Module::Layer::GUI);
 		editor->setLocked(true);
 	}
-
-}
+};
 
 MainComponent::~MainComponent()
 {
@@ -260,7 +259,7 @@ void MainComponent::createToolbar() {
 	lockButton->setImages(false, true, true, normalImage, 1.0f, juce::Colours::white, normalImage, 1.0, juce::Colours::white, downImage, 1.0f, juce::Colours::white);
 	lockButton->setClickingTogglesState(true);
 	lockButton->setSize(24, 24);
-	lockButton->setTopLeftPosition(1600, 10);
+	lockButton->setTopLeftPosition(1850, 10);
 	toolbar->addAndMakeVisible(lockButton);
 
 	lockButton->addListener(this);
@@ -290,7 +289,14 @@ void MainComponent::createCPUMeter() {
 void MainComponent::createStudioLayout() {
 	propertyView = new PropertyView();
 	parser = new CommandParser();
-	editorView = std::make_unique<EditorComponent>(sampleRate, buffersize, propertyView, *parser);
+	transportDisplay = std::make_unique<TransportDisplayComponent>();
+	transportDisplay->setTransportState(0, sampleRate, 120.0, 4, 4);
+	transportDisplay->setMetronomeState(false);
+	transportDisplay->setSize(660, 48);
+	transportDisplay->setTopLeftPosition(1180, 26);
+	addAndMakeVisible(transportDisplay.get());
+
+	editorView = std::make_unique<EditorComponent>(sampleRate, buffersize, propertyView, *parser, transportDisplay.get());
 	editor = editorView.get()->getEditor();
 	mixerPanel = editorView->getMixerPanel();
 

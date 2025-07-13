@@ -20,13 +20,14 @@
 #include "ShellConsoleComponent.h"
 #include "CommandParser.h"
 #include "PianoRollComponent.h"
+#include "TransportDisplayComponent.h"
 //==============================================================================
 /*
 */
 class EditorComponent    : public juce::Component, public juce::ChangeListener
 {
 public:
-    EditorComponent(float sampleRate, int bufferSize, PropertyView* properties, CommandParser& parser);
+    EditorComponent(float sampleRate, int bufferSize, PropertyView* properties, CommandParser& parser, TransportDisplayComponent* transport);
     ~EditorComponent();
 
     void paint (juce::Graphics&) override;
@@ -66,6 +67,8 @@ private:
     	
     std::unique_ptr<juce::MidiMessageSequence> sequence = nullptr;
 	std::unique_ptr<juce::Viewport> pianoView = nullptr;
+
+	TransportDisplayComponent* transportDisplay = nullptr;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (EditorComponent)
 };

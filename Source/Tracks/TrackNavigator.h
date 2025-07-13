@@ -24,6 +24,7 @@
 #include "../Project/TrackConfig.h"
 #include "TimeLine.h"
 #include "../UITools.h"
+#include "../TransportDisplayComponent.h"
 
 //==============================================================================
 /*
@@ -39,7 +40,7 @@ class TrackNavigator : public Component,
 
 {
 public:
-	TrackNavigator(AudioDeviceManager* manager, Viewport* view, PropertyView* propertyView);
+	TrackNavigator(AudioDeviceManager* manager, Viewport* view, PropertyView* propertyView, TransportDisplayComponent* transport);
 	~TrackNavigator();
 
 	void paint(Graphics&) override;
@@ -135,6 +136,7 @@ private:
 	
 	MidiMessage message;
 	PropertyView* propertyView;
+	TransportDisplayComponent* transportDisplay = nullptr;
 
 	virtual void changeListenerCallback(ChangeBroadcaster* source) override;
 	virtual void mouseDown(const MouseEvent& event) override;
