@@ -1,4 +1,5 @@
 #include "TransportDisplayComponent.h"
+#include "Project/Project.h"
 
 using namespace juce;
 
@@ -6,6 +7,25 @@ TransportDisplayComponent::TransportDisplayComponent()
 {
     startTimerHz(30); // für BPM-Animation
     setOpaque(true);
+
+    tempoLabel = std::make_unique<Label>("TempoLabel", "Tempo:");
+    tempoLabel->setJustificationType(Justification::centredLeft);
+    addAndMakeVisible(*tempoLabel);
+
+    tempoEditor = std::make_unique<TextEditor>("TempoEditor");
+    tempoEditor->setInputRestrictions(4, "0123456789.");
+    tempoEditor->setText(String(Project::getInstance()->getTempo()), dontSendNotification);
+    tempoEditor->onReturnKey = [this]() {
+        double newTempo = tempoEditor->getText().getDoubleValue();
+        if (newTempo >= 40.0 && newTempo <= 300.0) {
+            Project::getInstance()->setTempo(newTempo);
+        }
+        else {
+            tempoEditor->setText(String(Project::getInstance()->getTempo()), dontSendNotification);
+        }
+        };
+    addAndMakeVisible(*tempoEditor);
+
 }
 
 void TransportDisplayComponent::setTransportState(double samplePos, double sampleRate, double bpm, int numerator, int denominator)
@@ -64,14 +84,15 @@ void TransportDisplayComponent::drawHorizontalLayout(Graphics& g)
     String timeStr = getTimeAsString(currentSamplePos, currentSampleRate);
     String sampleStr = String((int64_t)currentSamplePos) + " samples";
     String sampleRateStr = String((int)currentSampleRate) + " Hz";
-    String tempoStr = String((int)currentBpm) + " BPM";
+    
     String timeSigStr = String(timeSigNumerator) + "/" + String(timeSigDenominator);
 
     g.drawFittedText(timeStr, bounds.removeFromLeft(160), Justification::left, 1);
     g.drawFittedText(sampleStr, bounds.removeFromLeft(180), Justification::left, 1);
     g.drawFittedText(sampleRateStr, bounds.removeFromLeft(120), Justification::left, 1);
-    g.setColour(Colours::orange.withBrightness(0.8f + 0.2f * std::sin(bpmPulse * 0.15f)));
-    g.drawFittedText(tempoStr, bounds.removeFromLeft(100), Justification::left, 1);
+    
+
+
     g.setColour(Colours::white);
     g.drawFittedText("Sig: " + timeSigStr, bounds.removeFromLeft(80), Justification::left, 1);
 
@@ -86,11 +107,9 @@ void TransportDisplayComponent::drawCompactLayout(Graphics& g)
     g.setColour(Colours::white);
 
     g.drawFittedText(getTimeAsString(currentSamplePos, currentSampleRate), bounds.removeFromTop(20), Justification::centred, 1);
-    g.drawFittedText(String((int64_t)currentSamplePos) + " samples", bounds.removeFromTop(20), Justification::centred, 1);
+    // g.drawFittedText(String((int64_t)currentSamplePos) + " samples", bounds.removeFromTop(20), Justification::centred, 1);
     g.drawFittedText(String((int)currentSampleRate) + " Hz", bounds.removeFromTop(20), Justification::centred, 1);
 
-    g.setColour(Colours::orange.withBrightness(0.8f + 0.2f * std::sin(bpmPulse * 0.15f)));
-    g.drawFittedText(String((int)currentBpm) + " BPM", bounds.removeFromTop(20), Justification::centred, 1);
     g.setColour(Colours::white);
     g.drawFittedText("Sig: " + String(timeSigNumerator) + "/" + String(timeSigDenominator), bounds.removeFromTop(20), Justification::centred, 1);
 
@@ -108,7 +127,13 @@ void TransportDisplayComponent::drawMetronomeButton(Graphics& g, const Rectangle
     g.drawEllipse(area.toFloat().reduced(3.0f), 2.0f);
 }
 
-void TransportDisplayComponent::resized() {}
+void TransportDisplayComponent::resized() {
+    int tempoX = 300; // Passe ggf. an
+    int tempoWidth = 100;
+
+    tempoLabel->setBounds(tempoX, 12, 50, 24);
+    tempoEditor->setBounds(tempoX + 50, 12, tempoWidth, 24);
+}
 
 void TransportDisplayComponent::mouseUp(const MouseEvent& e)
 {

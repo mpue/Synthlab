@@ -52,5 +52,9 @@ private:
     void drawHorizontalLayout(juce::Graphics& g);
     void drawCompactLayout(juce::Graphics& g);
     void drawMetronomeButton(juce::Graphics& g, const juce::Rectangle<int>& area);
+
+    std::unique_ptr<Label> tempoLabel;
+    std::unique_ptr<TextEditor> tempoEditor;
+
 };
 

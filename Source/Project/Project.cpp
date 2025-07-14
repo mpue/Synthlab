@@ -22,7 +22,7 @@ Project *Project::instance = nullptr;
 
 long  Project::DEFAULT_TRACK_LENGTH = 600;
 int   Project::DEFAULT_TRACK_HEIGHT = 75;
-float Project::DEFAULT_TEMPO = 100.0f;
+float Project::DEFAULT_TEMPO = 120.0f;
 
 void Project::addRecentFile(juce::String path) {
     
