@@ -386,10 +386,13 @@ void AudioRegion::componentMovedOrResized (Component& component, bool wasMoved, 
     
     if (wasMoved) {
         long tracklen = Project::getInstance()->getTrackLength();
-        double sampleRate = 48000; // Project::getInstance()->getSampleRate();
+        double sampleRate = Project::getInstance()->getSampleRate();
         
         long sampleNum = (tracklen / (tracklen * zoom)) * getBounds().getX() * getSampleRate();
         
+        if (sampleNum % 2 != 0)
+            sampleNum -= 1;
+
         oldOffset = sampleNum;
         
         if (sampleNum != getSampleOffset()) {
@@ -436,7 +439,7 @@ void AudioRegion::setPitch(float pitch) {
     this->pitch = pitch;
 
     if (stretcher == nullptr) {
-        stretcher = new RubberBand::RubberBandStretcher(48000, 2, RubberBand::RubberBandStretcher::OptionProcessRealTime);
+        stretcher = new RubberBand::RubberBandStretcher(Project::getInstance()->getSampleRate(), 2, RubberBand::RubberBandStretcher::OptionProcessRealTime);
     }
     stretcher->setPitchScale(this->pitch);
     // stretcher->setTimeRatio(this->pitch);

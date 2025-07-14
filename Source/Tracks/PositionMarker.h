@@ -42,6 +42,8 @@ public:
     void setSamplePosition(int64 samples)
     {
         samplePosition = std::max<int64>(0, samples);
+        if (samplePosition % 2 != 0)
+            samplePosition -= 1;
         updatePosition();
         repaint();
     }

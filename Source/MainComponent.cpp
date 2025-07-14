@@ -29,10 +29,8 @@
 #include "MidiClock.h"
 #include "MidiRecorderModule.h"
 #include "TrackUtil.h"
+#include "Tracks/BounceThread.h"
 
-#ifndef M_PI
-#define M_PI       3.14159265358979323846 
-#endif
 using juce::String;
 using juce::File;
 using juce::MenuBarComponent;
@@ -467,7 +465,7 @@ void MainComponent::createStudioLayout() {
 		}
 		String size = args[1];
 
-		bounceToWave(juce::File(args[0]),size.getIntValue());
+		startBounce(File(args[0]), size.getFloatValue());
 
 		return "Export finished.";
 		}, "Export track as audio.");
@@ -676,8 +674,8 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 
 			double pan = input->pan;
 
-			float gainLeft = cos((M_PI * (pan + 1) / 4));
-			float gainRight = sin((M_PI * (pan + 1) / 4));
+			float gainLeft = fastCos((M_PI * (pan + 1) / 4));
+			float gainRight = fastSin((M_PI * (pan + 1) / 4));
 
 			inputChannels.at(k)->pins.at(0)->getAudioBuffer()->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, k, bufferToFill.startSample, numSamples);
 			inputChannels.at(k)->pins.at(1)->getAudioBuffer()->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, k + 1, bufferToFill.startSample, numSamples);
@@ -712,8 +710,8 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 		float channelVolume = outputChannel->mute ? 0 : outputChannel->volume;
 		double pan = outputChannel->pan;
 
-		float gainLeft = cos((M_PI * (pan + 1) / 4));
-		float gainRight = sin((M_PI * (pan + 1) / 4));
+		float gainLeft = fastCos((M_PI * (pan + 1) / 4));
+		float gainRight = fastSin((M_PI * (pan + 1) / 4));
 
 		// process all output pins of the connected module
 
@@ -733,7 +731,7 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 						float auxVolume = channel->mute ? 0 : channel->volume;
 						double auxpan = channel->pan;
 
-						float auxgainLeft = cos((M_PI * (auxpan + 1) / 4));
+						float auxgainLeft = fastCos((M_PI * (auxpan + 1) / 4));
 						channel->magnitudeLeft = auxVolume * auxgainLeft * auxChannels.at(k)->getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
 
 						auxLeftOut += auxL[j] * auxVolume * auxgainLeft;
@@ -766,7 +764,7 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 						float auxVolume = channel->mute ? 0 : channel->volume;
 						double auxpan = channel->pan;
 
-						float auxgainRight = sin((M_PI * (auxpan + 1) / 4));
+						float auxgainRight = fastSin((M_PI * (auxpan + 1) / 4));
 						channel->magnitudeRight = auxVolume * auxgainRight * auxChannels.at(k)->getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
 						auxRightOut += auxR[j] * auxVolume * auxgainRight;
 					}
@@ -824,7 +822,7 @@ void MainComponent::resized()
 			toolbar->setSize(getLocalBounds().getWidth(), 50);
 
 		// make a list of two of our child components that we want to reposition
-		Component* comps[] = { propertyView, &resizerBar, editorView.get()};
+		Component* comps[] = { propertyView, &resizerBar, editorView.get() };
 
 		// this will position the 3 components, one above the other, to fit
 		// vertically into the rectangle provided.
@@ -1072,6 +1070,7 @@ void MainComponent::openSettings() {
 			config->writeToFile(configFile, "");
 			config = nullptr;
 		}
+		Project::getInstance()->setSampleRate(setup.sampleRate);
 		};
 
 	ModalComponentManager::Callback* callback = ModalCallbackFunction::create(lambda);
@@ -1387,4 +1386,23 @@ void MainComponent::bounceToWave(const juce::File& outputFile, double durationIn
 
 	bouncing = false;
 }
+void MainComponent::startBounce(const juce::File& outputFile, double durationInSeconds)
+{
+	bounceProgress = 0.0;
 
+	bounceThread = std::make_unique<BounceThread>(
+		this, outputFile, durationInSeconds,
+		[this](float p) { bounceProgress.store(p); }
+	);
+	bounceThread->startThread();
+
+	auto* dialog = new juce::DialogWindow("Exportiere Audio...", juce::Colours::black, true);
+	auto* content = new BounceProgressDialog(bounceProgress,
+		[this]() { return !bounceThread || !bounceThread->isThreadRunning(); });
+
+	dialog->setUsingNativeTitleBar(true);
+	dialog->setResizable(false, false);
+	dialog->setContentOwned(content, true);
+	dialog->centreWithSize(400, 80);
+	dialog->runModalLoop(); // blockiert bis fertig
+}

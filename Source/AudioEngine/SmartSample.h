@@ -1,6 +1,7 @@
 #pragma once
 
 #include <juce_audio_formats/juce_audio_formats.h>
+#include <juce_audio_utils/juce_audio_utils.h>
 #include <stdexcept>
 
 class SmartSample
@@ -10,8 +11,13 @@ public:
 
     void loadFromFile(const juce::File& file, double engineSampleRate)
     {
-        juce::AudioFormatManager formatManager;
-        formatManager.registerBasicFormats(); // WAV, AIFF, FLAC, MP3
+        static juce::AudioFormatManager formatManager;
+        static bool formatsRegistered = false;
+        if (!formatsRegistered)
+        {
+            formatManager.registerBasicFormats();
+            formatsRegistered = true;
+        }
 
         std::unique_ptr<juce::AudioFormatReader> reader(formatManager.createReaderFor(file));
 
@@ -26,15 +32,15 @@ public:
         if (lengthInSamples <= 0 || numChannels <= 0)
             throw std::runtime_error("Invalid sample format: " + file.getFileName().toStdString());
 
-        // Temporärer Puffer zum Einlesen
+        // Lesepuffer vorbereiten
         juce::AudioSampleBuffer tempBuffer(numChannels, lengthInSamples);
         if (!reader->read(&tempBuffer, 0, lengthInSamples, 0, true, true))
             throw std::runtime_error("Failed to read from file: " + file.getFullPathName().toStdString());
 
-        // Resample wenn nötig
+        // Resample falls nötig
         if (std::abs(originalSampleRate - engineSampleRate) > 1.0)
         {
-            buffer = resample(tempBuffer, originalSampleRate, engineSampleRate);
+            buffer = resampleWithResamplingSource(tempBuffer, originalSampleRate, engineSampleRate);
             wasResampled = true;
         }
         else
@@ -67,52 +73,69 @@ private:
     int lengthInSamples = 0;
     juce::String filePath;
 
-    juce::AudioSampleBuffer resample(const juce::AudioSampleBuffer& input,
+    juce::AudioSampleBuffer resampleWithResamplingSource(const juce::AudioSampleBuffer& input,
         double fromRate, double toRate)
     {
-
-        const int numChannels = input.getNumChannels();
-        const int originalSamples = input.getNumSamples();
         const double ratio = toRate / fromRate;
-        const int estimatedSamples = static_cast<int>(std::ceil(originalSamples * ratio));
+        const int estimatedLength = static_cast<int>(std::ceil(input.getNumSamples() * ratio));
 
-        if (numChannels == 0 || originalSamples == 0)
-            return juce::AudioSampleBuffer(); // gib leeren Buffer zurück
+        juce::AudioSampleBuffer resultBuffer(input.getNumChannels(), estimatedLength);
+        resultBuffer.clear();
 
-        juce::AudioSampleBuffer output(numChannels, estimatedSamples);
-        output.clear();
+        auto memorySource = std::make_unique<MemoryAudioSource>(input, fromRate);
+        juce::ResamplingAudioSource resampler(memorySource.get(), false);
+        resampler.setResamplingRatio(fromRate / toRate);
+        resampler.prepareToPlay(512, toRate); // 512 = block size, kannst du anpassen
 
-        for (int ch = 0; ch < numChannels; ++ch)
+        juce::AudioSourceChannelInfo info(&resultBuffer, 0, estimatedLength);
+        resampler.getNextAudioBlock(info);
+
+        resampler.releaseResources();
+
+        return resultBuffer;
+    }
+
+
+    class MemoryAudioSource : public juce::AudioSource
+    {
+    public:
+        MemoryAudioSource(const juce::AudioBuffer<float>& bufferToUse, double sampleRate)
+            : buffer(bufferToUse), rate(sampleRate)
         {
-            juce::LagrangeInterpolator interpolator;
-            interpolator.reset();
-
-            const float* inputPtr = input.getReadPointer(ch);
-            float* outputPtr = output.getWritePointer(ch);
-
-            int inputIndex = 0;
-            int outputIndex = 0;
-
-            while (outputIndex < estimatedSamples && inputIndex + 4 < originalSamples) // 4-Sample Safety Margin
-            {
-                int remaining = estimatedSamples - outputIndex;
-                int blockSize = juce::jmin(128, remaining); // blockweise verarbeiten
-
-                int inputUsed = interpolator.process(ratio,
-                    inputPtr + inputIndex,
-                    outputPtr + outputIndex,
-                    blockSize);
-
-                inputIndex += inputUsed;
-                outputIndex += blockSize;
-            }
-
-            // Fülle den Rest (falls noch nötig) mit 0
-            if (outputIndex < estimatedSamples)
-                juce::FloatVectorOperations::clear(outputPtr + outputIndex, estimatedSamples - outputIndex);
         }
 
-        return output;
-    }
+        void prepareToPlay(int, double) override
+        {
+            position = 0;
+        }
+
+        void releaseResources() override {}
+
+        void getNextAudioBlock(const juce::AudioSourceChannelInfo& info) override
+        {
+            const int numSamples = info.numSamples;
+            const int numAvailable = buffer.getNumSamples() - position;
+            const int numToCopy = juce::jmin(numSamples, numAvailable);
+
+            for (int ch = 0; ch < buffer.getNumChannels(); ++ch)
+            {
+                if (info.buffer->getNumChannels() > ch)
+                    info.buffer->copyFrom(ch, info.startSample, buffer, ch, position, numToCopy);
+            }
+
+            if (numToCopy < numSamples)
+            {
+                for (int ch = 0; ch < info.buffer->getNumChannels(); ++ch)
+                    info.buffer->clear(ch, info.startSample + numToCopy, numSamples - numToCopy);
+            }
+
+            position += numToCopy;
+        }
+
+    private:
+        const juce::AudioBuffer<float>& buffer;
+        int position = 0;
+        double rate;
+    };
 
 };

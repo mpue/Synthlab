@@ -46,7 +46,7 @@ public:
 		Project::getInstance()->getUndoManager()->perform(am1);
 		TrackIn* ti = dynamic_cast<TrackIn*>(am1->getModule());
 
-		Track* t = navigator->addTrack(Track::Type::INSTRUMENT, 48000);
+		Track* t = navigator->addTrack(Track::Type::INSTRUMENT, Project::getInstance()->getSampleRate());
 		t->setType(Track::Type::INSTRUMENT);
 		t->setInstrumentName(name);
 
@@ -162,7 +162,7 @@ public:
 
 		TrackIn* ti = dynamic_cast<TrackIn*>(am->getModule());
 
-		Track* t = navigator->addTrack(Track::Type::AUDIO, 48000);
+		Track* t = navigator->addTrack(Track::Type::AUDIO, Project::getInstance()->getSampleRate());
 		t->setName("Audio " + String(navigator->getTracks().size() + 1));
 		ti->setTrack(t);
 
@@ -170,7 +170,7 @@ public:
 
 		pos.x += 160;
 
-		AuxOut* audioOut = nullptr;
+		AuxOut* auxOut = nullptr;
 		AudioIn* audioIn = nullptr;
 
 		// find audio in
@@ -182,17 +182,37 @@ public:
 				}
 			}
 		}
-		//  find audio out
+		//  find aux out
 		for (int i = 0; i < m->getModules()->size(); i++) {
 			if (m->getModules()->at(i) != nullptr) {
-				audioOut = dynamic_cast<AuxOut*>(m->getModules()->at(i));
+				auxOut = dynamic_cast<AuxOut*>(m->getModules()->at(i));
+				if (auxOut != nullptr) {
+					break;
+				}
+			}
+		}
+
+		AudioOut* audioOut = nullptr;
+
+		for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
+			if (editor->getModule()->getModules()->at(i) != nullptr) {
+				audioOut = dynamic_cast<AudioOut*>(editor->getModule()->getModules()->at(i));
 				if (audioOut != nullptr) {
 					break;
 				}
 			}
 		}
+
+		if (audioOut == nullptr) {
+			// no audio out found, create one
+			AddModuleAction* am3 = new AddModuleAction(editor, pos, 66);
+			Project::getInstance()->getUndoManager()->beginNewTransaction();
+			Project::getInstance()->getUndoManager()->perform(am3);
+			audioOut = dynamic_cast<AudioOut*>(am3->getModule());
+		}
+
 		// found one
-		ConnectAudioOut(audioOut, ti, pos, 0, 1,module, editor);
+		ConnectAudioOut(auxOut, ti, pos, 0, 1,module, editor);
 		return t;
 	}
 
@@ -211,7 +231,7 @@ public:
 		Project::getInstance()->getUndoManager()->perform(am1);
 		TrackIn* ti = dynamic_cast<TrackIn*>(am1->getModule());
 
-		Track* t = navigator->addTrack(Track::Type::MIDI, 48000);
+		Track* t = navigator->addTrack(Track::Type::MIDI, Project::getInstance()->getSampleRate());
 		t->setName("MIDI " + String(navigator->getTracks().size() + 1));
 		ti->setTrack(t);
 

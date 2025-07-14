@@ -168,6 +168,9 @@
       <GROUP id="{38D83862-585A-00E2-D1DD-47C4FF4AB77C}" name="Tracks">
         <FILE id="QALREW" name="AudioRegion.cpp" compile="1" resource="0" file="Source/Tracks/AudioRegion.cpp"/>
         <FILE id="TK7Jo6" name="AudioRegion.h" compile="0" resource="0" file="Source/Tracks/AudioRegion.h"/>
+        <FILE id="PbUXLG" name="BounceThread.cpp" compile="1" resource="0"
+              file="Source/Tracks/BounceThread.cpp"/>
+        <FILE id="q7srJ3" name="BounceThread.h" compile="0" resource="0" file="Source/Tracks/BounceThread.h"/>
         <FILE id="cvn2sy" name="DragConstrainer.h" compile="0" resource="0"
               file="Source/Tracks/DragConstrainer.h"/>
         <FILE id="z4EEOH" name="MasterChannelPanel.cpp" compile="1" resource="0"
@@ -364,6 +367,8 @@
                 file="Source/AudioThumbnailComponent.cpp"/>
           <FILE id="rtSeW2" name="AudioThumbnailComponent.h" compile="0" resource="0"
                 file="Source/AudioThumbnailComponent.h"/>
+          <FILE id="Iy7juv" name="BounceProgressDialog.h" compile="0" resource="0"
+                file="Source/BounceProgressDialog.h"/>
           <FILE id="jP1nSs" name="Cell.cpp" compile="1" resource="0" file="Source/Cell.cpp"/>
           <FILE id="MFLi3W" name="Cell.h" compile="0" resource="0" file="Source/Cell.h"/>
           <FILE id="q9OyvC" name="CloseableTabButton.cpp" compile="1" resource="0"

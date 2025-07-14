@@ -11,6 +11,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "../MultiComponentDragger.h"
+#include "../Project/Project.h"
 
 class Region : public Component,  public ChangeListener, public ChangeBroadcaster, public ComponentListener, public Timer {
     
@@ -94,7 +95,7 @@ protected:
     float zoom = 20;
     String name;
     int offset = 0;
-    double sampleRate = 48000;
+    double sampleRate = Project::getInstance()->getSampleRate();
     long sampleOffset = 0;
     long oldOffset = 0;
     int loopCount = 1;

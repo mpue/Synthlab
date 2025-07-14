@@ -40,6 +40,19 @@ void TransportDisplayComponent::paint(Graphics& g)
         drawHorizontalLayout(g);
     else
         drawCompactLayout(g);
+
+    // Milchglas-Schicht oben drüber
+    auto boundsF = getLocalBounds().toFloat();
+    Colour glassColor = Colour::fromRGBA(180, 180, 200, 60); // milchiges Hellgrau-Blau
+    g.setColour(glassColor);
+    g.fillRoundedRectangle(boundsF.reduced(2), 12.0f);
+
+    // Leichter Lichtreflex oben
+    auto lightStripe = boundsF.withHeight(boundsF.getHeight() * 0.2f);
+    g.setGradientFill(ColourGradient::vertical(Colours::white.withAlpha(0.15f), lightStripe.getY(),
+        Colours::transparentWhite, lightStripe.getBottom()));
+    g.fillRect(lightStripe);
+
 }
 
 void TransportDisplayComponent::drawHorizontalLayout(Graphics& g)
@@ -116,9 +129,11 @@ void TransportDisplayComponent::timerCallback()
 
 String TransportDisplayComponent::getTimeAsString(double samples, double rate) const
 {
+    // Mit Millisekunden
     double seconds = samples / rate;
-    int h = (int)(seconds / 3600);
-    int m = ((int)(seconds) / 60) % 60;
-    int s = ((int)(seconds)) % 60;
-    return String::formatted("%02d:%02d:%02d", h, m, s);
+    int h = static_cast<int>(seconds / 3600);
+    int m = static_cast<int>(seconds / 60) % 60;
+    int s = static_cast<int>(seconds) % 60;
+    int ms = static_cast<int>((seconds - std::floor(seconds)) * 1000);
+    return String::formatted("%02d:%02d:%02d.%03d", h, m, s, ms);
 }

@@ -622,7 +622,7 @@ const float Track::getSample(int channel, long sample) {
 	}
 	currentRegion = getRegionAt(sample);
 
-	if (getRegionAt(sample) != nullptr) {
+	if (currentRegion != nullptr) {
 		if (sample - currentRegion->getSampleOffset() < getBuffer()->getNumSamples() && sample - currentRegion->getSampleOffset() > 0) {
 			return getBuffer()->getSample(channel, sample - currentRegion->getSampleOffset());
 		}

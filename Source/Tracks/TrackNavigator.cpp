@@ -160,7 +160,7 @@ void TrackNavigator::itemDropped(const SourceDetails& dragSourceDetails)
 	for (int i = 0; i < tracks.size(); i++) {
 		if (tracks.at(i)->isSelected()) {
 			juce::File file = juce::File(dragSourceDetails.description.toString());
-			tracks.at(i)->addRegion(file.getFileNameWithoutExtension(), file, 48000);
+			tracks.at(i)->addRegion(file.getFileNameWithoutExtension(), file, Project::getInstance()->getSampleRate());
 			Project::getInstance()->addAudioFile(file.getFileNameWithoutExtension(), file.getFullPathName());
 			repaint();
 		}
@@ -281,6 +281,9 @@ void TrackNavigator::setPosition(double position) {
 	//int pos = (int)position - (int)position % 2;
 	this->position = position;
 	this->samplePosition = position * Project::getInstance()->getSampleRate();
+	if (this->samplePosition % Project::getInstance()->getBufferSize() != 0)
+		this->samplePosition -= this->samplePosition % Project::getInstance()->getBufferSize();
+
 	Logger::getCurrentLogger()->writeToLog("samplePosition  : " + String(samplePosition));
 	std::function<void(void)> changeLambda =
 		[=]() {
@@ -307,7 +310,7 @@ void TrackNavigator::ResetMarkerPosition()
 }
 
 void TrackNavigator::setSamplePosition(int position) {
-	stopTimer();
+	
 	// Logger::getCurrentLogger()->writeToLog("setSamplePosition : " + String(position));
 	this->samplePosition = position;
 	for (int i = 0; i < tracks.size(); i++) {
@@ -318,7 +321,7 @@ void TrackNavigator::setSamplePosition(int position) {
 		[=]() {
 		marker->setSamplePosition(this->samplePosition);
 		transportDisplay->setTransportState(samplePosition, Project::getInstance()->getSampleRate(), Project::getInstance()->getTempo(), 4, 4);
-		startTimer(50);
+		
 		};
 	juce::MessageManager::callAsync(changeLambda);
 }

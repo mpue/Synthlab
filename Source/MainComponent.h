@@ -1,4 +1,4 @@
-/*
+﻿/*
   ==============================================================================
 
 
@@ -24,8 +24,32 @@
 #include "MidiProcessor.h"
 #include "CommandParser.h"
 #include "TransportDisplayComponent.h"
+#include <math.h>
+#include "BounceProgressDialog.h"
+
+#define _USE_MATH_DEFINES
+#ifndef M_PI
+#define M_PI       3.14159265358979323846 
+#endif
+
 
 //==============================================================================
+
+inline float fastSin(float x) {
+    // x ∈ [0, π/2] ideal!
+    const float B = 4 / M_PI;
+    const float C = -4 / (M_PI * M_PI);
+    const float P = 0.225f;
+
+    float y = B * x + C * x * std::fabs(x);
+    return P * (y * std::fabs(y) - y) + y;
+}
+
+inline float fastCos(float x) {
+    return fastSin((M_PI / 2.0f) - x);
+}
+
+class BounceThread;
 
 class MainComponent   : public juce::AudioAppComponent,
                         public juce::MenuBarModel,
@@ -37,9 +61,6 @@ class MainComponent   : public juce::AudioAppComponent,
                         public juce::ChangeListener,
                         public EditorListener,
                         public ComboBox::Listener
-    
-
-
 {
 public:
     //==============================================================================
@@ -70,13 +91,21 @@ public:
     SynthEditor* getEditor() {
         return editor;
     }
-    
+    // default settings just in case
+    double sampleRate = 44100;
+    int buffersize = 512;
+
+    bool running = false;
+    bool bouncing = false;
     // void mouseDrag (const juce::MouseEvent& event) override;
     // virtual void dragOperationStarted (const juce::DragAndDropTarget::SourceDetails& details) override;
     void timerCallback() override;
     virtual void changeListenerCallback (ChangeBroadcaster* source) override;
     
     void bounceToWave(const juce::File& outputFile, double durationInSeconds);
+    void startBounce(const juce::File& file, double duration);
+    TrackNavigator* navigator = nullptr;
+    MidiProcessor* midiProcessor = nullptr;
 private:
     //==============================================================================
 
@@ -121,11 +150,7 @@ private:
     juce::Toolbar* toolbar = nullptr;
     
     bool initialized = false;
-    volatile bool running = false;
     
-    // default settings just in case
-    double sampleRate = 44100;
-    int buffersize = 512;
     
     bool keyStates[128] = { false };
     
@@ -149,14 +174,12 @@ private:
     bool isOptionPressed = false;
     
     Sampler* defaultSampler = nullptr;
-    TrackNavigator* navigator = nullptr;
     CriticalSection lock;
     
-    MidiProcessor* midiProcessor = nullptr;
-
 	std::unique_ptr<TransportDisplayComponent> transportDisplay = nullptr;
 
-    bool bouncing = false;
+    std::unique_ptr<BounceThread> bounceThread;
+    std::atomic<double> bounceProgress{ 0.0 };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

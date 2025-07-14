@@ -1378,7 +1378,7 @@ void SynthEditor::openTracks(File file)
 			TrackIn* ti = tracks.at(i);
 
 			if (track.getProperty("type") == "audio") {
-				Track* t = navigator->addTrack(Track::Type::AUDIO, 48000);
+				Track* t = navigator->addTrack(Track::Type::AUDIO, Project::getInstance()->getSampleRate());
 				ti->setTrack(t);
 				t->setName(track.getProperty("name"));
 
@@ -1536,6 +1536,8 @@ Module* SynthEditor::getModule() {
 void SynthEditor::prepareToPlay(int samplesPerBlockExpected, double sampleRate) {
 	this->_sampleRate = sampleRate;
 	this->bufferSize = samplesPerBlockExpected;
+	Project::getInstance()->setSampleRate(sampleRate);
+	Project::getInstance()->setBufferSize(samplesPerBlockExpected);
 
 	Logger::writeToLog("SynthEditor using sample rate " + String(sampleRate) + " kHz and buffer size of " + String(samplesPerBlockExpected) + " bytes.");
 

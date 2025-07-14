@@ -277,7 +277,7 @@ void MidiProcessor::processBlock(int numSamples, TrackNavigator* navigator)
 			vector <MidiMessage*> messages = midiRegion->getMessages(currentSamplePos, numSamples);
 
 			for (auto* message : messages)
-			{
+			{ 
 				if (message != nullptr)
 					processMidiMessage(*message);
 			}

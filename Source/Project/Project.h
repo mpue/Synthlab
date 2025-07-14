@@ -108,14 +108,14 @@ public:
     
     // TODO: where should this be set???
     double getSampleRate() {
-        return 48000;
+        return 44100;
     }
     
     void setBufferSize(int bufferSize) {
         this->bufferSize = bufferSize;
     }
     
-    double getBufferSize() {
+    int getBufferSize() {
         return bufferSize;
     }
     
@@ -283,8 +283,8 @@ protected:
 
     String name;
     long tracklength;
-    double sampleRate;
-    int bufferSize;
+    double sampleRate = 44100;
+    int bufferSize = 128;
     float tempo = DEFAULT_TEMPO;
     
     map<String, String> projectAudio;

@@ -2,6 +2,20 @@
 
 #include <JuceHeader.h>
 
+struct TransportLookAndFeel
+{
+    juce::Colour background = juce::Colour(25, 25, 30);
+    juce::Colour border = juce::Colours::darkgrey.withAlpha(0.8f);
+    juce::Colour text = juce::Colours::white;
+    juce::Colour tempoPulse = juce::Colours::orange;
+    juce::Colour metronomeOn = juce::Colours::lime;
+    juce::Colour metronomeOff = juce::Colours::darkred;
+
+    float cornerRadius = 8.0f;
+    float borderThickness = 2.0f;
+    juce::Font mainFont = juce::Font(18.0f, juce::Font::bold);
+};
+
 class TransportDisplayComponent : public juce::Component, public juce::Timer
 {
 public:
@@ -32,6 +46,7 @@ private:
     int bpmPulse = 0;
 
     juce::Rectangle<int> metronomeArea;
+	TransportLookAndFeel lookAndFeel;   
 
     juce::String getTimeAsString(double samples, double rate) const;
     void drawHorizontalLayout(juce::Graphics& g);
