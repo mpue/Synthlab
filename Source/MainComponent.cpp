@@ -619,6 +619,10 @@ void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate
 	if (editor != nullptr) {
 		editor->prepareToPlay(samplesPerBlockExpected, sampleRate);
 	}
+
+	metronome = std::make_unique<Metronome>(sampleRate, samplesPerBlockExpected);
+	metronome->setBPM(120.0f); // oder Wert aus TransportDisplay
+
 }
 
 int MainComponent::getNumActiveChannels(int i) {
@@ -641,7 +645,7 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 	auto* writableBuffer = const_cast<juce::AudioBuffer<float>*>(bufferToFill.buffer);
 	float** outputChannelData = const_cast<float**>(writableBuffer->getArrayOfWritePointers());
 
-	if (outputChannelData == NULL) {
+	if (outputChannelData == nullptr) {
 		return;
 	}
 
@@ -652,6 +656,18 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 			outputChannelData[0][j] += defaultSampler->getOutput(0);
 			outputChannelData[1][j] += defaultSampler->getOutput(1);
 			defaultSampler->nextSample();
+		}
+	}
+	else {
+		for (int j = 0; j < numSamples; j++) {
+
+			if (outputChannelData[0] != nullptr) {
+				outputChannelData[0][j] = 0;
+			}
+			if (outputChannelData[1] != nullptr) {
+				outputChannelData[1][j] = 0;
+			}
+
 		}
 	}
 
@@ -691,18 +707,7 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 
 		if (defaultSampler != nullptr && defaultSampler->isPlaying()) {
 		}
-		else {
-			for (int j = 0; j < numSamples; j++) {
 
-				if (outputChannelData[0] != NULL) {
-					outputChannelData[0][j] = 0;
-				}
-				if (outputChannelData[1] != NULL) {
-					outputChannelData[1][j] = 0;
-				}
-
-			}
-		}
 	}
 	else {
 
@@ -788,6 +793,22 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 			outputChannel->magnitudeLeft = channelVolume * gainLeft * outputChannels.at(0)->getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
 		if (editor->getMixer()->channelIsValid(1))
 			outputChannel->magnitudeRight = channelVolume * gainRight * outputChannels.at(0)->getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+	}
+
+	if (metronome && transportDisplay && transportDisplay->isMetronomeActive() && navigator->isRecording()) {
+		if (metronomeBuffer.getNumSamples() != bufferToFill.numSamples)
+			metronomeBuffer.setSize(2, bufferToFill.numSamples, false, false, true);
+
+		metronome->generateBlock(metronomeBuffer);
+
+		const int numChannels = juce::jmin(bufferToFill.buffer->getNumChannels(), metronomeBuffer.getNumChannels());
+
+		for (int ch = 0; ch < numChannels; ++ch) {
+			auto* dest = bufferToFill.buffer->getWritePointer(ch, bufferToFill.startSample);
+			auto* src = metronomeBuffer.getReadPointer(ch);
+			for (int i = 0; i < bufferToFill.numSamples; ++i)
+				dest[i] += src[i];
+		}
 	}
 
 	if (!bouncing) {
@@ -1317,75 +1338,6 @@ void MainComponent::dirtyChanged(bool dirty) {
 
 }
 
-void MainComponent::bounceToWave(const juce::File& outputFile, double durationInSeconds)
-{
-	bouncing = true;
-	running = true;
-
-	const int sampleRate = 44100;
-	const int numChannels = 2;
-	const int totalSamples = (int)(durationInSeconds * sampleRate);
-
-	juce::AudioBuffer<float> buffer(numChannels, totalSamples);
-	buffer.clear();
-
-	// Set up internal state
-	prepareToPlay(buffersize, sampleRate);
-	if (editor != nullptr)
-		editor->prepareToPlay(buffersize, sampleRate);
-
-	if (navigator != nullptr) {
-		navigator->ResetMarkerPosition();
-		navigator->setSamplePosition(0);
-		navigator->setPlaying(true); // wichtig für MIDI-Regionen
-	}
-
-	// Loop über das Projekt in Blöcken
-	for (int position = 0; position < totalSamples; position += buffersize)
-	{
-		const int numSamples = std::min(buffersize, totalSamples - position);
-		juce::AudioBuffer<float> blockBuffer(numChannels, numSamples);
-		blockBuffer.clear();
-
-		juce::AudioSourceChannelInfo block(&blockBuffer, 0, numSamples);
-
-		// Wichtig: Sample-Position setzen, damit MIDI auch im Navigator korrekt verarbeitet wird
-		if (navigator != nullptr)
-			navigator->setSamplePosition(position);
-
-		// MIDI-Verarbeitung (nur wenn kein echter Timer läuft)
-		if (midiProcessor != nullptr)
-			midiProcessor->processBlock(numSamples, navigator);
-
-		// Synth und Audio-Verarbeitung
-		getNextAudioBlock(block);
-
-		// In Hauptbuffer schreiben
-		for (int ch = 0; ch < numChannels; ++ch)
-			buffer.addFrom(ch, position, blockBuffer, ch, 0, numSamples);
-	}
-
-	if (navigator != nullptr)
-		navigator->setPlaying(false);
-
-	releaseResources();
-
-	// Schreiben in WAV-Datei
-	juce::WavAudioFormat wavFormat;
-	std::unique_ptr<juce::FileOutputStream> stream(outputFile.createOutputStream());
-
-	if (stream != nullptr)
-	{
-		std::unique_ptr<juce::AudioFormatWriter> writer(wavFormat.createWriterFor(stream.get(), sampleRate, numChannels, 16, {}, 0));
-		if (writer != nullptr)
-		{
-			stream.release(); // writer owns the stream now
-			writer->writeFromAudioSampleBuffer(buffer, 0, totalSamples);
-		}
-	}
-
-	bouncing = false;
-}
 void MainComponent::startBounce(const juce::File& outputFile, double durationInSeconds)
 {
 	bounceProgress = 0.0;

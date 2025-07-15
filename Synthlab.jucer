@@ -400,6 +400,8 @@
                 file="Source/MainTabbedComponent.cpp"/>
           <FILE id="dUs9k8" name="MainTabbedComponent.h" compile="0" resource="0"
                 file="Source/MainTabbedComponent.h"/>
+          <FILE id="Qwnb6C" name="Metronome.cpp" compile="1" resource="0" file="Source/Metronome.cpp"/>
+          <FILE id="WvDbsO" name="Metronome.h" compile="0" resource="0" file="Source/Metronome.h"/>
           <FILE id="BU52xf" name="MixerPanel.cpp" compile="1" resource="0" file="Source/MixerPanel.cpp"/>
           <FILE id="wrBYlv" name="MixerPanel.h" compile="0" resource="0" file="Source/MixerPanel.h"/>
           <FILE id="j8BgnE" name="Module.cpp" compile="1" resource="0" file="Source/Module.cpp"/>
@@ -720,7 +722,7 @@
         <MODULEPATH id="juce_audio_basics" path="..\JUCE\modules"/>
       </MODULEPATHS>
     </VS2017>
-    <VS2022 targetFolder="Builds/VisualStudio2022" externalLibraries="d:/devel/Synthlab/lib/librubberband-debug.lib"
+    <VS2022 targetFolder="Builds/VisualStudio2022" externalLibraries="d:/devel/Synthlab/lib/librubberband.lib"
             extraDefs="JUCE_MODAL_LOOPS_PERMITTED=1">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" headerPath="d:\devel\ASIOSDK2.3\common\&#10;d:\devel\VST_SDK3.7\"/>

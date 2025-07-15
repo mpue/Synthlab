@@ -60,6 +60,7 @@ public:
     void stopMidiClock();
     void setMidiClockBPM(double bpm);
     bool isMidiClockRunning() const;
+    void processMidiMessage(const juce::MidiMessage& message);
 
 private:
     /** Called on the Timer thread (default: every 5 ms).
@@ -67,7 +68,6 @@ private:
     void timerCallback() override;
 
     /* The original routing / broadcasting logic – now thread-safe. */
-    void processMidiMessage(const juce::MidiMessage& message);
 
     /* ↓↓↓ your old helper functions (unchanged) ↓↓↓ */
 

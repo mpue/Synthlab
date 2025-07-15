@@ -104,6 +104,9 @@ public:
     void changeListenerCallback (juce::ChangeBroadcaster* source) override;
     virtual void process();
     
+    virtual void process(MidiBuffer* externalBuffer) {};
+    virtual void processInternal(MidiBuffer* externalBuffer) {};
+
     void savePosition();
     void saveUiPosition();
     void moveTo(int x, int y);

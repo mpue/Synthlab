@@ -26,12 +26,12 @@
 #include "TransportDisplayComponent.h"
 #include <math.h>
 #include "BounceProgressDialog.h"
+#include "Metronome.h"
 
 #define _USE_MATH_DEFINES
 #ifndef M_PI
 #define M_PI       3.14159265358979323846 
 #endif
-
 
 //==============================================================================
 
@@ -93,7 +93,7 @@ public:
     }
     // default settings just in case
     double sampleRate = 44100;
-    int buffersize = 512;
+    int buffersize = 128;
 
     bool running = false;
     bool bouncing = false;
@@ -102,7 +102,6 @@ public:
     void timerCallback() override;
     virtual void changeListenerCallback (ChangeBroadcaster* source) override;
     
-    void bounceToWave(const juce::File& outputFile, double durationInSeconds);
     void startBounce(const juce::File& file, double duration);
     TrackNavigator* navigator = nullptr;
     MidiProcessor* midiProcessor = nullptr;
@@ -110,6 +109,8 @@ private:
     //==============================================================================
 
     void openSettings();
+
+
     
 	SynthEditor* editor = nullptr;
     MainTabbedComponent* tab = nullptr;
@@ -180,6 +181,9 @@ private:
 
     std::unique_ptr<BounceThread> bounceThread;
     std::atomic<double> bounceProgress{ 0.0 };
+
+    std::unique_ptr<Metronome> metronome;
+    juce::AudioBuffer<float> metronomeBuffer;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

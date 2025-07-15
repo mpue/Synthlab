@@ -183,25 +183,24 @@ void MidiRegion::addMessage(MidiMessage* m, double time, int sampleNum) {
     midiThumbnail->addMessage(sampleNum - getSampleOffset(), m);
     updateThumb();
 }
-
-vector<MidiMessage*> MidiRegion::getMessages(int sampleNum, int tolerance = 2)
+vector<MidiMessage*> MidiRegion::getMessages(int sampleNum, int numSamples)
 {
-	vector<MidiMessage*> foundMessages;
+    vector<MidiMessage*> foundMessages;
+    const int endSample = sampleNum + numSamples;
 
     for (auto* m : midiMessageList)
     {
         if (m != nullptr &&
-            std::abs(sampleNum - m->getTimeStamp()) <= tolerance &&
-            (m->isNoteOnOrOff() || m->isMidiClock() || m->isController()))// oder eine eigene sinnvollere Bedingung
+            m->getTimeStamp() >= sampleNum &&
+            m->getTimeStamp() < endSample &&
+            (m->isNoteOnOrOff() || m->isMidiClock() || m->isController()))
         {
-            Logger::getCurrentLogger()->writeToLog(
-                "Found message at sample " + String(sampleNum) + ": " + m->getDescription());
-			foundMessages.push_back(m);
+            foundMessages.push_back(m);
         }
     }
+
     return foundMessages;
 }
-
 
 void MidiRegion::startRecording() {
     startTimer(100);

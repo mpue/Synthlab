@@ -6,40 +6,35 @@
 
 using namespace juce;
 
+constexpr float defaultGainDb = 12.0f;
+
 PluginModule::PluginModule(double sampleRate, int buffersize)
     : sampleRate(sampleRate), buffersize(buffersize)
 {
     setSize(120, 140);
+    nameLabel = std::make_unique<Label>();
     nameLabel->setJustificationType(Justification::left);
     nameLabel->setTopLeftPosition(18, 2);
+    addAndMakeVisible(*nameLabel);
     setName("Plugin");
     editable = false;
     prefab = true;
 
-    bufferLeft = new float[buffersize];
-    bufferRight = new float[buffersize];
-    audioBuffer = new AudioBuffer<float>(2, buffersize);
+    bufferLeft = std::make_unique<float[]>(buffersize);
+    bufferRight = std::make_unique<float[]>(buffersize);
+    audioBuffer = std::make_unique<AudioBuffer<float>>(2, buffersize);
 
     createProperties();
 }
 
-PluginModule::~PluginModule()
-{
-    delete[] bufferLeft;
-    delete[] bufferRight;
-    delete audioBuffer;
-    delete pluginValue;
-    delete pluginListener;
-    delete win;
-    delete plugin;
-}
+PluginModule::~PluginModule() = default;
 
 void PluginModule::openPluginWindow()
 {
     if (!plugin) return;
     auto editor = plugin->createEditorIfNeeded();
     if (!win)
-        win = new PluginManager::PluginWindow(pluginName, editor);
+        win = std::make_unique<PluginManager::PluginWindow>(pluginName, editor);
     else
         win->setVisible(true);
 }
@@ -56,15 +51,24 @@ void PluginModule::selectPlugin(String name)
             PluginDescription pd;
             auto preset = File(File::getSpecialLocation(File::userHomeDirectory)
                 .getChildFile(".Synthlab/plugins/" + name));
-            auto xml = XmlDocument(preset).getDocumentElement();
-            pd.loadFromXml(*xml);
+            std::unique_ptr<XmlElement> xml(XmlDocument(preset).getDocumentElement());
+            if (xml)
+            {
+                pd.loadFromXml(*xml);
+                String error;
+                auto instance = PluginManager::getInstance()->apfm
+                    ->createPluginInstance(pd, device->getCurrentSampleRate(),
+                        device->getCurrentBufferSizeSamples(), error);
 
-            String error;
-            plugin = PluginManager::getInstance()->apfm
-                ->createPluginInstance(pd, device->getCurrentSampleRate(),
-                    device->getCurrentBufferSizeSamples(), error)
-                .release();
-            plugin->prepareToPlay(sampleRate, buffersize);
+                if (!error.isEmpty() || instance == nullptr)
+                {
+                    DBG("Plugin load error: " + error);
+                    return;
+                }
+
+                plugin.reset(instance.release());
+                plugin->prepareToPlay(sampleRate, buffersize);
+            }
         }
 
         pluginName = name;
@@ -72,7 +76,7 @@ void PluginModule::selectPlugin(String name)
     }
 }
 
-juce::String PluginModule::getPluginName()
+String PluginModule::getPluginName()
 {
     return pluginName;
 }
@@ -113,6 +117,16 @@ void PluginModule::paint(Graphics& g)
 
 void PluginModule::process()
 {
+    processInternal(nullptr);
+}
+
+void PluginModule::process(MidiBuffer* externalBuffer)
+{
+    processInternal(externalBuffer);
+}
+
+void PluginModule::processInternal(MidiBuffer* externalBuffer)
+{
     const bool hasInputs =
         pins.size() >= 4 &&
         pins.at(0)->getConnections().size() > 0 &&
@@ -120,16 +134,13 @@ void PluginModule::process()
         pins.at(0)->getConnections()[0]->getAudioBuffer() != nullptr &&
         pins.at(1)->getConnections()[0]->getAudioBuffer() != nullptr;
 
-
     if (plugin)
     {
         const ScopedLock sl(lock);
 
-        // absichern: wie viele Eingänge/Outputs erwartet das Plugin?
         const int numIn = plugin->getTotalNumInputChannels();
         const int numOut = plugin->getTotalNumOutputChannels();
 
-        // stelle sicher, dass audioBuffer korrekt dimensioniert ist
         if (audioBuffer->getNumChannels() != jmax(numIn, numOut) || audioBuffer->getNumSamples() != buffersize)
             audioBuffer->setSize(jmax(numIn, numOut), buffersize, false, false, true);
 
@@ -143,7 +154,11 @@ void PluginModule::process()
             audioBuffer->clear();
         }
 
-        plugin->processBlock(*audioBuffer, midiBuffer);
+        MidiBuffer* midiInBuffer = externalBuffer ? externalBuffer : &midiBuffer;
+        plugin->processBlock(*audioBuffer, *midiInBuffer);
+
+        if (!externalBuffer)
+            midiBuffer.clear();
 
         if (numOut >= 2 && pins.size() >= 4)
         {
@@ -154,7 +169,7 @@ void PluginModule::process()
                 leftOut->copyFrom(0, 0, *audioBuffer, 0, 0, buffersize);
                 rightOut->copyFrom(0, 0, *audioBuffer, 1, 0, buffersize);
 
-                float gain = Decibels::decibelsToGain(12.0f);
+                float gain = Decibels::decibelsToGain(defaultGainDb);
                 leftOut->applyGain(gain);
                 rightOut->applyGain(gain);
             }
@@ -162,7 +177,6 @@ void PluginModule::process()
     }
 
     currentSample = (currentSample + 1) % buffersize;
-    midiBuffer.clear();
 }
 
 void PluginModule::eventReceived(Event* e)
@@ -172,20 +186,18 @@ void PluginModule::eventReceived(Event* e)
 
     auto msg = e->getMessage();
 
-    // Handle NoteOn with velocity 0 as NoteOff
-    if (msg.isNoteOn() && msg.getVelocity() == 0) {
+    if (msg.isNoteOn() && msg.getVelocity() == 0)
         msg = MidiMessage::noteOff(msg.getChannel(), msg.getNoteNumber());
-    }
-    msg.setTimeStamp(currentSample);     
-	
+
+    msg.setTimeStamp(currentSample);
     midiBuffer.addEvent(msg, currentSample);
     delete e;
 }
 
 void PluginModule::createProperties()
 {
-    pluginValue = new Value();
-    pluginListener = new PluginValueListener(*pluginValue, this);
+    pluginValue = std::make_unique<Value>();
+    pluginListener = std::make_unique<PluginValueListener>(*pluginValue, this);
 }
 
 Array<PropertyComponent*>& PluginModule::getProperties()
@@ -195,9 +207,11 @@ Array<PropertyComponent*>& PluginModule::getProperties()
     for (auto& name : PluginManager::getInstance()->getPlugins())
         pluginList.add(name);
 
-    pluginProp = new ChoicePropertyComponent(*pluginValue, "Plugin",
+    pluginProp = std::make_unique<ChoicePropertyComponent>(
+        *pluginValue, "Plugin",
         PluginManager::getInstance()->getPlugins(), pluginList);
-    properties.add(pluginProp);
+
+    properties.add(pluginProp.get());
     return properties;
 }
 
@@ -215,11 +229,10 @@ void PluginModule::setCurrentProgram(int program)
 
 void PluginModule::setPluginState(String state)
 {
-    auto* mos = new MemoryOutputStream();
+    auto mos = std::make_unique<MemoryOutputStream>();
     Base64::convertFromBase64(*mos, state);
     if (plugin)
         plugin->setStateInformation(mos->getData(), (int)mos->getDataSize());
-    delete mos;
 }
 
 String PluginModule::getPluginState()

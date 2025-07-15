@@ -34,6 +34,8 @@ public:
     void timerCallback() override;
     void mouseUp(const juce::MouseEvent& e) override;
 
+	bool isMetronomeActive() const { return metronomeActive; }  
+
 private:
     double currentSamplePos = 0;
     double currentSampleRate = 44100.0;

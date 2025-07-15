@@ -179,9 +179,9 @@ void MasterChannelPanel::paint (Graphics& g)
 
     g.setColour (Colour (0xff3f3f3f));
     g.drawRect (0, 0, 90, 250, 1);
-
+    	
     //[UserPaint] Add your own custom painting code here..
-    g.drawRect (getBounds(), 1);   // draw an outline around the component
+    g.drawRect (getBounds().reduced(2), 1);   // draw an outline around the component
     //[/UserPaint]
 }
 

@@ -82,6 +82,12 @@ public:
 
     void setMidiMessageSequence(const MidiMessageSequence& seq);
 
+    long getStartSample() const {
+        if (midiMessageList.empty())
+			return 0;
+		return (long)midiMessageList.front()->getTimeStamp();
+	}
+
 private:
     MidiBuffer* midiBuffer;
 

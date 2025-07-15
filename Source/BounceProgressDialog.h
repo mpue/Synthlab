@@ -14,7 +14,7 @@ public:
 
     void resized() override
     {
-        progressBar.setBounds(getLocalBounds().reduced(10));
+        progressBar.setBounds(getLocalBounds().reduced(20));
     }
 
     void timerCallback() override
