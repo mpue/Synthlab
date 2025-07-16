@@ -105,7 +105,8 @@ public:
     virtual void process();
     
     virtual void process(MidiBuffer* externalBuffer) {};
-    virtual void processInternal(MidiBuffer* externalBuffer) {};
+    virtual void processInternal(MidiBuffer* externalBuffer, int numSamples) {};
+    virtual void process(MidiBuffer* externalBuffer, int numSamples) {};
 
     void savePosition();
     void saveUiPosition();

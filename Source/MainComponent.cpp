@@ -465,8 +465,7 @@ void MainComponent::createStudioLayout() {
 		}
 		String size = args[1];
 
-		startBounce(File(args[0]), size.getFloatValue());
-
+		startBounce(File(args[0]), size.getFloatValue());		
 		return "Export finished.";
 		}, "Export track as audio.");
 
@@ -1348,13 +1347,37 @@ void MainComponent::startBounce(const juce::File& outputFile, double durationInS
 	);
 	bounceThread->startThread();
 
-	auto* dialog = new juce::DialogWindow("Exportiere Audio...", juce::Colours::black, true);
-	auto* content = new BounceProgressDialog(bounceProgress,
-		[this]() { return !bounceThread || !bounceThread->isThreadRunning(); });
+	auto* content = new BounceProgressDialog(
+		bounceProgress,
+		[this]() { return !bounceThread || !bounceThread->isThreadRunning(); }
+	);
 
+	auto* dialog = new juce::DialogWindow("Exportiere Audio...", juce::Colours::black, true);
 	dialog->setUsingNativeTitleBar(true);
 	dialog->setResizable(false, false);
 	dialog->setContentOwned(content, true);
 	dialog->centreWithSize(400, 80);
-	dialog->runModalLoop(); // blockiert bis fertig
+
+	// Zeige es asynchron, damit es sich selbst schließen kann
+	dialog->setVisible(true);
+
+	// Polling-Timer zum Schließen
+	juce::Timer::callAfterDelay(200, [dialog, this]() mutable {
+		if (!bounceThread || !bounceThread->isThreadRunning()) {
+			dialog->exitModalState(0); // (wenn nötig)
+			dialog->setVisible(false);
+			delete dialog; // oder smart pointer verwenden
+		}
+		else {
+			// nochmal nach 200ms prüfen
+			juce::Timer::callAfterDelay(200, [dialog, this]() mutable {
+				if (!bounceThread || !bounceThread->isThreadRunning()) {
+					dialog->exitModalState(0);
+					dialog->setVisible(false);
+					delete dialog;
+				}
+				});
+		}
+		});
 }
+

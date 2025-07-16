@@ -4,6 +4,7 @@
 #include "Plugins/PluginManager.h"
 #include "Project/Project.h"
 
+
 using namespace juce;
 
 constexpr float defaultGainDb = 12.0f;
@@ -23,7 +24,7 @@ PluginModule::PluginModule(double sampleRate, int buffersize)
     bufferLeft = std::make_unique<float[]>(buffersize);
     bufferRight = std::make_unique<float[]>(buffersize);
     audioBuffer = std::make_unique<AudioBuffer<float>>(2, buffersize);
-
+	
     createProperties();
 }
 
@@ -73,6 +74,8 @@ void PluginModule::selectPlugin(String name)
 
         pluginName = name;
         pluginValue->setValue(name);
+        playHead = OfflinePlayHead();
+		plugin->setPlayHead(&playHead);
     }
 }
 
@@ -115,69 +118,82 @@ void PluginModule::paint(Graphics& g)
     g.drawImageAt(ImageCache::getFromMemory(BinaryData::plugin_png, BinaryData::plugin_pngSize), 25, 40);
 }
 
+void PluginModule::process(MidiBuffer* externalBuffer, int numSamples)
+{
+    processInternal(externalBuffer, numSamples);
+}
+
 void PluginModule::process()
 {
-    processInternal(nullptr);
+    processInternal(nullptr, buffersize);
 }
 
 void PluginModule::process(MidiBuffer* externalBuffer)
 {
-    processInternal(externalBuffer);
+    processInternal(externalBuffer, buffersize);
 }
 
-void PluginModule::processInternal(MidiBuffer* externalBuffer)
+void PluginModule::processInternal(MidiBuffer* externalBuffer, int numSamples)
 {
+    if (!plugin)
+        return;
+
+    playHead.setPositionInfo(currentSample, sampleRate, Project::getInstance()->getTempo());
+
+    const int numIn = plugin->getTotalNumInputChannels();
+    const int numOut = plugin->getTotalNumOutputChannels();
+
+    if (audioBuffer->getNumChannels() != jmax(numIn, numOut) || audioBuffer->getNumSamples() != numSamples)
+        audioBuffer->setSize(jmax(numIn, numOut), numSamples, false, false, true);
+
+    audioBuffer->clear();
+
     const bool hasInputs =
         pins.size() >= 4 &&
-        pins.at(0)->getConnections().size() > 0 &&
-        pins.at(1)->getConnections().size() > 0 &&
-        pins.at(0)->getConnections()[0]->getAudioBuffer() != nullptr &&
-        pins.at(1)->getConnections()[0]->getAudioBuffer() != nullptr;
+        pins[0]->getConnections().size() > 0 &&
+        pins[1]->getConnections().size() > 0 &&
+        pins[0]->getConnections()[0]->getAudioBuffer() != nullptr &&
+        pins[1]->getConnections()[0]->getAudioBuffer() != nullptr;
 
-    if (plugin)
+    if (hasInputs && numIn >= 2)
+    {
+        audioBuffer->copyFrom(0, 0, *pins[0]->getConnections()[0]->getAudioBuffer(), 0, 0, numSamples);
+        audioBuffer->copyFrom(1, 0, *pins[1]->getConnections()[0]->getAudioBuffer(), 0, 0, numSamples);
+    }
+
     {
         const ScopedLock sl(lock);
-
-        const int numIn = plugin->getTotalNumInputChannels();
-        const int numOut = plugin->getTotalNumOutputChannels();
-
-        if (audioBuffer->getNumChannels() != jmax(numIn, numOut) || audioBuffer->getNumSamples() != buffersize)
-            audioBuffer->setSize(jmax(numIn, numOut), buffersize, false, false, true);
-
-        if (hasInputs && numIn >= 2)
-        {
-            audioBuffer->copyFrom(0, 0, *pins.at(0)->getConnections()[0]->getAudioBuffer(), 0, 0, buffersize);
-            audioBuffer->copyFrom(1, 0, *pins.at(1)->getConnections()[0]->getAudioBuffer(), 0, 0, buffersize);
-        }
-        else
-        {
-            audioBuffer->clear();
-        }
-
         MidiBuffer* midiInBuffer = externalBuffer ? externalBuffer : &midiBuffer;
         plugin->processBlock(*audioBuffer, *midiInBuffer);
+    }
 
-        if (!externalBuffer)
-            midiBuffer.clear();
+    if (!externalBuffer)
+        midiBuffer.clear();
 
-        if (numOut >= 2 && pins.size() >= 4)
+    if (numOut >= 2 && pins.size() >= 4)
+    {
+        auto* leftOut = pins[2]->getAudioBuffer();
+        auto* rightOut = pins[3]->getAudioBuffer();
+
+        if (leftOut && rightOut)
         {
-            auto* leftOut = pins.at(2)->getAudioBuffer();
-            auto* rightOut = pins.at(3)->getAudioBuffer();
-            if (leftOut && rightOut)
-            {
-                leftOut->copyFrom(0, 0, *audioBuffer, 0, 0, buffersize);
-                rightOut->copyFrom(0, 0, *audioBuffer, 1, 0, buffersize);
+            // ❗ ERZWINGE die Zielgröße des Outputs
+            leftOut->setSize(1, numSamples, false, false, true);
+            rightOut->setSize(1, numSamples, false, false, true);
 
-                float gain = Decibels::decibelsToGain(defaultGainDb);
-                leftOut->applyGain(gain);
-                rightOut->applyGain(gain);
-            }
+            leftOut->copyFrom(0, 0, *audioBuffer, 0, 0, numSamples);
+            rightOut->copyFrom(0, 0, *audioBuffer, 1, 0, numSamples);
+
+            float gain = Decibels::decibelsToGain(bounceMode ? 6.0f : defaultGainDb);
+            leftOut->applyGain(gain);
+            rightOut->applyGain(gain);
         }
     }
 
-    currentSample = (currentSample + 1) % buffersize;
+    if (!bounceMode)
+        currentSample = (currentSample + numSamples) % static_cast<int>(sampleRate);
 }
+
 
 void PluginModule::eventReceived(Event* e)
 {
@@ -196,8 +212,8 @@ void PluginModule::eventReceived(Event* e)
 
 void PluginModule::createProperties()
 {
-    pluginValue = std::make_unique<Value>();
-    pluginListener = std::make_unique<PluginValueListener>(*pluginValue, this);
+    pluginValue = new Value();
+    pluginListener = new PluginValueListener(*pluginValue, this);
 }
 
 Array<PropertyComponent*>& PluginModule::getProperties()
@@ -207,11 +223,9 @@ Array<PropertyComponent*>& PluginModule::getProperties()
     for (auto& name : PluginManager::getInstance()->getPlugins())
         pluginList.add(name);
 
-    pluginProp = std::make_unique<ChoicePropertyComponent>(
-        *pluginValue, "Plugin",
+    pluginProp = new ChoicePropertyComponent(*pluginValue, "Plugin",
         PluginManager::getInstance()->getPlugins(), pluginList);
-
-    properties.add(pluginProp.get());
+    properties.add(pluginProp);
     return properties;
 }
 

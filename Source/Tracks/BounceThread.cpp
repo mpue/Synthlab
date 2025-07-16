@@ -1,7 +1,10 @@
-#include "BounceThread.h"
+﻿#include "BounceThread.h"
 
 #include "../MainComponent.h"
 #include "../PluginModule.h"
+
+#include <JuceHeader.h>
+
 void BounceThread::run()
 {
     main->bouncing = true;
@@ -19,14 +22,6 @@ void BounceThread::run()
     if (main->getEditor())
         main->getEditor()->prepareToPlay(blockSize, sampleRate);
 
-    if (main->navigator)
-    {
-        main->navigator->ResetMarkerPosition();
-        main->navigator->setSamplePosition(0);
-        main->navigator->setPlaying(true);
-    }
-
-    // Nur eine aktive Spur mit Plugin wird verwendet (sp�ter ggf. erweitern)
     Track* track = nullptr;
     for (auto* t : main->navigator->getTracks())
     {
@@ -40,19 +35,18 @@ void BounceThread::run()
     PluginModule* pluginModule = nullptr;
     if (track)
     {
-       // find the plugin module which has the same channel as the track
-        for (int i = 0;i < main->getEditor()->getModule()->getModules()->size();i++)        
+        for (auto* mod : *main->getEditor()->getModule()->getModules())
         {
-            if (dynamic_cast<PluginModule*>(main->getEditor()->getModule()->getModules()->at(i)))
+            if (auto* pm = dynamic_cast<PluginModule*>(mod))
             {
-                pluginModule = dynamic_cast<PluginModule*>(main->getEditor()->getModule()->getModules()->at(i));
-             // TODO : Find a better way to get the plugin module for the track
-				pluginModule->setSampleRate(sampleRate);
-				pluginModule->setBuffersize(blockSize);
-				break;                
-			}
-		}
-
+                pluginModule = pm;
+                pluginModule->setSampleRate(sampleRate);
+                pluginModule->setBuffersize(blockSize);
+                pluginModule->getPlugin()->setNonRealtime(true);
+                pluginModule->setBounceMode(true);
+                break;
+            }
+        }
     }
 
     if (!track || !pluginModule)
@@ -66,31 +60,40 @@ void BounceThread::run()
     for (int pos = 0; pos < totalSamples && !threadShouldExit(); pos += blockSize)
     {
         const int numSamples = std::min(blockSize, totalSamples - pos);
-        juce::AudioBuffer<float> blockBuffer(numChannels, numSamples);
-        blockBuffer.clear();
 
-        juce::AudioSourceChannelInfo block(&blockBuffer, 0, numSamples);
-        
+        // MIDI für aktuellen Block extrahieren
         MidiBuffer midiSlice = getMidiSlice(fullMidi, pos, numSamples);
-
-        if (main->navigator)
-            main->navigator->setSamplePosition(pos);
-
+        pluginModule->setCurrentSample(pos);
         pluginModule->process(&midiSlice);
 
-        main->getNextAudioBlock(block);
+        // Plugin-Ausgänge holen
+        auto* outL = pluginModule->getPins().at(2)->getAudioBuffer();
+        auto* outR = pluginModule->getPins().at(3)->getAudioBuffer();
 
-        for (int ch = 0; ch < numChannels; ++ch)
-            buffer.addFrom(ch, pos, blockBuffer, ch, 0, numSamples);
+        if (outL && outR)
+        {
+            // Temporärer Buffer zum sicheren Arbeiten mit numSamples
+            juce::AudioBuffer<float> blockBuffer(2, numSamples);
+            blockBuffer.clear();
+
+            blockBuffer.copyFrom(0, 0, *outL, 0, 0, numSamples);
+            blockBuffer.copyFrom(1, 0, *outR, 0, 0, numSamples);
+
+            // Optional: Lautstärke etwas runter, um Clipping zu vermeiden
+            blockBuffer.applyGain(0.8f);
+
+            // In Zielbuffer schreiben
+            buffer.addFrom(0, pos, blockBuffer, 0, 0, numSamples);
+            buffer.addFrom(1, pos, blockBuffer, 1, 0, numSamples);
+        }
 
         onProgress((float)pos / totalSamples);
     }
 
-    if (main->navigator)
-        main->navigator->setPlaying(false);
 
     main->releaseResources();
 
+    // WAV schreiben
     juce::WavAudioFormat wavFormat;
     std::unique_ptr<juce::FileOutputStream> stream(outputFile.createOutputStream());
 
@@ -100,11 +103,13 @@ void BounceThread::run()
             wavFormat.createWriterFor(stream.get(), sampleRate, numChannels, 16, {}, 0));
         if (writer)
         {
-            stream.release();
+            stream.release(); // Übergabe des Besitzes an den Writer
             writer->writeFromAudioSampleBuffer(buffer, 0, totalSamples);
         }
     }
 
+    pluginModule->getPlugin()->setNonRealtime(false);
+    pluginModule->setBounceMode(false);
     main->bouncing = false;
     onProgress(1.0f);
 }
@@ -118,12 +123,13 @@ MidiBuffer BounceThread::buildMidiBufferForTrack(Track* track, double sampleRate
         if (auto* midiRegion = dynamic_cast<MidiRegion*>(region))
         {
             MidiMessageSequence* sequence = midiRegion->getMidiMessageSequence();
-            const int regionStartSample = midiRegion->getStartSample();
+            const int regionStartSample = midiRegion->getSampleOffset();
 
             for (int i = 0; i < sequence->getNumEvents(); ++i)
             {
                 const auto& msg = sequence->getEventPointer(i)->message;
-                int samplePos = static_cast<int>(msg.getTimeStamp() * sampleRate) + regionStartSample;
+                
+                int samplePos = static_cast<int>(msg.getTimeStamp()) + regionStartSample;
                 buffer.addEvent(msg, samplePos);
             }
         }
