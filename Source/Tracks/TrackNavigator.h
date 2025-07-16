@@ -97,8 +97,10 @@ public:
 
 	void setConfiguration(ValueTree* config);
 	void scrollBarMoved(ScrollBar* scrollBarThatHasMoved, double newRangeStart) override;
-
-	
+		
+	Region* getRecordingRegion() {
+		return recordingRegion;
+	}
 
 private:
 
@@ -144,6 +146,9 @@ private:
 	virtual void mouseMove(const juce::MouseEvent& event) override;
 	virtual bool keyPressed(const KeyPress& key, Component* originatingComponent) override;
 	virtual void mouseDrag(const MouseEvent& event) override;
+
+	Region* recordingRegion = nullptr;	
+
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TrackNavigator)
 };
 

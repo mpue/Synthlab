@@ -137,8 +137,6 @@ int MixerPanel::addChannel(String name, Mixer::Channel::Type channeltype) {
     channel->channelType = channeltype;
     panel->setChannel(channel);
     
-    
-    
     channels.push_back(panel);
     addAndMakeVisible(panel);
     setBounds(0, 0, 90 * static_cast<int>(channels.size()),250);

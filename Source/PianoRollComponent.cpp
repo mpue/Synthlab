@@ -29,23 +29,50 @@ void PianoRollComponent::drawGrid(juce::Graphics& g)
     g.fillAll(juce::Colours::darkgrey);
     auto bounds = getLocalBounds();
 
-    int gridSpacingSamples = 1000;
-
-    for (int i = 0; i < bounds.getWidth(); ++i)
+    for (int p = 0; p < 128; ++p)
     {
-        double sample = (i - pianoWidth - panOffset.x) / xZoom;
-        if (sample >= 0.0 && fmod(sample, gridSpacingSamples) < 1.0)
+        // Eine Note tiefer anzeigen:
+        int y = getYForPitch(p - 1);
+
+        if (p % 12 == 0) // C-Noten (Oktaven)
         {
-            g.setColour(juce::Colours::white.withAlpha(0.1f));
-            g.drawLine((float)i, 0, (float)i, (float)bounds.getHeight());
+            g.setColour(juce::Colours::white.withAlpha(0.15f));
+            g.drawLine((float)pianoWidth, (float)y, (float)bounds.getWidth(), (float)y, 2.0f);
+        }
+        else
+        {
+            g.setColour(juce::Colours::black.withAlpha(0.2f));
+            g.drawLine((float)pianoWidth, (float)y, (float)bounds.getWidth(), (float)y, 1.0f);
         }
     }
 
-    for (int p = 0; p < 128; ++p)
+
+    // Musikalische Rasterlinien
+    double quarterNoteSamples = (60.0 / bpm) * sampleRate;
+    double barLengthSamples = quarterNoteSamples * 4.0; // 4/4-Takt
+
+    double startSample = getTimeAtX(0);
+    double endSample = getTimeAtX(bounds.getWidth());
+
+    int firstQuarter = (int)(startSample / quarterNoteSamples);
+    int lastQuarter = (int)(endSample / quarterNoteSamples);
+
+    for (int i = firstQuarter; i <= lastQuarter; ++i)
     {
-        int y = getYForPitch(p);
-        g.setColour(juce::Colours::black.withAlpha(0.2f));
-        g.drawLine((float)pianoWidth, (float)y, (float)bounds.getWidth(), (float)y);
+        double sampleTime = i * quarterNoteSamples;
+        int x = getXForTime(sampleTime);
+
+        // Jede 4. Viertel → Taktstrich (dick)
+        if (i % 4 == 0)
+        {
+            g.setColour(juce::Colours::white.withAlpha(0.25f));
+            g.drawLine((float)x, 0.0f, (float)x, (float)bounds.getHeight(), 2.0f); // dick
+        }
+        else
+        {
+            g.setColour(juce::Colours::white.withAlpha(0.1f));
+            g.drawLine((float)x, 0.0f, (float)x, (float)bounds.getHeight(), 1.0f); // dünner
+        }
     }
 }
 
@@ -54,12 +81,25 @@ void PianoRollComponent::drawPiano(juce::Graphics& g)
     for (int i = 0; i < 128; ++i)
     {
         int y = getYForPitch(i);
-        g.setColour(isBlackKey(i) ? juce::Colours::black : juce::Colours::white);
+        bool isBlack = isBlackKey(i);
+
+        g.setColour(isBlack ? juce::Colours::black : juce::Colours::white);
         g.fillRect(0, y, pianoWidth, (int)yZoom);
+
         g.setColour(juce::Colours::grey);
         g.drawRect(0, y, pianoWidth, (int)yZoom);
+
+        // Oktaven beschriften
+        if (i % 12 == 0)
+        {
+            int octave = (i / 12) - 1; // MIDI 0 = C−1
+            g.setColour(isBlack ? juce::Colours::white : juce::Colours::black);
+            g.setFont(10.0f);
+            g.drawText("C" + juce::String(octave), 2, y, pianoWidth - 4, (int)yZoom, juce::Justification::centredLeft);
+        }
     }
 }
+
 
 void PianoRollComponent::drawNotes(juce::Graphics& g)
 {
@@ -137,7 +177,7 @@ void PianoRollComponent::mouseDown(const juce::MouseEvent& e)
     {
         int pitch = getPitchAtY(e.y);
         double start = getTimeAtX(e.x);
-        double duration = sampleRate * (60.0 / 120) / 4.0; // = 1/16 Note
+        double duration = sampleRate * gridResolution;
 
         juce::MidiMessage on = juce::MidiMessage::noteOn(1, pitch, (juce::uint8)100);
         juce::MidiMessage off = juce::MidiMessage::noteOff(1, pitch);
@@ -166,7 +206,7 @@ void PianoRollComponent::mouseDown(const juce::MouseEvent& e)
         if (offIndex < 0 || offIndex >= midiSequence->getNumEvents()) continue;
 
         double duration = midiSequence->getEventPointer(offIndex)->message.getTimeStamp() - ev->message.getTimeStamp();
-        auto rect = getNoteRect(ev->message, duration * (60.0 / 120) / 4.0);
+        auto rect = getNoteRect(ev->message, duration);
 
         if (rect.contains(dragStart))
         {
@@ -197,7 +237,13 @@ void PianoRollComponent::mouseDrag(const juce::MouseEvent& e)
 
     isDragging = true;
     auto delta = e.getPosition() - dragStart;
-    double deltaTime = delta.x / xZoom;
+    double rawDeltaTime = delta.x / xZoom;
+
+    double sixteenthSamples = (60.0 / bpm) / 4.0 * sampleRate;
+
+    // Runde den Zeitunterschied auf das nächste 16tel
+    double deltaTime = std::round(rawDeltaTime / sixteenthSamples) * sixteenthSamples;
+
     double deltaPitchF = -(delta.y / yZoom);
 
     if (isResizing && resizingIndex >= 0)
@@ -259,8 +305,9 @@ void PianoRollComponent::mouseWheelMove(const juce::MouseEvent& e, const juce::M
     else
         yZoom *= (1.0f + wheel.deltaY);
 
-    xZoom = juce::jlimit(20.0f, 800.0f, xZoom);
+    xZoom = juce::jlimit(0.0001f, 1.0f, xZoom);
     yZoom = juce::jlimit(6.0f, 48.0f, yZoom);
+
     repaint();
 }
 

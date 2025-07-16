@@ -11,7 +11,7 @@
 #include "PitchBendModule.h"
 #include "MidiClock.h"
 #include "Knob.h"                // for MIDI controller knobs
-
+#include "PluginModule.h"         // for plugin modules
 
 
 using namespace juce;
@@ -162,6 +162,7 @@ void MidiProcessor::sendPitchBendMessage(Module* module, int channel, int pitch)
 }
 
 void MidiProcessor::sendControllerMessage(Module* module, int targetChannel, int controller, float value, int midiInChannel) {
+
 	if (auto* knob = dynamic_cast<Knob*>(module)) {
 		if (knob->isLearning()) {
 			// Nur lernen, wenn Kanal passt oder explizit erlaubt
@@ -174,6 +175,13 @@ void MidiProcessor::sendControllerMessage(Module* module, int targetChannel, int
 		if (knob->getController() == controller) {
 			knob->setValue(value);
 		}
+	}
+	else if(auto* plugin = dynamic_cast<PluginModule*>(module)) {
+		MidiMessage msg = MidiMessage::controllerEvent(
+			midiInChannel, controller, static_cast<int>(value));
+		Event* event = new Event("controller", Event::Type::CONTROLLER);
+		event->setMessage(msg);
+		plugin->eventReceived(event);
 	}
 	for (auto* sub : *module->getModules()) {
 		sendControllerMessage(sub, targetChannel, controller, value, midiInChannel);

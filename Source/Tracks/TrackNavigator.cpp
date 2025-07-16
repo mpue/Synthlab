@@ -287,8 +287,8 @@ void TrackNavigator::setPosition(double position) {
 	Logger::getCurrentLogger()->writeToLog("samplePosition  : " + String(samplePosition));
 	std::function<void(void)> changeLambda =
 		[=]() {
-			marker->setSamplePosition(samplePosition);			
-			transportDisplay->setTransportState(samplePosition, Project::getInstance()->getSampleRate(), Project::getInstance()->getTempo(), 4, 4);
+		marker->setSamplePosition(samplePosition);
+		transportDisplay->setTransportState(samplePosition, Project::getInstance()->getSampleRate(), Project::getInstance()->getTempo(), 4, 4);
 		};
 	juce::MessageManager::callAsync(changeLambda);
 	startTimer(50);
@@ -310,7 +310,7 @@ void TrackNavigator::ResetMarkerPosition()
 }
 
 void TrackNavigator::setSamplePosition(int position) {
-	
+
 	// Logger::getCurrentLogger()->writeToLog("setSamplePosition : " + String(position));
 	this->samplePosition = position;
 	for (int i = 0; i < tracks.size(); i++) {
@@ -321,7 +321,7 @@ void TrackNavigator::setSamplePosition(int position) {
 		[=]() {
 		marker->setSamplePosition(this->samplePosition);
 		transportDisplay->setTransportState(samplePosition, Project::getInstance()->getSampleRate(), Project::getInstance()->getTempo(), 4, 4);
-		
+
 		};
 	juce::MessageManager::callAsync(changeLambda);
 }
@@ -369,7 +369,7 @@ void TrackNavigator::setRecording(bool recording) {
 		noteOffForAll();
 		startTimer(50);
 		Session::getInstance()->setRecordingStartTime();
-		recordStart = (long)marker->getSamplePosition() * Project::getInstance()->getSampleRate();
+		recordStart = (long)marker->getSamplePosition();
 		if (recordStart < 0) {
 			recordStart = 0;
 		}
@@ -378,16 +378,16 @@ void TrackNavigator::setRecording(bool recording) {
 
 				if (tracks.at(i)->getType() == Track::Type::MIDI || tracks.at(i)->getType() == Track::Type::INSTRUMENT) {
 
-					MidiRegion* r = dynamic_cast<MidiRegion*>(tracks.at(i)->getRegionAt(recordStart));
+					MidiRegion* r = dynamic_cast<MidiRegion*>(recordingRegion);
 					if (r == nullptr) {
-						tracks.at(i)->addMidiRegion(Project::getInstance()->getSampleRate(), recordStart, 48000+);
+						recordingRegion = tracks.at(i)->addMidiRegion(Project::getInstance()->getSampleRate(), recordStart, Project::getInstance()->getSampleRate() * 10);
 					}
-					tracks.at(i)->getRegionAt(recordStart)->startRecording();
+					recordingRegion->startRecording();
 				}
 				else if (tracks.at(i)->getType() == Track::Type::AUDIO) {
 					AudioRegion* r = dynamic_cast<AudioRegion*>(tracks.at(i)->getRegionAt(recordStart));
 					if (r == nullptr) {
-						tracks.at(i)->addRegion(nullptr, Project::getInstance()->getSampleRate(), recordStart, 480000 * 4);
+						tracks.at(i)->addRegion(nullptr, Project::getInstance()->getSampleRate(), recordStart, Project::getInstance()->getSampleRate() * 10);
 					}
 					tracks.at(i)->getRegionAt(recordStart)->startRecording();
 				}
@@ -397,14 +397,16 @@ void TrackNavigator::setRecording(bool recording) {
 	}
 	else {
 		stopTimer();
+		recordingRegion = nullptr;
 		Session::getInstance()->setRecordingStopTime();
 		recordStop = marker->getSamplePosition() * Project::getInstance()->getSampleRate();
+
 		for (int i = 0; i < tracks.size(); i++) {
 			if (tracks.at(i)->isRecording()) {
 				if (tracks.at(i)->getType() == Track::Type::MIDI || tracks.at(i)->getType() == Track::Type::INSTRUMENT) {
 					for (int j = 0; j < tracks.at(i)->getRegions().size(); j++) {
 
-						MidiRegion* mr = dynamic_cast<MidiRegion*>(tracks.at(i)->getRegions().at(j));
+						MidiRegion* mr = dynamic_cast<MidiRegion*>(recordingRegion);
 
 						if (mr != nullptr) {
 							mr->stopRecording();

@@ -102,6 +102,7 @@ void MidiRegion::updateThumb() {
         midiThumbnail->setBounds(x, getY(), w, getHeight());
         midiThumbnail->setZoom(zoom);
         midiThumbnail->repaint();
+        
         resized();
         repaint();
     };
@@ -130,6 +131,7 @@ void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bo
 
 void MidiRegion::setNumSamples(int numSamples) {
     this->numSamples = numSamples;
+    setBounds(getX(), getY(), numSamples / sampleRate * zoom, getHeight());
     updateThumb();
 }
 
@@ -175,10 +177,10 @@ void MidiRegion::addMessage(MidiMessage* m, double time, int sampleNum) {
 
     midiMessageList.push_back(m);
     
-    if (numSamples < sampleNum) {
-		numSamples = sampleNum;
-	}
-   
+    int relativeSample = sampleNum - getSampleOffset();
+    if (relativeSample > numSamples) {
+        setNumSamples(relativeSample);
+    }
     // Store message with timestamps relative to region start
     midiThumbnail->addMessage(sampleNum - getSampleOffset(), m);
     updateThumb();
@@ -222,7 +224,7 @@ void MidiRegion::stopRecording() {
     // Send all-notes-off for all 16 MIDI channels
     for (int channel = 1; channel <= 16; channel++) {
         midiBuffer->addEvent(MidiMessage::allNotesOff(channel), numSamples);
-    }
+    }    
 }
 
 void MidiRegion::timerCallback() {
@@ -248,6 +250,8 @@ MidiRegion* MidiRegion::clone(long newOffset) {
 }
 
 std::pair<MidiRegion*, MidiRegion*> MidiRegion::splitAt(long splitSample, MultiComponentDragger* dragger) {
+    const ScopedLock sl(lock);
+
     long relativeSplit = splitSample - sampleOffset;
     if (relativeSplit <= 0 || relativeSplit >= numSamples)
         return { nullptr, nullptr };
@@ -256,30 +260,94 @@ std::pair<MidiRegion*, MidiRegion*> MidiRegion::splitAt(long splitSample, MultiC
     auto* left = new MidiRegion(sampleOffset, relativeSplit, sampleRate, dragger);
     auto* right = new MidiRegion(splitSample, numSamples - relativeSplit, sampleRate, dragger);
 
-    // Note-On-Tracking für Pairing (nicht zwingend notwendig hier, aber für saubere Zukunft)
-    std::map<int, MidiMessage*> openNotes;
+    // Paare tracken
+    std::multimap<int, MidiMessage*> noteOnMap;
 
     for (auto* msg : midiMessageList) {
-        if (!msg) continue;
+        if (!msg)
+            continue;
+
         int t = static_cast<int>(msg->getTimeStamp());
+        int note = msg->getNoteNumber();
 
-        // ----------- LEFT REGION -----------
-        if (t < relativeSplit) {
-            auto* copy = new MidiMessage(*msg);
-            copy->setTimeStamp(t); // Timestamp relativ zur linken Region
-            left->addMessage(copy, 0, t + sampleOffset);
+        if (msg->isNoteOn()) {
+            noteOnMap.insert({ note, msg });
         }
+        else if (msg->isNoteOff()) {
+            auto range = noteOnMap.equal_range(note);
+            for (auto it = range.first; it != range.second; ++it) {
+                auto* on = it->second;
+                int onTime = static_cast<int>(on->getTimeStamp());
+                int offTime = t;
 
-        // ----------- RIGHT REGION -----------
-        else {
-            int newRel = t - relativeSplit;
-            auto* copy = new MidiMessage(*msg);
-            copy->setTimeStamp(newRel); // Timestamp relativ zur rechten Region
-            right->addMessage(copy, 0, newRel + splitSample);
+                // Fall A: Note liegt komplett links
+                if (offTime <= relativeSplit) {
+                    auto* onCopy = new MidiMessage(*on);
+                    auto* offCopy = new MidiMessage(*msg);
+                    onCopy->setTimeStamp(onTime);
+                    offCopy->setTimeStamp(offTime);
+                    left->addMessage(onCopy, 0, onTime + sampleOffset);
+                    left->addMessage(offCopy, 0, offTime + sampleOffset);
+                }
+
+                // Fall B: Note überlappt den Split
+                else if (onTime < relativeSplit && offTime > relativeSplit) {
+                    // Linke Seite: gestutzte Note mit Note-Off am Split
+                    auto* onCopy = new MidiMessage(*on);
+                    auto* offCopy = new MidiMessage(MidiMessage::noteOff(on->getChannel(), on->getNoteNumber()));
+                    onCopy->setTimeStamp(onTime);
+                    offCopy->setTimeStamp(relativeSplit);
+                    left->addMessage(onCopy, 0, onTime + sampleOffset);
+                    left->addMessage(offCopy, 0, relativeSplit + sampleOffset);
+
+                    // Rechte Seite: neue Note-On ab Split mit verkürzter Dauer
+                    auto* newOn = new MidiMessage(*on);
+                    newOn->setTimeStamp(0); // ab Beginn rechter Region
+                    int newDuration = offTime - relativeSplit;
+                    auto* newOff = new MidiMessage(*msg);
+                    newOff->setTimeStamp(newDuration);
+                    right->addMessage(newOn, 0, splitSample);
+                    right->addMessage(newOff, 0, splitSample + newDuration);
+                }
+
+                // Fall C: Note komplett rechts
+                else if (onTime >= relativeSplit) {
+                    auto* onCopy = new MidiMessage(*on);
+                    auto* offCopy = new MidiMessage(*msg);
+                    int relOn = onTime - relativeSplit;
+                    int relOff = offTime - relativeSplit;
+                    onCopy->setTimeStamp(relOn);
+                    offCopy->setTimeStamp(relOff);
+                    right->addMessage(onCopy, 0, relOn + splitSample);
+                    right->addMessage(offCopy, 0, relOff + splitSample);
+                }
+
+                noteOnMap.erase(it);
+                break;
+            }
         }
     }
 
-    // Zoom und Längen setzen
+    // Andere Events (Controller, Clock, SysEx etc.)
+    for (auto* msg : midiMessageList) {
+        if (!msg || msg->isNoteOnOrOff())
+            continue;
+
+        int t = static_cast<int>(msg->getTimeStamp());
+        if (t < relativeSplit) {
+            auto* copy = new MidiMessage(*msg);
+            copy->setTimeStamp(t);
+            left->addMessage(copy, 0, t + sampleOffset);
+        }
+        else {
+            auto* copy = new MidiMessage(*msg);
+            int relT = t - relativeSplit;
+            copy->setTimeStamp(relT);
+            right->addMessage(copy, 0, relT + splitSample);
+        }
+    }
+
+    // Zoom und Bounds
     left->setZoom(zoom);
     right->setZoom(zoom);
 
