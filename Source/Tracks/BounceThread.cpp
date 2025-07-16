@@ -57,6 +57,10 @@ void BounceThread::run()
 
     MidiBuffer fullMidi = buildMidiBufferForTrack(track, sampleRate);
 
+    // Plugin-Ausgänge holen
+    auto* outL = pluginModule->getPins().at(2)->getAudioBuffer();
+    auto* outR = pluginModule->getPins().at(3)->getAudioBuffer();
+
     for (int pos = 0; pos < totalSamples && !threadShouldExit(); pos += blockSize)
     {
         const int numSamples = std::min(blockSize, totalSamples - pos);
@@ -65,10 +69,6 @@ void BounceThread::run()
         MidiBuffer midiSlice = getMidiSlice(fullMidi, pos, numSamples);
         pluginModule->setCurrentSample(pos);
         pluginModule->process(&midiSlice);
-
-        // Plugin-Ausgänge holen
-        auto* outL = pluginModule->getPins().at(2)->getAudioBuffer();
-        auto* outR = pluginModule->getPins().at(3)->getAudioBuffer();
 
         if (outL && outR)
         {

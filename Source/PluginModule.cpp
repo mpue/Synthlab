@@ -125,7 +125,8 @@ void PluginModule::process(MidiBuffer* externalBuffer, int numSamples)
 
 void PluginModule::process()
 {
-    processInternal(nullptr, buffersize);
+    if (!bounceMode)  
+        processInternal(nullptr, buffersize);
 }
 
 void PluginModule::process(MidiBuffer* externalBuffer)
