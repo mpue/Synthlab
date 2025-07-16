@@ -380,7 +380,7 @@ void TrackNavigator::setRecording(bool recording) {
 
 					MidiRegion* r = dynamic_cast<MidiRegion*>(tracks.at(i)->getRegionAt(recordStart));
 					if (r == nullptr) {
-						tracks.at(i)->addMidiRegion(Project::getInstance()->getSampleRate(), recordStart, 480000 * 4);
+						tracks.at(i)->addMidiRegion(Project::getInstance()->getSampleRate(), recordStart, 48000+);
 					}
 					tracks.at(i)->getRegionAt(recordStart)->startRecording();
 				}
