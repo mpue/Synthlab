@@ -25,6 +25,8 @@
 #include "ExtendedFileBrowser.h"
 #include "EditorListener.h"
 
+class Track;
+
 //[/Headers]
 
 //==============================================================================
@@ -73,8 +75,9 @@ private:
     std::unique_ptr<MainTabbedComponent> propertyTab = nullptr;
     std::unique_ptr<MainTabbedComponent> tabbedComponent = nullptr;
 
+    std::unique_ptr<juce::TextButton> showButton;
     
-
+	Track* selectedTrack = nullptr;
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PropertyView)
 };

@@ -67,6 +67,7 @@ public:
 		Project::getInstance()->getUndoManager()->perform(am2);
 		PluginModule* pm = dynamic_cast<PluginModule*>(am2->getModule());
 		pm->selectPlugin(name);
+		pm->setChannel(channel);
 
 		Connection* c2 = new Connection(pm, pm->pins.at(4), ti, ti->pins.at(5));
 		editor->getModule()->getConnections()->push_back(c2);
@@ -94,6 +95,7 @@ public:
 			audioOut = dynamic_cast<AudioOut*>(am3->getModule());
 		}
 			
+		t->setPluginModule(pm);
 
 		AuxOut* auxOut = nullptr;
 

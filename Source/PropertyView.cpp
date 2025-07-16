@@ -22,7 +22,8 @@
 //[/Headers]
 
 #include "PropertyView.h"
-
+#include "Tracks/Track.h"
+#include "PluginModule.h"
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
 using juce::TabbedButtonBar;
@@ -83,6 +84,18 @@ PropertyView::PropertyView () : TimeSliceThread("PropertyWatcher")
     tabbedComponent->addTab("Browser",juce::Colours::grey, browser.get(), false);
     tabbedComponent->addTab("Description",juce::Colours::grey, descriptionEditor.get(), false);
 
+    showButton = std::make_unique<juce::TextButton>("Show Plugin");
+    addAndMakeVisible(*showButton);
+    showButton->setVisible(false);
+    showButton->onClick = [this]()
+        {
+            if (selectedTrack != nullptr)
+            {
+				selectedTrack->getPluginModule()->openPluginWindow();
+            }
+
+        };
+
     startThread();
 
     //[/Constructor]
@@ -128,6 +141,8 @@ void PropertyView::resized()
     propertyTab->setBounds (0, 0, proportionOfWidth (1.0000f), proportionOfHeight (0.5000f));
     tabbedComponent->setBounds (0, proportionOfHeight (0.5000f), proportionOfWidth (1.0000f), proportionOfHeight (0.5000f));
     //[UserResized] Add your own custom resize handling here..
+    if (showButton)
+        showButton->setBounds(getWidth() - 110, propertyTab->getBottom() - 35, 100, 25);
 
     //[/UserResized]
 }
@@ -136,43 +151,35 @@ void PropertyView::resized()
 
 //[MiscUserCode] You can add your own definitions of your custom methods or any other code here...
 
-void PropertyView::selectionChanged(Component* c) {
-
+void PropertyView::selectionChanged(Component* c)
+{
     propertyPanel->clear();
-    
-    if (c != nullptr) {
-        
-        Module* m = dynamic_cast<Module*>(c);
-    
-        if (m != nullptr) {
-            
-            if (m->getSelectedPin() != nullptr){
-                descriptionEditor->setText(m->getSelectedPin()->getDescription());
-            }
-            else {
-                descriptionEditor->setText(m->getDescription());
-            }
-            
+    selectedTrack = nullptr;
+    showButton->setVisible(false);  // standardm‰ﬂig verstecken
+
+    if (c != nullptr)
+    {
+        if (auto* m = dynamic_cast<Module*>(c))
+        {
+            descriptionEditor->setText(m->getSelectedPin() ? m->getSelectedPin()->getDescription() : m->getDescription());
             propertyPanel->addSection("Module settings", m->getProperties());
-            
-            // propertyPanel->addProperties(m->getProperties());
         }
 
-        AudioRegion* ar = dynamic_cast<AudioRegion*>(c);
+        if (auto* t = dynamic_cast<Track*>(c))
+        {
+            selectedTrack = t;
+            propertyPanel->addSection("Track settings", t->getProperties());
 
-        if (ar != nullptr) {
-            // propertyPanel->addSection("Region settings", ar->getProperties());
-        }
-        else {
-            Track* t = dynamic_cast<Track*>(c);
-
-            if (t != nullptr) {
-                propertyPanel->addSection("Track settings", t->getProperties());
+            if (selectedTrack->getType() == Track::Type::INSTRUMENT)
+            {
+                showButton->setVisible(true);
             }
         }
     }
 
+    resized(); // f¸r korrekte Positionierung
 }
+
 
 void PropertyView::fileChanged(juce::String name) {
     // propertyPanel->clear();

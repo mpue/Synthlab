@@ -26,6 +26,7 @@
 using namespace std;
 
 class TrackNavigator;
+class PluginModule;
 
 class Track : public Component, public ChangeBroadcaster, public ChangeListener
 {
@@ -215,6 +216,14 @@ public:
 
     void setSample(int channel, int sampleNum, float sample);
 
+    void setPluginModule(PluginModule* module) {
+        this->pluginModule = module;
+	}
+
+    PluginModule* getPluginModule() {
+        return this->pluginModule;
+	}
+
 private:
 
     juce::StringArray getTypeNames() const
@@ -345,6 +354,7 @@ private:
     juce::Value* channelValue;
 	juce::PropertyComponent* channelProp;
 
+	PluginModule* pluginModule = nullptr;
 
     juce::Array<juce::PropertyComponent*> properties;
   

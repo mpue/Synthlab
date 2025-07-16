@@ -164,6 +164,14 @@ public:
     void resized() override;
     void mouseDoubleClick (const juce::MouseEvent& e) override;
     
+    void setChannel(int channel) {
+        this->channel = channel;
+	}
+
+    int getChannel() {
+        return channel;
+	}
+
     // Binary resources:
     static const char* materialicons_301_viewmodule_64_0_ffffff_none_png;
     static const int materialicons_301_viewmodule_64_0_ffffff_none_pngSize;
@@ -202,7 +210,7 @@ protected:
     
     juce::DropShadow* shadow = nullptr;
     juce::DropShadower* shadower = nullptr;
-    
+
     Layer currentLayer = Layer::ALL;
     
     //[/UserVariables]
@@ -214,6 +222,8 @@ protected:
 
     int id = 0;
     
+    int channel;
+
     juce::String uuid;
     
     //==============================================================================
