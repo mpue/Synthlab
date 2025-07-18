@@ -159,8 +159,8 @@ MainComponent::~MainComponent()
 		propertyView = nullptr;
 		delete lockButton;
 		menu = nullptr;
-		delete toolbar;
-		delete toolbarFactory;
+		toolbar = nullptr;
+		toolbarFactory = nullptr;
 		editorView = nullptr;
 #if defined(JUCE_PLUGINHOST_AU)
 		delete pluginMenu;
@@ -173,7 +173,7 @@ MainComponent::~MainComponent()
 		delete editor;
 		tab = nullptr;
 		propertyView = nullptr;
-		delete toolbarFactory;
+		toolbarFactory = nullptr;
 		editorView = nullptr;
 		mixerPanel = nullptr;
 		delete lockButton;
@@ -226,7 +226,7 @@ void MainComponent::createConfig() {
 }
 
 void MainComponent::createToolbar() {
-	toolbar = new Toolbar();
+	toolbar = std::make_unique<Toolbar>();
 
 #if JUCE_MAC
 
@@ -234,9 +234,9 @@ void MainComponent::createToolbar() {
 	toolbar->setBounds(0, 25, getWidth(), 50);
 #endif
 
-	addAndMakeVisible(toolbar);
+	addAndMakeVisible(toolbar.get());
 
-	toolbarFactory = new DefaultToolbarItemFactory();
+	toolbarFactory = std::make_unique<DefaultToolbarItemFactory>();
 
 	for (int i = 0; i < toolbarFactory->numItems(); i++) {
 		toolbar->addItem(*toolbarFactory, i + 1);

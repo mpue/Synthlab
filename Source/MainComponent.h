@@ -1,11 +1,4 @@
-﻿/*
-  ==============================================================================
-
-
-  ==============================================================================
-*/
-
-#pragma once
+﻿#pragma once
 
 #include <map>
 #include "../JuceLibraryCode/JuceHeader.h"
@@ -106,6 +99,7 @@ public:
 
     TrackNavigator* navigator = nullptr;
     MidiProcessor* midiProcessor = nullptr;
+
 private:
     //==============================================================================
 
@@ -145,12 +139,11 @@ private:
     std::map<int,int> keyCodeMidiNote;
     
     int currentOctave = 0;
-    DefaultToolbarItemFactory* toolbarFactory;
-    juce::Toolbar* toolbar = nullptr;
+
+    std::unique_ptr<DefaultToolbarItemFactory> toolbarFactory;
+    std::unique_ptr<juce::Toolbar> toolbar = nullptr;
     
-    bool initialized = false;
-    
-    
+    bool initialized = false;   
     bool keyStates[128] = { false };
     
     float magnitudeLeft = 0;
