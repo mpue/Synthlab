@@ -150,15 +150,15 @@ MainComponent::~MainComponent()
 		if (moduleBrowser->isVisible()) {
 			moduleBrowser->setVisible(false);
 		}
-		delete moduleBrowser;
+		moduleBrowser = nullptr;
 	}
 
 	if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
-		delete tab;
-		delete view;
-		delete propertyView;
+		tab = nullptr;
+		
+		propertyView = nullptr;
 		delete lockButton;
-		delete menu;
+		menu = nullptr;
 		delete toolbar;
 		delete toolbarFactory;
 		editorView = nullptr;
@@ -171,8 +171,8 @@ MainComponent::~MainComponent()
 	}
 	else if (Project::getInstance()->getAppMode() == Project::AppMode::PLAYER) {
 		delete editor;
-		delete tab;
-		delete propertyView;
+		tab = nullptr;
+		propertyView = nullptr;
 		delete toolbarFactory;
 		editorView = nullptr;
 		mixerPanel = nullptr;
@@ -186,7 +186,7 @@ MainComponent::~MainComponent()
 	stopTimer();
 
 	delete midiProcessor;
-	delete chat;
+	chat = nullptr;
 
 	PrefabFactory::getInstance()->destroy();
 	Project::getInstance()->destroy();
@@ -196,7 +196,7 @@ MainComponent::~MainComponent()
 }
 
 void MainComponent::createMenu() {
-	this->menu = new MenuBarComponent();
+	this->menu = std::make_unique<MenuBarComponent>();
 
 #if JUCE_MAC
 	menu->setModel(nullptr);
@@ -204,7 +204,7 @@ void MainComponent::createMenu() {
 #else
 	menu->setModel(this);
 	menu->setBounds(0, 0, 1000, 25);
-	addAndMakeVisible(menu);
+	addAndMakeVisible(menu.get());
 #endif
 }
 
@@ -287,7 +287,7 @@ void MainComponent::createCPUMeter() {
 }
 
 void MainComponent::createStudioLayout() {
-	propertyView = new PropertyView();
+	propertyView = std::make_unique<PropertyView>();
 	parser = new CommandParser();
 	transportDisplay = std::make_unique<TransportDisplayComponent>();
 	transportDisplay->setTransportState(0, sampleRate, 120.0, 4, 4);
@@ -296,7 +296,7 @@ void MainComponent::createStudioLayout() {
 	transportDisplay->setTopLeftPosition(1180, 26);
 	addAndMakeVisible(transportDisplay.get());
 
-	editorView = std::make_unique<EditorComponent>(sampleRate, buffersize, propertyView, *parser, transportDisplay.get());
+	editorView = std::make_unique<EditorComponent>(sampleRate, buffersize, propertyView.get(), *parser, transportDisplay.get());
 	editor = editorView.get()->getEditor();
 	mixerPanel = editorView->getMixerPanel();
 
@@ -472,8 +472,7 @@ void MainComponent::createStudioLayout() {
 		}, "Export track as audio.");
 
 
-	chat = new ChatGPTInterface("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");
-
+	chat = std::make_unique<ChatGPTInterface>("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");
 
 	parser->registerCommand("chatgpt",
 		[this](const std::vector<std::string>& args) -> std::string
@@ -497,12 +496,12 @@ void MainComponent::createStudioLayout() {
 #else
 	propertyView->setTopLeftPosition(0, 75);
 #endif
-	editor->addEditorListener(propertyView);
+	editor->addEditorListener(propertyView.get());
 	propertyView->getBrowser()->addChangeListener(editor);
 
-	Project::getInstance()->setPropertyView(propertyView);
+	Project::getInstance()->setPropertyView(propertyView.get());
 
-	addAndMakeVisible(propertyView);
+	addAndMakeVisible(propertyView.get());
 	addAndMakeVisible(resizerBar);
 	addAndMakeVisible(editorView.get());
 	editor->setTab(editorView->getEditorTab());
@@ -753,7 +752,7 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 					const float* auxL = auxChannels.at(k)->getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
 
 					Mixer::Channel* channel = Mixer::getInstance()->getChannel(Mixer::Channel::Type::AUX, k);
-					if (channel != NULL) {
+					if (channel != nullptr) {
 						float auxVolume = channel->mute ? 0 : channel->volume;
 						double auxpan = channel->pan;
 
@@ -801,11 +800,11 @@ void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill
 			if (editor->getMixer()->channelIsValid(1)) {
 				// outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->applyGain(channelVolume);
 				const float* outR = outputChannels.at(0)->getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
-				if (outputChannelData[1] != NULL)
+				if (outputChannelData[1] != nullptr)
 					outputChannelData[1][j] += channelVolume * (outR[j] + auxRightOut) * gainRight;
 			}
 			else {
-				if (outputChannelData[1] != NULL)
+				if (outputChannelData[1] != nullptr)
 					outputChannelData[1][j] = auxRightOut;
 			}
 		}
@@ -864,7 +863,7 @@ void MainComponent::resized()
 			toolbar->setSize(getLocalBounds().getWidth(), 50);
 
 		// make a list of two of our child components that we want to reposition
-		Component* comps[] = { propertyView, &resizerBar, editorView.get() };
+		Component* comps[] = { propertyView.get(), &resizerBar, editorView.get()};
 
 		// this will position the 3 components, one above the other, to fit
 		// vertically into the rectangle provided.
@@ -872,17 +871,17 @@ void MainComponent::resized()
 			r.getX(), r.getY() + 25, r.getWidth(), r.getHeight(),
 			false, true);
 
-		if (propertyView != nullptr && propertyView->getParentComponent() != NULL)
+		if (propertyView != nullptr && propertyView->getParentComponent() != nullptr)
 			propertyView->setSize(r.getWidth() - editorView->getWidth(), propertyView->getHeight());
 		if (getParentComponent() != nullptr) {
-			if (cpuLoadLabel != NULL) {
+			if (cpuLoadLabel != nullptr) {
 				cpuLoadLabel->setBounds(getParentComponent()->getWidth() - 50, 0, 50, 20);
 				loadSlider->setBounds(getParentComponent()->getWidth() - 150, 10, 100, 10);
 			}
-			if (editorView != NULL) {
+			if (editorView != nullptr) {
 				editorView->getEditor()->resized();
 			}
-			if (menu != NULL) {
+			if (menu != nullptr) {
 				menu->setBounds(0, 0, getParentWidth(), 25);
 			}
 
@@ -1033,7 +1032,7 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 		if (editor->getSelectionModel().getSelectedModule() != nullptr) {
 			PluginModule* pm = dynamic_cast<PluginModule*>(editor->getSelectionModel().getSelectedModule());
 
-			if (pm != NULL) {
+			if (pm != nullptr) {
 				pm->selectPlugin(pluginName);
 			}
 		}
@@ -1071,17 +1070,17 @@ StringArray MainComponent::getMenuBarNames() {
 
 void MainComponent::openSettings() {
 
-	AudioDeviceSelectorComponent* selector = new AudioDeviceSelectorComponent(deviceManager, 2, 16, 2, 16, true, true, true, false);
+	AudioDeviceSelectorComponent selector = AudioDeviceSelectorComponent(deviceManager, 2, 16, 2, 16, true, true, true, false);
 	DialogWindow::LaunchOptions launchOptions;
 
-	selector->setLookAndFeel(Project::getInstance()->getLookAndFeel());
+	selector.setLookAndFeel(Project::getInstance()->getLookAndFeel());
 	launchOptions.dialogTitle = ("Audio Settings");
 	launchOptions.escapeKeyTriggersCloseButton = true;
 	launchOptions.resizable = false;
 	launchOptions.useNativeTitleBar = false;
 	launchOptions.useBottomRightCornerResizer = true;
 	launchOptions.componentToCentreAround = getParentComponent();
-	launchOptions.content.setOwned(selector);
+	launchOptions.content.setOwned(&selector);
 	launchOptions.content->setSize(600, 580);
 	launchOptions.dialogBackgroundColour = Colour(0xff222222);
 
@@ -1108,7 +1107,7 @@ void MainComponent::openSettings() {
 
 		File configFile = File(userHome + "/.Synthlab/config.xml");
 
-		if (config != NULL) {
+		if (config != nullptr) {
 			config->writeToFile(configFile, "");
 			config = nullptr;
 		}
@@ -1197,7 +1196,7 @@ void MainComponent::buttonClicked(Button* b)
 {
 	ToolbarButton* tb = dynamic_cast<ToolbarButton*>(b);
 
-	if (tb != NULL) {
+	if (tb != nullptr) {
 
 		if (tb->getItemId() == toolbarFactory->delete_element) {
 			RemoveSelectedAction* rma = new RemoveSelectedAction(editor);
@@ -1231,8 +1230,8 @@ void MainComponent::buttonClicked(Button* b)
 		else if (tb->getItemId() == toolbarFactory->mod_sources) {
 
 			if (moduleBrowser == nullptr) {
-				moduleBrowser = new ModuleBrowser();
-				addChildComponent(moduleBrowser);
+				moduleBrowser = std::make_unique<ModuleBrowser>();
+				addChildComponent(moduleBrowser.get());
 			}
 
 			if (!moduleBrowser->isVisible()) {
@@ -1274,7 +1273,7 @@ void MainComponent::buttonClicked(Button* b)
 
 				// make sure we do not send this event to a plugin module
 
-				if ((module = dynamic_cast<PluginModule*>(editor->getModule()->getModules()->at(i))) == NULL) {
+				if ((module = dynamic_cast<PluginModule*>(editor->getModule()->getModules()->at(i))) == nullptr) {
 					midiProcessor->sendMidiStopMessage(editor->getModule()->getModules()->at(i), 1);
 				}
 			}
@@ -1290,7 +1289,7 @@ void MainComponent::buttonClicked(Button* b)
 
 				// make sure we do not send this event to a plugin module
 
-				if ((module = dynamic_cast<PluginModule*>(editor->getModule()->getModules()->at(i))) == NULL) {
+				if ((module = dynamic_cast<PluginModule*>(editor->getModule()->getModules()->at(i))) == nullptr) {
 					midiProcessor->sendMidiStartMessage(editor->getModule()->getModules()->at(i), 1);
 				}
 			}
@@ -1351,7 +1350,7 @@ void MainComponent::selectionChanged(juce::Component* m) {
 
 void MainComponent::fileChanged(juce::String name) {
 	lockButton->setToggleState(editor->isLocked(), juce::NotificationType::dontSendNotification);
-	if (layerCombobox != NULL)
+	if (layerCombobox != nullptr)
 		layerCombobox->getComboBox().setSelectedId(editor->getCurrentLayer() + 1);
 }
 

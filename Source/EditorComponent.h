@@ -66,7 +66,6 @@ private:
     std::unique_ptr<ShellConsoleComponent> console = nullptr;
     	
     std::unique_ptr<juce::MidiMessageSequence> sequence = nullptr;
-	std::unique_ptr<juce::Viewport> pianoView = nullptr;
 
 	TransportDisplayComponent* transportDisplay = nullptr;
 

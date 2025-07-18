@@ -27,10 +27,11 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 {
 	this->transportDisplay = transport;
 	this->propertyView = propertyView;
-	this->timeLine = new TimeLine(Project::getInstance()->getTrackLength());
+	this->timeLine = std::make_unique<TimeLine>(Project::getInstance()->getTrackLength());
 	this->timeLine->setBounds(0, 0, getWidth(), timelineOffset);
 	this->timeLine->setSize(getWidth(), timelineOffset);
-	addAndMakeVisible(timeLine);
+	this->timeLine->setTempoAndTimeSignature(Project::getInstance()->getTempo(),4,4);
+	addAndMakeVisible(timeLine.get());
 	this->deviceManager = deviceManager;
 	this->selector = new WaveSelector();
 	this->selector->addChangeListener(this);
@@ -57,12 +58,13 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 
 TrackNavigator::~TrackNavigator()
 {
-	delete timeLine;
+	timeLine = nullptr;
 	selector = nullptr;
 
 	for (std::vector<Track*>::iterator it = tracks.begin(); it != tracks.end(); ++it) {
 		delete* it;
 	}
+
 	delete dragger;
 	delete marker;
 
@@ -457,28 +459,16 @@ StringArray TrackNavigator::getTrackList()
 void TrackNavigator::openPianoRoll(MidiRegion* r)
 {
 	PianoRollComponent* pr = new PianoRollComponent(r->getMidiMessageSequence(), Project::getInstance()->getSampleRate());
-
-	Viewport* pianoView = new Viewport();
-
-	pianoView->setViewedComponent(pr);
-	pianoView->setScrollBarsShown(true, true);
-	pianoView->setScrollOnDragEnabled(false);
-	pianoView->setWantsKeyboardFocus(false);
-	pianoView->setMouseClickGrabsKeyboardFocus(false);
-
-	pr->setSize(2000, 800);
 	pr->setGridResolution(16);
 
-	Project::getInstance()->getSupplemental()->addTab("Piano roll", Colours::darkgrey, pianoView, false);
+	Project::getInstance()->getSupplemental()->addTab("Piano roll", Colours::darkgrey, pr, true);
 	Project::getInstance()->getSupplemental()->setCurrentTabIndex(Project::getInstance()->getSupplemental()->getNumTabs() - 1);
-
 }
 
 double PianoRollComponent::secondsToBeats(double time) const
 {
 	return (Project::getInstance()->getTempo() / 60) * time;
 }
-
 
 Track* TrackNavigator::addTrack(TrackConfig* tc) {
 
@@ -521,14 +511,10 @@ Track* TrackNavigator::addTrack(TrackConfig* tc) {
 	this->timeLine->setBounds(0, 0, getWidth(), timelineOffset);
 	this->timeLine->setSize(getWidth(), timelineOffset);
 
-	// constrainer.setRaster(this->zoom / 4);
-	// constrainer.setMaxX(getMaxLength() * this->zoom);
-
 	repaint();
 	sendChangeMessage();
 
 	return track;
-
 }
 
 void TrackNavigator::addTrack(Track* track) {
@@ -579,10 +565,7 @@ void TrackNavigator::addTrack(Track* track) {
 Track* TrackNavigator::addTrack(Track::Type type, double sampleRate) {
 
 	Track* track = new Track(type, sampleRate, this->dragger);
-
 	addTrack(track);
-
-	// int height = this->getParentComponent()->getHeight();
 
 	int height = timelineOffset;
 
@@ -600,9 +583,6 @@ Track* TrackNavigator::addTrack(Track::Type type, double sampleRate) {
 
 	track->setVolume(1.0f);
 
-	// constrainer.setRaster(this->zoom / 4);
-	// constrainer.setMaxX(getMaxLength() * this->zoom);
-
 	repaint();
 	sendChangeMessage();
 
@@ -615,7 +595,6 @@ void TrackNavigator::removeSelectedTrack()
 		if ((*it)->isSelected()) {
 			delete* it;
 			it = tracks.erase(it);
-
 			break;
 		}
 		else {
@@ -630,7 +609,6 @@ void TrackNavigator::removeSelectedTrack()
 		for (int i = 1; i < tracks.size(); i++) {
 			tracks.at(i)->setTopLeftPosition(tracks.at(i - 1)->getX(), tracks.at(i - 1)->getHeight() + tracks.at(i - 1)->getY());
 		}
-
 	}
 
 	adjustHeight();

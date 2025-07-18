@@ -88,24 +88,21 @@ public:
     
     void processModule(Module* m);
     int getNumActiveChannels(int i);
+    void timerCallback() override;
+    virtual void changeListenerCallback (ChangeBroadcaster* source) override;
+    void startBounce(const juce::File& file, double duration);
+    juce::String tryExecuteChatInstruction(const std::string& jsonString);
 
     SynthEditor* getEditor() {
         return editor;
     }
+
     // default settings just in case
     double sampleRate = 44100;
     int buffersize = 128;
 
     bool running = false;
     bool bouncing = false;
-    // void mouseDrag (const juce::MouseEvent& event) override;
-    // virtual void dragOperationStarted (const juce::DragAndDropTarget::SourceDetails& details) override;
-    void timerCallback() override;
-    virtual void changeListenerCallback (ChangeBroadcaster* source) override;
-    
-    void startBounce(const juce::File& file, double duration);
-
-    juce::String tryExecuteChatInstruction(const std::string& jsonString);
 
     TrackNavigator* navigator = nullptr;
     MidiProcessor* midiProcessor = nullptr;
@@ -113,15 +110,12 @@ private:
     //==============================================================================
 
     void openSettings();
-
-
     
 	SynthEditor* editor = nullptr;
-    MainTabbedComponent* tab = nullptr;
-    PropertyView* propertyView = nullptr    ;
-    juce::Viewport* view = nullptr;
-    juce::MenuBarComponent* menu;
-    ModuleBrowser* moduleBrowser = nullptr;
+    std::unique_ptr<MainTabbedComponent> tab = nullptr;
+    std::unique_ptr<PropertyView> propertyView = nullptr    ;
+    std::unique_ptr<juce::MenuBarComponent> menu = nullptr;
+    std::unique_ptr<ModuleBrowser> moduleBrowser = nullptr;
     ToolbarComboBox* layerCombobox = nullptr;
 
     juce::Label* cpuLoadLabel = nullptr;
@@ -179,17 +173,15 @@ private:
     bool isOptionPressed = false;
     
     Sampler* defaultSampler = nullptr;
-    CriticalSection lock;
 
-    ChatGPTInterface* chat = nullptr;
-    
+    std::unique_ptr<ChatGPTInterface> chat = nullptr;    
 	std::unique_ptr<TransportDisplayComponent> transportDisplay = nullptr;
-
     std::unique_ptr<BounceThread> bounceThread;
     std::atomic<double> bounceProgress{ 0.0 };
-
     std::unique_ptr<Metronome> metronome;
     juce::AudioBuffer<float> metronomeBuffer;
+    
+    CriticalSection lock;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

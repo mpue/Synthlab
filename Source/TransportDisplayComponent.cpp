@@ -82,17 +82,15 @@ void TransportDisplayComponent::drawHorizontalLayout(Graphics& g)
     g.setColour(Colours::white);
 
     String timeStr = getTimeAsString(currentSamplePos, currentSampleRate);
-    String sampleStr = String((int64_t)currentSamplePos) + " samples";
+    String barBeatStr = getBarBeatString(currentSamplePos, currentSampleRate, currentBpm, timeSigNumerator, timeSigDenominator);
     String sampleRateStr = String((int)currentSampleRate) + " Hz";
     
     String timeSigStr = String(timeSigNumerator) + "/" + String(timeSigDenominator);
 
     g.drawFittedText(timeStr, bounds.removeFromLeft(160), Justification::left, 1);
-    g.drawFittedText(sampleStr, bounds.removeFromLeft(180), Justification::left, 1);
+    g.drawFittedText(barBeatStr, bounds.removeFromLeft(180), Justification::left, 1);
     g.drawFittedText(sampleRateStr, bounds.removeFromLeft(120), Justification::left, 1);
-    
-
-
+  
     g.setColour(Colours::white);
     g.drawFittedText("Sig: " + timeSigStr, bounds.removeFromLeft(80), Justification::left, 1);
 
@@ -161,4 +159,23 @@ String TransportDisplayComponent::getTimeAsString(double samples, double rate) c
     int s = static_cast<int>(seconds) % 60;
     int ms = static_cast<int>((seconds - std::floor(seconds)) * 1000);
     return String::formatted("%02d:%02d:%02d.%03d", h, m, s, ms);
+}
+
+String TransportDisplayComponent::getBarBeatString(double samples, double rate, double bpm, int numerator, int denominator) const
+{
+    if (rate <= 0.0 || bpm <= 0.0 || denominator <= 0)
+        return "0.0.0";
+
+    double seconds = samples / rate;
+    double beatsPerSecond = bpm / 60.0;
+    double totalBeats = seconds * beatsPerSecond;
+
+    int beatsPerBar = numerator;
+    int totalSixteenths = static_cast<int>(totalBeats * 4.0); // 4 Sechzehntel pro Beat
+
+    int bar = totalSixteenths / (beatsPerBar * 4) + 1;
+    int beat = (totalSixteenths / 4) % beatsPerBar + 1;
+    int sixteenth = totalSixteenths % 4 + 1;
+
+    return String(bar) + "." + String(beat) + "." + String(sixteenth);
 }

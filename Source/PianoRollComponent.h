@@ -25,6 +25,15 @@ public:
 
     static constexpr float pixelsPerSecond = 100.0f;
 
+    void focusGained(FocusChangeType cause) override {
+        Logger::getCurrentLogger()->writeToLog("PianoRollComponent: focus gained");
+    }
+
+    void focusLost(FocusChangeType cause) override {
+        Logger::getCurrentLogger()->writeToLog("PianoRollComponent: focus lost");
+    }
+
+
 private:
     void drawGrid(juce::Graphics& g);
     void drawPiano(juce::Graphics& g);

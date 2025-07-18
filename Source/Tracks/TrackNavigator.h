@@ -65,6 +65,14 @@ public:
 	bool isPlaying();
 	void setPlaying(bool playing);
 
+	void focusGained(FocusChangeType cause) override {
+		Logger::getCurrentLogger()->writeToLog("TrackNavigator: focus gained");
+	}
+
+	void focusLost(FocusChangeType cause) override {
+		Logger::getCurrentLogger()->writeToLog("TrackNavigator: focus lost");
+	}
+
 	bool isRecording();
 	void setRecording(bool recording);
 	void noteOffForAll();
@@ -112,7 +120,7 @@ private:
 
 	Track* currentTrack = NULL;
 	PositionMarker* marker;
-	TimeLine* timeLine;
+	std::unique_ptr<TimeLine> timeLine;
 	Viewport* view;
 
 	std::vector<Track*> tracks;

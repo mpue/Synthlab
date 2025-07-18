@@ -28,12 +28,17 @@ public:
     void setLength(double length);
 	static String secondsToTime(int seconds);
 	void setOffset(int offset);
+    void setTempoAndTimeSignature(double bpm, int numerator, int denominator);
+
 private:
 	virtual void changeListenerCallback(ChangeBroadcaster * source) override;
 	double length;
 	int offset = 0;
     std::unique_ptr<DropShadow> dropShadow;
     std::unique_ptr<DropShadower> dropShadower;
+    double bpm = 120.0;
+    int timeSigNumerator = 4;
+    int timeSigDenominator = 4;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TimeLine)
 };

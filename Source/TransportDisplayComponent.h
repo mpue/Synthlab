@@ -51,6 +51,7 @@ private:
 	TransportLookAndFeel lookAndFeel;   
 
     juce::String getTimeAsString(double samples, double rate) const;
+    String getBarBeatString(double samples, double rate, double bpm, int numerator, int denominator) const;
     void drawHorizontalLayout(juce::Graphics& g);
     void drawCompactLayout(juce::Graphics& g);
     void drawMetronomeButton(juce::Graphics& g, const juce::Rectangle<int>& area);

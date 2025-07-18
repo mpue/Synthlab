@@ -57,20 +57,6 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView*
     
     bottomTab->addTab("Mixer", Colours::darkgrey, mixerView.get(), false);
 
-
-	//pianoView = std::make_unique<Viewport>();
-
- //   pianoView->setViewedComponent(pianoRoll.get());
- //   pianoView->setScrollBarsShown(true, true);
- //   pianoView->setScrollOnDragEnabled(false);
- //   pianoView->setWantsKeyboardFocus(false);
- //   pianoView->setMouseClickGrabsKeyboardFocus(false);
-    
- //   pianoRoll->setSize(2000, 800);
-	//pianoRoll->setGridResolution(16);
-
-	bottomTab->addTab("Piano Roll", Colours::darkgrey, pianoView.get(), false);
-
     addAndMakeVisible(topTab.get());
     addAndMakeVisible(resizerBar);
     addAndMakeVisible(bottomTab.get());
@@ -112,14 +98,14 @@ EditorComponent::~EditorComponent()
 {
     editor->setTab(nullptr);
     editor = nullptr;
-    Project::getInstance()->setSupplemental(nullptr);
- //   editorView = nullptr;
- //   mixerPanel = nullptr;
- //   mixerView =  nullptr;    
- //   navigator = nullptr;
- //   trackView = nullptr;
- //   console = nullptr;
-	//sequence = nullptr;
+    Project::getInstance()->setSupplemental(nullptr); 
+    editorView = nullptr;
+    mixerPanel = nullptr;
+    mixerView =  nullptr;    
+    navigator = nullptr;
+    trackView = nullptr;
+    console = nullptr;
+	sequence = nullptr;
 }
 
 void EditorComponent::paint (Graphics& g)
@@ -172,15 +158,16 @@ void EditorComponent::OpenTrackView()
         navigator = std::make_unique<TrackNavigator>(AudioManager::getInstance()->getDeviceManager(), trackView.get(), propertyView, transportDisplay);
         
         PrefabFactory::getInstance()->init(navigator.get());
-        addMouseListener(navigator.get(), true);
+        // addMouseListener(navigator.get(), true);
         editor->setNavigator(navigator.get());
         trackView->setSize(500, 200);
         trackView->setViewedComponent(navigator.get());
         trackView->setScrollBarsShown(true, true);
         trackView->setScrollOnDragEnabled(false);
-        trackView->setWantsKeyboardFocus(false);
+        trackView->setWantsKeyboardFocus(false);        
         trackView->setMouseClickGrabsKeyboardFocus(false);
-		getTopLevelComponent()->addKeyListener(navigator.get());
+        
+	    getTopLevelComponent()->addKeyListener(navigator.get());
         navigator->setMouseClickGrabsKeyboardFocus(true);
         navigator->setWantsKeyboardFocus(true);
         

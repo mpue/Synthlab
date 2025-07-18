@@ -4,6 +4,8 @@ PianoRollComponent::PianoRollComponent(juce::MidiMessageSequence* seq, double sa
     : midiSequence(seq), sampleRate(sampleRate)
 {
     setWantsKeyboardFocus(true);
+	setMouseClickGrabsKeyboardFocus(true);
+    setInterceptsMouseClicks(true, true);
     addKeyListener(this);
 }
 
@@ -164,8 +166,16 @@ juce::Rectangle<int> PianoRollComponent::getNoteRect(const juce::MidiMessage& ms
     return { x, y, w, h };
 }
 
-void PianoRollComponent::mouseDown(const juce::MouseEvent& e)
+void PianoRollComponent::mouseDown(const juce::MouseEvent& e) 
 {
+    juce::Component::SafePointer<PianoRollComponent> safeThis(this);
+    juce::MessageManager::callAsync([safeThis]()
+        {
+            if (safeThis != nullptr)
+                safeThis->grabKeyboardFocus();
+        });
+        
+
     if (e.mods.isMiddleButtonDown())
     {
         isPanning = true;
@@ -230,10 +240,15 @@ void PianoRollComponent::mouseDrag(const juce::MouseEvent& e)
     {
         auto delta = e.getPosition() - panStart;
         panOffset += delta.toFloat();
+
+        // Begrenzung: nicht weiter nach rechts als X = 0
+        panOffset.x = juce::jmin(panOffset.x, 0.0f);
+
         panStart = e.getPosition();
         repaint();
         return;
     }
+
 
     isDragging = true;
     auto delta = e.getPosition() - dragStart;

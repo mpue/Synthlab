@@ -29,19 +29,41 @@ void TimeLine::paint(Graphics& g)
     g.drawRect(getLocalBounds(), 1);
     g.setColour(Colours::white);
 
-    if (this->length > 0)
+    if (length > 0 && bpm > 0.0 && timeSigDenominator > 0)
     {
-        const double stepSize = getWidth() / this->length;
+        const double secondsPerBeat = 60.0 / bpm;
+        const double beatsPerBar = static_cast<double>(timeSigNumerator);
+        const double secondsPerBar = secondsPerBeat * beatsPerBar;
+        const int totalBars = static_cast<int>(length / secondsPerBar) + 1;
 
-        for (int second = 1; second < this->length; ++second)
+        const double pixelsPerSecond = getWidth() / length;
+
+        for (int bar = 1; bar <= totalBars; ++bar)
         {
-            const float xPos = static_cast<float>(stepSize * second + offset);
+            const double barStartSec = (bar - 1) * secondsPerBar;
 
-            g.drawLine(xPos, 0.0f, xPos, (second % 5 == 0) ? getHeight() / 2.0f : getHeight() / 3.0f);
-
-            if (second % 10 == 0)
+            for (int beat = 0; beat < timeSigNumerator; ++beat)
             {
-                g.drawText(secondsToTime(second), static_cast<int>(stepSize * (second - 1) + offset), 15, 30, 10, juce::Justification::bottomRight, false);
+                const double beatTimeSec = barStartSec + beat * secondsPerBeat;
+                const float x = static_cast<float>(beatTimeSec * pixelsPerSecond + offset);
+
+                // Längere Linie am Taktanfang
+                const bool isBarStart = (beat == 0);
+                float lineHeight = isBarStart ? getHeight() / 2.0f : getHeight() / 3.0f;
+                g.drawLine(x, 0.0f, x, lineHeight);
+
+                // Nur Bar-Zahlen mittig zeichnen
+                if (isBarStart)
+                {
+                    String label = String(bar);
+                    const int textWidth = 30;
+                    const int textHeight = 12;
+                    g.drawText(label,
+                        static_cast<int>(x - textWidth / 2),
+                        getHeight() - textHeight - 2,
+                        textWidth, textHeight,
+                        juce::Justification::centred);
+                }
             }
         }
     }
@@ -55,6 +77,15 @@ void TimeLine::setLength(double length) {
 void TimeLine::resized() {}
 
 void TimeLine::changeListenerCallback(ChangeBroadcaster* source) {}
+
+void TimeLine::setTempoAndTimeSignature(double bpm_, int numerator, int denominator)
+{
+    bpm = bpm_;
+    timeSigNumerator = numerator;
+    timeSigDenominator = denominator;
+    repaint();
+}
+
 
 String TimeLine::secondsToTime(int seconds)
 {
