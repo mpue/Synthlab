@@ -50,6 +50,7 @@ inline float fastCos(float x) {
 }
 
 class BounceThread;
+class ChatGPTInterface;
 
 class MainComponent   : public juce::AudioAppComponent,
                         public juce::MenuBarModel,
@@ -103,6 +104,9 @@ public:
     virtual void changeListenerCallback (ChangeBroadcaster* source) override;
     
     void startBounce(const juce::File& file, double duration);
+
+    juce::String tryExecuteChatInstruction(const std::string& jsonString);
+
     TrackNavigator* navigator = nullptr;
     MidiProcessor* midiProcessor = nullptr;
 private:
@@ -176,6 +180,8 @@ private:
     
     Sampler* defaultSampler = nullptr;
     CriticalSection lock;
+
+    ChatGPTInterface* chat = nullptr;
     
 	std::unique_ptr<TransportDisplayComponent> transportDisplay = nullptr;
 

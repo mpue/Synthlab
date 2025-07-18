@@ -116,6 +116,8 @@
       <FILE id="EJ4uon" name="whitenoise.png" compile="0" resource="1" file="Images/whitenoise.png"/>
     </GROUP>
     <GROUP id="{CA20D122-1EA5-3A93-F1F8-F6EE53DA457E}" name="Source">
+      <FILE id="EbqCtx" name="ChatGPTInterface.h" compile="0" resource="0"
+            file="Source/ChatGPTInterface.h"/>
       <FILE id="IgD6uP" name="TrackUtil.h" compile="0" resource="0" file="Source/TrackUtil.h"/>
       <FILE id="o8rkDp" name="CommandParser.h" compile="0" resource="0" file="Source/CommandParser.h"/>
       <FILE id="HVUNoB" name="MidiProcessor.cpp" compile="1" resource="0"

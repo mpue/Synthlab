@@ -176,7 +176,7 @@ void PianoRollComponent::mouseDown(const juce::MouseEvent& e)
     if (e.getNumberOfClicks() == 2 && e.getPosition().getX() > pianoWidth)
     {
         int pitch = getPitchAtY(e.y);
-        double start = getTimeAtX(e.x);
+        double start = getTimeAtX(e.x);        
         double duration = sampleRate * gridResolution;
 
         juce::MidiMessage on = juce::MidiMessage::noteOn(1, pitch, (juce::uint8)100);
@@ -295,6 +295,32 @@ void PianoRollComponent::mouseUp(const juce::MouseEvent& e)
 {
     isPanning = false;
     isResizing = false;
+
+    double sixteenthSamples = (60.0 / bpm) / 4.0 * sampleRate;
+
+    for (int i : selectedIndices)
+    {
+        auto* noteOn = midiSequence->getEventPointer(i);
+        if (!noteOn || !noteOn->message.isNoteOn()) continue;
+
+        int offIndex = midiSequence->getIndexOfMatchingKeyUp(i);
+        if (offIndex < 0 || offIndex >= midiSequence->getNumEvents()) continue;
+
+        auto* noteOff = midiSequence->getEventPointer(offIndex);
+        if (!noteOff) continue;
+
+        double start = noteOn->message.getTimeStamp();
+        double end = noteOff->message.getTimeStamp();
+        double duration = end - start;
+
+        // Snap Start zur nächsten 16tel
+        double snappedStart = std::round(start / sixteenthSamples) * sixteenthSamples;
+        double snappedEnd = snappedStart + duration;
+
+        noteOn->message.setTimeStamp(snappedStart);
+        noteOff->message.setTimeStamp(snappedEnd);
+    }
+
     repaint();
 }
 

@@ -1,4 +1,4 @@
-/*
+ï»¿/*
   ==============================================================================
 
 	This file was auto-generated!
@@ -30,6 +30,7 @@
 #include "MidiRecorderModule.h"
 #include "TrackUtil.h"
 #include "Tracks/BounceThread.h"
+#include "ChatGPTInterface.h"
 
 using juce::String;
 using juce::File;
@@ -185,6 +186,7 @@ MainComponent::~MainComponent()
 	stopTimer();
 
 	delete midiProcessor;
+	delete chat;
 
 	PrefabFactory::getInstance()->destroy();
 	Project::getInstance()->destroy();
@@ -469,6 +471,26 @@ void MainComponent::createStudioLayout() {
 		return "Export finished.";
 		}, "Export track as audio.");
 
+
+	chat = new ChatGPTInterface("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");
+
+
+	parser->registerCommand("chatgpt",
+		[this](const std::vector<std::string>& args) -> std::string
+		{
+			if (args.empty())
+				return "Usage: chatgpt <frage>";
+
+			std::string prompt;
+			for (const auto& w : args)
+				prompt += w + " ";
+
+			std::string response = chat->sendPrompt(prompt);
+			juce::String parsed = tryExecuteChatInstruction(response);
+						
+			return parsed.toStdString();
+		},
+		"Frage an ChatGPT senden");
 
 #if JUCE_MAC
 
@@ -1358,18 +1380,18 @@ void MainComponent::startBounce(const juce::File& outputFile, double durationInS
 	dialog->setContentOwned(content, true);
 	dialog->centreWithSize(400, 80);
 
-	// Zeige es asynchron, damit es sich selbst schließen kann
+	// Zeige es asynchron, damit es sich selbst schlieÃŸen kann
 	dialog->setVisible(true);
 
-	// Polling-Timer zum Schließen
+	// Polling-Timer zum SchlieÃŸen
 	juce::Timer::callAfterDelay(200, [dialog, this]() mutable {
 		if (!bounceThread || !bounceThread->isThreadRunning()) {
-			dialog->exitModalState(0); // (wenn nötig)
+			dialog->exitModalState(0); // (wenn nÃ¶tig)
 			dialog->setVisible(false);
 			delete dialog; // oder smart pointer verwenden
 		}
 		else {
-			// nochmal nach 200ms prüfen
+			// nochmal nach 200ms prÃ¼fen
 			juce::Timer::callAfterDelay(200, [dialog, this]() mutable {
 				if (!bounceThread || !bounceThread->isThreadRunning()) {
 					dialog->exitModalState(0);
@@ -1381,3 +1403,55 @@ void MainComponent::startBounce(const juce::File& outputFile, double durationInS
 		});
 }
 
+juce::String MainComponent::tryExecuteChatInstruction(const std::string& jsonString)
+{
+	juce::var parsed = juce::JSON::parse(jsonString);
+	if (!parsed.isObject())
+		return " JSON ist kein Objekt.";
+
+	juce::String action = parsed["action"].toString();
+
+	if (action == "create_midi_region")
+	{
+		double length = parsed["length_beats"];
+		juce::Array<juce::var>* notes = parsed.getProperty("notes", {}).getArray();
+		if (notes == nullptr) return "Keine Noten gefunden.";
+
+		std::vector<juce::var> sortedNotes;
+		for (const auto& n : *notes)
+			sortedNotes.push_back(n);
+
+		std::sort(sortedNotes.begin(), sortedNotes.end(),
+			[](const juce::var& a, const juce::var& b)
+			{
+				return static_cast<double>(a["start"]) < static_cast<double>(b["start"]);
+			});
+
+
+		auto* track = navigator->getCurrentTrack();
+		if (!track) return "âš ï¸ Kein aktiver Track.";
+
+		auto sampleRate = 44100.0;
+		auto* region = track->addMidiRegion(sampleRate, navigator->getSamplePosition(), length * sampleRate);
+
+		for (auto& n : *notes)
+		{
+			int pitch = n["pitch"];
+			float start = n["start"];
+			float len = n["length"];
+
+			MidiMessage noteOn = MidiMessage(MidiMessage::noteOn(track->getMidiChannel(), pitch, (uint8)100));
+			noteOn.setTimeStamp(start*44100);
+
+			MidiMessage noteOff = MidiMessage::noteOff(track->getMidiChannel(), pitch, (uint8)0);
+			noteOff.setTimeStamp((start + len)*44100);
+
+			region->addMessage(new MidiMessage(noteOn), Time::getMillisecondCounterHiRes() / 1000, (int)(start * 44100));
+			region->addMessage(new MidiMessage(noteOff), Time::getMillisecondCounterHiRes() / 1000, (int)((start + len) * 44100));
+		}
+
+		return jsonString;
+	}
+
+	return "Unbekannte Aktion.";
+}

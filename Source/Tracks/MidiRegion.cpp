@@ -185,6 +185,7 @@ void MidiRegion::addMessage(MidiMessage* m, double time, int sampleNum) {
     midiThumbnail->addMessage(sampleNum - getSampleOffset(), m);
     updateThumb();
 }
+
 vector<MidiMessage*> MidiRegion::getMessages(int sampleNum, int numSamples)
 {
     vector<MidiMessage*> foundMessages;

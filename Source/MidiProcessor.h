@@ -66,11 +66,6 @@ private:
     /** Called on the Timer thread (default: every 5 ms).
         Takes queued messages and processes them in a non-realtime context. */
     void timerCallback() override;
-
-    /* The original routing / broadcasting logic – now thread-safe. */
-
-    /* ↓↓↓ your old helper functions (unchanged) ↓↓↓ */
-
     // ---------------------------------------------------------------------
 
     SynthEditor* editor{ nullptr };
