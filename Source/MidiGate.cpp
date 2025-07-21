@@ -44,13 +44,24 @@ void MidiGate::configurePins()
 }
 
 //==============================================================================
-// Zeichenroutine
 void MidiGate::paint(Graphics& g)
 {
     Module::paint(g);
+
+    // Icon zeichnen
     g.drawImageAt(ImageCache::getFromMemory(BinaryData::midiin_png,
         BinaryData::midiin_pngSize),
         25, 40);
+
+    // LED zeichnen (kleiner Kreis oben rechts)
+    const int ledSize = 10;
+    const int x = getWidth() - ledSize - 4;
+    const int y = getHeight() - ledSize -4;
+
+    g.setColour(gateActive ? Colours::yellow : Colours::darkgrey);
+    g.fillEllipse((float)x, (float)y, (float)ledSize, (float)ledSize);
+    g.setColour(Colours::black.withAlpha(0.3f));
+    g.drawEllipse((float)x, (float)y, (float)ledSize, (float)ledSize, 1.0f);
 }
 
 //==============================================================================
@@ -58,14 +69,16 @@ void MidiGate::paint(Graphics& g)
 
 void MidiGate::gateOn(int velocity, int note)
 {
-    activeNotes.insert(note);               // Note merken
-    gateActive = true;                       // Mind. eine Note aktiv
+    activeNotes.insert(note);
+    if (!gateActive)
+    {
+        gateActive = true;
+        repaint(); // LED einschalten
+    }
 
-    // VALUE-Pin aktualisieren
     pins.at(0)->setValue(velocity);
     pins.at(0)->setNote(note);
 
-    // EVENT erzeugen und an alle Verbindungen senden
     Event e("gate on", Event::Type::GATE);
     e.setValue(velocity);
     e.setNote(note);
@@ -77,9 +90,8 @@ void MidiGate::gateOn(int velocity, int note)
 
 void MidiGate::gateOff(int note)
 {
-    activeNotes.erase(note);                // Note entfernen
+    activeNotes.erase(note);
 
-    // Immer Note-Off-Event weitergeben (wichtig für Synth-Stimmen)
     Event e("gate off", Event::Type::GATE);
     e.setValue(0);
     e.setNote(note);
@@ -88,11 +100,11 @@ void MidiGate::gateOff(int note)
     for (auto* conn : pins.at(1)->getConnections())
         conn->sendEvent(new Event(e));
 
-    // Gate-Signal erst auf 0 setzen, wenn wirklich KEINE Note mehr aktiv
     if (activeNotes.empty() && gateActive)
     {
         pins.at(0)->setValue(0);
         gateActive = false;
+        repaint(); // LED ausschalten
     }
 }
 

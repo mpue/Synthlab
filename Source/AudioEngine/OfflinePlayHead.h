@@ -35,4 +35,15 @@ struct OfflinePlayHead : public juce::AudioPlayHead
         info.setIsPlaying(true);
         info.setIsRecording(false);
     }
+
+    void setRecording(bool recording)
+    {
+        info.setIsRecording(recording);
+	}
+
+    void setPlaying(bool playing)
+    {
+        info.setIsPlaying(playing);
+    }
+
 };

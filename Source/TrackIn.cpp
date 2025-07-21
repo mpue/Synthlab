@@ -125,7 +125,7 @@
 		}
 			//}			
 
-		if (e->getMessage().getChannel() != track->getMidiChannel()) {
+		if (track != nullptr && e->getMessage().getChannel() != track->getMidiChannel()) {
 			return;
 		}
 

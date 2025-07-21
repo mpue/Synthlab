@@ -270,7 +270,7 @@ protected:
     std::vector<juce::DialogWindow*> openWindows;
     juce::Component* main = nullptr;
     Sampler* defaultSampler = nullptr;
-    Module* root;
+    Module* root = nullptr;
     AppMode mode = STUDIO;
     
     String currentFilePath;

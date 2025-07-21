@@ -168,14 +168,6 @@ juce::Rectangle<int> PianoRollComponent::getNoteRect(const juce::MidiMessage& ms
 
 void PianoRollComponent::mouseDown(const juce::MouseEvent& e) 
 {
-    juce::Component::SafePointer<PianoRollComponent> safeThis(this);
-    juce::MessageManager::callAsync([safeThis]()
-        {
-            if (safeThis != nullptr)
-                safeThis->grabKeyboardFocus();
-        });
-        
-
     if (e.mods.isMiddleButtonDown())
     {
         isPanning = true;

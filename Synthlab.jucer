@@ -116,6 +116,10 @@
       <FILE id="EJ4uon" name="whitenoise.png" compile="0" resource="1" file="Images/whitenoise.png"/>
     </GROUP>
     <GROUP id="{CA20D122-1EA5-3A93-F1F8-F6EE53DA457E}" name="Source">
+      <FILE id="qpua8K" name="ComponentTreeDebugger.cpp" compile="1" resource="0"
+            file="Source/ComponentTreeDebugger.cpp"/>
+      <FILE id="a01BeC" name="ComponentTreeDebugger.h" compile="0" resource="0"
+            file="Source/ComponentTreeDebugger.h"/>
       <FILE id="EbqCtx" name="ChatGPTInterface.h" compile="0" resource="0"
             file="Source/ChatGPTInterface.h"/>
       <FILE id="IgD6uP" name="TrackUtil.h" compile="0" resource="0" file="Source/TrackUtil.h"/>
@@ -219,7 +223,6 @@
         <FILE id="cq00hn" name="HTTPServer.h" compile="0" resource="0" file="Source/HTTPServer.h"/>
       </GROUP>
       <GROUP id="{1C1CC707-767F-0A14-4BBC-FC07D9A8C470}" name="MessageBus">
-        <FILE id="xxFait" name="BusListener.h" compile="0" resource="0" file="Source/MessageBus/BusListener.h"/>
         <FILE id="Ukzbap" name="MessageBus.cpp" compile="1" resource="0" file="Source/MessageBus/MessageBus.cpp"/>
         <FILE id="C20i76" name="MessageBus.h" compile="0" resource="0" file="Source/MessageBus/MessageBus.h"/>
         <FILE id="xCo42k" name="Topic.cpp" compile="1" resource="0" file="Source/MessageBus/Topic.cpp"/>

@@ -95,7 +95,7 @@ private:
     juce::PropertyComponent* trackProp;
     TrackListener* trackListener;
 
-    Track* track;
+    Track* track = nullptr;
     TrackNavigator* navigator;
     int numSamples = 0;
     int offset = 0;

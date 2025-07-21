@@ -14,6 +14,7 @@
 #include "Mixer.h"
 #include "Actions/AddModuleAction.h"
 #include "Project/Project.h"
+#include "ComponentTreeDebugger.h"
 
 using juce::Viewport;
 using juce::Graphics;
@@ -75,6 +76,15 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView*
     Project::getInstance()->setSupplemental(this->bottomTab.get());
 
     OpenTrackView();
+
+ //   auto* treeDebugger = new ComponentTreeDebugger(getTopLevelComponent());
+ //   treeDebugger->setSize(300, 600);
+ //   treeDebugger->setName("Komponenten-Baum");
+ //   treeDebugger->setAlwaysOnTop(true);
+ //   treeDebugger->setVisible(true);
+
+	//topTab->addTab("Debugger", Colours::darkgrey, treeDebugger, false);
+    
 }
 
 
@@ -158,7 +168,7 @@ void EditorComponent::OpenTrackView()
         navigator = std::make_unique<TrackNavigator>(AudioManager::getInstance()->getDeviceManager(), trackView.get(), propertyView, transportDisplay);
         
         PrefabFactory::getInstance()->init(navigator.get());
-        // addMouseListener(navigator.get(), true);
+        addMouseListener(navigator.get(), true);
         editor->setNavigator(navigator.get());
         trackView->setSize(500, 200);
         trackView->setViewedComponent(navigator.get());
@@ -166,10 +176,13 @@ void EditorComponent::OpenTrackView()
         trackView->setScrollOnDragEnabled(false);
         trackView->setWantsKeyboardFocus(false);        
         trackView->setMouseClickGrabsKeyboardFocus(false);
+		trackView->setInterceptsMouseClicks(false, false);
         
 	    getTopLevelComponent()->addKeyListener(navigator.get());
         navigator->setMouseClickGrabsKeyboardFocus(true);
         navigator->setWantsKeyboardFocus(true);
+        navigator->setInterceptsMouseClicks(true, true);
+        navigator->setAlwaysOnTop(true);
         
     }
     topTab->addTab("Navigator", juce::Colours::grey, trackView.get(), false);

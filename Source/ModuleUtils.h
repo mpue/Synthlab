@@ -119,6 +119,37 @@ private:
     
     static bool connectModuleEvents(Module* source, Module* target, int pin);
  
-    
- 
 };
+ 
+template<typename T>
+static void collectModulesOfType(Module* module, std::vector<T*>& result)
+{
+    if (!module) return;
+
+    // Typ überprüfen und ggf. hinzufügen
+    if (T* casted = dynamic_cast<T*>(module))
+    {
+        result.push_back(casted);
+    }
+
+    // Rekursiv in die Untermodule gehen
+    auto subModules = module->getModules();
+    if (subModules)
+    {
+        for (Module* sub : *subModules)
+        {
+            collectModulesOfType(sub, result);
+        }
+    }
+}
+
+// Convenience-Funktion zum Starten der Rekursion
+template<typename T>
+static std::vector<T*> getAllModulesOfType(Module* root)
+{
+    std::vector<T*> result;
+    collectModulesOfType(root, result);
+    return result;
+}
+
+ 

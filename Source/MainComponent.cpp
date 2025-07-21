@@ -1070,24 +1070,24 @@ StringArray MainComponent::getMenuBarNames() {
 
 void MainComponent::openSettings() {
 
-	AudioDeviceSelectorComponent selector = AudioDeviceSelectorComponent(deviceManager, 2, 16, 2, 16, true, true, true, false);
+	AudioDeviceSelectorComponent* selector = new AudioDeviceSelectorComponent(deviceManager, 2, 16, 2, 16, true, true, true, false);
 	DialogWindow::LaunchOptions launchOptions;
 
-	selector.setLookAndFeel(Project::getInstance()->getLookAndFeel());
+	selector->setLookAndFeel(Project::getInstance()->getLookAndFeel());
 	launchOptions.dialogTitle = ("Audio Settings");
 	launchOptions.escapeKeyTriggersCloseButton = true;
 	launchOptions.resizable = false;
 	launchOptions.useNativeTitleBar = false;
 	launchOptions.useBottomRightCornerResizer = true;
 	launchOptions.componentToCentreAround = getParentComponent();
-	launchOptions.content.setOwned(&selector);
+	launchOptions.content.setOwned(selector);
 	launchOptions.content->setSize(600, 580);
 	launchOptions.dialogBackgroundColour = Colour(0xff222222);
 
 	DialogWindow* window = launchOptions.launchAsync();
 
 	std::function<void(int)> lambda =
-		[=](int result) {
+		[this,selector](int result) {
 		AudioDeviceManager::AudioDeviceSetup setup;
 
 		deviceManager.getAudioDeviceSetup(setup);
@@ -1112,7 +1112,8 @@ void MainComponent::openSettings() {
 			config = nullptr;
 		}
 		Project::getInstance()->setSampleRate(setup.sampleRate);
-		};
+		delete selector;
+	};
 
 	ModalComponentManager::Callback* callback = ModalCallbackFunction::create(lambda);
 	ModalComponentManager::getInstance()->attachCallback(window, callback);

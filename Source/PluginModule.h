@@ -40,6 +40,8 @@ public:
 
 	void setCurrentSample(int sample) { currentSample = sample; }
 
+	OfflinePlayHead& getPlayHead() { return playHead; }
+
 private:
     std::vector<std::unique_ptr<juce::PropertyComponent>> ownedProperties;
     juce::Array<juce::PropertyComponent*> propertyPtrs;

@@ -82,6 +82,14 @@ public:
     int getHeight();
      */
     
+    void focusGained(FocusChangeType cause) override {
+        Logger::getCurrentLogger()->writeToLog("Track: focus gained");
+    }
+
+    void focusLost(FocusChangeType cause) override {
+        Logger::getCurrentLogger()->writeToLog("Track: focus lost");
+    }
+
     void toggleLoopSelection();
     void clearSelection();
     

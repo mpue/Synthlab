@@ -33,11 +33,11 @@ public:
             << "    { \"pitch\": 64, \"start\": 1.0, \"length\": 0.5 }\n"
             << "  ]\n"
             << "}\n\n"
-            << "Achte darauf, dass du ausschließlich gültiges JSON zurückgibst. Gib keine Erklärung dazu ab.";
+            << "Achte darauf, dass du ausschließlich gültiges JSON zurückgibst. Gib keine Erklärung dazu ab. Die (length) Länge der Noten darf variabel sein.";
 
         juce::String fullPrompt = prePrompt + juce::String(prompt);
         juce::DynamicObject::Ptr root = new juce::DynamicObject();
-        root->setProperty("model", "gpt-3.5-turbo");
+        root->setProperty("model", "gpt-4");
 
         juce::Array<juce::var> messages;
         juce::DynamicObject::Ptr message = new juce::DynamicObject();
