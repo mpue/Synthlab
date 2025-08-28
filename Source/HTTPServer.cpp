@@ -101,7 +101,8 @@ void HTTPServer::run() {
 
 							//  TODO : check if the HTTP server is still needed
 
-                            // obj.writeAsJSON(*mos, 0, false, 3);
+							JSON::FormatOptions options;
+                            obj.writeAsJSON(*mos,options.withIndentLevel(4));
                             
                             mos->flush();
                             String responseBody = mos->toUTF8();
@@ -192,9 +193,6 @@ void HTTPServer::run() {
     }
         
 }
-    
-
-
 
 void HTTPServer::stop() {
     running = false;

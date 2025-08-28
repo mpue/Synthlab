@@ -306,7 +306,6 @@ void MainComponent::createStudioLayout() {
 
 	navigator->addChangeListener(this);
 	getTopLevelComponent()->addKeyListener(navigator);
-	navigator->setWantsKeyboardFocus(true);
 
 	parser->registerCommand("help", [this](const std::vector<std::string>&) -> std::string {
 		return parser->displayHelp();
@@ -651,198 +650,138 @@ int MainComponent::getNumActiveChannels(int i) {
 	return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
 }
 
-void MainComponent::getNextAudioBlock(const AudioSourceChannelInfo& bufferToFill)
+void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
 {
 	long startTime = 0;
 
 	if (!bouncing) {
-		lastTime = (long)Time::getMillisecondCounterHiRes() - currentTime;
-		currentTime = (long)Time::getMillisecondCounterHiRes();
+		lastTime = (long)juce::Time::getMillisecondCounterHiRes() - currentTime;
+		currentTime = (long)juce::Time::getMillisecondCounterHiRes();
 		startTime = currentTime;
 	}
 
-	int numSamples = bufferToFill.numSamples;
+	const int numSamples = bufferToFill.numSamples;
 	auto* writableBuffer = const_cast<juce::AudioBuffer<float>*>(bufferToFill.buffer);
-	float** outputChannelData = const_cast<float**>(writableBuffer->getArrayOfWritePointers());
+	if (!writableBuffer) return;
 
-	if (outputChannelData == nullptr) {
-		return;
-	}
+	float** outputData = const_cast<float**>(writableBuffer->getArrayOfWritePointers());
+	const int outNumChans = writableBuffer->getNumChannels();
+	if (!outputData || outNumChans == 0) return;
 
-	// const float** inputChannelData = bufferToFill.buffer->getArrayOfReadPointers();
+	// --- alles nullen ---
+	for (int ch = 0; ch < outNumChans; ++ch)
+		if (outputData[ch])
+			juce::FloatVectorOperations::clear(outputData[ch], numSamples);
 
-	if (defaultSampler != nullptr && defaultSampler->isPlaying()) {
-		for (int j = 0; j < numSamples; j++) {
-			outputChannelData[0][j] += defaultSampler->getOutput(0);
-			outputChannelData[1][j] += defaultSampler->getOutput(1);
+	// --- Sampler nur auf 0/1 ---
+	if (defaultSampler && defaultSampler->isPlaying()) {
+		for (int j = 0; j < numSamples; ++j) {
+			float sL = defaultSampler->getOutput(0);
+			float sR = defaultSampler->getOutput(1);
+			if (outNumChans > 0 && outputData[0]) outputData[0][j] += sL;
+			if (outNumChans > 1 && outputData[1]) outputData[1][j] += sR;
 			defaultSampler->nextSample();
 		}
 	}
-	else {
-		for (int j = 0; j < numSamples; j++) {
 
-			if (outputChannelData[0] != nullptr) {
-				outputChannelData[0][j] = 0;
-			}
-			if (outputChannelData[1] != nullptr) {
-				outputChannelData[1][j] = 0;
-			}
+	if (!running) return;
 
-		}
-	}
-
-	if (!running) {
-		return;
-	}
-
-	if (editor->getModule() != nullptr)
+	if (editor->getModule())
 		processModule(editor->getModule());
 
-	std::vector<AudioOut*> outputChannels = editor->getMixer()->getOutputChannels();
-	std::vector<AudioIn*> inputChannels = editor->getMixer()->getInputChannels();
-	std::vector<AuxOut*> auxChannels = editor->getMixer()->getAuxChannels();
+	auto& mixer = *editor->getMixer();
+	std::vector<AudioOut*> outputChannels = mixer.getOutputChannels();
+	std::vector<AudioIn*>  inputChannels = mixer.getInputChannels();
 
-	for (int k = 0; k < Mixer::getInstance()->getNumInputs(); k++) {
+	// --- Host -> Mixer Inputs ---
+	for (int k = 0; k < Mixer::getInstance()->getNumInputs(); ++k) {
+		Mixer::Channel* inCh = Mixer::getInstance()->getChannel(Mixer::Channel::Type::IN, k);
+		if (!inCh || k >= (int)inputChannels.size()) continue;
 
-		Mixer::Channel* input = Mixer::getInstance()->getChannel(Mixer::Channel::Type::IN, k);
+		if (!(k < outNumChans && (k + 1) < outNumChans)) continue;
 
-		if (input != nullptr) {
+		double pan = inCh->pan;
+		float gainL = fastCos((M_PI * (pan + 1) / 4));
+		float gainR = fastSin((M_PI * (pan + 1) / 4));
 
-			double pan = input->pan;
+		auto* bufL = inputChannels.at(k)->pins.at(0)->getAudioBuffer();
+		auto* bufR = inputChannels.at(k)->pins.at(1)->getAudioBuffer();
 
-			float gainLeft = fastCos((M_PI * (pan + 1) / 4));
-			float gainRight = fastSin((M_PI * (pan + 1) / 4));
+		bufL->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, k, bufferToFill.startSample, numSamples);
+		bufR->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, k + 1, bufferToFill.startSample, numSamples);
+		bufL->applyGain(0, bufferToFill.startSample, numSamples, inCh->volume * gainL);
+		bufR->applyGain(0, bufferToFill.startSample, numSamples, inCh->volume * gainR);
 
-			inputChannels.at(k)->pins.at(0)->getAudioBuffer()->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, k, bufferToFill.startSample, numSamples);
-			inputChannels.at(k)->pins.at(1)->getAudioBuffer()->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, k + 1, bufferToFill.startSample, numSamples);
-			inputChannels.at(k)->pins.at(0)->getAudioBuffer()->applyGain(0, bufferToFill.startSample, numSamples, input->volume * gainLeft);
-			inputChannels.at(k)->pins.at(1)->getAudioBuffer()->applyGain(0, bufferToFill.startSample, numSamples, input->volume * gainRight);
-			input->magnitudeLeft = inputChannels.at(k)->pins.at(0)->getAudioBuffer()->getMagnitude(0, bufferToFill.startSample, numSamples);
-			input->magnitudeRight = inputChannels.at(k)->pins.at(1)->getAudioBuffer()->getMagnitude(0, bufferToFill.startSample, numSamples);
+		inCh->magnitudeLeft = bufL->getMagnitude(0, bufferToFill.startSample, numSamples);
+		inCh->magnitudeRight = bufR->getMagnitude(0, bufferToFill.startSample, numSamples);
+	}
+
+	// --- 1:1 Output Mapping mit Pan ---
+	for (int o = 0; o < (int)outputChannels.size(); ++o) {
+		Mixer::Channel* meta = Mixer::getInstance()->getChannel(Mixer::Channel::Type::OUT, o);
+		const float chVol = (meta && !meta->mute) ? meta->volume : 0.0f;
+		const double pan = meta ? meta->pan : 0.0;
+		const float gainL = fastCos((M_PI * (pan + 1) / 4));
+		const float gainR = fastSin((M_PI * (pan + 1) / 4));
+
+		auto& pins = outputChannels[o]->getPins();
+		for (size_t p = 0; p < pins.size(); ++p) {
+			int hwIndex = o * pins.size() + (int)p; // Annahme: linear hintereinander
+			if (hwIndex >= outNumChans) continue;
+
+			if (pins[p]->getConnections().empty() || !pins[p]->getConnections()[0]) continue;
+			auto* buf = pins[p]->getConnections()[0]->getAudioBuffer();
+			if (!buf) continue;
+
+			const float* src = buf->getReadPointer(0);
+			if (!src || !outputData[hwIndex]) continue;
+
+			float gain = (p == 0) ? gainL * chVol : gainR * chVol;
+			for (int i = 0; i < numSamples; ++i)
+				outputData[hwIndex][i] += src[i] * gain;
+		}
+
+		// Pegelberechnung
+		if (meta && pins.size() >= 2) {
+			if (pins[0]->getConnections().size() > 0)
+				meta->magnitudeLeft = chVol * gainL * pins[0]->getConnections()[0]->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+			if (pins[1]->getConnections().size() > 0)
+				meta->magnitudeRight = chVol * gainR * pins[1]->getConnections()[0]->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+
 		}
 	}
 
-	// mute if there are no channels
-	if (Mixer::getInstance()->getNumOutputs() == 0) {
-
-		if (defaultSampler != nullptr && defaultSampler->isPlaying()) {
-		}
-
-	}
-	else {
-
-		Mixer::Channel* outputChannel = Mixer::getInstance()->getChannel(Mixer::Channel::Type::OUT, 0);
-		float channelVolume = outputChannel->mute ? 0 : outputChannel->volume;
-		double pan = outputChannel->pan;
-
-		float gainLeft = fastCos((M_PI * (pan + 1) / 4));
-		float gainRight = fastSin((M_PI * (pan + 1) / 4));
-
-		// process all output pins of the connected module
-
-		for (int j = 0; j < numSamples; j++) {
-
-			float auxLeftOut = 0;
-
-			// merge the output of the AUX busses
-
-			for (int k = 0; k < auxChannels.size(); k++) {
-
-				if (editor->getMixer()->auxChannelIsValid(k, 0)) {
-					const float* auxL = auxChannels.at(k)->getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
-
-					Mixer::Channel* channel = Mixer::getInstance()->getChannel(Mixer::Channel::Type::AUX, k);
-					if (channel != nullptr) {
-						float auxVolume = channel->mute ? 0 : channel->volume;
-						double auxpan = channel->pan;
-
-						float auxgainLeft = fastCos((M_PI * (auxpan + 1) / 4));
-						channel->magnitudeLeft = auxVolume * auxgainLeft * auxChannels.at(k)->getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
-
-						auxLeftOut += auxL[j] * auxVolume * auxgainLeft;
-					}
-
-				}
-
-			}
-
-			if (editor->getMixer()->channelIsValid(0)) {
-				// outputChannels.at(0)->getPins().at(0)->connections.at(0)->getAudioBuffer()->applyGain(channelVolume);
-				const float* outL = outputChannels.at(0)->getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
-				outputChannelData[0][j] += channelVolume * (outL[j] + auxLeftOut) * gainLeft;
-			}
-			else {
-				outputChannelData[0][j] = auxLeftOut;
-			}
-
-			float auxRightOut = 0;
-
-			for (int k = 0; k < auxChannels.size(); k++) {
-
-				if (editor->getMixer()->auxChannelIsValid(k, 1)) {
-					const float* auxR = auxChannels.at(k)->getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
-
-					Mixer::Channel* channel = Mixer::getInstance()->getChannel(Mixer::Channel::Type::AUX, k);
-
-					if (channel != nullptr) {
-
-						float auxVolume = channel->mute ? 0 : channel->volume;
-						double auxpan = channel->pan;
-
-						float auxgainRight = fastSin((M_PI * (auxpan + 1) / 4));
-						channel->magnitudeRight = auxVolume * auxgainRight * auxChannels.at(k)->getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
-						auxRightOut += auxR[j] * auxVolume * auxgainRight;
-					}
-				}
-
-			}
-
-			if (editor->getMixer()->channelIsValid(1)) {
-				// outputChannels.at(0)->getPins().at(1)->connections.at(0)->getAudioBuffer()->applyGain(channelVolume);
-				const float* outR = outputChannels.at(0)->getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
-				if (outputChannelData[1] != nullptr)
-					outputChannelData[1][j] += channelVolume * (outR[j] + auxRightOut) * gainRight;
-			}
-			else {
-				if (outputChannelData[1] != nullptr)
-					outputChannelData[1][j] = auxRightOut;
-			}
-		}
-
-		if (editor->getMixer()->channelIsValid(0))
-			outputChannel->magnitudeLeft = channelVolume * gainLeft * outputChannels.at(0)->getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
-		if (editor->getMixer()->channelIsValid(1))
-			outputChannel->magnitudeRight = channelVolume * gainRight * outputChannels.at(0)->getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getMagnitude(0, 0, numSamples);
-	}
-
+	// --- Metronom auf 0/1 ---
 	if (metronome && transportDisplay && transportDisplay->isMetronomeActive() && navigator->isRecording()) {
 		if (metronomeBuffer.getNumSamples() != bufferToFill.numSamples)
 			metronomeBuffer.setSize(2, bufferToFill.numSamples, false, false, true);
 
 		metronome->generateBlock(metronomeBuffer);
 
-		const int numChannels = juce::jmin(bufferToFill.buffer->getNumChannels(), metronomeBuffer.getNumChannels());
-
-		for (int ch = 0; ch < numChannels; ++ch) {
-			auto* dest = bufferToFill.buffer->getWritePointer(ch, bufferToFill.startSample);
-			auto* src = metronomeBuffer.getReadPointer(ch);
-			for (int i = 0; i < bufferToFill.numSamples; ++i)
-				dest[i] += src[i];
+		if (outNumChans > 0) {
+			auto* destL = bufferToFill.buffer->getWritePointer(0, bufferToFill.startSample);
+			auto* srcL = metronomeBuffer.getReadPointer(0);
+			for (int i = 0; i < numSamples; ++i) destL[i] += srcL[i];
+		}
+		if (outNumChans > 1) {
+			auto* destR = bufferToFill.buffer->getWritePointer(1, bufferToFill.startSample);
+			auto* srcR = metronomeBuffer.getReadPointer(metronomeBuffer.getNumChannels() > 1 ? 1 : 0);
+			for (int i = 0; i < numSamples; ++i) destR[i] += srcR[i];
 		}
 	}
 
 	if (!bouncing) {
-		long duration = Time::getMillisecondCounterHiRes() - startTime;
-		cpuLoad = ((float)duration / (float)lastTime) * 100;
+		long duration = (long)juce::Time::getMillisecondCounterHiRes() - startTime;
+		cpuLoad = ((float)duration / (float)lastTime) * 100.0f;
 	}
 
 	currentSample = (currentSample + 1) % numSamples;
 
-	if (navigator != nullptr && (navigator->isPlaying() || navigator->isRecording())) {
+	if (navigator && (navigator->isPlaying() || navigator->isRecording()))
 		navigator->setSamplePosition(navigator->getSamplePosition() + numSamples);
-	}
-
 }
+
+
 
 void MainComponent::releaseResources()
 {
@@ -1429,7 +1368,7 @@ juce::String MainComponent::tryExecuteChatInstruction(const std::string& jsonStr
 
 
 		auto* track = navigator->getCurrentTrack();
-		if (!track) return "⚠️ Kein aktiver Track.";
+		if (!track) return "Kein aktiver Track.";
 
 		auto sampleRate = 44100.0;
 		auto* region = track->addMidiRegion(sampleRate, navigator->getSamplePosition(), length * sampleRate);

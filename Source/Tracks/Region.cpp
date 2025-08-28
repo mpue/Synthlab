@@ -11,6 +11,7 @@
 Region::Region() {
     oldOffset = 0;
     createProperties();
+	setAlwaysOnTop(true);
 }
 
 Region::~Region() {

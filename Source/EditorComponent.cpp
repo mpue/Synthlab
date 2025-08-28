@@ -85,6 +85,8 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView*
 
 	//topTab->addTab("Debugger", Colours::darkgrey, treeDebugger, false);
     
+
+
 }
 
 
@@ -168,7 +170,7 @@ void EditorComponent::OpenTrackView()
         navigator = std::make_unique<TrackNavigator>(AudioManager::getInstance()->getDeviceManager(), trackView.get(), propertyView, transportDisplay);
         
         PrefabFactory::getInstance()->init(navigator.get());
-        addMouseListener(navigator.get(), true);
+        // addMouseListener(navigator.get(), true);
         editor->setNavigator(navigator.get());
         trackView->setSize(500, 200);
         trackView->setViewedComponent(navigator.get());

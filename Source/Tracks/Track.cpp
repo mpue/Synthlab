@@ -34,6 +34,7 @@ Track::Track(Type type, double sampleRate, MultiComponentDragger* dragger)
 	this->bufferSize = Project::getInstance()->getBufferSize();
 	addAndMakeVisible(resizer);	
 	setHeight(Project::DEFAULT_TRACK_HEIGHT);
+	setMouseClickGrabsKeyboardFocus(true);
 	resized();
 	createProperties();
 	setName("empty Track");
