@@ -110,12 +110,12 @@ MainComponent::MainComponent() : resizerBar(&stretchableManager, 1, true)
 	midiProcessor = new MidiProcessor(editor, &deviceManager);
 	midiProcessor->enableAllMidiInputs();
 
-	addMouseListener(this, true);
+	// addMouseListener(this, true);
 	editor->addKeyListener(getKeyMappings());
 	addKeyListener(getKeyMappings());
 	addKeyListener(this);
 	editor->setMouseClickGrabsKeyboardFocus(true);
-	editor->setWantsKeyboardFocus(true);
+	// editor->setWantsKeyboardFocus(true);
 	resized();
 	repaint();
 	initialized = true;

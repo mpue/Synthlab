@@ -170,21 +170,19 @@ void EditorComponent::OpenTrackView()
         navigator = std::make_unique<TrackNavigator>(AudioManager::getInstance()->getDeviceManager(), trackView.get(), propertyView, transportDisplay);
         
         PrefabFactory::getInstance()->init(navigator.get());
-        // addMouseListener(navigator.get(), true);
+        addMouseListener(navigator.get(), true);
         editor->setNavigator(navigator.get());
         trackView->setSize(500, 200);
         trackView->setViewedComponent(navigator.get());
         trackView->setScrollBarsShown(true, true);
         trackView->setScrollOnDragEnabled(false);
-        trackView->setWantsKeyboardFocus(false);        
-        trackView->setMouseClickGrabsKeyboardFocus(false);
-		trackView->setInterceptsMouseClicks(false, false);
-        
+	        
 	    getTopLevelComponent()->addKeyListener(navigator.get());
+
         navigator->setMouseClickGrabsKeyboardFocus(true);
         navigator->setWantsKeyboardFocus(true);
         navigator->setInterceptsMouseClicks(true, true);
-        navigator->setAlwaysOnTop(true);
+
         
     }
     topTab->addTab("Navigator", juce::Colours::grey, trackView.get(), false);

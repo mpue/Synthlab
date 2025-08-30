@@ -54,6 +54,7 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 	view->getHorizontalScrollBar().addListener(this);
 	setWantsKeyboardFocus(true);
 	setMouseClickGrabsKeyboardFocus(true);
+	setInterceptsMouseClicks(true, true);
 }
 
 TrackNavigator::~TrackNavigator()
