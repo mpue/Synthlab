@@ -116,6 +116,10 @@
       <FILE id="EJ4uon" name="whitenoise.png" compile="0" resource="1" file="Images/whitenoise.png"/>
     </GROUP>
     <GROUP id="{CA20D122-1EA5-3A93-F1F8-F6EE53DA457E}" name="Source">
+      <FILE id="ikAg2P" name="SynthlabAudioProcessor.cpp" compile="1" resource="0"
+            file="Source/SynthlabAudioProcessor.cpp"/>
+      <FILE id="Diry2g" name="SynthlabAudioProcessor.h" compile="0" resource="0"
+            file="Source/SynthlabAudioProcessor.h"/>
       <FILE id="qpua8K" name="ComponentTreeDebugger.cpp" compile="1" resource="0"
             file="Source/ComponentTreeDebugger.cpp"/>
       <FILE id="a01BeC" name="ComponentTreeDebugger.h" compile="0" resource="0"

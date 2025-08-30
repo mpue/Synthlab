@@ -7,9 +7,7 @@
 
   ==============================================================================
 */
-
-#ifndef MIDIREGION_H_INCLUDED
-#define MIDIREGION_H_INCLUDED
+#pragma once
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "../MultiComponentDragger.h"
@@ -88,6 +86,17 @@ public:
 		return (long)midiMessageList.front()->getTimeStamp();
 	}
 
+    std::vector<MidiMessage*>& getMidiMessageList() { return midiMessageList; }
+    const std::vector<MidiMessage*>& getMidiMessageList() const { return midiMessageList; }
+
+    // Methode um die Region nach direkten Änderungen zu aktualisieren
+    void notifyDirectEdit() {
+        rebuildThumbnail();
+        updateThumb();
+        repaint();
+    }
+    std::map<double, MidiMessage*> midiMessages;
+    std::vector<MidiMessage*> midiMessageList;
 private:
     MidiBuffer* midiBuffer;
 
@@ -95,8 +104,6 @@ private:
     int numSamples = 0;
     MidiBuffer::Iterator* iterator = NULL;
     MidiMessage message;
-    std::map<double, MidiMessage*> midiMessages;
-    std::vector<MidiMessage*> midiMessageList;
     MidiMessageSequence* sequence;
     ResizeConstrainer* constrainer = nullptr;
     int lastIndex = -1;
@@ -108,4 +115,3 @@ private:
 };
 
 
-#endif  // MIDIREGION_H_INCLUDED

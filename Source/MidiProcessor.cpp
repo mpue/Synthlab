@@ -226,7 +226,7 @@ void MidiProcessor::refreshMidiInputs() {
 void MidiProcessor::enableAllMidiInputs() {
 	auto inputs = MidiInput::getDevices();
 	for (const auto& input : inputs) {
-		if (deviceManager->isMidiInputEnabled(input) && input.contains("SL")) {
+		if (deviceManager->isMidiInputEnabled(input)) {
 			deviceManager->addMidiInputCallback(input, this);
 		}
 	}

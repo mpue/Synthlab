@@ -284,8 +284,10 @@ void TrackNavigator::setPosition(double position) {
 	//int pos = (int)position - (int)position % 2;
 	this->position = position;
 	this->samplePosition = position * Project::getInstance()->getSampleRate();
-	if (this->samplePosition % Project::getInstance()->getBufferSize() != 0)
-		this->samplePosition -= this->samplePosition % Project::getInstance()->getBufferSize();
+
+	// Align position marker to buffer size
+	int bufferSize = Project::getInstance()->getBufferSize();
+	this->samplePosition = ((int)(this->samplePosition + bufferSize / 2) / bufferSize) * bufferSize;
 
 	Logger::getCurrentLogger()->writeToLog("samplePosition  : " + String(samplePosition));
 	std::function<void(void)> changeLambda =
@@ -459,17 +461,13 @@ StringArray TrackNavigator::getTrackList()
 
 void TrackNavigator::openPianoRoll(MidiRegion* r)
 {
-	PianoRollComponent* pr = new PianoRollComponent(r->getMidiMessageSequence(), Project::getInstance()->getSampleRate());
+	PianoRollComponent* pr = new PianoRollComponent(r, Project::getInstance()->getSampleRate());
 	pr->setGridResolution(16);
 
 	Project::getInstance()->getSupplemental()->addTab("Piano roll", Colours::darkgrey, pr, true);
 	Project::getInstance()->getSupplemental()->setCurrentTabIndex(Project::getInstance()->getSupplemental()->getNumTabs() - 1);
 }
 
-double PianoRollComponent::secondsToBeats(double time) const
-{
-	return (Project::getInstance()->getTempo() / 60) * time;
-}
 
 Track* TrackNavigator::addTrack(TrackConfig* tc) {
 

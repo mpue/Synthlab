@@ -24,6 +24,7 @@ MidiRegion::MidiRegion(long startSample, long sampleLength, double sampleRate, M
     setBounds(sampleOffset / sampleRate * zoom, 0, lengthInSeconds * zoom, Project::DEFAULT_TRACK_HEIGHT);
 
     this->offset = 0;
+	midiMessageList = std::vector<MidiMessage*>();
     this->sequence = new MidiMessageSequence();
 
     this->constrainer = new ResizeConstrainer();
@@ -49,6 +50,7 @@ MidiRegion::MidiRegion(MidiBuffer* buffer, double sampleRate) {
     setBounds(0, 0, lengthInSeconds * zoom, Project::DEFAULT_TRACK_HEIGHT);
 
     this->offset = 0;
+    midiMessageList = std::vector<MidiMessage*>();
     this->sequence = new MidiMessageSequence();
 
     this->constrainer = new ResizeConstrainer();
@@ -169,6 +171,8 @@ void MidiRegion::clear() {
 
 void MidiRegion::addMessage(MidiMessage* m, double time, int sampleNum) {
     
+    sampleNum -= sampleNum % Project::getInstance()->getBufferSize();
+
     ScopedLock c(lock);
 
     // Logger::getCurrentLogger()->writeToLog("Adding message at sample " + String(sampleNum) + " offset :" + String(getSampleOffset()));
@@ -188,6 +192,8 @@ void MidiRegion::addMessage(MidiMessage* m, double time, int sampleNum) {
 
 vector<MidiMessage*> MidiRegion::getMessages(int sampleNum, int numSamples)
 {
+	sampleNum -= sampleNum % Project::getInstance()->getBufferSize();
+
     vector<MidiMessage*> foundMessages;
     const int endSample = sampleNum + numSamples;
 

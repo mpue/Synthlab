@@ -101,19 +101,19 @@ public:
 
 		pos.x += 160;
 
-		ConnectAudioOut(auxOut, pm, pos, 2, 3, editor->getModule(), editor);
+		ConnectAudioOut(audioOut, pm, pos, 2, 3, editor->getModule(), editor);
 		return t;
 	}
 
-	static void ConnectAudioOut(AuxOut*& audioOut, Module* m, const juce::Point<int>& pos, int leftSourcePin, int rightSourcePin, Module* module, SynthEditor* editor)
+	static void ConnectAudioOut(AudioOut*& audioOut, Module* m, const juce::Point<int>& pos, int leftSourcePin, int rightSourcePin, Module* module, SynthEditor* editor)
 	{
 		if (audioOut != nullptr) {
 			// audio out is not connected, thus make some connections
 			if (audioOut->pins.at(0)->getConnections().size() == 0 && audioOut->pins.at(1)->getConnections().size() == 0) {
 				audioOut->pins.at(0)->getConnections().push_back(m->pins.at(leftSourcePin));
 				audioOut->pins.at(1)->getConnections().push_back(m->pins.at(rightSourcePin));
-				Connection* c1 = new Connection(m, m->pins.at(0), audioOut, audioOut->pins.at(0));
-				Connection* c2 = new Connection(m, m->pins.at(1), audioOut, audioOut->pins.at(1));
+				Connection* c1 = new Connection(m, m->pins.at(2), audioOut, audioOut->pins.at(0));
+				Connection* c2 = new Connection(m, m->pins.at(3), audioOut, audioOut->pins.at(1));
 				module->getConnections()->push_back(c1);
 				module->getConnections()->push_back(c2);
 				audioOut->setVolume(1.0f);
@@ -135,24 +135,24 @@ public:
 
 			}
 		}
-		// no audio out, create one
-		else {
+		//// no audio out, create one
+		//else {
 
-			AddModuleAction* am = new AddModuleAction(editor, pos, 77);
-			Project::getInstance()->getUndoManager()->beginNewTransaction();
-			Project::getInstance()->getUndoManager()->perform(am);
-			audioOut = dynamic_cast<AuxOut*>(am->getModule());
+		//	AddModuleAction* am = new AddModuleAction(editor, pos, 77);
+		//	Project::getInstance()->getUndoManager()->beginNewTransaction();
+		//	Project::getInstance()->getUndoManager()->perform(am);
+		//	Aic = dynamic_cast<AuxOut*>(am->getModule());
 
-			if (audioOut != nullptr) {
-				audioOut->pins.at(0)->getConnections().push_back(m->pins.at(leftSourcePin));
-				audioOut->pins.at(1)->getConnections().push_back(m->pins.at(rightSourcePin));
-				Connection* c1 = new Connection(m, m->pins.at(leftSourcePin), audioOut, audioOut->pins.at(0));
-				Connection* c2 = new Connection(m, m->pins.at(rightSourcePin), audioOut, audioOut->pins.at(1));
-				module->getConnections()->push_back(c1);
-				module->getConnections()->push_back(c2);
-				audioOut->setVolume(1.0f);
-			}
-		}
+		//	if (audioOut != nullptr) {
+		//		audioOut->pins.at(0)->getConnections().push_back(m->pins.at(leftSourcePin));
+		//		audioOut->pins.at(1)->getConnections().push_back(m->pins.at(rightSourcePin));
+		//		Connection* c1 = new Connection(m, m->pins.at(leftSourcePin), audioOut, audioOut->pins.at(0));
+		//		Connection* c2 = new Connection(m, m->pins.at(rightSourcePin), audioOut, audioOut->pins.at(1));
+		//		module->getConnections()->push_back(c1);
+		//		module->getConnections()->push_back(c2);
+		//		audioOut->setVolume(1.0f);
+		//	}
+		//}
 	}
 
 	static Track* createAudioTrack(SynthEditor* editor, TrackNavigator* navigator, Module* module)
@@ -214,7 +214,7 @@ public:
 		}
 
 		// found one
-		ConnectAudioOut(auxOut, ti, pos, 0, 1,module, editor);
+		ConnectAudioOut(audioOut, ti, pos, 0, 1,module, editor);
 		return t;
 	}
 

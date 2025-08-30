@@ -957,7 +957,8 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	}
 	else if (menuItemID == 11)
 	{
-		editorView->getNavigator()->getCurrentTrack()->addMidiRegion(48000, editorView->getNavigator()->getSamplePosition(), 480000);
+		if (editorView->getNavigator()->getCurrentTrack() != nullptr)
+			editorView->getNavigator()->getCurrentTrack()->addMidiRegion(48000, editorView->getNavigator()->getSamplePosition(), 480000);
 	}
 
 	else if (menuItemID == 31) {
@@ -1052,6 +1053,7 @@ void MainComponent::openSettings() {
 		}
 		Project::getInstance()->setSampleRate(setup.sampleRate);
 		delete selector;
+		
 	};
 
 	ModalComponentManager::Callback* callback = ModalCallbackFunction::create(lambda);
