@@ -110,23 +110,21 @@ void MidiRegion::updateThumb() {
     };
     juce::MessageManager::callAsync(changeLambda);
 }
+
 void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bool wasResized) {
     if (wasMoved) {
         long newSampleOffset = std::round((getBounds().getX() / zoom) * sampleRate);
         long delta = newSampleOffset - sampleOffset;
         sampleOffset = newSampleOffset;
 
-        Logger::getCurrentLogger()->writeToLog(
-            "Moved! Bounds X: " + String(getBounds().getX()) +
-            ", Zoom: " + String(zoom) +
-            ", SampleRate: " + String(sampleRate) +
-            ", New SampleOffset: " + String(newSampleOffset) +
-            ", Delta: " + String(delta)
-        );
+        Logger::getCurrentLogger()->writeToLog("Region moved - synchronizing bounds with sampleOffset");
 
-        lastX = getBounds().getX();
+        // WICHTIG: Bounds mit neuem Offset synchronisieren
+        double lengthInSeconds = numSamples / sampleRate;
+        setBounds((int)(sampleOffset / sampleRate * zoom), getY(),
+            (int)(lengthInSeconds * zoom), getHeight());
 
-		rebuildThumbnail();
+        rebuildThumbnail();
         updateThumb();
     }
 }
@@ -153,12 +151,17 @@ MidiThumbnail* MidiRegion::getThumbnail() {
     return midiThumbnail;
 }
 
-void MidiRegion::setZoom(float zoom) {
-    this->zoom = zoom;
+void MidiRegion::setZoom(float newZoom) {
+    this->zoom = newZoom;
+
+    // Bounds mit neuem Zoom aktualisieren
+    double lengthInSeconds = numSamples / sampleRate;
+    setBounds((int)(sampleOffset / sampleRate * zoom), getY(),
+        (int)(lengthInSeconds * zoom), getHeight());
+
     this->midiThumbnail->setZoom(zoom);
     updateThumb();
 }
-
 void MidiRegion::setLoop(bool loop) {
     this->loop = loop;
     repaint();
