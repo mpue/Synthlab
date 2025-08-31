@@ -159,6 +159,11 @@ private:
 
 	std::unique_ptr<PianoRollComponent> pianoRoll = nullptr;
 
+	double loopStart = 0;
+	double loopEnd = 0;
+
+	bool loopEnabled = true;
+
 	Region* recordingRegion = nullptr;	
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TrackNavigator)
