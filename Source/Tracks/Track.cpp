@@ -510,7 +510,8 @@ void Track::setSamplePosition(int position)
 			
 		MidiRegion* r = dynamic_cast<MidiRegion*>(getRegionAt(position));
 		if (r != nullptr) {
-			vector<MidiMessage*> messages = r->getMessages(position - r->getSampleOffset(), 64);
+			vector<MidiMessage*> messages = r->getMessages(position - r->getSampleOffset(),
+				Project::getInstance()->getBufferSize()*2);
 			
 			for (auto* m : messages) {
 				if (m != nullptr) {

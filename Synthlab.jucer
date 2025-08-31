@@ -413,6 +413,8 @@
                 file="Source/MainTabbedComponent.h"/>
           <FILE id="Qwnb6C" name="Metronome.cpp" compile="1" resource="0" file="Source/Metronome.cpp"/>
           <FILE id="WvDbsO" name="Metronome.h" compile="0" resource="0" file="Source/Metronome.h"/>
+          <FILE id="clwxex" name="MidiRegionEventEditor.h" compile="0" resource="0"
+                file="Source/MidiRegionEventEditor.h"/>
           <FILE id="BU52xf" name="MixerPanel.cpp" compile="1" resource="0" file="Source/MixerPanel.cpp"/>
           <FILE id="wrBYlv" name="MixerPanel.h" compile="0" resource="0" file="Source/MixerPanel.h"/>
           <FILE id="j8BgnE" name="Module.cpp" compile="1" resource="0" file="Source/Module.cpp"/>

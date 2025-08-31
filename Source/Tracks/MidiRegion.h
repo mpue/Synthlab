@@ -67,6 +67,8 @@ public:
 		return midiMessageList;
 	}
 
+    vector<MidiMessage*> getActiveMessages(int localSamplePos); 
+
     virtual void updateThumb() override;
     virtual void componentMovedOrResized (Component& component,bool wasMoved, bool wasResized) override;
 
@@ -112,6 +114,7 @@ private:
     CriticalSection lock;
 
     int lastX = 0;
+
+    std::map<int, MidiMessage*> activeNotes; // Note-Nummer -> aktive Note-On Message
+    int lastPlaybackPosition = -1;
 };
-
-

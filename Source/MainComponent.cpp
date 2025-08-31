@@ -115,7 +115,7 @@ MainComponent::MainComponent() : resizerBar(&stretchableManager, 1, true)
 	addKeyListener(getKeyMappings());
 	addKeyListener(this);
 	editor->setMouseClickGrabsKeyboardFocus(true);
-	// editor->setWantsKeyboardFocus(true);
+	editor->setWantsKeyboardFocus(true);
 	resized();
 	repaint();
 	initialized = true;
@@ -1110,6 +1110,11 @@ bool MainComponent::keyPressed(const juce::KeyPress& key, juce::Component* origi
 	if (key.getTextCharacter() == 'd' && isOptionPressed) {
 		editor->duplicateSelected();
 		editor->repaint();
+	}
+	if (key.getKeyCode() == KeyPress::deleteKey || key.getKeyCode() == KeyPress::backspaceKey) {
+		RemoveSelectedAction* rsa = new RemoveSelectedAction(editor);
+		Project::getInstance()->getUndoManager()->beginNewTransaction();
+		Project::getInstance()->getUndoManager()->perform(rsa);
 	}
 
 	return true;

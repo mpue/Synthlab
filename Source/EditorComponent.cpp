@@ -54,8 +54,7 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView*
     mixerView->setMouseClickGrabsKeyboardFocus(false);
     
     editor->setMixer(mixerPanel);
-    editor->addChangeListener(this);
-    
+    editor->addChangeListener(this);	
     bottomTab->addTab("Mixer", Colours::darkgrey, mixerView.get(), false);
 
     addAndMakeVisible(topTab.get());

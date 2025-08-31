@@ -190,10 +190,56 @@ void MidiRegion::addMessage(MidiMessage* m, double time, int sampleNum) {
     updateThumb();
 }
 
+vector<MidiMessage*> MidiRegion::getActiveMessages(int localSamplePos) {
+    vector<MidiMessage*> result;
+
+    // Wenn Position zurückspringt (nach Verschieben), resette aktive Notes
+    if (localSamplePos < lastPlaybackPosition) {
+        activeNotes.clear();
+    }
+
+    // Finde alle Messages zwischen letzter und aktueller Position
+    int searchStart = std::max(0, lastPlaybackPosition);
+    int searchEnd = localSamplePos + 64;
+
+    for (auto* m : midiMessageList) {
+        if (!m) continue;
+
+        int msgTime = (int)m->getTimeStamp();
+
+        // Message liegt in unserem Suchbereich
+        if (msgTime >= searchStart && msgTime < searchEnd) {
+            if (m->isNoteOn()) {
+                activeNotes[m->getNoteNumber()] = m;
+                if (msgTime >= localSamplePos) {
+                    result.push_back(m); // Neue Note-On
+                }
+            }
+            else if (m->isNoteOff()) {
+                activeNotes.erase(m->getNoteNumber());
+                if (msgTime >= localSamplePos) {
+                    result.push_back(m); // Note-Off
+                }
+            }
+            else if (msgTime >= localSamplePos) {
+                result.push_back(m); // Controller etc.
+            }
+        }
+    }
+
+    // Für noch aktive Notes: sende "phantom" Note-On Messages
+    if (localSamplePos != lastPlaybackPosition) {
+        for (auto& pair : activeNotes) {
+            result.push_back(pair.second);
+        }
+    }
+
+    lastPlaybackPosition = localSamplePos;
+    return result;
+}
+
 vector<MidiMessage*> MidiRegion::getMessages(int sampleNum, int numSamples)
 {
-	sampleNum -= sampleNum % Project::getInstance()->getBufferSize();
-
     vector<MidiMessage*> foundMessages;
     const int endSample = sampleNum + numSamples;
 

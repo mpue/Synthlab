@@ -56,8 +56,9 @@ SynthEditor::SynthEditor() {
 
 	setRepaintsOnMouseActivity(true);
 	setMouseClickGrabsKeyboardFocus(true);
-	//setWantsKeyboardFocus(true);
-
+	setWantsKeyboardFocus(true);
+	setInterceptsMouseClicks(true, true);
+		
 	addChildComponent(root.get());
 }
 
@@ -272,8 +273,6 @@ void SynthEditor::mouseDown(const MouseEvent& e)
 	if (e.mods.isRightButtonDown()) {
 		showContextMenu(e.getPosition());
 	}
-
-
 
 	if (root->getModules()->size() > 0) {
 		sendChangeMessage();
@@ -914,13 +913,9 @@ std::shared_ptr<MixerPanel> SynthEditor::getMixer() {
 	return mixer;
 }
 
-bool SynthEditor::keyPressed(const KeyPress& key)
+bool SynthEditor::keyPressed(const KeyPress& key, Component* originatingComponent)
 {
-	if (key.getKeyCode() == KeyPress::deleteKey || key.getKeyCode() == KeyPress::backspaceKey) {
-		RemoveSelectedAction* rsa = new RemoveSelectedAction(this);
-		Project::getInstance()->getUndoManager()->beginNewTransaction();
-		Project::getInstance()->getUndoManager()->perform(rsa);
-	}
+
 	if (key.getKeyCode() == 65 && isCtrlDown) {
 		for (int i = 0; i < root->getModules()->size(); i++) {
 			root->getModules()->at(i)->setSelected(true);
@@ -1884,7 +1879,6 @@ void SynthEditor::alignSelectedY() {
 
 void SynthEditor::alignSelectedX() {
 	if (selectionModel.getSelectedModules().size() >= 2) {
-
 
 		int minX = getWidth();
 		int minY = getHeight();

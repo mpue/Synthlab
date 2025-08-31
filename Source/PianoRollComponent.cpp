@@ -19,6 +19,8 @@ PianoRollComponent::PianoRollComponent(MidiRegion* region, double sampleRate)
 
     // Initialize custom scale (C major as default)
     customScale = { 0, 2, 4, 5, 7, 9, 11 };
+
+    setMouseCursor(getCursorForTool(currentTool));
 }
 
 PianoRollComponent::~PianoRollComponent() = default;
@@ -412,6 +414,7 @@ void PianoRollComponent::handleSelectTool(const juce::MouseEvent& e)
     isDragging = false;
     resizingMessage = nullptr;
     isVelocityEditing = false;
+    originalNotePositions.clear();
 
     MidiMessage* hitNote = getNoteAt(e.getPosition());
 
@@ -419,19 +422,24 @@ void PianoRollComponent::handleSelectTool(const juce::MouseEvent& e)
         double duration = getNoteDuration(hitNote);
         auto rect = getNoteRect(*hitNote, duration);
 
-        // Check if clicking on resize handle
-        if (isOverNoteEdge(e.getPosition(), hitNote, duration)) {
+        // Fix: Better resize handle detection (right edge of note)
+        bool isOverResizeHandle = (e.x >= rect.getRight() - 8) && (e.x <= rect.getRight() + 4);
+
+        if (isOverResizeHandle) {
             isResizing = true;
             resizingMessage = hitNote;
             resizingPartner = findNoteOffForNoteOn(hitNote);
             originalDuration = duration;
             originalNoteRect = rect;
+
+            // Change cursor for resize
+            setMouseCursor(juce::MouseCursor::LeftRightResizeCursor);
         }
-        // Check if clicking on velocity handle
         else if (isOverVelocityHandle(e.getPosition(), hitNote)) {
             isVelocityEditing = true;
             resizingMessage = hitNote;
             originalVelocities[hitNote] = hitNote->getVelocity();
+            setMouseCursor(juce::MouseCursor::UpDownResizeCursor);
         }
         else {
             // Regular selection
@@ -440,7 +448,6 @@ void PianoRollComponent::handleSelectTool(const juce::MouseEvent& e)
             }
 
             if (e.mods.isCommandDown()) {
-                // Toggle selection
                 if (selectedMessages.find(hitNote) != selectedMessages.end()) {
                     selectedMessages.erase(hitNote);
                 }
@@ -451,6 +458,8 @@ void PianoRollComponent::handleSelectTool(const juce::MouseEvent& e)
             else {
                 selectedMessages.insert(hitNote);
             }
+
+            setMouseCursor(juce::MouseCursor::DraggingHandCursor);
         }
     }
     else {
@@ -462,6 +471,7 @@ void PianoRollComponent::handleSelectTool(const juce::MouseEvent& e)
         isBoxSelecting = true;
         selectionRectangle = juce::Rectangle<int>(e.getPosition(), e.getPosition());
         drawSelectionRect = true;
+        setMouseCursor(juce::MouseCursor::CrosshairCursor);
     }
 
     notifySelectionChanged();
@@ -553,7 +563,6 @@ void PianoRollComponent::mouseDrag(const juce::MouseEvent& e)
         auto rect = getNoteRect(*resizingMessage, getNoteDuration(resizingMessage));
         float velFactor = 1.0f - (e.y - rect.getY()) / (float)rect.getHeight();
         int newVel = juce::jlimit(1, 127, (int)(velFactor * 127));
-
         setNoteVelocity(resizingMessage, newVel);
         repaint();
         return;
@@ -562,106 +571,168 @@ void PianoRollComponent::mouseDrag(const juce::MouseEvent& e)
     if (isBoxSelecting) {
         selectionRectangle = juce::Rectangle<int>(dragStart, e.getPosition());
 
-        // Update selection based on rectangle
-        auto notesInRect = getNotesInRect(selectionRectangle);
         if (!e.mods.isCommandDown()) {
             selectedMessages.clear();
         }
 
+        auto notesInRect = getNotesInRect(selectionRectangle);
         for (auto* note : notesInRect) {
-            if (e.mods.isCommandDown()) {
-                // Toggle selection
-                if (selectedMessages.find(note) != selectedMessages.end()) {
-                    selectedMessages.erase(note);
-                }
-                else {
-                    selectedMessages.insert(note);
-                }
-            }
-            else {
-                selectedMessages.insert(note);
-            }
+            selectedMessages.insert(note);
         }
-
         repaint();
         return;
     }
 
     if (currentTool != Tool::SELECT) return;
 
-    isDragging = true;
     auto delta = e.getPosition() - dragStart;
-    double rawDeltaTime = delta.x / xZoom;
-    double deltaPitchF = -(delta.y / yZoom);
+    if (!isDragging && (std::abs(delta.x) > 3 || std::abs(delta.y) > 3)) {
+        isDragging = true;
 
-    // Quantization
-    double sixteenthSamples = (60.0 / bpm) / 4.0 * sampleRate;
-    double deltaTime = snapToGrid ?
-        std::round(rawDeltaTime / sixteenthSamples) * sixteenthSamples :
-        rawDeltaTime;
-
-    if (isResizing && resizingMessage && resizingPartner) {
-        double newDuration = originalDuration + deltaTime;
-        resizeNote(resizingMessage, juce::jmax(10.0, newDuration));
-    }
-    else if (!selectedMessages.empty()) {
-        int deltaPitch = static_cast<int>(std::round(deltaPitchF));
-
-        if (deltaTime != 0.0 || deltaPitch != 0) {
-            // Store original positions for undo
-            static std::map<MidiMessage*, std::pair<double, int>> originalPositions;
-            if (originalPositions.empty()) {
-                for (auto* msg : selectedMessages) {
-                    originalPositions[msg] = { msg->getTimeStamp(), msg->getNoteNumber() };
+        // WICHTIG: Kopiere die ursprünglichen Positionen NUR beim ersten Drag
+        if (originalNotePositions.empty()) {
+            for (auto* msg : selectedMessages) {
+                MidiMessage* noteOff = findNoteOffForNoteOn(msg);
+                if (noteOff) {
+                    originalNotePositions[msg] = {
+                        msg->getTimeStamp(),
+                        msg->getNoteNumber(),
+                        noteOff->getTimeStamp()  // Speichere auch die original End-Zeit
+                    };
                 }
             }
-
-            for (auto* msg : selectedMessages) {
-                moveNote(msg, deltaTime, deltaPitch);
-            }
-            dragStart = e.getPosition();
         }
     }
 
-    repaint();
+    if (!isDragging) return;
+
+    // Berechne Delta von der ursprünglichen Drag-Start-Position
+    double deltaTime = (e.x - dragStart.x) / xZoom;
+    int deltaPitch = -((e.y - dragStart.y) / yZoom);
+
+    // Apply snap to grid if enabled
+    if (snapToGrid) {
+        double gridSamples = (60.0 / bpm) / 4.0 * sampleRate;
+        deltaTime = std::round(deltaTime / gridSamples) * gridSamples;
+    }
+
+    deltaPitch = (int)std::round(deltaPitch);
+
+    if (isResizing && resizingMessage && resizingPartner) {
+        // Resize-Operation
+        double newDuration = originalDuration + deltaTime;
+        double minDuration = (60.0 / bpm) / 16.0 * sampleRate;
+        newDuration = juce::jmax(minDuration, newDuration);
+
+        resizingPartner->setTimeStamp(resizingMessage->getTimeStamp() + newDuration);
+        repaint();
+    }
+    else if (!selectedMessages.empty() && !originalNotePositions.empty()) {
+        // Move-Operation - verwende die gespeicherten Original-Positionen
+        for (auto* msg : selectedMessages) {
+            auto it = originalNotePositions.find(msg);
+            if (it != originalNotePositions.end()) {
+                double originalStartTime = std::get<0>(it->second);
+                int originalPitch = std::get<1>(it->second);
+                double originalEndTime = std::get<2>(it->second);
+                double originalDuration = originalEndTime - originalStartTime;
+
+                // Berechne neue Position basierend auf Original + Delta
+                double newStartTime = juce::jmax(0.0, originalStartTime + deltaTime);
+                int newPitch = juce::jlimit(0, 127, originalPitch + deltaPitch);
+
+                // Aktualisiere Note-On
+                msg->setTimeStamp(newStartTime);
+                msg->setNoteNumber(newPitch);
+
+                // Aktualisiere entsprechende Note-Off
+                MidiMessage* noteOff = findNoteOffForNoteOn(msg);
+                if (noteOff) {
+                    noteOff->setTimeStamp(newStartTime + originalDuration);
+                    noteOff->setNoteNumber(newPitch);
+                }
+            }
+        }
+
+        // WICHTIG: Repaint nach jeder Änderung
+        repaint();
+    }
 }
+
 
 void PianoRollComponent::mouseUp(const juce::MouseEvent& e)
 {
+    setMouseCursor(getCursorForTool(currentTool));
+
+    bool wasResizing = isResizing;
+    bool wasDragging = isDragging;
+
     isPanning = false;
-    isResizing = false;
-    isVelocityEditing = false;
     isBoxSelecting = false;
     drawSelectionRect = false;
 
-    if (isDragging && snapToGrid && currentTool == Tool::SELECT) {
-        // Final quantization snap
-        double sixteenthSamples = (60.0 / bpm) / 4.0 * sampleRate;
+    if (wasResizing && wasDragging && resizingMessage && resizingPartner) {
+        // Finalize resize
+        double minDuration = (60.0 / bpm) / 16.0 * sampleRate;
+        double currentDuration = resizingPartner->getTimeStamp() - resizingMessage->getTimeStamp();
 
-        for (auto* msg : selectedMessages) {
-            MidiMessage* noteOff = findNoteOffForNoteOn(msg);
-            if (!noteOff) continue;
-
-            double start = msg->getTimeStamp();
-            double end = noteOff->getTimeStamp();
-            double duration = end - start;
-
-            double snappedStart = snapTimeToGrid(start);
-            double snappedEnd = snappedStart + duration;
-
-            msg->setTimeStamp(snappedStart);
-            noteOff->setTimeStamp(snappedEnd);
+        if (currentDuration < minDuration) {
+            resizingPartner->setTimeStamp(resizingMessage->getTimeStamp() + minDuration);
         }
 
-        if (!selectedMessages.empty()) {
-            midiRegion->rebuildThumbnail();
-            midiRegion->updateThumb();
-            notifyRegionModified();
+        if (snapToGrid) {
+            double endTime = snapTimeToGrid(resizingPartner->getTimeStamp());
+            resizingPartner->setTimeStamp(endTime);
         }
+
+        // WICHTIG: Nach Resize die MIDI-Region aktualisieren
+        midiRegion->rebuildThumbnail();
+        midiRegion->updateThumb();
+        notifyRegionModified();
     }
 
+    if (wasDragging && !selectedMessages.empty() && currentTool == Tool::SELECT && !originalNotePositions.empty()) {
+        // Finalize move operation
+        if (snapToGrid) {
+            for (auto* msg : selectedMessages) {
+                MidiMessage* noteOff = findNoteOffForNoteOn(msg);
+                if (!noteOff) continue;
+
+                double start = msg->getTimeStamp();
+                double end = noteOff->getTimeStamp();
+                double duration = end - start;
+
+                double snappedStart = snapTimeToGrid(start);
+                msg->setTimeStamp(snappedStart);
+                noteOff->setTimeStamp(snappedStart + duration);
+            }
+        }
+
+        // WICHTIG: Nach Move die MIDI-Region aktualisieren
+        midiRegion->rebuildThumbnail();
+        midiRegion->updateThumb();
+        notifyRegionModified();
+
+        // Debug-Ausgabe um zu überprüfen ob die Noten noch da sind
+        auto& messages = midiRegion->getMidiMessageList();
+        int noteCount = 0;
+        for (auto* msg : messages) {
+            if (msg && msg->isNoteOn()) noteCount++;
+        }
+        DBG("Total notes after move: " << noteCount);
+    }
+
+    // Reset states
+    isResizing = false;
+    isVelocityEditing = false;
     isDragging = false;
+    resizingMessage = nullptr;
+    resizingPartner = nullptr;
     originalVelocities.clear();
+
+    // WICHTIG: Leere die Original-Positionen erst nach dem mouseUp
+    originalNotePositions.clear();
+
     repaint();
 }
 
@@ -799,7 +870,7 @@ bool PianoRollComponent::keyPressed(const juce::KeyPress& key, juce::Component*)
 void PianoRollComponent::modifierKeysChanged(const juce::ModifierKeys& modifiers)
 {
     // Update cursor based on modifiers and current tool
-    // setCursor(getCursorForTool(currentTool));
+    setMouseCursor(getCursorForTool(currentTool));
     repaint();
 }
 
@@ -814,53 +885,64 @@ MidiMessage* PianoRollComponent::findNoteOffForNoteOn(MidiMessage* noteOn)
     int noteNumber = noteOn->getNoteNumber();
     double onTime = noteOn->getTimeStamp();
 
+    // Suche das nächste Note-Off mit gleicher Channel/Note-Nummer nach der Note-On Zeit
+    MidiMessage* bestMatch = nullptr;
+    double bestTime = std::numeric_limits<double>::max();
+
     for (auto* msg : messages) {
         if (msg && msg->isNoteOff() &&
             msg->getChannel() == channel &&
             msg->getNoteNumber() == noteNumber &&
             msg->getTimeStamp() > onTime) {
-            return msg;
+
+            // Finde das zeitlich nächste Note-Off
+            if (msg->getTimeStamp() < bestTime) {
+                bestTime = msg->getTimeStamp();
+                bestMatch = msg;
+            }
         }
     }
-    return nullptr;
-}
 
+    return bestMatch;
+}
 double PianoRollComponent::getNoteDuration(MidiMessage* noteOn)
 {
     MidiMessage* noteOff = findNoteOffForNoteOn(noteOn);
     return noteOff ? (noteOff->getTimeStamp() - noteOn->getTimeStamp()) : 0.0;
 }
 
+
 void PianoRollComponent::addNotePair(int pitch, double startTime, double duration, int velocity, int channel)
 {
+    // Fix: Ensure proper sample alignment
+    if (snapToGrid) {
+        startTime = snapTimeToGrid(startTime);
+
+        // Align duration to grid as well
+        double gridSamples = (60.0 / bpm) / 4.0 * sampleRate; // 16th note grid
+        double gridDuration = std::round(duration / gridSamples) * gridSamples;
+        duration = juce::jmax(gridSamples / 4.0, gridDuration); // Minimum 1/64 note
+    }
+
+    // Ensure minimum duration for playback
+    double minDuration = sampleRate * 0.01; // 10ms minimum
+    duration = juce::jmax(minDuration, duration);
+
     MidiMessage* on = new MidiMessage(MidiMessage::noteOn(channel, pitch, (juce::uint8)velocity));
     on->setTimeStamp(startTime);
 
     MidiMessage* off = new MidiMessage(MidiMessage::noteOff(channel, pitch));
     off->setTimeStamp(startTime + duration);
 
-    // Create undo action
-    pushUndoAction("Add Note",
-        [this, on, off]() {
-            // Undo: remove notes
-            auto& messages = midiRegion->getMidiMessageList();
-            messages.erase(std::remove(messages.begin(), messages.end(), on), messages.end());
-            messages.erase(std::remove(messages.begin(), messages.end(), off), messages.end());
-            delete on;
-            delete off;
-            midiRegion->rebuildThumbnail();
-            midiRegion->updateThumb();
-        },
-        [this, on, off]() {
-            // Redo: add notes back
-            midiRegion->getMidiMessageList().push_back(new MidiMessage(*on));
-            midiRegion->getMidiMessageList().push_back(new MidiMessage(*off));
-            midiRegion->rebuildThumbnail();
-            midiRegion->updateThumb();
-        });
-
     midiRegion->getMidiMessageList().push_back(on);
     midiRegion->getMidiMessageList().push_back(off);
+
+    // Fix: Sort messages by timestamp for proper playback
+    auto& messages = midiRegion->getMidiMessageList();
+    std::sort(messages.begin(), messages.end(),
+        [](const MidiMessage* a, const MidiMessage* b) {
+            return a->getTimeStamp() < b->getTimeStamp();
+        });
 
     midiRegion->rebuildThumbnail();
     midiRegion->updateThumb();
@@ -1888,3 +1970,38 @@ bool PianoRollComponent::isOverVelocityHandle(juce::Point<int> position, MidiMes
     auto rect = getNoteRect(*note, getNoteDuration(note));
     return rect.contains(position) && position.y > rect.getBottom() - 8;
 }
+void PianoRollComponent::setCurrentTool(Tool newTool)
+{
+    if (currentTool != newTool) {
+        currentTool = newTool;
+        setMouseCursor(getCursorForTool(currentTool));
+        repaint();
+    }
+}
+
+// 7. Improve cursor handling in mouseMove
+void PianoRollComponent::mouseMove(const juce::MouseEvent& e)
+{
+    if (currentTool == Tool::SELECT) {
+        MidiMessage* hitNote = getNoteAt(e.getPosition());
+
+        if (hitNote) {
+            auto rect = getNoteRect(*hitNote, getNoteDuration(hitNote));
+            bool isOverResizeHandle = (e.x >= rect.getRight() - 8) && (e.x <= rect.getRight() + 4);
+
+            if (isOverResizeHandle) {
+                setMouseCursor(juce::MouseCursor::LeftRightResizeCursor);
+            }
+            else if (isOverVelocityHandle(e.getPosition(), hitNote)) {
+                setMouseCursor(juce::MouseCursor::UpDownResizeCursor);
+            }
+            else {
+                setMouseCursor(juce::MouseCursor::PointingHandCursor);
+            }
+        }
+        else {
+            setMouseCursor(getCursorForTool(currentTool));
+        }
+    }
+}
+

@@ -31,7 +31,8 @@ class SynthEditor  : public Component,
                      public ChangeListener,
                      public DragAndDropTarget,
                      public IEditor,
-                     public ApplicationCommandTarget
+                     public ApplicationCommandTarget,
+                     public KeyListener
 {
 public:
 
@@ -102,7 +103,7 @@ public:
     void mouseDrag (const MouseEvent& e) override;
     void mouseUp (const MouseEvent& e) override;
     void mouseDoubleClick (const MouseEvent& e) override;
-    bool keyPressed (const KeyPress& key) override;
+    bool keyPressed (const KeyPress& key, Component* originatingComponent) override;
     bool keyStateChanged (bool isKeyDown) override;
     void modifierKeysChanged (const ModifierKeys& modifiers) override;
 

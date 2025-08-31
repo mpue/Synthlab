@@ -19,6 +19,7 @@
 #include <iostream>
 #include "../ExtendedFileBrowser.h"
 #include "../PianoRollComponent.h"
+#include "../MidiRegionEventEditor.h"
 
 using namespace std;
 
@@ -326,8 +327,11 @@ void TrackNavigator::setSamplePosition(int position) {
 		[=]() {
 		marker->setSamplePosition(this->samplePosition);
 		transportDisplay->setTransportState(samplePosition, Project::getInstance()->getSampleRate(), Project::getInstance()->getTempo(), 4, 4);
+		if (pianoRoll != nullptr) {
+			pianoRoll->setPlaybackPosition(this->samplePosition);
 
-		};
+		}
+	};
 	juce::MessageManager::callAsync(changeLambda);
 }
 
@@ -461,10 +465,25 @@ StringArray TrackNavigator::getTrackList()
 
 void TrackNavigator::openPianoRoll(MidiRegion* r)
 {
-	PianoRollComponent* pr = new PianoRollComponent(r, Project::getInstance()->getSampleRate());
-	pr->setGridResolution(16);
+	if (pianoRoll != nullptr) {
+		pianoRoll = nullptr;
+	}
+	pianoRoll = std::make_unique<PianoRollComponent>(r, Project::getInstance()->getSampleRate());
 
-	Project::getInstance()->getSupplemental()->addTab("Piano roll", Colours::darkgrey, pr, true);
+	pianoRoll->setGridResolution(16);
+
+	Project::getInstance()->getSupplemental()->addTab("Piano roll", Colours::darkgrey, pianoRoll.get(), false);
+	Project::getInstance()->getSupplemental()->setCurrentTabIndex(Project::getInstance()->getSupplemental()->getNumTabs() - 1);
+}
+
+void TrackNavigator::openEventEditor(MidiRegion* r)
+{
+	if (pianoRoll != nullptr) {
+		pianoRoll = nullptr;
+	}
+	auto* eventEditor = new MidiRegionEventEditor(r, Project::getInstance()->getSampleRate());
+
+	Project::getInstance()->getSupplemental()->addTab("Event editor", Colours::darkgrey, eventEditor, true);
 	Project::getInstance()->getSupplemental()->setCurrentTabIndex(Project::getInstance()->getSupplemental()->getNumTabs() - 1);
 }
 
@@ -714,6 +733,9 @@ bool TrackNavigator::keyPressed(const KeyPress& key, Component* originatingCompo
 		}
 		else if (key.getKeyCode() == 69) { // E
 			openPianoRoll(dynamic_cast<MidiRegion*>(tracks.at(0)->getCurrentRegion()));
+		}
+		else if (key.getKeyCode() == 77) { // E
+			openEventEditor(dynamic_cast<MidiRegion*>(tracks.at(0)->getCurrentRegion()));
 		}
 		else if (key.getKeyCode() == 73) { // I
 			for (int i = 0; i < tracks.size(); i++) {

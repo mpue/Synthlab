@@ -36,7 +36,7 @@ public:
         SPLIT,      // Noten teilen
         GLUE        // Noten verbinden
     };
-    void setCurrentTool(Tool tool) { currentTool = tool; /*setCursor(getCursorForTool(tool));*/ }
+    void setCurrentTool(Tool tool);
     Tool getCurrentTool() const { return currentTool; }
 
     // === PLAYBACK ===
@@ -98,6 +98,11 @@ public:
     void mouseDoubleClick(const juce::MouseEvent& e) override;
     void mouseWheelMove(const juce::MouseEvent& e, const juce::MouseWheelDetails& wheel) override;
     void mouseMagnify(const juce::MouseEvent& e, float scaleFactor) override;
+
+    std::map<MidiMessage*, std::tuple<double, int, double>> originalNotePositions; // startTime, pitch, endTime
+
+    // Und diese Methode hinzufügen:
+    void mouseMove(const juce::MouseEvent& e) override;
 
     bool keyPressed(const juce::KeyPress& key, juce::Component*) override;
     void modifierKeysChanged(const juce::ModifierKeys& modifiers) override;
@@ -268,6 +273,8 @@ private:
     // === CONSTRAINTS ===
     double getMinTime() const { return 0.0; }
     double getMaxTime() const { return midiRegion->getNumSamples(); }
+
+    double gridSamples = 0.0;
 
     // === COMMAND IDS ===
     enum CommandIDs {

@@ -25,6 +25,7 @@
 #include "TimeLine.h"
 #include "../UITools.h"
 #include "../TransportDisplayComponent.h"
+#include "../PianoRollComponent.h"
 
 //==============================================================================
 /*
@@ -61,6 +62,7 @@ public:
 	StringArray getTrackList();
 
 	void openPianoRoll(MidiRegion* r);
+	void openEventEditor(MidiRegion* r);
 
 	bool isPlaying();
 	void setPlaying(bool playing);
@@ -154,6 +156,8 @@ private:
 	virtual void mouseMove(const juce::MouseEvent& event) override;
 	virtual bool keyPressed(const KeyPress& key, Component* originatingComponent) override;
 	virtual void mouseDrag(const MouseEvent& event) override;
+
+	std::unique_ptr<PianoRollComponent> pianoRoll = nullptr;
 
 	Region* recordingRegion = nullptr;	
 
