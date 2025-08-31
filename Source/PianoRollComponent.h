@@ -15,9 +15,36 @@ public:
     PianoRollComponent(MidiRegion* region, double sampleRate);
     ~PianoRollComponent() override;
 
+    struct DragPreviewNote {
+        MidiMessage* originalNote = nullptr;
+        double previewStartTime = 0.0;
+        double previewEndTime = 0.0;
+        int previewPitch = 0;
+    };
+
+    struct NotePositionData {
+        MidiMessage* noteOn = nullptr;
+        MidiMessage* noteOff = nullptr;
+        double startTime = 0.0;
+        double endTime = 0.0;
+        int pitch = 0;
+    };
+
+	// === DRAWING ===
     void paint(juce::Graphics& g) override;
     void resized() override;
     void timerCallback() override;
+
+    // Keyboard navigation methods
+    void moveSelectedNotes(double deltaTime, int deltaPitch);
+    void ensureSelectionVisible();
+
+    // Undo/Redo functionality
+    void performUndo();
+    void performRedo();
+    bool canUndo() const { return !undoStack.empty(); }
+    bool canRedo() const { return !redoStack.empty(); }
+
 
     // === SETTINGS ===
     void setGridResolution(int denominator);
@@ -117,6 +144,31 @@ public:
     std::function<void(const std::set<MidiMessage*>&)> onSelectionChanged;
     std::function<void(MidiMessage*, int oldVelocity, int newVelocity)> onVelocityChanged;
     std::function<void()> onRegionModified;
+
+    // Quick navigation shortcuts
+    void moveSelectedNotesUp(bool octave = false) {
+        moveSelectedNotes(0.0, octave ? 12 : 1);
+    }
+
+    void moveSelectedNotesDown(bool octave = false) {
+        moveSelectedNotes(0.0, octave ? -12 : -1);
+    }
+
+    void moveSelectedNotesLeft() {
+        moveSelectedNotes(-getGridTimeStep(), 0);
+    }
+
+    void moveSelectedNotesRight() {
+        moveSelectedNotes(getGridTimeStep(), 0);
+    }
+
+    // Grid resolution shortcuts for different note values
+    void setGridTo32ndNotes() { setGridResolution(32); }
+    void setGridTo16thNotes() { setGridResolution(16); }
+    void setGridTo8thNotes() { setGridResolution(8); }
+    void setGridToQuarterNotes() { setGridResolution(4); }
+    void setGridToHalfNotes() { setGridResolution(2); }
+    void setGridToWholeNotes() { setGridResolution(1); }
 
 private:
     // === CORE DATA ===
@@ -266,6 +318,17 @@ private:
     void handleVelocityTool(const juce::MouseEvent& e);
     void handleSplitTool(const juce::MouseEvent& e);
 
+    void drawResizePreview(juce::Graphics& g);
+    void drawNotePreview(juce::Graphics& g, MidiMessage* originalMsg, const DragPreviewNote& preview, bool isSelected);
+    void handleResizeDrag(double deltaTime);
+    void handleMoveDrag(double deltaTime, int deltaPitch);
+
+    void storeOriginalNotePositions();
+    void finalizeResize();
+    void finalizeMove();
+    void resetDragState();
+    double getGridTimeStep();
+
     // === NOTIFICATION ===
     void notifySelectionChanged();
     void notifyRegionModified();
@@ -296,6 +359,11 @@ private:
         reverseNotes,
         splitAtPlayhead
     };
+
+
+    // Add these member variables to your class:
+    std::vector<DragPreviewNote> dragPreviewNotes;
+    double dragPreviewEndTime = 0.0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PianoRollComponent)
 };

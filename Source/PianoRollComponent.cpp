@@ -186,9 +186,85 @@ void PianoRollComponent::drawNotes(juce::Graphics& g)
         if (noteEnd < startTime || noteStart > endTime) continue;
 
         bool isSelected = selectedMessages.find(msg) != selectedMessages.end();
-        drawNote(g, *msg, duration, isSelected);
+
+        // Check if this note has a drag preview
+        bool hasPreview = false;
+        DragPreviewNote previewData;
+
+        if (isDragging && !dragPreviewNotes.empty()) {
+            for (const auto& preview : dragPreviewNotes) {
+                if (preview.originalNote == msg) {
+                    hasPreview = true;
+                    previewData = preview;
+                    break;
+                }
+            }
+        }
+
+        if (hasPreview) {
+            // Draw preview version
+            drawNotePreview(g, msg, previewData, isSelected);
+        }
+        else {
+            // Draw normal version
+            drawNote(g, *msg, duration, isSelected);
+        }
+    }
+
+    // Draw resize preview if resizing
+    if (isResizing && resizingMessage && dragPreviewEndTime > 0) {
+        drawResizePreview(g);
     }
 }
+
+
+void PianoRollComponent::drawNotePreview(juce::Graphics& g, MidiMessage* originalMsg,
+    const DragPreviewNote& preview, bool isSelected)
+{
+    // Create temporary message for preview drawing
+    MidiMessage tempMsg(*originalMsg);
+    tempMsg.setTimeStamp(preview.previewStartTime);
+    tempMsg.setNoteNumber(preview.previewPitch);
+
+    double previewDuration = preview.previewEndTime - preview.previewStartTime;
+
+    // Draw with preview styling (slightly transparent)
+    auto rect = getNoteRect(tempMsg, previewDuration);
+    if (rect.getWidth() < 1 || rect.getHeight() < 1) return;
+
+    juce::Colour noteColour = getColourForChannel(tempMsg.getChannel() - 1);
+    noteColour = noteColour.withAlpha(0.7f); // Make preview semi-transparent
+
+    if (isSelected) {
+        float pulse = std::sin(pulseAnimation) * 0.2f + 0.8f;
+        noteColour = noteColour.brighter(pulse * 0.3f);
+
+        // Preview selection border
+        g.setColour(juce::Colours::orange.withAlpha(0.6f));
+        g.drawRect(rect.expanded(1), 2);
+    }
+
+    // Draw preview note
+    g.setColour(noteColour);
+    g.fillRoundedRectangle(rect.toFloat(), 2.0f);
+
+    g.setColour(noteColour.darker(0.3f));
+    g.drawRoundedRectangle(rect.toFloat(), 2.0f, 1.0f);
+}
+
+void PianoRollComponent::drawResizePreview(juce::Graphics& g)
+{
+    if (!resizingMessage) return;
+
+    auto rect = getNoteRect(*resizingMessage, dragPreviewEndTime - resizingMessage->getTimeStamp());
+
+    g.setColour(juce::Colours::orange.withAlpha(0.3f));
+    g.fillRoundedRectangle(rect.toFloat(), 2.0f);
+
+    g.setColour(juce::Colours::orange);
+    g.drawRoundedRectangle(rect.toFloat(), 2.0f, 1.0f);
+}
+
 
 void PianoRollComponent::drawNote(juce::Graphics& g, const juce::MidiMessage& msg, double duration, bool isSelected)
 {
@@ -412,9 +488,13 @@ void PianoRollComponent::handleSelectTool(const juce::MouseEvent& e)
 
     dragStart = e.getPosition();
     isDragging = false;
+    isResizing = false;
     resizingMessage = nullptr;
     isVelocityEditing = false;
+
+    // IMPORTANT: Clear previous drag data
     originalNotePositions.clear();
+    dragPreviewNotes.clear();
 
     MidiMessage* hitNote = getNoteAt(e.getPosition());
 
@@ -422,7 +502,6 @@ void PianoRollComponent::handleSelectTool(const juce::MouseEvent& e)
         double duration = getNoteDuration(hitNote);
         auto rect = getNoteRect(*hitNote, duration);
 
-        // Fix: Better resize handle detection (right edge of note)
         bool isOverResizeHandle = (e.x >= rect.getRight() - 8) && (e.x <= rect.getRight() + 4);
 
         if (isOverResizeHandle) {
@@ -430,9 +509,6 @@ void PianoRollComponent::handleSelectTool(const juce::MouseEvent& e)
             resizingMessage = hitNote;
             resizingPartner = findNoteOffForNoteOn(hitNote);
             originalDuration = duration;
-            originalNoteRect = rect;
-
-            // Change cursor for resize
             setMouseCursor(juce::MouseCursor::LeftRightResizeCursor);
         }
         else if (isOverVelocityHandle(e.getPosition(), hitNote)) {
@@ -589,24 +665,13 @@ void PianoRollComponent::mouseDrag(const juce::MouseEvent& e)
     if (!isDragging && (std::abs(delta.x) > 3 || std::abs(delta.y) > 3)) {
         isDragging = true;
 
-        // WICHTIG: Kopiere die ursprünglichen Positionen NUR beim ersten Drag
-        if (originalNotePositions.empty()) {
-            for (auto* msg : selectedMessages) {
-                MidiMessage* noteOff = findNoteOffForNoteOn(msg);
-                if (noteOff) {
-                    originalNotePositions[msg] = {
-                        msg->getTimeStamp(),
-                        msg->getNoteNumber(),
-                        noteOff->getTimeStamp()  // Speichere auch die original End-Zeit
-                    };
-                }
-            }
-        }
+        // CRITICAL FIX: Store original positions only once when drag starts
+        storeOriginalNotePositions();
     }
 
     if (!isDragging) return;
 
-    // Berechne Delta von der ursprünglichen Drag-Start-Position
+    // Calculate delta from original drag start position
     double deltaTime = (e.x - dragStart.x) / xZoom;
     int deltaPitch = -((e.y - dragStart.y) / yZoom);
 
@@ -619,46 +684,14 @@ void PianoRollComponent::mouseDrag(const juce::MouseEvent& e)
     deltaPitch = (int)std::round(deltaPitch);
 
     if (isResizing && resizingMessage && resizingPartner) {
-        // Resize-Operation
-        double newDuration = originalDuration + deltaTime;
-        double minDuration = (60.0 / bpm) / 16.0 * sampleRate;
-        newDuration = juce::jmax(minDuration, newDuration);
-
-        resizingPartner->setTimeStamp(resizingMessage->getTimeStamp() + newDuration);
-        repaint();
+        handleResizeDrag(deltaTime);
     }
-    else if (!selectedMessages.empty() && !originalNotePositions.empty()) {
-        // Move-Operation - verwende die gespeicherten Original-Positionen
-        for (auto* msg : selectedMessages) {
-            auto it = originalNotePositions.find(msg);
-            if (it != originalNotePositions.end()) {
-                double originalStartTime = std::get<0>(it->second);
-                int originalPitch = std::get<1>(it->second);
-                double originalEndTime = std::get<2>(it->second);
-                double originalDuration = originalEndTime - originalStartTime;
-
-                // Berechne neue Position basierend auf Original + Delta
-                double newStartTime = juce::jmax(0.0, originalStartTime + deltaTime);
-                int newPitch = juce::jlimit(0, 127, originalPitch + deltaPitch);
-
-                // Aktualisiere Note-On
-                msg->setTimeStamp(newStartTime);
-                msg->setNoteNumber(newPitch);
-
-                // Aktualisiere entsprechende Note-Off
-                MidiMessage* noteOff = findNoteOffForNoteOn(msg);
-                if (noteOff) {
-                    noteOff->setTimeStamp(newStartTime + originalDuration);
-                    noteOff->setNoteNumber(newPitch);
-                }
-            }
-        }
-
-        // WICHTIG: Repaint nach jeder Änderung
-        repaint();
+    else if (!selectedMessages.empty()) {
+        handleMoveDrag(deltaTime, deltaPitch);
     }
+
+    repaint();
 }
-
 
 void PianoRollComponent::mouseUp(const juce::MouseEvent& e)
 {
@@ -672,68 +705,147 @@ void PianoRollComponent::mouseUp(const juce::MouseEvent& e)
     drawSelectionRect = false;
 
     if (wasResizing && wasDragging && resizingMessage && resizingPartner) {
-        // Finalize resize
-        double minDuration = (60.0 / bpm) / 16.0 * sampleRate;
-        double currentDuration = resizingPartner->getTimeStamp() - resizingMessage->getTimeStamp();
-
-        if (currentDuration < minDuration) {
-            resizingPartner->setTimeStamp(resizingMessage->getTimeStamp() + minDuration);
-        }
-
-        if (snapToGrid) {
-            double endTime = snapTimeToGrid(resizingPartner->getTimeStamp());
-            resizingPartner->setTimeStamp(endTime);
-        }
-
-        // WICHTIG: Nach Resize die MIDI-Region aktualisieren
-        midiRegion->rebuildThumbnail();
-        midiRegion->updateThumb();
-        notifyRegionModified();
+        finalizeResize();
     }
 
-    if (wasDragging && !selectedMessages.empty() && currentTool == Tool::SELECT && !originalNotePositions.empty()) {
-        // Finalize move operation
-        if (snapToGrid) {
-            for (auto* msg : selectedMessages) {
-                MidiMessage* noteOff = findNoteOffForNoteOn(msg);
-                if (!noteOff) continue;
-
-                double start = msg->getTimeStamp();
-                double end = noteOff->getTimeStamp();
-                double duration = end - start;
-
-                double snappedStart = snapTimeToGrid(start);
-                msg->setTimeStamp(snappedStart);
-                noteOff->setTimeStamp(snappedStart + duration);
-            }
-        }
-
-        // WICHTIG: Nach Move die MIDI-Region aktualisieren
-        midiRegion->rebuildThumbnail();
-        midiRegion->updateThumb();
-        notifyRegionModified();
-
-        // Debug-Ausgabe um zu überprüfen ob die Noten noch da sind
-        auto& messages = midiRegion->getMidiMessageList();
-        int noteCount = 0;
-        for (auto* msg : messages) {
-            if (msg && msg->isNoteOn()) noteCount++;
-        }
-        DBG("Total notes after move: " << noteCount);
+    if (wasDragging && !selectedMessages.empty() && currentTool == Tool::SELECT) {
+        finalizeMove();
     }
 
-    // Reset states
+    // Reset all drag states
+    resetDragState();
+    repaint();
+}
+
+// =================== HELPER METHODS FOR SAFE DRAGGING ===================
+
+void PianoRollComponent::storeOriginalNotePositions()
+{
+    originalNotePositions.clear();
+
+    for (auto* msg : selectedMessages) {
+        MidiMessage* noteOff = findNoteOffForNoteOn(msg);
+        if (noteOff) {
+            originalNotePositions[msg] = {
+                msg->getTimeStamp(),
+                msg->getNoteNumber(),
+                noteOff->getTimeStamp()
+            };
+        }
+    }
+}
+
+void PianoRollComponent::handleResizeDrag(double deltaTime)
+{
+    if (!resizingMessage || !resizingPartner) return;
+
+    double newDuration = originalDuration + deltaTime;
+    double minDuration = (60.0 / bpm) / 16.0 * sampleRate;
+    newDuration = juce::jmax(minDuration, newDuration);
+
+    // Create preview position without modifying original
+    dragPreviewEndTime = resizingMessage->getTimeStamp() + newDuration;
+}
+
+void PianoRollComponent::handleMoveDrag(double deltaTime, int deltaPitch)
+{
+    // Clear previous preview
+    dragPreviewNotes.clear();
+
+    // Create preview positions without modifying originals
+    for (auto* msg : selectedMessages) {
+        auto it = originalNotePositions.find(msg);
+        if (it != originalNotePositions.end()) {
+            double originalStartTime = std::get<0>(it->second);
+            int originalPitch = std::get<1>(it->second);
+            double originalEndTime = std::get<2>(it->second);
+            double originalDuration = originalEndTime - originalStartTime;
+
+            // Calculate new position based on original + delta
+            double newStartTime = juce::jmax(0.0, originalStartTime + deltaTime);
+            int newPitch = juce::jlimit(0, 127, originalPitch + deltaPitch);
+
+            // Store preview data
+            DragPreviewNote preview;
+            preview.originalNote = msg;
+            preview.previewStartTime = newStartTime;
+            preview.previewEndTime = newStartTime + originalDuration;
+            preview.previewPitch = newPitch;
+
+            dragPreviewNotes.push_back(preview);
+        }
+    }
+}
+
+void PianoRollComponent::finalizeResize()
+{
+    if (!resizingMessage || !resizingPartner) return;
+
+    // Apply the preview changes to actual notes
+    double minDuration = (60.0 / bpm) / 16.0 * sampleRate;
+    double finalEndTime = dragPreviewEndTime;
+    double currentDuration = finalEndTime - resizingMessage->getTimeStamp();
+
+    if (currentDuration < minDuration) {
+        finalEndTime = resizingMessage->getTimeStamp() + minDuration;
+    }
+
+    if (snapToGrid) {
+        finalEndTime = snapTimeToGrid(finalEndTime);
+    }
+
+    // Now safely apply the change
+    resizingPartner->setTimeStamp(finalEndTime);
+
+    // Update region
+    midiRegion->rebuildThumbnail();
+    midiRegion->updateThumb();
+    notifyRegionModified();
+}
+
+void PianoRollComponent::finalizeMove()
+{
+    if (dragPreviewNotes.empty()) return;
+
+    // Apply all preview changes to actual notes
+    for (const auto& preview : dragPreviewNotes) {
+        MidiMessage* noteOff = findNoteOffForNoteOn(preview.originalNote);
+        if (!noteOff) continue;
+
+        double finalStartTime = preview.previewStartTime;
+        double finalEndTime = preview.previewEndTime;
+        int finalPitch = preview.previewPitch;
+
+        if (snapToGrid) {
+            finalStartTime = snapTimeToGrid(finalStartTime);
+            double duration = finalEndTime - preview.previewStartTime;
+            finalEndTime = finalStartTime + duration;
+        }
+
+        // Apply changes safely
+        preview.originalNote->setTimeStamp(finalStartTime);
+        preview.originalNote->setNoteNumber(finalPitch);
+        noteOff->setTimeStamp(finalEndTime);
+        noteOff->setNoteNumber(finalPitch);
+    }
+
+    // Update region
+    midiRegion->rebuildThumbnail();
+    midiRegion->updateThumb();
+    notifyRegionModified();
+}
+
+void PianoRollComponent::resetDragState()
+{
     isResizing = false;
     isVelocityEditing = false;
     isDragging = false;
     resizingMessage = nullptr;
     resizingPartner = nullptr;
     originalVelocities.clear();
-
-    // WICHTIG: Leere die Original-Positionen erst nach dem mouseUp
     originalNotePositions.clear();
-
-    repaint();
+    dragPreviewNotes.clear();
+    dragPreviewEndTime = 0.0;
 }
 
 void PianoRollComponent::mouseDoubleClick(const juce::MouseEvent& e)
@@ -807,9 +919,12 @@ void PianoRollComponent::mouseMagnify(const juce::MouseEvent& e, float scaleFact
 
 // =================== KEYBOARD HANDLING ===================
 
+// Enhanced keyPressed method with cursor key navigation
 bool PianoRollComponent::keyPressed(const juce::KeyPress& key, juce::Component*)
 {
     auto keyCode = key.getKeyCode();
+    bool shiftHeld = key.getModifiers().isShiftDown();
+    bool cmdHeld = key.getModifiers().isCommandDown();
 
     // Tool shortcuts
     if (keyCode == '1') { setCurrentTool(Tool::SELECT); return true; }
@@ -824,19 +939,66 @@ bool PianoRollComponent::keyPressed(const juce::KeyPress& key, juce::Component*)
         return true;
     }
 
-    if (key.isKeyCurrentlyDown('z') && key.getModifiers().isCommandDown()) {
-        if (key.getModifiers().isShiftDown()) {
-            // Redo
+    // Undo/Redo
+    if (keyCode == 'z' && cmdHeld) {
+        if (shiftHeld) {
+            performRedo();
         }
         else {
-            // Undo
+            performUndo();
         }
         return true;
     }
 
     // Selection shortcuts
-    if (key.isKeyCurrentlyDown('a') && key.getModifiers().isCommandDown()) {
+    if (keyCode == 'a' && cmdHeld) {
         selectAll();
+        return true;
+    }
+
+    // Copy/Cut/Paste
+    if (keyCode == 'c' && cmdHeld) { copySelected(); return true; }
+    if (keyCode == 'x' && cmdHeld) { cutSelected(); return true; }
+    if (keyCode == 'v' && cmdHeld) {
+        double pasteTime = playbackPosition >= 0.0 ? playbackPosition : 0.0;
+        pasteAtPosition(pasteTime);
+        return true;
+    }
+
+    // CURSOR KEY NAVIGATION - The new functionality!
+    if (!selectedMessages.empty()) {
+        if (keyCode == juce::KeyPress::upKey) {
+            // Move up by semitone or octave
+            int semitones = shiftHeld ? 12 : 1;
+            moveSelectedNotes(0.0, semitones);
+            return true;
+        }
+
+        if (keyCode == juce::KeyPress::downKey) {
+            // Move down by semitone or octave
+            int semitones = shiftHeld ? -12 : -1;
+            moveSelectedNotes(0.0, semitones);
+            return true;
+        }
+
+        if (keyCode == juce::KeyPress::leftKey) {
+            // Move to previous grid point
+            double gridTime = getGridTimeStep();
+            moveSelectedNotes(-gridTime, 0);
+            return true;
+        }
+
+        if (keyCode == juce::KeyPress::rightKey) {
+            // Move to next grid point
+            double gridTime = getGridTimeStep();
+            moveSelectedNotes(gridTime, 0);
+            return true;
+        }
+    }
+
+    // Quantize shortcut
+    if (keyCode == 'q' && cmdHeld) {
+        quantizeSelected();
         return true;
     }
 
@@ -866,6 +1028,212 @@ bool PianoRollComponent::keyPressed(const juce::KeyPress& key, juce::Component*)
 
     return false;
 }
+
+// Enhanced method to move selected notes with proper validation and undo support
+void PianoRollComponent::moveSelectedNotes(double deltaTime, int deltaPitch)
+{
+    if (selectedMessages.empty()) return;
+
+    // Create undo action first
+    std::vector<NotePositionData> originalPositions;
+
+    // Store original positions for undo
+    for (auto* msg : selectedMessages) {
+        MidiMessage* noteOff = findNoteOffForNoteOn(msg);
+        if (noteOff) {
+            NotePositionData data;
+            data.noteOn = msg;
+            data.noteOff = noteOff;
+            data.startTime = msg->getTimeStamp();
+            data.endTime = noteOff->getTimeStamp();
+            data.pitch = msg->getNoteNumber();
+            originalPositions.push_back(data);
+        }
+    }
+
+    // Validate and apply moves
+    bool anyMoved = false;
+    std::vector<NotePositionData> newPositions;
+
+    for (auto* msg : selectedMessages) {
+        MidiMessage* noteOff = findNoteOffForNoteOn(msg);
+        if (!noteOff) continue;
+
+        double originalStart = msg->getTimeStamp();
+        double originalEnd = noteOff->getTimeStamp();
+        double duration = originalEnd - originalStart;
+        int originalPitch = msg->getNoteNumber();
+
+        // Calculate new positions
+        double newStartTime = originalStart + deltaTime;
+        int newPitch = originalPitch + deltaPitch;
+
+        // Validate new positions
+        newStartTime = juce::jmax(0.0, newStartTime);  // Don't go before start
+        newPitch = juce::jlimit(0, 127, newPitch);     // Stay in MIDI range
+
+        // Apply snap to grid for time movement
+        if (snapToGrid && deltaTime != 0.0) {
+            newStartTime = snapTimeToGrid(newStartTime);
+        }
+
+        // Apply pitch snapping if enabled
+        if (!customScale.empty() && deltaPitch != 0) {
+            newPitch = snapPitchToScale(newPitch);
+        }
+
+        // Check if position actually changed
+        if (newStartTime != originalStart || newPitch != originalPitch) {
+            // Apply the move
+            msg->setTimeStamp(newStartTime);
+            msg->setNoteNumber(newPitch);
+            noteOff->setTimeStamp(newStartTime + duration);
+            noteOff->setNoteNumber(newPitch);
+
+            // Store new position for undo system
+            NotePositionData newData;
+            newData.noteOn = msg;
+            newData.noteOff = noteOff;
+            newData.startTime = newStartTime;
+            newData.endTime = newStartTime + duration;
+            newData.pitch = newPitch;
+            newPositions.push_back(newData);
+
+            anyMoved = true;
+        }
+    }
+
+    if (anyMoved) {
+        // Create undo action
+        pushUndoAction("Move Notes",
+            [this, originalPositions]() {
+                // Undo: restore original positions
+                for (const auto& data : originalPositions) {
+                    data.noteOn->setTimeStamp(data.startTime);
+                    data.noteOn->setNoteNumber(data.pitch);
+                    data.noteOff->setTimeStamp(data.endTime);
+                    data.noteOff->setNoteNumber(data.pitch);
+                }
+                midiRegion->rebuildThumbnail();
+                midiRegion->updateThumb();
+                repaint();
+            },
+            [this, newPositions]() {
+                // Redo: apply new positions
+                for (const auto& data : newPositions) {
+                    data.noteOn->setTimeStamp(data.startTime);
+                    data.noteOn->setNoteNumber(data.pitch);
+                    data.noteOff->setTimeStamp(data.endTime);
+                    data.noteOff->setNoteNumber(data.pitch);
+                }
+                midiRegion->rebuildThumbnail();
+                midiRegion->updateThumb();
+                repaint();
+            });
+
+        // Update MIDI region
+        midiRegion->rebuildThumbnail();
+        midiRegion->updateThumb();
+        notifyRegionModified();
+        repaint();
+
+        // Auto-scroll to keep selection visible if needed
+        ensureSelectionVisible();
+    }
+}
+
+// Helper method to calculate grid time step
+double PianoRollComponent::getGridTimeStep()
+{
+    // Calculate time for one grid step based on current grid resolution
+    double quarterNoteSamples = (60.0 / bpm) * sampleRate;  // Samples per quarter note
+    return quarterNoteSamples * gridResolution;  // Grid step in samples
+}
+
+// Helper method to ensure selection stays visible after keyboard moves
+void PianoRollComponent::ensureSelectionVisible()
+{
+    if (selectedMessages.empty()) return;
+
+    // Find bounds of selected notes
+    double minTime = std::numeric_limits<double>::max();
+    double maxTime = std::numeric_limits<double>::lowest();
+    int minPitch = 127;
+    int maxPitch = 0;
+
+    for (auto* msg : selectedMessages) {
+        MidiMessage* noteOff = findNoteOffForNoteOn(msg);
+        if (noteOff) {
+            minTime = juce::jmin(minTime, msg->getTimeStamp());
+            maxTime = juce::jmax(maxTime, noteOff->getTimeStamp());
+            minPitch = juce::jmin(minPitch, msg->getNoteNumber());
+            maxPitch = juce::jmax(maxPitch, msg->getNoteNumber());
+        }
+    }
+
+    // Check if selection is visible horizontally
+    int leftX = getXForTime(minTime);
+    int rightX = getXForTime(maxTime);
+    int viewLeft = pianoWidth;
+    int viewRight = getWidth();
+
+    if (leftX < viewLeft || rightX > viewRight) {
+        // Adjust horizontal pan to center the selection
+        double centerTime = (minTime + maxTime) / 2.0;
+        int centerX = getXForTime(centerTime);
+        int viewCenterX = (viewLeft + viewRight) / 2;
+
+        panOffset.x += viewCenterX - centerX;
+        panOffset.x = juce::jmin(panOffset.x, 0.0f);
+    }
+
+    // Check if selection is visible vertically
+    int topY = getYForPitch(maxPitch);
+    int bottomY = getYForPitch(minPitch);
+    int viewTop = 0;
+    int viewBottom = getHeight();
+
+    if (topY < viewTop || bottomY > viewBottom) {
+        // Adjust vertical pan to center the selection
+        int centerPitch = (minPitch + maxPitch) / 2;
+        int centerY = getYForPitch(centerPitch);
+        int viewCenterY = (viewTop + viewBottom) / 2;
+
+        panOffset.y += viewCenterY - centerY;
+    }
+
+    repaint();
+}
+
+// Add undo/redo methods if not already present
+void PianoRollComponent::performUndo()
+{
+    if (!undoStack.empty()) {
+        auto action = std::move(undoStack.top());
+        undoStack.pop();
+
+        if (action->undoFunc) {
+            action->undoFunc();
+        }
+
+        redoStack.push(std::move(action));
+    }
+}
+
+void PianoRollComponent::performRedo()
+{
+    if (!redoStack.empty()) {
+        auto action = std::move(redoStack.top());
+        redoStack.pop();
+
+        if (action->redoFunc) {
+            action->redoFunc();
+        }
+
+        undoStack.push(std::move(action));
+    }
+}
+
 
 void PianoRollComponent::modifierKeysChanged(const juce::ModifierKeys& modifiers)
 {
