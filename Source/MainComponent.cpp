@@ -471,24 +471,24 @@ void MainComponent::createStudioLayout() {
 		}, "Export track as audio.");
 
 
-	chat = std::make_unique<ChatGPTInterface>("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");
+	//chat = std::make_unique<ChatGPTInterface>("");
 
-	parser->registerCommand("chatgpt",
-		[this](const std::vector<std::string>& args) -> std::string
-		{
-			if (args.empty())
-				return "Usage: chatgpt <frage>";
+	//parser->registerCommand("chatgpt",
+	//	[this](const std::vector<std::string>& args) -> std::string
+	//	{
+	//		if (args.empty())
+	//			return "Usage: chatgpt <frage>";
 
-			std::string prompt;
-			for (const auto& w : args)
-				prompt += w + " ";
+	//		std::string prompt;
+	//		for (const auto& w : args)
+	//			prompt += w + " ";
 
-			std::string response = chat->sendPrompt(prompt);
-			juce::String parsed = tryExecuteChatInstruction(response);
-						
-			return parsed.toStdString();
-		},
-		"Frage an ChatGPT senden");
+	//		std::string response = chat->sendPrompt(prompt);
+	//		juce::String parsed = tryExecuteChatInstruction(response);
+	//					
+	//		return parsed.toStdString();
+	//	},
+	//	"Frage an ChatGPT senden");
 
 #if JUCE_MAC
 
