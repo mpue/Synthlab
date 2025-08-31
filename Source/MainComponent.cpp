@@ -470,25 +470,25 @@ void MainComponent::createStudioLayout() {
 		return "Export finished.";
 		}, "Export track as audio.");
 
+	// TODO: API Key management
+	chat = std::make_unique<ChatGPTInterface>("");
 
-	//chat = std::make_unique<ChatGPTInterface>("");
+	parser->registerCommand("chatgpt",
+		[this](const std::vector<std::string>& args) -> std::string
+		{
+			if (args.empty())
+				return "Usage: chatgpt <frage>";
 
-	//parser->registerCommand("chatgpt",
-	//	[this](const std::vector<std::string>& args) -> std::string
-	//	{
-	//		if (args.empty())
-	//			return "Usage: chatgpt <frage>";
+			std::string prompt;
+			for (const auto& w : args)
+				prompt += w + " ";
 
-	//		std::string prompt;
-	//		for (const auto& w : args)
-	//			prompt += w + " ";
-
-	//		std::string response = chat->sendPrompt(prompt);
-	//		juce::String parsed = tryExecuteChatInstruction(response);
-	//					
-	//		return parsed.toStdString();
-	//	},
-	//	"Frage an ChatGPT senden");
+			std::string response = chat->sendPrompt(prompt);
+			juce::String parsed = tryExecuteChatInstruction(response);
+						
+			return parsed.toStdString();
+		},
+		"Frage an ChatGPT senden");
 
 #if JUCE_MAC
 
