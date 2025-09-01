@@ -243,6 +243,8 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
 
 		ValueTree pins = mod.getChildWithName("Pins");
 
+		Logger::getCurrentLogger()->writeToLog("Configure pins for module " + (mod.getProperty("name").toString()));
+
 		for (int j = 0; j < pins.getNumChildren(); j++) {
 			ValueTree pin = pins.getChild(j);
 			m->getPins().at(j)->index = pin.getProperty("index").toString().getLargeIntValue();

@@ -292,7 +292,7 @@ void MainComponent::createStudioLayout() {
 	transportDisplay = std::make_unique<TransportDisplayComponent>();
 	transportDisplay->setTransportState(0, sampleRate, 120.0, 4, 4);
 	transportDisplay->setMetronomeState(false);
-	transportDisplay->setSize(660, 48);
+	transportDisplay->setSize(760, 48);
 	transportDisplay->setTopLeftPosition(1180, 26);
 	addAndMakeVisible(transportDisplay.get());
 
@@ -527,7 +527,10 @@ void MainComponent::createStudioLayout() {
 	pluginMenu = PluginManager::getInstance()->buildPluginMenu();
 #endif
 	editor->updateProject(File());
-
+	levelMeter = std::make_unique<AudioLevelMeter>();
+	Project::getInstance()->getSupplemental()->addTab("Level Meter", Colours::darkgrey, levelMeter.get(), false);
+	spectrumAnalyzer = std::make_unique<SpectrumAnalyzer>();
+	Project::getInstance()->getSupplemental()->addTab("Spektrum", Colours::darkgrey, spectrumAnalyzer.get(), false);
 }
 
 void MainComponent::createPlayerLayout() {
@@ -652,6 +655,11 @@ int MainComponent::getNumActiveChannels(int i) {
 
 void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
 {
+	if (spectrumAnalyzer)
+		spectrumAnalyzer->getNextAudioBlock(bufferToFill);
+	if (levelMeter)
+		levelMeter->processAudioBlock(bufferToFill);
+
 	long startTime = 0;
 
 	if (!bouncing) {
@@ -694,11 +702,18 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 	std::vector<AudioIn*>  inputChannels = mixer.getInputChannels();
 
 	// --- Host -> Mixer Inputs ---
-	for (int k = 0; k < Mixer::getInstance()->getNumInputs(); ++k) {
-		Mixer::Channel* inCh = Mixer::getInstance()->getChannel(Mixer::Channel::Type::IN, k);
-		if (!inCh || k >= (int)inputChannels.size()) continue;
+	int numInputPairs = std::min(Mixer::getInstance()->getNumInputs(), (int)inputChannels.size());
+	int numAvailableInputChannels = bufferToFill.buffer->getNumChannels();
 
-		if (!(k < outNumChans && (k + 1) < outNumChans)) continue;
+	for (int k = 0; k < numInputPairs; ++k) {
+		Mixer::Channel* inCh = Mixer::getInstance()->getChannel(Mixer::Channel::Type::IN, k);
+		if (!inCh) continue;
+
+		// Prüfen ob beide Kanäle des Stereo-Pairs verfügbar sind
+		int leftInputCh = k * 2;      // 0, 2, 4, 6...
+		int rightInputCh = k * 2 + 1; // 1, 3, 5, 7...
+
+		if (rightInputCh >= numAvailableInputChannels) continue;
 
 		double pan = inCh->pan;
 		float gainL = fastCos((M_PI * (pan + 1) / 4));
@@ -707,8 +722,10 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 		auto* bufL = inputChannels.at(k)->pins.at(0)->getAudioBuffer();
 		auto* bufR = inputChannels.at(k)->pins.at(1)->getAudioBuffer();
 
-		bufL->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, k, bufferToFill.startSample, numSamples);
-		bufR->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, k + 1, bufferToFill.startSample, numSamples);
+		// Stereo-Pair vom Host kopieren
+		bufL->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, leftInputCh, bufferToFill.startSample, numSamples);
+		bufR->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, rightInputCh, bufferToFill.startSample, numSamples);
+
 		bufL->applyGain(0, bufferToFill.startSample, numSamples, inCh->volume * gainL);
 		bufR->applyGain(0, bufferToFill.startSample, numSamples, inCh->volume * gainR);
 
@@ -776,6 +793,7 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 	}
 
 	currentSample = (currentSample + 1) % numSamples;
+
 
 	if (navigator && (navigator->isPlaying() || navigator->isRecording()))
 		navigator->setSamplePosition(navigator->getSamplePosition() + numSamples);

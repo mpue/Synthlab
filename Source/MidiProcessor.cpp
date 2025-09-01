@@ -12,7 +12,7 @@
 #include "MidiClock.h"
 #include "Knob.h"                // for MIDI controller knobs
 #include "PluginModule.h"         // for plugin modules
-
+#include "TrackIn.h"
 
 using namespace juce;
 
@@ -182,6 +182,13 @@ void MidiProcessor::sendControllerMessage(Module* module, int targetChannel, int
 		Event* event = new Event("controller", Event::Type::CONTROLLER);
 		event->setMessage(msg);
 		plugin->eventReceived(event);
+	}
+	else if (auto* trackin = dynamic_cast<TrackIn*>(module)) {
+		MidiMessage msg = MidiMessage::controllerEvent(
+			midiInChannel, controller, static_cast<int>(value));
+		Event* event = new Event("controller", Event::Type::CONTROLLER);
+		event->setMessage(msg);
+		trackin->eventReceived(event);
 	}
 	for (auto* sub : *module->getModules()) {
 		sendControllerMessage(sub, targetChannel, controller, value, midiInChannel);

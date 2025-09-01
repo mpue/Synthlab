@@ -924,7 +924,7 @@ bool PianoRollComponent::keyPressed(const juce::KeyPress& key, juce::Component*)
 {
     auto keyCode = key.getKeyCode();
     bool shiftHeld = key.getModifiers().isShiftDown();
-    bool cmdHeld = key.getModifiers().isCommandDown();
+    bool cmdHeld = key.getModifiers().isCtrlDown();
 
     // Tool shortcuts
     if (keyCode == '1') { setCurrentTool(Tool::SELECT); return true; }
@@ -940,7 +940,7 @@ bool PianoRollComponent::keyPressed(const juce::KeyPress& key, juce::Component*)
     }
 
     // Undo/Redo
-    if (keyCode == 'z' && cmdHeld) {
+    if (keyCode == 90 && cmdHeld) {
         if (shiftHeld) {
             performRedo();
         }
@@ -951,15 +951,15 @@ bool PianoRollComponent::keyPressed(const juce::KeyPress& key, juce::Component*)
     }
 
     // Selection shortcuts
-    if (keyCode == 'a' && cmdHeld) {
+    if (keyCode == 65 && cmdHeld) {
         selectAll();
         return true;
     }
 
     // Copy/Cut/Paste
-    if (keyCode == 'c' && cmdHeld) { copySelected(); return true; }
-    if (keyCode == 'x' && cmdHeld) { cutSelected(); return true; }
-    if (keyCode == 'v' && cmdHeld) {
+    if (keyCode == 67 && cmdHeld) { copySelected(); return true; }
+    if (keyCode == 88 && cmdHeld) { cutSelected(); return true; }
+    if (keyCode == 86 && cmdHeld) {
         double pasteTime = playbackPosition >= 0.0 ? playbackPosition : 0.0;
         pasteAtPosition(pasteTime);
         return true;
@@ -997,7 +997,7 @@ bool PianoRollComponent::keyPressed(const juce::KeyPress& key, juce::Component*)
     }
 
     // Quantize shortcut
-    if (keyCode == 'q' && cmdHeld) {
+    if (keyCode == 81 && cmdHeld) {
         quantizeSelected();
         return true;
     }
@@ -2223,29 +2223,29 @@ void PianoRollComponent::getCommandInfo(juce::CommandID commandID, juce::Applica
     switch (commandID) {
     case selectAllNotes:
         result.setInfo("Select All", "Select all notes", "Edit", 0);
-        result.defaultKeypresses.add(juce::KeyPress('a', juce::ModifierKeys::commandModifier, 0));
+        result.defaultKeypresses.add(juce::KeyPress('a', juce::ModifierKeys::ctrlModifier, 0));
         break;
 
     case selectNo:
         result.setInfo("Select None", "Clear selection", "Edit", 0);
-        result.defaultKeypresses.add(juce::KeyPress('d', juce::ModifierKeys::commandModifier, 0));
+        result.defaultKeypresses.add(juce::KeyPress('d', juce::ModifierKeys::ctrlModifier, 0));
         break;
 
     case copy:
         result.setInfo("Copy", "Copy selected notes", "Edit", 0);
-        result.defaultKeypresses.add(juce::KeyPress('c', juce::ModifierKeys::commandModifier, 0));
+        result.defaultKeypresses.add(juce::KeyPress('c', juce::ModifierKeys::ctrlModifier, 0));
         result.setActive(!selectedMessages.empty());
         break;
 
     case cut:
         result.setInfo("Cut", "Cut selected notes", "Edit", 0);
-        result.defaultKeypresses.add(juce::KeyPress('x', juce::ModifierKeys::commandModifier, 0));
+        result.defaultKeypresses.add(juce::KeyPress('x', juce::ModifierKeys::ctrlModifier, 0));
         result.setActive(!selectedMessages.empty());
         break;
 
     case paste:
         result.setInfo("Paste", "Paste notes", "Edit", 0);
-        result.defaultKeypresses.add(juce::KeyPress('v', juce::ModifierKeys::commandModifier, 0));
+        result.defaultKeypresses.add(juce::KeyPress('v', juce::ModifierKeys::ctrlModifier, 0));
         result.setActive(canPaste());
         break;
 
@@ -2257,7 +2257,7 @@ void PianoRollComponent::getCommandInfo(juce::CommandID commandID, juce::Applica
 
     case quantize:
         result.setInfo("Quantize", "Quantize selected notes to grid", "Edit", 0);
-        result.defaultKeypresses.add(juce::KeyPress('q', juce::ModifierKeys::commandModifier, 0));
+        result.defaultKeypresses.add(juce::KeyPress('q', juce::ModifierKeys::ctrlModifier, 0));
         result.setActive(!selectedMessages.empty());
         break;
 

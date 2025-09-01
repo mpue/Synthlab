@@ -20,6 +20,8 @@
 #include <math.h>
 #include "BounceProgressDialog.h"
 #include "Metronome.h"
+#include "AudioLevelMeter.h"
+#include "SpektrumAnalyzer.h"
 
 #define _USE_MATH_DEFINES
 #ifndef M_PI
@@ -174,6 +176,9 @@ private:
     std::unique_ptr<Metronome> metronome;
     juce::AudioBuffer<float> metronomeBuffer;
     
+	std::unique_ptr<AudioLevelMeter> levelMeter = nullptr;
+    std::unique_ptr<SpectrumAnalyzer> spectrumAnalyzer = nullptr;
+
     CriticalSection lock;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)

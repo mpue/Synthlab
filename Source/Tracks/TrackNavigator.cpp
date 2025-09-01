@@ -63,7 +63,13 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 		this->loopEnabled = enabled;		
 	};
 
-	timeLine->setLoopEnabled(true);
+	transportDisplay->onToggleLoop = [this]() {
+
+		bool loopState = transportDisplay->isLoopActive();
+		this->timeLine->setLoopEnabled(loopState);
+
+	};
+
 }
 
 TrackNavigator::~TrackNavigator()
