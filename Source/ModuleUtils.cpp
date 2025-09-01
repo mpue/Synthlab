@@ -232,8 +232,6 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
 			im->toBack();
 		}
 
-
-
 		KeyboardModule* km = nullptr;
 
 		if ((km = dynamic_cast<KeyboardModule*>(m)) != nullptr) {

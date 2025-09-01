@@ -99,7 +99,7 @@ namespace BinaryData
     const int            divider_pngSize = 3877;
 
     extern const char*   Fader_png;
-    const int            Fader_pngSize = 19460;
+    const int            Fader_pngSize = 5763;
 
     extern const char*   fastbackwardsolid_png;
     const int            fastbackwardsolid_pngSize = 793;

@@ -155,7 +155,7 @@ MainComponent::~MainComponent()
 
 	if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
 		tab = nullptr;
-		
+
 		propertyView = nullptr;
 		delete lockButton;
 		menu = nullptr;
@@ -466,7 +466,7 @@ void MainComponent::createStudioLayout() {
 		}
 		String size = args[1];
 
-		startBounce(File(args[0]), size.getFloatValue());		
+		startBounce(File(args[0]), size.getFloatValue());
 		return "Export finished.";
 		}, "Export track as audio.");
 
@@ -485,7 +485,7 @@ void MainComponent::createStudioLayout() {
 
 			std::string response = chat->sendPrompt(prompt);
 			juce::String parsed = tryExecuteChatInstruction(response);
-						
+
 			return parsed.toStdString();
 		},
 		"Frage an ChatGPT senden");
@@ -707,30 +707,34 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 
 	for (int k = 0; k < numInputPairs; ++k) {
 		Mixer::Channel* inCh = Mixer::getInstance()->getChannel(Mixer::Channel::Type::IN, k);
-		if (!inCh) continue;
+		if (!inCh || k >= (int)inputChannels.size()) continue;
 
 		// Prüfen ob beide Kanäle des Stereo-Pairs verfügbar sind
 		int leftInputCh = k * 2;      // 0, 2, 4, 6...
 		int rightInputCh = k * 2 + 1; // 1, 3, 5, 7...
-
 		if (rightInputCh >= numAvailableInputChannels) continue;
 
 		double pan = inCh->pan;
 		float gainL = fastCos((M_PI * (pan + 1) / 4));
 		float gainR = fastSin((M_PI * (pan + 1) / 4));
 
+		// AudioBuffer der AudioIn-Objekte holen (das sind die "echten" Buffer)
 		auto* bufL = inputChannels.at(k)->pins.at(0)->getAudioBuffer();
 		auto* bufR = inputChannels.at(k)->pins.at(1)->getAudioBuffer();
 
-		// Stereo-Pair vom Host kopieren
-		bufL->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, leftInputCh, bufferToFill.startSample, numSamples);
-		bufR->copyFrom(0, bufferToFill.startSample, *bufferToFill.buffer, rightInputCh, bufferToFill.startSample, numSamples);
+		if (!bufL || !bufR) continue;
 
-		bufL->applyGain(0, bufferToFill.startSample, numSamples, inCh->volume * gainL);
-		bufR->applyGain(0, bufferToFill.startSample, numSamples, inCh->volume * gainR);
+		// Stereo-Pair vom Host (bufferToFill) in die AudioIn-Buffer kopieren
+		bufL->copyFrom(0, 0, *bufferToFill.buffer, leftInputCh, bufferToFill.startSample, numSamples);
+		bufR->copyFrom(0, 0, *bufferToFill.buffer, rightInputCh, bufferToFill.startSample, numSamples);
 
-		inCh->magnitudeLeft = bufL->getMagnitude(0, bufferToFill.startSample, numSamples);
-		inCh->magnitudeRight = bufR->getMagnitude(0, bufferToFill.startSample, numSamples);
+		// Volume und Pan anwenden
+		bufL->applyGain(0, 0, numSamples, inCh->volume * gainL);
+		bufR->applyGain(0, 0, numSamples, inCh->volume * gainR);
+
+		// Pegelberechnung für die Mixer-Anzeige
+		inCh->magnitudeLeft = bufL->getMagnitude(0, 0, numSamples);
+		inCh->magnitudeRight = bufR->getMagnitude(0, 0, numSamples);
 	}
 
 	// --- 1:1 Output Mapping mit Pan ---
@@ -820,7 +824,7 @@ void MainComponent::resized()
 			toolbar->setSize(getLocalBounds().getWidth(), 50);
 
 		// make a list of two of our child components that we want to reposition
-		Component* comps[] = { propertyView.get(), &resizerBar, editorView.get()};
+		Component* comps[] = { propertyView.get(), &resizerBar, editorView.get() };
 
 		// this will position the 3 components, one above the other, to fit
 		// vertically into the rectangle provided.
@@ -1045,7 +1049,7 @@ void MainComponent::openSettings() {
 	DialogWindow* window = launchOptions.launchAsync();
 
 	std::function<void(int)> lambda =
-		[this,selector](int result) {
+		[this, selector](int result) {
 		AudioDeviceManager::AudioDeviceSetup setup;
 
 		deviceManager.getAudioDeviceSetup(setup);
@@ -1071,8 +1075,8 @@ void MainComponent::openSettings() {
 		}
 		Project::getInstance()->setSampleRate(setup.sampleRate);
 		delete selector;
-		
-	};
+
+		};
 
 	ModalComponentManager::Callback* callback = ModalCallbackFunction::create(lambda);
 	ModalComponentManager::getInstance()->attachCallback(window, callback);
@@ -1405,10 +1409,10 @@ juce::String MainComponent::tryExecuteChatInstruction(const std::string& jsonStr
 			float len = n["length"];
 
 			MidiMessage noteOn = MidiMessage(MidiMessage::noteOn(track->getMidiChannel(), pitch, (uint8)100));
-			noteOn.setTimeStamp(start*44100);
+			noteOn.setTimeStamp(start * 44100);
 
 			MidiMessage noteOff = MidiMessage::noteOff(track->getMidiChannel(), pitch, (uint8)0);
-			noteOff.setTimeStamp((start + len)*44100);
+			noteOff.setTimeStamp((start + len) * 44100);
 
 			region->addMessage(new MidiMessage(noteOn), Time::getMillisecondCounterHiRes() / 1000, (int)(start * 44100));
 			region->addMessage(new MidiMessage(noteOff), Time::getMillisecondCounterHiRes() / 1000, (int)((start + len) * 44100));
