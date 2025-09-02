@@ -67,7 +67,7 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 
 		bool loopState = transportDisplay->isLoopActive();
 		this->timeLine->setLoopEnabled(loopState);
-
+		this->loopEnabled = loopState;
 	};
 
 }
@@ -330,112 +330,32 @@ void TrackNavigator::ResetMarkerPosition()
 }
 
 void TrackNavigator::setSamplePosition(int position) {
-	const double sampleRate = Project::getInstance()->getSampleRate();
-	const int bufferSize = Project::getInstance()->getBufferSize(); // Aktuelle Buffergröße
-
-	// WICHTIG: Position IMMER auf Buffer-Boundary alignen um Audio-Artefakte zu vermeiden
-	position = (position / bufferSize) * bufferSize;
-
-	if (loopEnabled && loopEnd > loopStart) {
-		// Loop-Grenzen auf Buffergröße alignen
-		int loopStartSample = static_cast<int>(loopStart * sampleRate);
-		int loopEndSample = static_cast<int>(loopEnd * sampleRate);
-
-		// Loop-Start auf Buffer-Boundary alignen (abrunden)
-		loopStartSample = (loopStartSample / bufferSize) * bufferSize;
-
-		// Loop-End auf Buffer-Boundary alignen (aufrunden)
-		loopEndSample = ((loopEndSample + bufferSize - 1) / bufferSize) * bufferSize;
-
-		const int loopLengthSamples = loopEndSample - loopStartSample;
-
-		// Prüfen ob Position außerhalb der Loop-Region liegt
-		if (position >= loopEndSample) {
-			// Position relativ zum Loop-Ende berechnen
-			int overshoot = position - loopEndSample;
-
-			// Overshoot auch auf Buffer alignen
-			overshoot = (overshoot / bufferSize) * bufferSize;
-
-			// Bei sehr langen Overshoots: Modulo verwenden um innerhalb der Loop zu bleiben
-			if (overshoot >= loopLengthSamples && loopLengthSamples > 0) {
-				overshoot = overshoot % loopLengthSamples;
-				overshoot = (overshoot / bufferSize) * bufferSize; // Ergebnis wieder alignen
-			}
-
-			// Neue Position am Loop-Start + Overshoot
-			position = loopStartSample + overshoot;
-
-			// Sicherheitscheck: Falls immer noch außerhalb, auf Loop-Start setzen
-			if (position >= loopEndSample) {
-				position = loopStartSample;
-			}
-		}
-		// Prüfen ob Position vor Loop-Start liegt (bei Rückwärts-Playback)
-		else if (position < loopStartSample) {
-			// Position ans Loop-Ende setzen, minus den Unterschuss
-			int undershoot = loopStartSample - position;
-
-			// Undershoot auch auf Buffer alignen
-			undershoot = (undershoot / bufferSize) * bufferSize;
-
-			// Bei sehr langen Undershoots: Modulo verwenden
-			if (undershoot >= loopLengthSamples && loopLengthSamples > 0) {
-				undershoot = undershoot % loopLengthSamples;
-				undershoot = (undershoot / bufferSize) * bufferSize; // Ergebnis wieder alignen
-			}
-
-			// Neue Position am Loop-Ende - Unterschuss
-			position = loopEndSample - undershoot;
-
-			// Sicherheitscheck: Falls immer noch außerhalb, auf Loop-Ende setzen
-			if (position < loopStartSample) {
-				position = loopEndSample - bufferSize; // Ein Buffer vor Loop-Ende
-			}
-		}
-
-		// Finales Alignment prüfen - Position muss Buffer-aligned sein
-		position = (position / bufferSize) * bufferSize;
-
-		// Zusätzlicher Sicherheitscheck: Position muss in gültiger Loop-Region sein
-		position = jmax(loopStartSample, jmin(loopEndSample - bufferSize, position));
-	}
-
-	// Globale Projekt-Grenzen prüfen (falls vorhanden)
-	const int maxProjectSamples = static_cast<int>(Project::getInstance()->getTrackLength() * sampleRate);
-	if (maxProjectSamples > 0) {
-		position = jmax(0, jmin(maxProjectSamples - 1, position));
-	}
-	else {
-		position = jmax(0, position); // Mindestens bei 0 beginnen
-	}
 
 	// Logger::getCurrentLogger()->writeToLog("setSamplePosition : " + String(position));
 	this->samplePosition = position;
 
-	// Position an alle Tracks weiterleiten
+	if (loopEnabled) {
+		if (this->samplePosition > loopEnd * Project::getInstance()->getSampleRate()) {
+			this->samplePosition = loopStart * Project::getInstance()->getSampleRate();
+		}
+	}
+
 	for (int i = 0; i < tracks.size(); i++) {
 		tracks.at(i)->setSamplePosition(this->getSamplePosition());
 	}
-
-	// Zeitposition aktualisieren
-	this->position = static_cast<float>(samplePosition) / sampleRate;
-
-	// UI-Updates asynchron ausführen
-	std::function<void(void)> changeLambda = [=]() {
+	this->position = (float)samplePosition / Project::getInstance()->getSampleRate();
+	std::function<void(void)> changeLambda =
+		[=]() {
 		marker->setSamplePosition(this->samplePosition);
-		transportDisplay->setTransportState(
-			samplePosition,
-			Project::getInstance()->getSampleRate(),
-			Project::getInstance()->getTempo(),
-			4, 4
-		);
+		transportDisplay->setTransportState(samplePosition, Project::getInstance()->getSampleRate(), Project::getInstance()->getTempo(), 4, 4);
 		if (pianoRoll != nullptr) {
 			pianoRoll->setPlaybackPosition(this->samplePosition);
+
 		}
 		};
 	juce::MessageManager::callAsync(changeLambda);
 }
+
 double TrackNavigator::getMaxLength() {
 	double maxlen = 0;
 

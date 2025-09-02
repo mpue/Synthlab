@@ -162,7 +162,7 @@ private:
 	double loopStart = 0;
 	double loopEnd = 0;
 
-	bool loopEnabled = true;
+	bool loopEnabled = false;
 
 	Region* recordingRegion = nullptr;	
 

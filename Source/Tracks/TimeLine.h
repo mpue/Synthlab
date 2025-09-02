@@ -20,6 +20,7 @@ public:
     ~TimeLine();
     void paint(Graphics&) override;
     void resized() override;
+    void mouseMove(const MouseEvent& event) override;
     void mouseDown(const MouseEvent& event) override;
     void mouseDrag(const MouseEvent& event) override;
     void mouseUp(const MouseEvent& event) override;
@@ -38,6 +39,9 @@ public:
     double getLoopEnd() const { return loopEnd; }
     void setLoopRegion(double startTime, double endTime);
     void clearLoop();
+
+    double snapToQuarterBeat(double time) const;
+    double getQuarterBeatDuration() const;
 
     // Callback für Loop-Änderungen
     std::function<void(double, double, bool)> onLoopChanged;

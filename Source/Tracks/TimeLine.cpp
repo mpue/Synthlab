@@ -3,7 +3,7 @@
     TimeLine.cpp
     Created: 25 Nov 2016 10:54:33am
     Author:  pueskma
-    Extended: Loop functionality between two locators
+    Extended: Loop functionality between two locators with 1/4 beat snap
   ==============================================================================
 */
 #include "../JuceLibraryCode/JuceHeader.h"
@@ -37,6 +37,7 @@ void TimeLine::paint(Graphics& g)
         const int totalBars = static_cast<int>(length / secondsPerBar) + 1;
         const double pixelsPerSecond = getWidth() / length;
 
+        // Haupt-Taktlinien und Beat-Linien zeichnen
         for (int bar = 1; bar <= totalBars; ++bar)
         {
             const double barStartSec = (bar - 1) * secondsPerBar;
@@ -49,6 +50,19 @@ void TimeLine::paint(Graphics& g)
                 const bool isBarStart = (beat == 0);
                 float lineHeight = isBarStart ? getHeight() / 2.0f : getHeight() / 3.0f;
                 g.drawLine(x, 0.0f, x, lineHeight);
+
+                // 1/4-Takt Unterteilungen zeichnen (schwächere Linien)
+                g.setColour(Colours::lightgrey);
+                for (int quarter = 1; quarter < 4; ++quarter)
+                {
+                    const double quarterTimeSec = beatTimeSec + (quarter * secondsPerBeat / 4.0);
+                    const float quarterX = static_cast<float>(quarterTimeSec * pixelsPerSecond + offset);
+                    if (quarterX < getWidth())
+                    {
+                        g.drawLine(quarterX, 0.0f, quarterX, getHeight() / 6.0f);
+                    }
+                }
+                g.setColour(Colours::white);
 
                 // Nur Bar-Zahlen mittig zeichnen
                 if (isBarStart)
@@ -107,28 +121,56 @@ void TimeLine::paint(Graphics& g)
     }
 }
 
+void TimeLine::mouseMove(const MouseEvent& event)
+{
+    if (!loopEnabled)
+    {
+        setMouseCursor(MouseCursor::NormalCursor);
+        return;
+    }
+
+    const float tolerance = 5.0f; // Pixel-Toleranz für Hover-Bereich
+
+    // Prüfen ob Maus über Loop-Start oder Loop-End Locator ist
+    if (isMouseOverLocator(event, loopStart, tolerance) ||
+        isMouseOverLocator(event, loopEnd, tolerance))
+    {
+        setMouseCursor(MouseCursor::LeftRightResizeCursor);
+    }
+    else if (event.getPosition().x >= timeToPixel(loopStart) &&
+        event.getPosition().x <= timeToPixel(loopEnd))
+    {
+        // Innerhalb der Loop-Region - normaler Cursor oder Bewegungs-Cursor
+        setMouseCursor(MouseCursor::DraggingHandCursor);
+    }
+    else
+    {
+        setMouseCursor(MouseCursor::NormalCursor);
+    }
+}
+
 void TimeLine::mouseDown(const MouseEvent& event)
 {
     if (!loopEnabled)
         return;
 
-    double clickTime = pixelToTime(static_cast<float>(event.getMouseDownX()));
+    double clickTime = snapToQuarterBeat(pixelToTime(static_cast<float>(event.getMouseDownX())));
 
     // Prüfen ob auf einen Locator geklickt wurde
     if (isMouseOverLocator(event, loopStart))
     {
         currentDragMode = DragLoopStart;
-        dragStartOffset = clickTime - loopStart;
+        dragStartOffset = pixelToTime(static_cast<float>(event.getMouseDownX())) - loopStart;
     }
     else if (isMouseOverLocator(event, loopEnd))
     {
         currentDragMode = DragLoopEnd;
-        dragStartOffset = clickTime - loopEnd;
+        dragStartOffset = pixelToTime(static_cast<float>(event.getMouseDownX())) - loopEnd;
     }
     else if (clickTime >= loopStart && clickTime <= loopEnd)
     {
         currentDragMode = DragLoopRegion;
-        dragStartOffset = clickTime - loopStart;
+        dragStartOffset = pixelToTime(static_cast<float>(event.getMouseDownX())) - loopStart;
     }
     else
     {
@@ -153,22 +195,22 @@ void TimeLine::mouseDrag(const MouseEvent& event)
     {
     case DragLoopStart:
     {
-        double newStart = currentTime - dragStartOffset;
-        newStart = jmax(0.0, jmin(loopEnd - 0.1, newStart));
+        double newStart = snapToQuarterBeat(currentTime - dragStartOffset);
+        newStart = jmax(0.0, jmin(loopEnd - getQuarterBeatDuration(), newStart));
         loopStart = newStart;
         break;
     }
     case DragLoopEnd:
     {
-        double newEnd = currentTime - dragStartOffset;
-        newEnd = jmax(loopStart + 0.1, jmin(length, newEnd));
+        double newEnd = snapToQuarterBeat(currentTime - dragStartOffset);
+        newEnd = jmax(loopStart + getQuarterBeatDuration(), jmin(length, newEnd));
         loopEnd = newEnd;
         break;
     }
     case DragLoopRegion:
     {
         double loopLength = loopEnd - loopStart;
-        double newStart = currentTime - dragStartOffset;
+        double newStart = snapToQuarterBeat(currentTime - dragStartOffset);
         newStart = jmax(0.0, jmin(length - loopLength, newStart));
         loopStart = newStart;
         loopEnd = newStart + loopLength;
@@ -199,7 +241,7 @@ void TimeLine::setLength(double length)
         loopEnd = length;
         if (loopStart >= loopEnd)
         {
-            loopStart = jmax(0.0, loopEnd - 1.0);
+            loopStart = jmax(0.0, loopEnd - getQuarterBeatDuration());
         }
     }
     repaint();
@@ -245,20 +287,20 @@ void TimeLine::setLoopEnabled(bool enabled)
 
 void TimeLine::setLoopStart(double startTime)
 {
-    loopStart = jmax(0.0, jmin(length, startTime));
+    loopStart = snapToQuarterBeat(jmax(0.0, jmin(length, startTime)));
     if (loopStart >= loopEnd)
     {
-        loopEnd = jmin(length, loopStart + 1.0);
+        loopEnd = snapToQuarterBeat(jmin(length, loopStart + getQuarterBeatDuration()));
     }
     repaint();
 }
 
 void TimeLine::setLoopEnd(double endTime)
 {
-    loopEnd = jmax(0.0, jmin(length, endTime));
+    loopEnd = snapToQuarterBeat(jmax(0.0, jmin(length, endTime)));
     if (loopEnd <= loopStart)
     {
-        loopStart = jmax(0.0, loopEnd - 1.0);
+        loopStart = snapToQuarterBeat(jmax(0.0, loopEnd - getQuarterBeatDuration()));
     }
     repaint();
 }
@@ -268,8 +310,8 @@ void TimeLine::setLoopRegion(double startTime, double endTime)
     if (startTime > endTime)
         std::swap(startTime, endTime);
 
-    loopStart = jmax(0.0, jmin(length, startTime));
-    loopEnd = jmax(loopStart + 0.1, jmin(length, endTime));
+    loopStart = snapToQuarterBeat(jmax(0.0, jmin(length, startTime)));
+    loopEnd = snapToQuarterBeat(jmax(loopStart + getQuarterBeatDuration(), jmin(length, endTime)));
     repaint();
 
     if (onLoopChanged)
@@ -311,4 +353,30 @@ bool TimeLine::isMouseOverLocator(const MouseEvent& event, double locatorTime, f
 {
     float locatorX = timeToPixel(locatorTime);
     return std::abs(event.getPosition().x - locatorX) <= tolerance;
+}
+
+// Neue Snap-Funktionen
+double TimeLine::snapToQuarterBeat(double time) const
+{
+    if (bpm <= 0.0)
+        return time;
+
+    const double quarterBeatDuration = getQuarterBeatDuration();
+    if (quarterBeatDuration <= 0.0)
+        return time;
+
+    // Auf nächstes 1/4-Beat runden
+    const double quarterBeats = time / quarterBeatDuration;
+    const double roundedQuarterBeats = std::round(quarterBeats);
+
+    return roundedQuarterBeats * quarterBeatDuration;
+}
+
+double TimeLine::getQuarterBeatDuration() const
+{
+    if (bpm <= 0.0)
+        return 0.0;
+
+    const double secondsPerBeat = 60.0 / bpm;
+    return secondsPerBeat / 4.0; // Ein Viertel eines Beats
 }
