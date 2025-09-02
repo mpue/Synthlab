@@ -530,6 +530,7 @@ void MainComponent::createStudioLayout() {
 	levelMeter = std::make_unique<AudioLevelMeter>();
 	Project::getInstance()->getSupplemental()->addTab("Level Meter", Colours::darkgrey, levelMeter.get(), false);
 	spectrumAnalyzer = std::make_unique<SpectrumAnalyzer>();
+	spectrumAnalyzer->setNumberOfBars(128);
 	Project::getInstance()->getSupplemental()->addTab("Spektrum", Colours::darkgrey, spectrumAnalyzer.get(), false);
 }
 

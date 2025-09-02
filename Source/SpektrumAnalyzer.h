@@ -100,9 +100,6 @@ private:
     void drawBar(juce::Graphics& g, int barIndex, float x, float width, float height, float peakHeight);
 
     // Utility methods
-    float mapFrequencyToBarIndex(float frequency) const;
-    float mapBarIndexToFrequency(int barIndex) const;
-    float mapDecibelToHeight(float decibel, float maxHeight) const;
     juce::Colour getBarColour(float normalizedHeight) const;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SpectrumAnalyzer)
