@@ -26,7 +26,6 @@
 #include "../UITools.h"
 #include "../TransportDisplayComponent.h"
 #include "../PianoRollComponent.h"
-
 //==============================================================================
 /*
 */
@@ -114,9 +113,6 @@ public:
 
 private:
 
-	// ComponentDragger dragger;
-	// DragConstrainer constrainer;
-
 	MultiComponentDragger* dragger = NULL;
 	AudioDeviceManager* deviceManager;
 
@@ -126,7 +122,7 @@ private:
 	Viewport* view;
 
 	std::vector<Track*> tracks;
-	ScopedPointer<WaveSelector> selector;
+	std::unique_ptr<WaveSelector> selector;
 
 	bool playing = false;
 	bool recording = false;

@@ -291,17 +291,49 @@ void MidiRegion::reset() {
     currentMessageNum = 0;
 }
 
+// Neue Hilfsmethode in der Header-Datei hinzufügen
+int MidiRegion::calculateActualLength() const {
+    int dataLength = 0;
+    for (auto* msg : midiMessageList) {
+        if (msg) {
+            int msgTime = static_cast<int>(msg->getTimeStamp());
+            dataLength = std::max(dataLength, msgTime);
+        }
+    }
+
+    // Verwende visuelle Länge als Fallback
+    int visualLength = static_cast<int>((getBounds().getWidth() / zoom) * sampleRate);
+
+    return std::max({ dataLength, visualLength, 1 });
+}
+
 MidiRegion* MidiRegion::clone(long newOffset) {
-    auto* copy = new MidiRegion(newOffset, this->numSamples, this->sampleRate, this->dragger);
+    const ScopedLock sl(lock);
+
+    // Verwende die berechnete tatsächliche Länge
+    int actualLength = calculateActualLength();
+
+    // Erstelle Klon mit korrekter Länge
+    auto* copy = new MidiRegion(newOffset, actualLength, this->sampleRate, this->dragger);
+
+    // Kopiere alle MIDI-Messages
     for (auto* msg : midiMessageList) {
         if (msg) {
             auto* clonedMsg = new MidiMessage(*msg);
             clonedMsg->setTimeStamp(clonedMsg->getTimeStamp());
-            copy->addMessage(clonedMsg, 0, (int)(clonedMsg->getTimeStamp() + newOffset));
+            copy->midiMessageList.push_back(clonedMsg);
+
+            // Füge zur Thumbnail hinzu
+            copy->midiThumbnail->addMessage(static_cast<int>(clonedMsg->getTimeStamp()), clonedMsg);
         }
     }
+
+    // Setze die korrekte Größe und aktualisiere
     copy->setZoom(this->zoom);
+    copy->setNumSamples(actualLength);
+    copy->rebuildThumbnail();
     copy->updateThumb();
+
     return copy;
 }
 

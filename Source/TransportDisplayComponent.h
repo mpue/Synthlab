@@ -22,7 +22,7 @@ struct TransportLookAndFeel
     juce::Font secondaryFont = juce::Font(15.0f, juce::Font::plain);
 };
 
-class TransportDisplayComponent : public juce::Component, public juce::Timer
+class TransportDisplayComponent : public juce::Component, public juce::Timer, public juce::ChangeBroadcaster
 {
 public:
     enum class LayoutMode { Horizontal, Compact };
@@ -44,6 +44,8 @@ public:
 
     bool isMetronomeActive() const { return metronomeActive; }
     bool isLoopActive() const { return loopActive; }
+
+	double getCurrentBpm() const { return currentBpm; }
 
 private:
     double currentSamplePos = 0;

@@ -10,6 +10,7 @@
 #include "TimeLine.h"
 #include <sstream>
 #include <iostream>
+#include "../TransportDisplayComponent.h"
 
 //==============================================================================
 TimeLine::TimeLine(double lengthInSeconds)
@@ -249,7 +250,12 @@ void TimeLine::setLength(double length)
 
 void TimeLine::resized() {}
 
-void TimeLine::changeListenerCallback(ChangeBroadcaster* source) {}
+void TimeLine::changeListenerCallback(ChangeBroadcaster* source) {
+    if (dynamic_cast<TransportDisplayComponent*>(source) != nullptr) {
+        TransportDisplayComponent* transport = dynamic_cast<TransportDisplayComponent*>(source);
+		setTempoAndTimeSignature(transport->getCurrentBpm(),4,4);
+	}
+}
 
 void TimeLine::setTempoAndTimeSignature(double bpm_, int numerator, int denominator)
 {

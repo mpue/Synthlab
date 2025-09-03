@@ -20,6 +20,7 @@
 #include "../ExtendedFileBrowser.h"
 #include "../PianoRollComponent.h"
 #include "../MidiRegionEventEditor.h"
+#include "../PluginModule.h"
 
 using namespace std;
 
@@ -34,11 +35,11 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 	this->timeLine->setTempoAndTimeSignature(Project::getInstance()->getTempo(),4,4);
 	addAndMakeVisible(timeLine.get());
 	this->deviceManager = deviceManager;
-	this->selector = new WaveSelector();
+	this->selector = std::make_unique<WaveSelector>();
 	this->selector->addChangeListener(this);
 	this->selector->setSize(getWidth(), getHeight());
 	this->selector->setBounds(0, 0, getWidth(), getHeight());
-	addAndMakeVisible(selector);
+	addAndMakeVisible(selector.get());
 	this->zoom = 40.0f;
 	int64 lengthInSamples = Project::getInstance()->getTrackLength() * Project::getInstance()->getSampleRate();
 	this->marker = new PositionMarker(lengthInSamples);
@@ -56,6 +57,8 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 	setWantsKeyboardFocus(true);
 	setMouseClickGrabsKeyboardFocus(true);
 	setInterceptsMouseClicks(true, true);
+
+	transportDisplay->addChangeListener(timeLine.get());
 
 	timeLine->onLoopChanged = [this](double start, double end, bool enabled) {
 		this->loopStart = start;
@@ -381,6 +384,17 @@ void TrackNavigator::setPlaying(bool playing) {
 			tracks.at(i)->setCurrentMarkerPosition(position);
 		}
 	}
+	for (int i = 0; i < Project::getInstance()->getRoot()->getModules()->size(); i++) {
+
+		PluginModule* module = nullptr;
+
+		if ((module = dynamic_cast<PluginModule*>(Project::getInstance()->getRoot()->getModules()->at(i))) != nullptr) {
+			module->getPlayHead().setRecording(false);
+			module->getPlayHead().setPlaying(playing);
+		}
+	}
+
+
 	sendChangeMessage();
 }
 
@@ -394,6 +408,18 @@ void TrackNavigator::noteOffForAll() {
 }
 
 void TrackNavigator::setRecording(bool recording) {
+
+	for (int i = 0; i < Project::getInstance()->getRoot()->getModules()->size(); i++) {
+
+		PluginModule* module = nullptr;
+
+		// make sure we do not send this event to a plugin module
+
+		if ((module = dynamic_cast<PluginModule*>(Project::getInstance()->getRoot()->getModules()->at(i))) != nullptr) {
+			module->getPlayHead().setRecording(recording);
+			module->getPlayHead().setPlaying(false);
+		}
+	}
 
 	if (recording) {
 		noteOffForAll();
@@ -692,6 +718,10 @@ void TrackNavigator::changeListenerCallback(ChangeBroadcaster* source)
 	}
 	if (Track* track = dynamic_cast<Track*>(source)) {
 		sendChangeMessage();
+	}
+
+	if (source == transportDisplay) {
+		timeLine->setTempoAndTimeSignature(Project::getInstance()->getTempo(), 4, 4);
 	}
 }
 

@@ -296,6 +296,14 @@ void MainComponent::createStudioLayout() {
 	transportDisplay->setTopLeftPosition(1180, 26);
 	addAndMakeVisible(transportDisplay.get());
 
+	metronome = std::make_unique<Metronome>(44100, 128);
+	metronome->setBPM(Project::getInstance()->getTempo()); // oder Wert aus TransportDisplay
+
+	if (transportDisplay != nullptr) {
+		transportDisplay->addChangeListener(metronome.get());
+	}
+
+
 	editorView = std::make_unique<EditorComponent>(sampleRate, buffersize, propertyView.get(), *parser, transportDisplay.get());
 	editor = editorView.get()->getEditor();
 	mixerPanel = editorView->getMixerPanel();
@@ -642,9 +650,10 @@ void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate
 	if (editor != nullptr) {
 		editor->prepareToPlay(samplesPerBlockExpected, sampleRate);
 	}
+	if (metronome != nullptr) {
+		metronome->prepareToPlay(sampleRate, samplesPerBlockExpected);
+	}
 
-	metronome = std::make_unique<Metronome>(sampleRate, samplesPerBlockExpected);
-	metronome->setBPM(120.0f); // oder Wert aus TransportDisplay
 
 }
 

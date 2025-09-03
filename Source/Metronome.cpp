@@ -1,4 +1,6 @@
 #include "Metronome.h"
+#include "TransportDisplayComponent.h"
+#include "Project/Project.h"
 
 Metronome::Metronome(double sr, int bs)
     : sampleRate(sr), blockSize(bs)
@@ -90,4 +92,16 @@ void Metronome::generateBlock(juce::AudioBuffer<float>& outBuffer)
         outBuffer.setSample(1, i, sample);
         sampleCounter++;
     }
+}
+void Metronome::prepareToPlay(double sampleRate, int blockSize) {
+	this->sampleRate = sampleRate;
+	this->blockSize = blockSize;
+}
+
+void Metronome::changeListenerCallback(ChangeBroadcaster* source)
+{
+    if (dynamic_cast<TransportDisplayComponent*>(source) != nullptr) {
+        TransportDisplayComponent* tl = dynamic_cast<TransportDisplayComponent*>(source);
+        setBPM(tl->getCurrentBpm());
+	}
 }

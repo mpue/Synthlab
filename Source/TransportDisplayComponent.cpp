@@ -30,7 +30,8 @@ TransportDisplayComponent::TransportDisplayComponent()
         else {
             tempoEditor->setText(String(Project::getInstance()->getTempo()), dontSendNotification);
         }
-        };
+		sendChangeMessage();
+    };
     addAndMakeVisible(*tempoEditor);
 }
 

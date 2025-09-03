@@ -179,7 +179,7 @@ void PluginModule::processInternal(MidiBuffer* externalBuffer, int numSamples)
 
         if (leftOut && rightOut)
         {
-            // ❗ ERZWINGE die Zielgröße des Outputs
+            // ERZWINGE die Zielgröße des Outputs
             leftOut->setSize(1, numSamples, false, false, true);
             rightOut->setSize(1, numSamples, false, false, true);
 

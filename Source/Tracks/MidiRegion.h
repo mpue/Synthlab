@@ -101,7 +101,7 @@ public:
     std::vector<MidiMessage*> midiMessageList;
 private:
     MidiBuffer* midiBuffer;
-
+    int calculateActualLength() const;
     MidiThumbnail* midiThumbnail = nullptr;
     int numSamples = 0;
     MidiBuffer::Iterator* iterator = NULL;
