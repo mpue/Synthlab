@@ -93,6 +93,10 @@ private:
     ScopedPointer<AudioFormatReaderSource> readerSource;
     ResizeConstrainer* constrainer;
 
+    double getQuarterNoteLength();
+    long snapToQuarterNote(long samplePosition);
+    void updateSnapSettings();
+
     Rectangle<int>* thumbnailBounds = NULL;
     virtual void changeListenerCallback(ChangeBroadcaster * source) override;
     

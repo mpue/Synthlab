@@ -51,6 +51,7 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
     dirty = false;
     setPitch(1);
     createProperties();
+    updateSnapSettings();
 }
 
 
@@ -97,6 +98,7 @@ AudioRegion::AudioRegion(AudioSampleBuffer* source, AudioFormatManager& manager,
     dirty = false;
     // setPitch(1);
     createProperties();
+    updateSnapSettings();
 }
 
 AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double sampleRate) {
@@ -141,6 +143,7 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
 
     setPitch(1);
     createProperties();
+    updateSnapSettings();
 }
 
 //==============================================================================
@@ -183,7 +186,9 @@ AudioRegion::AudioRegion(File file, String refId, AudioFormatManager& manager, d
     dirty = false;
     setPitch(1);
     createProperties();
+	updateSnapSettings();
 	delete smartSample;
+
 }
 
 AudioRegion::~AudioRegion()
@@ -252,38 +257,30 @@ AudioSampleBuffer* AudioRegion::getBuffer() {
 
 void AudioRegion::setZoom(float zoom) {
     this->zoom = zoom;
-    
-    if (loop) {
-        // setSize(this->thumbnail->getTotalLength() * (loopCount + 1) * this->zoom, getHeight());
-        setSize((getNumSamples() / sampleRate * (loopCount + 1)) * this->zoom, getHeight());
 
+    if (loop) {
+        setSize((getNumSamples() / sampleRate * (loopCount + 1)) * this->zoom, getHeight());
     }
     else {
-        // setSize(this->thumbnail->getTotalLength() * this->zoom, getHeight());
-        // setSize(getNumSamples() / sampleRate * this->zoom, getHeight());
         setSize((getNumSamples() / sampleRate) * this->zoom, getHeight());
-
     }
-    
-    int newOffset = (this->sampleOffset / this->sampleRate) * zoom;
-    this->setOffset(newOffset);
 
+    // Snap auf Viertelnoten anwenden
+    long snappedOffset = snapToQuarterNote(this->sampleOffset);
+    int newOffset = (snappedOffset / this->sampleRate) * zoom;
+    this->setOffset(newOffset);
     this->setTopLeftPosition(newOffset, 0);
-    
+
     resizerR->setSize(5, getHeight());
     resizerR->setTopLeftPosition(getWidth() - 5, 0);
-    
-    // resizerL->setSize(5, getHeight());
-    // resizerL->setTopLeftPosition(0, 0);
-    
-    // setBounds(0,0,this->thumbnail->getTotalLength() * this->zoom, 200);
-    this->thumbnailBounds->setSize(getWidth(), getHeight());
-    // this->thumbnailBounds->setBounds(getBounds().getX(),getBounds().getY(),getWidth(),getHeight());
 
-    dragger->setRaster(this->zoom / 4);
-    constrainer->setRaster(this->zoom / 4);
+    this->thumbnailBounds->setSize(getWidth(), getHeight());
+
+    // Aktualisiere Snap-Einstellungen für Viertelnoten
+    updateSnapSettings();
+
     constrainer->setMaxWidth((audioBuffer->getNumSamples() / sampleRate) * this->zoom);
-    
+
     dirty = true;
 }
 
@@ -382,35 +379,48 @@ int AudioRegion::getNumSamples() {
     return audioBuffer->getNumSamples();
 }
 
-void AudioRegion::componentMovedOrResized (Component& component, bool wasMoved, bool wasResized) {
-    
+void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, bool wasResized) {
+
     if (wasMoved) {
         long tracklen = Project::getInstance()->getTrackLength();
         double sampleRate = Project::getInstance()->getSampleRate();
-        
-        long sampleNum = (tracklen / (tracklen * zoom)) * getBounds().getX() * getSampleRate();
-        
+
+        // Berechne Sample-Position basierend auf X-Position
+        long sampleNum = (getBounds().getX() / zoom) * sampleRate;
+
+        // Snap auf Viertelnote
+        sampleNum = snapToQuarterNote(sampleNum);
+
+        // Gerade Sample-Zahl sicherstellen
         if (sampleNum % 2 != 0)
             sampleNum -= 1;
 
         oldOffset = sampleNum;
-        
+
         if (sampleNum != getSampleOffset()) {
             setSampleOffset(sampleNum, true, true);
         }
-        
+
+        // Boundary-Check
         if (getSampleOffset() >= tracklen * sampleRate) {
-            
-            setSampleOffset(tracklen * sampleRate - getBuffer()->getNumSamples(), false, false);
+            long maxOffset = tracklen * sampleRate - getBuffer()->getNumSamples();
+            maxOffset = snapToQuarterNote(maxOffset);
+            setSampleOffset(maxOffset, false, false);
         }
-        
-        Logger::getCurrentLogger()->writeToLog("AudioRegion sampleOffset " + String(sampleOffset));
+
+        // Position visuell korrigieren falls durch Snap verändert
+        int correctedX = (getSampleOffset() / sampleRate) * zoom;
+        if (correctedX != getBounds().getX()) {
+            setTopLeftPosition(correctedX, getY());
+        }
+
+        Logger::getCurrentLogger()->writeToLog("AudioRegion snapped to quarter note at sample " + String(sampleOffset));
     }
+
     if (wasResized) {
-        // track needs to be notified about resizing in order to adjust the sample buffer
         sendChangeMessage();
     }
-    
+
     dirty = true;
 }
 
@@ -500,4 +510,32 @@ void AudioRegion::resizeAudio(int length)
     audioBuffer->clear();
     audioBuffer = temp;    
 
+}
+
+double AudioRegion::getQuarterNoteLength() {
+    // Berechne die Länge einer Viertelnote in Samples
+    double bpm = Project::getInstance()->getTempo();
+    double quarterNoteInSeconds = 60.0 / bpm;  // Eine Viertelnote in Sekunden
+    return quarterNoteInSeconds * sampleRate;  // In Samples umrechnen
+}
+
+long AudioRegion::snapToQuarterNote(long samplePosition) {
+    double quarterNoteLength = getQuarterNoteLength();
+
+    // Auf nächste Viertelnote runden
+    long quarterNoteIndex = (long)std::round(samplePosition / quarterNoteLength);
+    return (long)(quarterNoteIndex * quarterNoteLength);
+}
+
+void AudioRegion::updateSnapSettings() {
+    double quarterNoteLength = getQuarterNoteLength();
+    double quarterNotePixels = (quarterNoteLength / sampleRate) * zoom;
+
+    // Raster auf Viertelnoten setzen
+    if (dragger != nullptr) {
+        dragger->setRaster(quarterNotePixels);
+    }
+    if (constrainer != nullptr) {
+        constrainer->setRaster(quarterNotePixels);
+    }
 }

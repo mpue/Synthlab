@@ -71,12 +71,12 @@ void PluginModule::selectPlugin(String name)
                 plugin->prepareToPlay(sampleRate, buffersize);
             }
         }
-        else {
-            pluginName = name;
-            pluginValue->setValue(name);
-            playHead = OfflinePlayHead();
-		    plugin->setPlayHead(&playHead);
-        }
+        
+        pluginName = name;
+        pluginValue->setValue(name);
+        playHead = OfflinePlayHead();
+		plugin->setPlayHead(&playHead);
+        
     }
 }
 

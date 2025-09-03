@@ -299,11 +299,6 @@ void MainComponent::createStudioLayout() {
 	metronome = std::make_unique<Metronome>(44100, 128);
 	metronome->setBPM(Project::getInstance()->getTempo()); // oder Wert aus TransportDisplay
 
-	if (transportDisplay != nullptr) {
-		transportDisplay->addChangeListener(metronome.get());
-	}
-
-
 	editorView = std::make_unique<EditorComponent>(sampleRate, buffersize, propertyView.get(), *parser, transportDisplay.get());
 	editor = editorView.get()->getEditor();
 	mixerPanel = editorView->getMixerPanel();
@@ -318,7 +313,6 @@ void MainComponent::createStudioLayout() {
 	parser->registerCommand("help", [this](const std::vector<std::string>&) -> std::string {
 		return parser->displayHelp();
 		}, "Show help.");
-
 
 	parser->registerCommand("scan", [](const std::vector<std::string>&) -> std::string {
 		PluginManager::getInstance()->scanPlugins();

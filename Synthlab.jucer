@@ -227,6 +227,7 @@
         <FILE id="cq00hn" name="HTTPServer.h" compile="0" resource="0" file="Source/HTTPServer.h"/>
       </GROUP>
       <GROUP id="{1C1CC707-767F-0A14-4BBC-FC07D9A8C470}" name="MessageBus">
+        <FILE id="t62AIE" name="FastBus.h" compile="0" resource="0" file="Source/MessageBus/FastBus.h"/>
         <FILE id="Ukzbap" name="MessageBus.cpp" compile="1" resource="0" file="Source/MessageBus/MessageBus.cpp"/>
         <FILE id="C20i76" name="MessageBus.h" compile="0" resource="0" file="Source/MessageBus/MessageBus.h"/>
         <FILE id="xCo42k" name="Topic.cpp" compile="1" resource="0" file="Source/MessageBus/Topic.cpp"/>

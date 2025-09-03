@@ -73,11 +73,8 @@ SynthEditor::SynthEditor(double sampleRate, int buffersize)
 	setSize(1280, 800);
 
 	root = std::make_unique<Module>("Root");
-
-	// only the topmost module can be root
-	if (Project::getInstance()->getRoot() == nullptr) {
-		Project::getInstance()->setRoot(root.get());
-	}
+	Project::getInstance()->setRoot(root.get());
+	
 
 	selectionModel.setRoot(root.get());
 
@@ -1294,7 +1291,7 @@ void SynthEditor::openFile() {
 		ValueTree v = ValueTree::fromXml(*xml.get());
 		setRunning(false);
 		ModuleUtils::loadStructure(root->getModules(), root->getConnections(), &v, this);
-
+	
 		for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
 			addAndMakeVisible((*it));
 			configureAudioModule((*it), this);
@@ -1303,6 +1300,8 @@ void SynthEditor::openFile() {
 				im->toBack();
 			}
 		}
+
+		Project::getInstance()->setRoot(root.get());
 
 		resized();
 

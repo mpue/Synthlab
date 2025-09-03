@@ -1,7 +1,7 @@
 #pragma once
 #include <JuceHeader.h>
 
-class Metronome : public juce::ChangeListener
+class Metronome 
 {
 public:
     Metronome(double sampleRate = 44100.0, int blockSize = 512);
@@ -12,7 +12,6 @@ public:
     void setTimeSignature(int beatsPerBar);
     void reset();
     void generateBlock(juce::AudioBuffer<float>& outBuffer);
-    void changeListenerCallback(ChangeBroadcaster* source) override;
 	void prepareToPlay(double sampleRate, int blockSize);
 
 private:

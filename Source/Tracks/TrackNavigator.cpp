@@ -58,8 +58,6 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 	setMouseClickGrabsKeyboardFocus(true);
 	setInterceptsMouseClicks(true, true);
 
-	transportDisplay->addChangeListener(timeLine.get());
-
 	timeLine->onLoopChanged = [this](double start, double end, bool enabled) {
 		this->loopStart = start;
 		this->loopEnd = end;
@@ -394,7 +392,6 @@ void TrackNavigator::setPlaying(bool playing) {
 		}
 	}
 
-
 	sendChangeMessage();
 }
 
@@ -720,9 +717,6 @@ void TrackNavigator::changeListenerCallback(ChangeBroadcaster* source)
 		sendChangeMessage();
 	}
 
-	if (source == transportDisplay) {
-		timeLine->setTempoAndTimeSignature(Project::getInstance()->getTempo(), 4, 4);
-	}
 }
 
 bool TrackNavigator::keyPressed(const KeyPress& key, Component* originatingComponent) {

@@ -15,6 +15,7 @@
 #include "MidiThumbnail.h"
 #include "../Project/Project.h"
 #include "../ResizeConstrainer.h"
+#include "../MessageBus/FastBus.h"
 
 #include <map>
 #include <vector>
@@ -100,6 +101,19 @@ public:
     std::map<double, MidiMessage*> midiMessages;
     std::vector<MidiMessage*> midiMessageList;
 private:
+
+    // Tempo-bezogene Methoden
+    void updateTempoFromProject();
+    void setTempo(double bpm);
+    double getCurrentBPM() const;
+    long beatsToSamples(double beats) const;
+    double samplesToBeats(long samples) const;
+    void setQuantizeGrid(double beats);
+    double getQuantizeGrid() const;
+    void setSnapToGrid(bool snap);
+    bool getSnapToGrid() const;
+    void quantizeToBeats(double beatGrid);
+    long snapSampleToGrid(long sample) const;
     MidiBuffer* midiBuffer;
     int calculateActualLength() const;
     MidiThumbnail* midiThumbnail = nullptr;
@@ -112,9 +126,10 @@ private:
     long timeElapsed = 0;
     int currentMessageNum = 0;
     CriticalSection lock;
-
+	bool snapToGrid = true;
     int lastX = 0;
-
+    double currentBPM;
+    double quantizeGridBeats;
     std::map<int, MidiMessage*> activeNotes; // Note-Nummer -> aktive Note-On Message
     int lastPlaybackPosition = -1;
 };

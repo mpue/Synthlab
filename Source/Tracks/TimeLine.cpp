@@ -11,6 +11,7 @@
 #include <sstream>
 #include <iostream>
 #include "../TransportDisplayComponent.h"
+#include "../MessageBus/FastBus.h"
 
 //==============================================================================
 TimeLine::TimeLine(double lengthInSeconds)
@@ -19,6 +20,13 @@ TimeLine::TimeLine(double lengthInSeconds)
     dropShadow = std::make_unique<DropShadow>(Colour::fromFloatRGBA(0, 0, 0, 0.5), 3, Point<int>(3, 3));
     dropShadower = std::make_unique<DropShadower>(*dropShadow);
     dropShadower->setOwner(this);
+
+    auto& bus = FastBus::getInstance();
+
+    bus.subscribe<float>("tempo", [this](const FastTopic<float>& topic) {
+        bpm = topic.getValue();
+        repaint();
+    });
 }
 
 TimeLine::~TimeLine() {}
@@ -120,6 +128,8 @@ void TimeLine::paint(Graphics& g)
                 juce::Justification::left);
         }
     }
+
+
 }
 
 void TimeLine::mouseMove(const MouseEvent& event)
@@ -251,10 +261,6 @@ void TimeLine::setLength(double length)
 void TimeLine::resized() {}
 
 void TimeLine::changeListenerCallback(ChangeBroadcaster* source) {
-    if (dynamic_cast<TransportDisplayComponent*>(source) != nullptr) {
-        TransportDisplayComponent* transport = dynamic_cast<TransportDisplayComponent*>(source);
-		setTempoAndTimeSignature(transport->getCurrentBpm(),4,4);
-	}
 }
 
 void TimeLine::setTempoAndTimeSignature(double bpm_, int numerator, int denominator)

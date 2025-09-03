@@ -4,6 +4,7 @@
     MidiRegion.cpp
     Created: 28 Dec 2016 6:55:16pm
     Author:  Matthias Pueski
+    Modified: Mit globalem Tempo-Support
 
   ==============================================================================
 */
@@ -20,11 +21,19 @@ MidiRegion::MidiRegion(long startSample, long sampleLength, double sampleRate, M
     this->zoom = 40;
     this->numSamples = sampleLength;
 
+    // Tempo-Parameter initialisieren
+    this->currentBPM = 120.0; // Standard BPM
+    this->quantizeGridBeats = 0.25; // 16tel-Noten
+    this->snapToGrid = false;
+
+    // Projekttempo übernehmen falls verfügbar
+    updateTempoFromProject();
+
     double lengthInSeconds = numSamples / sampleRate;
     setBounds(sampleOffset / sampleRate * zoom, 0, lengthInSeconds * zoom, Project::DEFAULT_TRACK_HEIGHT);
 
     this->offset = 0;
-	midiMessageList = std::vector<MidiMessage*>();
+    midiMessageList = std::vector<MidiMessage*>();
     this->sequence = new MidiMessageSequence();
 
     this->constrainer = new ResizeConstrainer();
@@ -36,6 +45,15 @@ MidiRegion::MidiRegion(long startSample, long sampleLength, double sampleRate, M
     addAndMakeVisible(resizerR);
 
     addComponentListener(this);
+
+    auto& bus = FastBus::getInstance();
+
+    bus.subscribe<float>("tempo", [this](const FastTopic<float>& topic) {
+		this->currentBPM = topic.getValue();
+		calculateActualLength();
+        repaint();
+    });
+
 }
 
 MidiRegion::MidiRegion(MidiBuffer* buffer, double sampleRate) {
@@ -45,6 +63,13 @@ MidiRegion::MidiRegion(MidiBuffer* buffer, double sampleRate) {
     this->name = "copy";
     this->zoom = 1;
     this->numSamples = buffer->getNumEvents();
+
+    // Tempo-Parameter initialisieren
+    this->currentBPM = 120.0;
+    this->quantizeGridBeats = 0.25;
+    this->snapToGrid = false;
+
+    updateTempoFromProject();
 
     double lengthInSeconds = numSamples / sampleRate;
     setBounds(0, 0, lengthInSeconds * zoom, Project::DEFAULT_TRACK_HEIGHT);
@@ -66,10 +91,9 @@ MidiRegion::MidiRegion(MidiBuffer* buffer, double sampleRate) {
 
 MidiRegion::~MidiRegion() {
     // delete midi messages
-
     for (auto* m : midiMessageList) {
-		delete m;
-	}
+        delete m;
+    }
 
     removeComponentListener(this);
     delete midiThumbnail;
@@ -77,9 +101,93 @@ MidiRegion::~MidiRegion() {
     delete sequence;
 }
 
+// Tempo-bezogene Methoden
+void MidiRegion::updateTempoFromProject() {
+    if (Project::getInstance()) {
+        double projectBPM = Project::getInstance()->getTempo();
+        if (projectBPM > 0) {
+            currentBPM = projectBPM;
+        }
+    }
+}
+
+void MidiRegion::setTempo(double bpm) {
+    if (bpm > 0) {
+        currentBPM = bpm;
+		calculateActualLength();
+        repaint(); // Für BPM-Anzeige
+    }
+}
+
+double MidiRegion::getCurrentBPM() const {
+    return currentBPM;
+}
+
+long MidiRegion::beatsToSamples(double beats) const {
+    double secondsPerBeat = 60.0 / currentBPM;
+    return (long)(beats * secondsPerBeat * sampleRate);
+}
+
+double MidiRegion::samplesToBeats(long samples) const {
+    double seconds = (double)samples / sampleRate;
+    return seconds / (60.0 / currentBPM);
+}
+
+void MidiRegion::setQuantizeGrid(double beats) {
+    quantizeGridBeats = beats;
+}
+
+double MidiRegion::getQuantizeGrid() const {
+    return quantizeGridBeats;
+}
+
+void MidiRegion::setSnapToGrid(bool snap) {
+    snapToGrid = snap;
+    repaint();
+}
+
+bool MidiRegion::getSnapToGrid() const {
+    return snapToGrid;
+}
+
+long MidiRegion::snapSampleToGrid(long sample) const {
+    if (!snapToGrid) return sample;
+
+    // Relativer Sample innerhalb der Region
+    long relativeSample = sample - sampleOffset;
+    double beats = samplesToBeats(relativeSample);
+    double snappedBeats = std::round(beats / quantizeGridBeats) * quantizeGridBeats;
+    long snappedSample = beatsToSamples(snappedBeats);
+
+    return snappedSample + sampleOffset;
+}
+
 void MidiRegion::paint(Graphics& g) {
     g.setColour(dragger->isSelected(this) ? Colours::orange.brighter().brighter() : Colours::orange.brighter());
     g.fillRoundedRectangle(getLocalBounds().toFloat(), 10);
+
+    // BPM-Info anzeigen
+    g.setColour(Colours::white);
+    g.setFont(Font(10.0f));
+    String tempoInfo = String(currentBPM, 1) + " BPM";
+    g.drawText(tempoInfo, getLocalBounds().removeFromTop(15), Justification::centredLeft);
+
+    // Beat-Grid zeichnen (optional)
+    if (snapToGrid && zoom > 20) { // Nur bei gutem Zoom sichtbar
+        g.setColour(Colours::white.withAlpha(0.2f));
+
+        double regionLengthBeats = samplesToBeats(numSamples);
+        double beatsPerPixel = regionLengthBeats / getWidth();
+
+        // Zeichne Grid-Linien für quantizeGridBeats
+        for (double beat = 0; beat <= regionLengthBeats; beat += quantizeGridBeats) {
+            int x = (int)(beat / beatsPerPixel);
+            if (x < getWidth()) {
+                g.drawVerticalLine(x, 15, getHeight());
+            }
+        }
+    }
+
     g.setColour(Colours::lightgrey);
     double visibleTime = (getNumSamples() / sampleRate);
     midiThumbnail->drawChannels(g, 0.0, visibleTime, 1.0f);
@@ -104,16 +212,22 @@ void MidiRegion::updateThumb() {
         midiThumbnail->setBounds(x, getY(), w, getHeight());
         midiThumbnail->setZoom(zoom);
         midiThumbnail->repaint();
-        
+
         resized();
         repaint();
-    };
+        };
     juce::MessageManager::callAsync(changeLambda);
 }
 
 void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bool wasResized) {
     if (wasMoved) {
         long newSampleOffset = std::round((getBounds().getX() / zoom) * sampleRate);
+
+        // Optional: An Grid snappen
+        if (snapToGrid) {
+            newSampleOffset = snapSampleToGrid(newSampleOffset) - sampleOffset + newSampleOffset;
+        }
+
         long delta = newSampleOffset - sampleOffset;
         sampleOffset = newSampleOffset;
 
@@ -162,6 +276,7 @@ void MidiRegion::setZoom(float newZoom) {
     this->midiThumbnail->setZoom(zoom);
     updateThumb();
 }
+
 void MidiRegion::setLoop(bool loop) {
     this->loop = loop;
     repaint();
@@ -173,22 +288,27 @@ void MidiRegion::clear() {
 }
 
 void MidiRegion::addMessage(MidiMessage* m, double time, int sampleNum) {
-    
+
     sampleNum -= sampleNum % Project::getInstance()->getBufferSize();
 
     ScopedLock c(lock);
 
-    // Logger::getCurrentLogger()->writeToLog("Adding message at sample " + String(sampleNum) + " offset :" + String(getSampleOffset()));
-    
+    // Optional: Message an Grid snappen
+    if (snapToGrid) {
+        int relativeSample = sampleNum - getSampleOffset();
+        int snappedSample = snapSampleToGrid(relativeSample + getSampleOffset()) - getSampleOffset();
+        sampleNum = snappedSample + getSampleOffset();
+    }
+
     m->setTimeStamp(sampleNum - getSampleOffset());
 
     midiMessageList.push_back(m);
-    
+
     int relativeSample = sampleNum - getSampleOffset();
     if (relativeSample > numSamples) {
         setNumSamples(relativeSample);
     }
-    // Store message with timestamps relative to region start
+
     midiThumbnail->addMessage(sampleNum - getSampleOffset(), m);
     updateThumb();
 }
@@ -280,7 +400,7 @@ void MidiRegion::stopRecording() {
     // Send all-notes-off for all 16 MIDI channels
     for (int channel = 1; channel <= 16; channel++) {
         midiBuffer->addEvent(MidiMessage::allNotesOff(channel), numSamples);
-    }    
+    }
 }
 
 void MidiRegion::timerCallback() {
@@ -291,7 +411,6 @@ void MidiRegion::reset() {
     currentMessageNum = 0;
 }
 
-// Neue Hilfsmethode in der Header-Datei hinzufügen
 int MidiRegion::calculateActualLength() const {
     int dataLength = 0;
     for (auto* msg : midiMessageList) {
@@ -315,6 +434,11 @@ MidiRegion* MidiRegion::clone(long newOffset) {
 
     // Erstelle Klon mit korrekter Länge
     auto* copy = new MidiRegion(newOffset, actualLength, this->sampleRate, this->dragger);
+
+    // Tempo-Einstellungen kopieren
+    copy->setTempo(this->currentBPM);
+    copy->setQuantizeGrid(this->quantizeGridBeats);
+    copy->setSnapToGrid(this->snapToGrid);
 
     // Kopiere alle MIDI-Messages
     for (auto* msg : midiMessageList) {
@@ -347,6 +471,15 @@ std::pair<MidiRegion*, MidiRegion*> MidiRegion::splitAt(long splitSample, MultiC
     // Neue Regionen
     auto* left = new MidiRegion(sampleOffset, relativeSplit, sampleRate, dragger);
     auto* right = new MidiRegion(splitSample, numSamples - relativeSplit, sampleRate, dragger);
+
+    // Tempo-Einstellungen übertragen
+    left->setTempo(currentBPM);
+    left->setQuantizeGrid(quantizeGridBeats);
+    left->setSnapToGrid(snapToGrid);
+
+    right->setTempo(currentBPM);
+    right->setQuantizeGrid(quantizeGridBeats);
+    right->setSnapToGrid(snapToGrid);
 
     // Paare tracken
     std::multimap<int, MidiMessage*> noteOnMap;
@@ -526,7 +659,79 @@ void MidiRegion::quantize(int quantizeGridSamples)
     updateThumb();
 }
 
-MidiMessageSequence* MidiRegion::getMidiMessageSequence() 
+// Neue Beat-basierte Quantisierung
+void MidiRegion::quantizeToBeats(double beatGrid) {
+    const ScopedLock sl(lock);
+
+    std::multimap<int, MidiMessage*> noteOnMap;
+    std::vector<MidiMessage*> quantizedMessages;
+    std::vector<std::pair<MidiMessage*, MidiMessage*>> notePairs;
+
+    // Schritt 1: Paare aus Note-On und Note-Off bilden
+    for (auto* msg : midiMessageList) {
+        if (!msg) continue;
+
+        if (msg->isNoteOn()) {
+            noteOnMap.insert({ msg->getNoteNumber(), msg });
+        }
+        else if (msg->isNoteOff()) {
+            int note = msg->getNoteNumber();
+            auto range = noteOnMap.equal_range(note);
+            for (auto it = range.first; it != range.second; ++it) {
+                if (it->second != nullptr) {
+                    notePairs.emplace_back(it->second, msg);
+                    noteOnMap.erase(it);
+                    break;
+                }
+            }
+        }
+        else {
+            // Andere MIDI-Nachrichten zu Beats quantisieren
+            auto* quantized = new MidiMessage(*msg);
+            int originalSample = (int)msg->getTimeStamp();
+            double originalBeats = samplesToBeats(originalSample);
+            double quantizedBeats = std::round(originalBeats / beatGrid) * beatGrid;
+            int quantizedSample = beatsToSamples(quantizedBeats);
+            quantized->setTimeStamp(quantizedSample);
+            quantizedMessages.push_back(quantized);
+        }
+    }
+
+    // Schritt 2: Note-Paare gemeinsam quantisieren (Note-On position, Dauer beibehalten)
+    for (auto& pair : notePairs) {
+        auto* originalOn = pair.first;
+        auto* originalOff = pair.second;
+
+        int originalOnSample = (int)originalOn->getTimeStamp();
+        int originalOffSample = (int)originalOff->getTimeStamp();
+        int durationSamples = originalOffSample - originalOnSample;
+
+        // Note-On Position quantisieren
+        double originalOnBeats = samplesToBeats(originalOnSample);
+        double quantizedOnBeats = std::round(originalOnBeats / beatGrid) * beatGrid;
+        int quantizedOnSample = beatsToSamples(quantizedOnBeats);
+
+        auto* quantizedOn = new MidiMessage(*originalOn);
+        auto* quantizedOff = new MidiMessage(*originalOff);
+
+        quantizedOn->setTimeStamp(quantizedOnSample);
+        quantizedOff->setTimeStamp(quantizedOnSample + durationSamples); // Dauer beibehalten
+
+        quantizedMessages.push_back(quantizedOn);
+        quantizedMessages.push_back(quantizedOff);
+    }
+
+    // Alte Nachrichten löschen
+    for (auto* msg : midiMessageList)
+        delete msg;
+
+    midiMessageList = quantizedMessages;
+
+    rebuildThumbnail();
+    updateThumb();
+}
+
+MidiMessageSequence* MidiRegion::getMidiMessageSequence()
 {
     MidiMessageSequence* seq = new MidiMessageSequence();
     for (auto* msg : midiMessageList)
@@ -534,11 +739,10 @@ MidiMessageSequence* MidiRegion::getMidiMessageSequence()
         if (msg != nullptr) {
             seq->addEvent(*msg);
         }
-            
     }
-	Logger::getCurrentLogger()->writeToLog("MidiRegion::getMidiMessageSequence: " + String(seq->getNumEvents()) + " events");
+    Logger::getCurrentLogger()->writeToLog("MidiRegion::getMidiMessageSequence: " + String(seq->getNumEvents()) + " events");
 
-	seq->updateMatchedPairs();
+    seq->updateMatchedPairs();
 
     return seq;
 }
@@ -566,6 +770,3 @@ void MidiRegion::setMidiMessageSequence(const MidiMessageSequence& seq)
     rebuildThumbnail();
     updateThumb();
 }
-
-
-

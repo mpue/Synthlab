@@ -1,14 +1,21 @@
 #include "Metronome.h"
 #include "TransportDisplayComponent.h"
 #include "Project/Project.h"
+// #include "MessageBus/FastBus.h"
 
 Metronome::Metronome(double sr, int bs)
     : sampleRate(sr), blockSize(bs)
 {
-    setBPM(bpm);
+    setBPM(Project::getInstance()->getTempo());
     setClickFrequency(clickFreq);
     setAccentFrequency(accentFreq);
     setClickLengthSamples(clickLength);
+
+    //auto& bus = FastBus::getInstance();
+
+    //bus.subscribe<float>("tempo", [this](const FastTopic<float>& topic) {
+    //    this->setBPM(topic.getValue());
+    //});
 }
 
 void Metronome::setBPM(float newBPM)
@@ -96,12 +103,4 @@ void Metronome::generateBlock(juce::AudioBuffer<float>& outBuffer)
 void Metronome::prepareToPlay(double sampleRate, int blockSize) {
 	this->sampleRate = sampleRate;
 	this->blockSize = blockSize;
-}
-
-void Metronome::changeListenerCallback(ChangeBroadcaster* source)
-{
-    if (dynamic_cast<TransportDisplayComponent*>(source) != nullptr) {
-        TransportDisplayComponent* tl = dynamic_cast<TransportDisplayComponent*>(source);
-        setBPM(tl->getCurrentBpm());
-	}
 }

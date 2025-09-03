@@ -1,5 +1,6 @@
 #include "TransportDisplayComponent.h"
 #include "Project/Project.h"
+#include "MessageBus/FastBus.h"
 
 using namespace juce;
 
@@ -14,6 +15,8 @@ TransportDisplayComponent::TransportDisplayComponent()
     tempoLabel->setFont(lookAndFeel.secondaryFont);
     addAndMakeVisible(*tempoLabel);
 
+    auto& bus = FastBus::getInstance();
+
     tempoEditor = std::make_unique<TextEditor>("TempoEditor");
     tempoEditor->setInputRestrictions(4, "0123456789.");
     tempoEditor->setText(String(Project::getInstance()->getTempo()), dontSendNotification);
@@ -22,10 +25,11 @@ TransportDisplayComponent::TransportDisplayComponent()
     tempoEditor->setColour(TextEditor::textColourId, lookAndFeel.text);
     tempoEditor->setColour(TextEditor::outlineColourId, lookAndFeel.border);
     tempoEditor->setColour(TextEditor::focusedOutlineColourId, lookAndFeel.accent);
-    tempoEditor->onReturnKey = [this]() {
+    tempoEditor->onReturnKey = [this, &bus]() {
         double newTempo = tempoEditor->getText().getDoubleValue();
         if (newTempo >= 40.0 && newTempo <= 300.0) {
             Project::getInstance()->setTempo(newTempo);
+            bus.publish("tempo", (float)newTempo);
         }
         else {
             tempoEditor->setText(String(Project::getInstance()->getTempo()), dontSendNotification);
