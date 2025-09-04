@@ -1,21 +1,25 @@
 #include "Metronome.h"
 #include "TransportDisplayComponent.h"
 #include "Project/Project.h"
-// #include "MessageBus/FastBus.h"
+#include "MessageBus/FastBus.h"
 
 Metronome::Metronome(double sr, int bs)
-    : sampleRate(sr), blockSize(bs)
+    : sampleRate(sr), blockSize(bs),
+    sampleCounter(0), clickSamplePos(-1), beatInBar(0), phase(0.0f),
+    beatsPerBar(4), // Standard 4/4 Takt
+    clickFreq(1000.0f), accentFreq(800.0f), clickLength(4410), // Standard-Werte
+    phaseDelta(0.0f), accentPhaseDelta(0.0f)
 {
     setBPM(Project::getInstance()->getTempo());
     setClickFrequency(clickFreq);
     setAccentFrequency(accentFreq);
     setClickLengthSamples(clickLength);
 
-    //auto& bus = FastBus::getInstance();
+    auto& bus = FastBus::getInstance();
 
-    //bus.subscribe<float>("tempo", [this](const FastTopic<float>& topic) {
-    //    this->setBPM(topic.getValue());
-    //});
+    bus.subscribe<float>("tempo", [this](const FastTopic<float>& topic) {
+        this->setBPM(topic.getValue());
+    });
 }
 
 void Metronome::setBPM(float newBPM)
@@ -64,35 +68,35 @@ void Metronome::generateBlock(juce::AudioBuffer<float>& outBuffer)
         float sample = 0.0f;
 
         // Prüfe, ob neuer Beat beginnt
-        if (sampleCounter % samplesPerBeat == 0)
+        if (samplesPerBeat > 0 && sampleCounter % samplesPerBeat == 0)
         {
             clickSamplePos = 0;
             phase = 0.0f;
-            // beatInBar läuft von 0 bis beatsPerBar-1
+            beatInBar = (sampleCounter / samplesPerBeat) % beatsPerBar;
+
+            // Debug: Beat-Start
+            juce::Logger::writeToLog("Beat! beatInBar=" + juce::String(beatInBar));
         }
 
-        // Generiere Click-Sound (basierend auf dem Original)
+        // Generiere Click-Sound nur für kurze Dauer
         if (clickSamplePos >= 0 && clickSamplePos < clickLength)
         {
-            // Erster Beat im Takt (beatInBar == 0) bekommt tiefere Frequenz
             if (beatInBar == 0)
             {
-                sample = 0.4f * std::sin(phase);  // Etwas lauter für Betonung
-                phase += accentPhaseDelta;        // Tiefere Frequenz
+                sample = 0.4f * std::sin(phase);
+                phase += accentPhaseDelta;
             }
             else
             {
                 sample = 0.3f * std::sin(phase);
-                phase += phaseDelta;              // Normale Frequenz
+                phase += phaseDelta;
             }
 
             clickSamplePos++;
-
-            // Wenn Click zu Ende, nächsten Beat im Takt vorbereiten
-            if (clickSamplePos >= clickLength)
-            {
-                beatInBar = (beatInBar + 1) % beatsPerBar;
-            }
+        }
+        else if (clickSamplePos >= clickLength)
+        {
+            clickSamplePos = -1; // Explizit beenden
         }
 
         outBuffer.setSample(0, i, sample);

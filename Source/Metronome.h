@@ -4,7 +4,7 @@
 class Metronome 
 {
 public:
-    Metronome(double sampleRate = 44100.0, int blockSize = 512);
+    Metronome(double sampleRate = 44100.0, int blockSize = 128);
     void setBPM(float newBPM);
     void setClickFrequency(float freqHz);
     void setAccentFrequency(float freqHz);

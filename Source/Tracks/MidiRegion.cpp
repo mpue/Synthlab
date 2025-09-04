@@ -49,9 +49,7 @@ MidiRegion::MidiRegion(long startSample, long sampleLength, double sampleRate, M
     auto& bus = FastBus::getInstance();
 
     bus.subscribe<float>("tempo", [this](const FastTopic<float>& topic) {
-		this->currentBPM = topic.getValue();
-		calculateActualLength();
-        repaint();
+		handleTempoChange(topic.getValue());
     });
 
 }
@@ -87,6 +85,13 @@ MidiRegion::MidiRegion(MidiBuffer* buffer, double sampleRate) {
     addAndMakeVisible(resizerR);
 
     addComponentListener(this);
+
+    auto& bus = FastBus::getInstance();
+
+    bus.subscribe<float>("tempo", [this](const FastTopic<float>& topic) {
+        handleTempoChange(topic.getValue());
+    });
+
 }
 
 MidiRegion::~MidiRegion() {
@@ -769,4 +774,76 @@ void MidiRegion::setMidiMessageSequence(const MidiMessageSequence& seq)
 
     rebuildThumbnail();
     updateThumb();
+}
+
+void MidiRegion::rescaleMidiEvents(double oldBPM, double newBPM) {
+    const ScopedLock sl(lock);
+
+    // EINZIGE ÄNDERUNG: Korrekter Skalierungsfaktor
+    // Das Problem war: double scaleFactor = oldBPM / newBPM;
+    // Richtig ist aber die Beat-basierte Konvertierung:
+
+    for (auto* msg : midiMessageList) {
+        if (msg) {
+            // Konvertiere Sample zu Beats mit ALTEM Tempo
+            double oldSampleTime = msg->getTimeStamp();
+            double seconds = oldSampleTime / sampleRate;
+            double beats = seconds / (60.0 / oldBPM);
+
+            // Konvertiere Beats zu Sample mit NEUEM Tempo
+            double newSeconds = beats * (60.0 / newBPM);
+            long newSample = (long)(newSeconds * sampleRate);
+
+            msg->setTimeStamp(newSample);
+        }
+    }
+}
+
+void MidiRegion::handleTempoChange(double newBPM) {
+    if (newBPM <= 0 || std::abs(newBPM - currentBPM) < 0.001) {
+        return;
+    }
+
+    Logger::getCurrentLogger()->writeToLog(
+        "Tempo change: " + String(currentBPM, 1) + " -> " + String(newBPM, 1) + " BPM"
+    );
+
+    double oldBPM = this->currentBPM;
+    this->currentBPM = newBPM;
+
+    // Skaliere alle MIDI-Events entsprechend
+    if (oldBPM > 0 && this->currentBPM > 0) {
+        rescaleMidiEvents(oldBPM, this->currentBPM);
+    }
+	updateBoundsFromTempo();
+    rebuildThumbnail();
+    updateThumb();
+    repaint();
+}
+
+void MidiRegion::updateBoundsFromTempo() {
+    // Finde die längste Note/Event in aktuellen Samples
+    long maxSample = 0;
+    for (auto* msg : midiMessageList) {
+        if (msg) {
+            long sample = static_cast<long>(msg->getTimeStamp());
+            maxSample = std::max(maxSample, sample);
+        }
+    }
+
+    // Minimum-Länge sicherstellen
+    long newNumSamples = std::max(maxSample + (long)(sampleRate * 0.1), 1L); // 100ms Puffer
+
+    if (newNumSamples != numSamples) {
+        Logger::getCurrentLogger()->writeToLog(
+            "Updating numSamples: " + String(numSamples) + " -> " + String(newNumSamples)
+        );
+
+        numSamples = newNumSamples;
+
+        // Bounds entsprechend anpassen
+        double lengthInSeconds = (double)numSamples / sampleRate;
+        setBounds((int)(sampleOffset / sampleRate * zoom), getY(),
+            (int)(lengthInSeconds * zoom), getHeight());
+    }
 }

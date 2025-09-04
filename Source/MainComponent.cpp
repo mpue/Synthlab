@@ -646,9 +646,8 @@ void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate
 	}
 	if (metronome != nullptr) {
 		metronome->prepareToPlay(sampleRate, samplesPerBlockExpected);
+		metronome->setBPM(Project::getInstance()->getTempo());
 	}
-
-
 }
 
 int MainComponent::getNumActiveChannels(int i) {
@@ -802,12 +801,9 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 
 	currentSample = (currentSample + 1) % numSamples;
 
-
 	if (navigator && (navigator->isPlaying() || navigator->isRecording()))
 		navigator->setSamplePosition(navigator->getSamplePosition() + numSamples);
 }
-
-
 
 void MainComponent::releaseResources()
 {

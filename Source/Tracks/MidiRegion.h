@@ -104,6 +104,9 @@ private:
 
     // Tempo-bezogene Methoden
     void updateTempoFromProject();
+    void updateBoundsFromTempo();
+    void rescaleMidiEvents(double oldBPM, double newBPM);
+    void handleTempoChange(double newBPM);
     void setTempo(double bpm);
     double getCurrentBPM() const;
     long beatsToSamples(double beats) const;
