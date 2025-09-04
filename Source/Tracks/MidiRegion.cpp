@@ -78,7 +78,7 @@ MidiRegion::MidiRegion(MidiBuffer* buffer, double sampleRate) {
 
     this->constrainer = new ResizeConstrainer();
     constrainer->setMinimumWidth(20);
-    constrainer->setMaximumWidth(1000000);
+    constrainer->setMaximumWidth(getBounds().getWidth());
 
     resizerR = new ResizableEdgeComponent(this, constrainer, ResizableEdgeComponent::rightEdge);
     resizerR->setSize(5, getHeight());
@@ -818,6 +818,7 @@ void MidiRegion::handleTempoChange(double newBPM) {
 	updateBoundsFromTempo();
     rebuildThumbnail();
     updateThumb();
+    constrainer->setMaximumWidth(getBounds().getWidth());
     repaint();
 }
 
