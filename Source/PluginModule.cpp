@@ -77,6 +77,10 @@ void PluginModule::selectPlugin(String name)
 		pluginValue->setValue(name);
 
 		playHead = OfflinePlayHead();
+
+		if (!plugin)
+			return;
+
 		plugin->setPlayHead(&playHead);
 
 	}
