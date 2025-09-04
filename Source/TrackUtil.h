@@ -73,27 +73,14 @@ public:
 		editor->getModule()->getConnections()->push_back(c2);
 		ti->pins.at(5)->getConnections().push_back(pm->pins.at(4));
 
-
-		//find the audio out
+		// connect the audio out
 
 		AudioOut* audioOut = nullptr;
 
-		for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
-			if (editor->getModule()->getModules()->at(i) != nullptr) {
-				audioOut = dynamic_cast<AudioOut*>(editor->getModule()->getModules()->at(i));
-				if (audioOut != nullptr) {
-					break;
-				}
-			}
-		}
-
-		if (audioOut == nullptr) {
-			// no audio out found, create one
-			AddModuleAction* am3 = new AddModuleAction(editor, pos, 66);
-			Project::getInstance()->getUndoManager()->beginNewTransaction();
-			Project::getInstance()->getUndoManager()->perform(am3);
-			audioOut = dynamic_cast<AudioOut*>(am3->getModule());
-		}
+		AddModuleAction* am3 = new AddModuleAction(editor, pos, 66);
+		Project::getInstance()->getUndoManager()->beginNewTransaction();
+		Project::getInstance()->getUndoManager()->perform(am3);
+		audioOut = dynamic_cast<AudioOut*>(am3->getModule());
 			
 		t->setPluginModule(pm);
 
@@ -135,24 +122,7 @@ public:
 
 			}
 		}
-		//// no audio out, create one
-		//else {
 
-		//	AddModuleAction* am = new AddModuleAction(editor, pos, 77);
-		//	Project::getInstance()->getUndoManager()->beginNewTransaction();
-		//	Project::getInstance()->getUndoManager()->perform(am);
-		//	Aic = dynamic_cast<AuxOut*>(am->getModule());
-
-		//	if (audioOut != nullptr) {
-		//		audioOut->pins.at(0)->getConnections().push_back(m->pins.at(leftSourcePin));
-		//		audioOut->pins.at(1)->getConnections().push_back(m->pins.at(rightSourcePin));
-		//		Connection* c1 = new Connection(m, m->pins.at(leftSourcePin), audioOut, audioOut->pins.at(0));
-		//		Connection* c2 = new Connection(m, m->pins.at(rightSourcePin), audioOut, audioOut->pins.at(1));
-		//		module->getConnections()->push_back(c1);
-		//		module->getConnections()->push_back(c2);
-		//		audioOut->setVolume(1.0f);
-		//	}
-		//}
 	}
 
 	static Track* createAudioTrack(SynthEditor* editor, TrackNavigator* navigator, Module* module)
@@ -251,16 +221,25 @@ public:
 	}
 
 	static int getNextFreeMidiChannel(TrackNavigator* navigator) {
-		int channel = 1;
+		std::set<int> usedChannels;
 		std::vector<Track*> tracks = navigator->getTracks();
-		for (int i = 0; i < tracks.size(); i++) {
-			if (tracks[i]->getType() == Track::Type::MIDI) {
-				if (tracks[i]->getMidiChannel() == channel) {
-					channel++;
-				}
+
+		// Sammle alle verwendeten MIDI-Kanäle
+		for (const auto& track : tracks) {
+			if (track->getType() == Track::Type::MIDI || track->getType() == Track::Type::INSTRUMENT) {
+				usedChannels.insert(track->getMidiChannel());
 			}
 		}
-		return channel;
+
+		// Finde den ersten freien Kanal (normalerweise 1-16 für MIDI)
+		for (int channel = 1; channel <= 16; channel++) {
+			if (usedChannels.find(channel) == usedChannels.end()) {
+				return channel;
+			}
+		}
+
+		// Falls alle Kanäle belegt sind, gib den ersten zurück (oder handle den Fehlerfall)
+		return 1;
 	}
 
 

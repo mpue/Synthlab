@@ -777,11 +777,8 @@ void MidiRegion::setMidiMessageSequence(const MidiMessageSequence& seq)
 }
 
 void MidiRegion::rescaleMidiEvents(double oldBPM, double newBPM) {
-    const ScopedLock sl(lock);
 
-    // EINZIGE ÄNDERUNG: Korrekter Skalierungsfaktor
-    // Das Problem war: double scaleFactor = oldBPM / newBPM;
-    // Richtig ist aber die Beat-basierte Konvertierung:
+    const ScopedLock sl(lock);
 
     for (auto* msg : midiMessageList) {
         if (msg) {
@@ -803,11 +800,6 @@ void MidiRegion::handleTempoChange(double newBPM) {
     if (newBPM <= 0 || std::abs(newBPM - currentBPM) < 0.001) {
         return;
     }
-
-    Logger::getCurrentLogger()->writeToLog(
-        "Tempo change: " + String(currentBPM, 1) + " -> " + String(newBPM, 1) + " BPM"
-    );
-
     double oldBPM = this->currentBPM;
     this->currentBPM = newBPM;
 
@@ -836,10 +828,6 @@ void MidiRegion::updateBoundsFromTempo() {
     long newNumSamples = std::max(maxSample + (long)(sampleRate * 0.1), 1L); // 100ms Puffer
 
     if (newNumSamples != numSamples) {
-        Logger::getCurrentLogger()->writeToLog(
-            "Updating numSamples: " + String(numSamples) + " -> " + String(newNumSamples)
-        );
-
         numSamples = newNumSamples;
 
         // Bounds entsprechend anpassen

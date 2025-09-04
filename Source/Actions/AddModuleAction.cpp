@@ -89,8 +89,8 @@ bool AddModuleAction::perform() {
             out->setChannelIndex(channelIndex);
             m->setName(channelName);
             // set default volumes
-            editor->getMixer()->setVolume(channelIndex, out->getVolume());
             editor->getMixer()->setModule(channelIndex, out);
+            editor->getMixer()->setVolume(channelIndex, 0.75f);
             if (!editor->isRunning()) {
                 editor->setRunning(true);
             }
