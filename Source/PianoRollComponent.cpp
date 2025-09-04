@@ -171,6 +171,9 @@ void PianoRollComponent::drawNotes(juce::Graphics& g)
     double startTime = getTimeAtX(clipBounds.getX());
     double endTime = getTimeAtX(clipBounds.getRight());
 
+    if (messages.empty())
+        return;
+
     for (auto* msg : messages) {
         if (!msg || !msg->isNoteOn()) continue;
 

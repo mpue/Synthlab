@@ -463,10 +463,9 @@ void TrackNavigator::setRecording(bool recording) {
 
 						if (mr != nullptr) {
 							mr->stopRecording();
+							mr->sanitize();
 						}
-
 					}
-
 				}
 				else if (tracks.at(i)->getType() == Track::Type::AUDIO) {
 					for (int j = 0; j < tracks.at(i)->getRegions().size(); j++) {
@@ -478,9 +477,6 @@ void TrackNavigator::setRecording(bool recording) {
 						}
 					}
 				}
-
-
-
 			}
 		}
 	}
@@ -829,6 +825,7 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 
 	if (!event.mods.isCtrlDown() && event.mods.isRightButtonDown()) {
 		int width = getWidth();
+		
 		// float pos = (float)dragger->snap(x, zoom / 16) / width;
 		double total = getMaxLength();
 		double relative = total * x / width;

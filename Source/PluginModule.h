@@ -86,6 +86,8 @@ private:
     double sampleRate;
     int buffersize;
 
+    int internalLatency = 8192;
+
     juce::CriticalSection lock;
 
     OfflinePlayHead playHead;

@@ -103,10 +103,7 @@
 	{
 		// recording case, send event to current region of track and to event out pin
 		// this is necessary to update the midi regions in the timeline and to pass the event to the next module
-		// const ScopedLock sl(lock);
 
-
-		//if (trackType == Track::Type::MIDI && e->getType() == Event::GATE) {
 		if (track != nullptr && track->isRecording()) {
 			if (e->getMessage().getChannel() != track->getMidiChannel()) {
 				return;
@@ -123,7 +120,6 @@
 			}
 		
 		}
-			//}			
 
 		if (track != nullptr && e->getMessage().getChannel() != track->getMidiChannel()) {
 			return;
@@ -133,8 +129,7 @@
 		if (getPins().at(5)->getConnections().size() > 0) {
 			getPins().at(5)->getConnections().at(0)->sendEvent(e);
 		}
-			
-		// }
+		
 	}
 
 	void TrackIn::paint(juce::Graphics& g) {

@@ -92,6 +92,8 @@ public:
     std::vector<MidiMessage*>& getMidiMessageList() { return midiMessageList; }
     const std::vector<MidiMessage*>& getMidiMessageList() const { return midiMessageList; }
 
+    void sanitize();
+
     // Methode um die Region nach direkten Änderungen zu aktualisieren
     void notifyDirectEdit() {
         rebuildThumbnail();

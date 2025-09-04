@@ -95,6 +95,12 @@ MidiRegion::MidiRegion(MidiBuffer* buffer, double sampleRate) {
 }
 
 MidiRegion::~MidiRegion() {
+
+    auto& bus = FastBus::getInstance();
+	bus.removeTopic<float>("tempo");
+
+    removeAllChangeListeners();
+
     // delete midi messages
     for (auto* m : midiMessageList) {
         delete m;
@@ -586,6 +592,9 @@ std::pair<MidiRegion*, MidiRegion*> MidiRegion::splitAt(long splitSample, MultiC
     left->updateThumb();
     right->updateThumb();
 
+	left->setName(name + "_L");
+	right->setName(name + "_R");
+
     return { left, right };
 }
 
@@ -835,4 +844,97 @@ void MidiRegion::updateBoundsFromTempo() {
         setBounds((int)(sampleOffset / sampleRate * zoom), getY(),
             (int)(lengthInSeconds * zoom), getHeight());
     }
+}
+// Add this method to the MidiRegion class (in MidiRegion.h and MidiRegion.cpp)
+
+void MidiRegion::sanitize() {
+    const ScopedLock sl(lock);
+
+    // Map to track open notes: [channel][noteNumber] -> MidiMessage*
+    std::map<int, std::map<int, MidiMessage*>> openNotes;
+    std::vector<MidiMessage*> newMessages;
+
+    // First pass: collect all existing messages and track open notes
+    for (auto* msg : midiMessageList) {
+        if (!msg) continue;
+
+        if (msg->isNoteOn()) {
+            int channel = msg->getChannel();
+            int noteNumber = msg->getNoteNumber();
+
+            // If there's already an open note on this channel/note, close it first
+            if (openNotes[channel].find(noteNumber) != openNotes[channel].end()) {
+                // Create note-off for the previous open note
+                auto* noteOff = new MidiMessage(MidiMessage::noteOff(channel, noteNumber, (juce::uint8)0));
+                noteOff->setTimeStamp(msg->getTimeStamp() - 1); // Place just before the new note-on
+                newMessages.push_back(noteOff);
+            }
+
+            // Register this note as open
+            openNotes[channel][noteNumber] = msg;
+        }
+        else if (msg->isNoteOff()) {
+            int channel = msg->getChannel();
+            int noteNumber = msg->getNoteNumber();
+
+            // Remove from open notes if it exists
+            if (openNotes[channel].find(noteNumber) != openNotes[channel].end()) {
+                openNotes[channel].erase(noteNumber);
+            }
+            // If note-off without corresponding note-on, we'll keep it anyway
+        }
+    }
+
+    // Find the end time of the region for closing remaining open notes
+    long regionEndSample = numSamples;
+
+    // Also check the actual last event time
+    long lastEventTime = 0;
+    for (auto* msg : midiMessageList) {
+        if (msg) {
+            lastEventTime = std::max(lastEventTime, (long)msg->getTimeStamp());
+        }
+    }
+
+    // Use the later of region end or last event + small buffer
+    long closeTime = std::max(regionEndSample, lastEventTime + (long)(sampleRate * 0.1)); // 100ms buffer
+
+    // Second pass: add missing note-offs for all remaining open notes
+    for (const auto& channelPair : openNotes) {
+        int channel = channelPair.first;
+        for (const auto& notePair : channelPair.second) {
+            int noteNumber = notePair.first;
+
+            // Create note-off at the end of the region
+            auto* noteOff = new MidiMessage(MidiMessage::noteOff(channel, noteNumber, (juce::uint8)0));
+            noteOff->setTimeStamp(closeTime);
+            newMessages.push_back(noteOff);
+        }
+    }
+
+    // Add all new note-off messages to the existing list
+    for (auto* newMsg : newMessages) {
+        midiMessageList.push_back(newMsg);
+    }
+
+    // Sort all messages by timestamp
+    std::sort(midiMessageList.begin(), midiMessageList.end(),
+        [](const MidiMessage* a, const MidiMessage* b) {
+            if (!a) return true;
+            if (!b) return false;
+            return a->getTimeStamp() < b->getTimeStamp();
+        });
+
+    // Update region length if we added events beyond current length
+    if (closeTime > numSamples) {
+        setNumSamples(closeTime);
+    }
+
+    // Rebuild thumbnail and update display
+    rebuildThumbnail();
+    updateThumb();
+
+    Logger::getCurrentLogger()->writeToLog(
+        "MidiRegion::sanitize: Added " + String(newMessages.size()) + " missing note-off events"
+    );
 }
