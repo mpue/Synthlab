@@ -1,9 +1,9 @@
 # Synthlab
 Modular Synthesizer Studio
 
-Synthlab is in fact a simple Reaktor clone. It allows you to build synthesisers in a graphical manner.
+Synthlab is a modular DAW. It allows you to build yor own DAW and synthesisers in a graphical manner. 
 
-Currenly Synthlab is intended as a standalone application. We probably provide a plugin in the future.
+Currenly Synthlab is intended as a standalone application. I'll probably provide a plugin in the future.
 
 Here's how it looks like:
 
@@ -20,6 +20,19 @@ Countless variations are possible, so you can end up with a simple sampler, incr
 Synthlab provides a convenient module browser, many user controls and sound modules.
 
 ![Screenshot 1](docs/images/synthlab4.jpeg) 
+
+As mentioned Above it has DAW capabilities,currently it is working on a basical Level, but I am still heavily improving. As you can see I can load and use VST3 Plugins  (yeah!)
+
+![Screenshot 1](docs/images/synthlab5.png) 
+
+There's a piano roll Editor as well:
+
+![Screenshot 1](docs/images/synthlab6.png) 
+
+And theres a console, just in case: ;)
+
+![Screenshot 1](docs/images/synthlab7.png) 
+
 
 It currently runs on:
 
