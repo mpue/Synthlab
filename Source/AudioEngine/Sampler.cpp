@@ -57,7 +57,6 @@ void Sampler::nextSample() {
             else {
                 currentSample = startPosition;
             }
-            // currentSample = (currentSample + 1) % sampleLength;
         }
         else {
             if (currentSample < sampleLength - 1 && currentSample < endPosition) {

@@ -1240,10 +1240,10 @@ void MainComponent::buttonClicked(Button* b)
 
 				PluginModule* module = nullptr;
 
-				// make sure we do not send this event to a plugin module
-
-				if ((module = dynamic_cast<PluginModule*>(editor->getModule()->getModules()->at(i))) == nullptr) {
-					midiProcessor->sendMidiStopMessage(editor->getModule()->getModules()->at(i), 1);
+				if ((module = dynamic_cast<PluginModule*>(editor->getModule()->getModules()->at(i))) != nullptr) {					
+					module->getPlayHead().setPlaying(false);
+					module->getPlayHead().setRecording(false);
+					
 				}
 			}
 

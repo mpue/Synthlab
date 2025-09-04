@@ -75,13 +75,8 @@ public:
 
 	void setOffset(int offset);
 	int getOffset();
-    
-    
     void setHeight(int height);
-    /*
-    int getHeight();
-     */
-    
+
     void focusGained(FocusChangeType cause) override {
         Logger::getCurrentLogger()->writeToLog("Track: focus gained");
     }

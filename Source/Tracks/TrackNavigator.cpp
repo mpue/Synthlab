@@ -777,10 +777,11 @@ bool TrackNavigator::keyPressed(const KeyPress& key, Component* originatingCompo
 			}
 		}
 		else if (key.getKeyCode() == 69) { // E
-			openPianoRoll(dynamic_cast<MidiRegion*>(tracks.at(0)->getCurrentRegion()));
+			
+			openPianoRoll(dynamic_cast<MidiRegion*>(getCurrentTrack()->getCurrentRegion()));
 		}
-		else if (key.getKeyCode() == 77) { // E
-			openEventEditor(dynamic_cast<MidiRegion*>(tracks.at(0)->getCurrentRegion()));
+		else if (key.getKeyCode() == 77) { // M;
+			openEventEditor(dynamic_cast<MidiRegion*>(getCurrentTrack()->getCurrentRegion()));
 		}
 		else if (key.getKeyCode() == 73) { // I
 			for (int i = 0; i < tracks.size(); i++) {
