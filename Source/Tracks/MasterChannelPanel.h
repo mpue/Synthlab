@@ -107,7 +107,7 @@ private:
     double volume = 1.0f;
     double pan = 0.0f;
 
-    Track* track = NULL;
+    Track* track = nullptr;
 
     CustomLookAndFeel* clf;
 

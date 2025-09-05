@@ -146,7 +146,7 @@ public:
 			b = new juce::ToolbarButton(itemId, "Record", getImage(itemId), getImage(itemId));
 			return b;
 		case app_fast_backwards:
-			b = new juce::ToolbarButton(itemId, "Fast back", getImage(itemId), getImage(itemId));
+			b = new juce::ToolbarButton(itemId, "Fast back", getImage(itemId), getImage(itemId));			
 			return b;
 		case app_fast_forward:
 			b = new juce::ToolbarButton(itemId, "Fast forward", getImage(itemId), getImage(itemId));
@@ -205,6 +205,8 @@ public:
 			di->setImage(juce::ImageCache::getFromMemory(BinaryData::backwardsolid_png, BinaryData::backwardsolid_pngSize));
 		else if (itemId == app_forward)
 			di->setImage(juce::ImageCache::getFromMemory(BinaryData::forwardsolid_png, BinaryData::forwardsolid_pngSize));
+
+		di->setSize(16,16);
 
 		return di;
 	}

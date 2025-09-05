@@ -70,6 +70,14 @@ public:
     ApplicationCommandManager* getCommandManager();
     void setCommandManager(ApplicationCommandManager* commandManager);
     
+    AudioDeviceManager* getAudioDeviceManager() {
+		return deviceManager;
+    }
+
+    void setAudioDeviceManager(AudioDeviceManager* deviceManager) {
+		this->deviceManager = deviceManager;
+    }
+
     AppMode getAppMode();
     
     String getCurrentFilePath();
@@ -260,7 +268,7 @@ protected:
     }
     
     ApplicationCommandManager* commandManager;
-    
+    AudioDeviceManager* deviceManager;
     PropertyView* propertyView = nullptr;
     static Project* instance;
     juce::UndoManager* undoManager;

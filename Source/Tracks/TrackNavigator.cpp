@@ -47,6 +47,12 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 	marker->setZoom(zoom); // Zoom gleich mitgeben	
 	this->position = 0;
 	this->dragger = new MultiComponentDragger();
+	
+	double beatsPerSecond = Project::getInstance()->getTempo() / 60.0;
+	double samplesPerBeat = Project::getInstance()->getSampleRate() / beatsPerSecond;
+	int raster = (int)(samplesPerBeat * zoom) / Project::getInstance()->getSampleRate(); // Viertelnoten
+	dragger->setRaster(raster);
+
 	Project::getInstance()->addChangeListener(this);
 	addChangeListener(Mixer::getInstance());
 	addAndMakeVisible(marker);
@@ -114,7 +120,14 @@ void TrackNavigator::setZoom(float zoom) {
 		tracks.at(i)->setZoom(zoom);
 	}
 	marker->setZoom(zoom);
-	// constrainer.setRaster(this->zoom / 4);
+	double beatsPerSecond = Project::getInstance()->getTempo() / 60.0;
+	double samplesPerBeat = Project::getInstance()->getSampleRate() / beatsPerSecond;
+	int raster = (int)(samplesPerBeat * zoom) / Project::getInstance()->getSampleRate(); // Viertelnoten
+	dragger->setRaster(raster);
+	
+
+	// constrainer.set
+	// (this->zoom / 4);
 	// constrainer.setMaxX(getMaxLength() * this->zoom);
 }
 

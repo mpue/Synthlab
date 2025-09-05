@@ -9,7 +9,7 @@
 namespace BinaryData
 {
     extern const char*   README_md;
-    const int            README_mdSize = 1510;
+    const int            README_mdSize = 1917;
 
     extern const char*   _2osc_gate_slb;
     const int            _2osc_gate_slbSize = 8449;
@@ -78,10 +78,10 @@ namespace BinaryData
     const int            auxmodule_pngSize = 4961;
 
     extern const char*   backwardsolid_png;
-    const int            backwardsolid_pngSize = 752;
+    const int            backwardsolid_pngSize = 1801;
 
     extern const char*   circlesolid_png;
-    const int            circlesolid_pngSize = 1012;
+    const int            circlesolid_pngSize = 1922;
 
     extern const char*   clock_png;
     const int            clock_pngSize = 5554;
@@ -102,13 +102,13 @@ namespace BinaryData
     const int            Fader_pngSize = 5763;
 
     extern const char*   fastbackwardsolid_png;
-    const int            fastbackwardsolid_pngSize = 793;
+    const int            fastbackwardsolid_pngSize = 1851;
 
     extern const char*   fastforwardsolid_png;
-    const int            fastforwardsolid_pngSize = 746;
+    const int            fastforwardsolid_pngSize = 1828;
 
     extern const char*   forwardsolid_png;
-    const int            forwardsolid_pngSize = 707;
+    const int            forwardsolid_pngSize = 1806;
 
     extern const char*   hp_png;
     const int            hp_pngSize = 2941;
@@ -174,10 +174,10 @@ namespace BinaryData
     const int            p2f_pngSize = 3817;
 
     extern const char*   pausesolid_png;
-    const int            pausesolid_pngSize = 557;
+    const int            pausesolid_pngSize = 1638;
 
     extern const char*   playsolid_png;
-    const int            playsolid_pngSize = 673;
+    const int            playsolid_pngSize = 1804;
 
     extern const char*   plugin_png;
     const int            plugin_pngSize = 20569;
@@ -240,7 +240,7 @@ namespace BinaryData
     const int            stereodelay_pngSize = 4796;
 
     extern const char*   stop_png;
-    const int            stop_pngSize = 3578;
+    const int            stop_pngSize = 3332;
 
     extern const char*   tri_png;
     const int            tri_pngSize = 2335;

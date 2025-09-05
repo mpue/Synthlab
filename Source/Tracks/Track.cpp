@@ -752,6 +752,52 @@ void Track::paint(Graphics& g) {
 	g.fillAll();
 	g.setColour(Colours::grey);
 	g.drawLine(0, getHeight(), getWidth(), getHeight());
+	drawGrid(g);
+}
+
+// Berechnet die Rasterposition in Samples
+long Track::getGridSizeInSamples() const {
+	double beatsPerSecond = bpm / 60.0;
+	double samplesPerBeat = sampleRate / beatsPerSecond;
+
+	switch (gridSize) {
+	case WHOLE_NOTE:     return (long)(samplesPerBeat * 4.0);
+	case HALF_NOTE:      return (long)(samplesPerBeat * 2.0);
+	case QUARTER_NOTE:   return (long)(samplesPerBeat * 1.0);
+	case EIGHTH_NOTE:    return (long)(samplesPerBeat * 0.5);
+	case SIXTEENTH_NOTE: return (long)(samplesPerBeat * 0.25);
+	default:             return (long)(samplesPerBeat * 1.0);
+	}
+}
+
+// Berechnet die Rasterposition in Pixeln
+int Track::getGridSizeInPixels() const {
+	long samplesPerGrid = getGridSizeInSamples();
+	return (int)((samplesPerGrid * zoom) / sampleRate);
+}
+
+void Track::drawGrid(Graphics& g) {
+	if (!gridEnabled) return;
+
+	g.setColour(Colours::lightgrey.withAlpha(0.3f));
+
+	int gridPixels = getGridSizeInPixels();
+	if (gridPixels <= 0) return;
+
+	// Zeichne vertikale Rasterlinien
+	for (int x = 0; x < getWidth(); x += gridPixels) {
+		g.drawVerticalLine(x, 0, getHeight());
+	}
+
+	// Zeichne Takt-Markierungen (alle 4 Viertelnoten = 1 Takt)
+	if (gridSize == QUARTER_NOTE) {
+		g.setColour(Colours::lightgrey.withAlpha(0.6f));
+		int measurePixels = gridPixels * 4; // 4 Viertelnoten = 1 Takt
+
+		for (int x = 0; x < getWidth(); x += measurePixels) {
+			g.drawVerticalLine(x, getHeight(), 2.0f); // Dickere Linie für Takte
+		}
+	}
 }
 
 void Track::resized() {

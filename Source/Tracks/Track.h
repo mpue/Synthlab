@@ -31,6 +31,13 @@ class PluginModule;
 class Track : public Component, public ChangeBroadcaster, public ChangeListener
 {
 public:
+    enum GridSize {
+        WHOLE_NOTE,
+        HALF_NOTE,
+        QUARTER_NOTE,
+        EIGHTH_NOTE,
+        SIXTEENTH_NOTE
+    };
     
     enum Type {
         AUDIO,
@@ -41,7 +48,10 @@ public:
     Track(Type type,double sampleRate, MultiComponentDragger* dragger);
     ~Track();
     
-
+    long getGridSizeInSamples() const;
+    int getGridSizeInPixels() const;
+    GridSize gridSize;
+    void drawGrid(Graphics& g);
     void AddEventListener(EventListener* listener);
     void notifyListeners(Event* e);
 	void setZoom(float zoom);
@@ -227,6 +237,10 @@ public:
         return this->pluginModule;
 	}
 
+    void setBPM(double bpm) {
+		this->bpm = bpm;
+    }
+
 private:
 
     juce::StringArray getTypeNames() const
@@ -363,6 +377,9 @@ private:
   
     TrackNavigator* navigator;
 
+
+	bool gridEnabled = true;
+    double bpm = 120.0;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Track)
 };
 

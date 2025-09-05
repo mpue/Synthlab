@@ -81,6 +81,7 @@ MainComponent::MainComponent() : resizerBar(&stretchableManager, 1, true)
 	createConfig();
 
 	AudioManager::getInstance()->setDeviceManager(&deviceManager);
+	Project::getInstance()->setAudioDeviceManager(&deviceManager);
 	Project::getInstance()->setCommandManager(this);
 
 	if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
