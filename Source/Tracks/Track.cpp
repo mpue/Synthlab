@@ -13,6 +13,7 @@
 #include "../Session.h"
 #include "MasterChannelPanel.h"
 #include <iostream>
+#include "../MessageBus/FastBus.h"
 
 //==============================================================================
 Track::Track(Type type, double sampleRate, MultiComponentDragger* dragger)
@@ -38,6 +39,13 @@ Track::Track(Type type, double sampleRate, MultiComponentDragger* dragger)
 	resized();
 	createProperties();
 	setName("empty Track");
+
+	auto& bus = FastBus::getInstance();
+
+	bus.subscribe<float>("tempo", [this](const FastTopic<float>& topic) {
+		bpm = topic.getValue();
+		repaint();
+	});
 }
 
 Track::~Track()
@@ -773,7 +781,7 @@ long Track::getGridSizeInSamples() const {
 // Berechnet die Rasterposition in Pixeln
 int Track::getGridSizeInPixels() const {
 	long samplesPerGrid = getGridSizeInSamples();
-	return (int)((samplesPerGrid * zoom) / sampleRate);
+	return (int)(((double)samplesPerGrid * zoom) / sampleRate);
 }
 
 void Track::drawGrid(Graphics& g) {
@@ -781,21 +789,20 @@ void Track::drawGrid(Graphics& g) {
 
 	g.setColour(Colours::lightgrey.withAlpha(0.3f));
 
-	int gridPixels = getGridSizeInPixels();
-	if (gridPixels <= 0) return;
+	long samplesPerGrid = getGridSizeInSamples();
+	if (samplesPerGrid <= 0) return;
 
-	// Zeichne vertikale Rasterlinien
-	for (int x = 0; x < getWidth(); x += gridPixels) {
-		g.drawVerticalLine(x, 0, getHeight());
-	}
+	// WICHTIG: Verwende exakte Multiplikation statt akkumulierte Addition
+	int gridCount = (int)(getWidth() * sampleRate / (zoom * samplesPerGrid)) + 2;
 
-	// Zeichne Takt-Markierungen (alle 4 Viertelnoten = 1 Takt)
-	if (gridSize == QUARTER_NOTE) {
-		g.setColour(Colours::lightgrey.withAlpha(0.6f));
-		int measurePixels = gridPixels * 4; // 4 Viertelnoten = 1 Takt
+	for (int i = 0; i <= gridCount; i++) {
+		// Exakte Berechnung für jeden Grid-Punkt
+		long exactSample = i * samplesPerGrid;
+		double exactPixel = (double)exactSample * zoom / sampleRate;
+		int pixelPos = (int)std::round(exactPixel);
 
-		for (int x = 0; x < getWidth(); x += measurePixels) {
-			g.drawVerticalLine(x, getHeight(), 2.0f); // Dickere Linie für Takte
+		if (pixelPos >= 0 && pixelPos < getWidth()) {
+			g.drawVerticalLine(pixelPos, 0, getHeight());
 		}
 	}
 }
