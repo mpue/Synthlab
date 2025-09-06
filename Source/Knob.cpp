@@ -192,7 +192,7 @@ void Knob::setCurrentLayer(Module::Layer layer) {
         // nameLabel->setFont(Font(9));
         nameLabel->setTopLeftPosition(2 ,2);
         valueLabel->setVisible(true);
-        setInterceptsMouseClicks(false,false);
+        setInterceptsMouseClicks(true,false);        
     }
 }
 

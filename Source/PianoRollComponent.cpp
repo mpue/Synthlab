@@ -164,6 +164,10 @@ void PianoRollComponent::drawPiano(juce::Graphics& g)
 
 void PianoRollComponent::drawNotes(juce::Graphics& g)
 {
+    if (midiRegion == nullptr) {
+        return;
+    }
+
     auto& messages = midiRegion->getMidiMessageList();
 
     // Performance: only draw notes in visible area

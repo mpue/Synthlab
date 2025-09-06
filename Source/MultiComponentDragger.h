@@ -192,7 +192,8 @@ public:
             return;
         }
         
-        delta.x = (int)UITools::snap(delta.x, raster, tolerance);
+        if (!e.mods.isShiftDown())			
+            delta.x = (int)UITools::snap(delta.x, raster, tolerance);
 
         for (auto comp: selectedComponents)
         {

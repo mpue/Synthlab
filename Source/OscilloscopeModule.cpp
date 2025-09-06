@@ -104,13 +104,6 @@ void OscilloscopeModule::paint(juce::Graphics &g) {
 
 void OscilloscopeModule::setCurrentLayer(Module::Layer layer) {
     Module::setCurrentLayer(layer);
-    //
-    //if (currentLayer == Module::Layer::ALL) {
-    //    setInterceptsMouseClicks(false,false);
-    //}
-    //else {
-    //    setInterceptsMouseClicks(false,true);
-    //}
 }
 
 void OscilloscopeModule::resized() {

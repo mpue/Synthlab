@@ -1381,7 +1381,7 @@ void SynthEditor::openTracks(File file)
 				for (int j = 0; j < regions.getNumChildren(); j++) {
 					ValueTree region = regions.getChild(j);
 					Logger::getCurrentLogger()->writeToLog(region.getProperty("clipRefId"));
-					Region* r = t->addRegion(region.getProperty("clipRefId"), File(Project::getInstance()->getAudioPath(region.getProperty("clipRefId"))), 48000.0, region.getProperty("sampleOffset").toString().getIntValue());
+					Region* r = t->addRegion(region.getProperty("clipRefId"), File(Project::getInstance()->getAudioPath(region.getProperty("clipRefId"))), Project::getInstance()->getSampleRate(), region.getProperty("sampleOffset").toString().getIntValue());
 					Rectangle<int> bounds = r->getBounds();
 					bounds.setWidth(region.getProperty("width"));
 					r->setBounds(bounds);
@@ -1389,7 +1389,7 @@ void SynthEditor::openTracks(File file)
 			}
 			else if (track.getProperty("type") == "instrument") {
 				juce::Point<int> pos = juce::Point<int>(10, 10);
-				Track* t = navigator->addTrack(Track::Type::INSTRUMENT, 48000);
+				Track* t = navigator->addTrack(Track::Type::INSTRUMENT, Project::getInstance()->getSampleRate());
 
 				ti->setTrack(t);				
 				t->setMidiChannel(track.getProperty("midiChannel").toString().getIntValue(),false);
@@ -1397,7 +1397,7 @@ void SynthEditor::openTracks(File file)
 
 				for (int j = 0; j < regions.getNumChildren(); j++) {
 					ValueTree region = regions.getChild(j);
-					MidiRegion* mr = t->addMidiRegion(48000, region.getProperty("sampleOffset").toString().getIntValue(), region.getProperty("numSamples").toString().getIntValue());					
+					MidiRegion* mr = t->addMidiRegion(Project::getInstance()->getSampleRate(), region.getProperty("sampleOffset").toString().getIntValue(), region.getProperty("numSamples").toString().getIntValue());
 					Rectangle<int> bounds = mr->getBounds();
 					bounds.setWidth(region.getProperty("width"));
 					mr->setBounds(bounds);

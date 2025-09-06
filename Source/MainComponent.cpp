@@ -342,7 +342,7 @@ void MainComponent::createStudioLayout() {
 		}
 		if (args[0] == "midiregion") {
 			if (args.size() < 3) return "Error: Missing arguments for MIDI region.";
-			navigator->getCurrentTrack()->addMidiRegion(48000, juce::String(args[1]).getIntValue(), juce::String(args[2]).getIntValue());
+			navigator->getCurrentTrack()->addMidiRegion(Project::getInstance()->getSampleRate(), juce::String(args[1]).getIntValue(), juce::String(args[2]).getIntValue());
 			return "MIDI region added.";
 		}
 

@@ -36,8 +36,8 @@ void PluginModule::openPluginWindow()
 	auto editor = plugin->createEditorIfNeeded();
 	if (!win)
 		win = std::make_unique<PluginManager::PluginWindow>(pluginName, editor);
-	else
-		win->setVisible(true);
+
+	win->setVisible(true);
 }
 
 void PluginModule::selectPlugin(String name)
