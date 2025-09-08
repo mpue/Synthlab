@@ -1337,6 +1337,9 @@ void SynthEditor::openTracks(File file)
 
 	std::unique_ptr<XmlElement> audioXml = XmlDocument(File(audioDataFileName)).getDocumentElement();
 
+	if (audioXml == nullptr)
+		return;
+
 	ValueTree audio = ValueTree::fromXml(*audioXml.get());
 
 	audio = audio.getChild(0);

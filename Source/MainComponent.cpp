@@ -680,10 +680,10 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 	const int outNumChans = writableBuffer->getNumChannels();
 	if (!outputData || outNumChans == 0) return;
 
-	// --- alles nullen ---
-	for (int ch = 0; ch < outNumChans; ++ch)
-		if (outputData[ch])
-			juce::FloatVectorOperations::clear(outputData[ch], numSamples);
+	//// --- alles nullen ---
+	//for (int ch = 0; ch < outNumChans; ++ch)
+	//	if (outputData[ch])
+	//		juce::FloatVectorOperations::clear(outputData[ch], numSamples);
 
 	// --- Sampler nur auf 0/1 ---
 	if (defaultSampler && defaultSampler->isPlaying()) {
@@ -1244,7 +1244,6 @@ void MainComponent::buttonClicked(Button* b)
 				if ((module = dynamic_cast<PluginModule*>(editor->getModule()->getModules()->at(i))) != nullptr) {					
 					module->getPlayHead().setPlaying(false);
 					module->getPlayHead().setRecording(false);
-					
 				}
 			}
 

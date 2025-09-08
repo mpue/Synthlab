@@ -110,6 +110,7 @@
       <FILE id="Grgqb1" name="speaker.png" compile="0" resource="1" file="Images/speaker.png"/>
       <FILE id="e6TDlD" name="stereodelay.png" compile="0" resource="1" file="Images/stereodelay.png"/>
       <FILE id="oa95Wx" name="stop.png" compile="0" resource="1" file="Images/stop.png"/>
+      <FILE id="Abg7RO" name="synthlab.png" compile="0" resource="1" file="Images/synthlab.png"/>
       <FILE id="LlFYc6" name="tri.png" compile="0" resource="1" file="Images/tri.png"/>
       <FILE id="ogxnye" name="undo.png" compile="0" resource="1" file="Images/undo.png"/>
       <FILE id="S55ijn" name="unlock.png" compile="0" resource="1" file="Images/unlock.png"/>
@@ -422,6 +423,10 @@
                 file="Source/MidiRegionEventEditor.h"/>
           <FILE id="BU52xf" name="MixerPanel.cpp" compile="1" resource="0" file="Source/MixerPanel.cpp"/>
           <FILE id="wrBYlv" name="MixerPanel.h" compile="0" resource="0" file="Source/MixerPanel.h"/>
+          <FILE id="AaouMh" name="ModernLookAndFeel.cpp" compile="1" resource="0"
+                file="Source/ModernLookAndFeel.cpp"/>
+          <FILE id="PEIGFP" name="ModernLookAndFeel.h" compile="0" resource="0"
+                file="Source/ModernLookAndFeel.h"/>
           <FILE id="j8BgnE" name="Module.cpp" compile="1" resource="0" file="Source/Module.cpp"/>
           <FILE id="FdpOd5" name="Module.h" compile="0" resource="0" file="Source/Module.h"/>
           <FILE id="nQjy8U" name="ModuleBrowser.cpp" compile="1" resource="0"
@@ -749,7 +754,7 @@
       </MODULEPATHS>
     </VS2017>
     <VS2022 targetFolder="Builds/VisualStudio2022" externalLibraries="librubberband.lib"
-            extraDefs="JUCE_MODAL_LOOPS_PERMITTED=1">
+            extraDefs="JUCE_MODAL_LOOPS_PERMITTED=1" smallIcon="Abg7RO" bigIcon="Abg7RO">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" headerPath="d:\devel\ASIOSDK2.3\common\&#10;d:\devel\VST_SDK3.7\"
                        libraryPath="d:/devel/Synthlab/lib/debug"/>

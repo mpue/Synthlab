@@ -453,9 +453,9 @@ void TrackNavigator::setRecording(bool recording) {
 				else if (tracks.at(i)->getType() == Track::Type::AUDIO) {
 					AudioRegion* r = dynamic_cast<AudioRegion*>(tracks.at(i)->getRegionAt(recordStart));
 					if (r == nullptr) {
-						tracks.at(i)->addRegion(nullptr, Project::getInstance()->getSampleRate(), recordStart, Project::getInstance()->getSampleRate() * 10);
+						r = tracks.at(i)->addRegion(nullptr, Project::getInstance()->getSampleRate(), recordStart, Project::getInstance()->getSampleRate() * 10);
 					}
-					tracks.at(i)->getRegionAt(recordStart)->startRecording();
+					r->startRecording();
 				}
 
 			}

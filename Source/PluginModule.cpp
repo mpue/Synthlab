@@ -210,7 +210,7 @@ void PluginModule::eventReceived(Event* e)
 
 	auto msg = e->getMessage();
 
-	if (msg.isNoteOn() && msg.getVelocity() == 0)
+	if (msg.getVelocity() == 0)
 		msg = MidiMessage::noteOff(msg.getChannel(), msg.getNoteNumber());
 
 	msg.setTimeStamp(0);

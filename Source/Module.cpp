@@ -159,22 +159,12 @@ Module::~Module()
 //==============================================================================
 void Module::paint (Graphics& g)
 {
-    //[UserPrePaint] Add your own custom painting code here..
-
-
-
-    // g.drawFittedText(getName(), 40, 10, getWidth(), 20, juce::Justification::top, 2);
-
-
-
-    //[/UserPrePaint]
 
     g.fillAll (Colour (0xff2d2d2d));
 
     {
         int x = 28, y = 44, width = 64, height = 64;
-        //[UserPaintCustomArguments] Customize the painting arguments here..
-        //[/UserPaintCustomArguments]
+
         g.setColour (Colours::black);
         g.drawImageWithin (cachedImage_materialicons_301_viewmodule_64_0_ffffff_none_png_1,
                            x, y, width, height,
@@ -182,10 +172,10 @@ void Module::paint (Graphics& g)
                            false);
     }
 
-    // Schlagschatten zeichnen
+	// Drop shadow
     {
-        const int shadowOffset = 4;
-        juce::DropShadow shadow(juce::Colours::black.withAlpha(0.3f), 6, { shadowOffset, shadowOffset });
+        const int shadowOffset = 8;
+        juce::DropShadow shadow(juce::Colours::black.withAlpha(0.5f), 6, { shadowOffset, shadowOffset });
         juce::Rectangle<int> shadowArea = getLocalBounds().withSizeKeepingCentre(getWidth()+4, getHeight()+4);
         shadow.drawForRectangle(g, shadowArea);
     }

@@ -11,9 +11,9 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include <functional>
 
-class AudioLevelMeter : public juce::Component,
-    public juce::Timer
+class AudioLevelMeter : public juce::Component, private juce::Timer
 {
 public:
     AudioLevelMeter();
@@ -23,45 +23,50 @@ public:
     void resized() override;
     void timerCallback() override;
 
-    // Methoden zum Setzen der Pegel
-    void setLevel(int channel, float level);
-    void setNumChannels(int numChannels);
+    // Audio processing
+    void processAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill);
+    void setLevelDb(int channel, float dbLevel);
+    void setNumChannels(int newNumChannels);
     void reset();
 
-    // Neue Methode für AudioSourceChannelInfo
-    void processAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill);
+    // Toggle button callback
+    std::function<void(bool)> onToggleCallback;
 
 private:
-    struct ChannelMeter
+    struct ChannelData
     {
-        float currentLevel = 0.0f;
-        float peakLevel = 0.0f;
+        float currentDbLevel = -60.0f;     // aktueller dB-Wert
+        float peakDbLevel = -60.0f;        // Peak dB-Wert
+        float smoothedDbLevel = -60.0f;    // geglätteter dB-Wert
         int peakHoldCounter = 0;
-        float smoothedLevel = 0.0f;
     };
 
-    std::vector<ChannelMeter> channels;
+    std::vector<ChannelData> channels;
     int numChannels = 0;
 
-    // Konstanten
-    static constexpr float SMOOTHING_FACTOR = 0.8f;
-    static constexpr int PEAK_HOLD_TIME = 30; // Frames
+    // Toggle Button
+    std::unique_ptr<juce::ToggleButton> toggleButton;
+
+    // Constants
     static constexpr float MIN_DB = -60.0f;
     static constexpr float MAX_DB = 6.0f;
+    static constexpr float SMOOTHING_FACTOR = 0.85f;
+    static constexpr int PEAK_HOLD_TIME = 90; // 1.5 Sekunden bei 60 FPS
 
-    // Farben
-    juce::Colour greenZone = juce::Colours::green;
-    juce::Colour yellowZone = juce::Colours::yellow;
-    juce::Colour redZone = juce::Colours::red;
+    // Colors
     juce::Colour backgroundColor = juce::Colour(0xff2a2a2a);
-    juce::Colour borderColor = juce::Colour(0xff404040);
+    juce::Colour borderColor = juce::Colour(0xff555555);
+    juce::Colour greenZone = juce::Colour(0xff00ff00);
+    juce::Colour yellowZone = juce::Colour(0xffffff00);
+    juce::Colour redZone = juce::Colour(0xffff0000);
 
-    // Hilfsfunktionen
-    float dbToLinear(float db);
-    float linearToDb(float linear);
-    float levelToY(float level, const juce::Rectangle<float>& bounds);
+    // Helper functions
+    float dbToNormalized(float db);
+    float normalizedToDb(float normalized);
+    float levelToY(float normalizedLevel, const juce::Rectangle<float>& bounds);
     void drawScale(juce::Graphics& g, const juce::Rectangle<float>& bounds);
-    juce::Colour getLevelColor(float db);
+    void drawLedBar(juce::Graphics& g, const juce::Rectangle<float>& bounds, float dbLevel, float peakDb);
+    juce::Colour getLedColor(int ledIndex, int totalLeds, bool isPeak = false);
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AudioLevelMeter)
 };

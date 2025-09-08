@@ -242,6 +242,9 @@ namespace BinaryData
     extern const char*   stop_png;
     const int            stop_pngSize = 3332;
 
+    extern const char*   synthlab_png;
+    const int            synthlab_pngSize = 58873;
+
     extern const char*   tri_png;
     const int            tri_pngSize = 2335;
 
@@ -255,7 +258,7 @@ namespace BinaryData
     const int            whitenoise_pngSize = 7446;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 82;
+    const int namedResourceListSize = 83;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

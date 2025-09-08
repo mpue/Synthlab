@@ -361,7 +361,7 @@ void Track::addMidiRegion(juce::MidiBuffer* source, double sampleRate, long star
 	repaint();
 }
 
-void Track::addRegion(AudioSampleBuffer* source, double sampleRate, long samplePosition, long regionLength) {
+AudioRegion* Track::addRegion(AudioSampleBuffer* source, double sampleRate, long samplePosition, long regionLength) {
 
 	AudioRegion* region = new AudioRegion(source, *manager, samplePosition, regionLength, sampleRate);
 	region->setDragger(dragger);
@@ -395,6 +395,8 @@ void Track::addRegion(AudioSampleBuffer* source, double sampleRate, long sampleP
 	audioBuffer->copyFrom(1, region->getSampleOffset(), *region->getBuffer(), 1, 0, region->getBuffer()->getNumSamples());
 
 	repaint();
+
+	return region;
 }
 
 void Track::splitRegion() {
@@ -517,6 +519,7 @@ void Track::setSamplePosition(int position)
 	if ((type == MIDI || type == INSTRUMENT) && position != samplePosition) {
 			
 		MidiRegion* r = dynamic_cast<MidiRegion*>(getRegionAt(position));
+
 		if (r != nullptr) {
 			vector<MidiMessage*> messages = r->getMessages(position - r->getSampleOffset(),
 				Project::getInstance()->getBufferSize()*2);
