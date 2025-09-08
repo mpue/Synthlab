@@ -156,87 +156,69 @@ Module::~Module()
     //[/Destructor]
 }
 
-//==============================================================================
-void Module::paint (Graphics& g)
+void Module::paint(Graphics& g)
 {
+    // 1. Drop shadow ZUERST zeichnen
+    const int shadowOffset = 4;
+    juce::DropShadow shadow(juce::Colours::black.withAlpha(0.3f), 6, { shadowOffset, shadowOffset });
+    juce::Rectangle<int> moduleArea = getLocalBounds().reduced(shadowOffset);
+    shadow.drawForRectangle(g, moduleArea);
 
-    g.fillAll (Colour (0xff2d2d2d));
-
-    {
-        int x = 28, y = 44, width = 64, height = 64;
-
-        g.setColour (Colours::black);
-        g.drawImageWithin (cachedImage_materialicons_301_viewmodule_64_0_ffffff_none_png_1,
-                           x, y, width, height,
-                           RectanglePlacement::centred,
-                           false);
-    }
-
-	// Drop shadow
-    {
-        const int shadowOffset = 8;
-        juce::DropShadow shadow(juce::Colours::black.withAlpha(0.5f), 6, { shadowOffset, shadowOffset });
-        juce::Rectangle<int> shadowArea = getLocalBounds().withSizeKeepingCentre(getWidth()+4, getHeight()+4);
-        shadow.drawForRectangle(g, shadowArea);
-    }
-
-
-    //[UserPaint] Add your own custom painting code here..
-
+    // 2. Modul-Hintergrund zeichnen (in reduzierten Bounds)
     g.setColour(Colour(0xff434242));
+    g.fillRoundedRectangle(moduleArea.toFloat(), 8);
 
-    g.fillRoundedRectangle(0,0,getWidth(), getHeight(),8);
-
+    // 3. Modul-Rahmen zeichnen
     if (selected) {
         g.setColour(juce::Colours::orange);
     }
     else {
         g.setColour(juce::Colours::grey);
     }
-    g.drawRoundedRectangle(0, 0, getWidth(), getHeight(),8,2);
+    g.drawRoundedRectangle(moduleArea.toFloat(), 8, 2);
 
+    // 4. Icon zeichnen (Position anpassen für reduzierten Bereich)
+    {
+        int x = 28, y = 44, width = 64, height = 64;
+        g.setColour(Colours::black);
+        g.drawImageWithin(cachedImage_materialicons_301_viewmodule_64_0_ffffff_none_png_1,
+            x, y, width, height,
+            RectanglePlacement::centred,
+            false);
+    }
 
-    for (int i = 0; i < pins.size();i++) {
-
+    // 5. Pins zeichnen
+    for (int i = 0; i < pins.size(); i++) {
         if (pins.at(i)->isSelected()) {
             g.setColour(juce::Colours::white);
         }
         else {
-            
-            if(pins.at(i)->getType() == Pin::Type::AUDIO) {
+            if (pins.at(i)->getType() == Pin::Type::AUDIO) {
                 g.setColour(juce::Colours::orange);
             }
             else if (pins.at(i)->getType() == Pin::Type::VALUE) {
-                 g.setColour(juce::Colours::yellow);
+                g.setColour(juce::Colours::yellow);
             }
             else {
                 g.setColour(juce::Colours::lightblue);
             }
-            
         }
 
         g.setFont(10);
-        
+
         if (pins.at(i)->direction == Pin::Direction::IN) {
-            //g.fillRect(pins.at(i)->x,pins.at(i)->y, 5, 10);
-            g.drawEllipse(pins.at(i)->x,pins.at(i)->y, 10, 10,1);
-            g.fillEllipse(pins.at(i)->x+2,pins.at(i)->y+2, 6, 6);
-            g.drawText(pins.at(i)->getName() , pins.at(i)->x + 12,pins.at(i)->y, 10, 10, juce::Justification::left);
+            g.drawEllipse(pins.at(i)->x, pins.at(i)->y, 10, 10, 1);
+            g.fillEllipse(pins.at(i)->x + 2, pins.at(i)->y + 2, 6, 6);
+            g.drawText(pins.at(i)->getName(), pins.at(i)->x + 12, pins.at(i)->y, 10, 10, juce::Justification::left);
         }
         else {
-            // g.fillRect(pins.at(i)->x + 5, pins.at(i)->y, 5, 10);
-            g.drawEllipse(pins.at(i)->x, pins.at(i)->y, 10, 10,1);
-            g.fillEllipse(pins.at(i)->x+2,pins.at(i)->y +2, 6, 6);
-            g.drawText(pins.at(i)->getName() , pins.at(i)->x - 25,pins.at(i)->y, 20, 10, juce::Justification::right);
+            g.drawEllipse(pins.at(i)->x, pins.at(i)->y, 10, 10, 1);
+            g.fillEllipse(pins.at(i)->x + 2, pins.at(i)->y + 2, 6, 6);
+            g.drawText(pins.at(i)->getName(), pins.at(i)->x - 25, pins.at(i)->y, 20, 10, juce::Justification::right);
         }
-
-
     }
 
     Component::paint(g);
-
-
-    //[/UserPaint]
 }
 
 void Module::resized()

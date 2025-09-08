@@ -713,10 +713,11 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 		Mixer::Channel* inCh = Mixer::getInstance()->getChannel(Mixer::Channel::Type::IN, k);
 		if (!inCh || k >= (int)inputChannels.size()) continue;
 
-		// Prüfen ob beide Kanäle des Stereo-Pairs verfügbar sind
-		int leftInputCh = k * 2;      // 0, 2, 4, 6...
-		int rightInputCh = k * 2 + 1; // 1, 3, 5, 7...
-		if (rightInputCh >= numAvailableInputChannels) continue;
+		// Verwende getSelectedAudioInput() vom jeweiligen AudioIn-Objekt
+		int selectedInputIndex = inputChannels.at(k)->getSelectedAudioInput();
+
+		// Prüfen ob der ausgewählte Input-Index verfügbar ist
+		if (selectedInputIndex < 0 || selectedInputIndex >= numAvailableInputChannels) continue;
 
 		double pan = inCh->pan;
 		float gainL = fastCos((M_PI * (pan + 1) / 4));
@@ -724,23 +725,21 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 
 		// AudioBuffer der AudioIn-Objekte holen (das sind die "echten" Buffer)
 		auto* bufL = inputChannels.at(k)->pins.at(0)->getAudioBuffer();
-		auto* bufR = inputChannels.at(k)->pins.at(1)->getAudioBuffer();
+		// auto* bufR = inputChannels.at(k)->pins.at(1)->getAudioBuffer();
+		if (!bufL) continue;
 
-		if (!bufL || !bufR) continue;
-
-		// Stereo-Pair vom Host (bufferToFill) in die AudioIn-Buffer kopieren
-		bufL->copyFrom(0, 0, *bufferToFill.buffer, leftInputCh, bufferToFill.startSample, numSamples);
-		bufR->copyFrom(0, 0, *bufferToFill.buffer, rightInputCh, bufferToFill.startSample, numSamples);
+		// Ausgewählten Input-Kanal vom Host (bufferToFill) in die AudioIn-Buffer kopieren
+		bufL->copyFrom(0, 0, *bufferToFill.buffer, selectedInputIndex, bufferToFill.startSample, numSamples);
+		// bufR->copyFrom(0, 0, *bufferToFill.buffer, rightInputCh, bufferToFill.startSample, numSamples);
 
 		// Volume und Pan anwenden
 		bufL->applyGain(0, 0, numSamples, inCh->volume * gainL);
-		bufR->applyGain(0, 0, numSamples, inCh->volume * gainR);
+		// bufR->applyGain(0, 0, numSamples, inCh->volume * gainR);
 
 		// Pegelberechnung für die Mixer-Anzeige
 		inCh->magnitudeLeft = bufL->getMagnitude(0, 0, numSamples);
-		inCh->magnitudeRight = bufR->getMagnitude(0, 0, numSamples);
+		//inCh->magnitudeRight = bufR->getMagnitude(0, 0, numSamples);
 	}
-
 	// --- 1:1 Output Mapping mit Pan ---
 	for (int o = 0; o < (int)outputChannels.size(); ++o) {
 		Mixer::Channel* meta = Mixer::getInstance()->getChannel(Mixer::Channel::Type::OUT, o);

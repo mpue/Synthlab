@@ -51,14 +51,14 @@ void AudioIn::createProperties() {
 void AudioIn::configurePins() {
     Pin* p1 = new Pin(Pin::Type::AUDIO);
     p1->direction = Pin::Direction::IN;
-    p1->setName("L");
+    p1->setName("In");
 
-    Pin* p2 = new Pin(Pin::Type::AUDIO);
-    p2->direction = Pin::Direction::IN;
-    p2->setName("R");
+    //Pin* p2 = new Pin(Pin::Type::AUDIO);
+    //p2->direction = Pin::Direction::IN;
+    //p2->setName("R");
 
     addPin(Pin::Direction::OUT, p1);
-    addPin(Pin::Direction::OUT, p2);
+    // addPin(Pin::Direction::OUT, p2);
 }
 
 void AudioIn::paint(juce::Graphics& g) {
