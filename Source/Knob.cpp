@@ -10,6 +10,10 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Knob.h"
+#include "SynthEditor.h"
+
+// Forward-Deklaration für bessere Performance
+class SynthEditor;
 
 using juce::Justification;
 using juce::Slider;
@@ -42,6 +46,11 @@ Knob::Knob()
     slider->setColour(Slider::thumbColourId, juce::Colours::orange);
     slider->addListener (this);
     
+    // Slider-Performance verbessern für schnelle Mausbewegungen
+    slider->setMouseDragSensitivity(200);  // Höhere Sensitivität für feinere Kontrolle
+    slider->setVelocityBasedMode(true);    // Velocity-basierter Drag-Modus
+    slider->setVelocityModeParameters(1.0, 1, 0.09, false); // Optimale Parameter für Rotary-Knobs
+    
     slider->setTopLeftPosition(getWidth() / 2 - slider->getWidth() / 2, getHeight() / 2 - slider->getHeight()/2);
     
     addAndMakeVisible(slider);
@@ -60,7 +69,7 @@ Knob::Knob()
     
     setCurrentLayer(Layer::ALL);
     
-    slider->setEnabled(false);
+    // Slider standardmäßig aktiviert lassen - wird durch setLocked() korrekt gesetzt
     
 }
 
@@ -157,6 +166,27 @@ void Knob::paint(juce::Graphics &g) {
     }
 
     Component::paint(g);
+    
+    // Selection Highlight (immer über allem anderen zeichnen)
+    if (isShowingSelectionHighlight && !locked) {
+        g.setColour(juce::Colours::lightblue.withAlpha(0.3f));
+        
+        if (currentLayer == Layer::ALL) {
+            // ALL-Modus: Name-Label-Bereich hervorheben
+            Rectangle<int> highlightArea(30, 0, 60, 30);
+            g.fillRoundedRectangle(highlightArea.toFloat(), 3.0f);
+            g.setColour(juce::Colours::lightblue.withAlpha(0.6f));
+            g.drawRoundedRectangle(highlightArea.toFloat(), 3.0f, 1.0f);
+        } else {
+            // GUI-Modus: Name-Label-Bereich hervorheben
+            Rectangle<int> highlightArea(0, 0, 90, 12);
+            g.fillRoundedRectangle(highlightArea.toFloat(), 3.0f);
+            g.setColour(juce::Colours::lightblue.withAlpha(0.6f));
+            g.drawRoundedRectangle(highlightArea.toFloat(), 3.0f, 1.0f);
+        }
+    }
+    
+    // Standard-Selektion (orange Rahmen)
     if (selected) {
         g.setColour(Colours::orange);
         g.drawRect(0,0,getWidth(),getHeight());
@@ -182,17 +212,17 @@ void Knob::setCurrentLayer(Module::Layer layer) {
         slider->setTopLeftPosition(2,2);
         nameLabel->setTopLeftPosition(30 ,2);
         valueLabel->setVisible(false);
-        setInterceptsMouseClicks(false,false);
+        setInterceptsMouseClicks(true, false); // Modul fängt Mouse-Events ab für intelligente Behandlung
     }
     else {
         // GUI Mode
         setSize(90,90);
         slider->setSize(70,70);
         slider->setTopLeftPosition(10,10);
-        // nameLabel->setFont(Font(9));
         nameLabel->setTopLeftPosition(2 ,2);
         valueLabel->setVisible(true);
-        setInterceptsMouseClicks(true,false);        
+        setEnabled(true);
+        setInterceptsMouseClicks(true, false); // Modul fängt Mouse-Events ab für intelligente Behandlung      
     }
 }
 
@@ -301,6 +331,153 @@ void Knob::setSelected(bool selected) {
     Module::setSelected(selected);
     //slider->setWantsKeyboardFocus(true);
     // slider->grabKeyboardFocus();
+}
+
+void Knob::mouseDown(const MouseEvent& e) {
+    isDraggingSlider = false;
+    isDraggingModule = false;
+    
+    if (isInSliderArea(e.getPosition())) {
+        // Klick ist im Slider-Bereich - weiterleiten an Slider (immer erlaubt)
+        isDraggingSlider = true;
+        MouseEvent relativeEvent = e.getEventRelativeTo(slider);
+        slider->mouseDown(relativeEvent);
+        return;
+    }
+    
+    if (isInSelectionArea(e.getPosition()) && !locked) {
+        // Klick im Selektions-Bereich - für Selektion/Verschiebung
+        isDraggingModule = true;
+        handleModuleSelection();
+    }
+}
+
+void Knob::handleModuleSelection() {
+    // Direkte Selektion-Behandlung
+    if (auto* synthEditor = dynamic_cast<SynthEditor*>(getParentComponent())) {
+        auto& selectionModel = synthEditor->getSelectionModel();
+        
+        // Behandle die Selektion direkt
+        if (!selectionModel.selectionContains(this)) {
+            selectionModel.clearSelection();
+            setSelected(true);
+            selectionModel.getSelectedModules().push_back(this);
+        }
+        
+        // Speichere Position für Verschiebung
+        if (synthEditor->getCurrentLayer() == Module::Layer::GUI) {
+            saveUiPosition();
+        } else {
+            savePosition();
+        }
+    }
+}
+
+void Knob::mouseDrag(const MouseEvent& e) {
+    if (isDraggingSlider) {
+        // Drag für Slider-Bedienung
+        MouseEvent relativeEvent = e.getEventRelativeTo(slider);
+        slider->mouseDrag(relativeEvent);
+        return;
+    }
+    
+    if (isDraggingModule && !locked && isSelected()) {
+        // Direkte Verschiebung ohne Event-Weiterleitung
+        if (auto* synthEditor = dynamic_cast<SynthEditor*>(getParentComponent())) {
+            
+            if (synthEditor->getCurrentLayer() == Module::Layer::GUI) {
+                int x = getSavedUiPosition().getX() + e.getOffsetFromDragStart().getX();
+                int y = getSavedUiPosition().getY() + e.getOffsetFromDragStart().getY();
+                
+                setUiPosition(x, y);
+                setTopLeftPosition(x, y);
+            } else {
+                int x = getSavedPosition().getX() + e.getOffsetFromDragStart().getX();
+                int y = getSavedPosition().getY() + e.getOffsetFromDragStart().getY();
+                
+                setTopLeftPosition(x, y);
+            }
+            
+            // Repaint für sofortiges visuelles Feedback
+            getParentComponent()->repaint();
+        }
+    }
+}
+
+void Knob::mouseUp(const MouseEvent& e) {
+    if (isDraggingSlider) {
+        // Event für Slider beenden
+        MouseEvent relativeEvent = e.getEventRelativeTo(slider);
+        slider->mouseUp(relativeEvent);
+    }
+    
+    if (isDraggingModule && !locked) {
+        // Kein Event-Handling nötig - die Verschiebung ist bereits komplett
+    }
+    
+    // Zustand zurücksetzen
+    isDraggingSlider = false;
+    isDraggingModule = false;
+}
+
+void Knob::mouseMove(const MouseEvent& e) {
+    if (locked) {
+        setMouseCursor(MouseCursor::NormalCursor);
+        isShowingSelectionHighlight = false;
+        repaint();
+        return;
+    }
+    
+    bool wasShowingHighlight = isShowingSelectionHighlight;
+    
+    if (isInSliderArea(e.getPosition())) {
+        // Über dem Slider - Rotary-Cursor für Bedienung
+        setMouseCursor(MouseCursor::UpDownResizeCursor);
+        isShowingSelectionHighlight = false;
+    } else if (isInSelectionArea(e.getPosition())) {
+        // Über dem Selektions-Bereich - Hand-Cursor für Verschiebung
+        setMouseCursor(MouseCursor::DraggingHandCursor);
+        isShowingSelectionHighlight = true;
+    } else {
+        // Außerhalb aller aktiven Bereiche
+        setMouseCursor(MouseCursor::NormalCursor);
+        isShowingSelectionHighlight = false;
+    }
+    
+    // Repaint nur wenn sich der Highlight-Zustand geändert hat
+    if (wasShowingHighlight != isShowingSelectionHighlight) {
+        repaint();
+    }
+}
+
+bool Knob::isInSelectionArea(const Point<int>& position) const {
+    if (currentLayer == Module::Layer::ALL) {
+        // ALL-Modus: Name-Label-Bereich rechts
+        Rectangle<int> nameLabelArea(30, 0, 60, 30);
+        return nameLabelArea.contains(position);
+    } else {
+        // GUI-Modus: Name-Label oben oder Rand-Bereiche
+        Rectangle<int> nameLabelArea(0, 0, 90, 12);
+        Rectangle<int> sliderArea = slider->getBounds();
+        Rectangle<int> knobBounds = getLocalBounds();
+        
+        // Name-Label-Bereich oder außerhalb Slider aber innerhalb Knob
+        return nameLabelArea.contains(position) || 
+               (knobBounds.contains(position) && !sliderArea.contains(position));
+    }
+}
+
+bool Knob::isInSliderArea(const Point<int>& position) const {
+    return slider->getBounds().contains(position);
+}
+
+void Knob::mouseExit(const MouseEvent& e) {
+    // Highlight und Cursor zurücksetzen wenn Maus die Knob verlässt
+    if (isShowingSelectionHighlight) {
+        isShowingSelectionHighlight = false;
+        repaint();
+    }
+    setMouseCursor(MouseCursor::NormalCursor);
 }
 
 juce::Array<PropertyComponent*>& Knob::getProperties() {

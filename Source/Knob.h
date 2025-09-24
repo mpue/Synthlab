@@ -74,11 +74,24 @@ public:
     
     virtual void setLocked(bool locked) override {
         this->locked = locked;
-        this->slider->setEnabled(locked);
-        setInterceptsMouseClicks(locked, locked);
+        this->slider->setEnabled(true);  // Slider immer aktiviert lassen - muss immer bedienbar sein
+        // Mouse-Event-Behandlung wird in mouseDown/mouseDrag gehandhabt
     }
     
+    // Mouse-Event Handling für intelligente Trennung zwischen Slider und Modul-Verschiebung
+    void mouseDown(const MouseEvent& e) override;
+    void mouseDrag(const MouseEvent& e) override;
+    void mouseUp(const MouseEvent& e) override;
+    void mouseMove(const MouseEvent& e) override;
+    void mouseExit(const MouseEvent& e) override;
+
 private:
+    // Hilfsmethode für Modul-Selektion
+    void handleModuleSelection();
+    
+    // Hilfsmethoden für visuelles Feedback
+    bool isInSelectionArea(const Point<int>& position) const;
+    bool isInSliderArea(const Point<int>& position) const;
     
     struct ValueListener : juce::Value::Listener
     {
@@ -200,6 +213,11 @@ private:
 
     
     Label* valueLabel = nullptr;
+
+    // Zustand für Mouse-Event-Behandlung
+    bool isDraggingSlider = false;
+    bool isDraggingModule = false;
+    bool isShowingSelectionHighlight = false;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Knob)
 };
