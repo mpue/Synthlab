@@ -5,7 +5,7 @@
 #include "Module.h"
 
 //==============================================================================
-// MidiRecorderModule: Erweiterung des MidiRecorder für ein modulares System
+// Enhanced MidiRecorderModule with MIDI file support and trigger input
 class MidiRecorderModule : public Module, public juce::Timer
 {
 public:
@@ -28,17 +28,32 @@ public:
 	void setDeviceManager(juce::AudioDeviceManager* manager);
 	void setTempo(float newTempo);
 
+	// MIDI file functionality
+	void saveMidiFile();
+	void saveMidiFileAs(const juce::File& file);
+	void loadMidiFile();
+	void loadMidiFileFrom(const juce::File& file);
+	void clearSequence();
+
+	// Trigger functionality
+	void triggerSequence();
+
 	juce::Array<juce::PropertyComponent*>& getProperties() override;
 	void createProperties() override;
 	void eventReceived(Event* e) override;
 	void handleIncomingMidiMessage(juce::MidiInput* source, const juce::MidiMessage& message);
+
+	juce::String getCategory() override { return "MIDI"; }
+
+	// Mouse handling for context menu
+	void mouseDown(const juce::MouseEvent& e) override;
 
 private:
 
 	struct TempoListener : juce::Value::Listener
 	{
 		TempoListener(juce::Value& v, MidiRecorderModule* g) : g(g), value(v) { value.addListener(this); }
-		~TempoListener() {}  // no need to remove the listener
+		~TempoListener() {}
 
 		void valueChanged(juce::Value& value) override {
 			g->setTempo(value.toString().getFloatValue());
@@ -50,7 +65,7 @@ private:
 	struct RecordingStateListener : juce::Value::Listener
 	{
 		RecordingStateListener(juce::Value& v, MidiRecorderModule* g) : g(g), value(v) { value.addListener(this); }
-		~RecordingStateListener() {}  // no need to remove the listener
+		~RecordingStateListener() {}
 
 		void valueChanged(juce::Value& value) override {
 			if (value.toString().getIntValue() > 0) {
@@ -60,7 +75,6 @@ private:
 			else {
 				g->stopRecording();
 			}
-			// g->setRecordingState(value.toString().getIntValue() > 0 ? true : false);
 		}
 		MidiRecorderModule* g;
 		juce::Value value;
@@ -69,7 +83,7 @@ private:
 	struct PlayingStateListener : juce::Value::Listener
 	{
 		PlayingStateListener(juce::Value& v, MidiRecorderModule* g) : g(g), value(v) { value.addListener(this); }
-		~PlayingStateListener() {}  // no need to remove the listener
+		~PlayingStateListener() {}
 
 		void valueChanged(juce::Value& value) override {
 			if (value.toString().getIntValue() > 0) {
@@ -84,13 +98,20 @@ private:
 		juce::Value value;
 	};
 
-	// MidiRecorder midiRecorder;
+	// File management
+	void updateFileDisplay();
+	juce::String getCurrentFileName() const;
+
 	juce::AudioDeviceManager* deviceManager = nullptr;
 
 	Pin* midiInPin = nullptr;
 	Pin* midiOutPin = nullptr;
+	Pin* triggerPin = nullptr;  // New trigger input
 
 	juce::MidiBuffer buffer;
+	juce::MidiFile currentMidiFile;  // Current MIDI file
+	juce::File lastLoadedFile;       // Track loaded file
+	bool hasUnsavedChanges = false;  // Track if sequence has changes
 
 	juce::Value* tempoValue;
 	juce::Value* recordingStateValue;
@@ -106,13 +127,19 @@ private:
 
 	juce::Array<juce::PropertyComponent*> properties;
 
-	float tempo = 120.0f; // Standardtempo in BPM
-	int startTime = 0;
+	float tempo = 120.0f;
+	double startTime = 0.0;
+	double recordingStartTime = 0.0;
 
 	int playbackIndex = 0;
-	juce::MidiBuffer::Iterator* playbackIterator = nullptr;
+	// Removed deprecated MidiBuffer::Iterator
 
-	CriticalSection lock;
+	// For MIDI file playback
+	juce::MidiMessageSequence* currentSequence = nullptr;
+	int currentEventIndex = 0;
+	double sequenceStartTime = 0.0;
+
+	juce::CriticalSection lock;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiRecorderModule)
 };
