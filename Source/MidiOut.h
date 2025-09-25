@@ -1,7 +1,7 @@
 /*
   ==============================================================================
 
-    MidiOut.h
+    MidiGate.h
     Created: 4 Apr 2018 3:48:23pm
     Author:  Matthias Pueski
 
@@ -15,95 +15,38 @@
 
 //==============================================================================
 /*
-Enhanced MIDI Output Module with device selection and complete event support
 */
-class MidiOut : public Module
+class MidiOut    : public Module
 {
 public:
     MidiOut();
     ~MidiOut();
     
+    typedef struct TRawEvent {
+        Event* gate = nullptr;
+        Event* note = nullptr;
+    } RawEvent;
+
+    RawEvent* raw = nullptr;
+    
     void paint (juce::Graphics& g) override;
+
+    void message(juce::MidiMessage* message);
+    void setNote(int note);
+    void gate(bool on, int note, int velocity);
+    void setDeviceManager(juce::AudioDeviceManager* manager);
     void eventReceived(Event* e) override;
-    void configurePins() override;
-    
-    // Properties support
-    juce::Array<juce::PropertyComponent*>& getProperties() override;
-    void createProperties();
-    
-    // MIDI device management
-    void updateAvailableDevices();
-    void setSelectedMidiOutput(int deviceIndex);
-    int getSelectedMidiOutput() const { return selectedMidiOutputIndex; }
-    juce::StringArray getAvailableMidiOutputs() const { return availableOutputs; }
-    
-    // MIDI channel management
-    void setMidiChannel(int channel);
-    int getMidiChannel() const { return midiChannel; }
+    virtual void configurePins() override;
     
     virtual juce::String getCategory() override {
         return "MIDI";
     }
     
 private:
-    // MIDI message sending
-    void sendMidiMessage(const juce::MidiMessage& message);
-    
-    // Event type handlers
-    void handleGateEvent(Event* e);
-    void handleNoteEvent(Event* e);
-    void handleControllerEvent(Event* e);
-    void handlePitchEvent(Event* e);
-    void handleClockEvent(Event* e);
-    
-    // Device management
     juce::AudioDeviceManager* deviceManager;
-    juce::StringArray availableOutputs;
-    int selectedMidiOutputIndex = 0;
-    std::unique_ptr<juce::MidiOutput> currentMidiOutput;
-    
-    // MIDI state
-    int midiChannel = 1;
-    bool isActive = false;
-    
-    // Properties
-    juce::Array<juce::PropertyComponent*> properties;
-    
-    // Device selection property
-    juce::Value* deviceValue = nullptr;
-    struct DeviceListener : juce::Value::Listener {
-        DeviceListener(juce::Value& v, MidiOut* m) : owner(m), value(v) {
-            value.addListener(this);
-        }
-        ~DeviceListener() = default;
-        
-        void valueChanged(juce::Value& value) override {
-            owner->setSelectedMidiOutput(value.toString().getIntValue());
-        }
-        
-        MidiOut* owner;
-        juce::Value value;
-    };
-    DeviceListener* deviceListener = nullptr;
-    juce::PropertyComponent* deviceProp = nullptr;
-    
-    // Channel selection property
-    juce::Value* channelValue = nullptr;
-    struct ChannelListener : juce::Value::Listener {
-        ChannelListener(juce::Value& v, MidiOut* m) : owner(m), value(v) {
-            value.addListener(this);
-        }
-        ~ChannelListener() = default;
-        
-        void valueChanged(juce::Value& value) override {
-            owner->setMidiChannel(value.toString().getIntValue());
-        }
-        
-        MidiOut* owner;
-        juce::Value value;
-    };
-    ChannelListener* channelListener = nullptr;
-    juce::PropertyComponent* channelProp = nullptr;
-    
+    int note = 0;
+    int velocity = 0;
+    bool gateOn = false;
+    bool eventComplete = false;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MidiOut)
 };
