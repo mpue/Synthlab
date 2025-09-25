@@ -868,8 +868,8 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addCommandItem(this, SynthEditor::CommandIds::SAVE);
 		menu.addItem(5, "Settings", true, false, nullptr);
 		menu.addItem(6, "Import Audio", true, false, nullptr);
+		menu.addItem(12, "Import MIDI", true, false, nullptr);
 		menu.addItem(7, "Play", true, false, nullptr);
-		menu.addItem(8, "Stop", true, false, nullptr);
 		PopupMenu samplesMenu = PopupMenu();
 
 		for (int i = 0; i < BinaryData::namedResourceListSize; i++) {
@@ -898,8 +898,10 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 	}
 	else if (index == 2) {
 
+#if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
 		if (pluginMenu != nullptr)
 			return *pluginMenu;
+#endif
 	}
 	else if (index == 3) {
 		menu.addCommandItem(this, SynthEditor::CommandIds::DUPLICATE);
@@ -932,6 +934,9 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	}
 	else if (menuItemID == 6) {
 		editorView->ImportAudio();
+	}
+	else if (menuItemID == 12) {
+		editorView->ImportMidi();
 	}
 	else if (menuItemID == 7) {
 		editorView->getNavigator()->setPlaying(true);
@@ -982,6 +987,15 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	{
 		if (editorView->getNavigator()->getCurrentTrack() != nullptr)
 			editorView->getNavigator()->getCurrentTrack()->addMidiRegion(48000, editorView->getNavigator()->getSamplePosition(), 480000);
+	}
+
+	else if (menuItemID == 12) {
+		// Implement the handler for Import MIDI
+		FileChooser chooser("Select a MIDI file to import...", File(), "*.mid");
+		if (chooser.browseForFileToOpen()) {
+			File midiFile = chooser.getResult();
+			// Add your MIDI import logic here
+		}
 	}
 
 	else if (menuItemID == 31) {

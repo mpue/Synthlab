@@ -33,6 +33,7 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
     void ImportAudio();
+    void ImportMidi();
     SynthEditor* getEditor();
     std::shared_ptr<MixerPanel> getMixerPanel();
     TrackNavigator* getNavigator();
@@ -42,6 +43,8 @@ public:
     virtual void changeListenerCallback (juce::ChangeBroadcaster* source) override;
     
 private:
+    
+    void importMidiFileToTrack(const juce::MidiFile& midiFile, Track* track);
     
     int bufferSize;
     float sampleRate;
