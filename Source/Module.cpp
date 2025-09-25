@@ -180,11 +180,7 @@ void Module::paint(Graphics& g)
     // 4. Icon zeichnen (Position anpassen für reduzierten Bereich)
     {
         int x = 28, y = 44, width = 64, height = 64;
-        g.setColour(Colours::black);
-        g.drawImageWithin(cachedImage_materialicons_301_viewmodule_64_0_ffffff_none_png_1,
-            x, y, width, height,
-            RectanglePlacement::centred,
-            false);
+        g.setColour(Colours::black);        
     }
 
     // 5. Pins zeichnen

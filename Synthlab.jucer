@@ -472,6 +472,10 @@
                 file="Source/TransportDisplayComponent.h"/>
         </GROUP>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
+          <FILE id="LSVhL9" name="EventDisplayModule.cpp" compile="1" resource="0"
+                file="Source/EventDisplayModule.cpp"/>
+          <FILE id="rOriUf" name="EventDisplayModule.h" compile="0" resource="0"
+                file="Source/EventDisplayModule.h"/>
           <FILE id="r2Ct45" name="MidiRecorderModule.cpp" compile="1" resource="0"
                 file="Source/MidiRecorderModule.cpp"/>
           <FILE id="Sn3FZe" name="MidiRecorderModule.h" compile="0" resource="0"
@@ -753,13 +757,14 @@
         <MODULEPATH id="juce_audio_basics" path="..\JUCE\modules"/>
       </MODULEPATHS>
     </VS2017>
-    <VS2022 targetFolder="Builds/VisualStudio2022" externalLibraries="librubberband.lib"
-            extraDefs="JUCE_MODAL_LOOPS_PERMITTED=1" smallIcon="Abg7RO" bigIcon="Abg7RO">
+    <VS2022 targetFolder="Builds/VisualStudio2022" extraDefs="JUCE_MODAL_LOOPS_PERMITTED=1"
+            smallIcon="Abg7RO" bigIcon="Abg7RO">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" headerPath="d:\devel\ASIOSDK2.3\common\&#10;d:\devel\VST_SDK3.7\"
                        libraryPath="d:/devel/Synthlab/lib/debug"/>
         <CONFIGURATION isDebug="0" name="Release" headerPath="d:\devel\ASIOSDK2.3\common\&#10;d:\devel\VST_SDK3.7\"
-                       libraryPath="d:/devel/Synthlab/lib/release/"/>
+                       libraryPath="d:/devel/Synthlab/lib/release/" useRuntimeLibDLL="0"
+                       multiProcessorCompilation="1" enableIncrementalLinking="1"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_audio_basics" path="D:\devel\JUCE8\modules"/>

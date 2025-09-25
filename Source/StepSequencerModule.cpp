@@ -44,7 +44,7 @@ void StepSequencerModule::configurePins() {
     
     Pin* p2 = new Pin(Pin::Type::EVENT);
     p2->direction = Pin::Direction::OUT;
-    p2->listeners.push_back(this);
+    // p2->listeners.push_back(this);
     p2->setName("G");
     
     addPin(Pin::Direction::IN,p1);

@@ -185,7 +185,8 @@ void PluginModule::processInternal(MidiBuffer* externalBuffer, int numSamples)
 
 		if (leftOut && rightOut)
 		{
-			// ERZWINGE die Zielgröße des Outputs
+			// force buffer size
+		
 			leftOut->setSize(1, numSamples, false, false, true);
 			rightOut->setSize(1, numSamples, false, false, true);
 
@@ -193,6 +194,7 @@ void PluginModule::processInternal(MidiBuffer* externalBuffer, int numSamples)
 			rightOut->copyFrom(0, 0, *audioBuffer, 1, 0, numSamples);
 
 			float gain = Decibels::decibelsToGain(bounceMode ? 6.0f : defaultGainDb);
+
 			leftOut->applyGain(gain);
 			rightOut->applyGain(gain);
 		}

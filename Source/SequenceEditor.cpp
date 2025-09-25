@@ -452,7 +452,8 @@ void SequenceEditor::triggerNextStep() {
                     
                     e->setValue(grid[currentStep][y].getVelocity());
                     e->setNote(grid[currentStep][y].getNote());
-                    
+					e->setMessage(MidiMessage::noteOn(1, grid[currentStep][y].getNote(), (float)grid[currentStep][y].getVelocity() / 127.0f));
+
                     if (output != nullptr) {
                         
                         for (int i = 0; i < output->getConnections().size();i++) {
@@ -461,6 +462,11 @@ void SequenceEditor::triggerNextStep() {
                     }
                 }
                 e = new Event("gate off",Event::Type::GATE);
+
+                MidiMessage m = MidiMessage::noteOff(1, grid[currentStep][y].getNote());
+				m.setTimeStamp(m.getTimeStamp() + 100.0f);
+
+				e->setMessage(m);
                 e->setValue(0);
                 
                 
@@ -484,14 +490,10 @@ void SequenceEditor::triggerNextStep() {
     };
     juce::MessageManager::callAsync(async);
     
-
-    
     std::function<void(void)> changeLambda =
     [=]() {  content->repaint(); };
     juce::MessageManager::callAsync(changeLambda);
     
-
-
 }
 
 uint8* SequenceEditor::getConfiguration() {

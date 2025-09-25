@@ -100,6 +100,8 @@ public:
 		ChangeBroadcaster::addChangeListener(listener);
 	}
 
+	void allNotesOff();
+
 	void timerCallback() override;
 
 	ValueTree getConfiguration();

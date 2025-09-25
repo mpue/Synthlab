@@ -104,7 +104,7 @@ void MidiProcessor::processMidiMessage(const juce::MidiMessage& msg)
 	}
 
 	//------------------------------------------------------------------
-	// 3.  CONTROLLER / PITCH / CLOCK / START / STOP  (unverändert)
+	// 3.  CONTROLLER / PITCH / CLOCK / START / STOP  
 	//------------------------------------------------------------------
 	if (msg.isController())
 		for (auto* mod : *modules)

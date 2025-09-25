@@ -20,10 +20,13 @@
 #include "../Module.h"
 #include "../CustomLookAndFeel.h"
 
+
 #include <vector>
 #include <map>
 
 using namespace std;
+
+class MidiProcessor;
 
 class Project : public ChangeBroadcaster {
     
@@ -116,7 +119,7 @@ public:
     
     // TODO: where should this be set???
     double getSampleRate() {
-        return 44100;
+		return this->getAudioDeviceManager()->getCurrentAudioDevice()->getCurrentSampleRate(); 
     }
     
     void setBufferSize(int bufferSize) {
@@ -229,6 +232,13 @@ public:
     static int  DEFAULT_TRACK_HEIGHT;
     static float DEFAULT_TEMPO;
    
+    void setMidiProcessor(MidiProcessor* processor) {
+        this->midiProcessor = processor;
+	}
+
+    MidiProcessor* getMidiProcessor() {
+        return this->midiProcessor;
+	}
     
 protected:
     Project() {
@@ -280,14 +290,14 @@ protected:
     Sampler* defaultSampler = nullptr;
     Module* root = nullptr;
     AppMode mode = STUDIO;
-    
+	MidiProcessor* midiProcessor = nullptr;
+
     String currentFilePath;
     String currentFileName;
     bool newFile = true;
     bool dirty = false;
     
-    int tolerance = 1;
-    
+    int tolerance = 1;   
 
     String name;
     long tracklength;

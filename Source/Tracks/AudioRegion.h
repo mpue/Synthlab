@@ -15,7 +15,7 @@
 #include "../MultiComponentDragger.h"
 #include "../ResizeConstrainer.h"
 #include "Region.h"
-#include "../rubberband/RubberBandStretcher.h"
+
 
 //==============================================================================
 /*
@@ -103,8 +103,6 @@ private:
     // reference to original file
     String clipRefId;
     float pitch = 1.0f;
-
-    RubberBand::RubberBandStretcher* stretcher = nullptr;
 
     PitchListener* pitchListener;
     juce::Value* pitchValue;

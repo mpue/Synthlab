@@ -200,7 +200,6 @@ AudioRegion::~AudioRegion()
     // delete this->resizerL;
     delete this->resizerR;
     delete this->constrainer;
-    delete this->stretcher;   
 }
 
 void AudioRegion::timerCallback() {
@@ -447,16 +446,6 @@ void AudioRegion::setPitch(float pitch) {
     }
 
     this->pitch = pitch;
-
-    if (stretcher == nullptr) {
-        stretcher = new RubberBand::RubberBandStretcher(Project::getInstance()->getSampleRate(), 2, RubberBand::RubberBandStretcher::OptionProcessRealTime);
-    }
-    stretcher->setPitchScale(this->pitch);
-    // stretcher->setTimeRatio(this->pitch);
-
-    stretcher->reset();
-    stretcher->process(audioBuffer->getArrayOfReadPointers(), audioBuffer->getNumSamples(), true);
-    stretcher->retrieve(audioBuffer->getArrayOfWritePointers(), audioBuffer->getNumSamples());
     
     this->thumbnail->reset(2, sampleRate);
     this->thumbnail->addBlock(0, *audioBuffer, 0, audioBuffer->getNumSamples());

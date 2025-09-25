@@ -59,6 +59,7 @@
 #include "CompareModule.h"
 #include "TrackIn.h"
 #include "MidiRecorderModule.h"
+#include "EventDisplayModule.h"
 
 
 using juce::Image;
@@ -250,6 +251,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     else if (prefabs[id].getName() == "Midi Recorder") {
 		m = new MidiRecorderModule();
 	}
+    else if (prefabs[id].getName() == "Event Display") {
+        m = new EventDisplayModule(sampleRate, bufferSize);
+    }
 
 
     if (m != nullptr) {

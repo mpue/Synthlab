@@ -21,6 +21,7 @@
 #include "../PianoRollComponent.h"
 #include "../MidiRegionEventEditor.h"
 #include "../PluginModule.h"
+#include "../MidiProcessor.h"
 
 using namespace std;
 
@@ -107,6 +108,19 @@ void TrackNavigator::clearTracks() {
 
 void TrackNavigator::eventReceived(Event* e)
 {
+}
+
+void TrackNavigator::allNotesOff() {
+	for (int i = 0; i < Project::getInstance()->getRoot()->getModules()->size(); i++) {
+
+		for (int j = 0; j < 16; j++) {
+			Project::getInstance()->getMidiProcessor()->sendMidiStopMessage(Project::getInstance()->getRoot()->getModules()->at(i), j);
+
+			for (int k = 0; k < 128; k++) {
+				Project::getInstance()->getMidiProcessor()->sendGateMessage(Project::getInstance()->getRoot()->getModules()->at(i), j, 0, k, false);
+			}
+		}
+	}
 }
 
 float TrackNavigator::getZoom()
@@ -835,6 +849,10 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 
 	int x = event.x + scrollbarOffset;
 	int y = event.y;
+
+	if (isPlaying()) {
+		allNotesOff();
+	}
 
 	if (!event.mods.isCtrlDown() && event.mods.isRightButtonDown()) {
 		int width = getWidth();

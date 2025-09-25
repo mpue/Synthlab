@@ -110,6 +110,7 @@ MainComponent::MainComponent() : resizerBar(&stretchableManager, 1, true)
 
 	midiProcessor = new MidiProcessor(editor, &deviceManager);
 	midiProcessor->enableAllMidiInputs();
+	Project::getInstance()->setMidiProcessor(midiProcessor);
 
 	// addMouseListener(this, true);
 	editor->addKeyListener(getKeyMappings());
@@ -1174,6 +1175,7 @@ void MainComponent::buttonClicked(Button* b)
 		}
 		else if (tb->getItemId() == toolbarFactory->doc_new) {
 			Project::getInstance()->setNewFile(true);
+			navigator->clearTracks();
 			editor->setRunning(false);
 			editor->cleanUp();
 			editor->newFile();
@@ -1218,31 +1220,26 @@ void MainComponent::buttonClicked(Button* b)
 				if (navigator->isPlaying() || navigator->isRecording()) {
 					navigator->setPlaying(false);
 					navigator->setRecording(false);
-
-					// Iterate through all modules of the editor and if it's a MIDI Gate,
-					// send a note off message to all channels
-
 					for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
-						Module* module = editor->getModule()->getModules()->at(i);
-						MidiGate* gate = dynamic_cast<MidiGate*>(module);
-						if (gate != nullptr) {
-							for (int j = 0; j < 128; j++) {
-								gate->gateOff(j);
+
+						for (int j = 0; j < 16; j++) {
+							midiProcessor->sendMidiStopMessage(editor->getModule()->getModules()->at(i), j);
+
+							for (int k = 0; k < 128; k++) {
+								midiProcessor->sendGateMessage(editor->getModule()->getModules()->at(i), j, 0, k, false);
 							}
+						}
+
+						PluginModule* module = nullptr;
+
+						if ((module = dynamic_cast<PluginModule*>(editor->getModule()->getModules()->at(i))) != nullptr) {					
+							module->getPlayHead().setPlaying(false);
+							module->getPlayHead().setRecording(false);
 						}
 					}
 				}
 				else {
 					navigator->ResetMarkerPosition();
-				}
-			}
-			for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
-
-				PluginModule* module = nullptr;
-
-				if ((module = dynamic_cast<PluginModule*>(editor->getModule()->getModules()->at(i))) != nullptr) {					
-					module->getPlayHead().setPlaying(false);
-					module->getPlayHead().setRecording(false);
 				}
 			}
 
