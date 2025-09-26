@@ -46,7 +46,7 @@ public:
 	juce::String getCategory() override { return "MIDI"; }
 
 	// Mouse handling for context menu
-	void mouseDown(const juce::MouseEvent& e) override;
+	// void mouseDown(const juce::MouseEvent& e) override;
 
 private:
 
