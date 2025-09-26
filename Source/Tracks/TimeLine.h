@@ -42,6 +42,13 @@ public:
 
     double snapToQuarterBeat(double time) const;
     double getQuarterBeatDuration() const;
+    
+    // Buffer alignment functions
+    double snapToBufferBoundary(double time) const;
+    double getBufferDurationInSeconds() const;
+    int getCurrentBufferSize() const;
+    double getCurrentSampleRate() const;
+    double getMinLoopDuration() const;
 
     // Callback für Loop-Änderungen
     std::function<void(double, double, bool)> onLoopChanged;
