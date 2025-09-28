@@ -205,7 +205,7 @@ void Module::paint(Graphics& g)
         if (pins.at(i)->direction == Pin::Direction::IN) {
             g.drawEllipse(pins.at(i)->x, pins.at(i)->y, 10, 10, 1);
             g.fillEllipse(pins.at(i)->x + 2, pins.at(i)->y + 2, 6, 6);
-            g.drawText(pins.at(i)->getName(), pins.at(i)->x + 12, pins.at(i)->y, 10, 10, juce::Justification::left);
+            g.drawText(pins.at(i)->getName(), pins.at(i)->x + 12, pins.at(i)->y, 20, 10, juce::Justification::left);
         }
         else {
             g.drawEllipse(pins.at(i)->x, pins.at(i)->y, 10, 10, 1);

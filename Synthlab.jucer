@@ -280,6 +280,8 @@
               file="Source/Actions/RemoveSelectedAction.h"/>
       </GROUP>
       <GROUP id="{A79C9093-D329-37A0-AEE1-CF7BDC5C60DE}" name="AudioEngine">
+        <FILE id="o9JJ69" name="Compressor.cpp" compile="1" resource="0" file="Source/AudioEngine/Compressor.cpp"/>
+        <FILE id="hbCowv" name="Compressor.h" compile="0" resource="0" file="Source/AudioEngine/Compressor.h"/>
         <FILE id="sy0PFp" name="OfflinePlayHead.h" compile="0" resource="0"
               file="Source/AudioEngine/OfflinePlayHead.h"/>
         <FILE id="bSIaiX" name="SmartSample.h" compile="0" resource="0" file="Source/AudioEngine/SmartSample.h"/>
@@ -472,6 +474,14 @@
                 file="Source/TransportDisplayComponent.h"/>
         </GROUP>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
+          <FILE id="WRllnv" name="CompressorModule.cpp" compile="1" resource="0"
+                file="Source/CompressorModule.cpp"/>
+          <FILE id="ecKvvn" name="CompressorModule.h" compile="0" resource="0"
+                file="Source/CompressorModule.h"/>
+          <FILE id="xCndwf" name="ThreeBandEQModule.cpp" compile="1" resource="0"
+                file="Source/ThreeBandEQModule.cpp"/>
+          <FILE id="zJUnij" name="ThreeBandEQModule.h" compile="0" resource="0"
+                file="Source/ThreeBandEQModule.h"/>
           <FILE id="LSVhL9" name="EventDisplayModule.cpp" compile="1" resource="0"
                 file="Source/EventDisplayModule.cpp"/>
           <FILE id="rOriUf" name="EventDisplayModule.h" compile="0" resource="0"

@@ -103,6 +103,8 @@ private:
     TrackNavigator* navigator = nullptr;
 
     PrefabFactory() {
+        prefabs[45] = Prefab("Event Display","Debug");
+		prefabs[46] = Prefab("3-Band EQ", "Audio");
         prefabs[47] = Prefab("Midi Recorder", "MIDI");
         prefabs[48] = Prefab("Track In", "Input / Output");
         prefabs[49] = Prefab("Compare", "Math");
@@ -155,8 +157,9 @@ private:
         prefabs[96] = Prefab("And","Logic");
         prefabs[97] = Prefab("Or","Logic");
         prefabs[98] = Prefab("Not","Logic");
-        prefabs[99] = Prefab("Event Display","Debug");
         
+        prefabImages[45] = juce::ImageCache::getFromMemory(BinaryData::display_png, BinaryData::display_pngSize);
+        prefabImages[46] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[47] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[48] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);        
         prefabImages[49] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
@@ -209,7 +212,6 @@ private:
         prefabImages[96] = juce::ImageCache::getFromMemory(BinaryData::logic_and_png, BinaryData::logic_and_pngSize);
         prefabImages[97] = juce::ImageCache::getFromMemory(BinaryData::logic_or_png, BinaryData::logic_or_pngSize);
         prefabImages[98] = juce::ImageCache::getFromMemory(BinaryData::logic_not_png, BinaryData::logic_not_pngSize);
-        prefabImages[99] = juce::ImageCache::getFromMemory(BinaryData::display_png, BinaryData::display_pngSize);
         
         categories = new juce::StringArray();
 
