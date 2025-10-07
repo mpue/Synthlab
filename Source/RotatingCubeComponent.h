@@ -15,8 +15,8 @@ public:
 	}
 
 	RotatingCubeComponent(GeometryModule* m)
-	{		
-		this->module = m;		
+	{
+		this->module = m;
 		setSize(800, 600);
 	}
 
@@ -33,8 +33,17 @@ public:
 	virtual void changeListenerCallback(juce::ChangeBroadcaster* source) override
 	{
 		if (source == static_cast<juce::ChangeBroadcaster*>(module)) {
+			setModule(module);
 			bindBufferData();
 		}
+	}
+
+	void setModule(GeometryModule* m) {
+		if (module != nullptr) {
+			module->removeChangeListener(this);
+		}
+		this->module = m;
+		module->addChangeListener(this);
 	}
 
 	void initShaders() {
@@ -85,6 +94,10 @@ public:
 		float* vertices = module->getGeometry()->getVertices();
 		unsigned int* indices = module->getGeometry()->getIndices();
 
+		// Speichere die Anzahl der Indizes für das Rendering
+		numIndicesToDraw = module->getGeometry()->getNumIndices();
+		int numVertexFloats = module->getGeometry()->getNumVertices() * 6; // 6 floats pro Vertex (pos + color)
+
 		// VAO, VBO, EBO erstellen
 		openGLContext.extensions.glGenVertexArrays(1, &VAO);
 		openGLContext.extensions.glGenBuffers(1, &VBO);
@@ -93,10 +106,10 @@ public:
 		openGLContext.extensions.glBindVertexArray(VAO);
 
 		openGLContext.extensions.glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		openGLContext.extensions.glBufferData(GL_ARRAY_BUFFER, 48 * sizeof(float), vertices, GL_STATIC_DRAW);
+		openGLContext.extensions.glBufferData(GL_ARRAY_BUFFER, numVertexFloats * sizeof(float), vertices, GL_STATIC_DRAW);
 
 		openGLContext.extensions.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-		openGLContext.extensions.glBufferData(GL_ELEMENT_ARRAY_BUFFER, 36, indices, GL_STATIC_DRAW);
+		openGLContext.extensions.glBufferData(GL_ELEMENT_ARRAY_BUFFER, numIndicesToDraw * sizeof(unsigned int), indices, GL_STATIC_DRAW);
 
 		// Position-Attribut
 		openGLContext.extensions.glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
@@ -181,9 +194,9 @@ public:
 		GLint modelLoc = openGLContext.extensions.glGetUniformLocation(shader->getProgramID(), "model");
 		openGLContext.extensions.glUniformMatrix4fv(modelLoc, 1, GL_FALSE, model.mat);
 
-		// Würfel zeichnen
+		// Geometrie mit korrekter Index-Anzahl zeichnen
 		openGLContext.extensions.glBindVertexArray(VAO);
-		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, numIndicesToDraw, GL_UNSIGNED_INT, 0);
 		openGLContext.extensions.glBindVertexArray(0);
 	}
 
@@ -229,6 +242,7 @@ private:
 	Vector3D<float> scale = { 1.0f, 1.0f, 1.0f };
 
 	GeometryModule* module = nullptr;
+	int numIndicesToDraw = 0;  // Speichert die Anzahl der zu zeichnenden Indizes
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RotatingCubeComponent)
 };

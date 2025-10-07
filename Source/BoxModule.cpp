@@ -49,7 +49,7 @@ BoxModule::BoxModule()
         4, 5, 1,  1, 0, 4
     };
 
-	box = new Geometry(vertices, indices);
+	box = new Geometry(vertices, indices, 48,36);
 }
 
 BoxModule::~BoxModule()
@@ -58,7 +58,16 @@ BoxModule::~BoxModule()
 
 void BoxModule::paint(juce::Graphics& g)
 {
-	Module::paint(g);
+    Module::paint(g);
+
+    g.setColour(juce::Colours::white);
+    g.setFont(12);
+    g.drawText("Box", 10, getHeight() / 2 - 10, 100, 20, juce::Justification::centred);
+
+	// paint a a stylized box shape
+
+    g.setColour(juce::Colours::darkgrey);
+	g.drawRect(40, 40, getWidth() - 40, getHeight() - 60, 2);
 }
 
 void BoxModule::process()

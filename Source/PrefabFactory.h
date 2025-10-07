@@ -103,6 +103,7 @@ private:
     TrackNavigator* navigator = nullptr;
 
     PrefabFactory() {
+        prefabs[40] = Prefab("Donut", "Graphics");
         prefabs[41] = Prefab("Box", "Graphics");
         prefabs[42] = Prefab("Magnitude", "Audio");
         prefabs[43] = Prefab("Geometry", "Graphics");
