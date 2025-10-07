@@ -103,6 +103,8 @@ private:
     TrackNavigator* navigator = nullptr;
 
     PrefabFactory() {
+        prefabs[43] = Prefab("Geometry", "Graphics");
+        prefabs[44] = Prefab("Vector", "Math");
         prefabs[45] = Prefab("Event Display","Debug");
 		prefabs[46] = Prefab("3-Band EQ", "Audio");
         prefabs[47] = Prefab("Midi Recorder", "MIDI");
@@ -218,6 +220,7 @@ private:
         categories->add("Audio");
         categories->add("Controls");
         categories->add("Filter");
+        categories->add("Graphics");
         categories->add("Logic");
         categories->add("Math");
         categories->add("Input / Output");

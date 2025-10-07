@@ -883,7 +883,9 @@ bool ModuleUtils::connectModules(Module* source, Module* target, int pin) {
 	case Terminal::AUDIO:
 		return connectModuleAudio(source, target, pin);
 		break;
-
+	case Terminal::VECTOR:
+		return connectModuleVectors(source, target, pin);
+		break;
 	default:
 		return false;
 		break;
@@ -942,6 +944,28 @@ bool ModuleUtils::connectModuleEvents(Module* source, Module* target, int pin)
 		if (Terminal::EVENT == publisher->getType() && Terminal::Direction::OUT == publisher->getDirection())
 		{
 			publisher->getConnections().push_back(subscriber);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool ModuleUtils::connectModuleVectors(Module* source, Module* target, int inputPin)
+{
+	if (Terminal::Direction::IN != target->getPins().at(inputPin)->getDirection())
+	{
+		return false;
+	}
+
+	// Suche nach einem VECTOR Output Pin am Source-Modul
+	for (int i = 0; i < source->getPins().size(); i++)
+	{
+		Pin* sourcePin = source->getPins().at(i);
+
+		if (Terminal::VECTOR == sourcePin->getType() && Terminal::Direction::OUT == sourcePin->getDirection())
+		{
+			target->getPins().at(inputPin)->getConnections().push_back(sourcePin);
 			return true;
 		}
 	}

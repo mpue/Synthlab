@@ -40,6 +40,8 @@
 #include "AudioRecorderEditor.h"
 #include "PluginSelectorDialog.h"
 #include "TrackUtil.h"
+#include "RotatingCubeComponent.h"
+#include "GeometryModule.h"
 
 class SampleEditor;
 
@@ -251,7 +253,7 @@ void SynthEditor::mouseDown(const MouseEvent& e)
 	selectionModel.deselectAllPins();
 	selectionModel.checkForConnectionSelect(e.getPosition());
 
-	// has HitModule ?
+	// has Hit Module ?
 
 	state = selectionModel.checkForHitAndSelect(e.getPosition(), isLeftShiftDown);
 
@@ -485,6 +487,39 @@ void SynthEditor::mouseDoubleClick(const MouseEvent& e)
 
 				if (arm != NULL) {
 					openRecorder(arm);
+				}
+
+				GeometryModule* gm = dynamic_cast<GeometryModule*>(m);
+
+				if (gm != NULL) {
+
+					class GeometryWindow : public juce::DialogWindow {
+
+					public:
+
+						GeometryWindow() : juce::DialogWindow("Geometry", juce::Colours::darkgrey, true) {
+							setUsingNativeTitleBar(true);
+						}
+
+						void closeButtonPressed() override {
+							setVisible(false);
+							exitModalState(0);
+							delete this;
+						}
+
+					};
+
+					std::unique_ptr<RotatingCubeComponent> rcc = std::make_unique<RotatingCubeComponent>(gm);
+					rcc->setOpaque(false);
+					rcc->startTimer(30);	
+					auto* window = new GeometryWindow();
+					window->setContentOwned(rcc.release(), true);
+					window->centreWithSize(800, 600);
+					window->setVisible(true);			
+					window->setAlwaysOnTop(true);
+
+					Project::getInstance()->getOpenWindows().push_back(window);
+					
 				}
 
 			}

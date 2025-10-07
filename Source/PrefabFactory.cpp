@@ -61,7 +61,8 @@
 #include "TrackIn.h"
 #include "MidiRecorderModule.h"
 #include "EventDisplayModule.h"
-
+#include "VectorModule.h"
+#include "GeometryModule.h"
 
 using juce::Image;
 
@@ -74,7 +75,12 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     if (id == 0) {
         return m;
     }
-    
+    if (prefabs[id].getName() == "Geometry") {
+        m = new GeometryModule();
+    }
+    if (prefabs[id].getName() == "Vector") {
+        m = new VectorModule();
+    }
     if (prefabs[id].getName() == "Add signal") {
         m = new AdderModule(bufferSize);
     }

@@ -22,7 +22,9 @@ public:
     typedef enum TType {
         AUDIO,
         EVENT,
-        VALUE
+        VALUE, 
+        MATRIX,
+        VECTOR
     } Type;
     
     virtual Type getType() {

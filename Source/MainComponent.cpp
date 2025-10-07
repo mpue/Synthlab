@@ -32,6 +32,7 @@
 #include "Tracks/BounceThread.h"
 #include "ChatGPTInterface.h"
 
+
 using juce::String;
 using juce::File;
 using juce::MenuBarComponent;
@@ -194,7 +195,7 @@ MainComponent::~MainComponent()
 	Project::getInstance()->destroy();
 
 	// This shuts down the audio device and clears the audio source.
-
+	rotatingCube = nullptr;
 }
 
 void MainComponent::createMenu() {

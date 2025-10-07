@@ -51,6 +51,9 @@ public:
     float getValue();
     void setValue(float value);
     
+	juce::Vector3D<float> getVector3D();
+    void setVector3D(juce::Vector3D<float> vec);
+
     int getNote();
     void setNote(int note);
                 
@@ -97,4 +100,5 @@ private:
     std::vector<Pin*> connections;
     juce::AudioSampleBuffer* audioBuffer = nullptr;
     String description = "";
+    juce::Vector3D<float> vector3D = { 0.0f, 0.0f, 0.0f };
 };

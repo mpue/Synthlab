@@ -195,6 +195,12 @@ void Module::paint(Graphics& g)
             else if (pins.at(i)->getType() == Pin::Type::VALUE) {
                 g.setColour(juce::Colours::yellow);
             }
+            else if (pins.at(i)->getType() == Pin::Type::MATRIX) {
+                g.setColour(juce::Colours::green);
+            }
+            else if (pins.at(i)->getType() == Pin::Type::VECTOR) {
+                g.setColour(juce::Colours::violet);
+            }
             else {
                 g.setColour(juce::Colours::lightblue);
             }

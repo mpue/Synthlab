@@ -272,9 +272,8 @@ void SamplerModule::selectSample(int i) {
 	currentSampler = i;
 
 	if (sampler[currentSampler] == nullptr) {
-		Sampler* sampler = new Sampler(sampleRate, buffersize);
-		sampler->setVolume(0.5f);
-		this->sampler[i] = sampler;
+		sampler[currentSampler] = new Sampler(sampleRate, buffersize);
+		sampler[currentSampler]->setVolume(0.5f);		
 	}
 
 	this->thumbnail->reset(2, sampleRate);

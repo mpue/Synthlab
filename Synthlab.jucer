@@ -445,6 +445,8 @@
           <FILE id="wdEhY6" name="PropertyView.cpp" compile="1" resource="0"
                 file="Source/PropertyView.cpp"/>
           <FILE id="yeeY5O" name="PropertyView.h" compile="0" resource="0" file="Source/PropertyView.h"/>
+          <FILE id="LKbJzG" name="RotatingCubeComponent.h" compile="0" resource="0"
+                file="Source/RotatingCubeComponent.h"/>
           <FILE id="fWNKSv" name="SampleEditor.cpp" compile="1" resource="0"
                 file="Source/SampleEditor.cpp"/>
           <FILE id="NDciKQ" name="SampleEditor.h" compile="0" resource="0" file="Source/SampleEditor.h"/>
@@ -474,6 +476,13 @@
                 file="Source/TransportDisplayComponent.h"/>
         </GROUP>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
+          <FILE id="rKHtv9" name="GeometryModule.cpp" compile="1" resource="0"
+                file="Source/GeometryModule.cpp"/>
+          <FILE id="s3uFmu" name="GeometryModule.h" compile="0" resource="0"
+                file="Source/GeometryModule.h"/>
+          <FILE id="yTZt2v" name="VectorModule.cpp" compile="1" resource="0"
+                file="Source/VectorModule.cpp"/>
+          <FILE id="XcbulC" name="VectorModule.h" compile="0" resource="0" file="Source/VectorModule.h"/>
           <FILE id="WRllnv" name="CompressorModule.cpp" compile="1" resource="0"
                 file="Source/CompressorModule.cpp"/>
           <FILE id="ecKvvn" name="CompressorModule.h" compile="0" resource="0"

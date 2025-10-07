@@ -119,6 +119,8 @@ private:
     
     static bool connectModuleEvents(Module* source, Module* target, int pin);
  
+    static bool connectModuleVectors(Module* source, Module* target, int inputPin);
+
 };
  
 template<typename T>
