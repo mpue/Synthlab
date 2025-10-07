@@ -15,6 +15,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "AudioEngine/AudioProcessorModule.h"
 #include "Terminal.h"
+#include "Graphics/Geometry.h"
 
 class Pin : public juce::ChangeBroadcaster,
             public AudioProcessorModule,
@@ -53,6 +54,11 @@ public:
     
 	juce::Vector3D<float> getVector3D();
     void setVector3D(juce::Vector3D<float> vec);
+
+	Geometry* getGeometry();
+    void setGeometry(Geometry* geometry) {
+        this->geometry = geometry;
+	}
 
     int getNote();
     void setNote(int note);
@@ -101,4 +107,5 @@ private:
     juce::AudioSampleBuffer* audioBuffer = nullptr;
     String description = "";
     juce::Vector3D<float> vector3D = { 0.0f, 0.0f, 0.0f };
+	Geometry* geometry = nullptr;
 };

@@ -24,7 +24,8 @@ public:
         EVENT,
         VALUE, 
         MATRIX,
-        VECTOR
+        VECTOR,
+        GEOMETRY
     } Type;
     
     virtual Type getType() {

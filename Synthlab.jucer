@@ -117,6 +117,9 @@
       <FILE id="EJ4uon" name="whitenoise.png" compile="0" resource="1" file="Images/whitenoise.png"/>
     </GROUP>
     <GROUP id="{CA20D122-1EA5-3A93-F1F8-F6EE53DA457E}" name="Source">
+      <GROUP id="{1D219B94-DA83-5D9F-1D7A-529084FE64DE}" name="Graphics">
+        <FILE id="LJWlY8" name="Geometry.h" compile="0" resource="0" file="Source/Graphics/Geometry.h"/>
+      </GROUP>
       <FILE id="ikAg2P" name="SynthlabAudioProcessor.cpp" compile="1" resource="0"
             file="Source/SynthlabAudioProcessor.cpp"/>
       <FILE id="Diry2g" name="SynthlabAudioProcessor.h" compile="0" resource="0"
@@ -476,6 +479,8 @@
                 file="Source/TransportDisplayComponent.h"/>
         </GROUP>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
+          <FILE id="I3xCqW" name="BoxModule.cpp" compile="1" resource="0" file="Source/BoxModule.cpp"/>
+          <FILE id="Pxlpf9" name="BoxModule.h" compile="0" resource="0" file="Source/BoxModule.h"/>
           <FILE id="nFBtm9" name="MagnitudeModule.cpp" compile="1" resource="0"
                 file="Source/MagnitudeModule.cpp"/>
           <FILE id="Rlp0pU" name="MagnitudeModule.h" compile="0" resource="0"

@@ -121,6 +121,7 @@ private:
  
     static bool connectModuleVectors(Module* source, Module* target, int inputPin);
 
+    static bool connectModuleGeometry(Module* source, Module* target, int inputPin);
 };
  
 template<typename T>

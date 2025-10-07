@@ -9,9 +9,10 @@
 */
 
 #include "GeometryModule.h"
+#include "Graphics/Geometry.h"
 
 GeometryModule::GeometryModule()
-{
+{    
     setSize(120, 140);
     nameLabel->setJustificationType(Justification::left);
     nameLabel->setTopLeftPosition(18, 2);
@@ -41,6 +42,12 @@ void GeometryModule::process()
     if (pins.at(2)->getConnections().size() == 1) {
         rotate = pins.at(2)->getConnections().at(0)->getVector3D();
     }
+    if (pins.at(3)->getConnections().size() == 1) {
+		if (geometry != pins.at(3)->getConnections().at(0)->getGeometry()) {
+            geometry = pins.at(3)->getConnections().at(0)->getGeometry();
+			juce::ChangeBroadcaster::sendChangeMessage();
+        }
+	}
 
 }
 
@@ -58,10 +65,14 @@ void GeometryModule::configurePins()
     p3->direction = Pin::Direction::IN;
     p3->setName("S");    
 
+    Pin* p4 = new Pin(Pin::Type::GEOMETRY);
+    p4->direction = Pin::Direction::IN;
+    p4->setName("Geom");
+
     addPin(p1->direction, p1);
     addPin(p2->direction, p2);
     addPin(p3->direction, p3);
-
+    addPin(p4->direction, p4);
 }
 
 

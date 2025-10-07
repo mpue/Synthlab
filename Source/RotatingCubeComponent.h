@@ -3,35 +3,43 @@
 #include <JuceHeader.h>
 #include "GeometryModule.h"
 
+using namespace juce;
 using namespace juce::gl;
-class RotatingCubeComponent : public juce::OpenGLAppComponent, public Timer
+
+class RotatingCubeComponent : public juce::OpenGLAppComponent, public juce::Timer, public juce::ChangeListener
 {
 public:
 
-    RotatingCubeComponent() {
-        setSize(800, 600);
-    }
-
-    RotatingCubeComponent(GeometryModule* m)
-    {
-        this->module = m;
-        setSize(800, 600);
-    }
-
-    ~RotatingCubeComponent() override
-    {
-        shutdownOpenGL();
-    }
-
-    void timerCallback() override
-    {
-        updateRotation();        
+	RotatingCubeComponent() {
+		setSize(800, 600);
 	}
 
-    void initialise() override
-    {
-        // Shader-Source-Code
-        const char* vertexShader = R"(
+	RotatingCubeComponent(GeometryModule* m)
+	{		
+		this->module = m;		
+		setSize(800, 600);
+	}
+
+	~RotatingCubeComponent() override
+	{
+		shutdownOpenGL();
+	}
+
+	void timerCallback() override
+	{
+		updateRotation();
+	}
+
+	virtual void changeListenerCallback(juce::ChangeBroadcaster* source) override
+	{
+		if (source == static_cast<juce::ChangeBroadcaster*>(module)) {
+			bindBufferData();
+		}
+	}
+
+	void initShaders() {
+		// Shader-Source-Code
+		const char* vertexShader = R"(
             #version 330 core
             layout (location = 0) in vec3 position;
             layout (location = 1) in vec3 color;
@@ -49,7 +57,7 @@ public:
             }
         )";
 
-        const char* fragmentShader = R"(
+		const char* fragmentShader = R"(
             #version 330 core
             in vec3 fragColor;
             out vec4 color;
@@ -60,193 +68,167 @@ public:
             }
         )";
 
-        // Shader kompilieren
-        std::unique_ptr<juce::OpenGLShaderProgram> newShader(new juce::OpenGLShaderProgram(openGLContext));
+		// Shader kompilieren
+		std::unique_ptr<juce::OpenGLShaderProgram> newShader(new juce::OpenGLShaderProgram(openGLContext));
 
-        if (newShader->addVertexShader(vertexShader) &&
-            newShader->addFragmentShader(fragmentShader) &&
-            newShader->link())
-        {
-            shader.reset(newShader.release());
-            shader->use();
-        }
+		if (newShader->addVertexShader(vertexShader) &&
+			newShader->addFragmentShader(fragmentShader) &&
+			newShader->link())
+		{
+			shader.reset(newShader.release());
+			shader->use();
+		}
+	}
 
-        // Würfel-Vertices mit korrekter Zuordnung
-        // 8 Eckpunkte des Würfels
-        float vertices[] = {
-            // Position          // Farbe
-            // Vordere Seite (z = 0.5)
-            -0.5f, -0.5f,  0.5f,  1.0f, 0.0f, 0.0f,  // 0: Vorne-Unten-Links (Rot)
-             0.5f, -0.5f,  0.5f,  0.0f, 1.0f, 0.0f,  // 1: Vorne-Unten-Rechts (Grün)
-             0.5f,  0.5f,  0.5f,  0.0f, 0.0f, 1.0f,  // 2: Vorne-Oben-Rechts (Blau)
-            -0.5f,  0.5f,  0.5f,  1.0f, 1.0f, 0.0f,  // 3: Vorne-Oben-Links (Gelb)
+	void bindBufferData() {
 
-            // Hintere Seite (z = -0.5)
-            -0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 1.0f,  // 4: Hinten-Unten-Links (Magenta)
-             0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 1.0f,  // 5: Hinten-Unten-Rechts (Cyan)
-             0.5f,  0.5f, -0.5f,  1.0f, 1.0f, 1.0f,  // 6: Hinten-Oben-Rechts (Weiß)
-            -0.5f,  0.5f, -0.5f,  0.5f, 0.5f, 0.5f   // 7: Hinten-Oben-Links (Grau)
-        };
+		float* vertices = module->getGeometry()->getVertices();
+		unsigned int* indices = module->getGeometry()->getIndices();
 
-        // Korrigierte Indizes mit konsistenter Counter-Clockwise Wicklung
-        // (von außen betrachtet)
-        unsigned int indices[] = {
-            // Vordere Seite (z = 0.5)
-            0, 1, 2,  2, 3, 0,
+		// VAO, VBO, EBO erstellen
+		openGLContext.extensions.glGenVertexArrays(1, &VAO);
+		openGLContext.extensions.glGenBuffers(1, &VBO);
+		openGLContext.extensions.glGenBuffers(1, &EBO);
 
-            // Rechte Seite (x = 0.5)
-            1, 5, 6,  6, 2, 1,
+		openGLContext.extensions.glBindVertexArray(VAO);
 
-            // Hintere Seite (z = -0.5)
-            5, 4, 7,  7, 6, 5,
+		openGLContext.extensions.glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		openGLContext.extensions.glBufferData(GL_ARRAY_BUFFER, 48 * sizeof(float), vertices, GL_STATIC_DRAW);
 
-            // Linke Seite (x = -0.5)
-            4, 0, 3,  3, 7, 4,
+		openGLContext.extensions.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+		openGLContext.extensions.glBufferData(GL_ELEMENT_ARRAY_BUFFER, 36, indices, GL_STATIC_DRAW);
 
-            // Obere Seite (y = 0.5)
-            3, 2, 6,  6, 7, 3,
+		// Position-Attribut
+		openGLContext.extensions.glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+		openGLContext.extensions.glEnableVertexAttribArray(0);
 
-            // Untere Seite (y = -0.5)
-            4, 5, 1,  1, 0, 4
-        };
+		// Farb-Attribut
+		openGLContext.extensions.glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+		openGLContext.extensions.glEnableVertexAttribArray(1);
 
-        // VAO, VBO, EBO erstellen
-        openGLContext.extensions.glGenVertexArrays(1, &VAO);
-        openGLContext.extensions.glGenBuffers(1, &VBO);
-        openGLContext.extensions.glGenBuffers(1, &EBO);
+		openGLContext.extensions.glBindVertexArray(0);
 
-        openGLContext.extensions.glBindVertexArray(VAO);
+		// Depth-Test und Back-Face Culling aktivieren
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_BACK);
+		glFrontFace(GL_CCW);
 
-        openGLContext.extensions.glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        openGLContext.extensions.glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	}
 
-        openGLContext.extensions.glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-        openGLContext.extensions.glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	void initialise() override
+	{
+		initShaders();
+		bindBufferData();
+	}
 
-        // Position-Attribut
-        openGLContext.extensions.glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-        openGLContext.extensions.glEnableVertexAttribArray(0);
+	void shutdown() override
+	{
+		shader.reset();
+		openGLContext.extensions.glDeleteVertexArrays(1, &VAO);
+		openGLContext.extensions.glDeleteBuffers(1, &VBO);
+		openGLContext.extensions.glDeleteBuffers(1, &EBO);
+	}
 
-        // Farb-Attribut
-        openGLContext.extensions.glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-        openGLContext.extensions.glEnableVertexAttribArray(1);
+	void render() override
+	{
+		jassert(juce::OpenGLHelpers::isContextActive());
 
-        openGLContext.extensions.glBindVertexArray(0);
+		const float desktopScale = (float)openGLContext.getRenderingScale();
 
-        // Depth-Test und Back-Face Culling aktivieren
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
-        glCullFace(GL_BACK);
-        glFrontFace(GL_CCW);
-    }
+		// Depth Buffer und Color Buffer clearen
+		glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    void shutdown() override
-    {
-        shader.reset();
-        openGLContext.extensions.glDeleteVertexArrays(1, &VAO);
-        openGLContext.extensions.glDeleteBuffers(1, &VBO);
-        openGLContext.extensions.glDeleteBuffers(1, &EBO);
-    }
+		glViewport(0, 0, juce::roundToInt(desktopScale * getWidth()),
+			juce::roundToInt(desktopScale * getHeight()));
 
-    void render() override
-    {
-        jassert(juce::OpenGLHelpers::isContextActive());
+		if (shader == nullptr)
+			return;
 
-        const float desktopScale = (float)openGLContext.getRenderingScale();
+		shader->use();
 
-        // Depth Buffer und Color Buffer clearen
-        glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		// Matrizen erstellen
+		float aspect = getWidth() / (float)getHeight();
 
-        glViewport(0, 0, juce::roundToInt(desktopScale * getWidth()),
-            juce::roundToInt(desktopScale * getHeight()));
+		// Projection Matrix
+		juce::Matrix3D<float> projection = createPerspectiveMatrix(45.0f, aspect, 0.1f, 100.0f);
 
-        if (shader == nullptr)
-            return;
+		// View Matrix
+		juce::Matrix3D<float> view;
+		view = view * juce::Matrix3D<float>::fromTranslation({ 0.0f, 0.0f, -3.0f });
 
-        shader->use();
+		// Model Matrix (Rotation)
+		juce::Matrix3D<float> model;
+		model = model * juce::Matrix3D<float>::fromTranslation(translation) * juce::Matrix3D<float>::rotation(rotation);
 
-        // Matrizen erstellen
-        float aspect = getWidth() / (float)getHeight();
-
-        // Projection Matrix
-        juce::Matrix3D<float> projection = createPerspectiveMatrix(45.0f, aspect, 0.1f, 100.0f);
-
-        // View Matrix
-        juce::Matrix3D<float> view;
-        view = view * juce::Matrix3D<float>::fromTranslation({ 0.0f, 0.0f, -3.0f });
-
-        // Model Matrix (Rotation)
-        juce::Matrix3D<float> model;
-        model = model * juce::Matrix3D<float>::fromTranslation(translation) * juce::Matrix3D<float>::rotation(rotation);
-
-        Matrix3D<float> scaleMatrix(
-            scale.x, 0, 0, 0,
-            0, scale.y, 0, 0,
-            0, 0, scale.z, 0,
-            0, 0, 0, 1
-        );
+		Matrix3D<float> scaleMatrix(
+			scale.x, 0, 0, 0,
+			0, scale.y, 0, 0,
+			0, 0, scale.z, 0,
+			0, 0, 0, 1
+		);
 
 		model = model * scaleMatrix;
 
-        // Uniforms setzen
-        GLint projLoc = openGLContext.extensions.glGetUniformLocation(shader->getProgramID(), "projection");
-        openGLContext.extensions.glUniformMatrix4fv(projLoc, 1, GL_FALSE, projection.mat);
+		// Uniforms setzen
+		GLint projLoc = openGLContext.extensions.glGetUniformLocation(shader->getProgramID(), "projection");
+		openGLContext.extensions.glUniformMatrix4fv(projLoc, 1, GL_FALSE, projection.mat);
 
-        GLint viewLoc = openGLContext.extensions.glGetUniformLocation(shader->getProgramID(), "view");
-        openGLContext.extensions.glUniformMatrix4fv(viewLoc, 1, GL_FALSE, view.mat);
+		GLint viewLoc = openGLContext.extensions.glGetUniformLocation(shader->getProgramID(), "view");
+		openGLContext.extensions.glUniformMatrix4fv(viewLoc, 1, GL_FALSE, view.mat);
 
-        GLint modelLoc = openGLContext.extensions.glGetUniformLocation(shader->getProgramID(), "model");
-        openGLContext.extensions.glUniformMatrix4fv(modelLoc, 1, GL_FALSE, model.mat);
+		GLint modelLoc = openGLContext.extensions.glGetUniformLocation(shader->getProgramID(), "model");
+		openGLContext.extensions.glUniformMatrix4fv(modelLoc, 1, GL_FALSE, model.mat);
 
-        // Würfel zeichnen
-        openGLContext.extensions.glBindVertexArray(VAO);
-        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
-        openGLContext.extensions.glBindVertexArray(0);
-    }
+		// Würfel zeichnen
+		openGLContext.extensions.glBindVertexArray(VAO);
+		glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+		openGLContext.extensions.glBindVertexArray(0);
+	}
 
-    void updateRotation()
-    {
-		rotation = Vector3D<float>(0,0,0);
-        if (module != nullptr) {
-            if (module->getPins().at(0)->getConnections().size() == 1) {
+	void updateRotation()
+	{
+		rotation = Vector3D<float>(0, 0, 0);
+		if (module != nullptr) {
+			if (module->getPins().at(0)->getConnections().size() == 1) {
 				translation = module->getPins().at(0)->getConnections().at(0)->getVector3D();
-            }
-            if (module->getPins().at(1)->getConnections().size() == 1) {
-                rotation = module->getPins().at(1)->getConnections().at(0)->getVector3D();
-            }
-            if (module->getPins().at(2)->getConnections().size() == 1) {
-                scale = module->getPins().at(2)->getConnections().at(0)->getVector3D();
-            }
+			}
+			if (module->getPins().at(1)->getConnections().size() == 1) {
+				rotation = module->getPins().at(1)->getConnections().at(0)->getVector3D();
+			}
+			if (module->getPins().at(2)->getConnections().size() == 1) {
+				scale = module->getPins().at(2)->getConnections().at(0)->getVector3D();
+			}
 
-        }
-        repaint();
+		}
+		repaint();
 	}
 
 private:
-    juce::Matrix3D<float> createPerspectiveMatrix(float fov, float aspect, float near, float far)
-    {
-        float const tanHalfFovy = std::tan(fov / 2.0f * juce::MathConstants<float>::pi / 180.0f);
+	juce::Matrix3D<float> createPerspectiveMatrix(float fov, float aspect, float near, float far)
+	{
+		float const tanHalfFovy = std::tan(fov / 2.0f * juce::MathConstants<float>::pi / 180.0f);
 
-        juce::Matrix3D<float> result;
-        result.mat[0] = 1.0f / (aspect * tanHalfFovy);
-        result.mat[5] = 1.0f / tanHalfFovy;
-        result.mat[10] = -(far + near) / (far - near);
-        result.mat[11] = -1.0f;
-        result.mat[14] = -(2.0f * far * near) / (far - near);
-        result.mat[15] = 0.0f;
+		juce::Matrix3D<float> result;
+		result.mat[0] = 1.0f / (aspect * tanHalfFovy);
+		result.mat[5] = 1.0f / tanHalfFovy;
+		result.mat[10] = -(far + near) / (far - near);
+		result.mat[11] = -1.0f;
+		result.mat[14] = -(2.0f * far * near) / (far - near);
+		result.mat[15] = 0.0f;
 
-        return result;
-    }
+		return result;
+	}
 
-    std::unique_ptr<juce::OpenGLShaderProgram> shader;
-    GLuint VAO = 0, VBO = 0, EBO = 0;
+	std::unique_ptr<juce::OpenGLShaderProgram> shader;
+	GLuint VAO = 0, VBO = 0, EBO = 0;
 
-    Vector3D<float> translation = { 0.0f, 0.0f, 0.0f };
+	Vector3D<float> translation = { 0.0f, 0.0f, 0.0f };
 	Vector3D<float> rotation = { 0.0f, 0.0f, 0.0f };
-    Vector3D<float> scale = { 1.0f, 1.0f, 1.0f };
+	Vector3D<float> scale = { 1.0f, 1.0f, 1.0f };
 
 	GeometryModule* module = nullptr;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RotatingCubeComponent)
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RotatingCubeComponent)
 };

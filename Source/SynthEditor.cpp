@@ -512,7 +512,8 @@ void SynthEditor::mouseDoubleClick(const MouseEvent& e)
 					std::unique_ptr<RotatingCubeComponent> rcc = std::make_unique<RotatingCubeComponent>(gm);
 					rcc->setOpaque(false);
 					rcc->startTimer(30);	
-					auto* window = new GeometryWindow();
+					gm->addChangeListener(rcc.get());
+					auto* window = new GeometryWindow();					
 					window->setContentOwned(rcc.release(), true);
 					window->centreWithSize(800, 600);
 					window->setVisible(true);			

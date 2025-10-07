@@ -64,6 +64,7 @@
 #include "VectorModule.h"
 #include "GeometryModule.h"
 #include "MagnitudeModule.h"
+#include "BoxModule.h"
 
 using juce::Image;
 
@@ -75,6 +76,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     
     if (id == 0) {
         return m;
+    }
+    if (prefabs[id].getName() == "Box") {
+        m = new BoxModule();
     }
     if (prefabs[id].getName() == "Magnitude") {
         m = new MagnitudeModule();

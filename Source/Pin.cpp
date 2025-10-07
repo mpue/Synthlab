@@ -89,6 +89,10 @@ void Pin::setVector3D(juce::Vector3D<float> vec) {
     this->vector3D = vec;
 
 }
+Geometry* Pin::getGeometry()
+{
+    return geometry;;
+}
 std::vector<Pin*>& Pin::getConnections() {
     return connections;
 }
