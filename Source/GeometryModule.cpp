@@ -33,7 +33,13 @@ void GeometryModule::paint(juce::Graphics& g)
 void GeometryModule::process()
 {
     if (pins.at(0)->getConnections().size() == 1) {
-		vector = pins.at(0)->getConnections().at(0)->getVector3D();
+        translate = pins.at(0)->getConnections().at(0)->getVector3D();
+    }
+    if (pins.at(1)->getConnections().size() == 1) {
+        scale = pins.at(1)->getConnections().at(0)->getVector3D();
+    }
+    if (pins.at(2)->getConnections().size() == 1) {
+        rotate = pins.at(2)->getConnections().at(0)->getVector3D();
     }
 
 }
@@ -42,9 +48,21 @@ void GeometryModule::configurePins()
 {
     Pin* p1 = new Pin(Pin::Type::VECTOR);
     p1->direction = Pin::Direction::IN;
-    p1->setName("X");
+    p1->setName("T");
+
+    Pin* p2 = new Pin(Pin::Type::VECTOR);
+    p2->direction = Pin::Direction::IN;
+    p2->setName("R");
+
+    Pin* p3 = new Pin(Pin::Type::VECTOR);
+    p3->direction = Pin::Direction::IN;
+    p3->setName("S");    
 
     addPin(p1->direction, p1);
+    addPin(p2->direction, p2);
+    addPin(p3->direction, p3);
+
 }
+
 
 

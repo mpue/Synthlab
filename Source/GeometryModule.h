@@ -33,7 +33,9 @@ public:
 
 private:
 
-    juce::Vector3D<float> vector;
+    juce::Vector3D<float> translate;
+    juce::Vector3D<float> scale;
+    juce::Vector3D<float> rotate;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(GeometryModule)
 };

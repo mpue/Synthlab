@@ -178,7 +178,16 @@ public:
 
         // Model Matrix (Rotation)
         juce::Matrix3D<float> model;
-        model = model * juce::Matrix3D<float>::rotation(rotation);
+        model = model * juce::Matrix3D<float>::fromTranslation(translation) * juce::Matrix3D<float>::rotation(rotation);
+
+        Matrix3D<float> scaleMatrix(
+            scale.x, 0, 0, 0,
+            0, scale.y, 0, 0,
+            0, 0, scale.z, 0,
+            0, 0, 0, 1
+        );
+
+		model = model * scaleMatrix;
 
         // Uniforms setzen
         GLint projLoc = openGLContext.extensions.glGetUniformLocation(shader->getProgramID(), "projection");
@@ -201,8 +210,15 @@ public:
 		rotation = Vector3D<float>(0,0,0);
         if (module != nullptr) {
             if (module->getPins().at(0)->getConnections().size() == 1) {
-				rotation = module->getPins().at(0)->getConnections().at(0)->getVector3D();
+				translation = module->getPins().at(0)->getConnections().at(0)->getVector3D();
             }
+            if (module->getPins().at(1)->getConnections().size() == 1) {
+                rotation = module->getPins().at(1)->getConnections().at(0)->getVector3D();
+            }
+            if (module->getPins().at(2)->getConnections().size() == 1) {
+                scale = module->getPins().at(2)->getConnections().at(0)->getVector3D();
+            }
+
         }
         repaint();
 	}
@@ -225,7 +241,10 @@ private:
 
     std::unique_ptr<juce::OpenGLShaderProgram> shader;
     GLuint VAO = 0, VBO = 0, EBO = 0;
+
+    Vector3D<float> translation = { 0.0f, 0.0f, 0.0f };
 	Vector3D<float> rotation = { 0.0f, 0.0f, 0.0f };
+    Vector3D<float> scale = { 1.0f, 1.0f, 1.0f };
 
 	GeometryModule* module = nullptr;
 

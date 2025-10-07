@@ -103,6 +103,7 @@ private:
     TrackNavigator* navigator = nullptr;
 
     PrefabFactory() {
+        prefabs[42] = Prefab("Magnitude", "Audio");
         prefabs[43] = Prefab("Geometry", "Graphics");
         prefabs[44] = Prefab("Vector", "Math");
         prefabs[45] = Prefab("Event Display","Debug");
