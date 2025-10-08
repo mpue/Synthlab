@@ -86,7 +86,7 @@ SynthEditor::SynthEditor(double sampleRate, int buffersize)
 	linePath = Path();
 
 	Project::getInstance()->getCommandManager()->registerAllCommandsForTarget(this);
-	
+	setInterceptsMouseClicks(true, true);
 }
 
 SynthEditor::~SynthEditor()

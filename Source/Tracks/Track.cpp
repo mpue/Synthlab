@@ -546,6 +546,8 @@ void Track::setSamplePosition(int position)
 
 int Track::getSamplePosition()
 {
+	if (samplePosition < 0)
+		samplePosition = 0;
 	return samplePosition;
 }
 

@@ -151,44 +151,42 @@ AudioRegion::AudioRegion(File file, String refId, AudioFormatManager& manager, d
 {
     this->zoom = 40;
     this->constrainer = new ResizeConstrainer(this->zoom / 4);
+    resizerR = new ResizableEdgeComponent(this, constrainer, ResizableEdgeComponent::rightEdge);
+    this->sampleRate = sampleRate;
 
-    resizerR = new ResizableEdgeComponent(this,constrainer,ResizableEdgeComponent::rightEdge);
-    //resizerL = new ResizableEdgeComponent(this,constrainer,ResizableEdgeComponent::leftEdge);
+    SmartSample* smartSample = new SmartSample();
+    smartSample->loadFromFile(file, sampleRate);
 
-	this->sampleRate = sampleRate;
+    int numChannels = smartSample->getBuffer().getNumChannels();
+    int lengthInSamples = smartSample->getLengthInSamples();
 
-	SmartSample* smartSample = new SmartSample();
-	smartSample->loadFromFile(file, sampleRate);
-
-    this->thumbnailCache = new AudioThumbnailCache(1);
-    this->thumbnail = new AudioThumbnail(1, manager, *this->thumbnailCache);
+    this->thumbnailCache = new AudioThumbnailCache(5);
+    this->thumbnail = new AudioThumbnail(512, manager, *this->thumbnailCache);
     this->thumbnail->addChangeListener(this);
-    
+    this->thumbnail->reset(numChannels, sampleRate);
+
     audioBuffer = new AudioSampleBuffer(smartSample->getBuffer());
 
-    this->thumbnail->reset(2, sampleRate);
-    this->thumbnail->addBlock(0, *audioBuffer, 0,smartSample->getLengthInSamples());
-     
+    // KORRIGIERT: addBlock mit korrektem Buffer-Offset (immer 0, da wir den ganzen Buffer übergeben)
+    this->thumbnail->addBlock(0, *audioBuffer, 0, audioBuffer->getNumSamples());
+
     this->name = file.getFileNameWithoutExtension();
     this->clipRefId = refId;
+    setSize((lengthInSamples / sampleRate) * this->zoom, Project::DEFAULT_TRACK_HEIGHT);
 
-    setSize((smartSample->getLengthInSamples() / sampleRate) * this->zoom, Project::DEFAULT_TRACK_HEIGHT);
-    //  Logger::getCurrentLogger()->writeToLog(getThumbnailBounds()->toString());
     Logger::getCurrentLogger()->writeToLog(getBounds().toString());
-    
-	this->offset = 0;
-    
+
+    this->offset = 0;
+
     addComponentListener(this);
-    
-    // addAndMakeVisible(resizerL);
     addAndMakeVisible(resizerR);
-    
+
     dirty = false;
     setPitch(1);
     createProperties();
-	updateSnapSettings();
-	delete smartSample;
+    updateSnapSettings();
 
+    delete smartSample;
 }
 
 AudioRegion::~AudioRegion()

@@ -32,8 +32,10 @@ public:
 
 	virtual void changeListenerCallback(juce::ChangeBroadcaster* source) override
 	{
-		if (source == static_cast<juce::ChangeBroadcaster*>(module)) {
-			setModule(module);
+		GeometryModule* m = dynamic_cast<GeometryModule*>(module);
+
+		if (m != nullptr) {
+			setModule(m);
 			bindBufferData();
 		}
 	}

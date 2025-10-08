@@ -704,8 +704,10 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 		processModule(editor->getModule());
 
 	auto& mixer = *editor->getMixer();
+
 	std::vector<AudioOut*> outputChannels = mixer.getOutputChannels();
 	std::vector<AudioIn*>  inputChannels = mixer.getInputChannels();
+	std::vector<AuxOut*>   auxChannels = mixer.getAuxChannels();
 
 	// --- Host -> Mixer Inputs ---
 	int numInputPairs = std::min(Mixer::getInstance()->getNumInputs(), (int)inputChannels.size());
@@ -742,6 +744,49 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 		inCh->magnitudeLeft = bufL->getMagnitude(0, 0, numSamples);
 		//inCh->magnitudeRight = bufR->getMagnitude(0, 0, numSamples);
 	}
+
+	// --- Aux Channel Processing ---
+	for (int a = 0; a < (int)auxChannels.size(); ++a) {
+		Mixer::Channel* auxMeta = Mixer::getInstance()->getChannel(Mixer::Channel::Type::AUX, a);
+		if (!auxMeta || !mixer.auxChannelIsValid(a, 0)) continue;
+
+		const float auxVol = (auxMeta && !auxMeta->mute) ? auxMeta->volume : 0.0f;
+		const double auxPan = auxMeta ? auxMeta->pan : 0.0;
+		const float auxGainL = fastCos((M_PI * (auxPan + 1) / 4));
+		const float auxGainR = fastSin((M_PI * (auxPan + 1) / 4));
+
+		auto& auxPins = auxChannels[a]->getPins();
+
+		// Process left and right channels for aux
+		for (size_t p = 0; p < auxPins.size() && p < 2; ++p) {
+			if (auxPins[p]->getConnections().empty() || !auxPins[p]->getConnections()[0]) continue;
+			auto* auxBuf = auxPins[p]->getConnections()[0]->getAudioBuffer();
+			if (!auxBuf) continue;
+
+			const float* auxSrc = auxBuf->getReadPointer(0);
+			if (!auxSrc) continue;
+
+			// Determine which output channels to send aux to (typically aux sends go to hardware outputs)
+			// For now, let's assume aux channels 0,1 go to hardware outputs 2,3 (if available)
+			int auxHwIndex = 2 + a * 2 + (int)p; // aux 0 -> hw 2,3, aux 1 -> hw 4,5, etc.
+
+			if (auxHwIndex < outNumChans && outputData[auxHwIndex]) {
+				float auxGain = (p == 0) ? auxGainL * auxVol : auxGainR * auxVol;
+				for (int i = 0; i < numSamples; ++i) {
+					outputData[auxHwIndex][i] += auxSrc[i] * auxGain;
+				}
+			}
+		}
+
+		// Calculate magnitude for aux channels
+		if (auxMeta && auxPins.size() >= 2) {
+			if (auxPins[0]->getConnections().size() > 0)
+				auxMeta->magnitudeLeft = auxVol * auxGainL * auxPins[0]->getConnections()[0]->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+			if (auxPins[1]->getConnections().size() > 0)
+				auxMeta->magnitudeRight = auxVol * auxGainR * auxPins[1]->getConnections()[0]->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+		}
+	}
+
 	// --- 1:1 Output Mapping mit Pan ---
 	for (int o = 0; o < (int)outputChannels.size(); ++o) {
 		Mixer::Channel* meta = Mixer::getInstance()->getChannel(Mixer::Channel::Type::OUT, o);

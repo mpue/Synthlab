@@ -27,15 +27,22 @@ MagnitudeModule::~MagnitudeModule()
 
 void MagnitudeModule::paint(juce::Graphics& g)
 {
-	Module::paint(g);
+    Module::paint(g);
 }
 
 void MagnitudeModule::process()
 {
     if (pins.at(0)->getConnections().size() == 1) {
         juce::AudioSampleBuffer* buffer = pins.at(0)->getConnections().at(0)->getAudioBuffer();
-		magnitude = buffer->getMagnitude(0, 0, buffer->getNumSamples());
-		pins.at(1)->setValue(magnitude);
+
+        // Nur einen Teil des Buffers verarbeiten (z.B. letzte 512 Samples)
+        const int chunkSize = 512;
+        const int numSamples = buffer->getNumSamples();
+        const int startSample = juce::jmax(0, numSamples - chunkSize);
+        const int samplesToProcess = numSamples - startSample;
+
+        magnitude = buffer->getMagnitude(0, startSample, samplesToProcess);
+        pins.at(1)->setValue(magnitude);
     }
 }
 

@@ -64,20 +64,20 @@
 
 	void TrackIn::configurePins() {
 		Pin* p1 = new Pin(Pin::Type::AUDIO);
-		p1->direction = Pin::Direction::OUT;
+		p1->direction = Pin::Direction::IN;
 		p1->setName("L");
 
 		Pin* p2 = new Pin(Pin::Type::AUDIO);
-		p2->direction = Pin::Direction::OUT;
+		p2->direction = Pin::Direction::IN;
 		p2->setName("R");
 
 		Pin* p3 = new Pin(Pin::Type::AUDIO);
-		p3->direction = Pin::Direction::IN;
+		p3->direction = Pin::Direction::OUT;
 		p3->setName("L");
 
 		Pin* p4 = new Pin(Pin::Type::AUDIO);
-		p3->direction = Pin::Direction::IN;
-		p3->setName("R");
+		p4->direction = Pin::Direction::OUT;
+		p4->setName("R");
 
 		Pin* p5 = new Pin(Pin::Type::EVENT);
 		p5->direction = Pin::Direction::IN;
@@ -89,10 +89,10 @@
 		p6->direction = Pin::Direction::OUT;
 		p6->setName("G");
 
-		addPin(Pin::Direction::OUT, p1);
-		addPin(Pin::Direction::OUT, p2);
-		addPin(Pin::Direction::IN, p3);
-		addPin(Pin::Direction::IN, p4);
+		addPin(Pin::Direction::IN, p1);
+		addPin(Pin::Direction::IN, p2);
+		addPin(Pin::Direction::OUT, p3);
+		addPin(Pin::Direction::OUT, p4);
 		addPin(Pin::Direction::IN, p5);
 		addPin(Pin::Direction::OUT, p6);
 
