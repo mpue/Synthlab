@@ -66,7 +66,7 @@ Module::Module ()
     addAndMakeVisible (nameLabel = new Label ("nameLabel",
                                               getName()));
     nameLabel->setFont (Font (15.00f, Font::plain).withTypefaceStyle ("Regular"));
-    nameLabel->setJustificationType (Justification::centredTop);
+    nameLabel->setJustificationType (Justification::centredBottom);
     nameLabel->setEditable (false, false, false);
     nameLabel->setColour (TextEditor::textColourId, Colours::black);
     nameLabel->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
@@ -166,7 +166,7 @@ void Module::paint(Graphics& g)
 
     // 2. Modul-Hintergrund zeichnen (in reduzierten Bounds)
     g.setColour(Colour(0xff434242));
-    g.fillRoundedRectangle(moduleArea.toFloat(), 8);
+    g.fillRect(moduleArea.toFloat());
 
     // 3. Modul-Rahmen zeichnen
     if (selected) {
@@ -175,13 +175,17 @@ void Module::paint(Graphics& g)
     else {
         g.setColour(juce::Colours::grey);
     }
-    g.drawRoundedRectangle(moduleArea.toFloat(), 8, 2);
+    g.drawRect(moduleArea.toFloat());
 
-    // 4. Icon zeichnen (Position anpassen für reduzierten Bereich)
-    {
-        int x = 28, y = 44, width = 64, height = 64;
-        g.setColour(Colours::black);        
-    }
+    //// 4. Icon zeichnen (Position anpassen für reduzierten Bereich)
+    //{
+    //    int x = 28, y = 44, width = 64, height = 64;
+    //    g.setColour(Colours::black);        
+    //    g.drawImageWithin(cachedImage_materialicons_301_viewmodule_64_0_ffffff_none_png_1,
+    //        x, y, width, height,
+    //        RectanglePlacement::centred,
+    //        false);
+    //}
 
     // 5. Pins zeichnen
     for (int i = 0; i < pins.size(); i++) {
@@ -225,11 +229,9 @@ void Module::paint(Graphics& g)
 
 void Module::resized()
 {
-    //[UserPreResize] Add your own custom resize code here..
-    //[/UserPreResize]
-
-    //[UserResized] Add your own custom resize handling here..
-    //[/UserResized]
+    const int labelHeight = 24;
+    const int bottomMargin = 8;
+    nameLabel->setBounds(0, getHeight() - labelHeight - bottomMargin, getWidth(), labelHeight);
 }
 
 void Module::mouseDoubleClick (const MouseEvent& e)

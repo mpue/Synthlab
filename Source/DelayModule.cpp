@@ -30,9 +30,6 @@ DelayModule::DelayModule(double sampleRate, int buffersize)
     delay->setFeedback(StereoDelay::Channel::RIGHT, 0);
     
     setSize(120,140);
-    nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(18,2);
-    
     setName("Stereo delay");
 
     editable = false;

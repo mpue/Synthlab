@@ -479,6 +479,14 @@
                 file="Source/TransportDisplayComponent.h"/>
         </GROUP>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
+          <FILE id="nAeqym" name="TransformGeometryModule.cpp" compile="1" resource="0"
+                file="Source/TransformGeometryModule.cpp"/>
+          <FILE id="nH5XDY" name="TransformGeometryModule.h" compile="0" resource="0"
+                file="Source/TransformGeometryModule.h"/>
+          <FILE id="QOXSc5" name="MergeGeometryModule.cpp" compile="1" resource="0"
+                file="Source/MergeGeometryModule.cpp"/>
+          <FILE id="SQ9Pfe" name="MergeGeometryModule.h" compile="0" resource="0"
+                file="Source/MergeGeometryModule.h"/>
           <FILE id="Pl3l6x" name="DonutModule.cpp" compile="1" resource="0" file="Source/DonutModule.cpp"/>
           <FILE id="enINB4" name="DonutModule.h" compile="0" resource="0" file="Source/DonutModule.h"/>
           <FILE id="I3xCqW" name="BoxModule.cpp" compile="1" resource="0" file="Source/BoxModule.cpp"/>

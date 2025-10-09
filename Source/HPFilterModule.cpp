@@ -23,12 +23,8 @@ HPFilterModule::HPFilterModule(double sampleRate, int buffersize)
     
     filter = new HighPassFilter();
     filter->coefficients(sampleRate, frequency, resonance);
-
     
     setSize(120,140);
-    nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(18,2);
-    
     setName("HP Filter");
 
     editable = false;

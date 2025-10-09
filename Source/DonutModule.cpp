@@ -9,6 +9,8 @@
 
 DonutModule::DonutModule()
 {
+    setName("Donut");
+
     // Torus/Donut Parameter
     const float majorRadius = 1.0f;  // Äußerer Radius
     const float minorRadius = 0.4f;  // Röhrenradius
@@ -20,8 +22,8 @@ DonutModule::DonutModule()
     const int numIndices = majorSegments * minorSegments * 6;
 
     // Allokiere Arrays (6 floats pro Vertex: Position (3) + Farbe (3))
-    vertices = new float[numVertices * 6];
-    indices = new unsigned int[numIndices];
+    vertices = std::make_unique<float[]>(numVertices * 6);
+    indices = std::make_unique<unsigned int[]>(numIndices);
 
     int vertexIndex = 0;
 
@@ -82,30 +84,38 @@ DonutModule::DonutModule()
     }
 
     // Erstelle Geometry-Objekt
-    donut = new Geometry(vertices, indices, numIndices, numVertices);
+    donut = std::make_unique<Geometry>(vertices.get(), indices.get(), numIndices, numVertices);
 }
 
 DonutModule::~DonutModule()
 {
+    // Automatisches Cleanup durch Smart Pointers
 }
 
 void DonutModule::paint(juce::Graphics& g)
 {
     Module::paint(g);
-    g.setColour(juce::Colours::white);
-    g.setFont(12);
-    g.drawText("Donut", 10, getHeight() / 2 - 10, 100, 20, juce::Justification::centred);
 
-    // paint a stilized donut shape
+    // Paint a stylized donut shape
+    int centerX = getWidth() / 2;
+    int centerY = (getHeight() - 40) / 2 + 20;
+    int outerRadius = std::min(getWidth(), getHeight() - 80) / 2 - 10;
+    int innerRadius = outerRadius / 2;
+
+    // Äußerer Kreis
     g.setColour(juce::Colours::orange);
-    g.fillEllipse(30, 30, getWidth() - 60, getHeight() - 80);
-    g.setColour(juce::Colours::darkorange);
-    g.fillEllipse(40, 40, getWidth() - 80, getHeight() - 100);
+    g.fillEllipse(centerX - outerRadius, centerY - outerRadius,
+        outerRadius * 2, outerRadius * 2);
+
+    // Inneres Loch
+    g.setColour(juce::Colour(0xff2a2a2a));
+    g.fillEllipse(centerX - innerRadius, centerY - innerRadius,
+        innerRadius * 2, innerRadius * 2);
 }
 
 void DonutModule::process()
 {
-    pins.at(0)->setGeometry(donut);
+    pins.at(0)->setGeometry(donut.get());
 }
 
 void DonutModule::configurePins()

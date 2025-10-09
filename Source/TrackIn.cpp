@@ -27,9 +27,7 @@
 		this->sampleRate = sampleRate;
 		this->buffersize = buffersize;
 
-		nameLabel->setJustificationType(Justification::left);
-		nameLabel->setTopLeftPosition(18, 2);
-		setName("Track in");
+		setName("Track In");
 
 		editable = false;
 		prefab = true;
@@ -169,14 +167,14 @@
 
 				float gainLeft = cos((M_PI * (pan + 1) / 4));
 				float gainRight = sin((M_PI * (pan + 1) / 4));
-
-				for (int j = track->getSamplePosition(); j <  buffersize + track->getSamplePosition(); j++) {
+				for (int j = track->getSamplePosition(); j < buffersize + track->getSamplePosition(); j++) {
+					int bufferIndex = j - track->getSamplePosition(); // 0, 1, 2, ...
 
 					float sampleL = track->getSample(0, j) * track->getVolume() * gainLeft;
 					float sampleR = track->getSample(1, j) * track->getVolume() * gainRight;
 
-					pins.at(0)->getAudioBuffer()->setSample(0, j % buffersize, sampleL);
-					pins.at(1)->getAudioBuffer()->setSample(0, j % buffersize, sampleR);
+					pins.at(0)->getAudioBuffer()->setSample(0, bufferIndex, sampleL);
+					pins.at(1)->getAudioBuffer()->setSample(0, bufferIndex, sampleR);
 				}
 				// track->setSamplePosition(track->getSamplePosition() + buffersize);
 				// numSamples += buffersize;

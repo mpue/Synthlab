@@ -29,8 +29,6 @@ RandomModule::RandomModule(double sampleRate, int buffersize) :
     oscillator->setVolume(0.5f);
     
     setSize(120,140);
-    nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(18,2);
     
     setName("Random");
 

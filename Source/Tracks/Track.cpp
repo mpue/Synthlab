@@ -35,7 +35,7 @@ Track::Track(Type type, double sampleRate, MultiComponentDragger* dragger)
 	this->bufferSize = Project::getInstance()->getBufferSize();
 	addAndMakeVisible(resizer);	
 	setHeight(Project::DEFAULT_TRACK_HEIGHT);
-	setMouseClickGrabsKeyboardFocus(true);
+	// setMouseClickGrabsKeyboardFocus(true);
 	resized();
 	createProperties();
 	setName("empty Track");
@@ -548,7 +548,7 @@ int Track::getSamplePosition()
 {
 	if (samplePosition < 0)
 		samplePosition = 0;
-	return samplePosition;
+	return (samplePosition  / bufferSize) * bufferSize; 
 }
 
 void Track::AddEventListener(EventListener* listener)
@@ -640,6 +640,7 @@ const float Track::getSample(int channel, long sample) {
 	if (currentRegion != nullptr) {
 		if (sample - currentRegion->getSampleOffset() < getBuffer()->getNumSamples() && sample - currentRegion->getSampleOffset() > 0) {
 			return getBuffer()->getSample(channel, sample - currentRegion->getSampleOffset());
+
 		}
 	}
 	return 0;

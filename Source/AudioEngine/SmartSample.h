@@ -77,18 +77,27 @@ private:
         double fromRate, double toRate)
     {
         const double ratio = toRate / fromRate;
-        const int estimatedLength = static_cast<int>(std::ceil(input.getNumSamples() * ratio));
+        const int targetLength = static_cast<int>(std::ceil(input.getNumSamples() * ratio));
 
-        juce::AudioSampleBuffer resultBuffer(input.getNumChannels(), estimatedLength);
+        juce::AudioSampleBuffer resultBuffer(input.getNumChannels(), targetLength);
         resultBuffer.clear();
 
         auto memorySource = std::make_unique<MemoryAudioSource>(input, fromRate);
         juce::ResamplingAudioSource resampler(memorySource.get(), false);
         resampler.setResamplingRatio(fromRate / toRate);
-        resampler.prepareToPlay(512, toRate); // 512 = block size, kannst du anpassen
+        resampler.prepareToPlay(8192, toRate); // Größerer Block für Effizienz
 
-        juce::AudioSourceChannelInfo info(&resultBuffer, 0, estimatedLength);
-        resampler.getNextAudioBlock(info);
+        // In Blöcken verarbeiten statt alles auf einmal
+        const int blockSize = 8192;
+        int samplesWritten = 0;
+
+        while (samplesWritten < targetLength)
+        {
+            const int numThisTime = juce::jmin(blockSize, targetLength - samplesWritten);
+            juce::AudioSourceChannelInfo info(&resultBuffer, samplesWritten, numThisTime);
+            resampler.getNextAudioBlock(info);
+            samplesWritten += numThisTime;
+        }
 
         resampler.releaseResources();
 

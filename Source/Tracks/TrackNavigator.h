@@ -90,6 +90,8 @@ public:
 	float getZoom();
 	void setZoom(float zoom);
 
+	int alignToBufferSize(int samplePosition);
+
 	void updateTrackLayout(ChangeBroadcaster* source);
 	void adjustHeight();
 

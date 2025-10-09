@@ -32,11 +32,7 @@ ADSRModule::ADSRModule(double sampleRate, int buffersize)
     this->sampleRate = sampleRate;
     this->buffersize = buffersize;
 
-    setSize(120,140);
-    
-    nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(18,2);
-    
+    setSize(120,140);    
     setName("ADSR");
 
     // Envelopes for polyphonic mode

@@ -19,10 +19,8 @@ using juce::MidiMessage;
 //==============================================================================
 StepSequencerModule::StepSequencerModule(float sampleRate, int bufferSize)
 {
-    setSize(240,120);
-    nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(18,2);
-    setName("Step sequencer");
+    setSize(120,140);
+    setName("Step Sequencer");
     editable = false;
     prefab = true;
     this->buffersize = bufferSize;

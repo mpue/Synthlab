@@ -330,7 +330,7 @@ void TrackNavigator::setPosition(double position) {
 
 	// Align position marker to buffer size
 	int bufferSize = Project::getInstance()->getBufferSize();
-	this->samplePosition = ((int)(this->samplePosition + bufferSize / 2) / bufferSize) * bufferSize;
+	this->samplePosition = alignToBufferSize(this->samplePosition);
 
 	Logger::getCurrentLogger()->writeToLog("samplePosition  : " + String(samplePosition));
 	std::function<void(void)> changeLambda =
@@ -360,7 +360,7 @@ void TrackNavigator::ResetMarkerPosition()
 void TrackNavigator::setSamplePosition(int position) {
 
 	// Logger::getCurrentLogger()->writeToLog("setSamplePosition : " + String(position));
-	this->samplePosition = position;
+	this->samplePosition = alignToBufferSize(position);
 
 	if (loopEnabled) {
 		if (this->samplePosition > loopEnd * Project::getInstance()->getSampleRate()) {
@@ -606,6 +606,10 @@ void TrackNavigator::addTrack(Track* track) {
 
 	track->setNavigator(this);
 
+	// track->setInterceptsMouseClicks(false, true);
+
+	track->addMouseListener(this, true);
+
 	// deselect all tracks before adding a new one
 
 	for (int i = 0; i < tracks.size(); i++) {
@@ -828,6 +832,11 @@ bool TrackNavigator::keyPressed(const KeyPress& key, Component* originatingCompo
 	return true;
 }
 
+int TrackNavigator::alignToBufferSize(int samplePosition) {
+	int bufferSize = Project::getInstance()->getBufferSize();
+	return (samplePosition / bufferSize) * bufferSize;
+}
+
 void TrackNavigator::mouseUp(const MouseEvent& event) {
 }
 
@@ -847,29 +856,30 @@ void TrackNavigator::mouseMove(const juce::MouseEvent& event) {
 
 void TrackNavigator::mouseDown(const MouseEvent& event) {
 
-	int x = event.x + scrollbarOffset;
-	int y = event.y;
+	// event.x ist relativ zur Komponente, die geklickt wurde
+	// Wir brauchen die Position relativ zum Navigator
+	int x = event.getEventRelativeTo(this).x;
+	int y = event.getEventRelativeTo(this).y;
 
 	if (isPlaying()) {
 		allNotesOff();
 	}
 
 	if (!event.mods.isCtrlDown() && event.mods.isRightButtonDown()) {
-		int width = getWidth();
-		
-		// float pos = (float)dragger->snap(x, zoom / 16) / width;
-		double total = getMaxLength();
-		double relative = total * x / width;
-		setPosition(relative);
-		marker->setSamplePosition(samplePosition);
+		// x ist jetzt relativ zum Navigator (inklusive gescrolltem Bereich!)
+		double positionInSeconds = (double)x / zoom;
+		setPosition(positionInSeconds);
+		marker->setSamplePosition(getSamplePosition());
 		for (int i = 0; i < tracks.size(); i++) {
 			tracks.at(i)->setSamplePosition(samplePosition);
 			tracks.at(i)->setCurrentMarkerPosition(position);
 		}
 		sendChangeMessage();
+		marker->repaint();
+		return;
 	}
 	//else
-	if (Track* r = dynamic_cast<Track*>(event.eventComponent)) {
+	if (Track* r = dynamic_cast<Track*>(event.eventComponent)) {		
 		for (int i = 0; i < tracks.size(); i++) {
 			tracks.at(i)->setSelected(false);
 			tracks.at(i)->clearSelection();

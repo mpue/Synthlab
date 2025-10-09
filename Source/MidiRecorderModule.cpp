@@ -3,8 +3,9 @@
 
 MidiRecorderModule::MidiRecorderModule()
 {
-    setSize(200, 100);
+    setSize(120, 140);
     createProperties();
+    setName("MIDI Recorder");
     prefab = true;
     editable = false;
     this->deviceManager = AudioManager::getInstance()->getDeviceManager();

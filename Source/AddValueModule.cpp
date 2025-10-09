@@ -20,8 +20,6 @@ using juce::ImageCache;
 AddValueModule::AddValueModule()
 {
     setSize(120,140);
-    nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(18,2);
     setName("Add value");
     editable = false;
     prefab = true;

@@ -23,12 +23,8 @@ LPFilterModule::LPFilterModule(double sampleRate, int buffersize)
     
     filter = new LowPassFilter();
     filter->coefficients(sampleRate, frequency, resonance);
-
     
-    setSize(120,140);
-    nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(18,2);
-    
+    setSize(120,140);    
     setName("LP Filter");
 
     editable = false;

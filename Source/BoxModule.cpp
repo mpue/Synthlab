@@ -12,6 +12,7 @@
 
 BoxModule::BoxModule()
 {
+	setName("Box");
     vertices = new float[48] {
         // Position          // Farbe
         // Vordere Seite (z = 0.5)
@@ -59,15 +60,6 @@ BoxModule::~BoxModule()
 void BoxModule::paint(juce::Graphics& g)
 {
     Module::paint(g);
-
-    g.setColour(juce::Colours::white);
-    g.setFont(12);
-    g.drawText("Box", 10, getHeight() / 2 - 10, 100, 20, juce::Justification::centred);
-
-	// paint a a stylized box shape
-
-    g.setColour(juce::Colours::darkgrey);
-	g.drawRect(40, 40, getWidth() - 40, getHeight() - 60, 2);
 }
 
 void BoxModule::process()

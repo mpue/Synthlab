@@ -41,10 +41,8 @@ AudioRecorderModule::AudioRecorderModule(double sampleRate, int buffersize, Audi
     this->buffersize = buffersize;
     
     setSize(120,140);
-    nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(18,2);
     
-    setName("Recorder");
+    setName("Audio Recorder");
     
     editable = false;
     prefab = true;

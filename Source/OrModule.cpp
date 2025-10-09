@@ -19,9 +19,7 @@ using juce::ImageCache;
 //==============================================================================
 OrModule::OrModule()
 {
-    setSize(110,70);
-    nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(18,2);
+    setSize(120,140);
     setName("Or");
     nameLabel->setVisible(false);
     editable = false;

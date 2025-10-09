@@ -23,8 +23,6 @@ PitchBendModule::PitchBendModule()
     
     setName("Pitch bend");
     setSize(120,140);
-    nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(2,2);
     editable = false;
     prefab = true;
 }

@@ -66,6 +66,8 @@
 #include "MagnitudeModule.h"
 #include "BoxModule.h"
 #include "DonutModule.h"
+#include "MergeGeometryModule.h"
+#include "TransformGeometryModule.h"
 
 using juce::Image;
 
@@ -77,6 +79,12 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     
     if (id == 0) {
         return m;
+    }
+    if (prefabs[id].getName() == "TransformGeometry") {
+        m = new TransformGeometryModule();
+    }
+    if (prefabs[id].getName() == "MergeGeometry") {
+		m = new MergeGeometryModule();
     }
     if (prefabs[id].getName() == "Donut") {
         m = new DonutModule();

@@ -26,10 +26,7 @@ SineModule::SineModule(double sampleRate, int buffersize)
         oscillator[i] = nullptr;
     }
     
-    setSize(120,140);
-    nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(18,2);
-    
+    setSize(120,140);    
     setName("Sine");
     
     editable = false;

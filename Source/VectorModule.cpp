@@ -13,8 +13,6 @@
 VectorModule::VectorModule()
 {
     setSize(120,140);
-    nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(18,2);
     setName("Vector");
     editable = false;
     prefab = true;

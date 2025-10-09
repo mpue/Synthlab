@@ -24,8 +24,6 @@ using juce::SliderPropertyComponent;
 MixerModule::MixerModule(float sampleRate, int bufferSize)
 {
     setSize(120,140);
-    nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(18,2);
     setName("Mixer");
     editable = false;
     prefab = true;

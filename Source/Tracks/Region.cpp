@@ -75,6 +75,10 @@ void Region::setSampleOffset(long offset, bool reminder, bool notify)
         sampleOffset = 0;
     }
 
+	int bufferSize = Project::getInstance()->getBufferSize();
+
+    this->sampleOffset = (sampleOffset / bufferSize) * bufferSize;
+
     if (!reminder)
         this->oldOffset = this->sampleOffset;
     
@@ -91,7 +95,7 @@ long Region::getOldOffset() {
 }
 
 long Region::getSampleOffset() {
-    return this->sampleOffset;
+    return (this->sampleOffset / Project::getInstance()->getBufferSize()) * Project::getInstance()->getBufferSize();
 }
 
 

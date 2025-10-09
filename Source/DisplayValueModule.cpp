@@ -18,9 +18,7 @@ using juce::String;
 DisplayValueModule::DisplayValueModule() :
     eventInPin(nullptr)
 {
-    setSize(120,140);
-    nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(18,2);
+    setSize(120,160);
     setName("Display value");
     editable = false;
     prefab = true;

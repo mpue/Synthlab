@@ -21,8 +21,6 @@ using juce::ImageCache;
 InverterModule::InverterModule()
 {
     setSize(120,140);
-    nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(18,2);
     setName("Invert value");
     editable = false;
     prefab = true;

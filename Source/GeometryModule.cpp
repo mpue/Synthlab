@@ -14,9 +14,7 @@
 GeometryModule::GeometryModule()
 {    
     setSize(120, 140);
-    nameLabel->setJustificationType(Justification::left);
-    nameLabel->setTopLeftPosition(18, 2);
-    setName("Geometry");
+    setName("GeometryView");
     editable = false;
     prefab = true;
     setInterceptsMouseClicks(false, true);

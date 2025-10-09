@@ -15,10 +15,8 @@ using juce::ImageCache;
 
 PitchToFrequencyModule::PitchToFrequencyModule()
 {
-    setSize(120,80);
-    nameLabel->setJustificationType (Justification::centred);
-    nameLabel->setTopLeftPosition(2,2);
-    nameLabel->setText("P2F", juce::NotificationType::dontSendNotification);
+    setSize(120,140);
+    nameLabel->setText("Pitch2Freq", juce::NotificationType::dontSendNotification);
     editable = false;
     prefab = true;
 }

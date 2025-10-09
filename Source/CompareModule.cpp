@@ -21,14 +21,12 @@ using juce::ImageCache;
 CompareModule::CompareModule()
 {
     setSize(120,140);
-    nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(18,2);
     setName("Compare");
     editable = false;
     prefab = true;
     compareModeCombo = new ComboBox();
 
-    compareModeCombo->setBounds(20,getHeight() - 40,getWidth() - 40 , 30);
+    compareModeCombo->setBounds(20,40,getWidth() - 40 , 30);
     compareModeCombo->addItem("EQUALS", 1);
     compareModeCombo->addItem("A > B", 2);
     compareModeCombo->addItem("A < B ", 3);

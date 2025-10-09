@@ -186,6 +186,8 @@ AudioRegion::AudioRegion(File file, String refId, AudioFormatManager& manager, d
     createProperties();
     updateSnapSettings();
 
+    // setInterceptsMouseClicks(false, true);
+
     delete smartSample;
 }
 

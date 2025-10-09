@@ -14,8 +14,6 @@ using namespace juce;
 MidiGate::MidiGate()
 {
     setSize(120, 140);
-    nameLabel->setJustificationType(Justification::left);
-    nameLabel->setTopLeftPosition(2, 2);
     editable = false;  prefab = true;
     createProperties();
 }

@@ -24,14 +24,12 @@ using juce::Array;
 MidiClock::MidiClock()
 {
     setSize(120,140);
+    setName("Midi Clock");
     
-    nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(2,2);
     editable = false;
     prefab = true;
     
     createProperties();
-    //startTimer(500);
 }
 
 MidiClock::~MidiClock()

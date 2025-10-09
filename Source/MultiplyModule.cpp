@@ -20,8 +20,6 @@ using juce::ImageCache;
 MultiplyModule::MultiplyModule()
 {
     setSize(120,140);
-    nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(18,2);
     setName("Multiply value");
     editable = false;
     prefab = true;

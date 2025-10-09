@@ -41,7 +41,7 @@ public:
     void OpenTrackView();
 	void openConsole();
     virtual void changeListenerCallback (juce::ChangeBroadcaster* source) override;
-    
+
 private:
     
     void importMidiFileToTrack(const juce::MidiFile& midiFile, Track* track);
@@ -63,7 +63,7 @@ private:
     juce::StretchableLayoutManager stretchableManager;
     juce::StretchableLayoutResizerBar resizerBar;
 
-    std::unique_ptr<TrackNavigator> navigator = nullptr;
+    std::shared_ptr<TrackNavigator> navigator = nullptr;
     PropertyView* propertyView = nullptr;
     
     std::unique_ptr<ShellConsoleComponent> console = nullptr;

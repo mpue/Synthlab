@@ -103,6 +103,8 @@ private:
     TrackNavigator* navigator = nullptr;
 
     PrefabFactory() {
+        prefabs[38] = Prefab("TransformGeometry", "Graphics");
+        prefabs[39] = Prefab("MergeGeometry", "Graphics");
         prefabs[40] = Prefab("Donut", "Graphics");
         prefabs[41] = Prefab("Box", "Graphics");
         prefabs[42] = Prefab("Magnitude", "Audio");
@@ -162,7 +164,13 @@ private:
         prefabs[96] = Prefab("And","Logic");
         prefabs[97] = Prefab("Or","Logic");
         prefabs[98] = Prefab("Not","Logic");
-        
+        prefabImages[38] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[39] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[40] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[41] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[42] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[43] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[44] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[45] = juce::ImageCache::getFromMemory(BinaryData::display_png, BinaryData::display_pngSize);
         prefabImages[46] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[47] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);

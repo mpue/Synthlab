@@ -40,12 +40,15 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView*
     editorView->setScrollOnDragEnabled(false);
     editorView->setWantsKeyboardFocus(false);
     editorView->setMouseClickGrabsKeyboardFocus(false);
+
+    setMouseClickGrabsKeyboardFocus(true);
+	setInterceptsMouseClicks(true, true);
     
     topTab->addTab("Editor", juce::Colours::grey, editorView.get(), false);
-        
+    topTab->setInterceptsMouseClicks(true, true);
+
     mixerPanel = std::make_shared<MixerPanel>();
-    
-    
+        
     mixerView = std::make_unique<Viewport>();
     mixerView->setViewedComponent(mixerPanel.get(),false);
     mixerView->setScrollBarsShown(true,true);
@@ -77,17 +80,7 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView*
     Project::getInstance()->setSupplemental(this->bottomTab.get());
 
     OpenTrackView();
-
- //   auto* treeDebugger = new ComponentTreeDebugger(getTopLevelComponent());
- //   treeDebugger->setSize(300, 600);
- //   treeDebugger->setName("Komponenten-Baum");
- //   treeDebugger->setAlwaysOnTop(true);
- //   treeDebugger->setVisible(true);
-
-	//topTab->addTab("Debugger", Colours::darkgrey, treeDebugger, false);
-    
-
-
+     
 }
 
 
@@ -314,28 +307,29 @@ void EditorComponent::OpenTrackView()
 {
     if (navigator == nullptr) {        
         trackView = std::make_unique<Viewport>();
-        navigator = std::make_unique<TrackNavigator>(AudioManager::getInstance()->getDeviceManager(), trackView.get(), propertyView, transportDisplay);
+        navigator = std::make_shared<TrackNavigator>(AudioManager::getInstance()->getDeviceManager(), trackView.get(), propertyView, transportDisplay);
         
         PrefabFactory::getInstance()->init(navigator.get());
-        addMouseListener(navigator.get(), true);
+        // addMouseListener(navigator.get(), true);
         editor->setNavigator(navigator.get());
         trackView->setSize(500, 200);
         trackView->setViewedComponent(navigator.get());
         trackView->setScrollBarsShown(true, true);
         trackView->setScrollOnDragEnabled(false);
-	        
-	    getTopLevelComponent()->addKeyListener(navigator.get());
+        trackView->setInterceptsMouseClicks(true, true);
+	    
+        trackView->addMouseListener(this, true);
 
+	    getTopLevelComponent()->addKeyListener(navigator.get());
         navigator->setMouseClickGrabsKeyboardFocus(true);
         navigator->setWantsKeyboardFocus(true);
         navigator->setInterceptsMouseClicks(true, true);
-
-        
+        navigator->toFront(false);
     }
     topTab->addTab("Navigator", juce::Colours::grey, trackView.get(), false);
     topTab->setCurrentTabIndex(1);
-
-
+    navigator->setInterceptsMouseClicks(true, true);
+    navigator->toFront(true);
 }
 
 void EditorComponent::changeListenerCallback(juce::ChangeBroadcaster *source) {
