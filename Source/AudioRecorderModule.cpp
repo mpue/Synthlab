@@ -95,6 +95,7 @@ void AudioRecorderModule::configurePins() {
 
 void AudioRecorderModule::paint(juce::Graphics &g) {
     Module::paint(g);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::audiorecorder_png, BinaryData::audiorecorder_pngSize), 25, 40);
 }
 
 

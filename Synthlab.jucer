@@ -45,9 +45,12 @@
       <FILE id="DbUq4B" name="adder.png" compile="0" resource="1" file="Images/adder.png"/>
       <FILE id="LYnUGD" name="adsr.png" compile="0" resource="1" file="Images/adsr.png"/>
       <FILE id="udjGbx" name="apicon.png" compile="0" resource="1" file="Images/apicon.png"/>
+      <FILE id="EzqffB" name="audiorecorder.png" compile="0" resource="1"
+            file="Images/audiorecorder.png"/>
       <FILE id="Xwf0m7" name="auxmodule.png" compile="0" resource="1" file="Images/auxmodule.png"/>
       <FILE id="IJUjr6" name="backward-solid.png" compile="0" resource="1"
             file="Images/backward-solid.png"/>
+      <FILE id="wnWWlm" name="chorus.png" compile="0" resource="1" file="Images/chorus.png"/>
       <FILE id="PL20Kv" name="circle-solid.png" compile="0" resource="1"
             file="Images/circle-solid.png"/>
       <FILE id="gW9OzU" name="clock.png" compile="0" resource="1" file="Images/clock.png"/>
@@ -73,6 +76,8 @@
       <FILE id="qc79je" name="logic_not.png" compile="0" resource="1" file="Images/logic_not.png"/>
       <FILE id="fD6Tjk" name="logic_or.png" compile="0" resource="1" file="Images/logic_or.png"/>
       <FILE id="HGa4kr" name="lp.png" compile="0" resource="1" file="Images/lp.png"/>
+      <FILE id="BP1Sw1" name="magnitue.png" compile="0" resource="1" file="Images/magnitue.png"/>
+      <FILE id="vrVM7Q" name="merge.png" compile="0" resource="1" file="Images/merge.png"/>
       <FILE id="floa7Y" name="micro.png" compile="0" resource="1" file="Images/micro.png"/>
       <FILE id="wjQQld" name="midiin.png" compile="0" resource="1" file="Images/midiin.png"/>
       <FILE id="E9iJPb" name="midiout.png" compile="0" resource="1" file="Images/midiout.png"/>
@@ -111,9 +116,11 @@
       <FILE id="e6TDlD" name="stereodelay.png" compile="0" resource="1" file="Images/stereodelay.png"/>
       <FILE id="oa95Wx" name="stop.png" compile="0" resource="1" file="Images/stop.png"/>
       <FILE id="Abg7RO" name="synthlab.png" compile="0" resource="1" file="Images/synthlab.png"/>
+      <FILE id="k5WesC" name="transform.png" compile="0" resource="1" file="Images/transform.png"/>
       <FILE id="LlFYc6" name="tri.png" compile="0" resource="1" file="Images/tri.png"/>
       <FILE id="ogxnye" name="undo.png" compile="0" resource="1" file="Images/undo.png"/>
       <FILE id="S55ijn" name="unlock.png" compile="0" resource="1" file="Images/unlock.png"/>
+      <FILE id="qwGlcU" name="vector.png" compile="0" resource="1" file="Images/vector.png"/>
       <FILE id="EJ4uon" name="whitenoise.png" compile="0" resource="1" file="Images/whitenoise.png"/>
     </GROUP>
     <GROUP id="{CA20D122-1EA5-3A93-F1F8-F6EE53DA457E}" name="Source">

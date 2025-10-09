@@ -27,6 +27,7 @@ MergeGeometryModule::~MergeGeometryModule()
 void MergeGeometryModule::paint(juce::Graphics& g)
 {
     Module::paint(g);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::merge_png, BinaryData::merge_pngSize), 25, 40);
 }
 
 void MergeGeometryModule::process()

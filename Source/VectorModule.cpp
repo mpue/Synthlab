@@ -26,6 +26,7 @@ VectorModule::~VectorModule()
 void VectorModule::paint(juce::Graphics& g)
 {
 	Module::paint(g);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::vector_png, BinaryData::vector_pngSize), 25, 40);
 }
 
 void VectorModule::process()

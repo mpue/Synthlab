@@ -27,6 +27,7 @@ TransformGeometryModule::~TransformGeometryModule()
 void TransformGeometryModule::paint(juce::Graphics& g)
 {
     Module::paint(g);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::transform_png, BinaryData::transform_pngSize), 25, 40);
 }
 
 void TransformGeometryModule::process()

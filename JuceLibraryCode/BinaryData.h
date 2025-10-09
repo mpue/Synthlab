@@ -74,11 +74,17 @@ namespace BinaryData
     extern const char*   apicon_png;
     const int            apicon_pngSize = 213234;
 
+    extern const char*   audiorecorder_png;
+    const int            audiorecorder_pngSize = 4298;
+
     extern const char*   auxmodule_png;
     const int            auxmodule_pngSize = 4961;
 
     extern const char*   backwardsolid_png;
     const int            backwardsolid_pngSize = 1801;
+
+    extern const char*   chorus_png;
+    const int            chorus_pngSize = 2834;
 
     extern const char*   circlesolid_png;
     const int            circlesolid_pngSize = 1922;
@@ -142,6 +148,12 @@ namespace BinaryData
 
     extern const char*   lp_png;
     const int            lp_pngSize = 2979;
+
+    extern const char*   magnitue_png;
+    const int            magnitue_pngSize = 2630;
+
+    extern const char*   merge_png;
+    const int            merge_pngSize = 4709;
 
     extern const char*   micro_png;
     const int            micro_pngSize = 4670;
@@ -245,6 +257,9 @@ namespace BinaryData
     extern const char*   synthlab_png;
     const int            synthlab_pngSize = 58873;
 
+    extern const char*   transform_png;
+    const int            transform_pngSize = 4889;
+
     extern const char*   tri_png;
     const int            tri_pngSize = 2335;
 
@@ -254,11 +269,14 @@ namespace BinaryData
     extern const char*   unlock_png;
     const int            unlock_pngSize = 21208;
 
+    extern const char*   vector_png;
+    const int            vector_pngSize = 4049;
+
     extern const char*   whitenoise_png;
     const int            whitenoise_pngSize = 7446;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 83;
+    const int namedResourceListSize = 89;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

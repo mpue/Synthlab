@@ -26,6 +26,7 @@ MagnitudeModule::~MagnitudeModule()
 void MagnitudeModule::paint(juce::Graphics& g)
 {
     Module::paint(g);
+    g.drawImageAt(ImageCache::getFromMemory(BinaryData::magnitue_png, BinaryData::magnitue_pngSize), 25, 40);
 }
 
 void MagnitudeModule::process()
