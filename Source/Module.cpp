@@ -372,6 +372,20 @@ Pin* Module::getValueOutputPin()
     return nullptr;
 }
 
+void Module::addConnection(Connection* c)
+{
+	connections->push_back(c);
+}
+
+void Module::connectPins(int outputPinIndex, Pin* inputPin)
+{
+    if (outputPinIndex < 0 || outputPinIndex >= pins.size()) {
+        return;
+	}
+    pins.at(outputPinIndex)->getConnections().push_back(inputPin);      
+}
+
+
 void Module::setSelected(bool selected) {
     this->selected = selected;
 }

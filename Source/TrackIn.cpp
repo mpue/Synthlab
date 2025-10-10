@@ -152,14 +152,14 @@
 			const float* inR = nullptr;
 
 			if (getPins().at(2)->getConnections().size() >= 1) {
-				inL = getPins().at(2)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
+				inL = getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
 			}
 			if (getPins().at(3)->getConnections().size() >= 1) {
-				inR = getPins().at(3)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
+				inR = getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
 			}
 
-			outL = getPins().at(0)->getAudioBuffer()->getWritePointer(0);
-			outR = getPins().at(1)->getAudioBuffer()->getWritePointer(0);
+			outL = getPins().at(2)->getAudioBuffer()->getWritePointer(0);
+			outR = getPins().at(3)->getAudioBuffer()->getWritePointer(0);
 
 			if (track != nullptr && navigator->isPlaying()) {
 
@@ -173,8 +173,8 @@
 					float sampleL = track->getSample(0, j) * track->getVolume() * gainLeft;
 					float sampleR = track->getSample(1, j) * track->getVolume() * gainRight;
 
-					pins.at(0)->getAudioBuffer()->setSample(0, bufferIndex, sampleL);
-					pins.at(1)->getAudioBuffer()->setSample(0, bufferIndex, sampleR);
+					pins.at(2)->getAudioBuffer()->setSample(0, bufferIndex, sampleL);
+					pins.at(3)->getAudioBuffer()->setSample(0, bufferIndex, sampleR);
 				}
 				// track->setSamplePosition(track->getSamplePosition() + buffersize);
 				// numSamples += buffersize;

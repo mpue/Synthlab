@@ -92,6 +92,9 @@ public:
     
     virtual Pin* getValueOutputPin();
 
+	void addConnection(Connection* c);
+	void connectPins(int outputPinIndex, Pin* inputPin);
+
     void setConnections(std::vector<Connection*>* connections);
     void textEditorReturnKeyPressed(juce::TextEditor &) override;
     void setModules(std::vector<Module*>* modules);

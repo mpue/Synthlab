@@ -57,8 +57,8 @@ public:
 		t->setMidiChannel(channel, false);
 
 		Connection* c1 = new Connection(ti, ti->pins.at(4), gate, gate->pins.at(1));
-		editor->getModule()->getConnections()->push_back(c1);
-		gate->pins.at(1)->getConnections().push_back(ti->pins.at(4));
+		editor->getModule()->addConnection(c1);		
+		gate->connectPins(1, ti->pins.at(4));
 
 		pos.x += 160;
 
@@ -70,8 +70,8 @@ public:
 		pm->setChannel(channel);
 
 		Connection* c2 = new Connection(pm, pm->pins.at(4), ti, ti->pins.at(5));
-		editor->getModule()->getConnections()->push_back(c2);
-		ti->pins.at(5)->getConnections().push_back(pm->pins.at(4));
+		editor->getModule()->addConnection(c2);		
+		ti->connectPins(5, pm->pins.at(4));
 
 		// connect the audio out
 
@@ -96,13 +96,13 @@ public:
 	{
 		if (audioOut != nullptr) {
 			// audio out is not connected, thus make some connections
-			if (audioOut->pins.at(0)->getConnections().size() == 0 && audioOut->pins.at(1)->getConnections().size() == 0) {
-				audioOut->pins.at(0)->getConnections().push_back(m->pins.at(leftSourcePin));
-				audioOut->pins.at(1)->getConnections().push_back(m->pins.at(rightSourcePin));
+			if (audioOut->pins.at(0)->getConnections().size() == 0 && audioOut->pins.at(1)->getConnections().size() == 0) {				
+				audioOut->connectPins(0, m->pins.at(leftSourcePin));
+				audioOut->connectPins(1, m->pins.at(rightSourcePin));			
 				Connection* c1 = new Connection(m, m->pins.at(2), audioOut, audioOut->pins.at(0));
 				Connection* c2 = new Connection(m, m->pins.at(3), audioOut, audioOut->pins.at(1));
-				module->getConnections()->push_back(c1);
-				module->getConnections()->push_back(c2);
+				module->addConnection(c1);
+				module->addConnection(c2);				
 				audioOut->setVolume(1.0f);
 			}
 			// already connected, create an aux out
@@ -184,7 +184,7 @@ public:
 		}
 
 		// found one
-		ConnectAudioOut(audioOut, ti, pos, 0, 1,module, editor);
+		ConnectAudioOut(audioOut, ti, pos, 2, 3,module, editor);
 		return t;
 	}
 
