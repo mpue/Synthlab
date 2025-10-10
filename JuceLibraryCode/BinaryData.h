@@ -119,6 +119,9 @@ namespace BinaryData
     extern const char*   hp_png;
     const int            hp_pngSize = 2941;
 
+    extern const char*   infinity_png;
+    const int            infinity_pngSize = 3442;
+
     extern const char*   inverter_png;
     const int            inverter_pngSize = 3679;
 
@@ -276,7 +279,7 @@ namespace BinaryData
     const int            whitenoise_pngSize = 7446;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 89;
+    const int namedResourceListSize = 90;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

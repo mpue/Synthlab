@@ -103,6 +103,7 @@ private:
     TrackNavigator* navigator = nullptr;
 
     PrefabFactory() {
+        prefabs[37] = Prefab("Feedback", "Math");
         prefabs[38] = Prefab("TransformGeometry", "Graphics");
         prefabs[39] = Prefab("MergeGeometry", "Graphics");
         prefabs[40] = Prefab("Donut", "Graphics");
@@ -164,6 +165,7 @@ private:
         prefabs[96] = Prefab("And","Logic");
         prefabs[97] = Prefab("Or","Logic");
         prefabs[98] = Prefab("Not","Logic");
+        prefabImages[38] = juce::ImageCache::getFromMemory(BinaryData::infinity_png, BinaryData::infinity_pngSize);
         prefabImages[38] = juce::ImageCache::getFromMemory(BinaryData::transform_png, BinaryData::transform_pngSize);
         prefabImages[39] = juce::ImageCache::getFromMemory(BinaryData::merge_png, BinaryData::merge_pngSize);
         prefabImages[40] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);

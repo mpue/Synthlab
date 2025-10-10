@@ -66,6 +66,7 @@
       <FILE id="oqoVtX" name="forward-solid.png" compile="0" resource="1"
             file="Images/forward-solid.png"/>
       <FILE id="v1N5Vy" name="hp.png" compile="0" resource="1" file="Images/hp.png"/>
+      <FILE id="KvCI50" name="infinity.png" compile="0" resource="1" file="Images/infinity.png"/>
       <FILE id="MpStxg" name="inverter.png" compile="0" resource="1" file="Images/inverter.png"/>
       <FILE id="h83R3I" name="knob.png" compile="0" resource="1" file="Images/knob.png"/>
       <FILE id="t88qcC" name="Knob_64.png" compile="0" resource="1" file="Images/Knob_64.png"/>
@@ -486,6 +487,10 @@
                 file="Source/TransportDisplayComponent.h"/>
         </GROUP>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
+          <FILE id="APGbwC" name="FeedbackModule.cpp" compile="1" resource="0"
+                file="Source/FeedbackModule.cpp"/>
+          <FILE id="yxjo6T" name="FeedbackModule.h" compile="0" resource="0"
+                file="Source/FeedbackModule.h"/>
           <FILE id="nAeqym" name="TransformGeometryModule.cpp" compile="1" resource="0"
                 file="Source/TransformGeometryModule.cpp"/>
           <FILE id="nH5XDY" name="TransformGeometryModule.h" compile="0" resource="0"

@@ -60,7 +60,7 @@ SynthEditor::SynthEditor() {
 	setMouseClickGrabsKeyboardFocus(true);
 	setWantsKeyboardFocus(true);
 	setInterceptsMouseClicks(true, true);
-		
+
 	addChildComponent(root.get());
 }
 
@@ -76,7 +76,7 @@ SynthEditor::SynthEditor(double sampleRate, int buffersize)
 
 	root = std::make_unique<Module>("Root");
 	Project::getInstance()->setRoot(root.get());
-	
+
 
 	selectionModel.setRoot(root.get());
 
@@ -248,29 +248,34 @@ void SynthEditor::mouseDown(const MouseEvent& e)
 
 	if (e.mods.isLeftButtonDown()) {
 		isLeftMouseDown = true;
+
+		selectionFrame.setBounds(mouseDownX, mouseDownY, 0, 0);
+
+		selectionModel.deselectAllPins();
+		selectionModel.checkForConnectionSelect(e.getPosition());
+
+		// has Hit Module ?
+
+		state = selectionModel.checkForHitAndSelect(e.getPosition(), isLeftShiftDown);
+
+		if (state == SelectionModel::State::NONE) {
+			state = SelectionModel::State::DRAGGING_SELECTION;
+		}
+		else {
+			selectionModel.checkForPinSelection(e.getPosition());
+			notifyListeners();
+		}
+
+		// has any connection been clicked?
+
+		selectionModel.checkForConnectionSelect(e.getPosition());
 	}
-
-	selectionModel.deselectAllPins();
-	selectionModel.checkForConnectionSelect(e.getPosition());
-
-	// has Hit Module ?
-
-	state = selectionModel.checkForHitAndSelect(e.getPosition(), isLeftShiftDown);
-
-	if (state == SelectionModel::State::NONE) {
-		state = SelectionModel::State::DRAGGING_SELECTION;
-	}
-	else {
+	else if (e.mods.isRightButtonDown()) {
+		selectionModel.checkForHitAndSelect(e.getPosition(), isLeftShiftDown);
+		selectionModel.checkForConnectionSelect(e.getPosition());
 		selectionModel.checkForPinSelection(e.getPosition());
 		notifyListeners();
-	}
-
-	// has any connection been clicked?
-
-	selectionModel.checkForConnectionSelect(e.getPosition());
-
-	if (e.mods.isRightButtonDown()) {
-		showContextMenu(e.getPosition());
+		showCommonContextMenu(e.getPosition());
 	}
 
 	if (root->getModules()->size() > 0) {
@@ -353,8 +358,8 @@ void SynthEditor::moveSelection(const MouseEvent& e) {
 					int y = m->getSavedUiPosition().getY() + e.getOffsetFromDragStart().getY();
 
 					if (snapToGrid) {
-						x = UITools::snap(x, 10,4);
-						y = UITools::snap(y, 10,4);
+						x = UITools::snap(x, 10, 4);
+						y = UITools::snap(y, 10, 4);
 
 					}
 
@@ -506,23 +511,20 @@ void SynthEditor::mouseDoubleClick(const MouseEvent& e)
 							exitModalState(0);
 							delete this;
 						}
-
 					};
 
 					std::unique_ptr<RotatingCubeComponent> rcc = std::make_unique<RotatingCubeComponent>(gm);
 					rcc->setOpaque(false);
-					rcc->startTimer(30);	
+					rcc->startTimer(30);
 					gm->addChangeListener(rcc.get());
-					auto* window = new GeometryWindow();					
+					auto* window = new GeometryWindow();
 					window->setContentOwned(rcc.release(), true);
 					window->centreWithSize(800, 600);
-					window->setVisible(true);			
+					window->setVisible(true);
 					window->setAlwaysOnTop(true);
 
 					Project::getInstance()->getOpenWindows().push_back(window);
-					
 				}
-
 			}
 			else {
 				if (m->isSelected() && m->isEditable()) {
@@ -533,10 +535,102 @@ void SynthEditor::mouseDoubleClick(const MouseEvent& e)
 	}
 }
 
+bool::SynthEditor::showPinContextMenu(Point<int> position, Module* module, int pinIndex) {
 
-void SynthEditor::showContextMenu(Point<int> position) {
-	PopupMenu* popoupMenu = new PopupMenu();
-	popoupMenu->setLookAndFeel(Project::getInstance()->getLookAndFeel());
+	PopupMenu menu = PopupMenu();
+
+	menu.addItem(1, "Add control");
+	menu.addItem(2, "Add constant");
+	menu.addItem(3, "Add terminal");
+
+	const int result = menu.show();
+
+	if (result == 0)
+	{
+		// user dismissed the menu without picking anything
+	}
+	else if (result == 1) {
+		addControl(module, pinIndex);
+		menu.setLookAndFeel(nullptr);
+		return true;
+	}
+	else if (result == 2) {
+		addConstant(module, pinIndex);
+		menu.setLookAndFeel(nullptr);
+		return true;
+	}
+	else if (result == 3) {
+		addTerminal(module, pinIndex);
+		menu.setLookAndFeel(nullptr);
+		return true;
+	}
+		
+	menu.setLookAndFeel(nullptr);
+
+	return false;
+
+}
+
+bool SynthEditor::showModuleContextMenu(Point<int> position, Module* module) {
+
+	PopupMenu menu = PopupMenu();
+
+	if (module->isEditable()) {
+		menu.addItem(1, "Add input");
+		menu.addItem(2, "Add output");
+		menu.addItem(3, "Duplicate");
+		menu.addItem(4, "Save module");
+	}
+
+	Knob* k = nullptr;
+
+	if ((k = dynamic_cast<Knob*>(module)) != nullptr) {
+		menu.addItem(5, "MIDI learn");		
+	}
+
+
+	if (menu.getNumItems() > 0) {
+		const int result = menu.show();
+
+		if (result == 0)
+		{
+			// user dismissed the menu without picking anything
+		}
+		else if (result == 1) {
+			module->addPin(Pin::Direction::IN);
+			menu.setLookAndFeel(nullptr);
+			return true;
+		}
+		else if (result == 2) {
+			module->addPin(Pin::Direction::OUT);
+			menu.setLookAndFeel(nullptr);
+			return true;
+		}
+		else if (result == 3) {
+			duplicateSelected();
+			menu.setLookAndFeel(nullptr);
+			return true;
+		}
+		else if (result == 4) {
+			saveModule(selectionModel.getSelectedModule());
+			menu.setLookAndFeel(nullptr);
+			return true;
+		}
+		else if (result == 5) {
+			k->setLearning(true);
+			menu.setLookAndFeel(nullptr);
+			return true;
+		}
+
+	}
+
+	menu.setLookAndFeel(nullptr);
+}
+
+void SynthEditor::showCommonContextMenu(Point<int> position) {
+
+	PopupMenu commonMenu = PopupMenu();
+	commonMenu.setLookAndFeel(Project::getInstance()->getLookAndFeel());	
 
 	Module* module = nullptr;
 
@@ -554,199 +648,142 @@ void SynthEditor::showContextMenu(Point<int> position) {
 			}
 		}
 
-		Knob* k = nullptr;
-
-		if (pinIndex < 0) {
-			if (module->isEditable()) {
-				popoupMenu->addItem(1, "Add input");
-				popoupMenu->addItem(2, "Add output");
-				popoupMenu->addItem(4, "Duplicate");
-				popoupMenu->addItem(6, "Save module");
-
-			}
-			else {
-				if ((k = dynamic_cast<Knob*>(module)) != nullptr) {
-					popoupMenu->addItem(3, "MIDI learn");
-					popoupMenu->addCommandItem(Project::getInstance()->getCommandManager(), SynthEditor::CommandIds::RESET_GUI_POS);
-				}
-			}
-
-			const int result = popoupMenu->show();
-
-			if (result == 0)
-			{
-				// user dismissed the menu without picking anything
-			}
-			else if (result == 1) {
-				module->addPin(Pin::Direction::IN);
-
-			}
-			else if (result == 2) {
-				module->addPin(Pin::Direction::OUT);
-			}
-
-			else if (result == 3) {
-				if (k != nullptr) {
-					k->setLearning(true);
-				}
-			}
-			else if (result == 4) {
-				duplicateSelected();
-			}
-			else if (result == 6) {
-				saveModule(selectionModel.getSelectedModule());
+		// found pin 
+		if (pinIndex >= 0) {
+			if (showPinContextMenu(position, module, pinIndex)) {
+				return;
 			}
 		}
 		else {
-			popoupMenu->addItem(1, "Add control");
-			popoupMenu->addItem(2, "Add constant");
-			popoupMenu->addItem(3, "Add terminal");
 
-			const int result = popoupMenu->show();
-
-			if (result == 0)
-			{
-				// user dismissed the menu without picking anything
-			}
-			else if (result == 1) {
-				addControl(module, pinIndex);
-			}
-			else if (result == 2) {
-				addConstant(module, pinIndex);
-			}
-			else if (result == 3) {
-				addTerminal(module, pinIndex);
+			if (showModuleContextMenu(position, module)) {
+				return;
 			}
 
 		}
 
+	}
+	PopupMenu menu = PopupMenu();
+
+	// Add general items
+	menu.addItem(1, "Add module");	
+	menu.addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::DELETE_SELECTED);	
+	menu.addItem(3, "Load module");
+	menu.addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::SAVE_MODULE);
+	menu.addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::SAVE_SCREENSHOT);
+
+	if (locked) {
+		menu.addItem(99, "Unlock");
+		for (int i = 0; i < root->getModules()->size(); i++) {
+			// root->getModules()->at(i)->setInterceptsMouseClicks(false, true);
+		}
 	}
 	else {
-
-		popoupMenu->addItem(1, "Add module");
-		// m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::ADD_MODULE);
-		popoupMenu->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::DELETE_SELECTED);
-		// m->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::LOAD_MODULE);
-		popoupMenu->addItem(3, "Load module");
-		popoupMenu->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::SAVE_MODULE);
-		popoupMenu->addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::SAVE_SCREENSHOT);
-
-		if (locked) {
-			popoupMenu->addItem(99, "Unlock");
-			for (int i = 0; i < root->getModules()->size(); i++) {
-				// root->getModules()->at(i)->setInterceptsMouseClicks(false, true);
-			}
+		for (int i = 0; i < root->getModules()->size(); i++) {
+			// root->getModules()->at(i)->setInterceptsMouseClicks(true, true);
 		}
-		else {
-			for (int i = 0; i < root->getModules()->size(); i++) {
-				// root->getModules()->at(i)->setInterceptsMouseClicks(true, true);
-			}
-			popoupMenu->addItem(99, "Lock");
-		}
+		menu.addItem(99, "Lock");
+	}
 
+	PopupMenu alignMenu = PopupMenu();
 
-		PopupMenu alignMenu = PopupMenu();
+	alignMenu.addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::ALIGN_X);
+	alignMenu.addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::ALIGN_Y);
 
-		alignMenu.addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::ALIGN_X);
-		alignMenu.addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::ALIGN_Y);
+	menu.addSubMenu("Align", alignMenu);
 
-		popoupMenu->addSubMenu("Align", alignMenu);
+	PopupMenu prefabMenu = PopupMenu();
 
-		PopupMenu prefabMenu = PopupMenu();
+	StringArray* categories = PrefabFactory::getInstance()->getCategories();
 
-		StringArray* categories = PrefabFactory::getInstance()->getCategories();
+	for (int i = 0; i < categories->size(); i++) {
+		PopupMenu category = PopupMenu();
 
-		for (int i = 0; i < categories->size(); i++) {
-			PopupMenu category = PopupMenu();
+		std::map<int, PrefabFactory::Prefab> prefabs = PrefabFactory::getInstance()->getPrefabNames();
 
-			std::map<int, PrefabFactory::Prefab> prefabs = PrefabFactory::getInstance()->getPrefabNames();
+		for (std::map<int, PrefabFactory::Prefab>::iterator it = prefabs.begin(); it != prefabs.end(); ++it) {
+			if ((*it).second.getCategory() == categories->getReference(i)) {
 
-			for (std::map<int, PrefabFactory::Prefab>::iterator it = prefabs.begin(); it != prefabs.end(); ++it) {
-				if ((*it).second.getCategory() == categories->getReference(i)) {
+				if (((*it).second.getName().equalsIgnoreCase("Audio In") || (*it).second.getName().equalsIgnoreCase("Audio Out")) && !isRoot) {
+					continue;
+				}
 
-					if (((*it).second.getName().equalsIgnoreCase("Audio In") || (*it).second.getName().equalsIgnoreCase("Audio Out")) && !isRoot) {
-						continue;
-					}
-
-					if ((*it).second.getIcon() != nullptr) {
-						// int itemResultID, const String& itemText, bool isActive, bool isTicked, const Image& iconToUs
-						category.addItem((*it).first, (*it).second.getName(), true, false, *(*it).second.getIcon());
-					}
-					else {
-						category.addItem((*it).first, (*it).second.getName(), true);
-					}
-
+				if ((*it).second.getIcon() != nullptr) {
+					// int itemResultID, const String& itemText, bool isActive, bool isTicked, const Image& iconToUs
+					category.addItem((*it).first, (*it).second.getName(), true, false, *(*it).second.getIcon());
+				}
+				else {
+					category.addItem((*it).first, (*it).second.getName(), true);
 				}
 
 			}
 
-			prefabMenu.addSubMenu(categories->getReference(i), category, true);
 		}
 
-		popoupMenu->addSubMenu("Prefabs", prefabMenu);
+		prefabMenu.addSubMenu(categories->getReference(i), category, true);
+	}
 
-		PopupMenu recentFiles = PopupMenu();
+	menu.addSubMenu("Prefabs", prefabMenu);
 
-		Project::getInstance()->loadRecentFileList();
-		StringArray recent = Project::getInstance()->getRecentFiles();
+	PopupMenu recentFiles = PopupMenu();
 
-		for (int i = 0; i < recent.size(); i++) {
-			recentFiles.addItem(i + 1000, recent.getReference(i));
-		}
+	Project::getInstance()->loadRecentFileList();
+	StringArray recent = Project::getInstance()->getRecentFiles();
 
-		popoupMenu->addSubMenu("Recent files", recentFiles);
+	for (int i = 0; i < recent.size(); i++) {
+		recentFiles.addItem(i + 1000, recent.getReference(i));
+	}
 
-		const int result = popoupMenu->show();
+	menu.addSubMenu("Recent files", recentFiles);
 
-		if (result == 0)
-		{
-			// user dismissed the menu without picking anything
-		}
-		else if (result == 1) {
-			Module* m = new Module("Module");
-			m->setIndex(PrefabFactory::getInstance()->getNextModuleIndex());
-			AddModuleAction* am = new AddModuleAction(this, position, m->getIndex());
-			am->setModule(m);
-			Project::getInstance()->getUndoManager()->beginNewTransaction();
-			Project::getInstance()->getUndoManager()->perform(am);
-		}
-		else if (result == 3) {
+	const int result = menu.show();
+
+	if (result == 0)
+	{
+		// user dismissed the menu without picking anything
+	}
+	else if (result == 1) {
+		Module* m = new Module("Module");
+		m->setIndex(PrefabFactory::getInstance()->getNextModuleIndex());
+		AddModuleAction* am = new AddModuleAction(this, position, m->getIndex());
+		am->setModule(m);
+		Project::getInstance()->getUndoManager()->beginNewTransaction();
+		Project::getInstance()->getUndoManager()->perform(am);
+	}
+	else if (result == 3) {
+		setRunning(false);
+		loadModule();
+		setRunning(true);
+	}
+	else if (result == 99) {
+		locked = !locked;
+	}
+	else if (result >= 30 && result <= 99) {
+		AddModuleAction* am = new AddModuleAction(this, position, result);
+		Project::getInstance()->getUndoManager()->beginNewTransaction();
+		Project::getInstance()->getUndoManager()->perform(am);
+	}
+	else if (result >= 1000) {
+		recent = Project::getInstance()->getRecentFiles();
+		String path = recent.getReference(result - 1000);
+		File file = File(path);
+
+		if (file.exists()) {
+			FileInputStream* fis = new FileInputStream(file);
+			String data = fis->readEntireStreamAsString();
+			delete fis;
 			setRunning(false);
-			loadModule();
+			cleanUp();
+			newFile();
+			loadFromString(data);
+			updateProject(file);
+			Project::getInstance()->setNewFile(false);
 			setRunning(true);
-		}
-		else if (result == 99) {
-			locked = !locked;
-		}
-		else if (result >= 30 && result <= 99) {
-			AddModuleAction* am = new AddModuleAction(this, position, result);
-			Project::getInstance()->getUndoManager()->beginNewTransaction();
-			Project::getInstance()->getUndoManager()->perform(am);
-		}
-		else if (result >= 1000) {
-			recent = Project::getInstance()->getRecentFiles();
-			String path = recent.getReference(result - 1000);
-			File file = File(path);
-
-			if (file.exists()) {
-				FileInputStream* fis = new FileInputStream(file);
-				String data = fis->readEntireStreamAsString();
-				delete fis;
-				setRunning(false);
-				cleanUp();
-				newFile();
-				loadFromString(data);
-				updateProject(file);
-				Project::getInstance()->setNewFile(false);
-				setRunning(true);
-			}
-
 		}
 
 	}
 
-	popoupMenu->setLookAndFeel(nullptr);
-	delete popoupMenu;
+	menu.setLookAndFeel(nullptr);	
 
 }
 
@@ -1202,7 +1239,7 @@ void SynthEditor::saveFile() {
 			ValueTree tracks = navigator->getConfiguration();
 			xml = tracks.createXml();
 			xml->writeToFile(file.getParentDirectory().getFullPathName() + "\\" + file.getFileNameWithoutExtension() + "_tracks.xml", "");
-			xml = nullptr;		
+			xml = nullptr;
 		}
 
 		setDirty(false);
@@ -1327,7 +1364,7 @@ void SynthEditor::openFile() {
 		ValueTree v = ValueTree::fromXml(*xml.get());
 		setRunning(false);
 		ModuleUtils::loadStructure(root->getModules(), root->getConnections(), &v, this);
-	
+
 		for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
 			addAndMakeVisible((*it));
 			configureAudioModule((*it), this);
@@ -1430,8 +1467,8 @@ void SynthEditor::openTracks(File file)
 				juce::Point<int> pos = juce::Point<int>(10, 10);
 				Track* t = navigator->addTrack(Track::Type::INSTRUMENT, Project::getInstance()->getSampleRate());
 
-				ti->setTrack(t);				
-				t->setMidiChannel(track.getProperty("midiChannel").toString().getIntValue(),false);
+				ti->setTrack(t);
+				t->setMidiChannel(track.getProperty("midiChannel").toString().getIntValue(), false);
 				ValueTree regions = track.getChild(0);
 
 				for (int j = 0; j < regions.getNumChildren(); j++) {
@@ -1440,17 +1477,17 @@ void SynthEditor::openTracks(File file)
 					Rectangle<int> bounds = mr->getBounds();
 					bounds.setWidth(region.getProperty("width"));
 					mr->setBounds(bounds);
-					ValueTree events =  region.getChild(0);
+					ValueTree events = region.getChild(0);
 					for (int k = 0; k < events.getNumChildren(); k++) {
 						ValueTree event = events.getChild(k);
 						Logger::getCurrentLogger()->writeToLog(event.getProperty("type"));
 						if (event.getProperty("type") == "noteon") {
-							MidiMessage msg = MidiMessage::noteOn(event.getProperty("channel").toString().getIntValue(), event.getProperty("note"), event.getProperty("velocity").toString().getFloatValue()/127.0f);		
+							MidiMessage msg = MidiMessage::noteOn(event.getProperty("channel").toString().getIntValue(), event.getProperty("note"), event.getProperty("velocity").toString().getFloatValue() / 127.0f);
 							mr->addMessage(new MidiMessage(msg), Time::getMillisecondCounterHiRes() / 1000, event.getProperty("timestamp").toString().getIntValue());
 						}
 						else if (event.getProperty("type") == "noteoff") {
 							MidiMessage msg = MidiMessage::noteOff(event.getProperty("channel").toString().getIntValue(), event.getProperty("note").toString().getIntValue(), (float)0);
-							mr->addMessage(new MidiMessage(msg), Time::getMillisecondCounterHiRes()/1000, event.getProperty("timestamp").toString().getIntValue());
+							mr->addMessage(new MidiMessage(msg), Time::getMillisecondCounterHiRes() / 1000, event.getProperty("timestamp").toString().getIntValue());
 						}
 						else if (event.getProperty("type") == "control") {
 							MidiMessage msg = MidiMessage::controllerEvent(event.getProperty("channel").toString().getIntValue(), event.getProperty("controller").toString().getIntValue(), event.getProperty("value").toString().getIntValue());
@@ -1523,12 +1560,12 @@ void SynthEditor::addVirtualInstrumentTrack()
 	}
 
 	PluginSelectorDialog::show(values, [this](juce::String selectedPlugin)
-	{
-		Point<int> pos = Point<int>(10, 10);
+		{
+			Point<int> pos = Point<int>(10, 10);
 
-		Track* t = TrackUtil::createVirtualInstrumentTrack(selectedPlugin, pos,navigator, this);
-		// t->addMidiRegion(48000, 0, 960000);
-	});
+			Track* t = TrackUtil::createVirtualInstrumentTrack(selectedPlugin, pos, navigator, this);
+			// t->addMidiRegion(48000, 0, 960000);
+		});
 
 }
 

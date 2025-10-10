@@ -63,7 +63,10 @@ public:
 
     void prepareToPlay (int samplesPerBlockExpected, double sampleRate);
 
-    void showContextMenu(Point<int> position);
+    void showCommonContextMenu(Point<int> position);
+    bool showPinContextMenu(Point<int> position, Module* module, int pinIndex);
+    bool showModuleContextMenu(Point<int> position, Module* module);
+
     bool isRunning();
     void setRunning(bool running);
     void timerCallback() override;

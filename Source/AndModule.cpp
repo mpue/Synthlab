@@ -24,11 +24,8 @@ using namespace std::chrono; // nanoseconds, system_clock, seconds
 //==============================================================================
 AndModule::AndModule()
 {
-    setSize(110,70);
-    nameLabel->setJustificationType (Justification::left);
-    nameLabel->setTopLeftPosition(18,2);
+    setSize(120,140);
     setName("And");
-    nameLabel->setVisible(false);
     editable = false;
     prefab = true;
 }
