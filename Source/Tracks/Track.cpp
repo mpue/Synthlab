@@ -465,7 +465,7 @@ void Track::splitRegion() {
 			leftRegion->setSelected(true);
 			rightRegion->setSelected(true);
 		}
-
+		return;
 	}
 	
 	if (MidiRegion* region = dynamic_cast<MidiRegion*>(baseRegion)) {

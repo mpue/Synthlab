@@ -164,7 +164,7 @@ void SelectionModel::checkForConnectionSelect(juce::Point<int> pos) {
         Connection* c = root->getConnections()->at(i);
         
         if (c->source != NULL && c->target != NULL)  {
-            if(c->getPath().contains(pos.x,pos.y) ){
+            if(c->getPath().contains(pos.x,pos.y, 5.0f) ){
                 
                 c->selected = true;
             }

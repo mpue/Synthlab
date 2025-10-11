@@ -31,7 +31,7 @@
 #include "TrackUtil.h"
 #include "Tracks/BounceThread.h"
 #include "ChatGPTInterface.h"
-
+#include "AudioEngine/BPMDetector.h"
 
 using juce::String;
 using juce::File;
@@ -968,6 +968,10 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 	else if (index == 4) {
 
 		menu.addItem(41, "Quantize", true, false, nullptr);
+		menu.addItem(42, "Detect BPM", true, false, nullptr);
+		menu.addItem(43, "Duplicate", true, false, nullptr);
+		menu.addItem(44, "Split at marker", true, false, nullptr);
+		menu.addItem(45, "Delete", true, false, nullptr);
 	}
 
 	return menu;
@@ -1066,6 +1070,47 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	else if (menuItemID == 41) {
 		navigator->getCurrentTrack()->getCurrentRegion()->quantize(96);
 	}
+	else if (menuItemID == 42) {
+		Region* region = navigator->getCurrentTrack()->getCurrentRegion();
+		BPMDetector detector;
+
+		if (AudioRegion* ar = dynamic_cast<AudioRegion*>(region)) {
+			if (ar->getBuffer() == nullptr) {
+				AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Error", "No audio data found in the selected region.");
+				return;
+			}
+			else {
+				AudioBuffer<float>* buffer = ar->getBuffer();
+
+				float bpm = detector.detectBPM(*buffer, Project::getInstance()->getSampleRate());
+				AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "BPM Result", "The region has "+juce::String(bpm)+" bpm");
+			}
+		}
+		else {
+			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Error", "Selected region is not an audio region.");
+			return;
+		}
+
+	}
+	else if (menuItemID == 43) {
+		if (navigator->getCurrentTrack() != nullptr) {
+			Region* region = navigator->getCurrentTrack()->getCurrentRegion();
+			if (region != nullptr) {			
+				navigator->getCurrentTrack()->duplicateRegion(region);
+			}			
+		}
+	}
+	else if (menuItemID == 44) {
+		if (navigator->getCurrentTrack() != nullptr) {
+			navigator->getCurrentTrack()->splitRegion();
+		}
+	}
+	else if (menuItemID == 45) {
+		for (int i = 0; i < navigator->getTracks().size(); i++) {
+			navigator->getTracks().at(i)->removeSelectedRegions(true);
+		}
+	}
+
 	else if (menuItemID == 999) {
 		JUCEApplication::getInstance()->shutdown();
 	}

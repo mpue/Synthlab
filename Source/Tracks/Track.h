@@ -86,20 +86,10 @@ public:
 	void setOffset(int offset);
 	int getOffset();
     void setHeight(int height);
-
-    void focusGained(FocusChangeType cause) override {
-        Logger::getCurrentLogger()->writeToLog("Track: focus gained");
-    }
-
-    void focusLost(FocusChangeType cause) override {
-        Logger::getCurrentLogger()->writeToLog("Track: focus lost");
-    }
-
     void toggleLoopSelection();
     void clearSelection();
     
     MidiBuffer* getMidiBuffer();
-
 	AudioSampleBuffer* getBuffer();
   	AudioSampleBuffer* getRecordingBuffer();
     
@@ -376,7 +366,6 @@ private:
     juce::Array<juce::PropertyComponent*> properties;
   
     TrackNavigator* navigator;
-
 
 	bool gridEnabled = true;
     double bpm = 120.0;

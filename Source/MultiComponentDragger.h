@@ -276,7 +276,7 @@ private:
         }
         else
         {
-            constrainedDirection = noConstraint;
+            constrainedDirection = xAxisOnly;
 
         }
     }

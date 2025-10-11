@@ -165,6 +165,11 @@ public:
 
     void exportAudio();
 
+    void cutConnectionAtPosition(Point<int> position);
+    void cutConnectionsAlongLine(Point<int> start, Point<int> end);
+    void removeConnection(Connection* c);
+
+
 private:
     //[UserVariables]   -- You can add your own custom variables in this section.
 
@@ -244,6 +249,8 @@ private:
     std::vector<EditorListener*> listener;
     
     TrackNavigator* navigator = nullptr;
+
+    bool isMiddleMouseDown = false;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SynthEditor)
 };

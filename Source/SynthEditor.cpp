@@ -270,6 +270,10 @@ void SynthEditor::mouseDown(const MouseEvent& e)
 
 		selectionModel.checkForConnectionSelect(e.getPosition());
 	}
+	else if (e.mods.isMiddleButtonDown()) {
+		isMiddleMouseDown = true;
+		cutConnectionAtPosition(e.getPosition());
+	}
 	else if (e.mods.isRightButtonDown()) {
 		selectionModel.checkForHitAndSelect(e.getPosition(), isLeftShiftDown);
 		selectionModel.checkForConnectionSelect(e.getPosition());
@@ -298,6 +302,13 @@ void SynthEditor::mouseDrag(const MouseEvent& e)
 
 	lineStopX = lineStartX + e.getDistanceFromDragStartX();
 	lineStopY = lineStartY + e.getDistanceFromDragStartY();
+
+	// Mittlerer Mausbutton: schneide Verbindungen
+	if (isMiddleMouseDown) {
+		cutConnectionsAlongLine(Point<int>(mouseDownX, mouseDownY), e.getPosition());
+		repaint();
+		return;
+	}
 
 	if (state != SelectionModel::State::DRAGGING_SELECTION) {
 		checkForConnectionDrag();
@@ -422,6 +433,9 @@ void SynthEditor::mouseUp(const MouseEvent& e)
 {
 	if (e.mods.isLeftButtonDown()) {
 		isLeftMouseDown = false;
+	}
+	if (e.mods.isMiddleButtonDown()) {
+		isMiddleMouseDown = false;
 	}
 
 	if (state == SelectionModel::MOVING_SELECTION) {
@@ -2074,4 +2088,81 @@ void SynthEditor::updateProject(File file) {
 	for (int i = 0; i < listener.size(); i++) {
 		listener.at(i)->fileChanged(file.getFullPathName());
 	}
+}
+
+void SynthEditor::cutConnectionAtPosition(Point<int> position)
+{
+	for (int i = root->getConnections()->size() - 1; i >= 0; i--) {
+		Connection* c = root->getConnections()->at(i);
+
+		if (c->source != nullptr && c->target != nullptr) {
+			int x1 = c->source->getX() + c->a->x;
+			int y1 = c->source->getY() + c->a->y + 5;
+			int x2 = c->target->getX() + c->b->x;
+			int y2 = c->target->getY() + c->b->y + 5;
+
+			// Berechne Distanz von Punkt zur Linie
+			Line<float> line(x1, y1, x2, y2);
+			Point<float> nearestPoint;
+			float distance = line.getDistanceFromPoint(position.toFloat(), nearestPoint);
+
+			if (distance <= 15.0f) { // 15 Pixel Toleranz
+				removeConnection(c);
+				break; // Nur eine Verbindung pro Klick
+			}
+		}
+	}
+	repaint();
+}
+
+void SynthEditor::cutConnectionsAlongLine(Point<int> start, Point<int> end)
+{
+	Line<float> cutLine(start.toFloat(), end.toFloat());
+
+	for (int i = root->getConnections()->size() - 1; i >= 0; i--) {
+		Connection* c = root->getConnections()->at(i);
+
+		if (c->source != nullptr && c->target != nullptr) {
+			int x1 = c->source->getX() + c->a->x;
+			int y1 = c->source->getY() + c->a->y + 5;
+			int x2 = c->target->getX() + c->b->x;
+			int y2 = c->target->getY() + c->b->y + 5;
+
+			Line<float> connectionLine(x1, y1, x2, y2);
+			Point<float> intersection;
+
+			if (connectionLine.intersects(cutLine, intersection)) {
+				removeConnection(c);
+			}
+		}
+	}
+}
+
+void SynthEditor::removeConnection(Connection* c)
+{
+	// Entferne die Verbindung aus den Pin-Listen
+	if (c->a != nullptr) {
+		auto& connections = c->a->getConnections();
+		auto it = std::find(connections.begin(), connections.end(), c->b);
+		if (it != connections.end()) {
+			connections.erase(it);
+		}
+	}
+
+	if (c->b != nullptr) {
+		auto& connections = c->b->getConnections();
+		auto it = std::find(connections.begin(), connections.end(), c->a);
+		if (it != connections.end()) {
+			connections.erase(it);
+		}
+	}
+
+	// Entferne aus der Root-Liste
+	auto& rootConnections = *root->getConnections();
+	auto it = std::find(rootConnections.begin(), rootConnections.end(), c);
+	if (it != rootConnections.end()) {
+		rootConnections.erase(it);
+	}
+
+	delete c;
 }

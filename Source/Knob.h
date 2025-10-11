@@ -79,6 +79,11 @@ public:
         // setInterceptsMouseClicks(locked, true);
     }
 
+
+    void mouseDown(const MouseEvent& event) override {
+		DBG("Knob mouse down. Event source "+String(event.eventComponent->getName()));
+	}
+
 private:
 
     struct ValueListener : juce::Value::Listener

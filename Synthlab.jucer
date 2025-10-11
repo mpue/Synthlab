@@ -291,6 +291,7 @@
               file="Source/Actions/RemoveSelectedAction.h"/>
       </GROUP>
       <GROUP id="{A79C9093-D329-37A0-AEE1-CF7BDC5C60DE}" name="AudioEngine">
+        <FILE id="hjpDyz" name="BPMDetector.h" compile="0" resource="0" file="Source/AudioEngine/BPMDetector.h"/>
         <FILE id="o9JJ69" name="Compressor.cpp" compile="1" resource="0" file="Source/AudioEngine/Compressor.cpp"/>
         <FILE id="hbCowv" name="Compressor.h" compile="0" resource="0" file="Source/AudioEngine/Compressor.h"/>
         <FILE id="sy0PFp" name="OfflinePlayHead.h" compile="0" resource="0"
@@ -814,7 +815,8 @@
                        libraryPath="d:/devel/Synthlab/lib/debug"/>
         <CONFIGURATION isDebug="0" name="Release" headerPath="d:\devel\ASIOSDK2.3\common\&#10;d:\devel\VST_SDK3.7\"
                        libraryPath="d:/devel/Synthlab/lib/release/" useRuntimeLibDLL="0"
-                       multiProcessorCompilation="1" enableIncrementalLinking="1"/>
+                       multiProcessorCompilation="1" enableIncrementalLinking="1" optimisation="4"
+                       winWarningLevel="2" alwaysGenerateDebugSymbols="0"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_audio_basics" path="D:\devel\JUCE8\modules"/>
