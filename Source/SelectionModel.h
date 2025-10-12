@@ -31,7 +31,7 @@ public:
     void clearSelection();
     void checkForPinSelection(juce::Point<int> position);
     void deselectAllPins();
-    State checkForHitAndSelect(juce::Point<int> pos, bool additionalSelect);
+    State checkForHitAndSelect(juce::Point<int> pos, bool additionalSelect, bool shouldDeselect);
     void checkForConnectionSelect(juce::Point<int> pos);
     void select(juce::Point<int> pos);
     void setRoot(Module* root);

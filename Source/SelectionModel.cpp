@@ -73,7 +73,7 @@ void SelectionModel::setCurrentLayer(int layer) {
     this->layer = layer;
 }
 
-SelectionModel::State SelectionModel::checkForHitAndSelect(juce::Point<int> pos, bool additionalSelect) {
+SelectionModel::State SelectionModel::checkForHitAndSelect(juce::Point<int> pos, bool additionalSelect, bool shouldDeselect) {
     
     bool hit = false;
     
@@ -86,7 +86,7 @@ SelectionModel::State SelectionModel::checkForHitAndSelect(juce::Point<int> pos,
             
             // not selected yet
             if(!selectionContains(root->getModules()->at(i))) {
-                if (!additionalSelect) {
+                if (!additionalSelect && shouldDeselect) {
                     clearSelection();
                 }
                 root->getModules()->at(i)->setSelected(true);
@@ -98,7 +98,7 @@ SelectionModel::State SelectionModel::checkForHitAndSelect(juce::Point<int> pos,
         
     }
     
-    if (!hit) {
+    if (!hit && shouldDeselect) {
         clearSelection();
     }
     

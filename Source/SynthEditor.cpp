@@ -256,7 +256,7 @@ void SynthEditor::mouseDown(const MouseEvent& e)
 
 		// has Hit Module ?
 
-		state = selectionModel.checkForHitAndSelect(e.getPosition(), isLeftShiftDown);
+		state = selectionModel.checkForHitAndSelect(e.getPosition(), isLeftShiftDown, true);
 
 		if (state == SelectionModel::State::NONE) {
 			state = SelectionModel::State::DRAGGING_SELECTION;
@@ -275,7 +275,7 @@ void SynthEditor::mouseDown(const MouseEvent& e)
 		cutConnectionAtPosition(e.getPosition());
 	}
 	else if (e.mods.isRightButtonDown()) {
-		selectionModel.checkForHitAndSelect(e.getPosition(), isLeftShiftDown);
+		selectionModel.checkForHitAndSelect(e.getPosition(), isLeftShiftDown, false);
 		selectionModel.checkForConnectionSelect(e.getPosition());
 		selectionModel.checkForPinSelection(e.getPosition());
 		notifyListeners();
@@ -652,7 +652,7 @@ void SynthEditor::showCommonContextMenu(Point<int> position) {
 		module = selectionModel.getSelectedModule();
 	}
 
-	if (module != nullptr) {
+	if (module != nullptr && selectionModel.getSelectedModules().size() == 1) {
 
 		int pinIndex = -1;
 

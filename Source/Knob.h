@@ -75,15 +75,15 @@ public:
 
     virtual void setLocked(bool locked) override {
         this->locked = locked;
-		if (locked)
-            addMouseListener(this, true);
-        else 
-			removeMouseListener(this);
+		//if (locked)
+        //  addMouseListener(this, true);
+        //else 
+		//  removeMouseListener(this);
 
         this->slider->setEnabled(locked);
-        setInterceptsMouseClicks(locked, true);
-        slider->setInterceptsMouseClicks(locked, true);
-        setEnabled(locked);
+        setInterceptsMouseClicks(locked, locked);
+        slider->setInterceptsMouseClicks(locked, locked);
+        // setEnabled(locked);
     }
 
     void mouseDown(const MouseEvent& event) override {
@@ -98,8 +98,7 @@ public:
     void mouseMove(const MouseEvent& event) override {
         slider->mouseMove(event);
 	}
-        
-        
+                
 private:
 
     struct ValueListener : juce::Value::Listener
