@@ -151,6 +151,11 @@ public:
 
 		setColour(juce::TabbedComponent::backgroundColourId, juce::Colour(0xff1a1a1a));
 
+        gradientVertical = juce::ColourGradient(juce::Colours::red, 0, 0, juce::Colours::chartreuse, 5, 128, false);
+        gradientVertical.addColour(0.2, juce::Colours::lightgrey);
+
+        gradientHorizontal = juce::ColourGradient(juce::Colours::chartreuse, 0, 0, juce::Colours::red, 128, 5, false);
+        gradientHorizontal.addColour(0.8, juce::Colours::grey);
 
         // Schriftart setzen
         setDefaultSansSerifTypefaceName("Verdana");
@@ -221,7 +226,7 @@ public:
         g.fillPath(thumb, juce::AffineTransform::rotation(angle).translated(centreX, centreY));
     }
 
-    
+    /*
     void drawLinearSlider(juce::Graphics& g, int x, int y, int width, int height,
         float sliderPos, float minSliderPos, float maxSliderPos,
         juce::Slider::SliderStyle style, juce::Slider& slider) override
@@ -279,78 +284,80 @@ public:
             g.fillEllipse(juce::Rectangle<float>(thumbRadius, thumbRadius).withCentre(thumbPoint));
         }
     }
-   
-    /*
-    void drawLinearSlider(juce::Graphics& g, int x, int y, int width, int height,
-        float sliderPos, float minSliderPos, float maxSliderPos,
-        const juce::Slider::SliderStyle style, juce::Slider& slider) override
-    {
-        if (style == juce::Slider::LinearHorizontal)
-        {
-            // Hintergrund
-            g.setColour(juce::Colour(0xFF1a2332));
-            g.fillRoundedRectangle(x, y, width, height, 4.0f);
 
-            // VU-Meter Bereich berechnen
-            float fillWidth = sliderPos - x;
-
-            // Gradient für VU-Meter erstellen (Blautöne)
-            juce::ColourGradient gradient(
-                juce::Colour(0xFF4a90e2), x, y,  // Helles Blau (links)
-                juce::Colour(0xFF2e5c8a), sliderPos, y,  // Dunkles Blau (rechts)
-                false
-            );
-
-            // Optional: Warnstufe bei hohen Werten (über 80%)
-            float valueRange = slider.getMaximum() - slider.getMinimum();
-            float normalizedValue = (slider.getValue() - slider.getMinimum()) / valueRange;
-
-            if (normalizedValue > 0.8f)
-            {
-                gradient = juce::ColourGradient(
-                    juce::Colour(0xFF4a90e2), x, y,
-                    juce::Colour(0xFF5a7fa0), sliderPos, y,
-                    false
-                );
-            }
-
-            g.setGradientFill(gradient);
-            g.fillRoundedRectangle(x, y, fillWidth, height, 4.0f);
-
-            // Segmentierte Darstellung (optional)
-            g.setColour(juce::Colour(0xFF1a2332));
-            int segments = 20;
-            float segmentWidth = width / (float)segments;
-            for (int i = 1; i < segments; ++i)
-            {
-                float segX = x + i * segmentWidth;
-                if (segX < sliderPos)
-                {
-                    g.drawLine(segX, y + 2, segX, y + height - 2, 2.0f);
-                }
-            }
-
-            // Glanzeffekt oben
-            g.setGradientFill(juce::ColourGradient(
-                juce::Colour(0x40ffffff), x, y,
-                juce::Colour(0x00ffffff), x, y + height * 0.5f,
-                false
-            ));
-            g.fillRoundedRectangle(x, y, fillWidth, height * 0.5f, 4.0f);
-
-            // Rahmen
-            g.setColour(juce::Colour(0xFF0d1419));
-            g.drawRoundedRectangle(x, y, width, height, 4.0f, 1.5f);
-        }
-        else
-        {
-            // Fallback für andere Slider-Stile
-            LookAndFeel_V4::drawLinearSlider(g, x, y, width, height,
-                sliderPos, minSliderPos, maxSliderPos,
-                style, slider);
-        }
-    }
     */
+   
+    
+
+    void drawLinearSlider(Graphics& g, int x, int y, int width, int height,
+        float sliderPos, float minSliderPos, float maxSliderPos,
+        const Slider::SliderStyle style, Slider& slider) {
+        g.fillAll(slider.findColour(Slider::backgroundColourId));
+
+        if (style == Slider::SliderStyle::LinearBarVertical) {
+
+            float from = (sliderPos / maxSliderPos) * height;
+            float to = height;
+
+            g.setGradientFill(gradientVertical);
+
+            if (Time::getMillisecondCounter() - triggerTime > 1000) {
+                triggerTime = Time::getMillisecondCounter();
+                maxY = 0xFFFF;
+            }
+
+            if (from < maxY) {
+                maxY = from;
+
+            }
+
+            g.fillRect((float)x, (float)maxY, (float)width, 1.0f);
+            g.fillRect((float)x, from, (float)width, to);
+
+        }
+        else if (style == Slider::SliderStyle::LinearBar) {
+
+            // float to  = (sliderPos / maxSliderPos) * width;
+            //float to = width;
+
+            g.setGradientFill(gradientHorizontal);
+            //g.fillRect((float)x,(float)y,(float)to,(float)height);
+
+            if (Time::getMillisecondCounter() - triggerTime > 2000) {
+                triggerTime = Time::getMillisecondCounter();
+                maxX = 0;
+            }
+
+            if (sliderPos > maxX) {
+                maxX = sliderPos;
+
+            }
+
+            g.fillRect((float)maxX, (float)y, 2.0f, (float)height);
+            g.fillRect(0.0f, (float)y, (float)(sliderPos), (float)height);
+        }
+
+
+        else if (style == Slider::SliderStyle::LinearVertical) {
+            Image fader = ImageCache::getFromMemory(BinaryData::Fader_png, BinaryData::Fader_pngSize);
+
+
+            float from = (sliderPos / maxSliderPos) * height;
+            LookAndFeel_V3::drawLinearSliderBackground(g, x, y + 10, width, height + 10, sliderPos, minSliderPos, maxSliderPos, style, slider);
+
+
+            g.setColour(Colours::white);
+            g.drawImageAt(fader.rescaled(fader.getWidth(), fader.getHeight() / 2), 0, from - fader.getHeight() / 4 + 10);
+
+        }
+        else {
+            LookAndFeel_V4::drawLinearSlider(g, x, y, width, height, sliderPos, minSliderPos, maxSliderPos, style, slider);
+        }
+
+
+    }
+
+    
 
     // Custom ComboBox Arrow
     void drawComboBox(juce::Graphics& g, int width, int height, bool isButtonDown,
@@ -503,4 +510,13 @@ public:
             g.drawFittedText(text, r.reduced(2, 0), juce::Justification::centredLeft, 1);
         }
     }*/
+
+    private:
+        juce::ColourGradient gradientVertical;
+        juce::ColourGradient gradientHorizontal;
+        juce::ComponentAnimator animator;
+
+        long triggerTime = 0;
+        int maxY = 0xFFFF;
+        int maxX = 0;
 };

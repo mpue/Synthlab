@@ -184,10 +184,29 @@ bool AddModuleAction::perform() {
     m->setSelected(true);
 
     editor->getSelectionModel().getSelectedModules().push_back(m);
-    editor->repaint();
     
     module = m;
-    
+
+    switch (editor->getCurrentLayer()) {
+        case Module::Layer::ALL:
+            module->setCurrentLayer(Module::Layer::ALL);
+            break;
+        case Module::Layer::GUI:
+            module->setCurrentLayer(Module::Layer::GUI);
+            break;
+        case Module::Layer::MODULES:
+            module->setCurrentLayer(Module::Layer::MODULES);
+            break;
+        case Module::Layer::CONNECTIONS:
+            module->setCurrentLayer(Module::Layer::CONNECTIONS);
+            break;
+        default:
+            break;
+	}
+
+
+    m->repaint();
+    editor->repaint();
     editor->setDirty(true);
     
     return true;

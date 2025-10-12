@@ -986,6 +986,11 @@ int SynthEditor::getCurrentLayer() {
 	return static_cast<int>(currentLayer);
 }
 
+Module::Layer SynthEditor::getCurrentLayerEnum()
+{
+	return Module::Layer();
+}
+
 SelectionModel& SynthEditor::getSelectionModel() {
 	return selectionModel;
 }

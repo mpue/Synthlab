@@ -68,7 +68,6 @@ public:
         return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
     }
 
-
     virtual Layer getLayer() override {
         return Layer::GUI;
     };

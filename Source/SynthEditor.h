@@ -78,6 +78,7 @@ public:
     SelectionModel& getSelectionModel();
     void setCurrentLayer(int layer);
     int getCurrentLayer();
+	Module::Layer getCurrentLayerEnum();
     void duplicateSelected();
     void setLocked(bool lock);
     bool isLocked();
