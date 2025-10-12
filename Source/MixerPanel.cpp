@@ -187,9 +187,7 @@ void MixerPanel::removeChannel(int index) {
         }
         else {
             ++it;
-        }
-
-        
+        }        
     }
 }
 

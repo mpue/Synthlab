@@ -359,7 +359,7 @@ void TrackNavigator::ResetMarkerPosition()
 
 void TrackNavigator::setSamplePosition(int position) {
 
-	// Logger::getCurrentLogger()->writeToLog("setSamplePosition : " + String(position));
+	DBG("setSamplePosition : " + String(position));
 	this->samplePosition = alignToBufferSize(position);
 
 	if (loopEnabled) {

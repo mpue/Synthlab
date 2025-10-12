@@ -1495,7 +1495,6 @@ void SynthEditor::openTracks(File file)
 			else if (track.getProperty("type") == "instrument") {
 				juce::Point<int> pos = juce::Point<int>(10, 10);
 				Track* t = navigator->addTrack(Track::Type::INSTRUMENT, Project::getInstance()->getSampleRate());
-
 				ti->setTrack(t);
 				t->setMidiChannel(track.getProperty("midiChannel").toString().getIntValue(), false);
 				ValueTree regions = track.getChild(0);
@@ -1629,8 +1628,6 @@ void SynthEditor::setModule(std::unique_ptr<Module> m, bool deleteWhenRemoved) {
 Module* SynthEditor::getModule() {
 	return root.get();
 }
-
-
 
 void SynthEditor::prepareToPlay(int samplesPerBlockExpected, double sampleRate) {
 	this->_sampleRate = sampleRate;

@@ -28,12 +28,23 @@ public:
     void paint(juce::Graphics& g) override;
     void setDeviceManager(juce::AudioDeviceManager* manager);
     virtual void process() override;
+    virtual void bounce();
     virtual void configurePins() override;
     void eventReceived(Event* e) override;
 
     virtual juce::String getCategory() override {
         return "Input / Output";
     }
+    void setBouncing(bool b) {
+		DBG("Set bouncing" ,b);
+		bouncing.store(b);
+    }
+
+	bool isBouncing() {
+		return bouncing.load();
+	}
+
+    std::atomic<bool> bouncing{ false };
 
     // this is needed to associate the channel with the mixer
     int getChannelIndex();

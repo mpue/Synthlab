@@ -7,6 +7,7 @@
 */
 
 
+#include <vector>
 #include "Plugins/PluginManager.h"
 #include "PluginModule.h"
 
@@ -32,6 +33,8 @@
 #include "Tracks/BounceThread.h"
 #include "ChatGPTInterface.h"
 #include "AudioEngine/BPMDetector.h"
+#include "TrackIn.h"
+#include "Module.h"
 
 using juce::String;
 using juce::File;
@@ -122,7 +125,7 @@ MainComponent::MainComponent() : resizerBar(&stretchableManager, 1, true)
 	resized();
 	repaint();
 	initialized = true;
-	running = true;
+	setRunning(true);
 
 	if (Project::getInstance()->getAppMode() == Project::AppMode::PLAYER) {
 		editor->loadFromString(String(BinaryData::_3oscV2_slb));
@@ -470,10 +473,31 @@ void MainComponent::createStudioLayout() {
 			return "Error: No arguments provided.";
 		}
 		String size = args[1];
+		setRunning(false);
+		setBouncing(true);
+
+		// Alle Plugin-Module für Bounce-Modus vorbereiten
+		for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
+			if (dynamic_cast<TrackIn*>(editor->getModule()->getModules()->at(i)) != nullptr) {
+				TrackIn* t = dynamic_cast<TrackIn*>(editor->getModule()->getModules()->at(i));
+				t->setBouncing(true);
+			}
+		}
 
 		startBounce(File(args[0]), size.getFloatValue());
 		return "Export finished.";
 		}, "Export track as audio.");
+
+	parser->registerCommand("stop", [&](const std::vector<std::string>&) -> std::string {
+		setRunning(false);		
+		return "Engine stopped.";
+		}, "Stop the audio engine.");
+
+	parser->registerCommand("run", [&](const std::vector<std::string>&) -> std::string {
+		setRunning(true);		
+		return "Engine started.";
+		}, "Start the audio engine.");
+
 
 	// TODO: API Key management
 	chat = std::make_unique<ChatGPTInterface>("");
@@ -661,6 +685,10 @@ int MainComponent::getNumActiveChannels(int i) {
 
 void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
 {
+	if (isBouncing()) {
+		return;
+	}
+
 	if (spectrumAnalyzer)
 		spectrumAnalyzer->getNextAudioBlock(bufferToFill);
 	if (levelMeter)
@@ -668,7 +696,7 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 
 	long startTime = 0;
 
-	if (!bouncing) {
+	if (!isBouncing()) {
 		lastTime = (long)juce::Time::getMillisecondCounterHiRes() - currentTime;
 		currentTime = (long)juce::Time::getMillisecondCounterHiRes();
 		startTime = currentTime;
@@ -698,7 +726,7 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 		}
 	}
 
-	if (!running) return;
+	if (!isRunning()) return;
 
 	if (editor->getModule())
 		processModule(editor->getModule());
@@ -841,7 +869,7 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 		}
 	}
 
-	if (!bouncing) {
+	if (!isBouncing()) {
 		long duration = (long)juce::Time::getMillisecondCounterHiRes() - startTime;
 		cpuLoad = ((float)duration / (float)lastTime) * 100.0f;
 	}
@@ -1385,7 +1413,7 @@ void MainComponent::buttonClicked(Button* b)
 
 void MainComponent::processModule(Module* m) {
 
-	if (m != nullptr && running) {
+	if (m != nullptr && isRunning()) {
 
 		m->process();
 

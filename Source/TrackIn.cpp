@@ -161,7 +161,7 @@
 			outL = getPins().at(2)->getAudioBuffer()->getWritePointer(0);
 			outR = getPins().at(3)->getAudioBuffer()->getWritePointer(0);
 
-			if (track != nullptr && navigator->isPlaying()) {
+			if (track != nullptr && (navigator->isPlaying() || isBouncing())) {
 
 				double pan = track->getPan();
 
@@ -236,6 +236,45 @@
 			if (track != nullptr && !track->isRecording()) {
 				
 			}
+		}
+
+	}
+
+	void TrackIn::bounce()
+	{
+		if (trackType == Track::Type::AUDIO) {
+
+			float* outL = nullptr;
+			float* outR = nullptr;
+
+			const float* inL = nullptr;
+			const float* inR = nullptr;
+
+			if (getPins().at(2)->getConnections().size() >= 1) {
+				inL = getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
+			}
+			if (getPins().at(3)->getConnections().size() >= 1) {
+				inR = getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
+			}
+
+			outL = getPins().at(2)->getAudioBuffer()->getWritePointer(0);
+			outR = getPins().at(3)->getAudioBuffer()->getWritePointer(0);
+
+			double pan = track->getPan();
+
+			float gainLeft = cos((M_PI * (pan + 1) / 4));
+			float gainRight = sin((M_PI * (pan + 1) / 4));
+			for (int j = track->getSamplePosition(); j < buffersize + track->getSamplePosition(); j++) {
+				int bufferIndex = j - track->getSamplePosition(); // 0, 1, 2, ...
+
+				float sampleL = track->getSample(0, j) * track->getVolume() * gainLeft;
+				float sampleR = track->getSample(1, j) * track->getVolume() * gainRight;
+
+				pins.at(2)->getAudioBuffer()->setSample(0, bufferIndex, sampleL);
+				pins.at(3)->getAudioBuffer()->setSample(0, bufferIndex, sampleR);
+			}
+
+			track->updateMagnitude(track->getSamplePosition(), buffersize, gainLeft, gainRight);
 		}
 
 	}

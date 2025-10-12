@@ -97,8 +97,29 @@ public:
     double sampleRate = 44100;
     int buffersize = 128;
 
-    bool running = false;
-    bool bouncing = false;
+    void setRunning(bool b) {
+
+        if (b)
+            DBG("Set running to true");
+        else
+            DBG("Set running to false");
+
+        running.store(b);
+    }
+
+    bool isRunning() {
+        return running.load();
+    }
+
+    void setBouncing(bool b) {
+        DBG("Set bouncing", juce::String(b));
+        bouncing.store(b);
+    }
+
+    bool isBouncing() {
+        return bouncing.load();
+    }
+
 
     TrackNavigator* navigator = nullptr;
     MidiProcessor* midiProcessor = nullptr;
@@ -106,6 +127,8 @@ public:
 private:
     //==============================================================================
 
+    std::atomic<bool> bouncing{ false };
+    std::atomic<bool> running{ false };
     void openSettings();
     
 	SynthEditor* editor = nullptr;
