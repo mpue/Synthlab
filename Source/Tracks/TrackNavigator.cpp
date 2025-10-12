@@ -748,6 +748,10 @@ void TrackNavigator::changeListenerCallback(ChangeBroadcaster* source)
 
 bool TrackNavigator::keyPressed(const KeyPress& key, Component* originatingComponent) {
 
+	if (!hasFocus) {
+		return false;
+	}
+
 	if (key == KeyPress::spaceKey) {
 		if (isPlaying())
 		{
@@ -829,7 +833,7 @@ bool TrackNavigator::keyPressed(const KeyPress& key, Component* originatingCompo
 		}
 	}
 
-	return true;
+	return false;
 }
 
 int TrackNavigator::alignToBufferSize(int samplePosition) {

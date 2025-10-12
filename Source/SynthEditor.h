@@ -66,7 +66,7 @@ public:
     void showCommonContextMenu(Point<int> position);
     bool showPinContextMenu(Point<int> position, Module* module, int pinIndex);
     bool showModuleContextMenu(Point<int> position, Module* module);
-
+    void showPrefabMenu(Point<int> position);
     bool isRunning();
     void setRunning(bool running);
     void timerCallback() override;

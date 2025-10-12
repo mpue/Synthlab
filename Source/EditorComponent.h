@@ -41,6 +41,9 @@ public:
     void OpenTrackView();
 	void openConsole();
     virtual void changeListenerCallback (juce::ChangeBroadcaster* source) override;
+    
+    // Keyboard-Focus-Setup nach der vollständigen Initialisierung
+    void setupKeyboardFocus();
 
 private:
     

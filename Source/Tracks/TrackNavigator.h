@@ -67,11 +67,11 @@ public:
 	void setPlaying(bool playing);
 
 	void focusGained(FocusChangeType cause) override {
-		Logger::getCurrentLogger()->writeToLog("TrackNavigator: focus gained");
+		hasFocus = true;
 	}
 
 	void focusLost(FocusChangeType cause) override {
-		Logger::getCurrentLogger()->writeToLog("TrackNavigator: focus lost");
+		hasFocus = false;		
 	}
 
 	bool isRecording();
@@ -161,6 +161,8 @@ private:
 
 	double loopStart = 0;
 	double loopEnd = 0;
+
+	bool hasFocus = false;
 
 	bool loopEnabled = false;
 

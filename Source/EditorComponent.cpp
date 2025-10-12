@@ -41,6 +41,16 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView*
     editorView->setWantsKeyboardFocus(false);
     editorView->setMouseClickGrabsKeyboardFocus(false);
 
+    // Keyboard-Focus für SynthEditor einrichten
+    editor->setWantsKeyboardFocus(true);
+    editor->setMouseClickGrabsKeyboardFocus(true);
+    
+    // SynthEditor als KeyListener für das Top-Level-Component registrieren
+    if (auto* topLevel = getTopLevelComponent())
+    {
+        topLevel->addKeyListener(editor.get());
+    }
+
     setMouseClickGrabsKeyboardFocus(true);
 	// setInterceptsMouseClicks(true, true);
     
@@ -60,6 +70,10 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView*
     editor->addChangeListener(this);	
 	// editor->setInterceptsMouseClicks(true, true);
 	editor->setMouseClickGrabsKeyboardFocus(true);
+    
+    // Sicherstellen, dass der SynthEditor den Keyboard-Focus bekommt
+    editor->setWantsKeyboardFocus(true);
+    
     bottomTab->addTab("Mixer", Colours::darkgrey, mixerView.get(), false);
 
     addAndMakeVisible(topTab.get());
@@ -80,8 +94,12 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView*
     Project::getInstance()->setSupplemental(this->bottomTab.get());
 
     OpenTrackView();
-     
+    
+    // Keyboard-Setup nach der Initialisierung
+    setupKeyboardFocus();
 }
+
+
 
 
 void EditorComponent::ImportAudio() {
@@ -334,4 +352,9 @@ void EditorComponent::OpenTrackView()
 
 void EditorComponent::changeListenerCallback(juce::ChangeBroadcaster *source) {
     
+}
+
+void EditorComponent::setupKeyboardFocus()
+{
+
 }

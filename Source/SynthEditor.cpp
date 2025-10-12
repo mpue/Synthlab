@@ -59,8 +59,7 @@ SynthEditor::SynthEditor() {
 	setRepaintsOnMouseActivity(true);
 	setMouseClickGrabsKeyboardFocus(true);
 	setWantsKeyboardFocus(true);
-	setInterceptsMouseClicks(true, true);
-
+	setInterceptsMouseClicks(true, true);	
 	addChildComponent(root.get());
 }
 
@@ -641,6 +640,52 @@ bool SynthEditor::showModuleContextMenu(Point<int> position, Module* module) {
 	menu.setLookAndFeel(nullptr);
 }
 
+void SynthEditor::showPrefabMenu(Point<int> position) {
+	
+	PopupMenu prefabMenu = PopupMenu();
+	prefabMenu.setLookAndFeel(Project::getInstance()->getLookAndFeel());
+
+	StringArray* categories = PrefabFactory::getInstance()->getCategories();
+
+	for (int i = 0; i < categories->size(); i++) {
+		PopupMenu category = PopupMenu();
+
+		std::map<int, PrefabFactory::Prefab> prefabs = PrefabFactory::getInstance()->getPrefabNames();
+
+		for (std::map<int, PrefabFactory::Prefab>::iterator it = prefabs.begin(); it != prefabs.end(); ++it) {
+			if ((*it).second.getCategory() == categories->getReference(i)) {
+
+				if (((*it).second.getName().equalsIgnoreCase("Audio In") || (*it).second.getName().equalsIgnoreCase("Audio Out")) && !isRoot) {
+					continue;
+				}
+
+				if ((*it).second.getIcon() != nullptr) {
+					// int itemResultID, const String& itemText, bool isActive, bool isTicked, const Image& iconToUs
+					category.addItem((*it).first, (*it).second.getName(), true, false, *(*it).second.getIcon());
+				}
+				else {
+					category.addItem((*it).first, (*it).second.getName(), true);
+				}
+
+			}
+
+		}
+
+		prefabMenu.addSubMenu(categories->getReference(i), category, true);
+	}
+
+	const int result = prefabMenu.show();
+	prefabMenu.setLookAndFeel(nullptr);
+
+
+	if (result > 0) {
+		AddModuleAction* am = new AddModuleAction(this, position, result);
+		Project::getInstance()->getUndoManager()->beginNewTransaction();
+		Project::getInstance()->getUndoManager()->perform(am);
+	}
+
+}
+
 void SynthEditor::showCommonContextMenu(Point<int> position) {
 
 	PopupMenu commonMenu = PopupMenu();
@@ -707,39 +752,6 @@ void SynthEditor::showCommonContextMenu(Point<int> position) {
 
 	menu.addSubMenu("Align", alignMenu);
 
-	PopupMenu prefabMenu = PopupMenu();
-
-	StringArray* categories = PrefabFactory::getInstance()->getCategories();
-
-	for (int i = 0; i < categories->size(); i++) {
-		PopupMenu category = PopupMenu();
-
-		std::map<int, PrefabFactory::Prefab> prefabs = PrefabFactory::getInstance()->getPrefabNames();
-
-		for (std::map<int, PrefabFactory::Prefab>::iterator it = prefabs.begin(); it != prefabs.end(); ++it) {
-			if ((*it).second.getCategory() == categories->getReference(i)) {
-
-				if (((*it).second.getName().equalsIgnoreCase("Audio In") || (*it).second.getName().equalsIgnoreCase("Audio Out")) && !isRoot) {
-					continue;
-				}
-
-				if ((*it).second.getIcon() != nullptr) {
-					// int itemResultID, const String& itemText, bool isActive, bool isTicked, const Image& iconToUs
-					category.addItem((*it).first, (*it).second.getName(), true, false, *(*it).second.getIcon());
-				}
-				else {
-					category.addItem((*it).first, (*it).second.getName(), true);
-				}
-
-			}
-
-		}
-
-		prefabMenu.addSubMenu(categories->getReference(i), category, true);
-	}
-
-	menu.addSubMenu("Prefabs", prefabMenu);
-
 	PopupMenu recentFiles = PopupMenu();
 
 	Project::getInstance()->loadRecentFileList();
@@ -772,11 +784,6 @@ void SynthEditor::showCommonContextMenu(Point<int> position) {
 	}
 	else if (result == 99) {
 		setLocked(!locked);
-	}
-	else if (result >= 30 && result <= 99) {
-		AddModuleAction* am = new AddModuleAction(this, position, result);
-		Project::getInstance()->getUndoManager()->beginNewTransaction();
-		Project::getInstance()->getUndoManager()->perform(am);
 	}
 	else if (result >= 1000) {
 		recent = Project::getInstance()->getRecentFiles();
@@ -1005,8 +1012,10 @@ std::shared_ptr<MixerPanel> SynthEditor::getMixer() {
 
 bool SynthEditor::keyPressed(const KeyPress& key, Component* originatingComponent)
 {
-
-	if (key.getKeyCode() == 65 && isCtrlDown) {
+	if (key.getKeyCode() == 65 && isLeftShiftDown) {
+		showPrefabMenu(Point<int>(mouseX, mouseY));
+	}
+	else if (key.getKeyCode() == 65 && isCtrlDown) {
 		for (int i = 0; i < root->getModules()->size(); i++) {
 			root->getModules()->at(i)->setSelected(true);
 			selectionModel.getSelectedModules().push_back(root->getModules()->at(i));
