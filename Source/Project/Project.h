@@ -20,6 +20,7 @@
 #include "../Module.h"
 #include "../CustomLookAndFeel.h"
 
+#include "../ElegantDarkLookAndFeel.h"
 
 #include <vector>
 #include <map>
@@ -54,8 +55,8 @@ public:
     void setSupplemental(MainTabbedComponent* component) ;
     MainTabbedComponent* getSupplemental();
     
-    CustomLookAndFeel* getLookAndFeel();
-    
+    ElegantDarkLookAndFeel* getLookAndFeel();
+
     std::vector<juce::DialogWindow*>& getOpenWindows();
     
     void setDefaultSampler(Sampler* sampler);
@@ -243,7 +244,7 @@ public:
 protected:
     Project() {
         undoManager = new juce::UndoManager();
-        lookAndFeel = new CustomLookAndFeel();
+        lookAndFeel = new ElegantDarkLookAndFeel();
         this->tracklength = DEFAULT_TRACK_LENGTH;
         name = "empty Project";
         this->config = new ProjectConfig();
@@ -283,7 +284,7 @@ protected:
     static Project* instance;
     juce::UndoManager* undoManager;
     juce::StringArray recentFiles;
-    CustomLookAndFeel* lookAndFeel;
+    ElegantDarkLookAndFeel* lookAndFeel;
     MainTabbedComponent* supplementalTab = nullptr;
     std::vector<juce::DialogWindow*> openWindows;
     juce::Component* main = nullptr;

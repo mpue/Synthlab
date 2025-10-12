@@ -262,7 +262,7 @@ void MainComponent::createToolbar() {
 	lockButton->setImages(false, true, true, normalImage, 1.0f, juce::Colours::white, normalImage, 1.0, juce::Colours::white, downImage, 1.0f, juce::Colours::white);
 	lockButton->setClickingTogglesState(true);
 	lockButton->setSize(24, 24);
-	lockButton->setTopLeftPosition(1850, 10);
+	lockButton->setTopLeftPosition(1950, 10);
 	toolbar->addAndMakeVisible(lockButton);
 
 	lockButton->addListener(this);
@@ -958,6 +958,7 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 
 		alignMenu.addCommandItem(this, SynthEditor::CommandIds::ALIGN_X);
 		alignMenu.addCommandItem(this, SynthEditor::CommandIds::ALIGN_Y);
+		alignMenu.addCommandItem(this, SynthEditor::CommandIds::ALIGN_TO_GRID);
 
 		menu.addItem(8, "Add Audio Track", true, false, nullptr);
 		menu.addItem(9, "Add MIDI Track", true, false, nullptr);

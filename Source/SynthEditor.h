@@ -129,7 +129,8 @@ public:
         ALIGN_Y = 10,
         ALIGN_X = 11,
         RESET_GUI_POS = 12,
-        EXPORT_AUDIO = 13
+        EXPORT_AUDIO = 13,
+        ALIGN_TO_GRID = 14
     };
 
     // member access
@@ -156,6 +157,7 @@ public:
     
     void alignSelectedY();
     void alignSelectedX();    
+    void alignToGrid();
     void resetGUIPosition();
 
     void updateProject(File file);

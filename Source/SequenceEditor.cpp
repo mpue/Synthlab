@@ -31,7 +31,8 @@ SequenceEditor::SequenceEditor (Pin* output)
 {
     this->output = output;
 
-    thread = new TimeSliceThread("Bad motherfucker");
+    thread = new TimeSliceThread("SequenceEditor Timer");
+    thread->startThread(); // Start the thread
     
     addAndMakeVisible (playButton = new TextButton ("Play"));
     playButton->setButtonText (TRANS("Play"));
@@ -95,8 +96,12 @@ SequenceEditor::~SequenceEditor()
     clearButton = nullptr;
     lengthSlider = nullptr;
     delete view;
-    thread->removeAllClients();
-    delete thread;
+    
+    if (thread != nullptr) {
+        thread->removeAllClients();
+        thread->stopThread(1000); // Wait up to 1 second for thread to stop
+        delete thread;
+    }
 }
 
 //==============================================================================
@@ -119,11 +124,20 @@ void SequenceEditor::buttonClicked (Button* buttonThatWasClicked)
 
     if (buttonThatWasClicked == playButton)
     {
-        if (syncMode == SyncMode::INTERNAL) {
-            thread->addTimeSliceClient(this);
+        if (!running) {
+            if (syncMode == SyncMode::INTERNAL) {
+                thread->addTimeSliceClient(this);
+            }
+            running = true;
+            currentStep = -1; // Will be incremented to 0 on first step
+            clockEventNum = 0;
         }
-        running = true;
-
+        else {
+            if (syncMode == SyncMode::INTERNAL) {
+                thread->removeTimeSliceClient(this);
+            }
+            running = false;
+        }
     }
     else if (buttonThatWasClicked == recordButton)
     {
@@ -141,8 +155,19 @@ void SequenceEditor::buttonClicked (Button* buttonThatWasClicked)
 
 void SequenceEditor::sliderValueChanged(juce::Slider *slider) {
     if (slider == lengthSlider) {
-        gridWidth = slider->getValue();
-        repaint();
+        int newWidth = (int)slider->getValue();
+        if (newWidth >= 1 && newWidth <= 32) { // Ensure valid range
+            gridWidth = newWidth;
+            // Reset selected column if it's out of bounds
+            if (selectedCol >= gridWidth) {
+                selectedCol = gridWidth - 1;
+            }
+            resized(); // Update the view size
+            repaint();
+            if (content != nullptr) {
+                content->repaint();
+            }
+        }
     }
 }
 
@@ -160,18 +185,38 @@ void SequenceEditor::mouseMove (const MouseEvent& e)
 
 void SequenceEditor::mouseDown (const MouseEvent& e)
 {
-
-    // toggle cell
-    grid[e.getPosition().getX() / cellSize][e.getPosition().getY() / cellSize].setEnabled(!grid[e.getPosition().getX() / cellSize][e.getPosition().getY() /cellSize].isEnabled());
+    // Calculate grid position with bounds checking
+    int gridX = e.getPosition().getX() / cellSize;
+    int gridY = e.getPosition().getY() / cellSize;
+    
+    // Ensure we don't go out of bounds
+    if (gridX >= 0 && gridX < gridWidth && gridY >= 0 && gridY < gridHeight) {
+        // toggle cell
+        grid[gridX][gridY].setEnabled(!grid[gridX][gridY].isEnabled());
+        selectedCol = gridX;
+        selectedRow = gridY;
+        
+        std::function<void(void)> changeLambda =
+        [=]() {  content->repaint(); };
+        juce::MessageManager::callAsync(changeLambda);
+    }
 }
 
 void SequenceEditor::mouseDrag (const MouseEvent& e)
 {
     int delta = - e.getDistanceFromDragStartY() / 20;
+    
+    // Calculate grid position with bounds checking
+    int gridX = e.getMouseDownX() / cellSize;
+    int gridY = e.getMouseDownY() / cellSize;
+    
+    // Ensure we don't go out of bounds
+    if (gridX < 0 || gridX >= gridWidth || gridY < 0 || gridY >= gridHeight) {
+        return;
+    }
 
     if (!showVelocity) {
-
-        int note =  grid[e.getMouseDownX()/ cellSize][e.getMouseDownY()/ cellSize].getNote();
+        int note = grid[gridX][gridY].getNote();
         if (note + delta > 127) {
             note = 127;
         }
@@ -183,11 +228,10 @@ void SequenceEditor::mouseDrag (const MouseEvent& e)
             note += delta;
         }
 
-        grid[e.getMouseDownX()/ cellSize][e.getMouseDownY()/ cellSize].setNote(note);
-
+        grid[gridX][gridY].setNote(note);
     }
     else {
-        int velocity =  grid[e.getMouseDownX()/ cellSize][e.getMouseDownY()/ cellSize].getVelocity();
+        int velocity = grid[gridX][gridY].getVelocity();
         if (velocity + delta > 127) {
             velocity = 127;
         }
@@ -199,7 +243,7 @@ void SequenceEditor::mouseDrag (const MouseEvent& e)
             velocity += delta;
         }
 
-        grid[e.getMouseDownX()/ cellSize][e.getMouseDownY()/ cellSize].setVelocity(velocity);
+        grid[gridX][gridY].setVelocity(velocity);
     }
 
     sendConfig();
@@ -217,11 +261,17 @@ bool SequenceEditor::keyPressed (const KeyPress& key)
 {
     if (key.getKeyCode() == KeyPress::spaceKey) {
         if (!running) {
-            thread->addTimeSliceClient(this);
+            if (syncMode == SyncMode::INTERNAL) {
+                thread->addTimeSliceClient(this);
+            }
             running = true;
+            currentStep = -1; // Will be incremented to 0 on first step
+            clockEventNum = 0;
         }
         else {
-            thread->removeTimeSliceClient(this);
+            if (syncMode == SyncMode::INTERNAL) {
+                thread->removeTimeSliceClient(this);
+            }
             running = false;
         }
     }
@@ -241,7 +291,9 @@ bool SequenceEditor::keyPressed (const KeyPress& key)
             grid[selectedCol][selectedRow].setVelocity(velocity);
         }
         else if(optionPressed) {
-            note = note + 1 % 127;
+            if (note < 127) {
+                note = note + 1;
+            }
             grid[selectedCol][selectedRow].setNote(note);
         }
         else {
@@ -261,13 +313,14 @@ bool SequenceEditor::keyPressed (const KeyPress& key)
         }
         else if(optionPressed) {
 
-            if (note > 0)
-                note = note - 1 % 127;
+            if (note > 0) {
+                note = note - 1;
+            }
 
             grid[selectedCol][selectedRow].setNote(note);
         }
         else {
-            if(selectedRow < 5) {
+            if(selectedRow < gridHeight - 1) {
                 selectedRow++;
             }
         }
@@ -278,7 +331,7 @@ bool SequenceEditor::keyPressed (const KeyPress& key)
         }
     }
     if (key.getKeyCode() == KeyPress::rightKey) {
-        if(selectedCol < 63) {
+        if(selectedCol < gridWidth - 1) {
             selectedCol++;
         }
     }
@@ -420,7 +473,10 @@ int SequenceEditor::useTimeSlice() {
 
 void SequenceEditor::setRunning(bool running) {
     this->running = running;
-    this->currentStep = 0;
+    if (running) {
+        this->currentStep = -1; // Will be incremented to 0 on first step
+        this->clockEventNum = 0;
+    }
     std::function<void(void)> changeLambda =
     [=]() {  content->repaint(); };
     juce::MessageManager::callAsync(changeLambda);
@@ -442,33 +498,34 @@ void SequenceEditor::triggerNextStep() {
         if (clockEventNum % 6 == 0) {
             currentStep = (currentStep + 1) % gridWidth;
             
-            for (int y = 0; y < gridHeight;y++) {
+            for (int y = 0; y < gridHeight; y++) {
                 
                 Event* e = nullptr;
                 
                 if (grid[currentStep][y].isEnabled()) {
                     
-                    e = new Event("gate on",Event::Type::GATE);
+                    e = new Event("gate on", Event::Type::GATE);
                     
                     e->setValue(grid[currentStep][y].getVelocity());
                     e->setNote(grid[currentStep][y].getNote());
-					e->setMessage(MidiMessage::noteOn(1, grid[currentStep][y].getNote(), (float)grid[currentStep][y].getVelocity() / 127.0f));
+                    e->setMessage(MidiMessage::noteOn(1, grid[currentStep][y].getNote(), (float)grid[currentStep][y].getVelocity() / 127.0f));
 
                     if (output != nullptr) {
                         
-                        for (int i = 0; i < output->getConnections().size();i++) {
+                        for (int i = 0; i < output->getConnections().size(); i++) {
                             output->getConnections().at(i)->sendEvent(new Event(e));
                         }
                     }
                 }
-                e = new Event("gate off",Event::Type::GATE);
+                
+                // Send note off for previous step
+                e = new Event("gate off", Event::Type::GATE);
 
                 MidiMessage m = MidiMessage::noteOff(1, grid[currentStep][y].getNote());
-				m.setTimeStamp(m.getTimeStamp() + 100.0f);
+                m.setTimeStamp(m.getTimeStamp() + 100.0f);
 
-				e->setMessage(m);
+                e->setMessage(m);
                 e->setValue(0);
-                
                 
                 if (currentStep > 0) {
                     e->setNote(grid[currentStep - 1][y].getNote());
@@ -479,7 +536,7 @@ void SequenceEditor::triggerNextStep() {
                 
                 if (output != nullptr) {
                     
-                    for (int i = 0; i < output->getConnections().size();i++) {
+                    for (int i = 0; i < output->getConnections().size(); i++) {
                         output->getConnections().at(i)->sendEvent(new Event(e));
                     }
                 }

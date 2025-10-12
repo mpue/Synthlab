@@ -123,7 +123,7 @@ MainTabbedComponent* Project::getSupplemental(){
     return supplementalTab;
 }
 
-CustomLookAndFeel* Project::getLookAndFeel() {
+ElegantDarkLookAndFeel* Project::getLookAndFeel() {
     return lookAndFeel;
 };
 

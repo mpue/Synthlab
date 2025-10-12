@@ -703,6 +703,7 @@ void SynthEditor::showCommonContextMenu(Point<int> position) {
 
 	alignMenu.addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::ALIGN_X);
 	alignMenu.addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::ALIGN_Y);
+	alignMenu.addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::ALIGN_TO_GRID);
 
 	menu.addSubMenu("Align", alignMenu);
 
@@ -770,7 +771,7 @@ void SynthEditor::showCommonContextMenu(Point<int> position) {
 		setRunning(true);
 	}
 	else if (result == 99) {
-		locked = !locked;
+		setLocked(!locked);
 	}
 	else if (result >= 30 && result <= 99) {
 		AddModuleAction* am = new AddModuleAction(this, position, result);
@@ -1776,6 +1777,7 @@ void SynthEditor::getAllCommands(Array<CommandID>& commands) {
 	commands.add({ SynthEditor::CommandIds::SAVE_SCREENSHOT });
 	commands.add({ SynthEditor::CommandIds::ALIGN_X });
 	commands.add({ SynthEditor::CommandIds::ALIGN_Y });
+	commands.add({ SynthEditor::CommandIds::ALIGN_TO_GRID });
 	commands.add({ SynthEditor::CommandIds::RESET_GUI_POS });
 }
 
@@ -1821,15 +1823,16 @@ void SynthEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo& re
 	case SynthEditor::CommandIds::ALIGN_X:
 		result.setInfo("Align horizontally", String(), String(), 0);
 		break;
+	case SynthEditor::CommandIds::ALIGN_TO_GRID:
+		result.setInfo("Align to grid", String(), String(), 0);
+		break;
 	case SynthEditor::CommandIds::RESET_GUI_POS:
 		result.setInfo("Reset UI position", String(), String(), 0);
 		break;
 	case SynthEditor::CommandIds::EXPORT_AUDIO:
 		result.setInfo("Export audio", String(), String(), 0);
 		break;
-
 	}
-
 };
 
 bool SynthEditor::perform(const InvocationInfo& info) {
@@ -1901,6 +1904,10 @@ bool SynthEditor::perform(const InvocationInfo& info) {
 	}
 	else if (info.commandID == SynthEditor::CommandIds::ALIGN_X) {
 		alignSelectedX();
+		return true;
+	}
+	else if (info.commandID == SynthEditor::CommandIds::ALIGN_Y) {
+		alignToGrid();
 		return true;
 	}
 	else if (info.commandID == SynthEditor::CommandIds::RESET_GUI_POS) {
@@ -2010,6 +2017,23 @@ void SynthEditor::alignSelectedX() {
 			}
 		}
 	}
+}
+
+void SynthEditor::alignToGrid()
+{
+	// align all selected modules to the grid
+
+	for (int i = 0; i < selectionModel.getSelectedModules().size(); i++) {
+		int x = selectionModel.getSelectedModules().at(i)->getBounds().getX();
+		int y = selectionModel.getSelectedModules().at(i)->getBounds().getY();
+
+		x = UITools::snap(x, 25, 5);
+		y = UITools::snap(y, 25, 5);
+
+		selectionModel.getSelectedModules().at(i)->setTopLeftPosition(x,y);
+
+	}
+	repaint();
 }
 
 void SynthEditor::resetGUIPosition() {

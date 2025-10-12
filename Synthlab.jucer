@@ -418,6 +418,8 @@
                 file="Source/EditorComponent.cpp"/>
           <FILE id="E8kosS" name="EditorComponent.h" compile="0" resource="0"
                 file="Source/EditorComponent.h"/>
+          <FILE id="cQOqpY" name="ElegantDarkLookAndFeel.h" compile="0" resource="0"
+                file="Source/ElegantDarkLookAndFeel.h"/>
           <FILE id="yuob1A" name="ExtendedFileBrowser.cpp" compile="1" resource="0"
                 file="Source/ExtendedFileBrowser.cpp"/>
           <FILE id="l1q3BL" name="ExtendedFileBrowser.h" compile="0" resource="0"
@@ -815,8 +817,8 @@
                        libraryPath="d:/devel/Synthlab/lib/debug"/>
         <CONFIGURATION isDebug="0" name="Release" headerPath="d:\devel\ASIOSDK2.3\common\&#10;d:\devel\VST_SDK3.7\"
                        libraryPath="d:/devel/Synthlab/lib/release/" useRuntimeLibDLL="0"
-                       multiProcessorCompilation="1" enableIncrementalLinking="1" optimisation="4"
-                       winWarningLevel="2" alwaysGenerateDebugSymbols="0"/>
+                       multiProcessorCompilation="1" enableIncrementalLinking="1" winWarningLevel="2"
+                       alwaysGenerateDebugSymbols="1"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_audio_basics" path="D:\devel\JUCE8\modules"/>

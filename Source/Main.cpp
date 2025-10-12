@@ -120,8 +120,7 @@ public:
 	{
 	public:
 		MainWindow(String name) : DocumentWindow(name,
-			Desktop::getInstance().getDefaultLookAndFeel()
-			.findColour(ResizableWindow::backgroundColourId),
+			Project::getInstance()->getLookAndFeel()->findColour(ResizableWindow::backgroundColourId),
 			DocumentWindow::allButtons)
 		{
 			// Project::getInstance()->getLookAndFeel()->setColourScheme(LookAndFeel_V4::getDarkColourScheme());
