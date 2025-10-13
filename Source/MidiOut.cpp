@@ -115,8 +115,6 @@ void MidiOut::sendMidiMessage(const juce::MidiMessage& message) {
             isActive = false;
             repaint();
         });
-        
-        repaint();
         Logger::getCurrentLogger()->writeToLog("MIDI Out: " + message.getDescription());
     }
 }

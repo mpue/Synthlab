@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Module lock="0" layer="0">
+  <Modules>
+    <Module name="Gate" index="1" x="163" y="118" ui_x="10" ui_y="10" isPrefab="1"
+            prefabId="61" channel="1">
+      <Pins>
+        <Pin type="2" name="G" direction="1" index="101" x="110" y="10"/>
+        <Pin type="1" name="E" direction="1" index="102" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Track In" index="2" x="321" y="97" ui_x="170" ui_y="10"
+            isPrefab="1" prefabId="48" volume="0.0">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="201" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="202" x="0" y="30"/>
+        <Pin type="0" name="L" direction="1" index="203" x="110" y="10"/>
+        <Pin type="0" name="R" direction="1" index="204" x="110" y="30"/>
+        <Pin type="1" name="G" direction="0" index="205" x="0" y="50"/>
+        <Pin type="1" name="G" direction="1" index="206" x="110" y="50"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="3" x="161" y="295" ui_x="141" ui_y="127" isPrefab="1"
+            prefabId="69" minvalue="0.0" maxvalue="127.0" stepsize="1.001000046730042"
+            value="104.0999984741211" isController="1" controllerNum="74">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="301" x="80" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="ValueToEvent" index="4" x="323" y="249" ui_x="873" ui_y="360"
+            isPrefab="1" prefabId="36">
+      <Pins>
+        <Pin type="2" name="V" direction="0" index="401" x="0" y="10"/>
+        <Pin type="1" name="E" direction="1" index="402" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Midi Out" index="5" x="508" y="139" ui_x="-195" ui_y="108"
+            isPrefab="1" prefabId="62">
+      <Pins>
+        <Pin type="1" name="G" direction="0" index="501" x="0" y="10"/>
+        <Pin type="1" name="N" direction="0" index="502" x="0" y="30"/>
+        <Pin type="1" name="C" direction="0" index="503" x="0" y="50"/>
+        <Pin type="1" name="P" direction="0" index="504" x="0" y="70"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections>
+    <Connection source="2" target="1" a="205" b="102"/>
+    <Connection source="3" target="4" a="301" b="401"/>
+    <Connection source="4" target="3" a="401" b="301"/>
+    <Connection source="2" target="5" a="206" b="501"/>
+    <Connection source="5" target="2" a="501" b="206"/>
+    <Connection source="4" target="5" a="402" b="503"/>
+    <Connection source="5" target="4" a="503" b="402"/>
+  </Connections>
+</Module>

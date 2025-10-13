@@ -100,6 +100,7 @@ void ValueToEvent::process()
             midiValue);
 
         Event e("controller", Event::Type::CONTROLLER);
+        e.setNumber(controllerNum);        
         e.setValue(midiValue);
         e.setMessage(msg);
 
