@@ -69,6 +69,7 @@
 #include "MergeGeometryModule.h"
 #include "TransformGeometryModule.h"
 #include "FeedbackModule.h"
+#include "ValueToEvent.h"
 
 using juce::Image;
 
@@ -80,6 +81,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     
     if (id == 0) {
         return m;
+    }
+    if (prefabs[id].getName() == "ValueToEvent") {
+        m = new ValueToEvent();
     }
     if (prefabs[id].getName() == "Feedback") {
         m = new FeedbackModule();

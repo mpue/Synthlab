@@ -967,8 +967,9 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addItem(200, "Manage plugins", true, false, nullptr);
 #endif
 		menu.addItem(201, "Tracks", true, false, nullptr);
-		menu.addItem(202, "Console", true, false, nullptr);
-
+		menu.addItem(202, "Console", true, false, nullptr); 
+		menu.addItem(202, "Level Meters", true, false, nullptr);
+		menu.addItem(202, "Input Spectrum", true, false, nullptr);
 	}
 	else if (index == 2) {
 
@@ -1035,6 +1036,20 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	}
 	else if (menuItemID == 202) {
 		editorView->openConsole();
+	}
+	else if (menuItemID == 203) {
+		if (levelMeter == nullptr) {
+			levelMeter = std::make_unique<AudioLevelMeter>();
+			Project::getInstance()->getSupplemental()->addTab("Level Meter", Colours::darkgrey, levelMeter.get(), false);
+		}
+
+	}
+	else if (menuItemID == 204) {
+		if (spectrumAnalyzer == nullptr) {
+			spectrumAnalyzer = std::make_unique<SpectrumAnalyzer>();
+			spectrumAnalyzer->setNumberOfBars(128);
+			Project::getInstance()->getSupplemental()->addTab("Spektrum", Colours::darkgrey, spectrumAnalyzer.get(), false);
+		}
 	}
 
 	else if (menuItemID == 8) {
@@ -1354,6 +1369,7 @@ void MainComponent::buttonClicked(Button* b)
 				if (navigator->isPlaying() || navigator->isRecording()) {
 					navigator->setPlaying(false);
 					navigator->setRecording(false);
+					metronome->reset();
 					for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
 
 						for (int j = 0; j < 16; j++) {
@@ -1369,6 +1385,7 @@ void MainComponent::buttonClicked(Button* b)
 						if ((module = dynamic_cast<PluginModule*>(editor->getModule()->getModules()->at(i))) != nullptr) {					
 							module->getPlayHead().setPlaying(false);
 							module->getPlayHead().setRecording(false);
+							module->getPlugin()->reset();
 						}
 					}
 				}

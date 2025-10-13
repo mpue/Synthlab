@@ -239,7 +239,9 @@ ValueTree TrackNavigator::getConfiguration()
 			track.setProperty("plugin", tracks.at(i)->getInstrumentName(), nullptr);
 		}
 		else {
-			track.setProperty("type", "unknown", nullptr); // Fallback
+			track.setProperty("type", "midi", nullptr);
+			track.setProperty("midiChannel", tracks.at(i)->getMidiChannel(), nullptr);
+			track.setProperty("interface", tracks.at(i)->getMidiOutputDevice(), nullptr);
 		}
 
 		ValueTree regions("Regions");

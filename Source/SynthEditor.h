@@ -49,6 +49,7 @@ public:
     void saveFile();
     void openFile();
     void openTracks(File file);
+    void loadMidiRegions(juce::ValueTree& track, Track* t);
     void openSampleEditor(SamplerModule* sm);
     void openStepSequencer(StepSequencerModule* ssm);
     void openEditor(Module* m);

@@ -490,6 +490,9 @@
                 file="Source/TransportDisplayComponent.h"/>
         </GROUP>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
+          <FILE id="fgy3RI" name="ValueToEvent.cpp" compile="1" resource="0"
+                file="Source/ValueToEvent.cpp"/>
+          <FILE id="Sd44YT" name="ValueToEvent.h" compile="0" resource="0" file="Source/ValueToEvent.h"/>
           <FILE id="APGbwC" name="FeedbackModule.cpp" compile="1" resource="0"
                 file="Source/FeedbackModule.cpp"/>
           <FILE id="yxjo6T" name="FeedbackModule.h" compile="0" resource="0"

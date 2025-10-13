@@ -1492,48 +1492,60 @@ void SynthEditor::openTracks(File file)
 					r->setBounds(bounds);
 				}
 			}
+			else if (track.getProperty("type") == "midi") {
+				juce::Point<int> pos = juce::Point<int>(10, 10);
+				Track* t = navigator->addTrack(Track::Type::MIDI, Project::getInstance()->getSampleRate());
+				ti->setTrack(t);
+				t->setMidiChannel(track.getProperty("midiChannel").toString().getIntValue(), false);
+				t->setMidiOutputDevice(track.getProperty("interface").toString());
+				loadMidiRegions(track, t);
+			}
 			else if (track.getProperty("type") == "instrument") {
 				juce::Point<int> pos = juce::Point<int>(10, 10);
 				Track* t = navigator->addTrack(Track::Type::INSTRUMENT, Project::getInstance()->getSampleRate());
 				ti->setTrack(t);
-				t->setMidiChannel(track.getProperty("midiChannel").toString().getIntValue(), false);
-				ValueTree regions = track.getChild(0);
-
-				for (int j = 0; j < regions.getNumChildren(); j++) {
-					ValueTree region = regions.getChild(j);
-					MidiRegion* mr = t->addMidiRegion(Project::getInstance()->getSampleRate(), region.getProperty("sampleOffset").toString().getIntValue(), region.getProperty("numSamples").toString().getIntValue());
-					Rectangle<int> bounds = mr->getBounds();
-					bounds.setWidth(region.getProperty("width"));
-					mr->setBounds(bounds);
-					ValueTree events = region.getChild(0);
-					for (int k = 0; k < events.getNumChildren(); k++) {
-						ValueTree event = events.getChild(k);
-						Logger::getCurrentLogger()->writeToLog(event.getProperty("type"));
-						if (event.getProperty("type") == "noteon") {
-							MidiMessage msg = MidiMessage::noteOn(event.getProperty("channel").toString().getIntValue(), event.getProperty("note"), event.getProperty("velocity").toString().getFloatValue() / 127.0f);
-							mr->addMessage(new MidiMessage(msg), Time::getMillisecondCounterHiRes() / 1000, event.getProperty("timestamp").toString().getIntValue());
-						}
-						else if (event.getProperty("type") == "noteoff") {
-							MidiMessage msg = MidiMessage::noteOff(event.getProperty("channel").toString().getIntValue(), event.getProperty("note").toString().getIntValue(), (float)0);
-							mr->addMessage(new MidiMessage(msg), Time::getMillisecondCounterHiRes() / 1000, event.getProperty("timestamp").toString().getIntValue());
-						}
-						else if (event.getProperty("type") == "control") {
-							MidiMessage msg = MidiMessage::controllerEvent(event.getProperty("channel").toString().getIntValue(), event.getProperty("controller").toString().getIntValue(), event.getProperty("value").toString().getIntValue());
-							mr->addMessage(new MidiMessage(msg), Time::getMillisecondCounterHiRes() / 1000, event.getProperty("timestamp").toString().getIntValue());
-						}
-						else if (event.getProperty("type") == "pitch") {
-							MidiMessage msg = MidiMessage::pitchWheel(event.getProperty("channel").toString().getIntValue(), event.getProperty("pitch").toString().getIntValue());
-							mr->addMessage(new MidiMessage(msg), Time::getMillisecondCounterHiRes() / 1000, event.getProperty("timestamp").toString().getIntValue());
-						}
-					}
-				}
-
+				t->setMidiChannel(track.getProperty("midiChannel").toString().getIntValue(), false);								
+				loadMidiRegions(track, t);
 			}
 
 		}
 	}
 
 	setRunning(true);
+}
+
+void SynthEditor::loadMidiRegions(juce::ValueTree& track, Track* t)
+{
+	ValueTree regions = track.getChild(0);
+
+	for (int j = 0; j < regions.getNumChildren(); j++) {
+		ValueTree region = regions.getChild(j);
+		MidiRegion* mr = t->addMidiRegion(Project::getInstance()->getSampleRate(), region.getProperty("sampleOffset").toString().getIntValue(), region.getProperty("numSamples").toString().getIntValue());
+		Rectangle<int> bounds = mr->getBounds();
+		bounds.setWidth(region.getProperty("width"));
+		mr->setBounds(bounds);
+		ValueTree events = region.getChild(0);
+		for (int k = 0; k < events.getNumChildren(); k++) {
+			ValueTree event = events.getChild(k);
+			Logger::getCurrentLogger()->writeToLog(event.getProperty("type"));
+			if (event.getProperty("type") == "noteon") {
+				MidiMessage msg = MidiMessage::noteOn(event.getProperty("channel").toString().getIntValue(), event.getProperty("note"), event.getProperty("velocity").toString().getFloatValue() / 127.0f);
+				mr->addMessage(new MidiMessage(msg), Time::getMillisecondCounterHiRes() / 1000, event.getProperty("timestamp").toString().getIntValue());
+			}
+			else if (event.getProperty("type") == "noteoff") {
+				MidiMessage msg = MidiMessage::noteOff(event.getProperty("channel").toString().getIntValue(), event.getProperty("note").toString().getIntValue(), (float)0);
+				mr->addMessage(new MidiMessage(msg), Time::getMillisecondCounterHiRes() / 1000, event.getProperty("timestamp").toString().getIntValue());
+			}
+			else if (event.getProperty("type") == "control") {
+				MidiMessage msg = MidiMessage::controllerEvent(event.getProperty("channel").toString().getIntValue(), event.getProperty("controller").toString().getIntValue(), event.getProperty("value").toString().getIntValue());
+				mr->addMessage(new MidiMessage(msg), Time::getMillisecondCounterHiRes() / 1000, event.getProperty("timestamp").toString().getIntValue());
+			}
+			else if (event.getProperty("type") == "pitch") {
+				MidiMessage msg = MidiMessage::pitchWheel(event.getProperty("channel").toString().getIntValue(), event.getProperty("pitch").toString().getIntValue());
+				mr->addMessage(new MidiMessage(msg), Time::getMillisecondCounterHiRes() / 1000, event.getProperty("timestamp").toString().getIntValue());
+			}
+		}
+	}
 }
 
 void SynthEditor::configureAudioModule(Module* m, ChangeBroadcaster* broadcaster) {
