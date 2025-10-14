@@ -267,6 +267,8 @@ ValueTree TrackNavigator::getConfiguration()
 
 					ValueTree events("Events");
 
+					DBG("Saving " + String(mr->getNumMessages()) + " MIDI messages");
+
 					for (int k = 0; k < mr->getNumMessages(); k++) {
 						if (auto* msg = mr->getMessageAt(k)) {
 							ValueTree e("Event");
@@ -291,7 +293,7 @@ ValueTree TrackNavigator::getConfiguration()
 
 							e.setProperty("channel", msg->getChannel(), nullptr);
 							e.setProperty("velocity", msg->getVelocity(), nullptr);
-							e.setProperty("timestamp", msg->getTimeStamp(), nullptr);
+							e.setProperty("timestamp", (int64)msg->getTimeStamp(), nullptr);
 
 							events.addChild(e, -1, nullptr);
 						}

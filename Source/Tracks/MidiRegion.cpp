@@ -300,7 +300,7 @@ void MidiRegion::clear() {
 
 void MidiRegion::addMessage(MidiMessage* m, double time, int sampleNum) {
 
-    sampleNum -= sampleNum % Project::getInstance()->getBufferSize();
+    // sampleNum -= sampleNum % Project::getInstance()->getBufferSize();
 
     ScopedLock c(lock);
 

@@ -294,6 +294,10 @@ public:
         const Slider::SliderStyle style, Slider& slider) {
         g.fillAll(slider.findColour(Slider::backgroundColourId));
 
+        if (std::isnan(sliderPos)) {
+            sliderPos = minSliderPos;
+		}
+
         if (style == Slider::SliderStyle::LinearBarVertical) {
 
             float from = (sliderPos / maxSliderPos) * height;

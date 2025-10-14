@@ -12,6 +12,7 @@
 #include "Actions/AddModuleAction.h"
 #include "MidiGate.h"
 #include "TrackIn.h"
+#include "MidiOut.h"
 #include "SynthEditor.h"
 #include "Tracks/TrackNavigator.h"
 #include "PluginModule.h"
@@ -210,6 +211,24 @@ public:
 		Connection* c1 = new Connection(ti, ti->pins.at(4), gate, gate->pins.at(1));
 		module->getConnections()->push_back(c1);
 		gate->pins.at(1)->getConnections().push_back(ti->pins.at(4));
+				
+		pos.x += 160;
+		AddModuleAction* am2 = new AddModuleAction(editor, pos, 62); // MidiOut prefab ID is 62
+		Project::getInstance()->getUndoManager()->beginNewTransaction();
+		Project::getInstance()->getUndoManager()->perform(am2);
+		MidiOut* midiOut = dynamic_cast<MidiOut*>(am2->getModule());
+
+		if (midiOut) {
+			// Set the MIDI channel for the MidiOut to match the track
+			int channel = getNextFreeMidiChannel(navigator);
+			t->setMidiChannel(channel, false);
+			midiOut->setMidiChannel(channel);
+
+			// Connect TrackIn's EVENT output pin (index 5) to MidiOut's EVENT input pin (index 0)
+			Connection* c2 = new Connection(midiOut, midiOut->pins.at(0), ti, ti->pins.at(5));
+			module->getConnections()->push_back(c2);
+			ti->pins.at(5)->getConnections().push_back(midiOut->pins.at(0));
+		}
 
 		Array<var> values = Array<var>();
 

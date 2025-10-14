@@ -815,7 +815,7 @@ void Track::drawGrid(Graphics& g) {
 
 void Track::resized() {
 	for (std::vector<Region*>::iterator it = regions.begin(); it != regions.end(); ++it) {
-		(*it)->setSize((*it)->getWidth(), getHeight());
+		(*it)->setSize((*it)->getWidth(), getHeight() - 5);
 		(*it)->setZoom(zoom);
 	}
 	resizer->setSize(getWidth(), 5);

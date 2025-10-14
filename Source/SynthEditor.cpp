@@ -45,9 +45,6 @@
 
 class SampleEditor;
 
-String SynthEditor::defaultMidiOutputName = "Express 128 Port 7";
-String SynthEditor::defaultMidiInputName = "Express 128 Port 7";
-
 SynthEditor::SynthEditor() {
 
 	setSize(1280, 800);
@@ -63,7 +60,6 @@ SynthEditor::SynthEditor() {
 	addChildComponent(root.get());
 }
 
-
 SynthEditor::SynthEditor(double sampleRate, int buffersize)
 {
 	Logger::writeToLog("Creating SynthEditor with sample rate " + String(sampleRate) + " kHz and buffer size of " + String(buffersize) + " bytes.");
@@ -75,7 +71,6 @@ SynthEditor::SynthEditor(double sampleRate, int buffersize)
 
 	root = std::make_unique<Module>("Root");
 	Project::getInstance()->setRoot(root.get());
-
 
 	selectionModel.setRoot(root.get());
 
@@ -155,8 +150,6 @@ void SynthEditor::paint(Graphics& g)
 	if (currentLayer == Module::Layer::ALL) {
 		drawConnections(g);
 	}
-
-
 }
 
 void SynthEditor::drawConnections(Graphics& g) {
@@ -176,7 +169,6 @@ void SynthEditor::drawConnections(Graphics& g) {
 			c->toFront(false);
 			c->paint(g);
 		}
-
 	}
 }
 
@@ -209,19 +201,23 @@ void SynthEditor::resized()
 }
 
 void SynthEditor::drawCurrentConnection() {
+
 	p1.x = lineStartX;
 	p1.y = lineStartY;
 	p2.x = lineStopX;
 	p2.y = lineStopY;
+
 	linePath.clear();
 	linePath.startNewSubPath(p1.x, p1.y);
 
 	linePath.cubicTo(p1.x, p1.y,
 		p1.x + (p2.x - p1.x) * 0.3f, p1.y,
 		p1.x + (p2.x - p1.x) * 0.5f, p1.y + (p2.y - p1.y) * 0.5f);
+
 	linePath.cubicTo(p1.x + (p2.x - p1.x) * 0.5f, p1.y + (p2.y - p1.y) * 0.5f,
 		p2.x - (p2.x - p1.x) * 0.3, p2.y,
 		p2.x, p2.y);
+
 	PathStrokeType wideStroke(2.0f);
 	wideStroke.createStrokedPath(linePath, linePath);
 }
@@ -302,7 +298,7 @@ void SynthEditor::mouseDrag(const MouseEvent& e)
 	lineStopX = lineStartX + e.getDistanceFromDragStartX();
 	lineStopY = lineStartY + e.getDistanceFromDragStartY();
 
-	// Mittlerer Mausbutton: schneide Verbindungen
+	// middle mouse = cut connections
 	if (isMiddleMouseDown) {
 		cutConnectionsAlongLine(Point<int>(mouseDownX, mouseDownY), e.getPosition());
 		repaint();
@@ -370,7 +366,6 @@ void SynthEditor::moveSelection(const MouseEvent& e) {
 					if (snapToGrid) {
 						x = UITools::snap(x, 10, 4);
 						y = UITools::snap(y, 10, 4);
-
 					}
 
 					m->setUiPosition(x, y);
@@ -398,6 +393,7 @@ void SynthEditor::moveSelection(const MouseEvent& e) {
 }
 
 void SynthEditor::dragSelection() {
+
 	int x = mouseDownX;
 	int y = mouseDownY;
 
@@ -526,10 +522,11 @@ void SynthEditor::mouseDoubleClick(const MouseEvent& e)
 						}
 					};
 
-					std::unique_ptr<RotatingCubeComponent> rcc = std::make_unique<RotatingCubeComponent>(gm);
+					std::unique_ptr<RotatingCubeComponent> rcc = std::make_unique<RotatingCubeComponent>(gm);					
 					rcc->setOpaque(false);
 					rcc->startTimer(30);
 					gm->addChangeListener(rcc.get());
+
 					auto* window = new GeometryWindow();
 					window->setContentOwned(rcc.release(), true);
 					window->centreWithSize(800, 600);
@@ -581,7 +578,6 @@ bool::SynthEditor::showPinContextMenu(Point<int> position, Module* module, int p
 	menu.setLookAndFeel(nullptr);
 
 	return false;
-
 }
 
 bool SynthEditor::showModuleContextMenu(Point<int> position, Module* module) {
@@ -600,7 +596,6 @@ bool SynthEditor::showModuleContextMenu(Point<int> position, Module* module) {
 	if ((k = dynamic_cast<Knob*>(module)) != nullptr) {
 		menu.addItem(5, "MIDI learn");		
 	}
-
 
 	if (menu.getNumItems() > 0) {
 		const int result = menu.show();
@@ -634,7 +629,6 @@ bool SynthEditor::showModuleContextMenu(Point<int> position, Module* module) {
 			menu.setLookAndFeel(nullptr);
 			return true;
 		}
-
 	}
 
 	menu.setLookAndFeel(nullptr);
@@ -666,9 +660,7 @@ void SynthEditor::showPrefabMenu(Point<int> position) {
 				else {
 					category.addItem((*it).first, (*it).second.getName(), true);
 				}
-
 			}
-
 		}
 
 		prefabMenu.addSubMenu(categories->getReference(i), category, true);
@@ -718,10 +710,10 @@ void SynthEditor::showCommonContextMenu(Point<int> position) {
 			if (showModuleContextMenu(position, module)) {
 				return;
 			}
-
 		}
-
 	}
+
+	// no module selected, or multiple modules selected
 	PopupMenu menu = PopupMenu();
 
 	// Add general items
@@ -831,11 +823,13 @@ void SynthEditor::connect(Module* root, Module* c, Module* module, int pinIndex,
 
 }
 void SynthEditor::addControl(Module* module, int pinIndex) {
+
 	Knob* k = dynamic_cast<Knob*>(PrefabFactory::getInstance()->getPrefab(69, _sampleRate, bufferSize));
-	addChangeListener(k);
+		
 	k->setValue(1);
 	k->setName(module->getPins().at(pinIndex)->getName());
-
+	
+	addChangeListener(k);
 	connect(root.get(), k, module, pinIndex, mouseY);
 
 	selectionModel.clearSelection();
@@ -871,12 +865,14 @@ void SynthEditor::addControl(Module* module, int pinIndex) {
 }
 
 void SynthEditor::addConstant(Module* module, int pinIndex) {
+
 	Constant* c = dynamic_cast<Constant*>(PrefabFactory::getInstance()->getPrefab(67, _sampleRate, bufferSize));
+	
 	addChangeListener(c);
 	c->setValue(1);
 	c->setName(module->getPins().at(pinIndex)->getName());
+	
 	connect(root.get(), c, module, pinIndex, mouseY);
-
 }
 
 void SynthEditor::addTerminal(Module* module, int pinIndex) {
@@ -887,19 +883,20 @@ void SynthEditor::addTerminal(Module* module, int pinIndex) {
 
 	if (targetPin->getDirection() == TerminalModule::Direction::IN) {
 		t = dynamic_cast<TerminalModule*>(PrefabFactory::getInstance()->getPrefab(83, getSampleRate(), getBufferSize()));
-
 	}
 	else {
 		t = dynamic_cast<TerminalModule*>(PrefabFactory::getInstance()->getPrefab(84, getSampleRate(), getBufferSize()));
-
 	}
 
 	t->setType(targetPin->getType());
+	
 	Pin* p = new Pin(targetPin->getType());
+	
 	t->getPins().at(0)->setTerminal(p);
 	p->listeners.push_back(t);
 	p->setName(t->getName());
 	t->addChangeListener(p);
+
 	if (t->getDirection() == TerminalModule::Direction::IN) {
 		getModule()->addPin(Pin::Direction::IN, p);
 	}
@@ -908,12 +905,8 @@ void SynthEditor::addTerminal(Module* module, int pinIndex) {
 	}
 	t->setIndex(p->index);
 
-	// ModuleUtils::connectModules(t, module, pinIndex);
-
 	connect(root.get(), t, module, pinIndex, mouseY);
-
 	addAndMakeVisible(t);
-
 	getModule()->repaint();
 
 }
@@ -923,8 +916,6 @@ void SynthEditor::itemDropped(const SourceDetails& dragSourceDetails) {
 	Project::getInstance()->getUndoManager()->beginNewTransaction();
 	Project::getInstance()->getUndoManager()->perform(am);
 };
-
-
 
 float SynthEditor::getSampleRate() {
 	return _sampleRate;
@@ -936,10 +927,10 @@ float SynthEditor::getBufferSize() {
 
 bool SynthEditor::isRunning() {
 	return running;
-	//stopTimer();
 }
 
 void SynthEditor::setRunning(bool running) {
+
 	this->running = running;
 
 	CriticalSection& c = AudioManager::getInstance()->getDeviceManager()->getAudioCallbackLock();
@@ -951,7 +942,6 @@ void SynthEditor::setRunning(bool running) {
 	else {
 		c.exit();
 	}
-	// startTimer(100);
 }
 
 void SynthEditor::timerCallback() {
@@ -982,8 +972,6 @@ void SynthEditor::setCurrentLayer(int layer) {
 		else {
 			root->getModules()->at(i)->setVisible(false);
 		}
-
-
 	}
 	repaint();
 	resized();
@@ -1059,11 +1047,11 @@ void SynthEditor::cleanUp() {
 	PrefabFactory::getInstance()->reset();
 
 	root = nullptr;
-	//deleteSelected(true);
 	selectionModel.getSelectedModules().clear();
 	mixer->clearChannels();
 	Project::getInstance()->getUndoManager()->clearUndoHistory();
 	removeAllChangeListeners();
+
 	if (tab != nullptr) {
 
 		int i = tab->getNumTabs();
@@ -1089,8 +1077,6 @@ void SynthEditor::cleanUp() {
 		}
 		supplemental->setCurrentTabIndex(0);
 	}
-
-
 }
 
 void SynthEditor::newFile() {
@@ -1102,7 +1088,6 @@ void SynthEditor::newFile() {
 	setLocked(false);
 	repaint();
 }
-
 
 void SynthEditor::loadFromString(juce::String in) {
 
@@ -1153,9 +1138,7 @@ void SynthEditor::saveModule(Module* m) {
 		xml = nullptr;
 
 		delete v;
-
 	}
-
 }
 
 Module* SynthEditor::loadModule() {
@@ -1230,11 +1213,8 @@ void SynthEditor::saveFile() {
 #else
 
 	bool fileValid = false;
-
 	File file;
-
 	ValueTree* v = new ValueTree("Module");
-
 
 	v->setProperty("lock", isLocked(), nullptr);
 	v->setProperty("layer", static_cast<int>(currentLayer), nullptr);
@@ -1249,7 +1229,6 @@ void SynthEditor::saveFile() {
 			file = chooser.getResult();
 			fileValid = true;
 		}
-
 	}
 	else {
 		file = File(Project::getInstance()->getCurrentFilePath());
@@ -1296,10 +1275,7 @@ void SynthEditor::openEditor(Module* m) {
 					return;
 				}
 			}
-
-
 		}
-
 	}
 
 	SynthEditor* editor = new SynthEditor(_sampleRate, bufferSize);
@@ -1362,10 +1338,11 @@ void SynthEditor::openRecorder(AudioRecorderModule* arm) {
 				return;
 			}
 		}
-
 	}
+
 	AudioRecorderEditor* are = arm->getEditor();
 	are->setIndex(static_cast<int>(arm->getIndex()));
+
 	Project::getInstance()->getSupplemental()->addTab("Audio recorder", Colours::darkgrey, are, false);
 	Project::getInstance()->getSupplemental()->setCurrentTabIndex(Project::getInstance()->getSupplemental()->getNumTabs() - 1);
 }
@@ -1453,7 +1430,6 @@ void SynthEditor::openTracks(File file)
 		Project::getInstance()->addAudioFile(id, path);
 	}
 
-
 	std::unique_ptr<XmlElement> xml = XmlDocument(File(trackDataFileName)).getDocumentElement();
 
 	ValueTree v = ValueTree::fromXml(*xml.get());
@@ -1507,44 +1483,84 @@ void SynthEditor::openTracks(File file)
 				t->setMidiChannel(track.getProperty("midiChannel").toString().getIntValue(), false);								
 				loadMidiRegions(track, t);
 			}
-
 		}
 	}
 
 	setRunning(true);
 }
 
-void SynthEditor::loadMidiRegions(juce::ValueTree& track, Track* t)
-{
+void SynthEditor::loadMidiRegions(juce::ValueTree& track, Track* t) {
 	ValueTree regions = track.getChild(0);
 
 	for (int j = 0; j < regions.getNumChildren(); j++) {
 		ValueTree region = regions.getChild(j);
-		MidiRegion* mr = t->addMidiRegion(Project::getInstance()->getSampleRate(), region.getProperty("sampleOffset").toString().getIntValue(), region.getProperty("numSamples").toString().getIntValue());
+		MidiRegion* mr = t->addMidiRegion(
+			Project::getInstance()->getSampleRate(),
+			int(region.getProperty("sampleOffset")),
+			int(region.getProperty("numSamples"))
+		);
+
 		Rectangle<int> bounds = mr->getBounds();
-		bounds.setWidth(region.getProperty("width"));
+		bounds.setWidth(int(region.getProperty("width")));
 		mr->setBounds(bounds);
+
 		ValueTree events = region.getChild(0);
-		for (int k = 0; k < events.getNumChildren(); k++) {
+		int numEvents = events.getNumChildren();
+		DBG("Loading " + String(numEvents) + " events.");
+
+		int loadedCount = 0;
+		for (int k = 0; k < numEvents; k++) {
 			ValueTree event = events.getChild(k);
-			Logger::getCurrentLogger()->writeToLog(event.getProperty("type"));
-			if (event.getProperty("type") == "noteon") {
-				MidiMessage msg = MidiMessage::noteOn(event.getProperty("channel").toString().getIntValue(), event.getProperty("note"), event.getProperty("velocity").toString().getFloatValue() / 127.0f);
-				mr->addMessage(new MidiMessage(msg), Time::getMillisecondCounterHiRes() / 1000, event.getProperty("timestamp").toString().getIntValue());
+			String eventType = event.getProperty("type").toString().toLowerCase().trim();
+
+			DBG("Processing event " + String(k) + ": " + eventType);
+
+			MidiMessage msg;
+			bool validMessage = false;
+
+			if (eventType == "noteon") {
+				msg = MidiMessage::noteOn(
+					int(event.getProperty("channel")),
+					int(event.getProperty("note")),
+					float(event.getProperty("velocity")) / 127.0f
+				);
+				validMessage = true;
 			}
-			else if (event.getProperty("type") == "noteoff") {
-				MidiMessage msg = MidiMessage::noteOff(event.getProperty("channel").toString().getIntValue(), event.getProperty("note").toString().getIntValue(), (float)0);
-				mr->addMessage(new MidiMessage(msg), Time::getMillisecondCounterHiRes() / 1000, event.getProperty("timestamp").toString().getIntValue());
+			else if (eventType == "noteoff") {
+				msg = MidiMessage::noteOff(
+					int(event.getProperty("channel")),
+					int(event.getProperty("note")),
+					0.0f
+				);
+				validMessage = true;
 			}
-			else if (event.getProperty("type") == "control") {
-				MidiMessage msg = MidiMessage::controllerEvent(event.getProperty("channel").toString().getIntValue(), event.getProperty("controller").toString().getIntValue(), event.getProperty("value").toString().getIntValue());
-				mr->addMessage(new MidiMessage(msg), Time::getMillisecondCounterHiRes() / 1000, event.getProperty("timestamp").toString().getIntValue());
+			else if (eventType == "control") {
+				msg = MidiMessage::controllerEvent(
+					int(event.getProperty("channel")),
+					int(event.getProperty("controller")),
+					int(event.getProperty("value"))
+				);
+				validMessage = true;
 			}
-			else if (event.getProperty("type") == "pitch") {
-				MidiMessage msg = MidiMessage::pitchWheel(event.getProperty("channel").toString().getIntValue(), event.getProperty("pitch").toString().getIntValue());
-				mr->addMessage(new MidiMessage(msg), Time::getMillisecondCounterHiRes() / 1000, event.getProperty("timestamp").toString().getIntValue());
+			else if (eventType == "pitch") {
+				msg = MidiMessage::pitchWheel(
+					int(event.getProperty("channel")),
+					int(event.getProperty("pitch"))
+				);
+				validMessage = true;
+			}
+			else {
+				DBG("WARNING: Unknown event type: " + eventType);
+			}
+
+			if (validMessage) {
+				int timestamp = int(event.getProperty("timestamp"));
+				mr->addMessage(new MidiMessage(msg), timestamp, timestamp);
+				loadedCount++;
 			}
 		}
+
+		DBG("Successfully loaded " + String(loadedCount) + " of " + String(numEvents) + " events.");
 	}
 }
 
@@ -1573,7 +1589,6 @@ void SynthEditor::configureAudioModule(Module* m, ChangeBroadcaster* broadcaster
 			mixer->setVolume(channelIndex, in->getVolume());
 			mixer->setModule(channelIndex, in);
 		}
-
 	}
 
 	AuxOut* aux;
@@ -1588,7 +1603,6 @@ void SynthEditor::configureAudioModule(Module* m, ChangeBroadcaster* broadcaster
 	}
 
 	broadcaster->addChangeListener(m);
-
 }
 
 void SynthEditor::addVirtualInstrumentTrack()
@@ -1600,13 +1614,10 @@ void SynthEditor::addVirtualInstrumentTrack()
 	}
 
 	PluginSelectorDialog::show(values, [this](juce::String selectedPlugin)
-		{
-			Point<int> pos = Point<int>(10, 10);
-
-			Track* t = TrackUtil::createVirtualInstrumentTrack(selectedPlugin, pos, navigator, this);
-			// t->addMidiRegion(48000, 0, 960000);
-		});
-
+	{
+		Point<int> pos = Point<int>(10, 10);
+		Track* t = TrackUtil::createVirtualInstrumentTrack(selectedPlugin, pos, navigator, this);
+	});
 }
 
 void SynthEditor::setTab(juce::TabbedComponent* t) {
@@ -1664,8 +1675,6 @@ void SynthEditor::setSamplerate(double rate) {
 void SynthEditor::setBufferSize(int buffersize) {
 	this->bufferSize = buffersize;
 }
-
-
 
 int SynthEditor::addChannel(juce::String name, Mixer::Channel::Type channeltype) {
 	return mixer->addChannel(name, channeltype);
@@ -1779,9 +1788,7 @@ void SynthEditor::changeListenerCallback(juce::ChangeBroadcaster* source) {
 			Project::getInstance()->setNewFile(false);
 			setRunning(true);
 		}
-
 	}
-
 }
 
 ApplicationCommandTarget* SynthEditor::getNextCommandTarget() {
@@ -2054,7 +2061,6 @@ void SynthEditor::alignToGrid()
 		y = UITools::snap(y, 25, 5);
 
 		selectionModel.getSelectedModules().at(i)->setTopLeftPosition(x,y);
-
 	}
 	repaint();
 }
@@ -2103,7 +2109,7 @@ void SynthEditor::setNavigator(TrackNavigator* navigator)
 
 void SynthEditor::exportAudio()
 {
-
+	// TODO: implement export audio dialog
 }
 
 void SynthEditor::updateProject(File file) {
@@ -2148,14 +2154,14 @@ void SynthEditor::cutConnectionAtPosition(Point<int> position)
 			int x2 = c->target->getX() + c->b->x;
 			int y2 = c->target->getY() + c->b->y + 5;
 
-			// Berechne Distanz von Punkt zur Linie
+			// calculate distance from point to line
 			Line<float> line(x1, y1, x2, y2);
 			Point<float> nearestPoint;
 			float distance = line.getDistanceFromPoint(position.toFloat(), nearestPoint);
 
-			if (distance <= 15.0f) { // 15 Pixel Toleranz
+			if (distance <= 15.0f) { // 15 Pixel tolerance
 				removeConnection(c);
-				break; // Nur eine Verbindung pro Klick
+				break; // just one connection at a time
 			}
 		}
 	}
@@ -2187,7 +2193,7 @@ void SynthEditor::cutConnectionsAlongLine(Point<int> start, Point<int> end)
 
 void SynthEditor::removeConnection(Connection* c)
 {
-	// Entferne die Verbindung aus den Pin-Listen
+	// remove from modules
 	if (c->a != nullptr) {
 		auto& connections = c->a->getConnections();
 		auto it = std::find(connections.begin(), connections.end(), c->b);
@@ -2204,7 +2210,7 @@ void SynthEditor::removeConnection(Connection* c)
 		}
 	}
 
-	// Entferne aus der Root-Liste
+	// remove from root
 	auto& rootConnections = *root->getConnections();
 	auto it = std::find(rootConnections.begin(), rootConnections.end(), c);
 	if (it != rootConnections.end()) {
