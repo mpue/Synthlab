@@ -191,14 +191,67 @@ void TrackNavigator::adjustHeight()
 	setSize(getWidth(), height + timelineOffset);
 }
 
+// Bestehende isInterestedInDragSource erweitern:
 bool TrackNavigator::isInterestedInDragSource(const SourceDetails& dragSourceDetails)
 {
 	juce::String name = dragSourceDetails.description.toString();
-	if (name.endsWith(".wav")) {
+	if (name.endsWith(".wav") || name.endsWith(".mp3") ||
+		name.endsWith(".flac") || name.endsWith(".ogg") ||
+		name.endsWith(".aiff") || name.endsWith(".aif")) {
 		return true;
 	}
-
 	return false;
+}
+
+// Neue Methode für externe Datei-Drops hinzufügen:
+bool TrackNavigator::isInterestedInFileDrag(const StringArray& files)
+{
+	// Prüfe, ob mindestens eine Audio-Datei dabei ist
+	for (const auto& filename : files)
+	{
+		juce::File file(filename);
+		juce::String extension = file.getFileExtension().toLowerCase();
+
+		if (extension == ".wav" || extension == ".mp3" ||
+			extension == ".flac" || extension == ".ogg" ||
+			extension == ".aiff" || extension == ".aif" ||
+			extension == ".m4a" || extension == ".wma")
+		{
+			return true;
+		}
+	}
+	return false;
+}
+
+void TrackNavigator::filesDropped(const StringArray& files, int x, int y)
+{
+	// Verarbeite alle Audio-Dateien
+	for (const auto& filename : files)
+	{
+		juce::File file(filename);
+		juce::String extension = file.getFileExtension().toLowerCase();
+
+		// Prüfe, ob es eine unterstützte Audio-Datei ist
+		if (extension == ".wav" || extension == ".mp3" ||
+			extension == ".flac" || extension == ".ogg" ||
+			extension == ".aiff" || extension == ".aif" ||
+			extension == ".m4a" || extension == ".wma")
+		{
+			for (int i = 0; i < tracks.size(); i++) {
+				if (tracks.at(i)->isSelected()) {					
+					tracks.at(i)->addRegion(file.getFileNameWithoutExtension(), file, Project::getInstance()->getSampleRate());
+					Project::getInstance()->addAudioFile(file.getFileNameWithoutExtension(), file.getFullPathName());
+					repaint();
+				}
+			}
+
+		}
+	}
+
+	// Layout aktualisieren
+	adjustHeight();
+	repaint();
+	sendChangeMessage();
 }
 
 void TrackNavigator::itemDropped(const SourceDetails& dragSourceDetails)

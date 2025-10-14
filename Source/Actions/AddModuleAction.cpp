@@ -204,6 +204,7 @@ bool AddModuleAction::perform() {
             break;
 	}
 
+    editor->saveFile();
 
     m->repaint();
     editor->repaint();

@@ -35,6 +35,7 @@ class TrackNavigator : public Component,
 	public Timer,
 	public KeyListener,
 	public DragAndDropTarget,
+	public FileDragAndDropTarget,
 	public ScrollBar::Listener,
 	public EventListener
 
@@ -97,6 +98,9 @@ public:
 
 	bool isInterestedInDragSource(const SourceDetails& dragSourceDetails) override;
 	void itemDropped(const SourceDetails& dragSourceDetails) override;
+
+	bool isInterestedInFileDrag(const StringArray& files) override;
+	void filesDropped(const StringArray& files, int x, int y) override;
 
 	inline void addChangeListener(ChangeListener* listener) {
 		ChangeBroadcaster::addChangeListener(listener);
