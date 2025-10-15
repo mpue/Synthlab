@@ -428,6 +428,8 @@
                 resource="0" file="Source/FileButtonPropertyComponent.cpp"/>
           <FILE id="fin4m5" name="FileButtonPropertyComponent.h" compile="0"
                 resource="0" file="Source/FileButtonPropertyComponent.h"/>
+          <FILE id="XQNwhY" name="GeometryViewComponent.h" compile="0" resource="0"
+                file="Source/GeometryViewComponent.h"/>
           <FILE id="mkTk7I" name="ISampleEditor.h" compile="0" resource="0" file="Source/ISampleEditor.h"/>
           <FILE id="p4Fr6r" name="MainTabbedComponent.cpp" compile="1" resource="0"
                 file="Source/MainTabbedComponent.cpp"/>
@@ -459,8 +461,6 @@
           <FILE id="wdEhY6" name="PropertyView.cpp" compile="1" resource="0"
                 file="Source/PropertyView.cpp"/>
           <FILE id="yeeY5O" name="PropertyView.h" compile="0" resource="0" file="Source/PropertyView.h"/>
-          <FILE id="LKbJzG" name="RotatingCubeComponent.h" compile="0" resource="0"
-                file="Source/RotatingCubeComponent.h"/>
           <FILE id="fWNKSv" name="SampleEditor.cpp" compile="1" resource="0"
                 file="Source/SampleEditor.cpp"/>
           <FILE id="NDciKQ" name="SampleEditor.h" compile="0" resource="0" file="Source/SampleEditor.h"/>

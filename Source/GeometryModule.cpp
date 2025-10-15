@@ -42,8 +42,7 @@ void GeometryModule::process()
     }
     if (pins.at(3)->getConnections().size() == 1) {
 		if (geometry != pins.at(3)->getConnections().at(0)->getGeometry()) {
-            geometry = pins.at(3)->getConnections().at(0)->getGeometry();
-			juce::ChangeBroadcaster::sendChangeMessage();
+            geometry = pins.at(3)->getConnections().at(0)->getGeometry();		
         }
 	}
 

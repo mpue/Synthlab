@@ -127,7 +127,7 @@ void PropertyView::paint (Graphics& g)
     //[UserPrePaint] Add your own custom painting code here..
     //[/UserPrePaint]
 
-    g.fillAll (Colour (0xff222222));
+    g.fillAll (Colour (0xff1a1a1a));
 
     //[UserPaint] Add your own custom painting code here..
     //[/UserPaint]

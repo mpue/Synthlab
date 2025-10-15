@@ -35,6 +35,9 @@ public:
     void setSelectedMidiOutput(int deviceIndex);
     void setMidiChannel(int channel);
     
+    juce::String getSelectedMidiOutput();
+	void setSelectedMidiOutput(const juce::String& deviceName);
+
     // Property management
     juce::Array<juce::PropertyComponent*>& getProperties() override;
     void createProperties() override;

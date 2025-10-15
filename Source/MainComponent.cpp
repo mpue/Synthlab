@@ -1112,9 +1112,23 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 #endif
 
 	else if (menuItemID == 41) {
+
+		if (navigator->getCurrentTrack() == nullptr)
+			return;
+
+		if (navigator->getCurrentTrack()->getCurrentRegion() == nullptr)
+			return;
+
 		navigator->getCurrentTrack()->getCurrentRegion()->quantize(96);
 	}
 	else if (menuItemID == 42) {
+
+		if (navigator->getCurrentTrack() == nullptr)
+			return;
+			
+		if (navigator->getCurrentTrack()->getCurrentRegion() == nullptr)
+			return;
+
 		Region* region = navigator->getCurrentTrack()->getCurrentRegion();
 		BPMDetector detector;
 
@@ -1323,9 +1337,9 @@ void MainComponent::buttonClicked(Button* b)
 			Project::getInstance()->getUndoManager()->perform(rma);
 		}
 		else if (tb->getItemId() == toolbarFactory->doc_new) {
+			editor->setRunning(false);
 			Project::getInstance()->setNewFile(true);
 			navigator->clearTracks();
-			editor->setRunning(false);
 			editor->cleanUp();
 			editor->newFile();
 			editor->setRunning(true);

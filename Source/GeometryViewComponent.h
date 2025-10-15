@@ -6,23 +6,29 @@
 using namespace juce;
 using namespace juce::gl;
 
-class RotatingCubeComponent : public juce::OpenGLAppComponent, public juce::Timer, public juce::ChangeListener
+class GeometryViewComponent : public juce::OpenGLAppComponent, public juce::Timer, public juce::ChangeListener
 {
 public:
 
-	RotatingCubeComponent() {
+	GeometryViewComponent() {
 		setSize(800, 600);
 	}
 
-	RotatingCubeComponent(GeometryModule* m)
+	GeometryViewComponent(GeometryModule* m)
 	{
 		this->module = m;
 		setSize(800, 600);
 	}
 
-	~RotatingCubeComponent() override
+	~GeometryViewComponent() override
 	{
 		shutdownOpenGL();
+	}
+
+	void resized() override
+	{
+		// OpenGL-Kontext wird automatisch aktualisiert
+		// render() wird mit neuen Dimensionen aufgerufen
 	}
 
 	void timerCallback() override
@@ -32,7 +38,7 @@ public:
 
 	virtual void changeListenerCallback(juce::ChangeBroadcaster* source) override
 	{
-		GeometryModule* m = dynamic_cast<GeometryModule*>(module);
+		GeometryModule* m = dynamic_cast<GeometryModule*>(source);
 
 		if (m != nullptr) {
 			setModule(m);
@@ -93,12 +99,30 @@ public:
 
 	void bindBufferData() {
 
+		if (module == nullptr || module->getGeometry() == nullptr) {
+			return;
+		}
+
 		float* vertices = module->getGeometry()->getVertices();
 		unsigned int* indices = module->getGeometry()->getIndices();
 
 		// Speichere die Anzahl der Indizes für das Rendering
 		numIndicesToDraw = module->getGeometry()->getNumIndices();
 		int numVertexFloats = module->getGeometry()->getNumVertices() * 6; // 6 floats pro Vertex (pos + color)
+
+		// Alte Buffer löschen falls vorhanden
+		if (VAO != 0) {
+			openGLContext.extensions.glDeleteVertexArrays(1, &VAO);
+			VAO = 0;
+		}
+		if (VBO != 0) {
+			openGLContext.extensions.glDeleteBuffers(1, &VBO);
+			VBO = 0;
+		}
+		if (EBO != 0) {
+			openGLContext.extensions.glDeleteBuffers(1, &EBO);
+			EBO = 0;
+		}
 
 		// VAO, VBO, EBO erstellen
 		openGLContext.extensions.glGenVertexArrays(1, &VAO);
@@ -158,7 +182,7 @@ public:
 		glViewport(0, 0, juce::roundToInt(desktopScale * getWidth()),
 			juce::roundToInt(desktopScale * getHeight()));
 
-		if (shader == nullptr)
+		if (shader == nullptr || VAO == 0 || numIndicesToDraw == 0)
 			return;
 
 		shader->use();
@@ -246,5 +270,5 @@ private:
 	GeometryModule* module = nullptr;
 	int numIndicesToDraw = 0;  // Speichert die Anzahl der zu zeichnenden Indizes
 
-	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(RotatingCubeComponent)
+	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(GeometryViewComponent)
 };

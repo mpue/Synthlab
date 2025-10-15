@@ -78,8 +78,7 @@ ExtendedFileBrowser::~ExtendedFileBrowser() {
     delete view;
     for (int i = 0; i < driveButtons.size(); i++) {
         delete driveButtons.at(i);
-    }
-        
+    }        
 }
 
 void ExtendedFileBrowser::mouseDrag(const juce::MouseEvent &event) {
@@ -93,8 +92,7 @@ void ExtendedFileBrowser::mouseDrag(const juce::MouseEvent &event) {
 }
 
 void ExtendedFileBrowser::paint(juce::Graphics &g) {
-    g.fillAll (Colour (0xff333333));
-    g.fillRect (getLocalBounds());
+    g.fillAll (Colour (0xff1a1a1a));    
     // Component::paint(g);
 }
 
@@ -226,13 +224,12 @@ void FileBrowserModel::paintRowBackground (Graphics& g,
                          int rowNumber,
                          int width, int height,
                          bool rowIsSelected) {
-
-    
+        
     if (rowIsSelected) {
-        g.setColour(juce::Colours::orange);
+        g.setColour(Colour(0xff4d9eff));
     }
     else {
-        g.setColour(Colour (0xff222222));
+        g.setColour(Colour (0xff1a1a1a));
     }
     
     g.fillRect(0,0,width,height);
@@ -309,13 +306,12 @@ void ExtendedFileBrowser::loadState() {
         xml = nullptr;
     }
 }
-
+ 
 void ExtendedFileBrowser::focusLost(FocusChangeType cause)
 {
     Component::focusLost(cause);
     Project::getInstance()->getDefaultSampler()->stop();
 }
-
 
 File* ExtendedFileBrowser::getSelectedFile() {
     return selectedFile;

@@ -274,6 +274,31 @@ void MidiOut::setMidiChannel(int channel) {
     }
 }
 
+juce::String MidiOut::getSelectedMidiOutput()
+{
+    auto devices = juce::MidiOutput::getAvailableDevices();
+
+    for (int i = 0; i < devices.size(); i++) {
+        if (i + 1 == selectedMidiOutputIndex) { // +1 because of "None" at index 0
+            return devices[i].name;
+        }
+	}
+        
+}
+
+void MidiOut::setSelectedMidiOutput(const juce::String& deviceName)
+{
+    auto devices = juce::MidiOutput::getAvailableDevices();
+    for (int i = 0; i < devices.size(); i++) {
+        if (devices[i].name == deviceName) {
+            setSelectedMidiOutput(i + 1); // +1 because of "None" at index 0
+            return;
+        }
+    }
+    // If device not found, select "None"
+	setSelectedMidiOutput(0);
+}
+
 juce::Array<juce::PropertyComponent*>& MidiOut::getProperties() {
     properties.clear();
     

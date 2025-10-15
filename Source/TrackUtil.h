@@ -75,6 +75,8 @@ public:
 		ti->connectPins(5, pm->pins.at(4));
 
 		// connect the audio out
+		
+		pos.x += 160;
 
 		AudioOut* audioOut = nullptr;
 
@@ -87,7 +89,6 @@ public:
 
 		AuxOut* auxOut = nullptr;
 
-		pos.x += 160;
 
 		ConnectAudioOut(audioOut, pm, pos, 2, 3, editor->getModule(), editor);
 		return t;
@@ -191,6 +192,8 @@ public:
 
 	static Track* createMIDITrack(SynthEditor* editor, TrackNavigator* navigator, Module* module)
 	{
+		int channel = getNextFreeMidiChannel(navigator);
+
 		Point<int> pos = Point<int>(10, 10);
 
 		AddModuleAction* am = new AddModuleAction(editor, pos, 61);
@@ -220,7 +223,6 @@ public:
 
 		if (midiOut) {
 			// Set the MIDI channel for the MidiOut to match the track
-			int channel = getNextFreeMidiChannel(navigator);
 			t->setMidiChannel(channel, false);
 			midiOut->setMidiChannel(channel);
 

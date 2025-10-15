@@ -22,7 +22,7 @@
 #include "Metronome.h"
 #include "AudioLevelMeter.h"
 #include "SpektrumAnalyzer.h"
-#include "RotatingCubeComponent.h"
+#include "GeometryViewComponent.h"
 
 #define _USE_MATH_DEFINES
 #ifndef M_PI
@@ -203,7 +203,7 @@ private:
 	std::unique_ptr<AudioLevelMeter> levelMeter = nullptr;
     std::unique_ptr<SpectrumAnalyzer> spectrumAnalyzer = nullptr;
 
-	std::unique_ptr<RotatingCubeComponent> rotatingCube = nullptr;
+	std::unique_ptr<GeometryViewComponent> rotatingCube = nullptr;
 
     CriticalSection lock;
 

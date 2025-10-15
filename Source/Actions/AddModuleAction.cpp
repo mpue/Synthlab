@@ -203,9 +203,7 @@ bool AddModuleAction::perform() {
         default:
             break;
 	}
-
-    editor->saveFile();
-
+  
     m->repaint();
     editor->repaint();
     editor->setDirty(true);

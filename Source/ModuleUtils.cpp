@@ -34,6 +34,7 @@
 #include "PublisherModule.h"
 #include "MessageBus/MessageBus.h"
 #include "CompareModule.h"
+#include "MidiOut.h"
 
 void ModuleUtils::loadStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections, juce::ValueTree* v, ChangeBroadcaster* broadcaster) {
 	ValueTree mods = v->getChildWithName("Modules");
@@ -237,6 +238,13 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
 		if ((km = dynamic_cast<KeyboardModule*>(m)) != nullptr) {
 			km->setChannel(mod.getProperty("channel").toString().getIntValue());
 			km->setSize(mod.getProperty("width").toString().getIntValue(), mod.getProperty("height").toString().getIntValue());
+		}
+
+		MidiOut* mo = nullptr;
+
+		if ((mo = dynamic_cast<MidiOut*>(m)) != nullptr) {
+			mo->setSelectedMidiOutput(mod.getProperty("midiOutputDevice").toString());
+			mo->setMidiChannel(mod.getProperty("channel").toString().getIntValue());
 		}
 
 		ValueTree pins = mod.getChildWithName("Pins");
@@ -629,6 +637,13 @@ void ModuleUtils::saveStructure(std::vector<Module*>* modules, std::vector<Conne
 
 		if ((pum = dynamic_cast<PublisherModule*>(*it)) != nullptr) {
 			file.setProperty("topic", pum->getTopic(), nullptr);
+		}
+
+		MidiOut *mom = nullptr;
+
+		if ((mom = dynamic_cast<MidiOut*>(*it)) != nullptr) {
+			file.setProperty("midiOutputDevice", mom->getSelectedMidiOutput(), nullptr);
+			file.setProperty("channel", mom->getChannel(), nullptr);
 		}
 
 		mods.addChild(file, -1, nullptr);

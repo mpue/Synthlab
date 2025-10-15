@@ -40,7 +40,7 @@
 #include "AudioRecorderEditor.h"
 #include "PluginSelectorDialog.h"
 #include "TrackUtil.h"
-#include "RotatingCubeComponent.h"
+#include "GeometryViewComponent.h"
 #include "GeometryModule.h"
 
 class SampleEditor;
@@ -513,6 +513,7 @@ void SynthEditor::mouseDoubleClick(const MouseEvent& e)
 
 						GeometryWindow() : juce::DialogWindow("Geometry", juce::Colours::darkgrey, true) {
 							setUsingNativeTitleBar(true);
+							setResizable(true, true);
 						}
 
 						void closeButtonPressed() override {
@@ -522,7 +523,7 @@ void SynthEditor::mouseDoubleClick(const MouseEvent& e)
 						}
 					};
 
-					std::unique_ptr<RotatingCubeComponent> rcc = std::make_unique<RotatingCubeComponent>(gm);					
+					std::unique_ptr<GeometryViewComponent> rcc = std::make_unique<GeometryViewComponent>(gm);
 					rcc->setOpaque(false);
 					rcc->startTimer(30);
 					gm->addChangeListener(rcc.get());
@@ -1086,7 +1087,7 @@ void SynthEditor::newFile() {
 	setLocked(true);
 	updateProject(File());
 	setLocked(false);
-	repaint();
+	repaint();	
 }
 
 void SynthEditor::loadFromString(juce::String in) {
@@ -1615,8 +1616,9 @@ void SynthEditor::addVirtualInstrumentTrack()
 
 	PluginSelectorDialog::show(values, [this](juce::String selectedPlugin)
 	{
-		Point<int> pos = Point<int>(10, 10);
+		Point<int> pos = Point<int>(50, 50);
 		Track* t = TrackUtil::createVirtualInstrumentTrack(selectedPlugin, pos, navigator, this);
+		repaint();
 	});
 }
 

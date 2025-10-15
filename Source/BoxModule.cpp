@@ -13,6 +13,8 @@
 BoxModule::BoxModule()
 {
 	setName("Box");
+	prefab = true;
+	editable = false;
     vertices = new float[48] {
         // Position          // Farbe
         // Vordere Seite (z = 0.5)

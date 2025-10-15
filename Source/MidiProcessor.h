@@ -73,7 +73,7 @@ private:
 
     std::mutex                           queueMutex;
     std::vector<QueuedMidiMessage>       midiQueue;   // guarded by queueMutex
-    std::atomic<int>                     activeChannel{ 1 };
+    std::atomic<int>                     activeChannel{ 0 };
 
     std::atomic<bool> clockRunning{ false };
     double clockBPM = 120.0;
