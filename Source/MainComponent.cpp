@@ -31,10 +31,12 @@
 #include "MidiRecorderModule.h"
 #include "TrackUtil.h"
 #include "Tracks/BounceThread.h"
+#include "BounceDialog.h"
 #include "ChatGPTInterface.h"
 #include "AudioEngine/BPMDetector.h"
 #include "TrackIn.h"
 #include "Module.h"
+#include "AudioUtils.h"
 
 using juce::String;
 using juce::File;
@@ -938,7 +940,7 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 	if (index == 0) {
 		menu.addCommandItem(this, SynthEditor::CommandIds::NEW);
 		menu.addCommandItem(this, SynthEditor::CommandIds::LOAD);
-		menu.addCommandItem(this, SynthEditor::CommandIds::EXPORT_AUDIO);
+		menu.addItem(13, "Export Audio...", true, false, nullptr);
 		menu.addCommandItem(this, SynthEditor::CommandIds::SAVE);
 		menu.addItem(5, "Settings", true, false, nullptr);
 		menu.addItem(6, "Import Audio", true, false, nullptr);
@@ -998,10 +1000,32 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 	else if (index == 4) {
 
 		menu.addItem(41, "Quantize", true, false, nullptr);
-		menu.addItem(42, "Detect BPM", true, false, nullptr);
 		menu.addItem(43, "Duplicate", true, false, nullptr);
 		menu.addItem(44, "Split at marker", true, false, nullptr);
 		menu.addItem(45, "Delete", true, false, nullptr);
+
+		PopupMenu audioMenu = PopupMenu();
+
+		audioMenu.addItem(42, "Detect BPM", true, false, nullptr);
+		audioMenu.addItem(47, "Normalize", true, false, nullptr);
+		
+		//TODO: implement these functions
+		/*
+		audioMenu.addItem(46, "Reverse", true, false, nullptr);
+		audioMenu.addItem(48, "Fade In", true, false, nullptr);
+		audioMenu.addItem(49, "Fade Out", true, false, nullptr);
+		audioMenu.addItem(50, "Trim", true, false, nullptr);
+		audioMenu.addItem(51, "Silence", true, false, nullptr);
+		audioMenu.addItem(52, "Time Stretch", true, false, nullptr);
+		audioMenu.addItem(53, "Pitch Shift", true, false, nullptr);
+		audioMenu.addItem(54, "Apply Gain", true, false, nullptr);
+		audioMenu.addItem(55, "Render to new file", true, false, nullptr);
+		*/
+
+
+		menu.addSubMenu("Audio", audioMenu);
+
+
 	}
 
 	return menu;
@@ -1009,21 +1033,24 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 
 void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 
-	if (menuItemID == 5) {
-		openSettings();
-	}
-	else if (menuItemID == 6) {
-		editorView->ImportAudio();
-	}
-	else if (menuItemID == 12) {
-		editorView->ImportMidi();
-	}
-	else if (menuItemID == 7) {
-		editorView->getNavigator()->setPlaying(true);
-	}
-	else if (menuItemID == 7) {
-		editorView->getNavigator()->setPlaying(false);
-	}
+if (menuItemID == 5) {
+openSettings();
+}
+else if (menuItemID == 6) {
+editorView->ImportAudio();
+}
+else if (menuItemID == 12) {
+editorView->ImportMidi();
+}
+else if (menuItemID == 13) {
+showBounceDialog();
+}
+else if (menuItemID == 7) {
+editorView->getNavigator()->setPlaying(true);
+}
+else if (menuItemID == 7) {
+editorView->getNavigator()->setPlaying(false);
+}
 
 #if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
 	else if (menuItemID == 200) {
@@ -1166,6 +1193,19 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	else if (menuItemID == 45) {
 		for (int i = 0; i < navigator->getTracks().size(); i++) {
 			navigator->getTracks().at(i)->removeSelectedRegions(true);
+		}
+	}
+	else if (menuItemID == 47) {
+		if (navigator->getCurrentTrack() != nullptr) {
+			Region* region = navigator->getCurrentTrack()->getCurrentRegion();
+
+			// check if it's an audio region
+			AudioRegion* audioRegion = dynamic_cast<AudioRegion*>(region);
+
+			if (audioRegion != nullptr) {
+				AudioUtils::normalizeBuffer(*audioRegion->getBuffer());
+				audioRegion->updateThumb();
+			}
 		}
 	}
 
@@ -1509,6 +1549,8 @@ void MainComponent::startBounce(const juce::File& outputFile, double durationInS
 	dialog->setContentOwned(content, true);
 	dialog->centreWithSize(400, 80);
 
+	
+
 	// Zeige es asynchron, damit es sich selbst schließen kann
 	dialog->setVisible(true);
 
@@ -1583,4 +1625,67 @@ juce::String MainComponent::tryExecuteChatInstruction(const std::string& jsonStr
 	}
 
 	return "Unbekannte Aktion.";
+}
+
+void MainComponent::showBounceDialog()
+{
+	auto* dialog = new BounceDialog();
+	
+	dialog->onExport = [this, dialog]() {
+		// Validierung
+		if (!dialog->getOutputFile().existsAsFile() && dialog->getOutputFile().getFullPathName().isEmpty()) {
+			juce::AlertWindow::showMessageBoxAsync(
+				juce::AlertWindow::WarningIcon,
+				"Export Error",
+				"Please select an output file first.");
+			return;
+		}
+		
+		double duration = dialog->getDuration();
+		if (duration <= 0.0) {
+			juce::AlertWindow::showMessageBoxAsync(
+				juce::AlertWindow::WarningIcon,
+				"Export Error",
+				"Duration must be greater than 0.");
+			return;
+		}
+		
+		// Bereite Bounce vor
+		setRunning(false);
+		setBouncing(true);
+		
+		// Alle Plugin-Module für Bounce-Modus vorbereiten
+		for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
+			if (dynamic_cast<TrackIn*>(editor->getModule()->getModules()->at(i)) != nullptr) {
+				TrackIn* t = dynamic_cast<TrackIn*>(editor->getModule()->getModules()->at(i));
+				t->setBouncing(true);
+			}
+		}
+		
+		// Starte Bounce
+		startBounce(dialog->getOutputFile(), duration);
+		
+		// Schließe Dialog
+		if (auto* dw = dialog->findParentComponentOfClass<juce::DialogWindow>()) {
+			dw->exitModalState(0);
+		}
+	};
+	
+	dialog->onCancel = [dialog]() {
+		if (auto* dw = dialog->findParentComponentOfClass<juce::DialogWindow>()) {
+			dw->exitModalState(0);
+		}
+	};
+	
+	juce::DialogWindow::LaunchOptions options;
+	options.content.setOwned(dialog);
+	options.dialogTitle = "Export Audio";
+	options.dialogBackgroundColour = juce::Colour(0xff222222);
+	options.escapeKeyTriggersCloseButton = true;
+	options.useNativeTitleBar = true;
+	options.resizable = false;
+	options.componentToCentreAround = this;
+	
+	auto* window = options.launchAsync();
+	Project::getInstance()->getOpenWindows().push_back(window);
 }

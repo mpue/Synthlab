@@ -125,6 +125,12 @@
       <FILE id="EJ4uon" name="whitenoise.png" compile="0" resource="1" file="Images/whitenoise.png"/>
     </GROUP>
     <GROUP id="{CA20D122-1EA5-3A93-F1F8-F6EE53DA457E}" name="Source">
+      <FILE id="zrKOiF" name="BounceDialog.cpp" compile="1" resource="0"
+            file="Source/BounceDialog.cpp"/>
+      <FILE id="tIOHpC" name="BounceDialog.h" compile="0" resource="0" file="Source/BounceDialog.h"/>
+      <GROUP id="{99AB1130-564C-440C-0A3B-F4C6BC0D4200}" name="Utils">
+        <FILE id="JILReW" name="AudioUtils.h" compile="0" resource="0" file="Source/AudioUtils.h"/>
+      </GROUP>
       <GROUP id="{1D219B94-DA83-5D9F-1D7A-529084FE64DE}" name="Graphics">
         <FILE id="LJWlY8" name="Geometry.h" compile="0" resource="0" file="Source/Graphics/Geometry.h"/>
       </GROUP>

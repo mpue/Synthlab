@@ -19,6 +19,7 @@
 #include "TransportDisplayComponent.h"
 #include <math.h>
 #include "BounceProgressDialog.h"
+#include "BounceDialog.h"
 #include "Metronome.h"
 #include "AudioLevelMeter.h"
 #include "SpektrumAnalyzer.h"
@@ -87,6 +88,7 @@ public:
     void timerCallback() override;
     virtual void changeListenerCallback (ChangeBroadcaster* source) override;
     void startBounce(const juce::File& file, double duration);
+    void showBounceDialog();
     juce::String tryExecuteChatInstruction(const std::string& jsonString);
 
     SynthEditor* getEditor() {
