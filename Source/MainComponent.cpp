@@ -32,6 +32,7 @@
 #include "TrackUtil.h"
 #include "Tracks/BounceThread.h"
 #include "BounceDialog.h"
+#include "FadeDialog.h"
 #include "ChatGPTInterface.h"
 #include "AudioEngine/BPMDetector.h"
 #include "TrackIn.h"
@@ -1007,13 +1008,13 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		PopupMenu audioMenu = PopupMenu();
 
 		audioMenu.addItem(42, "Detect BPM", true, false, nullptr);
+		audioMenu.addItem(46, "Reverse", true, false, nullptr);
 		audioMenu.addItem(47, "Normalize", true, false, nullptr);
+		audioMenu.addItem(48, "Fade In / Out", true, false, nullptr);
 		
 		//TODO: implement these functions
 		/*
-		audioMenu.addItem(46, "Reverse", true, false, nullptr);
-		audioMenu.addItem(48, "Fade In", true, false, nullptr);
-		audioMenu.addItem(49, "Fade Out", true, false, nullptr);
+		
 		audioMenu.addItem(50, "Trim", true, false, nullptr);
 		audioMenu.addItem(51, "Silence", true, false, nullptr);
 		audioMenu.addItem(52, "Time Stretch", true, false, nullptr);
@@ -1195,6 +1196,21 @@ editorView->getNavigator()->setPlaying(false);
 			navigator->getTracks().at(i)->removeSelectedRegions(true);
 		}
 	}
+	else if (menuItemID == 46) {
+		if (navigator->getCurrentTrack() != nullptr) {
+			Region* region = navigator->getCurrentTrack()->getCurrentRegion();
+			// check if it's an audio region
+			AudioRegion* audioRegion = dynamic_cast<AudioRegion*>(region);
+
+			if (audioRegion != nullptr) {
+				AudioUtils::reverseAudioBuffer(*audioRegion->getBuffer());
+				audioRegion->updateThumb();
+			}
+
+		}
+	}
+
+
 	else if (menuItemID == 47) {
 		if (navigator->getCurrentTrack() != nullptr) {
 			Region* region = navigator->getCurrentTrack()->getCurrentRegion();
@@ -1207,6 +1223,85 @@ editorView->getNavigator()->setPlaying(false);
 				audioRegion->updateThumb();
 			}
 		}
+	}
+	else if (menuItemID == 48) {
+		if (navigator->getCurrentTrack() == nullptr) {
+			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Error", "No track selected.");
+			return;
+		}
+		
+		Region* region = navigator->getCurrentTrack()->getCurrentRegion();
+		if (region == nullptr) {
+			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Error", "No region selected.");
+			return;
+		}
+		
+		// Check if it's an audio region
+		AudioRegion* audioRegion = dynamic_cast<AudioRegion*>(region);
+		if (audioRegion == nullptr) {
+			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Error", "Selected region is not an audio region.");
+			return;
+		}
+		
+		if (audioRegion->getBuffer() == nullptr) {
+			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Error", "No audio data found in the selected region.");
+			return;
+		}
+		
+		// Show fade dialog
+		auto* fadeDialog = new FadeDialog();
+		
+		fadeDialog->onApply = [this, fadeDialog, audioRegion]() {
+			// Get parameters
+			int fadeInMs = fadeDialog->getFadeInMs();
+			int fadeOutMs = fadeDialog->getFadeOutMs();
+			bool exponential = fadeDialog->isExponential();
+			
+			// Convert milliseconds to samples
+			double sampleRate = Project::getInstance()->getSampleRate();
+			int fadeInSamples = static_cast<int>((fadeInMs / 1000.0) * sampleRate);
+			int fadeOutSamples = static_cast<int>((fadeOutMs / 1000.0) * sampleRate);
+			
+			// Apply fades
+			if (exponential) {
+				if (fadeInSamples > 0)
+					AudioUtils::applyExponentialFadeIn(*audioRegion->getBuffer(), fadeInSamples);
+				if (fadeOutSamples > 0)
+					AudioUtils::applyExponentialFadeOut(*audioRegion->getBuffer(), fadeOutSamples);
+			}
+			else {
+				if (fadeInSamples > 0)
+					AudioUtils::applyFadeIn(*audioRegion->getBuffer(), fadeInSamples);
+				if (fadeOutSamples > 0)
+					AudioUtils::applyFadeOut(*audioRegion->getBuffer(), fadeOutSamples);
+			}
+			
+			// Update thumbnail
+			audioRegion->updateThumb();
+			
+			// Close dialog
+			if (auto* dw = fadeDialog->findParentComponentOfClass<juce::DialogWindow>()) {
+				dw->exitModalState(0);
+			}
+		};
+		
+		fadeDialog->onCancel = [fadeDialog]() {
+			if (auto* dw = fadeDialog->findParentComponentOfClass<juce::DialogWindow>()) {
+				dw->exitModalState(0);
+			}
+		};
+		
+		juce::DialogWindow::LaunchOptions options;
+		options.content.setOwned(fadeDialog);
+		options.dialogTitle = "Fade In/Out";
+		options.dialogBackgroundColour = juce::Colour(0xff222222);
+		options.escapeKeyTriggersCloseButton = true;
+		options.useNativeTitleBar = true;
+		options.resizable = false;
+		options.componentToCentreAround = this;
+		
+		auto* window = options.launchAsync();
+		Project::getInstance()->getOpenWindows().push_back(window);
 	}
 
 	else if (menuItemID == 999) {

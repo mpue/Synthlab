@@ -433,6 +433,24 @@ public:
         g.drawRect(0, 0, width, height);
     }
 
+    void drawDocumentWindowTitleBar(juce::DocumentWindow& window,
+        juce::Graphics& g,
+        int w, int h,
+        int titleSpaceX, int titleSpaceW,
+        const juce::Image* icon,
+        bool drawTitleTextOnLeft) override
+    {
+        // Hintergrund der Titelleiste zeichnen
+        g.fillAll(juce::Colours::darkgrey.darker());
+
+        // Optional: Titel-Text zeichnen
+        g.setColour(juce::Colours::white);
+        g.setFont(juce::Font(15.0f, juce::Font::bold));
+
+        g.drawText(window.getName(),
+            titleSpaceX, 0, titleSpaceW, h,
+            juce::Justification::centred, true);
+    }
 
     /*void drawPopupMenuItem(juce::Graphics& g, const juce::Rectangle<int>& area,
         bool isSeparator, bool isActive, bool isHighlighted, bool isTicked, bool hasSubMenu,

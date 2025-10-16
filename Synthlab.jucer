@@ -125,6 +125,8 @@
       <FILE id="EJ4uon" name="whitenoise.png" compile="0" resource="1" file="Images/whitenoise.png"/>
     </GROUP>
     <GROUP id="{CA20D122-1EA5-3A93-F1F8-F6EE53DA457E}" name="Source">
+      <FILE id="Z3pqNA" name="FadeDialog.cpp" compile="1" resource="0" file="Source/FadeDialog.cpp"/>
+      <FILE id="OhZpcQ" name="FadeDialog.h" compile="0" resource="0" file="Source/FadeDialog.h"/>
       <FILE id="zrKOiF" name="BounceDialog.cpp" compile="1" resource="0"
             file="Source/BounceDialog.cpp"/>
       <FILE id="tIOHpC" name="BounceDialog.h" compile="0" resource="0" file="Source/BounceDialog.h"/>
