@@ -33,7 +33,7 @@ void MidiProcessor::handleIncomingMidiMessage(MidiInput* /*source*/,
 	const MidiMessage& message)
 {
 	const double tsSec = Time::getMillisecondCounterHiRes() * 0.001;
-
+	activeChannel.store(message.getChannel());	
 	std::lock_guard<std::mutex> g(queueMutex);
 	midiQueue.emplace_back(message, tsSec);
 }

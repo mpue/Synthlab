@@ -289,14 +289,26 @@
               file="Source/Actions/DuplicateModuleAction.cpp"/>
         <FILE id="GOE4dx" name="DuplicateModuleAction.h" compile="0" resource="0"
               file="Source/Actions/DuplicateModuleAction.h"/>
+        <FILE id="v3rFLo" name="FadeRegionAction.cpp" compile="1" resource="0"
+              file="Source/Actions/FadeRegionAction.cpp"/>
+        <FILE id="UE8QGg" name="FadeRegionAction.h" compile="0" resource="0"
+              file="Source/Actions/FadeRegionAction.h"/>
         <FILE id="D45eq4" name="MoveSelectedAction.cpp" compile="1" resource="0"
               file="Source/Actions/MoveSelectedAction.cpp"/>
         <FILE id="D2QKLB" name="MoveSelectedAction.h" compile="0" resource="0"
               file="Source/Actions/MoveSelectedAction.h"/>
+        <FILE id="Up4Ayn" name="NormalizeRegionAction.cpp" compile="1" resource="0"
+              file="Source/Actions/NormalizeRegionAction.cpp"/>
+        <FILE id="KAsE0Q" name="NormalizeRegionAction.h" compile="0" resource="0"
+              file="Source/Actions/NormalizeRegionAction.h"/>
         <FILE id="tQblPY" name="RemoveSelectedAction.cpp" compile="1" resource="0"
               file="Source/Actions/RemoveSelectedAction.cpp"/>
         <FILE id="pwtJAH" name="RemoveSelectedAction.h" compile="0" resource="0"
               file="Source/Actions/RemoveSelectedAction.h"/>
+        <FILE id="QDqpW1" name="SetGainForRegionAction.cpp" compile="1" resource="0"
+              file="Source/Actions/SetGainForRegionAction.cpp"/>
+        <FILE id="hSLVIv" name="SetGainForRegionAction.h" compile="0" resource="0"
+              file="Source/Actions/SetGainForRegionAction.h"/>
       </GROUP>
       <GROUP id="{A79C9093-D329-37A0-AEE1-CF7BDC5C60DE}" name="AudioEngine">
         <FILE id="hjpDyz" name="BPMDetector.h" compile="0" resource="0" file="Source/AudioEngine/BPMDetector.h"/>

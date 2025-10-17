@@ -33,11 +33,16 @@
 #include "Tracks/BounceThread.h"
 #include "BounceDialog.h"
 #include "FadeDialog.h"
+#include "GainDialog.h"
+#include "SilenceDialog.h"
+#include "TrimDialog.h"
 #include "ChatGPTInterface.h"
 #include "AudioEngine/BPMDetector.h"
 #include "TrackIn.h"
 #include "Module.h"
 #include "AudioUtils.h"
+#include "Actions/NormalizeRegionAction.h"
+#include "Actions/FadeRegionAction.h"
 
 using juce::String;
 using juce::File;
@@ -492,12 +497,12 @@ void MainComponent::createStudioLayout() {
 		}, "Export track as audio.");
 
 	parser->registerCommand("stop", [&](const std::vector<std::string>&) -> std::string {
-		setRunning(false);		
+		setRunning(false);
 		return "Engine stopped.";
 		}, "Stop the audio engine.");
 
 	parser->registerCommand("run", [&](const std::vector<std::string>&) -> std::string {
-		setRunning(true);		
+		setRunning(true);
 		return "Engine started.";
 		}, "Start the audio engine.");
 
@@ -608,60 +613,6 @@ void MainComponent::timerCallback() {
 	}
 
 }
-/*
-void MainComponent::mouseDrag (const MouseEvent& event) {
-
-	if(Project::getInstance()->getAppMode() == Project::AppMode::PLAYER) {
-		return;
-	}
-
-	var description;
-
-	TabBarButton* t = dynamic_cast<TabBarButton*>(event.originalComponent);
-
-	if (t != nullptr) {
-		description.append("tab");
-		Logger::writeToLog("Drag from tab "+t->getParentComponent()->getName());
-		startDragging(description,t->getParentComponent());
-	}
-	else {
-
-		description.append("property");
-		startDragging(description,propertyView->getBrowser());
-	//}
-
-}
-
-void MainComponent::dragOperationStarted (const DragAndDropTarget::SourceDetails& details)  {
-
-	if(Project::getInstance()->getAppMode() == Project::AppMode::PLAYER) {
-		return;
-	}
-
-
-	TabbedButtonBar* tbb = dynamic_cast<TabbedButtonBar*>(details.sourceComponent.get());
-
-	if(tbb != nullptr) {
-
-
-		int index = tbb->getCurrentTabIndex();
-
-		MainTabbedComponent* tab = dynamic_cast<MainTabbedComponent*>(tbb->getParentComponent());
-
-		if (tab != nullptr) {
-			 setDragImageForIndex(0,tab->getComponentAt(index)->createComponentSnapshot(tab->getComponentAt(index)->getLocalBounds()));
-		}
-	}
-
-
-	else {
-
-		setDragImageForIndex(0, Image());
-	// }
-
-
-}
-*/
 
 //==============================================================================
 void MainComponent::prepareToPlay(int samplesPerBlockExpected, double sampleRate)
@@ -712,11 +663,6 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 	float** outputData = const_cast<float**>(writableBuffer->getArrayOfWritePointers());
 	const int outNumChans = writableBuffer->getNumChannels();
 	if (!outputData || outNumChans == 0) return;
-
-	//// --- alles nullen ---
-	//for (int ch = 0; ch < outNumChans; ++ch)
-	//	if (outputData[ch])
-	//		juce::FloatVectorOperations::clear(outputData[ch], numSamples);
 
 	// --- Sampler nur auf 0/1 ---
 	if (defaultSampler && defaultSampler->isPlaying()) {
@@ -970,7 +916,7 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addItem(200, "Manage plugins", true, false, nullptr);
 #endif
 		menu.addItem(201, "Tracks", true, false, nullptr);
-		menu.addItem(202, "Console", true, false, nullptr); 
+		menu.addItem(202, "Console", true, false, nullptr);
 		menu.addItem(202, "Level Meters", true, false, nullptr);
 		menu.addItem(202, "Input Spectrum", true, false, nullptr);
 	}
@@ -1011,10 +957,10 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		audioMenu.addItem(46, "Reverse", true, false, nullptr);
 		audioMenu.addItem(47, "Normalize", true, false, nullptr);
 		audioMenu.addItem(48, "Fade In / Out", true, false, nullptr);
-		
+
 		//TODO: implement these functions
 		/*
-		
+
 		audioMenu.addItem(50, "Trim", true, false, nullptr);
 		audioMenu.addItem(51, "Silence", true, false, nullptr);
 		audioMenu.addItem(52, "Time Stretch", true, false, nullptr);
@@ -1023,10 +969,7 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		audioMenu.addItem(55, "Render to new file", true, false, nullptr);
 		*/
 
-
 		menu.addSubMenu("Audio", audioMenu);
-
-
 	}
 
 	return menu;
@@ -1034,24 +977,24 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 
 void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 
-if (menuItemID == 5) {
-openSettings();
-}
-else if (menuItemID == 6) {
-editorView->ImportAudio();
-}
-else if (menuItemID == 12) {
-editorView->ImportMidi();
-}
-else if (menuItemID == 13) {
-showBounceDialog();
-}
-else if (menuItemID == 7) {
-editorView->getNavigator()->setPlaying(true);
-}
-else if (menuItemID == 7) {
-editorView->getNavigator()->setPlaying(false);
-}
+	if (menuItemID == 5) {
+		openSettings();
+	}
+	else if (menuItemID == 6) {
+		editorView->ImportAudio();
+	}
+	else if (menuItemID == 12) {
+		editorView->ImportMidi();
+	}
+	else if (menuItemID == 13) {
+		showBounceDialog();
+	}
+	else if (menuItemID == 7) {
+		editorView->getNavigator()->setPlaying(true);
+	}
+	else if (menuItemID == 7) {
+		editorView->getNavigator()->setPlaying(false);
+	}
 
 #if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
 	else if (menuItemID == 200) {
@@ -1153,7 +1096,7 @@ editorView->getNavigator()->setPlaying(false);
 
 		if (navigator->getCurrentTrack() == nullptr)
 			return;
-			
+
 		if (navigator->getCurrentTrack()->getCurrentRegion() == nullptr)
 			return;
 
@@ -1169,7 +1112,7 @@ editorView->getNavigator()->setPlaying(false);
 				AudioBuffer<float>* buffer = ar->getBuffer();
 
 				float bpm = detector.detectBPM(*buffer, Project::getInstance()->getSampleRate());
-				AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "BPM Result", "The region has "+juce::String(bpm)+" bpm");
+				AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "BPM Result", "The region has " + juce::String(bpm) + " bpm");
 			}
 		}
 		else {
@@ -1181,9 +1124,9 @@ editorView->getNavigator()->setPlaying(false);
 	else if (menuItemID == 43) {
 		if (navigator->getCurrentTrack() != nullptr) {
 			Region* region = navigator->getCurrentTrack()->getCurrentRegion();
-			if (region != nullptr) {			
+			if (region != nullptr) {
 				navigator->getCurrentTrack()->duplicateRegion(region);
-			}			
+			}
 		}
 	}
 	else if (menuItemID == 44) {
@@ -1209,101 +1152,17 @@ editorView->getNavigator()->setPlaying(false);
 
 		}
 	}
-
-
 	else if (menuItemID == 47) {
-		if (navigator->getCurrentTrack() != nullptr) {
-			Region* region = navigator->getCurrentTrack()->getCurrentRegion();
+		NormalizeRegionAction* action = new NormalizeRegionAction(navigator);
+		Project::getInstance()->getUndoManager()->beginNewTransaction();
+		Project::getInstance()->getUndoManager()->perform(action);
 
-			// check if it's an audio region
-			AudioRegion* audioRegion = dynamic_cast<AudioRegion*>(region);
-
-			if (audioRegion != nullptr) {
-				AudioUtils::normalizeBuffer(*audioRegion->getBuffer());
-				audioRegion->updateThumb();
-			}
-		}
 	}
 	else if (menuItemID == 48) {
-		if (navigator->getCurrentTrack() == nullptr) {
-			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Error", "No track selected.");
-			return;
-		}
-		
-		Region* region = navigator->getCurrentTrack()->getCurrentRegion();
-		if (region == nullptr) {
-			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Error", "No region selected.");
-			return;
-		}
-		
-		// Check if it's an audio region
-		AudioRegion* audioRegion = dynamic_cast<AudioRegion*>(region);
-		if (audioRegion == nullptr) {
-			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Error", "Selected region is not an audio region.");
-			return;
-		}
-		
-		if (audioRegion->getBuffer() == nullptr) {
-			AlertWindow::showMessageBoxAsync(AlertWindow::WarningIcon, "Error", "No audio data found in the selected region.");
-			return;
-		}
-		
-		// Show fade dialog
-		auto* fadeDialog = new FadeDialog();
-		
-		fadeDialog->onApply = [this, fadeDialog, audioRegion]() {
-			// Get parameters
-			int fadeInMs = fadeDialog->getFadeInMs();
-			int fadeOutMs = fadeDialog->getFadeOutMs();
-			bool exponential = fadeDialog->isExponential();
-			
-			// Convert milliseconds to samples
-			double sampleRate = Project::getInstance()->getSampleRate();
-			int fadeInSamples = static_cast<int>((fadeInMs / 1000.0) * sampleRate);
-			int fadeOutSamples = static_cast<int>((fadeOutMs / 1000.0) * sampleRate);
-			
-			// Apply fades
-			if (exponential) {
-				if (fadeInSamples > 0)
-					AudioUtils::applyExponentialFadeIn(*audioRegion->getBuffer(), fadeInSamples);
-				if (fadeOutSamples > 0)
-					AudioUtils::applyExponentialFadeOut(*audioRegion->getBuffer(), fadeOutSamples);
-			}
-			else {
-				if (fadeInSamples > 0)
-					AudioUtils::applyFadeIn(*audioRegion->getBuffer(), fadeInSamples);
-				if (fadeOutSamples > 0)
-					AudioUtils::applyFadeOut(*audioRegion->getBuffer(), fadeOutSamples);
-			}
-			
-			// Update thumbnail
-			audioRegion->updateThumb();
-			
-			// Close dialog
-			if (auto* dw = fadeDialog->findParentComponentOfClass<juce::DialogWindow>()) {
-				dw->exitModalState(0);
-			}
-		};
-		
-		fadeDialog->onCancel = [fadeDialog]() {
-			if (auto* dw = fadeDialog->findParentComponentOfClass<juce::DialogWindow>()) {
-				dw->exitModalState(0);
-			}
-		};
-		
-		juce::DialogWindow::LaunchOptions options;
-		options.content.setOwned(fadeDialog);
-		options.dialogTitle = "Fade In/Out";
-		options.dialogBackgroundColour = juce::Colour(0xff222222);
-		options.escapeKeyTriggersCloseButton = true;
-		options.useNativeTitleBar = true;
-		options.resizable = false;
-		options.componentToCentreAround = this;
-		
-		auto* window = options.launchAsync();
-		Project::getInstance()->getOpenWindows().push_back(window);
+		FadeRegionAction* action = new FadeRegionAction(navigator);
+		Project::getInstance()->getUndoManager()->beginNewTransaction();
+		Project::getInstance()->getUndoManager()->perform(action);
 	}
-
 	else if (menuItemID == 999) {
 		JUCEApplication::getInstance()->shutdown();
 	}
@@ -1531,7 +1390,7 @@ void MainComponent::buttonClicked(Button* b)
 
 						PluginModule* module = nullptr;
 
-						if ((module = dynamic_cast<PluginModule*>(editor->getModule()->getModules()->at(i))) != nullptr) {					
+						if ((module = dynamic_cast<PluginModule*>(editor->getModule()->getModules()->at(i))) != nullptr) {
 							module->getPlayHead().setPlaying(false);
 							module->getPlayHead().setRecording(false);
 							module->getPlugin()->reset();
@@ -1644,7 +1503,7 @@ void MainComponent::startBounce(const juce::File& outputFile, double durationInS
 	dialog->setContentOwned(content, true);
 	dialog->centreWithSize(400, 80);
 
-	
+
 
 	// Zeige es asynchron, damit es sich selbst schließen kann
 	dialog->setVisible(true);
@@ -1725,7 +1584,7 @@ juce::String MainComponent::tryExecuteChatInstruction(const std::string& jsonStr
 void MainComponent::showBounceDialog()
 {
 	auto* dialog = new BounceDialog();
-	
+
 	dialog->onExport = [this, dialog]() {
 		// Validierung
 		if (!dialog->getOutputFile().existsAsFile() && dialog->getOutputFile().getFullPathName().isEmpty()) {
@@ -1735,7 +1594,7 @@ void MainComponent::showBounceDialog()
 				"Please select an output file first.");
 			return;
 		}
-		
+
 		double duration = dialog->getDuration();
 		if (duration <= 0.0) {
 			juce::AlertWindow::showMessageBoxAsync(
@@ -1744,11 +1603,11 @@ void MainComponent::showBounceDialog()
 				"Duration must be greater than 0.");
 			return;
 		}
-		
+
 		// Bereite Bounce vor
 		setRunning(false);
 		setBouncing(true);
-		
+
 		// Alle Plugin-Module für Bounce-Modus vorbereiten
 		for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
 			if (dynamic_cast<TrackIn*>(editor->getModule()->getModules()->at(i)) != nullptr) {
@@ -1756,22 +1615,22 @@ void MainComponent::showBounceDialog()
 				t->setBouncing(true);
 			}
 		}
-		
+
 		// Starte Bounce
 		startBounce(dialog->getOutputFile(), duration);
-		
+
 		// Schließe Dialog
 		if (auto* dw = dialog->findParentComponentOfClass<juce::DialogWindow>()) {
 			dw->exitModalState(0);
 		}
-	};
-	
+		};
+
 	dialog->onCancel = [dialog]() {
 		if (auto* dw = dialog->findParentComponentOfClass<juce::DialogWindow>()) {
 			dw->exitModalState(0);
 		}
-	};
-	
+		};
+
 	juce::DialogWindow::LaunchOptions options;
 	options.content.setOwned(dialog);
 	options.dialogTitle = "Export Audio";
@@ -1780,7 +1639,7 @@ void MainComponent::showBounceDialog()
 	options.useNativeTitleBar = true;
 	options.resizable = false;
 	options.componentToCentreAround = this;
-	
+
 	auto* window = options.launchAsync();
 	Project::getInstance()->getOpenWindows().push_back(window);
 }
