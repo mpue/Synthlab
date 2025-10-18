@@ -56,8 +56,7 @@ public:
     void notifyListeners(Event* e);
 	void setZoom(float zoom);
 	String getName();
-    void setName(String name);
-	
+    void setName(String name);	
     void setGain(float gain);
     float getGain();
 	void setVolume(float volume);

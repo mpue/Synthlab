@@ -33,6 +33,7 @@ class SynthEditor  : public Component,
                      public IEditor,
                      public ApplicationCommandTarget,
                      public KeyListener
+                
 {
 public:
 

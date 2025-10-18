@@ -396,7 +396,9 @@ void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, b
 
         oldOffset = sampleNum;
 
-        oldOffset = sampleNum;
+        if (sampleNum != getSampleOffset()) {
+            setSampleOffset(sampleNum, true, true);
+        }
 
         // Boundary-Check
         if (getSampleOffset() >= tracklen * sampleRate) {

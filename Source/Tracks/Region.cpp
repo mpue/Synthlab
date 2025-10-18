@@ -7,6 +7,7 @@
 //
 
 #include "Region.h"
+#include "../Actions/MoveRegionAction.h"
 
 Region::Region() {
     oldOffset = 0;
@@ -66,6 +67,7 @@ void Region::timerCallback() {
 
 void Region::setSampleOffset(long offset, bool reminder, bool notify)
 {
+
     if (reminder)
         this->oldOffset = this->sampleOffset;
     

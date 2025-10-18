@@ -692,6 +692,8 @@ void TrackNavigator::addTrack(Track* track) {
 	addAndMakeVisible(track);
 
 	track->addChangeListener(this);
+	track->setZoom(this->zoom);
+	track->setBPM(Project::getInstance()->getTempo());
 
 	Mixer::getInstance()->addTrack(track);
 

@@ -11,6 +11,7 @@ AddConnectionAction::AddConnectionAction(SynthEditor* editor, Module* module) {
     this->editor = editor;
     this->source = module;
     this->root = editor->getModule();
+    
 }
 
 bool AddConnectionAction::perform() {

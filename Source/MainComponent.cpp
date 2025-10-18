@@ -92,9 +92,13 @@ MainComponent::MainComponent() : resizerBar(&stretchableManager, 1, true)
 
 	createConfig();
 
+	commandManager.reset(new juce::ApplicationCommandManager());
+	
+	addKeyListener(commandManager->getKeyMappings());
+
 	AudioManager::getInstance()->setDeviceManager(&deviceManager);
 	Project::getInstance()->setAudioDeviceManager(&deviceManager);
-	Project::getInstance()->setCommandManager(this);
+	Project::getInstance()->setCommandManager(commandManager.get());
 
 	if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
 
@@ -125,8 +129,9 @@ MainComponent::MainComponent() : resizerBar(&stretchableManager, 1, true)
 	Project::getInstance()->setMidiProcessor(midiProcessor);
 
 	// addMouseListener(this, true);
-	editor->addKeyListener(getKeyMappings());
-	addKeyListener(getKeyMappings());
+	editor->addKeyListener(commandManager->getKeyMappings());
+	addKeyListener(commandManager->getKeyMappings());
+	setApplicationCommandManagerToWatch(commandManager.get());
 	addKeyListener(this);
 	editor->setMouseClickGrabsKeyboardFocus(true);
 	editor->setWantsKeyboardFocus(true);
@@ -140,6 +145,7 @@ MainComponent::MainComponent() : resizerBar(&stretchableManager, 1, true)
 		editor->setCurrentLayer(Module::Layer::GUI);
 		editor->setLocked(true);
 	}
+	commandManager->registerAllCommandsForTarget(this);
 };
 
 MainComponent::~MainComponent()
@@ -545,8 +551,8 @@ void MainComponent::createStudioLayout() {
 	editor->addEditorListener(this);
 	addMouseListener(propertyView->getBrowser(), false);
 
-	registerAllCommandsForTarget(editor);
-	setFirstCommandTarget(editor);
+	commandManager->registerAllCommandsForTarget(editor);
+	commandManager->setFirstCommandTarget(editor);
 
 	// we have to set up our StretchableLayoutManager so it know the limits and preferred sizes of it's contents
 	stretchableManager.setItemLayout(0,            // for the properties
@@ -885,10 +891,10 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 	PopupMenu menu;
 
 	if (index == 0) {
-		menu.addCommandItem(this, SynthEditor::CommandIds::NEW);
-		menu.addCommandItem(this, SynthEditor::CommandIds::LOAD);
+		menu.addCommandItem(commandManager.get(), SynthEditor::CommandIds::NEW);
+		menu.addCommandItem(commandManager.get(), SynthEditor::CommandIds::LOAD);
 		menu.addItem(13, "Export Audio...", true, false, nullptr);
-		menu.addCommandItem(this, SynthEditor::CommandIds::SAVE);
+		menu.addCommandItem(commandManager.get(), SynthEditor::CommandIds::SAVE);
 		menu.addItem(5, "Settings", true, false, nullptr);
 		menu.addItem(6, "Import Audio", true, false, nullptr);
 		menu.addItem(12, "Import MIDI", true, false, nullptr);
@@ -928,15 +934,18 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 #endif
 	}
 	else if (index == 3) {
-		menu.addCommandItem(this, SynthEditor::CommandIds::DUPLICATE);
-		menu.addCommandItem(this, SynthEditor::CommandIds::DELETE_SELECTED);
-		menu.addCommandItem(this, SynthEditor::CommandIds::RESET_GUI_POS);
+		menu.addCommandItem(commandManager.get(), undoCommand);
+		menu.addCommandItem(commandManager.get(), redoCommand);
+		menu.addSeparator();
+		menu.addCommandItem(commandManager.get(), SynthEditor::CommandIds::DUPLICATE);
+		menu.addCommandItem(commandManager.get(), SynthEditor::CommandIds::DELETE_SELECTED);
+		menu.addCommandItem(commandManager.get(), SynthEditor::CommandIds::RESET_GUI_POS);
 
 		PopupMenu alignMenu = PopupMenu();
 
-		alignMenu.addCommandItem(this, SynthEditor::CommandIds::ALIGN_X);
-		alignMenu.addCommandItem(this, SynthEditor::CommandIds::ALIGN_Y);
-		alignMenu.addCommandItem(this, SynthEditor::CommandIds::ALIGN_TO_GRID);
+		alignMenu.addCommandItem(commandManager.get(), SynthEditor::CommandIds::ALIGN_X);
+		alignMenu.addCommandItem(commandManager.get(), SynthEditor::CommandIds::ALIGN_Y);
+		alignMenu.addCommandItem(commandManager.get(), SynthEditor::CommandIds::ALIGN_TO_GRID);
 
 		menu.addItem(8, "Add Audio Track", true, false, nullptr);
 		menu.addItem(9, "Add MIDI Track", true, false, nullptr);
@@ -1131,7 +1140,14 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	}
 	else if (menuItemID == 44) {
 		if (navigator->getCurrentTrack() != nullptr) {
-			navigator->getCurrentTrack()->splitRegion();
+
+			// split at current position, for every track
+			// iterate through all tracks
+
+			for (int i = 0; i < navigator->getTracks().size(); i++) {
+				navigator->getTracks().at(i)->splitRegion();
+			}
+				
 		}
 	}
 	else if (menuItemID == 45) {
@@ -1580,6 +1596,59 @@ juce::String MainComponent::tryExecuteChatInstruction(const std::string& jsonStr
 
 	return "Unbekannte Aktion.";
 }
+
+juce::ApplicationCommandTarget* MainComponent::getNextCommandTarget()
+{
+	return editor;
+}
+
+void MainComponent::getAllCommands(Array<CommandID>& commands)
+{
+	commands.add(undoCommand);
+	commands.add(redoCommand);
+}
+
+void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& result)
+{
+	switch (commandID)
+	{
+	case undoCommand:
+		result.setInfo("Undo", "Undo: " + Project::getInstance()->getCommandManager()->getDescriptionOfCommand(undoCommand), "General", 0);
+		result.addDefaultKeypress('z', juce::ModifierKeys::ctrlModifier);
+		result.setActive(Project::getInstance()->getUndoManager()->canUndo());
+		break;
+
+	case redoCommand:
+		result.setInfo("Redo", "Redo: " + Project::getInstance()->getCommandManager()->getDescriptionOfCommand(undoCommand), "General", 0);
+		result.addDefaultKeypress('y', juce::ModifierKeys::ctrlModifier);
+		result.setActive(Project::getInstance()->getUndoManager()->canRedo());
+		break;
+	}
+}
+
+bool MainComponent::perform(const InvocationInfo& info)
+{
+	switch (info.commandID)
+	{
+	case undoCommand:
+		if (Project::getInstance()->getUndoManager()->canUndo())
+		{
+			Project::getInstance()->getUndoManager()->undo();
+			commandManager->commandStatusChanged();
+		}
+		return true;
+
+	case redoCommand:
+		if (Project::getInstance()->getUndoManager()->canRedo())
+		{
+			Project::getInstance()->getUndoManager()->redo();
+			commandManager->commandStatusChanged();
+		}
+		return true;
+	}
+	return false;
+}
+
 
 void MainComponent::showBounceDialog()
 {

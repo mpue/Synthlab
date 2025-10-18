@@ -54,8 +54,7 @@ class MainComponent   : public juce::AudioAppComponent,
                         public juce::KeyListener,
                         public juce::Button::Listener,
                         public juce::Timer,                        
-                        // public juce::DragAndDropContainer,
-                        public juce::ApplicationCommandManager,
+                        public ApplicationCommandTarget,
                         public juce::ChangeListener,
                         public EditorListener,
                         public ComboBox::Listener
@@ -90,6 +89,18 @@ public:
     void startBounce(const juce::File& file, double duration);
     void showBounceDialog();
     juce::String tryExecuteChatInstruction(const std::string& jsonString);
+
+    // command handling
+    virtual ApplicationCommandTarget* getNextCommandTarget() override;
+    virtual void getAllCommands(Array<CommandID>& commands) override;
+    void getCommandInfo(CommandID commandID, ApplicationCommandInfo& result) override;
+    virtual bool perform(const InvocationInfo& info) override;
+
+    enum CommandIds {
+        undoCommand = 111,
+		redoCommand = 112 
+    };
+
 
     SynthEditor* getEditor() {
         return editor;
@@ -139,6 +150,8 @@ private:
     std::unique_ptr<juce::MenuBarComponent> menu = nullptr;
     std::unique_ptr<ModuleBrowser> moduleBrowser = nullptr;
     ToolbarComboBox* layerCombobox = nullptr;
+
+	std::shared_ptr<ApplicationCommandManager> commandManager = nullptr;
 
     juce::Label* cpuLoadLabel = nullptr;
     juce::Slider* loadSlider = nullptr;

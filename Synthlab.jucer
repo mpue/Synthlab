@@ -293,6 +293,10 @@
               file="Source/Actions/FadeRegionAction.cpp"/>
         <FILE id="UE8QGg" name="FadeRegionAction.h" compile="0" resource="0"
               file="Source/Actions/FadeRegionAction.h"/>
+        <FILE id="btcii3" name="MoveRegionAction.cpp" compile="1" resource="0"
+              file="Source/Actions/MoveRegionAction.cpp"/>
+        <FILE id="nHPRrd" name="MoveRegionAction.h" compile="0" resource="0"
+              file="Source/Actions/MoveRegionAction.h"/>
         <FILE id="D45eq4" name="MoveSelectedAction.cpp" compile="1" resource="0"
               file="Source/Actions/MoveSelectedAction.cpp"/>
         <FILE id="D2QKLB" name="MoveSelectedAction.h" compile="0" resource="0"

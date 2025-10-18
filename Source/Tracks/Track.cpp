@@ -38,7 +38,13 @@ Track::Track(Type type, double sampleRate, MultiComponentDragger* dragger)
 	// setMouseClickGrabsKeyboardFocus(true);
 	resized();
 	createProperties();
-	setName("empty Track");
+
+	if (type != AUDIO) {
+		setName("Audio Track");	
+	}
+	else {
+		setName("MIDI Track");
+	}
 
 	auto& bus = FastBus::getInstance();
 

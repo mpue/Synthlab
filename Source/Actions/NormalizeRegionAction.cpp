@@ -48,7 +48,8 @@ bool NormalizeRegionAction::perform()
 				// Führe die Normalisierung durch
 				AudioUtils::normalizeBuffer(*buffer);
 				audioRegion->updateThumb();
-				
+				Project::getInstance()->getCommandManager()->commandStatusChanged();	
+
 				return true;
 			}
 		}
