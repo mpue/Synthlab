@@ -42,6 +42,8 @@
 #include "TrackUtil.h"
 #include "GeometryViewComponent.h"
 #include "GeometryModule.h"
+#include "Actions/AlignVerticalAction.h"
+#include "Actions/AlignHorizontalAction.h"
 
 class SampleEditor;
 
@@ -1955,100 +1957,15 @@ bool SynthEditor::perform(const InvocationInfo& info) {
 }
 
 void SynthEditor::alignSelectedY() {
-
-	if (selectionModel.getSelectedModules().size() >= 2) {
-
-		int minX = getWidth();
-		int minY = getHeight();
-
-		if (currentLayer == Module::Layer::ALL) {
-
-			// find the topmost-topleft coordinate
-
-			for (int i = 0; i < selectionModel.getSelectedModules().size(); i++) {
-				if (selectionModel.getSelectedModules().at(i)->getPosition().getX() < minX) {
-					minX = selectionModel.getSelectedModules().at(i)->getPosition().getX();
-				}
-				if (selectionModel.getSelectedModules().at(i)->getPosition().getY() < minY) {
-					minY = selectionModel.getSelectedModules().at(i)->getPosition().getY();
-				}
-			}
-
-			/// now position the modules in the desired raster
-			for (int i = 0; i < selectionModel.getSelectedModules().size(); i++) {
-				selectionModel.getSelectedModules().at(i)->savePosition();
-				selectionModel.getSelectedModules().at(i)->setTopLeftPosition(minX, minY + i * selectionModel.getSelectedModules().at(i)->getHeight());
-
-			}
-		}
-		else {
-			// find the topmost-topleft coordinate of the UI positions
-
-			for (int i = 0; i < selectionModel.getSelectedModules().size(); i++) {
-				if (selectionModel.getSelectedModules().at(i)->getUiPosition().getX() < minX) {
-					minX = selectionModel.getSelectedModules().at(i)->getUiPosition().getX();
-				}
-				if (selectionModel.getSelectedModules().at(i)->getPosition().getY() < minY) {
-					minY = selectionModel.getSelectedModules().at(i)->getUiPosition().getY();
-				}
-			}
-
-			/// now position the modules in the desired raster
-			for (int i = 0; i < selectionModel.getSelectedModules().size(); i++) {
-				selectionModel.getSelectedModules().at(i)->setUiPosition(minX, minY + i * selectionModel.getSelectedModules().at(i)->getHeight());
-				selectionModel.getSelectedModules().at(i)->saveUiPosition();
-				selectionModel.getSelectedModules().at(i)->setTopLeftPosition(selectionModel.getSelectedModules().at(i)->getUiPosition());
-			}
-		}
-
-	}
-
+	AlignVerticalAction* ava = new AlignVerticalAction(this);	
+	Project::getInstance()->getUndoManager()->beginNewTransaction();
+	Project::getInstance()->getUndoManager()->perform(ava);
 }
 
 void SynthEditor::alignSelectedX() {
-	if (selectionModel.getSelectedModules().size() >= 2) {
-
-		int minX = getWidth();
-		int minY = getHeight();
-
-		if (currentLayer == Module::Layer::ALL) {
-
-			// find the topmost-topleft coordinate for the GUI layer position
-
-			for (int i = 0; i < selectionModel.getSelectedModules().size(); i++) {
-				if (selectionModel.getSelectedModules().at(i)->getPosition().getX() < minX) {
-					minX = selectionModel.getSelectedModules().at(i)->getPosition().getX();
-				}
-				if (selectionModel.getSelectedModules().at(i)->getPosition().getY() < minY) {
-					minY = selectionModel.getSelectedModules().at(i)->getPosition().getY();
-				}
-			}
-
-			for (int i = 0; i < selectionModel.getSelectedModules().size(); i++) {
-				selectionModel.getSelectedModules().at(i)->savePosition();
-				selectionModel.getSelectedModules().at(i)->setTopLeftPosition(minX + i * selectionModel.getSelectedModules().at(i)->getWidth(), minY);
-			}
-		}
-		else {
-
-			// find the topmost-topleft coordinate for the GUI layer position
-
-			for (int i = 0; i < selectionModel.getSelectedModules().size(); i++) {
-				if (selectionModel.getSelectedModules().at(i)->getUiPosition().getX() < minX) {
-					minX = selectionModel.getSelectedModules().at(i)->getUiPosition().getX();
-				}
-				if (selectionModel.getSelectedModules().at(i)->getUiPosition().getY() < minY) {
-					minY = selectionModel.getSelectedModules().at(i)->getUiPosition().getY();
-				}
-			}
-
-			for (int i = 0; i < selectionModel.getSelectedModules().size(); i++) {
-				selectionModel.getSelectedModules().at(i)->setUiPosition(minX + i * selectionModel.getSelectedModules().at(i)->getWidth(), minY);
-				selectionModel.getSelectedModules().at(i)->saveUiPosition();
-				selectionModel.getSelectedModules().at(i)->setTopLeftPosition(selectionModel.getSelectedModules().at(i)->getUiPosition());
-			}
-		}
-	}
+	AlignHorizontalAction* aha = new AlignHorizontalAction(this);
+	Project::getInstance()->getUndoManager()->beginNewTransaction();
+	Project::getInstance()->getUndoManager()->perform(aha);
 }
 
 void SynthEditor::alignToGrid()
@@ -2063,6 +1980,7 @@ void SynthEditor::alignToGrid()
 		y = UITools::snap(y, 25, 5);
 
 		selectionModel.getSelectedModules().at(i)->setTopLeftPosition(x,y);
+
 	}
 	repaint();
 }

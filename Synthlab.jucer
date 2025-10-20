@@ -132,6 +132,8 @@
       <FILE id="tIOHpC" name="BounceDialog.h" compile="0" resource="0" file="Source/BounceDialog.h"/>
       <GROUP id="{99AB1130-564C-440C-0A3B-F4C6BC0D4200}" name="Utils">
         <FILE id="JILReW" name="AudioUtils.h" compile="0" resource="0" file="Source/AudioUtils.h"/>
+        <FILE id="pdhP73" name="DefaultUndoManager.h" compile="0" resource="0"
+              file="Source/DefaultUndoManager.h"/>
       </GROUP>
       <GROUP id="{1D219B94-DA83-5D9F-1D7A-529084FE64DE}" name="Graphics">
         <FILE id="LJWlY8" name="Geometry.h" compile="0" resource="0" file="Source/Graphics/Geometry.h"/>
@@ -285,6 +287,16 @@
               file="Source/Actions/AddModuleAction.cpp"/>
         <FILE id="h8KNVV" name="AddModuleAction.h" compile="0" resource="0"
               file="Source/Actions/AddModuleAction.h"/>
+        <FILE id="SpuhlB" name="AlignHorizontalAction.cpp" compile="1" resource="0"
+              file="Source/Actions/AlignHorizontalAction.cpp"/>
+        <FILE id="qM0aDj" name="AlignHorizontalAction.h" compile="0" resource="0"
+              file="Source/Actions/AlignHorizontalAction.h"/>
+        <FILE id="k6i7uI" name="AlignVerticalAction.cpp" compile="1" resource="0"
+              file="Source/Actions/AlignVerticalAction.cpp"/>
+        <FILE id="jEqKJL" name="AlignVerticalAction.h" compile="0" resource="0"
+              file="Source/Actions/AlignVerticalAction.h"/>
+        <FILE id="A9oSxU" name="DefaultUndoableAction.h" compile="0" resource="0"
+              file="Source/Actions/DefaultUndoableAction.h"/>
         <FILE id="W3ixCV" name="DuplicateModuleAction.cpp" compile="1" resource="0"
               file="Source/Actions/DuplicateModuleAction.cpp"/>
         <FILE id="GOE4dx" name="DuplicateModuleAction.h" compile="0" resource="0"

@@ -934,8 +934,8 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 #endif
 	}
 	else if (index == 3) {
-		menu.addCommandItem(commandManager.get(), undoCommand);
-		menu.addCommandItem(commandManager.get(), redoCommand);
+		menu.addItem(undoCommand, "Undo", true, false, nullptr);
+		menu.addItem(redoCommand, "Redo", true, false, nullptr);
 		menu.addSeparator();
 		menu.addCommandItem(commandManager.get(), SynthEditor::CommandIds::DUPLICATE);
 		menu.addCommandItem(commandManager.get(), SynthEditor::CommandIds::DELETE_SELECTED);
@@ -1179,6 +1179,12 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 		Project::getInstance()->getUndoManager()->beginNewTransaction();
 		Project::getInstance()->getUndoManager()->perform(action);
 	}
+	else if (menuItemID == undoCommand) {
+		Project::getInstance()->getUndoManager()->undo();
+	}
+	else if (menuItemID == redoCommand) {
+		Project::getInstance()->getUndoManager()->redo();
+	}
 	else if (menuItemID == 999) {
 		JUCEApplication::getInstance()->shutdown();
 	}
@@ -1190,6 +1196,7 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 		editor->loadFromString(xmlData);
 		editor->setRunning(true);
 	}
+	
 }
 
 StringArray MainComponent::getMenuBarNames() {
@@ -1615,13 +1622,11 @@ void MainComponent::getCommandInfo(CommandID commandID, ApplicationCommandInfo& 
 	case undoCommand:
 		result.setInfo("Undo", "Undo: " + Project::getInstance()->getCommandManager()->getDescriptionOfCommand(undoCommand), "General", 0);
 		result.addDefaultKeypress('z', juce::ModifierKeys::ctrlModifier);
-		result.setActive(Project::getInstance()->getUndoManager()->canUndo());
 		break;
 
 	case redoCommand:
-		result.setInfo("Redo", "Redo: " + Project::getInstance()->getCommandManager()->getDescriptionOfCommand(undoCommand), "General", 0);
+		result.setInfo("Redo", "Redo: " + Project::getInstance()->getCommandManager()->getDescriptionOfCommand(redoCommand), "General", 0);
 		result.addDefaultKeypress('y', juce::ModifierKeys::ctrlModifier);
-		result.setActive(Project::getInstance()->getUndoManager()->canRedo());
 		break;
 	}
 }
@@ -1631,19 +1636,13 @@ bool MainComponent::perform(const InvocationInfo& info)
 	switch (info.commandID)
 	{
 	case undoCommand:
-		if (Project::getInstance()->getUndoManager()->canUndo())
-		{
-			Project::getInstance()->getUndoManager()->undo();
-			commandManager->commandStatusChanged();
-		}
+		Project::getInstance()->getUndoManager()->undo();
+		commandManager->commandStatusChanged();
 		return true;
 
 	case redoCommand:
-		if (Project::getInstance()->getUndoManager()->canRedo())
-		{
-			Project::getInstance()->getUndoManager()->redo();
-			commandManager->commandStatusChanged();
-		}
+		Project::getInstance()->getUndoManager()->redo();
+		commandManager->commandStatusChanged();
 		return true;
 	}
 	return false;
