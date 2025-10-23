@@ -27,20 +27,24 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
     this->thumbnail->addChangeListener(this);
     
     audioBuffer = new AudioSampleBuffer(2, numSamples);
-    audioBuffer->copyFrom(0, 0, *other->getBuffer(), 0, startSample, numSamples);
-    audioBuffer->copyFrom(1, 0, *other->getBuffer(), 1, startSample, numSamples);
-    
+
+    if (other->getBuffer()->getNumChannels() == 1) {
+        audioBuffer->copyFrom(0, 0, *other->getBuffer(), 0, startSample, numSamples);
+        audioBuffer->copyFrom(1, 0, *other->getBuffer(), 0, startSample, numSamples);
+    }
+    else {
+        audioBuffer->copyFrom(0, 0, *other->getBuffer(), 0, startSample, numSamples);
+        audioBuffer->copyFrom(1, 0, *other->getBuffer(), 1, startSample, numSamples);
+    }
+        
     this->thumbnail->reset(2, sampleRate);
-    this->thumbnail->addBlock(0, *audioBuffer, 0,numSamples);
+    this->thumbnail->addBlock(0, *audioBuffer, 0, numSamples);
     
     this->name = other->getName();
     
-    /*
-    double length = this->thumbnail->getTotalLength();
-    setSize(length * this->zoom, other->getHeight());
-    */
-    
-    setSize((other->getBuffer()->getNumSamples() / sampleRate) * this->zoom, Project::DEFAULT_TRACK_HEIGHT-25);
+    // KORREKTUR: Verwende numSamples statt other->getBuffer()->getNumSamples()
+    // da wir nur einen Teil des Buffers kopiert haben
+    setSize((numSamples / sampleRate) * this->zoom, Project::DEFAULT_TRACK_HEIGHT - 25);
 
     this->offset = 0;
     
@@ -72,27 +76,27 @@ AudioRegion::AudioRegion(AudioSampleBuffer* source, AudioFormatManager& manager,
     audioBuffer = new AudioSampleBuffer(2, sampleLength);
     
     if (source != nullptr) {
-        audioBuffer->copyFrom(0, 0, *source, 0, 0, sampleLength);
-        audioBuffer->copyFrom(1, 0, *source, 1, 0, sampleLength);
+
+        if (source->getNumChannels() == 1) {
+            audioBuffer->copyFrom(0, 0, *source, 0, 0, sampleLength);
+            audioBuffer->copyFrom(1, 0, *source, 0, 0, sampleLength);
+        }
+        else {
+            audioBuffer->copyFrom(0, 0, *source, 0, 0, sampleLength);
+            audioBuffer->copyFrom(1, 0, *source, 1, 0, sampleLength);
+        }
     }
     
     this->thumbnail->reset(2, sampleRate);
     this->thumbnail->addBlock(0, *audioBuffer, 0, sampleLength);
     
     this->name = "new";
-    
-    /*
-    double length = this->thumbnail->getTotalLength();
-    setSize(length * this->zoom, Project::DEFAULT_TRACK_HEIGHT);
-    */
-    
-    setSize((audioBuffer->getNumSamples() / sampleRate) * this->zoom, Project::DEFAULT_TRACK_HEIGHT);
-
     this->offset = 0;
+        
+    setSize((audioBuffer->getNumSamples() / sampleRate) * this->zoom, Project::DEFAULT_TRACK_HEIGHT);
     
     // addAndMakeVisible(resizerL);
-    addAndMakeVisible(resizerR);
-    
+    addAndMakeVisible(resizerR);    
     addComponentListener(this);
     
     dirty = false;
@@ -535,3 +539,5 @@ void AudioRegion::updateSnapSettings() {
         constrainer->setRaster(quarterNotePixels);
     }
 }
+
+

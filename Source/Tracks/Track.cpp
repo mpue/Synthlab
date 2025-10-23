@@ -143,10 +143,24 @@ void Track::duplicateRegion(Region* region) {
 
 	if (AudioRegion* _region = dynamic_cast<AudioRegion*>(region)) {
 
-		AudioRegion* duplicate = new AudioRegion(_region, *manager, sampleRate);
+		// Berechne die tatsächliche Anzahl der Samples (berücksichtigt Resizing)
+		int numSamplesToCopy = _region->getNumSamples();
+
+		// Erstelle Duplikat mit NUR den tatsächlich verwendeten Samples
+		// Verwende den Konstruktor, der startSample und numSamples akzeptiert
+		AudioRegion* duplicate = new AudioRegion(_region, *manager, sampleRate, 0, numSamplesToCopy);
 		duplicate->setDragger(dragger);
-		Rectangle<int>* bounds = new Rectangle<int>(0, 0, _region->getThumbnail()->getTotalLength() * 20, getHeight());
-		duplicate->setBounds(region->getWidth() + region->getX(), 0, region->getWidth(), region->getHeight());
+
+		// Berechne die neue X-Position: direkt nach der ursprünglichen Region
+		int newX = region->getX() + region->getWidth();
+
+		// Berechne Sample-Offset aus der X-Position (in Pixeln)
+		long newSampleOffset = (long)((newX / zoom) * sampleRate);
+
+		// WICHTIG: Setze Bounds NACHDEM der Konstruktor die initiale Größe gesetzt hat
+		// und überschreibe die Breite mit der tatsächlichen Breite der Originalregion
+		Rectangle<int>* bounds = new Rectangle<int>(0, 0, region->getWidth(), getHeight());
+		duplicate->setBounds(newX, 0, region->getWidth(), region->getHeight());
 		duplicate->setThumbnailBounds(bounds);
 		duplicate->setLoopCount(0);
 
@@ -158,22 +172,26 @@ void Track::duplicateRegion(Region* region) {
 
 		clearSelection();
 		dragger->setSelected(duplicate, true);
-		//duplicate->setSelected(true);
-		duplicate->setSampleOffset(region->getSampleOffset() + region->getNumSamples(), false, false);
-		duplicate->setOffset(region->getOffset() + region->getWidth());
+
+		// Setze den Sample-Offset und visuellen Offset
+		duplicate->setSampleOffset(newSampleOffset, false, false);
+		duplicate->setOffset(newX);
 		duplicate->setClipRefId(_region->getClipRefid());
 		duplicate->addChangeListener(this);
 
+		// WICHTIG: setZoom NACH setSampleOffset aufrufen
+		// Dadurch wird die Position korrekt neu berechnet
 		if (zoom > 0)
 			duplicate->setZoom(zoom);
 
-		if (_region->getBuffer()->getNumChannels() == 1) {
-			audioBuffer->copyFrom(0, duplicate->getSampleOffset(), *_region->getBuffer(), 0, 0, _region->getNumSamples());
-			audioBuffer->copyFrom(1, duplicate->getSampleOffset(), *_region->getBuffer(), 0, 0, _region->getNumSamples());
+		// Kopiere nur die tatsächlich verwendeten Samples in den Track-Buffer
+		if (duplicate->getBuffer()->getNumChannels() == 1) {
+			audioBuffer->copyFrom(0, newSampleOffset, *duplicate->getBuffer(), 0, 0, numSamplesToCopy);
+			audioBuffer->copyFrom(1, newSampleOffset, *duplicate->getBuffer(), 0, 0, numSamplesToCopy);
 		}
 		else {
-			audioBuffer->copyFrom(0, duplicate->getSampleOffset(), *_region->getBuffer(), 0, 0, _region->getNumSamples());
-			audioBuffer->copyFrom(1, duplicate->getSampleOffset(), *_region->getBuffer(), 1, 0, _region->getNumSamples());
+			audioBuffer->copyFrom(0, newSampleOffset, *duplicate->getBuffer(), 0, 0, numSamplesToCopy);
+			audioBuffer->copyFrom(1, newSampleOffset, *duplicate->getBuffer(), 1, 0, numSamplesToCopy);
 		}
 
 		repaint();
