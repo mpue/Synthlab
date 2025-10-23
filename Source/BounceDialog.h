@@ -3,13 +3,13 @@
 #include <JuceHeader.h>
 
 /**
- * BounceDialog - Dialog für Audio Export Einstellungen
+ * BounceDialog - Dialog fÃ¼r Audio Export Einstellungen
  * 
- * Dieser Dialog ermöglicht es dem Benutzer, die wichtigsten Parameter
- * für das Audio Bouncing zu konfigurieren:
- * - Ausgabedatei auswählen
+ * Dieser Dialog ermÃ¶glicht es dem Benutzer, die wichtigsten Parameter
+ * fÃ¼r das Audio Bouncing zu konfigurieren:
+ * - Ausgabedatei auswÃ¤hlen
  * - Dauer in Sekunden festlegen
- * - Sample Rate wählen
+ * - Sample Rate wÃ¤hlen
  * - Bit Depth festlegen
  * - Optional: Start- und Endposition
  */
@@ -22,7 +22,7 @@ public:
     void paint(juce::Graphics& g) override;
     void resized() override;
 
-    // Getter für die Bounce-Parameter
+    // Getter fÃ¼r die Bounce-Parameter
     juce::File getOutputFile() const { return outputFile; }
     double getDuration() const { return durationEditor.getText().getDoubleValue(); }
     int getSampleRate() const { return sampleRateCombo.getSelectedId() == 1 ? 44100 : 48000; }

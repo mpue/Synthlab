@@ -1,4 +1,4 @@
-﻿/*  MidiProcessor.h
+/*  MidiProcessor.h
  *  Thread-safe, queue-based MIDI processor for JUCE
  *  © 2025 Matthias Püski
  */
@@ -79,6 +79,8 @@ private:
     double clockBPM = 120.0;
     int clockIntervalMs = 0;
     juce::int64 lastClockTimeMs = 0;
+
+	bool running{ true };
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiProcessor)
 };

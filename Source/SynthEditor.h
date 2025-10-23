@@ -197,7 +197,7 @@ private:
 	bool isMovingModule = true;
 	bool isDraggingConnection = false;
 
-    std::unique_ptr <Module> root = nullptr;
+    std::shared_ptr <Module> root = nullptr;
     
     bool isRoot = true;;
 

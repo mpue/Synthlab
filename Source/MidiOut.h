@@ -62,8 +62,8 @@ private:
     void handleClockEvent(Event* e);
     
     // Property components and values
-    juce::Value* deviceValue = nullptr;
-    juce::Value* channelValue = nullptr;
+    std::unique_ptr<juce::Value> deviceValue = nullptr;
+    std::unique_ptr<juce::Value> channelValue = nullptr;
     juce::ChoicePropertyComponent* deviceProp = nullptr;
     juce::SliderPropertyComponent* channelProp = nullptr;
     
@@ -120,8 +120,8 @@ private:
         MidiOut* midiOut;
     };
     
-    DeviceListener* deviceListener = nullptr;
-    ChannelListener* channelListener = nullptr;
+    std::unique_ptr<DeviceListener> deviceListener = nullptr;
+    std::unique_ptr<ChannelListener> channelListener = nullptr;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiOut)
 };

@@ -14,14 +14,7 @@ MidiRecorderModule::MidiRecorderModule()
 MidiRecorderModule::~MidiRecorderModule()
 {
     properties.clear();
-    delete tempoValue;
-    delete tempoListener;
-    delete recordingStateValue;
-    delete recordingStateListener;
-    delete playingStateValue;
-    delete playingStateListener;
-    delete midiInPin;
-    delete midiOutPin;
+
 }
 
 void MidiRecorderModule::configurePins()
@@ -105,8 +98,8 @@ void MidiRecorderModule::startRecording()
         buffer.clear();
         startTime = juce::Time::getMillisecondCounterHiRes();
 
-        if (recordingStateValue == nullptr) {
-            recordingStateValue = new Value();
+        if (!recordingStateValue) {
+            recordingStateValue = std::make_unique<juce::Value>();
         }
         recordingStateValue->setValue(true);
         repaint();
@@ -115,8 +108,8 @@ void MidiRecorderModule::startRecording()
 
 void MidiRecorderModule::stopRecording()
 {
-    if (recordingStateValue == nullptr) {
-        recordingStateValue = new Value();
+    if (!recordingStateValue) {
+        recordingStateValue = std::make_unique<juce::Value>();
     }
     recordingStateValue->setValue(false);
     repaint();
@@ -125,8 +118,8 @@ void MidiRecorderModule::stopRecording()
 void MidiRecorderModule::startPlaying()
 {
     if (deviceManager) {
-        if (playingStateValue == nullptr) {
-            playingStateValue = new Value();
+        if (!playingStateValue) {
+            playingStateValue = std::make_unique<juce::Value>();
         }
         playingStateValue->setValue(true);
         startTime = juce::Time::getMillisecondCounterHiRes();
@@ -138,7 +131,7 @@ void MidiRecorderModule::startPlaying()
 
 void MidiRecorderModule::stopPlaying()
 {
-    if (playingStateValue != nullptr) {
+    if (playingStateValue) {
         playingStateValue->setValue(false);
     }
     stopTimer();
@@ -162,22 +155,22 @@ void MidiRecorderModule::setDeviceManager(juce::AudioDeviceManager* manager)
 
 void MidiRecorderModule::setTempo(float newTempo)
 {
-    if (tempoValue != nullptr) {
+    if (tempoValue) {
         tempoValue->setValue(newTempo);
     }
 }
 
 void MidiRecorderModule::createProperties()
 {
-    tempoValue = new Value();
+    tempoValue = std::make_unique<juce::Value>();
     tempoValue->setValue(120.0f);
-    tempoListener = new TempoListener(*tempoValue, this);
+    tempoListener = std::make_unique<TempoListener>(*tempoValue, this);
 
-    recordingStateValue = new Value();
-    recordingStateListener = new RecordingStateListener(*recordingStateValue, this);
+    recordingStateValue = std::make_unique<juce::Value>();
+    recordingStateListener = std::make_unique<RecordingStateListener>(*recordingStateValue, this);
 
-    playingStateValue = new Value();
-    playingStateListener = new PlayingStateListener(*playingStateValue, this);
+    playingStateValue = std::make_unique<juce::Value>();
+    playingStateListener = std::make_unique<PlayingStateListener>(*playingStateValue, this);
 }
 
 void MidiRecorderModule::eventReceived(Event* e)

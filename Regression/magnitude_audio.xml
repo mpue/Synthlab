@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Project trackLength="600" name="magnitude_audio" sampleRate="44100.0"
+         bufferSize="128" tempo="120.0">
+  <AudioFiles>
+    <File refId="burners_turners_remix (Cover)" path="C:\Users\mpue\Downloads\burners_turners_remix (Cover).wav"/>
+  </AudioFiles>
+</Project>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Module lock="0" layer="0">
+  <Modules>
+    <Module name="" index="1" x="499" y="212" ui_x="185" ui_y="93" isPrefab="0"
+            prefabId="40">
+      <Pins>
+        <Pin type="5" name="Geom" direction="1" index="101" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Geometry" index="2" x="1179" y="332" ui_x="1179" ui_y="332"
+            isPrefab="1" prefabId="43">
+      <Pins>
+        <Pin type="4" name="T" direction="0" index="201" x="0" y="10"/>
+        <Pin type="4" name="R" direction="0" index="202" x="0" y="30"/>
+        <Pin type="4" name="S" direction="0" index="203" x="0" y="50"/>
+        <Pin type="5" name="Geom" direction="0" index="204" x="0" y="70"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Vector" index="3" x="924" y="167" ui_x="924" ui_y="167"
+            isPrefab="1" prefabId="44">
+      <Pins>
+        <Pin type="2" name="X" direction="0" index="301" x="0" y="10"/>
+        <Pin type="2" name="Y" direction="0" index="302" x="0" y="30"/>
+        <Pin type="2" name="Z" direction="0" index="303" x="0" y="50"/>
+        <Pin type="4" name="V" direction="1" index="304" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="X" index="4" x="774" y="169" ui_x="0" ui_y="0" isPrefab="1"
+            prefabId="69" minvalue="0.0" maxvalue="127.0" stepsize="1.001000046730042"
+            value="38.03800201416016" isController="0" controllerNum="1">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="401" x="80" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections>
+    <Connection source="2" target="1" a="204" b="101"/>
+    <Connection source="2" target="3" a="202" b="304"/>
+    <Connection source="4" target="3" a="401" b="301"/>
+    <Connection source="3" target="4" a="302" b="401"/>
+    <Connection source="3" target="4" a="303" b="401"/>
+  </Connections>
+</Module>

@@ -21,8 +21,8 @@ public:
     {
 
         juce::String prePrompt;
-        prePrompt << "Du bist ein Musiksystem. Wenn du eine Melodie erzeugst, gib bitte eine JSON-Struktur zurück "
-            << "im folgenden Format zurück:\n\n"
+        prePrompt << "Du bist ein Musiksystem. Wenn du eine Melodie erzeugst, gib bitte eine JSON-Struktur zurÃ¼ck "
+            << "im folgenden Format zurÃ¼ck:\n\n"
             << "{\n"
             << "  \"action\": \"create_midi_region\",\n"
             << "  \"track\": \"current\",\n"
@@ -33,7 +33,7 @@ public:
             << "    { \"pitch\": 64, \"start\": 1.0, \"length\": 0.5 }\n"
             << "  ]\n"
             << "}\n\n"
-            << "Achte darauf, dass du ausschließlich gültiges JSON zurückgibst. Gib keine Erklärung dazu ab. Die (length) Länge der Noten darf variabel sein.";
+            << "Achte darauf, dass du ausschlieÃŸlich gÃ¼ltiges JSON zurÃ¼ckgibst. Gib keine ErklÃ¤rung dazu ab. Die (length) LÃ¤nge der Noten darf variabel sein.";
 
         juce::String fullPrompt = prePrompt + juce::String(prompt);
         juce::DynamicObject::Ptr root = new juce::DynamicObject();

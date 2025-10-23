@@ -490,15 +490,17 @@ void TrackNavigator::noteOffForAll() {
 
 void TrackNavigator::setRecording(bool recording) {
 
-	for (int i = 0; i < Project::getInstance()->getRoot()->getModules()->size(); i++) {
+	if (Project::getInstance()->getRoot() != nullptr) {
+		for (int i = 0; i < Project::getInstance()->getRoot()->getModules()->size(); i++) {
 
-		PluginModule* module = nullptr;
+			PluginModule* module = nullptr;
 
-		// make sure we do not send this event to a plugin module
+			// make sure we do not send this event to a plugin module
 
-		if ((module = dynamic_cast<PluginModule*>(Project::getInstance()->getRoot()->getModules()->at(i))) != nullptr) {
-			module->getPlayHead().setRecording(recording);
-			module->getPlayHead().setPlaying(false);
+			if ((module = dynamic_cast<PluginModule*>(Project::getInstance()->getRoot()->getModules()->at(i))) != nullptr) {
+				module->getPlayHead().setRecording(recording);
+				module->getPlayHead().setPlaying(false);
+			}
 		}
 	}
 
@@ -938,8 +940,7 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 			tracks.at(i)->setCurrentMarkerPosition(position);
 		}
 		sendChangeMessage();
-		marker->repaint();
-		return;
+		marker->repaint();		
 	}
 	//else
 	if (Track* r = dynamic_cast<Track*>(event.eventComponent)) {		

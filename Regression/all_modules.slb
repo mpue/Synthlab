@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Module lock="0" layer="0">
+  <Modules>
+    <Module name="Magnitude" index="1" x="198" y="61" ui_x="237" ui_y="142"
+            isPrefab="1" prefabId="42">
+      <Pins>
+        <Pin type="0" name="In" direction="0" index="101" x="0" y="10"/>
+        <Pin type="2" name="Mag" direction="1" index="102" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Mixer" index="2" x="365" y="58" ui_x="678" ui_y="330" isPrefab="1"
+            prefabId="82">
+      <Pins>
+        <Pin type="0" name="In1" direction="0" index="201" x="0" y="10"/>
+        <Pin type="2" name="A1" direction="0" index="202" x="0" y="30"/>
+        <Pin type="0" name="In2" direction="0" index="203" x="0" y="50"/>
+        <Pin type="2" name="A2" direction="0" index="204" x="0" y="70"/>
+        <Pin type="0" name="In3" direction="0" index="205" x="0" y="90"/>
+        <Pin type="2" name="A3" direction="0" index="206" x="0" y="110"/>
+        <Pin type="0" name="Out" direction="1" index="207" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Audio Recorder" index="3" x="531" y="58" ui_x="934" ui_y="314"
+            isPrefab="1" prefabId="87">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="301" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="302" x="0" y="30"/>
+        <Pin type="0" name="L" direction="1" index="303" x="110" y="10"/>
+        <Pin type="0" name="R" direction="1" index="304" x="110" y="30"/>
+        <Pin type="1" name="Tr" direction="0" index="305" x="0" y="50"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Transform" index="4" x="721" y="60" ui_x="814" ui_y="298"
+            isPrefab="1" prefabId="38">
+      <Pins>
+        <Pin type="5" name="Geom" direction="0" index="401" x="0" y="10"/>
+        <Pin type="4" name="T" direction="0" index="402" x="0" y="30"/>
+        <Pin type="4" name="R" direction="0" index="403" x="0" y="50"/>
+        <Pin type="4" name="S" direction="0" index="404" x="0" y="70"/>
+        <Pin type="5" name="Out" direction="1" index="405" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Merge" index="5" x="917" y="61" ui_x="956" ui_y="286" isPrefab="1"
+            prefabId="39">
+      <Pins>
+        <Pin type="5" name="Geom1" direction="0" index="501" x="0" y="10"/>
+        <Pin type="5" name="Geom2" direction="0" index="502" x="0" y="30"/>
+        <Pin type="5" name="Out" direction="1" index="503" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Box" index="6" x="1094" y="61" ui_x="1456" ui_y="404" isPrefab="0"
+            prefabId="0">
+      <Pins>
+        <Pin type="5" name="Geom" direction="1" index="601" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="GeometryView" index="6" x="1263" y="60" ui_x="232" ui_y="501"
+            isPrefab="1" prefabId="43">
+      <Pins>
+        <Pin type="4" name="T" direction="0" index="601" x="0" y="10"/>
+        <Pin type="4" name="R" direction="0" index="602" x="0" y="30"/>
+        <Pin type="4" name="S" direction="0" index="603" x="0" y="50"/>
+        <Pin type="5" name="Geom" direction="0" index="604" x="0" y="70"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="And" index="7" x="205" y="253" ui_x="954" ui_y="507" isPrefab="1"
+            prefabId="96">
+      <Pins>
+        <Pin type="2" name="A" direction="0" index="701" x="0" y="10"/>
+        <Pin type="2" name="B" direction="0" index="702" x="0" y="30"/>
+        <Pin type="2" name="Out" direction="1" index="703" x="100" y="10"/>
+        <Pin type="2" name="Not" direction="1" index="704" x="100" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Or" index="8" x="369" y="251" ui_x="587" ui_y="389" isPrefab="1"
+            prefabId="97">
+      <Pins>
+        <Pin type="2" name="A" direction="0" index="801" x="0" y="10"/>
+        <Pin type="2" name="B" direction="0" index="802" x="0" y="30"/>
+        <Pin type="2" name="C" direction="1" index="803" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Not" index="9" x="534" y="252" ui_x="649" ui_y="470" isPrefab="1"
+            prefabId="98">
+      <Pins>
+        <Pin type="2" name="A" direction="0" index="901" x="0" y="10"/>
+        <Pin type="2" name="B" direction="1" index="902" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Vector" index="10" x="721" y="246" ui_x="778" ui_y="513"
+            isPrefab="1" prefabId="44">
+      <Pins>
+        <Pin type="2" name="X" direction="0" index="1001" x="0" y="10"/>
+        <Pin type="2" name="Y" direction="0" index="1002" x="0" y="30"/>
+        <Pin type="2" name="Z" direction="0" index="1003" x="0" y="50"/>
+        <Pin type="4" name="V" direction="1" index="1004" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Compare" index="11" x="921" y="242" ui_x="477" ui_y="695"
+            isPrefab="1" prefabId="49" mode="3">
+      <Pins>
+        <Pin type="2" name="A" direction="0" index="1101" x="0" y="10"/>
+        <Pin type="2" name="B" direction="0" index="1102" x="0" y="30"/>
+        <Pin type="2" name="C" direction="1" index="1103" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Invert value" index="12" x="1271" y="244" ui_x="1185" ui_y="421"
+            isPrefab="1" prefabId="56">
+      <Pins>
+        <Pin type="2" name="A" direction="0" index="1201" x="0" y="10"/>
+        <Pin type="2" name="1/a" direction="1" index="1202" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="13" x="1097" y="239" ui_x="1118" ui_y="436" isPrefab="1"
+            prefabId="55">
+      <Pins>
+        <Pin type="2" name="In" direction="0" index="1301" x="0" y="10"/>
+        <Pin type="2" name="Out" direction="1" index="1302" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Multiply value" index="14" x="198" y="413" ui_x="88" ui_y="635"
+            isPrefab="1" prefabId="57">
+      <Pins>
+        <Pin type="2" name="A" direction="0" index="1401" x="0" y="10"/>
+        <Pin type="2" name="B" direction="0" index="1402" x="0" y="30"/>
+        <Pin type="2" name="C" direction="1" index="1403" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Add value" index="15" x="366" y="420" ui_x="393" ui_y="592"
+            isPrefab="1" prefabId="59">
+      <Pins>
+        <Pin type="2" name="A" direction="0" index="1501" x="0" y="10"/>
+        <Pin type="2" name="B" direction="0" index="1502" x="0" y="30"/>
+        <Pin type="2" name="C" direction="1" index="1503" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Add signal" index="16" x="534" y="418" ui_x="591" ui_y="570"
+            isPrefab="1" prefabId="60">
+      <Pins>
+        <Pin type="0" name="A" direction="0" index="1601" x="0" y="10"/>
+        <Pin type="0" name="B" direction="0" index="1602" x="0" y="30"/>
+        <Pin type="0" name="C" direction="1" index="1603" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="17" x="723" y="420" ui_x="787" ui_y="608" isPrefab="1"
+            prefabId="67" value="42.0">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="1701" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Track In" index="18" x="925" y="415" ui_x="1108" ui_y="595"
+            isPrefab="1" prefabId="48" volume="0.0">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="1801" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="1802" x="0" y="30"/>
+        <Pin type="0" name="L" direction="1" index="1803" x="110" y="10"/>
+        <Pin type="0" name="R" direction="1" index="1804" x="110" y="30"/>
+        <Pin type="1" name="G" direction="0" index="1805" x="0" y="50"/>
+        <Pin type="1" name="G" direction="1" index="1806" x="110" y="50"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Mon L" index="19" x="1101" y="415" ui_x="1132" ui_y="576"
+            isPrefab="1" prefabId="66" volume="0.75">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="1901" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="1902" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="ADSR" index="20" x="1271" y="420" ui_x="1409" ui_y="583"
+            isPrefab="1" prefabId="70" attack="0.0" decay="0.0" sustain="0.800000011920929"
+            release="0.0" mono="0">
+      <Pins>
+        <Pin type="1" name="G" direction="0" index="2001" x="0" y="10"/>
+        <Pin type="2" name="A" direction="0" index="2002" x="0" y="30"/>
+        <Pin type="2" name="D" direction="0" index="2003" x="0" y="50"/>
+        <Pin type="2" name="S" direction="0" index="2004" x="0" y="70"/>
+        <Pin type="2" name="R" direction="0" index="2005" x="0" y="90"/>
+        <Pin type="2" name="Out" direction="1" index="2006" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Analogue 1" index="21" x="193" y="615" ui_x="637" ui_y="646"
+            isPrefab="1" prefabId="76" volume="0.0">
+      <Pins>
+        <Pin type="0" name="In" direction="1" index="2101" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Aux 1" index="22" x="370" y="618" ui_x="354" ui_y="652"
+            isPrefab="1" prefabId="77" volume="0.0">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="2201" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="2202" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="T" index="1" x="540" y="628" ui_x="552" ui_y="680" isPrefab="1"
+            prefabId="83" type="2">
+      <Pins>
+        <Pin type="2" name="In" direction="1" index="2301" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="T" index="2" x="543" y="663" ui_x="635" ui_y="692" isPrefab="1"
+            prefabId="84" type="2">
+      <Pins>
+        <Pin type="2" name="Out" direction="0" index="2401" x="0" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="25" x="544" y="707" ui_x="841" ui_y="721" isPrefab="1"
+            prefabId="50">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="2501" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="" index="26" x="748" y="515" ui_x="873" ui_y="639" isPrefab="1"
+            prefabId="52">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="2601" x="50" y="10"/>
+        <Pin type="1" name="E" direction="1" index="2602" x="50" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="3-Band EQ" index="27" x="1427" y="58" ui_x="880" ui_y="662"
+            isPrefab="1" prefabId="46">
+      <Pins>
+        <Pin type="0" name="In" direction="0" index="2701" x="0" y="10"/>
+        <Pin type="0" name="Out" direction="1" index="2702" x="150" y="10"/>
+        <Pin type="2" name="LF" direction="0" index="2703" x="0" y="30"/>
+        <Pin type="2" name="LQ" direction="0" index="2704" x="0" y="50"/>
+        <Pin type="2" name="LG" direction="0" index="2705" x="0" y="70"/>
+        <Pin type="2" name="MF" direction="0" index="2706" x="0" y="90"/>
+        <Pin type="2" name="MQ" direction="0" index="2707" x="0" y="110"/>
+        <Pin type="2" name="MG" direction="0" index="2708" x="0" y="130"/>
+        <Pin type="2" name="HF" direction="0" index="2709" x="0" y="150"/>
+        <Pin type="2" name="HQ" direction="0" index="2710" x="0" y="170"/>
+        <Pin type="2" name="HG" direction="0" index="2711" x="0" y="190"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Mixer" index="28" x="1449" y="418" ui_x="1403" ui_y="442"
+            isPrefab="1" prefabId="82">
+      <Pins>
+        <Pin type="0" name="In1" direction="0" index="2801" x="0" y="10"/>
+        <Pin type="2" name="A1" direction="0" index="2802" x="0" y="30"/>
+        <Pin type="0" name="In2" direction="0" index="2803" x="0" y="50"/>
+        <Pin type="2" name="A2" direction="0" index="2804" x="0" y="70"/>
+        <Pin type="0" name="In3" direction="0" index="2805" x="0" y="90"/>
+        <Pin type="2" name="A3" direction="0" index="2806" x="0" y="110"/>
+        <Pin type="0" name="Out" direction="1" index="2807" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections/>
+</Module>

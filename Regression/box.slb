@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Module lock="0" layer="0">
+  <Modules>
+    <Module name="Box" index="1" x="886" y="285" ui_x="438" ui_y="255" isPrefab="0"
+            prefabId="41">
+      <Pins>
+        <Pin type="5" name="Geom" direction="1" index="101" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="GeometryView" index="2" x="1312" y="251" ui_x="667" ui_y="339"
+            isPrefab="1" prefabId="43">
+      <Pins>
+        <Pin type="4" name="T" direction="0" index="201" x="0" y="10"/>
+        <Pin type="4" name="R" direction="0" index="202" x="0" y="30"/>
+        <Pin type="4" name="S" direction="0" index="203" x="0" y="50"/>
+        <Pin type="5" name="Geom" direction="0" index="204" x="0" y="70"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections>
+    <Connection source="1" target="2" a="101" b="204"/>
+  </Connections>
+</Module>

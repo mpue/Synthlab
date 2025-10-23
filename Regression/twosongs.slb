@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Module lock="0" layer="0">
+  <Modules>
+    <Module name="Track In" index="1" x="464" y="451" ui_x="10" ui_y="10"
+            isPrefab="1" prefabId="48" volume="0.0">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="101" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="102" x="0" y="30"/>
+        <Pin type="0" name="L" direction="1" index="103" x="110" y="10"/>
+        <Pin type="0" name="R" direction="1" index="104" x="110" y="30"/>
+        <Pin type="1" name="G" direction="0" index="105" x="0" y="50"/>
+        <Pin type="1" name="G" direction="1" index="106" x="110" y="50"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Out 1" index="2" x="646" y="167" ui_x="170" ui_y="10" isPrefab="1"
+            prefabId="66" volume="0.75">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="201" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="202" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Track In" index="3" x="678" y="540" ui_x="10" ui_y="10"
+            isPrefab="1" prefabId="48" volume="0.0">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="301" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="302" x="0" y="30"/>
+        <Pin type="0" name="L" direction="1" index="303" x="110" y="10"/>
+        <Pin type="0" name="R" direction="1" index="304" x="110" y="30"/>
+        <Pin type="1" name="G" direction="0" index="305" x="0" y="50"/>
+        <Pin type="1" name="G" direction="1" index="306" x="110" y="50"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Out 2" index="5" x="916" y="413" ui_x="916" ui_y="413"
+            isPrefab="1" prefabId="66" volume="1.0">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="501" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="502" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Gate" index="6" x="189" y="-136" ui_x="10" ui_y="10" isPrefab="1"
+            prefabId="61" channel="1">
+      <Pins>
+        <Pin type="2" name="G" direction="1" index="601" x="110" y="10"/>
+        <Pin type="1" name="E" direction="1" index="602" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Track In" index="7" x="349" y="-136" ui_x="170" ui_y="10"
+            isPrefab="1" prefabId="48" volume="0.0">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="701" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="702" x="0" y="30"/>
+        <Pin type="0" name="L" direction="1" index="703" x="110" y="10"/>
+        <Pin type="0" name="R" direction="1" index="704" x="110" y="30"/>
+        <Pin type="1" name="G" direction="0" index="705" x="0" y="50"/>
+        <Pin type="1" name="G" direction="1" index="706" x="110" y="50"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Plugin" index="8" x="509" y="-136" ui_x="330" ui_y="10"
+            isPrefab="1" prefabId="79" plugin="DUNE 3" currentProgram="0"
+            state="VkMyIWsVAAA8P3htbCB2ZXJzaW9uPSIxLjAiIGVuY29kaW5nPSJVVEYtOCI/PiA8VlNUM1BsdWdpblN0YXRlPjxJQ29tcG9uZW50PjQwMDYuaDkuLi4zMVlvTUdOdWkuLmY0YkEuSDNDLi4ud0kuLi42dC4uLi4uLi4uLi4uLi4uM3dZNmJtR2NVVWR0R0dPNExFUTVFNXNYWXBCblZtc05meHNDMVJOR2JCcUNuaEJwMFFwaDhSVVFqM1gzVmZWSk5FU2JoUEYuMEhJRkZSSC5zQkRqVkladllSUEJCSU5CcGdnQm9WbjM3RDJTTjZPbjIrNXQ3dFZ0VmNzdHRlVnFqdTd0MjZlNmVPNm1tMjIyck9Bayt5YUtxdVZRMW8rNTV0cHdObEk2TzI2emVzTzk1NlRja0dlbVd5TzNLdTVJbTBqKzVjYXlEbThNZGsyM01qK1VPbCtPSElTTmpXZGlOdTh5ZTlxeTArYXR0d090Um01V2M4NE01d090WG9ZRGlpZ2k5WkcwWDY3WjU3ZGVSaVo3VzhZT3BxNyswNjhuRituRjJka2x1YTdyeDV3Y3llN3J5RmlmUXdYWGJMQWxTRnRiNVdOOEttOWtTK3hvZTR6dWI1V044U2Y5SVArRG5lQnpPQTVtLjhTZjlJUCsxbmVhenVNNTJGOGFpOXNRKzFuZWF6T3cuNG9sWFBVTk1pZlF3WFhiTEFsUWVwWjRlczd1VjlXSytxaysweCtaNGVzN2VEek9CNUdBOGlmOVFQK0huZUR6T0I1bWJQNW01MkdiYXg1T2ZTQStpM1R3OHI3NDF3Ni51Uzd0dkJ2NkZLREtCdUc3ZHc2Q3VlN0F2b2dFaVNHS0FLRUtDS0dtQU5TN0F3R0JlWHJnTGV1aFRPb3dPRTFIdFI3b3dtQWVWNzR2bUdlQTdFd1VnTWdNaXFGZUliTVhLM1p3V0ZXR3RkclVyTTdVdldFZU03MHcyLmVTYkMzRncyQmVhN2N2MXdNZ2FGMkJ0VTd1Z2FDMk4xQTkydzJFK0czTnZjaCtTYlczNmd1TzlBM0doZUQ5dzNtZmVKOVkzbWllQXRhYjdZOTlqU05BTFVsa1FTTjJHQk8rSEE3Z005MlEyK0VOQmFsZG8zNlk4M2VMcDdOWGJ4Ty4rUDdpdk9GK0Q3U3dPQytiN0t2Y2kxRE9vazZJaWZRd1hYYkxBbEN0V1hXdjhGNko5Y3YrTXJhWDJ3dUs5dWllT3JHMzlmZSt6NzVHN29rcm1YdXZkaThBNks5Q3Y4RTZHMWViLjM5ZzZPZC4zT0RPUDdmdkNGT0Q3UHdDQ09iN0h2ZURkajNRZ0dNZEwzLndpRU9OYlAzK2c0RStYN21mK1Q3bWdHTzl5d2VBTlhMV0xJbEJHQmRCM0lobURkeDNvZkNFT1U3V2htRmQ1M1lmbUlOTDdydnlGT0diMzM0aG1HTjBmMEFJdU03MXc2LnVTN3R2QnY2RktES0J1RzdkdzZDdWU3QXZvZ0VpU0dLQUtFS0NLR21BTlM3QXdHQmVYckI3UXZZZ1VoVWdPWnpmNEFVaXlGbUNOV2JkWE1YczM3dzV2RWZLRFdEOW12K0w5WDNod2tmS0VxR1dGOTMzeHcrQjlXd20uV0ExLjlqM1NnTWhxRGVaNkM5TDN5aE9HOTczS2Z1SHRKcklyWWIwM0tncUFhQVdLOXgzNXYwaXNoc2d1QjlwM3FndU45RjNhaGEuMkg5VjNhaXVDMU5kTkErYmlqbUs5R3ZhQ21yZWR3dUdtSmRtM0ttZ2UyZzdmRis0Vlc4RTFlOFVSZTd3Tm5yRjdxaHVsZTl2cWl1QXRRN3N2VWtna05qVWs0OEY2alF2blhMTE5sLnlJQ2VvZjZTWmxNRkFpaHd2M1hCTHk2Y05qbDc3emoyYXNJK2ZybDdkcU00OFZheDZzMWoyYXNJdTI1Wm5lTXp1RjVXQzhxZzkwUCtabmVNejJMOE1TZXl6Mkw4TVNleXoyTDhNU2VLejJCOHNQZUt6MkI4c1BlS3oyQjhzU2U2ejJOOHNTZTZ6Mk44c1NlNnp1STUyRDhhaDlNUStsbmVTenVJNTJEOHFsOVVTK3BvZTB6dVo1V004cWw5VVMrWm9lc3p1VjVXSzhxazkwUitab2VzenVCNVdBOHFmOVVQK0puZUV6dUI1V0E4TVJlaXoySDhNUmVpejJIOE1SZWl6ZWxBeHk1VHZvdW1lTlg1dTUzYnBPMjlhODYwNjdtTmRGbytwdGdsY3g4MjM2dzUzT3Y1d0NIM3ZJT1BtK2Z2Q0ZPYjdkbzZDbzZIbjZIYzlpQk9aNzN2Nml0T2h0QVEyTzE0K0kzT0V5RVNob3ZnZm0uZGgzSWdtTE56emUwMzZ1V0lPRDdUYzZOVDdXNTVOTGJqcGlXRmRNMzBnV0tOTmJyMzB1bTJHdzlTbXQ5Nm9ZN3ZMOUxNOXJMZDNGT0ppeTIzb1g3MFk3M0w5Mlk3c2E3c1g3c1piRVk5OWpTOUhkOWxFVklWRTluWDAzcnc0ZnlFbUdWQ1ZLTmVyTmJBM0J3RWcrSTdPaU9GdFhiSTNSdzV3a2dPTnRiN3VmK1U3SXZVZmNOc08yOHRqYmlsVTFYRExKRkNpaUl2Ynh2R3k3eUdLeTV4TllETEpGQ2lpSXZieHZJUitEb2Voek9RNW1IOFNqOUlSK0RvdVNVU1hlTnBieU5jOUd2SFhUTEZGR1NmNGpnZTBxWW1NRkFpaHd2M1hCTHk5SkllU3ltZHlmOGtSeUhYVExGRkdTZkE1V200Z3F5OVpxeTlacXk5WnF5OVpxeTlacXk5WnF5OVplVXJtZXFlZGh4eEZaZTR1MHUzWEJMUCtSaitLUTl1RDQrUmorS1E5dUQ0K1JqK0tROXVtNmRMOUdpK3czZUw5R2krdzNlTDl1Yzgrc3ErdWM4K3NxK3VjOCtzcSt1Yzgrc3ErKy5vazB6cE5pYmVmejVDWERMSkZDaWlJdmJ4dmg0ZXc3dVg5V0wrS2wrRXkraDRldzdlNXBlU1c4YTVwZVNXOGE1cGVTVzhhNXBlU1c4cUQ0ZUl4K1JqK2tIK0tROVdoN3VENGVJeCt4aitrSStLUzlXbDd1TDRlWXgreGora0krS1c5V3Q3dWI0ZTR4K3hrK2tLK0tXOVd0N2VGeCtZSCttZzdlRngrWUgrbWc3ZUZ4K1lIKzJnN2VHeCtjSCsyZzdlR3grY0grMmc3ZUd4K1lKK21vN2VseCtZSittbzdlbHgrWUorbW83dUE5Mi4rYWYrTXYrRjNlQzd1QTkyLisyb2tjNno1MmNaODZOczljbVYrdFNxZTJvMHU2ejUyTis4cE9mb1ZTdDZVNTBPQUxCRkVpZ3d3RFhOWTNSNCtSNCtSNCtSNCtSNCtSNCtSNCtSNCtqNzdPSU8rU3h5K2o3N09JTytTeHkrajc3T0lPK2NOWlBHMndrYWh6NGUuaWZRd1hYYkxBbFNGMTRjb3RnOUhvWTFYRExKRkNpaUl2Ynh2TW4rdUE4K01uK3VBOCtNbit1QTgrTW4rdUE4KzBxOXNkMHUwcTlzZDB1MHE5c2QwdTBxOXNkMHU4cnFaYjYrRTI5ZXdzK1diNitFMlVGMjlld3MrMnhqK0tTOXVMNCt4aitLUzl1TDQreGorS1M5MkU5MkU5MkU5MkU5MkU5MkU5MkU5MkU5Mmc5ZUc1K2NuKzJnOWVHNStjbisyZzllRzUrVVg4ZUVWK1dnMCtVWDhlRVYrV2cwK1VYOGVFVitPSzlPSzlPSzlPSzlPSzlPSzlPSzlPSzlXbzVXa3BlVXA5VW81V2twZVVwOVVvNVdrcGVVSStxUjlXazd1SjRlVXgrcGorVUkrcVI5V3M3dVo0ZTB4K3BrK1VLK3FWOVdzN3VaNCtyayt5VjlPYTQrcmsreVY5T2E0K3JrK3lWOU9HNCtiait5UTlPRzQrYmoreVE5T0c0K2JqKzZSOXVLNCt0ais2Ujl1SzQrdGorNlI5dUs0K2JrK3lVOU9XNCtiayt5VTlPVzQrYmsreVU5T085T085T085T085T085T085T085T085dVJxZVdvMHVxejUyVVo4NkpzOWNrVit0UnFlV28wdTZjZjd6TGFMQkZFaWd3d0RYZjlCODdXbm0rQjg3V25tK0I4N1dubStCODdXbm0raG51SDVLaDlobnVINUtoOWhudUg1dStIQTB1Nk9SMVhETEpGQ2lpSVB1K2pXVzdBaGpNRkFpaHd2M1hCTDM0ZVp6T001bUY4U2k5b1Erem5lWnpPTTVhVSt1VTgrVjArYVUrdVU4K1YwK2FVK3VVOCtFcTlzWDB1RXE5c1gwdUVxOXNYMHVFcTlzWDB1MTNlYTd1TTkyRithaStzdysxM2VhN3VkOVdPK3FtKzB5KzU0ZTg3dWQ5V08rNlpQNEtxdFo5V1dNK3FxbCswVXkrNXA0ZWMwN3V0WjkyODQyS3Y4RVQrU3lIWFRMRkZHU2ZBOTJjOTJjOTJjOTJjOTJjOTJjOTJjOTJjOVdCK0tnK2t2K1IzZUk3dUQ5V0IrS2crY2krY2krY2krY2krY2krY2krY2krY2krRXkraDRldzd1WDlXTCtLbCtFeStoNCtUTCtjSmwrTkV5ZW1oNHVTdzcyb1g5NlRMK2NKbCt0VTYrclU2K3JVNityVTYrclU2K3JVNityVTYrclU2K3JFNTJCOGFnOXNQK1ZuZUt6dUU1MkI4NmE1dXQybTU4eWNlU1crQlhETEpGQ2lpSXZieHY5bzkyTzArOW85Mk8wKzlvOTJPMCs5bzkyTzArQURITzQuNzRtR2ZPKzcuNzRtR1BmOXpMTmwuQ3ArOGsrOGsrOGsrOGsrOGsrOGsrOGsrOGsrOG05OVNlK291K3oyZTU2Tzg4bTk5Uys3czllOVYrT2VxK211MCt5MjUrNGE4KzdzOWU5VitXbTlXYzVlMG8rVW05V2M1ZTBvK1VtOVdjNWVLdjlHS3Y5R0t2OUdLdjlHS3Y5R0t2OUdLdjlHS3Y5R0tqK0tqK0tqK0tqK0tqK0tqK0tqK0tqK0toOUVRK2huZVF6dUg1V0Q4S2g5RVErSG9lanpPUjVHSThpajlRUitIb2VqenVZMCtNcTl1WTArTXE5dVkwK01xOXVZMCtNcTkyeS42eXBtNSs4VCt1bTUrOFQrdW01KzhUK3VtNSs4SlBkeGRZOWF1TCtzV2wrMUt5ZTZrNHU4eDcyZFk5YXU0ZXU0ZXU0ZXU0ZXU0ZXU0ZXU0ZXU0ZWUzZWUzZWUzZWUzZWUzZWUzZWUzZWUzKzJLODJkcTdHVFpsTUZBaWh3djNYQkxtTHJHN3VHN3VHN3VHN3VHN3VHN3VHN3VHN2VleEpuK3NPWWtNRkFpaHd2M1hCTG4rODhTKzg1NitBa2xZaVF2blhMTE5sLnlJQ0t2N21CTCtvLnllSnY3bUJMK28ueWVKdjdtQkwrWTIxK2UyMStlMjErZTIxK2UyMStlMjErZTIxK2UyMStlWDUrQ1MrZVg1K0NTK2VYNStDUytlWDUrQ1MrT081eWk5N25PTzV5aTk3bk9PNXlpOTdvT2U1eW05N29PZTV5bTk3b09lNUswNk9WcDJlclR1K1hvZCt3Ujg5aWs1OEdLMDZPVnAyZXJGMHVaVCtwUThxRjB1WlQrcFE4cUYwdVpUK0ZrNytKdmVjLlJGN2VRaFNONDk0V2k0OWlHLjlDQ1h4Q0RPSDdmd0NJWmY5QzAzQ0NPYjdIYjllRGRqTjlRWTdReW1lRmQ3M09HK0V0OUFpNGhJd1R0T0N3M1MuT1E3amI5U0ZPRUdlbkZlcDc0clRHTmU2eWRObys1aHVtSEl1Lnk2R3Q1MFltNDNPVXRtV2xnb1JkZ1k5YmdxWnZtcXlPaC5sME1TMkU1MytwOFAyK0taTzZtdUdlYzlLMU9tNVJCOTdsQzlCYjdvcCtlYWxHYzZkZXI2LnVTbSt0dkJiYzJzeVdIVlRqZjY2OFg3RUViNG9kdTg3MnVqNytSeDdiZC5JdTN6YnY2Y3FDOXhjYiszbGp3VTJ0enJDOTZzNnhqMmkxeXlrbFV2dyswZE51Qm0rSnl0eStkRGQyYkdjWlYwMzVXeEtXYzVwYjlPVmQ3STN1d3dxdzg0Wkw5MkZuSzJxMTN3ZldhWmRVVzBBbTdkODdNVjIrYVA5ZWkzTWcyTGRLM3NKK3VBOWNpM01nbUhkUnR1bWJ2M1RtUkZsSjBQeXZGUmNwQW1PMDBtZ2FMMDN5dkpSa1d2ME9qWjg3TWVyTjQ2QnoyRnQ1NjRobUdOQjArUWhtT2RBM0VaZDh1eDNLQnVYN1JiOUtFdUxHK3hNZFQ3NHB3cUF1VmJydDlxQ0dHZDgzM2NleHkzYS51UTdsYjlhRnVFRytWTU5lOTdEcENxUDhvZ0hBcUdlUkcrb1R1WkxSdjV3VWxZYnBqT2NqZjBpT2l5K3J6K2J6ODdOOUtmdW55dUpySVdXeU4rcHdXeDVsMFg3YTQ1ZWFXKzYzM3NpYXg0Mkx0RVcyVmM5K0Z0TTIyc2FiS0FMMDZTMlp3V05SdjV3MEVJWDgzNWNiYSttTGc1VnFRQlYyMGw2V1ZwcXVoaStwejhaTitxR0lYODNhRElYODNhSk8yZnkrb3Q5T0MybmkyZ3crY2llMi5jNDlPTGRHM05pRHJkN2VaN3RiK21FOFVoVWdPSlZNTmFiTjNidzRna2drNjlOQzB1WUZMZUgwQ2xnTWo1Z0JOZXBHTkMyWHBKeHZKUjhIQVcrUDViWTRVTTF3THQ4SzFXdSsrLkhMQml2M2FXdyt5OEVGM3dieENjZjJ6WEdjbWV0ekkrdW43SUxCaXZITEJpdkhMQml2SExCaSswRGM5NEFOMXZPT1BYREZnUVhERmdRWERGZ1FYN3N4bnlPT3Z3RTk0QUJpdkhMQml2SExCaXZITEJpdVVGYzk0QUZUM21HSExCaXZITEJpdkhMQml2SEw5VllMdmlZM0NZZmlhN2lweStjSTZLK21SdnZITEJpdkhMQml2SExCaXZITEJpdkhMQmkrZWN6NCsxQkx2d0w5UWtKcXVZOTJlak51R2k0SjlsNjlNdkFON2dicmcrOUpCaXZITEJpdkhMQml2SExCaXZITEJpdjNhVVFtK05FTjF1Zys4VTdhK0Y3Mld3K01FQWd5ckI8L0lDb21wb25lbnQ+PElFZGl0Q29udHJvbGxlcj4wLjwvSUVkaXRDb250cm9sbGVyPjwvVlNUM1BsdWdpblN0YXRlPgA=">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="801" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="802" x="0" y="30"/>
+        <Pin type="0" name="L" direction="1" index="803" x="110" y="10"/>
+        <Pin type="0" name="R" direction="1" index="804" x="110" y="30"/>
+        <Pin type="1" name="G" direction="0" index="805" x="0" y="50"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Out 3" index="9" x="509" y="-136" ui_x="330" ui_y="10"
+            isPrefab="1" prefabId="66" volume="0.300000011920929">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="901" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="902" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections>
+    <Connection source="1" target="2" a="103" b="201"/>
+    <Connection source="1" target="2" a="104" b="202"/>
+    <Connection source="3" target="5" a="303" b="501"/>
+    <Connection source="7" target="6" a="705" b="602"/>
+    <Connection source="8" target="7" a="805" b="706"/>
+    <Connection source="8" target="9" a="803" b="901"/>
+    <Connection source="8" target="9" a="804" b="902"/>
+    <Connection source="3" target="5" a="304" b="502"/>
+  </Connections>
+</Module>

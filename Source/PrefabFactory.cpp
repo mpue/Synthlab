@@ -70,6 +70,8 @@
 #include "TransformGeometryModule.h"
 #include "FeedbackModule.h"
 #include "ValueToEvent.h"
+#include "VocoderModule.h"
+#include "GainModule.h"
 
 using juce::Image;
 
@@ -264,6 +266,12 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Not") {
         m = new NotModule();
+    }
+    else if (prefabs[id].getName() == "Vocoder") {
+        m = new VocoderModule(sampleRate, bufferSize);
+    }
+    else if (prefabs[id].getName() == "Gain") {
+        m = new GainModule(sampleRate, bufferSize);
     }
     else if (prefabs[id].getName() == "Trigger timer") {
         m = new TriggerTimerModule();

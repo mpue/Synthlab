@@ -91,7 +91,7 @@ void BounceDialog::paint(juce::Graphics& g)
 void BounceDialog::resized()
 {
     auto bounds = getLocalBounds().reduced(20);
-    bounds.removeFromTop(50); // Für Titel
+    bounds.removeFromTop(50); // FÃ¼r Titel
     
     const int rowHeight = 30;
     const int spacing = 10;

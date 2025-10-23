@@ -166,6 +166,8 @@ private:
         prefabs[96] = Prefab("And","Logic");
         prefabs[97] = Prefab("Or","Logic");
         prefabs[98] = Prefab("Not","Logic");
+        prefabs[99] = Prefab("Vocoder","FX");
+        prefabs[100] = Prefab("Gain","Audio");
         prefabImages[38] = juce::ImageCache::getFromMemory(BinaryData::infinity_png, BinaryData::infinity_pngSize);
         prefabImages[38] = juce::ImageCache::getFromMemory(BinaryData::transform_png, BinaryData::transform_pngSize);
         prefabImages[39] = juce::ImageCache::getFromMemory(BinaryData::merge_png, BinaryData::merge_pngSize);
@@ -228,6 +230,8 @@ private:
         prefabImages[96] = juce::ImageCache::getFromMemory(BinaryData::logic_and_png, BinaryData::logic_and_pngSize);
         prefabImages[97] = juce::ImageCache::getFromMemory(BinaryData::logic_or_png, BinaryData::logic_or_pngSize);
         prefabImages[98] = juce::ImageCache::getFromMemory(BinaryData::logic_not_png, BinaryData::logic_not_pngSize);
+        prefabImages[99] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[100] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         
         categories = new juce::StringArray();
 

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Project trackLength="600" name="bounce_audio_audio" sampleRate="44100.0"
+         bufferSize="128" tempo="120.0">
+  <AudioFiles>
+    <File refId="LDH_apaio_nokick_172" path="D:\samples\5P_Liquid_Drum_&amp;_Bass_Horizons\LDH_Loops_Acid_WAV\Drum &amp; Perc\Drum\LDH_apaio_nokick_172.wav"/>
+    <File refId="LDH_apaio_tops_172" path="D:\samples\5P_Liquid_Drum_&amp;_Bass_Horizons\LDH_Loops_Acid_WAV\Drum &amp; Perc\Drum\LDH_apaio_tops_172.wav"/>
+  </AudioFiles>
+</Project>

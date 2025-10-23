@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Tracks>
+  <Track name="LDH_apaio_nokick_172" type="audio">
+    <Regions>
+      <Region name="LDH_apaio_nokick_172" clipRefId="LDH_apaio_nokick_172"
+              sampleOffset="0" numSamples="246140" width="222"/>
+    </Regions>
+  </Track>
+  <Track name="LDH_apaio_tops_172" type="audio">
+    <Regions>
+      <Region name="LDH_apaio_tops_172" clipRefId="LDH_apaio_tops_172" sampleOffset="0"
+              numSamples="246140" width="222"/>
+    </Regions>
+  </Track>
+</Tracks>

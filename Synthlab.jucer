@@ -125,13 +125,10 @@
       <FILE id="EJ4uon" name="whitenoise.png" compile="0" resource="1" file="Images/whitenoise.png"/>
     </GROUP>
     <GROUP id="{CA20D122-1EA5-3A93-F1F8-F6EE53DA457E}" name="Source">
-      <FILE id="Z3pqNA" name="FadeDialog.cpp" compile="1" resource="0" file="Source/FadeDialog.cpp"/>
-      <FILE id="OhZpcQ" name="FadeDialog.h" compile="0" resource="0" file="Source/FadeDialog.h"/>
-      <FILE id="zrKOiF" name="BounceDialog.cpp" compile="1" resource="0"
-            file="Source/BounceDialog.cpp"/>
-      <FILE id="tIOHpC" name="BounceDialog.h" compile="0" resource="0" file="Source/BounceDialog.h"/>
       <GROUP id="{99AB1130-564C-440C-0A3B-F4C6BC0D4200}" name="Utils">
         <FILE id="JILReW" name="AudioUtils.h" compile="0" resource="0" file="Source/AudioUtils.h"/>
+        <FILE id="IgD6uP" name="TrackUtil.h" compile="0" resource="0" file="Source/TrackUtil.h"/>
+        <FILE id="feLR7z" name="UITools.h" compile="0" resource="0" file="Source/UITools.h"/>
         <FILE id="pdhP73" name="DefaultUndoManager.h" compile="0" resource="0"
               file="Source/DefaultUndoManager.h"/>
       </GROUP>
@@ -142,32 +139,15 @@
             file="Source/SynthlabAudioProcessor.cpp"/>
       <FILE id="Diry2g" name="SynthlabAudioProcessor.h" compile="0" resource="0"
             file="Source/SynthlabAudioProcessor.h"/>
-      <FILE id="qpua8K" name="ComponentTreeDebugger.cpp" compile="1" resource="0"
-            file="Source/ComponentTreeDebugger.cpp"/>
-      <FILE id="a01BeC" name="ComponentTreeDebugger.h" compile="0" resource="0"
-            file="Source/ComponentTreeDebugger.h"/>
       <FILE id="EbqCtx" name="ChatGPTInterface.h" compile="0" resource="0"
             file="Source/ChatGPTInterface.h"/>
-      <FILE id="IgD6uP" name="TrackUtil.h" compile="0" resource="0" file="Source/TrackUtil.h"/>
       <FILE id="o8rkDp" name="CommandParser.h" compile="0" resource="0" file="Source/CommandParser.h"/>
-      <FILE id="HVUNoB" name="MidiProcessor.cpp" compile="1" resource="0"
-            file="Source/MidiProcessor.cpp"/>
-      <FILE id="fTHaS5" name="MidiProcessor.h" compile="0" resource="0" file="Source/MidiProcessor.h"/>
-      <FILE id="feLR7z" name="UITools.h" compile="0" resource="0" file="Source/UITools.h"/>
       <GROUP id="{B7C33A19-23F0-17A9-B061-BBB991E079B2}" name="rubberband">
         <FILE id="csvtr7" name="RubberBandStretcher.h" compile="0" resource="0"
               file="Source/rubberband/RubberBandStretcher.h"/>
       </GROUP>
       <FILE id="j0wLxh" name="Session.cpp" compile="1" resource="0" file="Source/Session.cpp"/>
       <FILE id="xr1D6n" name="Session.h" compile="0" resource="0" file="Source/Session.h"/>
-      <FILE id="a3Ycus" name="DragConstrainer.h" compile="0" resource="0"
-            file="Source/DragConstrainer.h"/>
-      <FILE id="eU4D9d" name="ImageToggleButton.cpp" compile="1" resource="0"
-            file="Source/ImageToggleButton.cpp"/>
-      <FILE id="RQjYkB" name="ImageToggleButton.h" compile="0" resource="0"
-            file="Source/ImageToggleButton.h"/>
-      <FILE id="FrxMcy" name="ResizeConstrainer.h" compile="0" resource="0"
-            file="Source/ResizeConstrainer.h"/>
       <GROUP id="{4D7EAD10-981D-6F1E-0DC9-A21F1E92EE95}" name="Project">
         <FILE id="D7xLcE" name="AudioClip.cpp" compile="1" resource="0" file="Source/Project/AudioClip.cpp"/>
         <FILE id="pdXykI" name="AudioClip.h" compile="0" resource="0" file="Source/Project/AudioClip.h"/>
@@ -327,6 +307,9 @@
               file="Source/Actions/SetGainForRegionAction.h"/>
       </GROUP>
       <GROUP id="{A79C9093-D329-37A0-AEE1-CF7BDC5C60DE}" name="AudioEngine">
+        <FILE id="HVUNoB" name="MidiProcessor.cpp" compile="1" resource="0"
+              file="Source/MidiProcessor.cpp"/>
+        <FILE id="fTHaS5" name="MidiProcessor.h" compile="0" resource="0" file="Source/MidiProcessor.h"/>
         <FILE id="hjpDyz" name="BPMDetector.h" compile="0" resource="0" file="Source/AudioEngine/BPMDetector.h"/>
         <FILE id="o9JJ69" name="Compressor.cpp" compile="1" resource="0" file="Source/AudioEngine/Compressor.cpp"/>
         <FILE id="hbCowv" name="Compressor.h" compile="0" resource="0" file="Source/AudioEngine/Compressor.h"/>
@@ -418,6 +401,23 @@
         <FILE id="RViUJy" name="SelectionModel.h" compile="0" resource="0"
               file="Source/SelectionModel.h"/>
         <GROUP id="{19B8F02D-4185-9D0D-F820-8F1C70EECC53}" name="Components">
+          <FILE id="a3Ycus" name="DragConstrainer.h" compile="0" resource="0"
+                file="Source/DragConstrainer.h"/>
+          <FILE id="eU4D9d" name="ImageToggleButton.cpp" compile="1" resource="0"
+                file="Source/ImageToggleButton.cpp"/>
+          <FILE id="RQjYkB" name="ImageToggleButton.h" compile="0" resource="0"
+                file="Source/ImageToggleButton.h"/>
+          <FILE id="FrxMcy" name="ResizeConstrainer.h" compile="0" resource="0"
+                file="Source/ResizeConstrainer.h"/>
+          <FILE id="qpua8K" name="ComponentTreeDebugger.cpp" compile="1" resource="0"
+                file="Source/ComponentTreeDebugger.cpp"/>
+          <FILE id="a01BeC" name="ComponentTreeDebugger.h" compile="0" resource="0"
+                file="Source/ComponentTreeDebugger.h"/>
+          <FILE id="zrKOiF" name="BounceDialog.cpp" compile="1" resource="0"
+                file="Source/BounceDialog.cpp"/>
+          <FILE id="tIOHpC" name="BounceDialog.h" compile="0" resource="0" file="Source/BounceDialog.h"/>
+          <FILE id="Z3pqNA" name="FadeDialog.cpp" compile="1" resource="0" file="Source/FadeDialog.cpp"/>
+          <FILE id="OhZpcQ" name="FadeDialog.h" compile="0" resource="0" file="Source/FadeDialog.h"/>
           <FILE id="EyKggG" name="AudioLevelMeter.cpp" compile="1" resource="0"
                 file="Source/AudioLevelMeter.cpp"/>
           <FILE id="kyoNdE" name="AudioLevelMeter.h" compile="0" resource="0"
@@ -526,6 +526,19 @@
                 file="Source/TransportDisplayComponent.h"/>
         </GROUP>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
+          <FILE id="sjpUIx" name="SwitchSignalModule.cpp" compile="1" resource="0"
+                file="Source/SwitchSignalModule.cpp"/>
+          <FILE id="VTO5e3" name="SwitchSignalModule.h" compile="0" resource="0"
+                file="Source/SwitchSignalModule.h"/>
+          <FILE id="RhgNHw" name="SwitchValueModule.cpp" compile="1" resource="0"
+                file="Source/SwitchValueModule.cpp"/>
+          <FILE id="ITGRrZ" name="SwitchValueModule.h" compile="0" resource="0"
+                file="Source/SwitchValueModule.h"/>
+          <FILE id="YM0PJP" name="GainModule.cpp" compile="1" resource="0" file="Source/GainModule.cpp"/>
+          <FILE id="fSJtEN" name="GainModule.h" compile="0" resource="0" file="Source/GainModule.h"/>
+          <FILE id="AKcJ6L" name="VocoderModule.cpp" compile="1" resource="0"
+                file="Source/VocoderModule.cpp"/>
+          <FILE id="jkEyAS" name="VocoderModule.h" compile="0" resource="0" file="Source/VocoderModule.h"/>
           <FILE id="fgy3RI" name="ValueToEvent.cpp" compile="1" resource="0"
                 file="Source/ValueToEvent.cpp"/>
           <FILE id="Sd44YT" name="ValueToEvent.h" compile="0" resource="0" file="Source/ValueToEvent.h"/>

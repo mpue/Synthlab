@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Tracks>
+  <Track name="MIDI 2" type="instrument" midiChannel="1" plugin="Co-Producer">
+    <Regions/>
+  </Track>
+  <Track name="Detroit Drums Basic Full Groove 01_A_120-Wavetick" type="audio">
+    <Regions>
+      <Region name="Detroit Drums Basic Full Groove 01_A_120-Wavetick" clipRefId="Detroit Drums Basic Full Groove 01_A_120-Wavetick"
+              sampleOffset="0" numSamples="384001" width="440"/>
+      <Region name="Detroit Drums Basic Full Groove 01_A_120-Wavetick" clipRefId="Detroit Drums Basic Full Groove 01_A_120-Wavetick"
+              sampleOffset="384000" numSamples="384001" width="440"/>
+      <Region name="Detroit Drums Basic Full Groove 01_A_120-Wavetick" clipRefId="Detroit Drums Basic Full Groove 01_A_120-Wavetick"
+              sampleOffset="768000" numSamples="384001" width="440"/>
+      <Region name="Detroit Drums Basic Full Groove 01_A_120-Wavetick" clipRefId="Detroit Drums Basic Full Groove 01_A_120-Wavetick"
+              sampleOffset="1152000" numSamples="384001" width="440"/>
+    </Regions>
+  </Track>
+  <Track name="MIDI 4" type="instrument" midiChannel="2" plugin="VPS Avenger">
+    <Regions/>
+  </Track>
+</Tracks>

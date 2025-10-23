@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Module lock="0" layer="0">
+  <Modules>
+    <Module name="Gate" index="1" x="384" y="248" ui_x="10" ui_y="10" isPrefab="1"
+            prefabId="61" channel="1">
+      <Pins>
+        <Pin type="2" name="G" direction="1" index="101" x="110" y="10"/>
+        <Pin type="1" name="E" direction="1" index="102" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Track In" index="2" x="714" y="305" ui_x="170" ui_y="10"
+            isPrefab="1" prefabId="48" volume="0.0">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="201" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="202" x="0" y="30"/>
+        <Pin type="0" name="L" direction="1" index="203" x="110" y="10"/>
+        <Pin type="0" name="R" direction="1" index="204" x="110" y="30"/>
+        <Pin type="1" name="G" direction="0" index="205" x="0" y="50"/>
+        <Pin type="1" name="G" direction="1" index="206" x="110" y="50"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Midi Out" index="3" x="1104" y="230" ui_x="806" ui_y="611"
+            isPrefab="1" prefabId="62">
+      <Pins>
+        <Pin type="1" name="G" direction="0" index="301" x="0" y="10"/>
+        <Pin type="1" name="N" direction="0" index="302" x="0" y="30"/>
+        <Pin type="1" name="C" direction="0" index="303" x="0" y="50"/>
+        <Pin type="1" name="P" direction="0" index="304" x="0" y="70"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Clock" index="4" x="935" y="558" ui_x="935" ui_y="558"
+            isPrefab="1" prefabId="89">
+      <Pins>
+        <Pin type="2" name="G" direction="1" index="401" x="110" y="10"/>
+        <Pin type="1" name="E" direction="1" index="402" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections>
+    <Connection source="2" target="1" a="205" b="102"/>
+    <Connection source="2" target="3" a="206" b="301"/>
+    <Connection source="3" target="2" a="301" b="206"/>
+    <Connection source="4" target="3" a="402" b="303"/>
+  </Connections>
+</Module>

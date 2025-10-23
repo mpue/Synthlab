@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Tracks>
+  <Track name="MIDI 4" type="instrument" midiChannel="1" plugin="VPS Avenger">
+    <Regions/>
+  </Track>
+</Tracks>

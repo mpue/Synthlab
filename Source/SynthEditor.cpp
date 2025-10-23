@@ -51,7 +51,7 @@ SynthEditor::SynthEditor() {
 
 	setSize(1280, 800);
 
-	root = std::make_unique<Module>("Root");
+	root = std::make_shared<Module>("Root");
 
 	selectionModel = SelectionModel();
 
@@ -71,7 +71,7 @@ SynthEditor::SynthEditor(double sampleRate, int buffersize)
 
 	setSize(1280, 800);
 
-	root = std::make_unique<Module>("Root");
+	root = std::make_shared<Module>("Root");
 	Project::getInstance()->setRoot(root.get());
 
 	selectionModel.setRoot(root.get());
@@ -155,6 +155,9 @@ void SynthEditor::paint(Graphics& g)
 }
 
 void SynthEditor::drawConnections(Graphics& g) {
+	if (root == nullptr) {
+		return;
+	}
 	for (int i = 0; i < root->getConnections()->size(); i++) {
 		Connection* c = root->getConnections()->at(i);
 
@@ -934,6 +937,10 @@ bool SynthEditor::isRunning() {
 
 void SynthEditor::setRunning(bool running) {
 
+	auto& bus = FastBus::getInstance();
+
+	bus.publish("running", running);
+
 	this->running = running;
 
 	CriticalSection& c = AudioManager::getInstance()->getDeviceManager()->getAudioCallbackLock();
@@ -1083,13 +1090,28 @@ void SynthEditor::cleanUp() {
 }
 
 void SynthEditor::newFile() {
-	root = std::make_unique<Module>("Root");
-	selectionModel = SelectionModel();
-	selectionModel.setRoot(root.get());
-	setLocked(true);
-	updateProject(File());
-	setLocked(false);
-	repaint();	
+
+	setRunning(false);
+	bool makeNewFile = true;
+	
+	if (isDirty()) {
+		makeNewFile = juce::AlertWindow::showOkCancelBox(juce::AlertWindow::AlertIconType::NoIcon, "Hey!", "You have unsaved resources, wanna start from scratch anyway?");
+	}
+	
+	if (makeNewFile) {
+		Project::getInstance()->getUndoManager()->clearUndoHistory();
+		root = std::make_shared<Module>("Root");
+		Project::getInstance()->setRoot(root.get());
+		selectionModel = SelectionModel();
+		selectionModel.setRoot(root.get());
+		setLocked(true);
+		updateProject(File());
+		setLocked(false);
+		repaint();	
+	}
+
+	setRunning(true);
+
 }
 
 void SynthEditor::loadFromString(juce::String in) {

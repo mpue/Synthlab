@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Module lock="0" layer="0">
+  <Modules>
+    <Module name="GeometryView" index="1" x="1644" y="354" ui_x="1149" ui_y="172"
+            isPrefab="1" prefabId="43">
+      <Pins>
+        <Pin type="4" name="T" direction="0" index="101" x="0" y="10"/>
+        <Pin type="4" name="R" direction="0" index="102" x="0" y="30"/>
+        <Pin type="4" name="S" direction="0" index="103" x="0" y="50"/>
+        <Pin type="5" name="Geom" direction="0" index="104" x="0" y="70"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Box" index="2" x="1450" y="422" ui_x="1372" ui_y="579"
+            isPrefab="1" prefabId="41">
+      <Pins>
+        <Pin type="5" name="Geom" direction="1" index="201" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Sine" index="3" x="616" y="278" ui_x="475" ui_y="441" isPrefab="1"
+            prefabId="71" mono="1">
+      <Pins>
+        <Pin type="2" name="P" direction="0" index="301" x="0" y="10"/>
+        <Pin type="2" name="F" direction="0" index="302" x="0" y="30"/>
+        <Pin type="2" name="A" direction="0" index="303" x="0" y="50"/>
+        <Pin type="0" name="Out" direction="1" index="304" x="110" y="10"/>
+        <Pin type="2" name="V" direction="1" index="305" x="110" y="30"/>
+        <Pin type="2" name="Pb" direction="0" index="306" x="0" y="70"/>
+        <Pin type="2" name="Mod" direction="0" index="307" x="0" y="90"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="P" index="5" x="439" y="366" ui_x="0" ui_y="0" isPrefab="1"
+            prefabId="67" value="36.0">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="501" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="A" index="6" x="439" y="414" ui_x="0" ui_y="0" isPrefab="1"
+            prefabId="67" value="1.0">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="601" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Magnitude" index="7" x="837" y="476" ui_x="881" ui_y="195"
+            isPrefab="1" prefabId="42">
+      <Pins>
+        <Pin type="0" name="In" direction="0" index="701" x="0" y="10"/>
+        <Pin type="2" name="Mag" direction="1" index="702" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Vector" index="8" x="1161" y="537" ui_x="1134" ui_y="628"
+            isPrefab="1" prefabId="44">
+      <Pins>
+        <Pin type="2" name="X" direction="0" index="801" x="0" y="10"/>
+        <Pin type="2" name="Y" direction="0" index="802" x="0" y="30"/>
+        <Pin type="2" name="Z" direction="0" index="803" x="0" y="50"/>
+        <Pin type="4" name="V" direction="1" index="804" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="X" index="9" x="1011" y="538" ui_x="0" ui_y="0" isPrefab="1"
+            prefabId="67" value="1.0">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="901" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Z" index="10" x="1011" y="580" ui_x="0" ui_y="0" isPrefab="1"
+            prefabId="67" value="1.0">
+      <Pins>
+        <Pin type="2" name="V" direction="1" index="1001" x="110" y="10"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Mon L" index="11" x="1037" y="266" ui_x="859" ui_y="56"
+            isPrefab="1" prefabId="66" volume="0.75">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="1101" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="1102" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections>
+    <Connection source="2" target="1" a="201" b="104"/>
+    <Connection source="5" target="3" a="501" b="301"/>
+    <Connection source="6" target="3" a="601" b="303"/>
+    <Connection source="3" target="7" a="304" b="701"/>
+    <Connection source="7" target="8" a="702" b="802"/>
+    <Connection source="9" target="8" a="901" b="801"/>
+    <Connection source="10" target="8" a="1001" b="803"/>
+    <Connection source="8" target="1" a="804" b="102"/>
+    <Connection source="3" target="11" a="304" b="1101"/>
+    <Connection source="11" target="3" a="1101" b="304"/>
+    <Connection source="3" target="11" a="304" b="1102"/>
+    <Connection source="11" target="3" a="1102" b="304"/>
+  </Connections>
+</Module>

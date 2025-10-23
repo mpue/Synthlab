@@ -25,7 +25,8 @@ public:
         VALUE, 
         MATRIX,
         VECTOR,
-        GEOMETRY
+        GEOMETRY,
+        BOOLEAN
     } Type;
     
     virtual Type getType() {

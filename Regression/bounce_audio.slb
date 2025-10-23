@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Module lock="0" layer="0">
+  <Modules>
+    <Module name="Track In" index="1" x="10" y="10" ui_x="10" ui_y="10" isPrefab="1"
+            prefabId="48" volume="0.0">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="101" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="102" x="0" y="30"/>
+        <Pin type="0" name="L" direction="1" index="103" x="110" y="10"/>
+        <Pin type="0" name="R" direction="1" index="104" x="110" y="30"/>
+        <Pin type="1" name="G" direction="0" index="105" x="0" y="50"/>
+        <Pin type="1" name="G" direction="1" index="106" x="110" y="50"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Mon L" index="2" x="170" y="10" ui_x="170" ui_y="10" isPrefab="1"
+            prefabId="66" volume="0.75">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="201" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="202" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Track In" index="3" x="10" y="10" ui_x="10" ui_y="10" isPrefab="1"
+            prefabId="48" volume="0.0">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="301" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="302" x="0" y="30"/>
+        <Pin type="0" name="L" direction="1" index="303" x="110" y="10"/>
+        <Pin type="0" name="R" direction="1" index="304" x="110" y="30"/>
+        <Pin type="1" name="G" direction="0" index="305" x="0" y="50"/>
+        <Pin type="1" name="G" direction="1" index="306" x="110" y="50"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Aux 1" index="4" x="170" y="10" ui_x="170" ui_y="10" isPrefab="1"
+            prefabId="77" volume="0.8100000023841858">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="401" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="402" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections>
+    <Connection source="1" target="2" a="103" b="201"/>
+    <Connection source="1" target="2" a="104" b="202"/>
+    <Connection source="3" target="4" a="303" b="401"/>
+    <Connection source="3" target="4" a="304" b="402"/>
+  </Connections>
+</Module>

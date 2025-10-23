@@ -35,6 +35,7 @@
 #include "MessageBus/MessageBus.h"
 #include "CompareModule.h"
 #include "MidiOut.h"
+#include "VocoderModule.h"
 
 void ModuleUtils::loadStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections, juce::ValueTree* v, ChangeBroadcaster* broadcaster) {
 	ValueTree mods = v->getChildWithName("Modules");
@@ -472,6 +473,13 @@ void ModuleUtils::configureModule(Module* m, ValueTree& mod, ChangeBroadcaster* 
 
 	if ((pum = dynamic_cast<PublisherModule*>(m)) != nullptr) {
 		pum->setTopic(mod.getProperty("topic").toString());
+	}
+
+	VocoderModule* vm = nullptr;
+
+	if ((vm = dynamic_cast<VocoderModule*>(m)) != nullptr) {
+		// Vocoder hat Properties die automatisch über das Property-System geladen werden
+		// Die Werte werden beim loadModule bereits gesetzt, hier ist nichts zu tun
 	}
 
 	broadcaster->addChangeListener(m);

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Tracks>
+  <Track name="Das Lied vom Drachenkind" type="audio">
+    <Regions>
+      <Region name="Das Lied vom Drachenkind" clipRefId="Das Lied vom Drachenkind"
+              sampleOffset="0" numSamples="9838079" width="8198"/>
+    </Regions>
+  </Track>
+  <Track name="Das verborgene Ich" type="audio">
+    <Regions>
+      <Region name="Das verborgene Ich" clipRefId="Das verborgene Ich" sampleOffset="9504000"
+              numSamples="12911999" width="10759"/>
+    </Regions>
+  </Track>
+  <Track name="new" type="instrument" midiChannel="1" plugin="DUNE 3">
+    <Regions>
+      <Region name="" sampleOffset="9517056" numSamples="1179136" width="982">
+        <Events>
+          <Event type="noteon" note="62" channel="1" velocity="37" timestamp="16000.0"/>
+          <Event type="noteon" note="55" channel="1" velocity="89" timestamp="376320.0"/>
+          <Event type="noteoff" note="62" channel="1" velocity="0" timestamp="380416.0"/>
+          <Event type="noteon" note="57" channel="1" velocity="82" timestamp="503424.0"/>
+          <Event type="noteoff" note="55" channel="1" velocity="0" timestamp="507264.0"/>
+          <Event type="noteon" note="62" channel="1" velocity="60" timestamp="644992.0"/>
+          <Event type="noteoff" note="57" channel="1" velocity="0" timestamp="645888.0"/>
+          <Event type="noteon" note="64" channel="1" velocity="84" timestamp="879872.0"/>
+          <Event type="noteoff" note="62" channel="1" velocity="0" timestamp="882304.0"/>
+          <Event type="noteon" note="65" channel="1" velocity="67" timestamp="915584.0"/>
+          <Event type="noteoff" note="64" channel="1" velocity="0" timestamp="918144.0"/>
+          <Event type="noteoff" note="65" channel="1" velocity="0" timestamp="1.179136e6"/>
+        </Events>
+      </Region>
+    </Regions>
+  </Track>
+</Tracks>

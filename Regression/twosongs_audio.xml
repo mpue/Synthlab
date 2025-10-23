@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Project trackLength="600" name="twosongs_audio" sampleRate="44100.0"
+         bufferSize="128" tempo="120.0">
+  <AudioFiles>
+    <File refId="Das Lied vom Drachenkind" path="C:\Users\mpue\Downloads\Das Lied vom Drachenkind.wav"/>
+    <File refId="Das verborgene Ich" path="C:\Users\mpue\Downloads\Das verborgene Ich.wav"/>
+  </AudioFiles>
+</Project>

@@ -40,12 +40,7 @@ MidiOut::MidiOut()
 
 MidiOut::~MidiOut()
 {
-    currentMidiOutput.reset();
-    
-    delete deviceValue;
-    delete deviceListener;
-    delete channelValue;
-    delete channelListener;
+    currentMidiOutput.reset();   
 }
 
 void MidiOut::configurePins() {
@@ -327,12 +322,12 @@ juce::Array<juce::PropertyComponent*>& MidiOut::getProperties() {
 
 void MidiOut::createProperties() {
     // Device selection
-    deviceValue = new juce::Value(selectedMidiOutputIndex);
-    deviceListener = new DeviceListener(*deviceValue, this);
+    deviceValue = std::make_unique<juce::Value>(selectedMidiOutputIndex);
+    deviceListener = std::make_unique<DeviceListener>(*deviceValue, this);
     
     // Channel selection
-    channelValue = new juce::Value(midiChannel);
-    channelListener = new ChannelListener(*channelValue, this);
+    channelValue = std::make_unique<juce::Value>(midiChannel);
+    channelListener = std::make_unique<ChannelListener>(*channelValue, this);
     
     // Create property components
     juce::Array<juce::var> deviceValues;

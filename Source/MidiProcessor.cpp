@@ -1,4 +1,4 @@
-﻿/*  MidiProcessor.cpp
+/*  MidiProcessor.cpp
  *  Queue-based implementation
  */
 
@@ -13,6 +13,7 @@
 #include "Knob.h"                // for MIDI controller knobs
 #include "PluginModule.h"         // for plugin modules
 #include "TrackIn.h"
+#include "MessageBus/FastBus.h"
 
 using namespace juce;
 
@@ -25,7 +26,20 @@ MidiProcessor::MidiProcessor(SynthEditor* root,
 	startTimer(2);
 	setMidiClockBPM(120.0);
 	startMidiClock();
+	auto& bus = FastBus::getInstance();
 
+	bus.subscribe<bool>("running", [this](const FastTopic<bool>& topic) {
+		running = topic.getValue();
+		if (!running) {
+			// Clear MIDI queue when stopping
+			std::lock_guard<std::mutex> g(queueMutex);
+			midiQueue.clear();
+			stopTimer();
+		}
+		if (!isTimerRunning() && running) {
+			startTimer(2);
+		}
+	});
 }
 
 /* 1) High-priority MIDI callback – enqueue only, never heavy work! */
@@ -41,6 +55,9 @@ void MidiProcessor::handleIncomingMidiMessage(MidiInput* /*source*/,
 /* 2) Timer thread – dequeues and calls the original routing logic. */
 void MidiProcessor::timerCallback()
 {
+	if (!running)
+		return;
+
 	std::vector<QueuedMidiMessage> local;
 	{
 		std::lock_guard<std::mutex> g(queueMutex);
@@ -56,10 +73,12 @@ void MidiProcessor::timerCallback()
 		const auto now = Time::getMillisecondCounter();
 		if (now - lastClockTimeMs >= clockIntervalMs)
 		{
-			for (auto* mod : *editor->getModule()->getModules())
-			{
-				sendMidiClockMessage(mod, activeChannel.load());
+			if (editor->getModule()) {
+				for (auto* mod : *editor->getModule()->getModules())
+				{
+					sendMidiClockMessage(mod, activeChannel.load());
 
+				}
 			}
 			lastClockTimeMs = now;
 		}

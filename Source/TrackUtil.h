@@ -245,21 +245,21 @@ public:
 		std::set<int> usedChannels;
 		std::vector<Track*> tracks = navigator->getTracks();
 
-		// Sammle alle verwendeten MIDI-Kanäle
+		// Sammle alle verwendeten MIDI-KanÃ¤le
 		for (const auto& track : tracks) {
 			if (track->getType() == Track::Type::MIDI || track->getType() == Track::Type::INSTRUMENT) {
 				usedChannels.insert(track->getMidiChannel());
 			}
 		}
 
-		// Finde den ersten freien Kanal (normalerweise 1-16 für MIDI)
+		// Finde den ersten freien Kanal (normalerweise 1-16 fÃ¼r MIDI)
 		for (int channel = 1; channel <= 16; channel++) {
 			if (usedChannels.find(channel) == usedChannels.end()) {
 				return channel;
 			}
 		}
 
-		// Falls alle Kanäle belegt sind, gib den ersten zurück (oder handle den Fehlerfall)
+		// Falls alle KanÃ¤le belegt sind, gib den ersten zurÃ¼ck (oder handle den Fehlerfall)
 		return 1;
 	}
 

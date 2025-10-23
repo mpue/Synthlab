@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Tracks>
+  <Track name="burners_turners_remix (Cover)" type="audio">
+    <Regions>
+      <Region name="burners_turners_remix (Cover)" clipRefId="burners_turners_remix (Cover)"
+              sampleOffset="0" numSamples="11387519" width="9489"/>
+    </Regions>
+  </Track>
+</Tracks>

@@ -68,6 +68,7 @@ ExtendedFileBrowser::ExtendedFileBrowser(const File& initialFileOrDirectory,cons
     loadState();
     
     model->update();
+	setWantsKeyboardFocus(true);
 
     repaint();
 }
@@ -110,6 +111,9 @@ void ExtendedFileBrowser::changeListenerCallback (ChangeBroadcaster* source) {
 }
 
 void ExtendedFileBrowser::mouseDown(const juce::MouseEvent &event) {
+
+	grabKeyboardFocus();
+
     if (table->getSelectedRow() > 0) {
         File* f = new File(model->getDirectoryList()->getFile(table->getSelectedRow()));
         if (f->exists()) {

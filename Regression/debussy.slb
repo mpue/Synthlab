@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Module lock="0" layer="0">
+  <Modules>
+    <Module name="Gate" index="1" x="10" y="10" ui_x="10" ui_y="10" isPrefab="1"
+            prefabId="61" channel="1">
+      <Pins>
+        <Pin type="2" name="G" direction="1" index="101" x="110" y="10"/>
+        <Pin type="1" name="E" direction="1" index="102" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Track In" index="2" x="170" y="10" ui_x="170" ui_y="10"
+            isPrefab="1" prefabId="48" volume="0.0">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="201" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="202" x="0" y="30"/>
+        <Pin type="0" name="L" direction="1" index="203" x="110" y="10"/>
+        <Pin type="0" name="R" direction="1" index="204" x="110" y="30"/>
+        <Pin type="1" name="G" direction="0" index="205" x="0" y="50"/>
+        <Pin type="1" name="G" direction="1" index="206" x="110" y="50"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Plugin" index="3" x="330" y="10" ui_x="330" ui_y="10" isPrefab="1"
+            prefabId="79" plugin="Fabric Piano" currentProgram="0" state="VkMyIX8HAAA8P3htbCB2ZXJzaW9uPSIxLjAiIGVuY29kaW5nPSJVVEYtOCI/PiA8VlNUM1BsdWdpblN0YXRlPjxJQ29tcG9uZW50PjEzNjEuQU1qVVNBLi4uLi5WdkVsYWpZVFhoSVdaaUEuLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uQ3dWWHlNV1ppRUZhZmJqYmc0RlkuZlZZajhFYm9NRmMwSVdZZUFXWHpnbEg1LmhIaHZoQmYuQkhmLkJIZi5CSGYuQkhmLkJIZi5CSGYuaEhrMFZYb013SS4uUFBpOFZjeVFXWmlBQlRvRWxhdU1HLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi5QRUZZeUF4SmYuMGFyazJiLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uYmpiZzRGWWZIQy4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLnZUdVlGY2YuVVhqQS4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uRXdWWWlBQlRvRWxhdUFCVW80VlkuLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLm5MLi4uLi4uLi4ub0s1aDkuLi52N0MuLi4uLmppaUMrLi4uLjlDLi4uLi4uLi4uLlhhczA3Q0VDSW5PTDBYejkuLi4uN0MuLi52Ty4uLi4rLi4uLjdDLi4udk8uLi4uKy4uLi4uLi4uLjNPLi4uLi4uLi56NkMuLi52Ty4uLi4rLi4uLjdTaEhoWE90MVpLKy4uLi4uLi4uWHlPLi4uLisuLi4uNlN5THlqT1ptY1YrLi4uLjd5cHBweE8uLi5mKy4uLi4uLi4uLjNPLi4uZjkuLi4uOUMuLi52Ty4uLi4uLi4uajVDLi4uLi4uLi4uKy4uLkQ2Qy4udnZPLi4uLisuLi4uN0MuLi52Ty4uLi4uLi4uLjdDLi4ubk8uLi5mKy4uLi43Qy4uLnZPLi4uLisuLi4uN1NOTk5sTy4uLi4rLi4uLjhDLi5Idk8uLi4uKy4uLi41Qy4uLnZPLi4uLisuLi4uN0MuLi4uLi4uLmYrLi4uLi4uLi4uLi4uLi44OS4uLi43Qy4uLnZPLi4uLisuLi4uLi4uLlh4Ty4uLi4uLi4uMTdDLi4udk8uLi52OW4rK0M0Qy4udjFPLi4uLisuLi4uLi4uLi5uTy4uLi4uLi4uLjlDLi4ubk8uLi5YKy4uLi43Qy4uLi4uLi4ubzkuLi4uLi4uLi52Ty4uLnc5Li4uTDdDLi4udk8uLi4uKy4uLi43Qy4uLi4uLi4uLisuLi4uNUMuLi4zTy4uLi4rLi4uLjdDLi4udk8uLi4uK2ppaWk0Qy4uLnZPLi4uUCsuLi5CN0MuLi52Ty4uLmY5Li4uLjdDLi4udk8uLi4uKy4uLno2Qy4uLjNPLi4uVCsuLi41N0MuLi4uLjNkNk0rLi4uLjdDLi4udk8uLi4uLkhLZWg0Qy4uLi4uWmxZRjkuLi4uLlBrVFJ3Ty4uLmYrLi4uLi4uLi4udk8uLi4uLi4uLi44Qy4uLjNPLi4uLi4uLi4uNWlwd0tvTy4uLi4uVEtzejdDLi4uLi4uLi4uLi4uLi4uLi4uM3dPLi4uLi4uLi4uLi4uLi53Ty4uLnk5Ykd5cUhDLi4udk8uLi5mKy4uLi4uLi4uUHFPLi4uUCsuLi50N0MuLi5QTy4uLi4rLi4uLi4uLi4uLi4uLi5mNy4uLi45Qy4uLi4uLi4uLi4uLi4uLi4uLi4uLi4uLmYrREpuZjdDaEdkdk8rNnUrOWYzZ0c3Qy4uLi4uLi4uLi4uLi4uOUMuLi52Ty4uLi4rLi4uLjdDLi4uLi4uLi5mKy4uLi43Qy4uLi4uLi5mRisuLi4uLi4uLmZoTy4uLi4rLi4uLi4uLi5QdE8uLi4uLi4uLmY1Qy4uZjFPLi5mSSsuLi5yNkMuLi4uLi4uLmYrN29tZDVTRFlld09xcXQ1OS4uLi45UzZyeTFPU0pvRCtYZDRrOFN2MW9iT0k0RmNvMFZYelVGSEdJV1h0UUYuUElVUVNVRFVORVRTRTguLi4uLi4uLi4uLi4uLi5uVFVDVURUeGtsY2dRV1lERUZjZ0FQLkFIVGR2RTFieUFQLkFMLi5jLi4uLi4uLi4uZlJVTVRRUElXWjFFRmNrUVRYekVGPC9JQ29tcG9uZW50PjwvVlNUM1BsdWdpblN0YXRlPgA=">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="301" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="302" x="0" y="30"/>
+        <Pin type="0" name="L" direction="1" index="303" x="110" y="10"/>
+        <Pin type="0" name="R" direction="1" index="304" x="110" y="30"/>
+        <Pin type="1" name="G" direction="0" index="305" x="0" y="50"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Out 1" index="4" x="330" y="10" ui_x="330" ui_y="10" isPrefab="1"
+            prefabId="66" volume="0.75">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="401" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="402" x="0" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections>
+    <Connection source="2" target="1" a="205" b="102"/>
+    <Connection source="3" target="2" a="305" b="206"/>
+    <Connection source="3" target="4" a="303" b="401"/>
+    <Connection source="3" target="4" a="304" b="402"/>
+  </Connections>
+</Module>

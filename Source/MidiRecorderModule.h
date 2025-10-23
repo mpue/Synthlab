@@ -3,6 +3,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "MidiRecorder/MidiRecorder.h"
 #include "Module.h"
+#include <memory>
 
 //==============================================================================
 // Enhanced MidiRecorderModule with MIDI file support and trigger input
@@ -113,13 +114,13 @@ private:
 	juce::File lastLoadedFile;       // Track loaded file
 	bool hasUnsavedChanges = false;  // Track if sequence has changes
 
-	juce::Value* tempoValue;
-	juce::Value* recordingStateValue;
-	juce::Value* playingStateValue;
+	std::unique_ptr<juce::Value> tempoValue;
+	std::unique_ptr<juce::Value> recordingStateValue;
+	std::unique_ptr<juce::Value> playingStateValue;
 
-	TempoListener* tempoListener = nullptr;
-	RecordingStateListener* recordingStateListener = nullptr;
-	PlayingStateListener* playingStateListener = nullptr;
+	std::unique_ptr<TempoListener> tempoListener;
+	std::unique_ptr<RecordingStateListener> recordingStateListener;
+	std::unique_ptr<PlayingStateListener> playingStateListener;
 
 	juce::PropertyComponent* tempoProperty = nullptr;
 	juce::PropertyComponent* recordingStateProperty = nullptr;

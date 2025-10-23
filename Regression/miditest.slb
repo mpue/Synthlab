@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Module lock="0" layer="0">
+  <Modules>
+    <Module name="Gate" index="1" x="10" y="10" ui_x="10" ui_y="10" isPrefab="1"
+            prefabId="61" channel="1">
+      <Pins>
+        <Pin type="2" name="G" direction="1" index="101" x="110" y="10"/>
+        <Pin type="1" name="E" direction="1" index="102" x="110" y="30"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+    <Module name="Track In" index="2" x="170" y="10" ui_x="170" ui_y="10"
+            isPrefab="1" prefabId="48" volume="0.0">
+      <Pins>
+        <Pin type="0" name="L" direction="0" index="201" x="0" y="10"/>
+        <Pin type="0" name="R" direction="0" index="202" x="0" y="30"/>
+        <Pin type="0" name="L" direction="1" index="203" x="110" y="10"/>
+        <Pin type="0" name="R" direction="1" index="204" x="110" y="30"/>
+        <Pin type="1" name="G" direction="0" index="205" x="0" y="50"/>
+        <Pin type="1" name="G" direction="1" index="206" x="110" y="50"/>
+      </Pins>
+      <Modules/>
+      <Connections/>
+    </Module>
+  </Modules>
+  <Connections/>
+</Module>

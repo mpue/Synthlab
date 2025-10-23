@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Project trackLength="600" name="eq_audio" sampleRate="44100.0" bufferSize="128"
+         tempo="120.0">
+  <AudioFiles/>
+</Project>

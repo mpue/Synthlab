@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Project trackLength="600" name="productiontest1_audio" sampleRate="44100.0"
+         bufferSize="128" tempo="120.0">
+  <AudioFiles>
+    <File refId="Detroit Drums Basic Full Groove 01_A_120-Wavetick" path="C:\ProgramData\Output\Co-Producer\Renders\Detroit Drums Basic Full Groove 01_A_120-Wavetick.wav"/>
+  </AudioFiles>
+</Project>

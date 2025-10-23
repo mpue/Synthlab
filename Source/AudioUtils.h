@@ -44,7 +44,7 @@ namespace AudioUtils
      */
     static void normalizeBuffer(AudioSampleBuffer& buffer)
     {
-        // Finde den höchsten Absolutwert im gesamten Buffer
+        // Finde den hÃ¶chsten Absolutwert im gesamten Buffer
         float maxLevel = 0.0f;
 
         for (int channel = 0; channel < buffer.getNumChannels(); ++channel)
@@ -56,7 +56,7 @@ namespace AudioUtils
             maxLevel = jmax(maxLevel, jmax(std::abs(channelMax), std::abs(channelMin)));
         }
 
-        // Normalisiere nur wenn nötig (vermeide Division durch 0)
+        // Normalisiere nur wenn nÃ¶tig (vermeide Division durch 0)
         if (maxLevel > 0.0f && maxLevel != 1.0f)
         {
             float gainFactor = 1.0f / maxLevel;
@@ -112,7 +112,7 @@ namespace AudioUtils
             totalRMS += channelRMS;
         }
 
-        totalRMS /= buffer.getNumChannels(); // Durchschnitt aller Kanäle
+        totalRMS /= buffer.getNumChannels(); // Durchschnitt aller KanÃ¤le
 
         if (totalRMS > 0.0f)
         {

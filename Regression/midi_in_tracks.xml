@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Tracks>
+  <Track name="MIDI 2" type="midi" interface="SSL 12 MIDI">
+    <Regions/>
+  </Track>
+</Tracks>
