@@ -167,8 +167,14 @@ void Track::duplicateRegion(Region* region) {
 		if (zoom > 0)
 			duplicate->setZoom(zoom);
 
-		audioBuffer->copyFrom(0, duplicate->getSampleOffset(), *_region->getBuffer(), 0, 0, _region->getNumSamples());
-		audioBuffer->copyFrom(1, duplicate->getSampleOffset(), *_region->getBuffer(), 1, 0, _region->getNumSamples());
+		if (_region->getBuffer()->getNumChannels() == 1) {
+			audioBuffer->copyFrom(0, duplicate->getSampleOffset(), *_region->getBuffer(), 0, 0, _region->getNumSamples());
+			audioBuffer->copyFrom(1, duplicate->getSampleOffset(), *_region->getBuffer(), 0, 0, _region->getNumSamples());
+		}
+		else {
+			audioBuffer->copyFrom(0, duplicate->getSampleOffset(), *_region->getBuffer(), 0, 0, _region->getNumSamples());
+			audioBuffer->copyFrom(1, duplicate->getSampleOffset(), *_region->getBuffer(), 1, 0, _region->getNumSamples());
+		}
 
 		repaint();
 	}
@@ -261,8 +267,16 @@ void Track::addRegion(String refId, File file, double sampleRate) {
 	if (zoom > 0)
 		region->setZoom(zoom);
 
-	audioBuffer->copyFrom(0, region->getSampleOffset(), *region->getBuffer(), 0, 0, region->getBuffer()->getNumSamples());
-	audioBuffer->copyFrom(1, region->getSampleOffset(), *region->getBuffer(), 1, 0, region->getBuffer()->getNumSamples());
+	// convert to stereo if there's only one channel
+	// TODO : What would be a better solution, keep them as mono and handle each case?
+	if (region->getBuffer()->getNumChannels() == 1) {
+		audioBuffer->copyFrom(0, region->getSampleOffset(), *region->getBuffer(), 0, 0, region->getBuffer()->getNumSamples());
+		audioBuffer->copyFrom(1, region->getSampleOffset(), *region->getBuffer(), 0, 0, region->getBuffer()->getNumSamples());
+	}
+	else {
+		audioBuffer->copyFrom(0, region->getSampleOffset(), *region->getBuffer(), 0, 0, region->getBuffer()->getNumSamples());
+		audioBuffer->copyFrom(1, region->getSampleOffset(), *region->getBuffer(), 1, 0, region->getBuffer()->getNumSamples());
+	}
 
 	repaint();
 }
@@ -645,7 +659,13 @@ const float Track::getSample(int channel, long sample) {
 
 	if (currentRegion != nullptr) {
 		if (sample - currentRegion->getSampleOffset() < getBuffer()->getNumSamples() && sample - currentRegion->getSampleOffset() > 0) {
-			return getBuffer()->getSample(channel, sample - currentRegion->getSampleOffset());
+
+			if (getBuffer()->getNumChannels() == 1) {
+				return getBuffer()->getSample(0, sample - currentRegion->getSampleOffset());
+			}
+			else {
+				return getBuffer()->getSample(channel, sample - currentRegion->getSampleOffset());
+			}			
 		}
 	}
 	return 0;
@@ -894,8 +914,16 @@ void Track::changeListenerCallback(ChangeBroadcaster* source) {
 		audioBuffer->clear(oldoffset, r->getBuffer()->getNumSamples());
 		// copy data from region to tracks audio buffer
 		long numSamples = r->getBuffer()->getNumSamples();
-		audioBuffer->copyFrom(0, sampleOffset, *r->getBuffer(), 0, 0, numSamples);
-		audioBuffer->copyFrom(1, sampleOffset, *r->getBuffer(), 1, 0, numSamples);
+
+		if (r->getBuffer()->getNumChannels() == 1) {
+			audioBuffer->copyFrom(0, sampleOffset, *r->getBuffer(), 0, 0, numSamples);
+			audioBuffer->copyFrom(1, sampleOffset, *r->getBuffer(), 0, 0, numSamples);
+		}
+		else {
+			audioBuffer->copyFrom(0, sampleOffset, *r->getBuffer(), 0, 0, numSamples);
+			audioBuffer->copyFrom(1, sampleOffset, *r->getBuffer(), 1, 0, numSamples);
+		}
+
 	}
 	if (MasterChannelPanel* panel = dynamic_cast<MasterChannelPanel*>(source)) {
 		setVolume(panel->getVolume());

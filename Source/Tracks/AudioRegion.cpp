@@ -117,9 +117,16 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
     this->setThumbnailBounds(other->getThumbnailBounds());
     
     audioBuffer = new AudioSampleBuffer(2, other->getBuffer()->getNumSamples());
-    audioBuffer->copyFrom(0, 0, *other->getBuffer(), 0, 0, other->getBuffer()->getNumSamples());
-    audioBuffer->copyFrom(1, 0, *other->getBuffer(), 1, 0, other->getBuffer()->getNumSamples());
-    
+
+    if (other->getBuffer()->getNumChannels() == 1) {
+        audioBuffer->copyFrom(0, 0, *other->getBuffer(), 0, 0, other->getBuffer()->getNumSamples());
+        audioBuffer->copyFrom(1, 0, *other->getBuffer(), 0, 0, other->getBuffer()->getNumSamples());
+    }
+    else {
+        audioBuffer->copyFrom(0, 0, *other->getBuffer(), 0, 0, other->getBuffer()->getNumSamples());
+        audioBuffer->copyFrom(1, 0, *other->getBuffer(), 1, 0, other->getBuffer()->getNumSamples());
+    }
+        
     this->thumbnail->reset(2, sampleRate);
     this->thumbnail->addBlock(0, *audioBuffer, 0,other->getBuffer()->getNumSamples());
     
