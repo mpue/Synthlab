@@ -1,3 +1,27 @@
+# Project Status (February 2026)
+
+After 466 commits and years of work, I'm archiving this project.
+
+**What I learned:**
+- JUCE framework mastery
+- Complex audio engine architecture
+- VST3 hosting
+- Multi-platform audio development
+
+**Why I'm stopping:**
+- The scope became too large for a solo project
+- I've moved on to other interests (cflux, AI-assisted development)
+- Synthlab was an incredible learning journey, but it's time to let it rest
+
+**For anyone interested:**
+- The code is here, feel free to fork
+- Contact me if you want to continue it
+- I'm proud of what I built, even if it's not "finished"
+
+Thanks to everyone who starred this project. ❤️
+
+Original tetx below:
+
 # Synthlab
 Modular Synthesizer Studio
 
