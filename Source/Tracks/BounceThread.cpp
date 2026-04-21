@@ -1,4 +1,4 @@
-﻿/**
+/**
 * BounceThread.cpp
 *
 * Thread to handle non-realtime audio bouncing/rendering to a file.
@@ -78,6 +78,15 @@ void BounceThread::run()
 
 	auto fastCos = [](double x) -> float { return static_cast<float>(std::cos(x)); };
 	auto fastSin = [](double x) -> float { return static_cast<float>(std::sin(x)); };
+
+	// Force all track positions to -1 so the first setSamplePosition(0) call
+	// always dispatches MIDI events. Without this, the samplePosition==0 guard
+	// in Track::setSamplePosition skips the first block, silencing synth notes
+	// that start at t=0.
+	for (auto* track : main->navigator->getTracks()) {
+		if (track)
+			track->forcePositionReset();
+	}
 
 	int blocksWithAudio = 0;
 	float maxMagnitude = 0.0f;

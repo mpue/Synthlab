@@ -1505,7 +1505,26 @@ void SynthEditor::openTracks(File file)
 				juce::Point<int> pos = juce::Point<int>(10, 10);
 				Track* t = navigator->addTrack(Track::Type::INSTRUMENT, Project::getInstance()->getSampleRate());
 				ti->setTrack(t);
-				t->setMidiChannel(track.getProperty("midiChannel").toString().getIntValue(), false);								
+				t->setMidiChannel(track.getProperty("midiChannel").toString().getIntValue(), false);
+
+				// Re-link the PluginModule to the track.
+				// The TrackIn's event-out pin (index 5) is connected to the PluginModule's
+				// event-in pin. We find the PluginModule by matching against that connected pin.
+				auto& tiPins = ti->getPins();
+				if (tiPins.size() > 5 && !tiPins.at(5)->getConnections().empty()) {
+					Pin* connectedPin = tiPins.at(5)->getConnections().at(0);
+					for (auto* mod : *getModule()->getModules()) {
+						if (auto* pm = dynamic_cast<PluginModule*>(mod)) {
+							for (auto* pin : pm->getPins()) {
+								if (pin == connectedPin) {
+									t->setPluginModule(pm);
+									break;
+								}
+							}
+						}
+					}
+				}
+
 				loadMidiRegions(track, t);
 			}
 		}

@@ -123,6 +123,7 @@ public:
     
     void setSamplePosition(int position);
     int getSamplePosition();
+    void forcePositionReset();  // invalidates samplePosition so next setSamplePosition always dispatches MIDI
 
     void setCurrentMarkerPosition(int pos);
 

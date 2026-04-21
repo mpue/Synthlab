@@ -620,6 +620,16 @@ void Track::sendAllNotesOff()
 	activeNoteNumbers.clear();
 }
 
+void Track::forcePositionReset()
+{
+	// Set samplePosition to -1 so the next setSamplePosition call always
+	// dispatches MIDI events, even when the new position is 0.
+	// Used before bounce/export to ensure notes at t=0 are not skipped.
+	samplePosition = -1;
+	activeNoteNumbers.clear();
+	lastActiveRegion = nullptr;
+}
+
 int Track::getSamplePosition()
 {
 	if (samplePosition < 0)
