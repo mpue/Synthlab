@@ -47,7 +47,6 @@ void MidiProcessor::handleIncomingMidiMessage(MidiInput* /*source*/,
 	const MidiMessage& message)
 {
 	const double tsSec = Time::getMillisecondCounterHiRes() * 0.001;
-	activeChannel.store(message.getChannel());	
 	std::lock_guard<std::mutex> g(queueMutex);
 	midiQueue.emplace_back(message, tsSec);
 }
@@ -240,29 +239,29 @@ void MidiProcessor::sendMidiClockMessage(Module* module, int channel)
 }
 
 void MidiProcessor::refreshMidiInputs() {
-	auto inputs = MidiInput::getDevices();
+	auto inputs = MidiInput::getAvailableDevices();
 	for (const auto& input : inputs) {
-		if (deviceManager->isMidiInputEnabled(input)) {
-			deviceManager->removeMidiInputCallback(input, this);
-			deviceManager->addMidiInputCallback(input, this);
+		if (deviceManager->isMidiInputDeviceEnabled(input.identifier)) {
+			deviceManager->removeMidiInputDeviceCallback(input.identifier, this);
+			deviceManager->addMidiInputDeviceCallback(input.identifier, this);
 		}
 	}
 }
 
 void MidiProcessor::enableAllMidiInputs() {
-	auto inputs = MidiInput::getDevices();
+	auto inputs = MidiInput::getAvailableDevices();
 	for (const auto& input : inputs) {
-		if (deviceManager->isMidiInputEnabled(input)) {
-			deviceManager->addMidiInputCallback(input, this);
+		if (deviceManager->isMidiInputDeviceEnabled(input.identifier)) {
+			deviceManager->addMidiInputDeviceCallback(input.identifier, this);
 		}
 	}
 }
 
 void MidiProcessor::disableAllMidiInputs() {
-	auto inputs = MidiInput::getDevices();
+	auto inputs = MidiInput::getAvailableDevices();
 	for (const auto& input : inputs) {
-		if (deviceManager->isMidiInputEnabled(input)) {
-			deviceManager->removeMidiInputCallback(input, this);
+		if (deviceManager->isMidiInputDeviceEnabled(input.identifier)) {
+			deviceManager->removeMidiInputDeviceCallback(input.identifier, this);
 		}
 	}
 }

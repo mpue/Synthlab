@@ -55,9 +55,9 @@ public:
 
     // === TOOLS ===
     enum class Tool {
-        SELECT,     // Auswählen/Bewegen
+        SELECT,     // Auswï¿½hlen/Bewegen
         PENCIL,     // Noten zeichnen  
-        ERASER,     // Noten löschen
+        ERASER,     // Noten lï¿½schen
         RESIZE,     // Noten dehnen
         VELOCITY,   // Velocity editieren
         SPLIT,      // Noten teilen
@@ -128,7 +128,7 @@ public:
 
     std::map<MidiMessage*, std::tuple<double, int, double>> originalNotePositions; // startTime, pitch, endTime
 
-    // Und diese Methode hinzufügen:
+    // Und diese Methode hinzufï¿½gen:
     void mouseMove(const juce::MouseEvent& e) override;
 
     bool keyPressed(const juce::KeyPress& key, juce::Component*) override;
@@ -144,6 +144,8 @@ public:
     std::function<void(const std::set<MidiMessage*>&)> onSelectionChanged;
     std::function<void(MidiMessage*, int oldVelocity, int newVelocity)> onVelocityChanged;
     std::function<void()> onRegionModified;
+    std::function<void(double)> onMarkerPositionChanged; // samplePosition â†’ track marker
+    std::function<void()> onPlayToggle;                  // spacebar â†’ play/stop
 
     // Quick navigation shortcuts
     void moveSelectedNotesUp(bool octave = false) {

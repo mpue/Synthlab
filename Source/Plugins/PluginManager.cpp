@@ -33,7 +33,7 @@ PluginManager* PluginManager::instance = NULL;
 
 PluginManager::PluginManager() {
     apfm = new AudioPluginFormatManager();
-    apfm->addDefaultFormats();
+    addDefaultFormatsToManager(*apfm);
 }
 
 void PluginManager::scanPlugins() {

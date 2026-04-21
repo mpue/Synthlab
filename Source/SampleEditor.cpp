@@ -31,9 +31,9 @@ SampleEditor::SampleEditor (int buffersize, float sampleRate, AudioFormatManager
     
     AudioDeviceManager* deviceManager = AudioManager::getInstance()->getDeviceManager();
     
-    for (int i = 0; i < MidiInput::getDevices().size();i++) {
-        if (deviceManager->isMidiInputEnabled(MidiInput::getDevices().getReference(i))) {
-            deviceManager->addMidiInputCallback(MidiInput::getDevices().getReference(i),this);
+    for (auto& device : MidiInput::getAvailableDevices()) {
+        if (deviceManager->isMidiInputDeviceEnabled(device.identifier)) {
+            deviceManager->addMidiInputDeviceCallback(device.identifier, this);
         }
     }
     
@@ -51,9 +51,9 @@ SampleEditor::~SampleEditor()
 
     AudioDeviceManager* deviceManager = AudioManager::getInstance()->getDeviceManager();
     
-    for (int i = 0; i < MidiInput::getDevices().size();i++) {
-        if (deviceManager->isMidiInputEnabled(MidiInput::getDevices().getReference(i))) {
-            deviceManager->removeMidiInputCallback(MidiInput::getDevices().getReference(i),this);
+    for (auto& device : MidiInput::getAvailableDevices()) {
+        if (deviceManager->isMidiInputDeviceEnabled(device.identifier)) {
+            deviceManager->removeMidiInputDeviceCallback(device.identifier, this);
         }
     }
     

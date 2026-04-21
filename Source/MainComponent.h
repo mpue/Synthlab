@@ -125,7 +125,6 @@ public:
     }
 
     void setBouncing(bool b) {
-        DBG("Set bouncing", juce::String(b));
         bouncing.store(b);
     }
 
@@ -167,6 +166,7 @@ private:
     virtual juce::PopupMenu getMenuForIndex(int index, const juce::String & menuName) override;
     virtual void menuItemSelected(int menuItemID, int topLevelMenuIndex) override;
     
+    std::unique_ptr<juce::XmlElement> loadAudioConfig();
     void createConfig();
     void createToolbar();
     void createMenu();

@@ -555,31 +555,69 @@ void Track::splitRegion() {
 void Track::setSamplePosition(int position)
 {
 	if ((type == MIDI || type == INSTRUMENT) && position != samplePosition) {
-			
+
 		MidiRegion* r = dynamic_cast<MidiRegion*>(getRegionAt(position));
 
+		// If the active region changed (ended, seeked, or looped back),
+		// stop all currently playing notes to prevent stuck notes.
+		if (r != lastActiveRegion && !activeNoteNumbers.empty()) {
+			sendAllNotesOff();
+		}
+		lastActiveRegion = r;
+
 		if (r != nullptr) {
+			// Use exact bufferSize window – bufferSize*2 caused each message to
+			// appear in two consecutive windows, firing Note-Ons twice but
+			// Note-Offs only once, resulting in stuck notes.
 			vector<MidiMessage*> messages = r->getMessages(position - r->getSampleOffset(),
-				Project::getInstance()->getBufferSize()*2);
-			
+				Project::getInstance()->getBufferSize());
+
 			for (auto* m : messages) {
 				if (m != nullptr) {
-					// Logger::getCurrentLogger()->writeToLog("Midi message at " + String(position) + " : " + String(m->getDescription()));
 					Event* e = new Event();
 					e->setMessage(*m);
 					e->setType(Event::Type::GATE);
 					e->setNote(m->getNoteNumber());
-					if (m->getVelocity() > 127) {
+					if (m->getVelocity() > 127)
 						m->setVelocity(127);
-					}
 					e->setValue(m->isNoteOn() ? m->getVelocity() : 0);
-					// send event to all connected pins
-					notifyListeners(e);					
+
+					// Track which notes are currently on.
+					// Use find+erase(iterator) so that one NoteOff removes exactly
+					// one entry from the multiset - important when two NoteOns for
+					// the same pitch overlap (duplicate notes in the piano roll).
+					if (m->isNoteOn() && m->getVelocity() > 0) {
+						activeNoteNumbers.insert(m->getNoteNumber());
+					}
+					else {
+						auto it = activeNoteNumbers.find(m->getNoteNumber());
+						if (it != activeNoteNumbers.end())
+							activeNoteNumbers.erase(it);
+					}
+
+					notifyListeners(e);
 				}
 			}
 		}
 	}
 	this->samplePosition = position;
+}
+
+void Track::sendAllNotesOff()
+{
+	// Build a unique set so we send exactly one NoteOff per pitch,
+	// even if the multiset contains duplicate entries for the same note.
+	std::set<int> unique(activeNoteNumbers.begin(), activeNoteNumbers.end());
+	for (int note : unique) {
+		juce::MidiMessage noteOff = juce::MidiMessage::noteOff(midiChannel, note, (juce::uint8)0);
+		Event* e = new Event();
+		e->setMessage(noteOff);
+		e->setType(Event::Type::GATE);
+		e->setNote(note);
+		e->setValue(0);
+		notifyListeners(e);
+	}
+	activeNoteNumbers.clear();
 }
 
 int Track::getSamplePosition()

@@ -1,4 +1,4 @@
-﻿/*
+/*
   ==============================================================================
 
 	This file was auto-generated!
@@ -87,8 +87,28 @@ MainComponent::MainComponent() : resizerBar(&stretchableManager, 1, true)
 	// you add any child components.
 	setSize(1280, 800);
 
-	// specify the number of input and output channels that we want to open
+	// Step 1: always open the system default device first – this guarantees that
+	// the AudioSourcePlayer is properly connected and delivering callbacks.
 	setAudioChannels(2, 2);
+
+	// Step 2: if a saved config exists, switch to it after a short delay.
+	// This replicates what the user has to do manually ("switch to internal,
+	// then switch to Tascam") – some USB interfaces only work when the device
+	// manager performs an explicit device switch rather than opening them cold.
+	auto savedAudioConfig = loadAudioConfig();
+	if (savedAudioConfig != nullptr)
+	{
+		juce::String savedXml = savedAudioConfig->toString();
+		juce::Timer::callAfterDelay(1500, [this, savedXml]()
+		{
+			auto xml = juce::XmlDocument::parse(savedXml);
+			deviceManager.initialise(2, 2, xml.get(), true);
+			deviceManager.restartLastAudioDevice();
+			AudioManager::getInstance()->setupChannels();
+			if (midiProcessor != nullptr)
+				midiProcessor->refreshMidiInputs();
+		});
+	}
 
 	createConfig();
 
@@ -228,6 +248,17 @@ void MainComponent::createMenu() {
 #endif
 }
 
+std::unique_ptr<juce::XmlElement> MainComponent::loadAudioConfig()
+{
+	String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
+	File configFile = File(userHome + "/.Synthlab/config.xml");
+
+	if (configFile.exists())
+		return XmlDocument(configFile).getDocumentElement();
+
+	return nullptr;
+}
+
 void MainComponent::createConfig() {
 	String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
 
@@ -236,13 +267,7 @@ void MainComponent::createConfig() {
 	if (!appDir.exists()) {
 		appDir.createDirectory();
 	}
-
-	File configFile = File(userHome + "/.Synthlab/config.xml");
-
-	if (configFile.exists()) {
-		std::unique_ptr<XmlElement> xml = XmlDocument(configFile).getDocumentElement();
-		deviceManager.initialise(2, 2, xml.get(), true);
-	}
+	// Audio device is already initialised via setAudioChannels() in the constructor.
 }
 
 void MainComponent::createToolbar() {

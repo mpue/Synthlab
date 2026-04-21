@@ -36,7 +36,6 @@ public:
         return "Input / Output";
     }
     void setBouncing(bool b) {
-		DBG("Set bouncing" ,b);
 		bouncing.store(b);
     }
 

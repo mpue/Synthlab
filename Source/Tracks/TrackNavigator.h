@@ -132,12 +132,12 @@ private:
 	std::vector<Track*> tracks;
 	std::unique_ptr<WaveSelector> selector;
 
-	bool playing = false;
-	bool recording = false;
+	std::atomic<bool> playing { false };
+	std::atomic<bool> recording { false };
 	double position;
 	float zoom;
 
-	int samplePosition = 0;
+	std::atomic<int> samplePosition { 0 };
 
 	// length of the track in seconds
 	long tracklength;

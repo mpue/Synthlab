@@ -16,6 +16,7 @@
 #include "MidiRegion.h"
 #include "Region.h"
 #include <vector>
+#include <set>
 #include "../MultiComponentDragger.h"
 
 
@@ -54,6 +55,7 @@ public:
     void drawGrid(Graphics& g);
     void AddEventListener(EventListener* listener);
     void notifyListeners(Event* e);
+    void sendAllNotesOff();
 	void setZoom(float zoom);
 	String getName();
     void setName(String name);	
@@ -323,6 +325,9 @@ private:
     bool solo = false;
     bool mute = false;
     bool mono = false;
+
+    std::multiset<int> activeNoteNumbers;
+    MidiRegion* lastActiveRegion = nullptr;
     
     double magnitudeLeft = 0;
     double magnitudeRight = 0;

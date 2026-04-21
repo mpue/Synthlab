@@ -546,6 +546,10 @@ void PianoRollComponent::handleSelectTool(const juce::MouseEvent& e)
         }
     }
     else {
+        // Set track marker position when clicking in the note area
+        if (e.x > pianoWidth && onMarkerPositionChanged)
+            onMarkerPositionChanged(getTimeAtX(e.x));
+
         // Start box selection or clear selection
         if (!e.mods.isCommandDown()) {
             selectedMessages.clear();
@@ -932,6 +936,12 @@ bool PianoRollComponent::keyPressed(const juce::KeyPress& key, juce::Component*)
     auto keyCode = key.getKeyCode();
     bool shiftHeld = key.getModifiers().isShiftDown();
     bool cmdHeld = key.getModifiers().isCtrlDown();
+
+    // Spacebar → play/stop
+    if (key == juce::KeyPress::spaceKey) {
+        if (onPlayToggle) onPlayToggle();
+        return true;
+    }
 
     // Tool shortcuts
     if (keyCode == '1') { setCurrentTool(Tool::SELECT); return true; }

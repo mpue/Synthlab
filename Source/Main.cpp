@@ -92,7 +92,7 @@ public:
 	void systemRequestedQuit() override
 	{
 		if (Project::getInstance()->isDirty()) {
-			bool exit = juce::AlertWindow::showOkCancelBox(juce::AlertWindow::AlertIconType::NoIcon, "Hey!", "You have unsaved resources, wanna exit anyway?");
+			bool exit = juce::AlertWindow::showOkCancelBox(juce::AlertWindow::AlertIconType::NoIcon, "Hey!", "You have unsaved resources, wanna exit anyway?", {}, {}, nullptr, nullptr);
 
 			if (exit) {
 				quit();
@@ -153,7 +153,7 @@ public:
 		void closeButtonPressed() override {
 
 			if (Project::getInstance()->isDirty()) {
-				bool exit = juce::AlertWindow::showOkCancelBox(juce::AlertWindow::AlertIconType::NoIcon, "Hey!", "You have unsaved resources, wanna exit anyway?");
+				bool exit = juce::AlertWindow::showOkCancelBox(juce::AlertWindow::AlertIconType::NoIcon, "Hey!", "You have unsaved resources, wanna exit anyway?", {}, {}, nullptr, nullptr);
 
 				if (exit) {
 					quit();

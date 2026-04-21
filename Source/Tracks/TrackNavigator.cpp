@@ -203,10 +203,10 @@ bool TrackNavigator::isInterestedInDragSource(const SourceDetails& dragSourceDet
 	return false;
 }
 
-// Neue Methode für externe Datei-Drops hinzufügen:
+// Neue Methode fï¿½r externe Datei-Drops hinzufï¿½gen:
 bool TrackNavigator::isInterestedInFileDrag(const StringArray& files)
 {
-	// Prüfe, ob mindestens eine Audio-Datei dabei ist
+	// Prï¿½fe, ob mindestens eine Audio-Datei dabei ist
 	for (const auto& filename : files)
 	{
 		juce::File file(filename);
@@ -231,7 +231,7 @@ void TrackNavigator::filesDropped(const StringArray& files, int x, int y)
 		juce::File file(filename);
 		juce::String extension = file.getFileExtension().toLowerCase();
 
-		// Prüfe, ob es eine unterstützte Audio-Datei ist
+		// Prï¿½fe, ob es eine unterstï¿½tzte Audio-Datei ist
 		if (extension == ".wav" || extension == ".mp3" ||
 			extension == ".flac" || extension == ".ogg" ||
 			extension == ".aiff" || extension == ".aif" ||
@@ -270,6 +270,10 @@ void TrackNavigator::itemDropped(const SourceDetails& dragSourceDetails)
 
 void TrackNavigator::timerCallback()
 {
+	marker->setSamplePosition(this->samplePosition);
+	transportDisplay->setTransportState(samplePosition, Project::getInstance()->getSampleRate(), Project::getInstance()->getTempo(), 4, 4);
+	if (pianoRoll != nullptr)
+		pianoRoll->setPlaybackPosition(this->samplePosition);
 	repaint();
 }
 
@@ -282,7 +286,7 @@ ValueTree TrackNavigator::getConfiguration()
 		ValueTree track("Track");
 		track.setProperty("name", tracks.at(i)->getName(), nullptr);
 
-		// Setze den Typ unabhängig von den Regionen
+		// Setze den Typ unabhï¿½ngig von den Regionen
 		if (tracks.at(i)->getType() == Track::AUDIO) {
 			track.setProperty("type", "audio", nullptr);
 		}
@@ -389,13 +393,8 @@ void TrackNavigator::setPosition(double position) {
 	int bufferSize = Project::getInstance()->getBufferSize();
 	this->samplePosition = alignToBufferSize(this->samplePosition);
 
-	Logger::getCurrentLogger()->writeToLog("samplePosition  : " + String(samplePosition));
-	std::function<void(void)> changeLambda =
-		[=]() {
-		marker->setSamplePosition(samplePosition);
-		transportDisplay->setTransportState(samplePosition, Project::getInstance()->getSampleRate(), Project::getInstance()->getTempo(), 4, 4);
-		};
-	juce::MessageManager::callAsync(changeLambda);
+	marker->setSamplePosition(samplePosition);
+	transportDisplay->setTransportState(samplePosition, Project::getInstance()->getSampleRate(), Project::getInstance()->getTempo(), 4, 4);
 	startTimer(50);
 }
 
@@ -416,11 +415,12 @@ void TrackNavigator::ResetMarkerPosition()
 
 void TrackNavigator::setSamplePosition(int position) {
 
-	DBG("setSamplePosition : " + String(position));
 	this->samplePosition = alignToBufferSize(position);
 
 	if (loopEnabled) {
 		if (this->samplePosition > loopEnd * Project::getInstance()->getSampleRate()) {
+			for (int i = 0; i < tracks.size(); i++)
+				tracks.at(i)->sendAllNotesOff();
 			this->samplePosition = loopStart * Project::getInstance()->getSampleRate();
 		}
 	}
@@ -429,16 +429,6 @@ void TrackNavigator::setSamplePosition(int position) {
 		tracks.at(i)->setSamplePosition(this->getSamplePosition());
 	}
 	this->position = (float)samplePosition / Project::getInstance()->getSampleRate();
-	std::function<void(void)> changeLambda =
-		[=]() {
-		marker->setSamplePosition(this->samplePosition);
-		transportDisplay->setTransportState(samplePosition, Project::getInstance()->getSampleRate(), Project::getInstance()->getTempo(), 4, 4);
-		if (pianoRoll != nullptr) {
-			pianoRoll->setPlaybackPosition(this->samplePosition);
-
-		}
-		};
-	juce::MessageManager::callAsync(changeLambda);
 }
 
 double TrackNavigator::getMaxLength() {
@@ -458,6 +448,12 @@ double TrackNavigator::getMaxLength() {
 
 void TrackNavigator::setPlaying(bool playing) {
 	this->playing = playing;
+	if (playing)
+		startTimer(50);
+	else {
+		stopTimer();
+		allNotesOff();
+	}
 	Session::getInstance()->setRecordingStartTime();
 	for (int i = 0; i < tracks.size(); i++) {
 		for (int j = 0; j < tracks.at(i)->getRegions().size(); j++) {
@@ -597,6 +593,20 @@ void TrackNavigator::openPianoRoll(MidiRegion* r)
 	pianoRoll = std::make_unique<PianoRollComponent>(r, Project::getInstance()->getSampleRate());
 
 	pianoRoll->setGridResolution(16);
+
+	pianoRoll->onPlayToggle = [this]() {
+		setPlaying(!isPlaying());
+	};
+
+	pianoRoll->onMarkerPositionChanged = [this](double samplePos) {
+		double posInSeconds = samplePos / Project::getInstance()->getSampleRate();
+		setPosition(posInSeconds);
+		for (int i = 0; i < tracks.size(); i++) {
+			tracks.at(i)->setSamplePosition(this->samplePosition);
+			tracks.at(i)->setCurrentMarkerPosition(this->position);
+		}
+		sendChangeMessage();
+	};
 
 	Project::getInstance()->getSupplemental()->addTab("Piano roll", Colours::darkgrey, pianoRoll.get(), false);
 	Project::getInstance()->getSupplemental()->setCurrentTabIndex(Project::getInstance()->getSupplemental()->getNumTabs() - 1);
@@ -814,17 +824,7 @@ bool TrackNavigator::keyPressed(const KeyPress& key, Component* originatingCompo
 	}
 
 	if (key == KeyPress::spaceKey) {
-		if (isPlaying())
-		{
-			setPlaying(false);
-			stopTimer();
-		}
-		else
-		{
-			setPlaying(true);
-			startTimer(50);
-		}
-
+		setPlaying(!isPlaying());
 	}
 	if (key.getTextCharacter() == '+') {
 		if (getMaxLength() == 0) {

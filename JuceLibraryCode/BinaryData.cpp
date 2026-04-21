@@ -11,63 +11,87 @@ namespace BinaryData
 
 //================== README.md ==================
 static const unsigned char temp_binary_data_0[] =
-"# Synthlab\r\n"
-"Modular Synthesizer Studio\r\n"
-"\r\n"
-"Synthlab is a modular DAW. It allows you to build yor own DAW and synthesisers in a graphical manner. \r\n"
-"\r\n"
-"Currenly Synthlab is intended as a standalone application. I'll probably provide a plugin in the future.\r\n"
-"\r\n"
-"Here's how it looks like:\r\n"
-"\r\n"
-"![Screenshot 1](docs/images/synthlab1.jpeg)\r\n"
-"\r\n"
-"Synthlab allows complex structures, macros, nesting and much more:\r\n"
-"\r\n"
-"![Screenshot 1](docs/images/synthlab2.jpeg) \r\n"
-"\r\n"
-"Countless variations are possible, so you can end up with a simple sampler, incredible synths and grooveboxes as well:\r\n"
-"\r\n"
-"![Screenshot 1](docs/images/synthlab3.jpeg) \r\n"
-"\r\n"
-"Synthlab provides a convenient module browser, many user controls and sound modules.\r\n"
-"\r\n"
-"![Screenshot 1](docs/images/synthlab4.jpeg) \r\n"
-"\r\n"
-"As mentioned Above it has DAW capabilities,currently it is working on a basical Level, but I am still heavily improving. As you can see I can load and use VST3 Plugins  (yeah!)\r\n"
-"\r\n"
-"![Screenshot 1](docs/images/synthlab5.png) \r\n"
-"\r\n"
-"There's a piano roll Editor as well:\r\n"
-"\r\n"
-"![Screenshot 1](docs/images/synthlab6.png) \r\n"
-"\r\n"
-"And theres a console, just in case: ;)\r\n"
-"\r\n"
-"![Screenshot 1](docs/images/synthlab7.png) \r\n"
-"\r\n"
-"\r\n"
-"It currently runs on:\r\n"
-"\r\n"
-"* Windows\r\n"
-"* macOS\r\n"
-"* iOS\r\n"
-"\r\n"
-"It should also run on Linux and Android, but this has not been tested yet.\r\n"
-"\r\n"
-"It's a JUCE project, so simply go to juce.com and download the framework. \r\n"
-"Then start the projucer and open the project file in order to generate your platform configuration.\r\n"
-"\r\n"
-"# Notice\r\n"
-"This is a project at a very early stage but works already good. I currently neither has any docs or tutorials or something.\r\n"
-"To get the thing running you can use the projucer. But if you would like to have support you're probably alone an your way.\r\n"
-"\r\n"
-"The samples folder contains a few simple samples though.\r\n"
-"\r\n"
-"But do not hesitate to dig into the code and make Synthlab a better place. ;)\r\n"
-"\r\n"
-"Feel free to contact me for questions.\r\n"
-"\r\n";
+"# Project Status (February 2026)\n"
+"\n"
+"After 466 commits and years of work, I'm archiving this project.\n"
+"\n"
+"**What I learned:**\n"
+"- JUCE framework mastery\n"
+"- Complex audio engine architecture\n"
+"- VST3 hosting\n"
+"- Multi-platform audio development\n"
+"\n"
+"**Why I'm stopping:**\n"
+"- The scope became too large for a solo project\n"
+"- I've moved on to other interests (cflux, AI-assisted development)\n"
+"- Synthlab was an incredible learning journey, but it's time to let it rest\n"
+"\n"
+"**For anyone interested:**\n"
+"- The code is here, feel free to fork\n"
+"- Contact me if you want to continue it\n"
+"- I'm proud of what I built, even if it's not \"finished\"\n"
+"\n"
+"Thanks to everyone who starred this project. \xe2\x9d\xa4\xef\xb8\x8f\n"
+"\n"
+"Original tetx below:\n"
+"\n"
+"# Synthlab\n"
+"Modular Synthesizer Studio\n"
+"\n"
+"Synthlab is a modular DAW. It allows you to build yor own DAW and synthesisers in a graphical manner. \n"
+"\n"
+"Currenly Synthlab is intended as a standalone application. I'll probably provide a plugin in the future.\n"
+"\n"
+"Here's how it looks like:\n"
+"\n"
+"![Screenshot 1](docs/images/synthlab1.jpeg)\n"
+"\n"
+"Synthlab allows complex structures, macros, nesting and much more:\n"
+"\n"
+"![Screenshot 1](docs/images/synthlab2.jpeg) \n"
+"\n"
+"Countless variations are possible, so you can end up with a simple sampler, incredible synths and grooveboxes as well:\n"
+"\n"
+"![Screenshot 1](docs/images/synthlab3.jpeg) \n"
+"\n"
+"Synthlab provides a convenient module browser, many user controls and sound modules.\n"
+"\n"
+"![Screenshot 1](docs/images/synthlab4.jpeg) \n"
+"\n"
+"As mentioned Above it has DAW capabilities,currently it is working on a basical Level, but I am still heavily improving. As you can see I can load and use VST3 Plugins  (yeah!)\n"
+"\n"
+"![Screenshot 1](docs/images/synthlab5.png) \n"
+"\n"
+"There's a piano roll Editor as well:\n"
+"\n"
+"![Screenshot 1](docs/images/synthlab6.png) \n"
+"\n"
+"And theres a console, just in case: ;)\n"
+"\n"
+"![Screenshot 1](docs/images/synthlab7.png) \n"
+"\n"
+"\n"
+"It currently runs on:\n"
+"\n"
+"* Windows\n"
+"* macOS\n"
+"* iOS\n"
+"\n"
+"It should also run on Linux and Android, but this has not been tested yet.\n"
+"\n"
+"It's a JUCE project, so simply go to juce.com and download the framework. \n"
+"Then start the projucer and open the project file in order to generate your platform configuration.\n"
+"\n"
+"# Notice\n"
+"This is a project at a very early stage but works already good. I currently neither has any docs or tutorials or something.\n"
+"To get the thing running you can use the projucer. But if you would like to have support you're probably alone an your way.\n"
+"\n"
+"The samples folder contains a few simple samples though.\n"
+"\n"
+"But do not hesitate to dig into the code and make Synthlab a better place. ;)\n"
+"\n"
+"Feel free to contact me for questions.\n"
+"\n";
 
 const char* README_md = (const char*) temp_binary_data_0;
 
@@ -26148,12 +26172,12 @@ const char* highpass_txt = (const char*) temp_binary_data_16;
 //================== lowpass.txt ==================
 static const unsigned char temp_binary_data_17[] =
 "A low-pass filter (LPF) is a filter that passes signals with a frequency lower than a certain cutoff frequency and attenuates signals with frequencies higher than the cutoff frequency. The exact frequency response of the filter depends on the filter "
-"design. The filter is sometimes called a high-cut filter, or treble-cut filter in audio applications. A low-pass filter is the complement of a high-pass filter.\r\n"
-"\r\n"
+"design. The filter is sometimes called a high-cut filter, or treble-cut filter in audio applications. A low-pass filter is the complement of a high-pass filter.\n"
+"\n"
 "Low-pass filters exist in many different forms, including electronic circuits such as a hiss filter used in audio, anti-aliasing filters for conditioning signals prior to analog-to-digital conversion, digital filters for smoothing sets of data, acous"
 "tic barriers, blurring of images, and so on. The moving average operation used in fields such as finance is a particular kind of low-pass filter, and can be analyzed with the same signal processing techniques as are used for other low-pass filters. L"
-"ow-pass filters provide a smoother form of a signal, removing the short-term fluctuations and leaving the longer-term trend.\r\n"
-"\r\n"
+"ow-pass filters provide a smoother form of a signal, removing the short-term fluctuations and leaving the longer-term trend.\n"
+"\n"
 "Filter designers will often use the low-pass form as a prototype filter. That is, a filter with unity bandwidth and impedance. The desired filter is obtained from the prototype by scaling for the desired bandwidth and impedance and transforming into "
 "the desired bandform (that is low-pass, high-pass, band-pass or band-stop).";
 
@@ -26161,8 +26185,8 @@ const char* lowpass_txt = (const char*) temp_binary_data_17;
 
 //================== oscillator.txt ==================
 static const unsigned char temp_binary_data_18[] =
-"An electronic oscillator is an electronic circuit that produces a periodic, oscillating electronic signal, often a sine wave or a square wave.\r\n"
-"\r\n"
+"An electronic oscillator is an electronic circuit that produces a periodic, oscillating electronic signal, often a sine wave or a square wave.\n"
+"\n"
 "Oscillators convert direct current (DC) from a power supply to an alternating current (AC) signal. They are widely used in many electronic devices. Common examples of signals generated by oscillators include signals broadcast by radio and television "
 "transmitters, clock signals that regulate computers and quartz clocks, and the sounds produced by electronic beepers and video games";
 
@@ -42019,7 +42043,7 @@ const char* getNamedResource (const char* resourceNameUTF8, int& numBytes)
 
     switch (hash)
     {
-        case 0x64791dc8:  numBytes = 1917; return README_md;
+        case 0x64791dc8:  numBytes = 2545; return README_md;
         case 0xbff7e428:  numBytes = 8449; return _2osc_gate_slb;
         case 0x126b2978:  numBytes = 15803; return _3osc_broad_slb;
         case 0xea0a5b91:  numBytes = 17120; return _3oscV2_slb;
@@ -42036,8 +42060,8 @@ const char* getNamedResource (const char* resourceNameUTF8, int& numBytes)
         case 0x779d75ea:  numBytes = 1768430; return boom_aif;
         case 0xd0f1de73:  numBytes = 1210; return adsr_txt;
         case 0xffd100e4:  numBytes = 644; return highpass_txt;
-        case 0xf0a1f496:  numBytes = 1367; return lowpass_txt;
-        case 0xd3e35a51:  numBytes = 528; return oscillator_txt;
+        case 0xf0a1f496:  numBytes = 1363; return lowpass_txt;
+        case 0xd3e35a51:  numBytes = 526; return oscillator_txt;
         case 0x1e9f8b78:  numBytes = 3242; return adder_png;
         case 0xd0f1ce2c:  numBytes = 2742; return adsr_png;
         case 0x41cda692:  numBytes = 213234; return apicon_png;

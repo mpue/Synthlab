@@ -1,7 +1,7 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include "MidiRegion.h"
+#include "Tracks/MidiRegion.h"
 
 //==============================================================================
 struct RegionMidiEvent
