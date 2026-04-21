@@ -915,7 +915,7 @@
     <MODULE id="juce_opengl" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
     <MODULE id="juce_video" showAllCode="1" useLocalCopy="0" useGlobalPath="0"/>
   </MODULES>
-  <JUCEOPTIONS JUCE_PLUGINHOST_AU="0" JUCE_ASIO="1" JUCE_PLUGINHOST_VST3="1"
+  <JUCEOPTIONS JUCE_PLUGINHOST_AU="1" JUCE_ASIO="1" JUCE_PLUGINHOST_VST3="1"
                JUCE_USE_MP3AUDIOFORMAT="1" JUCE_USE_OGGVORBIS="1" JUCE_PLUGINHOST_VST="0"/>
   <LIVE_SETTINGS>
     <OSX/>
