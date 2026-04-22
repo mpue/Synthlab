@@ -1037,6 +1037,9 @@ void SynthEditor::modifierKeysChanged(const ModifierKeys& modifiers)
 }
 
 void SynthEditor::cleanUp() {
+	if (navigator != nullptr)
+		navigator->clearTracks();
+
 	mixer->removeAllChannels();
 	for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); it++) {
 		ModuleUtils::removeModule(root.get(), (*it), getMixer().get(), this);

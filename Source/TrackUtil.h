@@ -12,6 +12,7 @@
 #include "Actions/AddModuleAction.h"
 #include "MidiGate.h"
 #include "TrackIn.h"
+#include "AudioIn.h"
 #include "MidiOut.h"
 #include "SynthEditor.h"
 #include "Tracks/TrackNavigator.h"
@@ -129,43 +130,61 @@ public:
 
 	static Track* createAudioTrack(SynthEditor* editor, TrackNavigator* navigator, Module* module)
 	{
+		// Count existing audio tracks to determine the next available hardware input pair.
+		// Track N gets inputs (N*2, N*2+1).
+		int audioTrackCount = 0;
+		for (auto* track : navigator->getTracks()) {
+			if (track->getType() == Track::Type::AUDIO)
+				audioTrackCount++;
+		}
+		int leftInputChannel  = audioTrackCount * 2;
+		int rightInputChannel = audioTrackCount * 2 + 1;
+
+		// Create AudioIn L module
 		Point<int> pos = Point<int>(10, 10);
+		AddModuleAction* amAL = new AddModuleAction(editor, pos, 76);
+		Project::getInstance()->getUndoManager()->beginNewTransaction();
+		Project::getInstance()->getUndoManager()->perform(amAL);
+		AudioIn* audioInL = dynamic_cast<AudioIn*>(amAL->getModule());
+		if (audioInL != nullptr)
+			audioInL->setSelectedAudioInput(leftInputChannel);
+
+		// Create AudioIn R module below L
+		pos.y += 155;
+		AddModuleAction* amAR = new AddModuleAction(editor, pos, 76);
+		Project::getInstance()->getUndoManager()->beginNewTransaction();
+		Project::getInstance()->getUndoManager()->perform(amAR);
+		AudioIn* audioInR = dynamic_cast<AudioIn*>(amAR->getModule());
+		if (audioInR != nullptr)
+			audioInR->setSelectedAudioInput(rightInputChannel);
+
+		// Create TrackIn module to the right of the AudioIn pair
+		pos = Point<int>(180, 80);
 		AddModuleAction* am = new AddModuleAction(editor, pos, 48);
 		Project::getInstance()->getUndoManager()->beginNewTransaction();
 		Project::getInstance()->getUndoManager()->perform(am);
-
 		TrackIn* ti = dynamic_cast<TrackIn*>(am->getModule());
 
 		Track* t = navigator->addTrack(Track::Type::AUDIO, Project::getInstance()->getSampleRate());
 		t->setName("Audio " + String(navigator->getTracks().size() + 1));
 		ti->setTrack(t);
 
-		Module* m = module;
-
-		pos.x += 160;
-
-		AuxOut* auxOut = nullptr;
-		AudioIn* audioIn = nullptr;
-
-		// find audio in
-		for (int i = 0; i < m->getModules()->size(); i++) {
-			if (m->getModules()->at(i) != nullptr) {
-				audioIn = dynamic_cast<AudioIn*>(m->getModules()->at(i));
-				if (audioIn != nullptr) {
-					break;
-				}
-			}
-		}
-		//  find aux out
-		for (int i = 0; i < m->getModules()->size(); i++) {
-			if (m->getModules()->at(i) != nullptr) {
-				auxOut = dynamic_cast<AuxOut*>(m->getModules()->at(i));
-				if (auxOut != nullptr) {
-					break;
-				}
-			}
+		// Wire AudioIn L OUT (pin 0) → TrackIn IN L (pin 0)
+		if (audioInL != nullptr) {
+			ti->connectPins(0, audioInL->pins.at(0));
+			Connection* cL = new Connection(audioInL, audioInL->pins.at(0), ti, ti->pins.at(0));
+			module->addConnection(cL);
 		}
 
+		// Wire AudioIn R OUT (pin 0) → TrackIn IN R (pin 1)
+		if (audioInR != nullptr) {
+			ti->connectPins(1, audioInR->pins.at(0));
+			Connection* cR = new Connection(audioInR, audioInR->pins.at(0), ti, ti->pins.at(1));
+			module->addConnection(cR);
+		}
+
+		// Find or create AudioOut and connect TrackIn output pins (2=L, 3=R) to it
+		pos = Point<int>(340, 80);
 		AudioOut* audioOut = nullptr;
 
 		for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
@@ -178,15 +197,13 @@ public:
 		}
 
 		if (audioOut == nullptr) {
-			// no audio out found, create one
 			AddModuleAction* am3 = new AddModuleAction(editor, pos, 66);
 			Project::getInstance()->getUndoManager()->beginNewTransaction();
 			Project::getInstance()->getUndoManager()->perform(am3);
 			audioOut = dynamic_cast<AudioOut*>(am3->getModule());
 		}
 
-		// found one
-		ConnectAudioOut(audioOut, ti, pos, 2, 3,module, editor);
+		ConnectAudioOut(audioOut, ti, pos, 2, 3, module, editor);
 		return t;
 	}
 

@@ -151,10 +151,10 @@
 			const float* inL = nullptr;
 			const float* inR = nullptr;
 
-			if (getPins().at(2)->getConnections().size() >= 1) {
+			if (getPins().at(0)->getConnections().size() >= 1) {
 				inL = getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
 			}
-			if (getPins().at(3)->getConnections().size() >= 1) {
+			if (getPins().at(1)->getConnections().size() >= 1) {
 				inR = getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
 			}
 
@@ -250,10 +250,10 @@
 			const float* inL = nullptr;
 			const float* inR = nullptr;
 
-			if (getPins().at(2)->getConnections().size() >= 1) {
+			if (getPins().at(0)->getConnections().size() >= 1) {
 				inL = getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
 			}
-			if (getPins().at(3)->getConnections().size() >= 1) {
+			if (getPins().at(1)->getConnections().size() >= 1) {
 				inR = getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
 			}
 

@@ -214,6 +214,7 @@ private:
     std::atomic<double> bounceProgress{ 0.0 };
     std::unique_ptr<Metronome> metronome;
     juce::AudioBuffer<float> metronomeBuffer;
+    juce::AudioBuffer<float> inputCaptureBuffer; // Snapshot of hardware input before output clear
     
 	std::unique_ptr<AudioLevelMeter> levelMeter = nullptr;
     std::unique_ptr<SpectrumAnalyzer> spectrumAnalyzer = nullptr;

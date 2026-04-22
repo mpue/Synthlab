@@ -669,16 +669,31 @@ int MainComponent::getNumActiveChannels(int i) {
 	return (((i + (i >> 4)) & 0x0F0F0F0F) * 0x01010101) >> 24;
 }
 
+
 void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& bufferToFill)
 {
 	if (isBouncing()) {
 		return;
 	}
 
+	// At this point the buffer contains hardware input data (AudioSourcePlayer copies
+	// input into the output buffer before calling us). Snapshot it for AudioIn modules,
+	// capture levels, then clear so that input does not leak into the speaker output.
+	{
+		const int nChans = bufferToFill.buffer->getNumChannels();
+		const int nSamps = bufferToFill.numSamples;
+		inputCaptureBuffer.setSize(nChans, nSamps, false, false, true);
+		for (int ch = 0; ch < nChans; ++ch)
+			inputCaptureBuffer.copyFrom(ch, 0, *bufferToFill.buffer, ch, bufferToFill.startSample, nSamps);
+	}
+
+	if (levelMeter != nullptr)
+		levelMeter->processAudioBlock(bufferToFill);
+
 	if (spectrumAnalyzer)
 		spectrumAnalyzer->getNextAudioBlock(bufferToFill);
-	if (levelMeter)
-		levelMeter->processAudioBlock(bufferToFill);
+
+	bufferToFill.clearActiveBufferRegion();
 
 	long startTime = 0;
 
@@ -741,8 +756,8 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 		// auto* bufR = inputChannels.at(k)->pins.at(1)->getAudioBuffer();
 		if (!bufL) continue;
 
-		// Ausgewählten Input-Kanal vom Host (bufferToFill) in die AudioIn-Buffer kopieren
-		bufL->copyFrom(0, 0, *bufferToFill.buffer, selectedInputIndex, bufferToFill.startSample, numSamples);
+		// Ausgewählten Input-Kanal vom Host in die AudioIn-Buffer kopieren
+		bufL->copyFrom(0, 0, inputCaptureBuffer, selectedInputIndex, 0, numSamples);
 		// bufR->copyFrom(0, 0, *bufferToFill.buffer, rightInputCh, bufferToFill.startSample, numSamples);
 
 		// Volume und Pan anwenden
@@ -1126,7 +1141,13 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 		if (navigator->getCurrentTrack()->getCurrentRegion() == nullptr)
 			return;
 
-		navigator->getCurrentTrack()->getCurrentRegion()->quantize(96);
+		{
+			// Calculate grid size for 1/16 note at the current tempo and sample rate
+			double sr     = Project::getInstance()->getSampleRate();
+			float  tempo  = Project::getInstance()->getTempo();
+			int gridSamples = (int)(sr * 60.0 / tempo / 4.0);
+			navigator->getCurrentTrack()->getCurrentRegion()->quantize(gridSamples);
+		}
 	}
 	else if (menuItemID == 42) {
 
