@@ -107,6 +107,7 @@ MidiRegion::~MidiRegion() {
     }
 
     removeComponentListener(this);
+    delete constrainer;
     delete midiThumbnail;
     delete midiBuffer;
     delete sequence;
@@ -596,6 +597,56 @@ std::pair<MidiRegion*, MidiRegion*> MidiRegion::splitAt(long splitSample, MultiC
 	right->setName(name + "_R");
 
     return { left, right };
+}
+
+void MidiRegion::consolidate()
+{
+    const ScopedLock sl(lock);
+
+    if (loop && loopCount > 0)
+    {
+        // Looping case: bake all repetitions into the MIDI data
+        std::vector<MidiMessage*> origMessages(midiMessageList);
+
+        for (int i = 1; i <= loopCount; i++)
+        {
+            for (auto* m : origMessages)
+            {
+                auto* copy = new MidiMessage(*m);
+                copy->setTimeStamp(m->getTimeStamp() + (double)(i * numSamples));
+                midiMessageList.push_back(copy);
+            }
+        }
+
+        numSamples = numSamples * (loopCount + 1);
+        loopCount  = 0;
+        loop       = false;
+    }
+    else
+    {
+        // Non-looping case: trim MIDI events to the current visual (dragged) length.
+        // numSamples holds the original data length; use the component width directly.
+        int trimSamples = (int)((getWidth() / zoom) * sampleRate);
+        if (trimSamples > 0 && trimSamples < numSamples)
+        {
+            midiMessageList.erase(
+                std::remove_if(midiMessageList.begin(), midiMessageList.end(),
+                    [trimSamples](MidiMessage* m) {
+                        if (m->getTimeStamp() >= trimSamples) {
+                            delete m;
+                            return true;
+                        }
+                        return false;
+                    }),
+                midiMessageList.end());
+            numSamples = trimSamples;
+        }
+    }
+
+    setBounds(getX(), getY(), (int)(numSamples / sampleRate * zoom), getHeight());
+    rebuildThumbnail();
+    updateThumb();
+    repaint();
 }
 
 void MidiRegion::quantize(int quantizeGridSamples)

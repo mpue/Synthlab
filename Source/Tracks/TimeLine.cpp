@@ -56,12 +56,12 @@ void TimeLine::paint(Graphics& g)
                 const double beatTimeSec = barStartSec + beat * secondsPerBeat;
                 const float x = static_cast<float>(beatTimeSec * pixelsPerSecond + offset);
 
-                // Längere Linie am Taktanfang
+                // Lï¿½ngere Linie am Taktanfang
                 const bool isBarStart = (beat == 0);
                 float lineHeight = isBarStart ? getHeight() / 2.0f : getHeight() / 3.0f;
                 g.drawLine(x, 0.0f, x, lineHeight);
 
-                // 1/4-Takt Unterteilungen zeichnen (schwächere Linien)
+                // 1/4-Takt Unterteilungen zeichnen (schwï¿½chere Linien)
                 g.setColour(Colours::lightgrey);
                 for (int quarter = 1; quarter < 4; ++quarter)
                 {
@@ -96,8 +96,10 @@ void TimeLine::paint(Graphics& g)
             float endX = timeToPixel(loopEnd);
 
             // Loop-Region mit transparenter Farbe hervorheben
-            g.setColour(Colour::fromFloatRGBA(0.0f, 1.0f, 0.0f, 0.2f));
-            g.fillRect(startX, 0.0f, endX - startX, static_cast<float>(getHeight()));
+            if (endX > startX) {
+                g.setColour(Colour::fromFloatRGBA(0.0f, 1.0f, 0.0f, 0.2f));
+                g.fillRect(startX, 0.0f, endX - startX, static_cast<float>(getHeight()));
+            }
 
             // Loop-Locatoren zeichnen
             g.setColour(Colours::green);
@@ -119,14 +121,17 @@ void TimeLine::paint(Graphics& g)
             g.fillPath(endTriangle);
             g.drawLine(endX, 0.0f, endX, static_cast<float>(getHeight()), locatorWidth);
 
-            // Loop-Beschriftung
-            g.setColour(Colours::white);
-            String loopText = "LOOP: " + secondsToTime(static_cast<int>(loopStart)) +
-                " - " + secondsToTime(static_cast<int>(loopEnd));
-            g.drawText(loopText,
-                static_cast<int>(startX + 10), 2,
-                static_cast<int>(endX - startX - 20), 12,
-                juce::Justification::left);
+            // Loop-Beschriftung â€“ nur zeichnen wenn genug Platz vorhanden
+            float labelWidth = endX - startX - 20.0f;
+            if (labelWidth > 0.0f) {
+                g.setColour(Colours::white);
+                String loopText = "LOOP: " + secondsToTime(static_cast<int>(loopStart)) +
+                    " - " + secondsToTime(static_cast<int>(loopEnd));
+                g.drawText(loopText,
+                    static_cast<int>(startX + 10), 2,
+                    static_cast<int>(labelWidth), 12,
+                    juce::Justification::left);
+            }
         }
     }
 }
@@ -139,9 +144,9 @@ void TimeLine::mouseMove(const MouseEvent& event)
         return;
     }
 
-    const float tolerance = 5.0f; // Pixel-Toleranz für Hover-Bereich
+    const float tolerance = 5.0f; // Pixel-Toleranz fï¿½r Hover-Bereich
 
-    // Prüfen ob Maus über Loop-Start oder Loop-End Locator ist
+    // Prï¿½fen ob Maus ï¿½ber Loop-Start oder Loop-End Locator ist
     if (isMouseOverLocator(event, loopStart, tolerance) ||
         isMouseOverLocator(event, loopEnd, tolerance))
     {
@@ -166,7 +171,7 @@ void TimeLine::mouseDown(const MouseEvent& event)
 
     double clickTime = snapToBufferBoundary(snapToQuarterBeat(pixelToTime(static_cast<float>(event.getMouseDownX()))));
 
-    // Prüfen ob auf einen Locator geklickt wurde
+    // Prï¿½fen ob auf einen Locator geklickt wurde
     if (isMouseOverLocator(event, loopStart))
     {
         currentDragMode = DragLoopStart;
@@ -245,7 +250,7 @@ void TimeLine::mouseUp(const MouseEvent& event)
 void TimeLine::setLength(double length)
 {
     this->length = length;
-    // Loop-Region anpassen falls sie außerhalb der neuen Länge liegt
+    // Loop-Region anpassen falls sie auï¿½erhalb der neuen Lï¿½nge liegt
     if (loopEnd > length)
     {
         loopEnd = length;
@@ -376,7 +381,7 @@ double TimeLine::snapToQuarterBeat(double time) const
     if (quarterBeatDuration <= 0.0)
         return time;
 
-    // Auf nächstes 1/4-Beat runden
+    // Auf nï¿½chstes 1/4-Beat runden
     const double quarterBeats = time / quarterBeatDuration;
     const double roundedQuarterBeats = std::round(quarterBeats);
 

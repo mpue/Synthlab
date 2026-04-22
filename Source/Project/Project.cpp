@@ -104,6 +104,7 @@ void Project::loadRecentFileList() {
 
 void Project::destroy() {
     delete instance;
+    instance = nullptr;
 }
 
 juce::UndoManager* Project::getUndoManager() {

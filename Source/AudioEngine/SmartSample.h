@@ -3,6 +3,7 @@
 #include <juce_audio_formats/juce_audio_formats.h>
 #include <juce_audio_utils/juce_audio_utils.h>
 #include <stdexcept>
+#include "../AudioManager.h"
 
 class SmartSample
 {
@@ -11,15 +12,8 @@ public:
 
     void loadFromFile(const juce::File& file, double engineSampleRate)
     {
-        static juce::AudioFormatManager formatManager;
-        static bool formatsRegistered = false;
-        if (!formatsRegistered)
-        {
-            formatManager.registerBasicFormats();
-            formatsRegistered = true;
-        }
-
-        std::unique_ptr<juce::AudioFormatReader> reader(formatManager.createReaderFor(file));
+        std::unique_ptr<juce::AudioFormatReader> reader(
+            AudioManager::getInstance()->getFormatManager()->createReaderFor(file));
 
         if (!reader)
             throw std::runtime_error("Could not create reader for file: " + file.getFullPathName().toStdString());
@@ -37,7 +31,7 @@ public:
         if (!reader->read(&tempBuffer, 0, lengthInSamples, 0, true, true))
             throw std::runtime_error("Failed to read from file: " + file.getFullPathName().toStdString());
 
-        // Resample falls nötig
+        // Resample falls nï¿½tig
         if (std::abs(originalSampleRate - engineSampleRate) > 1.0)
         {
             buffer = resampleWithResamplingSource(tempBuffer, originalSampleRate, engineSampleRate);
@@ -85,9 +79,9 @@ private:
         auto memorySource = std::make_unique<MemoryAudioSource>(input, fromRate);
         juce::ResamplingAudioSource resampler(memorySource.get(), false);
         resampler.setResamplingRatio(fromRate / toRate);
-        resampler.prepareToPlay(8192, toRate); // Größerer Block für Effizienz
+        resampler.prepareToPlay(8192, toRate); // Grï¿½ï¿½erer Block fï¿½r Effizienz
 
-        // In Blöcken verarbeiten statt alles auf einmal
+        // In Blï¿½cken verarbeiten statt alles auf einmal
         const int blockSize = 8192;
         int samplesWritten = 0;
 

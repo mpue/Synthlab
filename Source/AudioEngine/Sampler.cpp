@@ -44,7 +44,7 @@ Sampler::~Sampler() {
 	samplerEnvelope = NULL;
 	delete interpolatorLeft;
     delete interpolatorRight;
-    
+    delete sampleBuffer;
 }
 
 void Sampler::nextSample() {
@@ -122,7 +122,7 @@ void Sampler::loadSample(File file) {
     startPosition = 0;
     currentSample = 0;
 
-    // Mono-Fallback: wenn nur 1 Kanal vorhanden ist, dupliziere ihn für Rechts
+    // Mono-Fallback: wenn nur 1 Kanal vorhanden ist, dupliziere ihn fï¿½r Rechts
     if (sampleBuffer->getNumChannels() == 1) {
         AudioSampleBuffer* stereoBuffer = new AudioSampleBuffer(2, sampleBuffer->getNumSamples());
         stereoBuffer->copyFrom(0, 0, *sampleBuffer, 0, 0, sampleBuffer->getNumSamples());

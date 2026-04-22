@@ -228,8 +228,9 @@ MainComponent::~MainComponent()
 	delete midiProcessor;
 	chat = nullptr;
 
-	PrefabFactory::getInstance()->destroy();
-	Project::getInstance()->destroy();
+	PrefabFactory::destroy();
+	Project::getInstance()->removeAllChangeListeners();
+	Project::destroy();
 
 	// This shuts down the audio device and clears the audio source.
 	rotatingCube = nullptr;
@@ -983,6 +984,7 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addItem(41, "Quantize", true, false, nullptr);
 		menu.addItem(43, "Duplicate", true, false, nullptr);
 		menu.addItem(44, "Split at marker", true, false, nullptr);
+		menu.addItem(49, "Consolidate", true, false, nullptr);
 		menu.addItem(45, "Delete", true, false, nullptr);
 
 		PopupMenu audioMenu = PopupMenu();
@@ -1203,6 +1205,13 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 		FadeRegionAction* action = new FadeRegionAction(navigator);
 		Project::getInstance()->getUndoManager()->beginNewTransaction();
 		Project::getInstance()->getUndoManager()->perform(action);
+	}
+	else if (menuItemID == 49) {
+		if (navigator->getCurrentTrack() != nullptr) {
+			Region* region = navigator->getCurrentTrack()->getCurrentRegion();
+			if (region != nullptr)
+				region->consolidate();
+		}
 	}
 	else if (menuItemID == undoCommand) {
 		Project::getInstance()->getUndoManager()->undo();
@@ -1545,35 +1554,17 @@ void MainComponent::startBounce(const juce::File& outputFile, double durationInS
 		[this]() { return !bounceThread || !bounceThread->isThreadRunning(); }
 	);
 
-	auto* dialog = new juce::DialogWindow("Exportiere Audio...", juce::Colours::black, true);
-	dialog->setUsingNativeTitleBar(true);
-	dialog->setResizable(false, false);
-	dialog->setContentOwned(content, true);
-	dialog->centreWithSize(400, 80);
-
-
-
-	// Zeige es asynchron, damit es sich selbst schließen kann
-	dialog->setVisible(true);
-
-	// Polling-Timer zum Schließen
-	juce::Timer::callAfterDelay(200, [dialog, this]() mutable {
-		if (!bounceThread || !bounceThread->isThreadRunning()) {
-			dialog->exitModalState(0); // (wenn nötig)
-			dialog->setVisible(false);
-			delete dialog; // oder smart pointer verwenden
-		}
-		else {
-			// nochmal nach 200ms prüfen
-			juce::Timer::callAfterDelay(200, [dialog, this]() mutable {
-				if (!bounceThread || !bounceThread->isThreadRunning()) {
-					dialog->exitModalState(0);
-					dialog->setVisible(false);
-					delete dialog;
-				}
-				});
-		}
-		});
+	// Use launchAsync so the DialogWindow manages its own lifetime.
+	// BounceProgressDialog's timer calls exitModalState(0) when done,
+	// which causes the async dialog to close and delete itself safely.
+	juce::DialogWindow::LaunchOptions options;
+	options.dialogTitle = "Exportiere Audio...";
+	options.dialogBackgroundColour = juce::Colours::black;
+	options.useNativeTitleBar = true;
+	options.resizable = false;
+	options.content.setOwned(content);
+	options.content->setSize(400, 80);
+	options.launchAsync();
 }
 
 juce::String MainComponent::tryExecuteChatInstruction(const std::string& jsonString)

@@ -1,4 +1,4 @@
-﻿#include "PianoRollComponent.h"
+#include "PianoRollComponent.h"
 #include "Tracks/MidiRegion.h"
 
 PianoRollComponent::PianoRollComponent(MidiRegion* region, double sampleRate)
@@ -45,8 +45,8 @@ void PianoRollComponent::paint(juce::Graphics& g)
     auto clipBounds = g.getClipBounds();
 
     if (showGrid) drawGrid(g);
-    drawPiano(g);
     drawNotes(g);
+    drawPiano(g);
 
     if (!controllerLanes.empty()) drawControllerLanes(g);
     if (showVelocityAsHeight) drawVelocityBars(g);
@@ -877,35 +877,35 @@ void PianoRollComponent::mouseDoubleClick(const juce::MouseEvent& e)
 
 void PianoRollComponent::mouseWheelMove(const juce::MouseEvent& e, const juce::MouseWheelDetails& wheel)
 {
-    if (e.mods.isCtrlDown()) {
-        // Zoom at mouse position
+    // On macOS, Ctrl+Scroll is intercepted by the OS (accessibility zoom).
+    // Use Cmd (Command) as the zoom modifier on macOS; Ctrl still works on Windows/Linux.
+    const bool isZoomModifier = e.mods.isCommandDown() || e.mods.isCtrlDown();
+
+    if (isZoomModifier) {
         float factor = 1.0f + wheel.deltaY;
         juce::Point<float> mousePos = e.getPosition().toFloat();
 
-        if (e.mods.isShiftDown()) {
-            // Horizontal zoom
+        if (e.mods.isAltDown()) {
+            // Option+Cmd+Scroll: horizontal zoom anchored at mouse position
             double timeAtMouse = getTimeAtX((int)mousePos.x);
             xZoom *= factor;
             xZoom = juce::jlimit(0.001f, 2.0f, xZoom);
-
-            // Adjust pan to keep mouse position stable
             int newX = getXForTime(timeAtMouse);
             panOffset.x += mousePos.x - newX;
         }
         else {
-            // Vertical zoom
+            // Cmd+Scroll: vertical zoom anchored at mouse position
             int pitchAtMouse = getPitchAtY((int)mousePos.y);
             yZoom *= factor;
             yZoom = juce::jlimit(4.0f, 64.0f, yZoom);
-
-            // Adjust pan to keep mouse position stable
             int newY = getYForPitch(pitchAtMouse);
             panOffset.y += mousePos.y - newY;
         }
     }
-    else if (e.mods.isShiftDown()) {
-        // Horizontal scroll
-        panOffset.x += wheel.deltaX * 50.0f;
+    else if (e.mods.isShiftDown() || std::abs(wheel.deltaX) > std::abs(wheel.deltaY)) {
+        // Horizontal scroll — Shift+Scroll (Windows) or natural trackpad deltaX (macOS)
+        float dx = (std::abs(wheel.deltaX) > 0.0f) ? wheel.deltaX : wheel.deltaY;
+        panOffset.x += dx * 50.0f;
         panOffset.x = juce::jmin(panOffset.x, 0.0f);
     }
     else {

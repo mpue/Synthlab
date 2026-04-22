@@ -178,7 +178,7 @@ AudioRegion::AudioRegion(File file, String refId, AudioFormatManager& manager, d
 
     audioBuffer = new AudioSampleBuffer(smartSample->getBuffer());
 
-    // KORRIGIERT: addBlock mit korrektem Buffer-Offset (immer 0, da wir den ganzen Buffer übergeben)
+    // KORRIGIERT: addBlock mit korrektem Buffer-Offset (immer 0, da wir den ganzen Buffer ï¿½bergeben)
     this->thumbnail->addBlock(0, *audioBuffer, 0, audioBuffer->getNumSamples());
 
     this->name = file.getFileNameWithoutExtension();
@@ -204,12 +204,20 @@ AudioRegion::AudioRegion(File file, String refId, AudioFormatManager& manager, d
 
 AudioRegion::~AudioRegion()
 {
+    if (pitchValue)
+        pitchValue->removeListener(pitchListener);
+    delete pitchListener;
+    delete pitchValue;
+
+    delete[] tempBufferLeft;
+    delete[] tempBufferRight;
+
+    delete this->thumbnailBounds;
     delete this->thumbnailCache;
     delete this->thumbnail;
     delete this->audioBuffer;
     delete this->audioBufferProcessed;
-    // delete this->resizerL;
-    delete this->resizerR;
+    // resizerR and resizerL are deleted by Region::~Region()
     delete this->constrainer;
 }
 
@@ -242,6 +250,55 @@ void AudioRegion::startRecording() {
 
 void AudioRegion::stopRecording() {
     stopTimer();
+}
+
+void AudioRegion::consolidate()
+{
+    int numChannels = audioBuffer->getNumChannels();
+
+    if (loop && loopCount > 0)
+    {
+        // Looping case: repeat the audio buffer (loopCount + 1) times.
+        // Call updateThumb() afterwards so the component expands to the full length.
+        int oneLoopSamples = audioBuffer->getNumSamples();
+        int totalSamples   = oneLoopSamples * (loopCount + 1);
+
+        auto* newBuffer = new AudioSampleBuffer(numChannels, totalSamples);
+
+        for (int i = 0; i <= loopCount; i++)
+            for (int ch = 0; ch < numChannels; ch++)
+                newBuffer->copyFrom(ch, i * oneLoopSamples, *audioBuffer, ch, 0, oneLoopSamples);
+
+        delete audioBuffer;
+        audioBuffer = newBuffer;
+
+        loopCount = 0;
+        loop      = false;
+        dirty     = true;
+        updateThumb();
+    }
+    else
+    {
+        // Non-looping case: trim the audio buffer to the current visual (dragged) length.
+        // Use the component width directly â€” independent of thumbnailBounds state.
+        int trimmedSamples = (int)((getWidth() / zoom) * sampleRate);
+        if (trimmedSamples > 0 && trimmedSamples < audioBuffer->getNumSamples())
+        {
+            auto* newBuffer = new AudioSampleBuffer(numChannels, trimmedSamples);
+            for (int ch = 0; ch < numChannels; ch++)
+                newBuffer->copyFrom(ch, 0, *audioBuffer, ch, 0, trimmedSamples);
+            delete audioBuffer;
+            audioBuffer = newBuffer;
+
+            // Rebuild thumbnail for the new (shorter) buffer.
+            this->thumbnail->reset(numChannels, sampleRate);
+            this->thumbnail->addBlock(0, *audioBuffer, 0, trimmedSamples);
+            // Align thumbnailBounds so getNumSamples() returns the buffer size going forward.
+            this->thumbnailBounds->setWidth(getWidth());
+            dirty = true;
+            repaint();
+        }
+    }
 }
 
 void AudioRegion::setLoop(bool loop)
@@ -286,7 +343,7 @@ void AudioRegion::setZoom(float zoom) {
 
     this->thumbnailBounds->setSize(getWidth(), getHeight());
 
-    // Aktualisiere Snap-Einstellungen für Viertelnoten
+    // Aktualisiere Snap-Einstellungen fï¿½r Viertelnoten
     updateSnapSettings();
 
     constrainer->setMaxWidth((audioBuffer->getNumSamples() / sampleRate) * this->zoom);
@@ -418,7 +475,7 @@ void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, b
             setSampleOffset(maxOffset, false, false);
         }
 
-        // Position visuell korrigieren falls durch Snap verändert
+        // Position visuell korrigieren falls durch Snap verï¿½ndert
         int correctedX = (getSampleOffset() / sampleRate) * zoom;
         if (correctedX != getBounds().getX()) {
             setTopLeftPosition(correctedX, getY());
@@ -507,13 +564,12 @@ void AudioRegion::resizeAudio(int length)
     temp->copyFrom(0, 0, audioBuffer->getReadPointer(0), audioBuffer->getNumSamples());
     temp->copyFrom(1, 0, audioBuffer->getReadPointer(1), audioBuffer->getNumSamples());
 
-    audioBuffer->clear();
-    audioBuffer = temp;    
-
+    delete audioBuffer;
+    audioBuffer = temp;
 }
 
 double AudioRegion::getQuarterNoteLength() {
-    // Berechne die Länge einer Viertelnote in Samples
+    // Berechne die Lï¿½nge einer Viertelnote in Samples
     double bpm = Project::getInstance()->getTempo();
     double quarterNoteInSeconds = 60.0 / bpm;  // Eine Viertelnote in Sekunden
     return quarterNoteInSeconds * sampleRate;  // In Samples umrechnen
@@ -522,7 +578,7 @@ double AudioRegion::getQuarterNoteLength() {
 long AudioRegion::snapToQuarterNote(long samplePosition) {
     double quarterNoteLength = getQuarterNoteLength();
 
-    // Auf nächste Viertelnote runden
+    // Auf nï¿½chste Viertelnote runden
     long quarterNoteIndex = (long)std::round(samplePosition / quarterNoteLength);
     return (long)(quarterNoteIndex * quarterNoteLength);
 }

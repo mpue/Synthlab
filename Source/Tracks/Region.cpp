@@ -16,7 +16,18 @@ Region::Region() {
 }
 
 Region::~Region() {
-    
+    // Remove the listener before destroying it so the Value's shared data
+    // does not hold a dangling pointer if any code writes to it afterwards.
+    if (nameValue)
+        nameValue->removeListener(nameListener);
+    delete nameListener;
+    delete nameValue;
+
+    // resizerR/resizerL are base-class members created by subclass constructors.
+    // Deleting here covers all subclasses (MidiRegion, AudioRegion, etc.)
+    // so subclasses must NOT delete them themselves to avoid double-free.
+    delete resizerR;
+    delete resizerL;
 }
 
 void Region::setName(juce::String name) {

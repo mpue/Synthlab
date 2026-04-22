@@ -251,28 +251,21 @@ protected:
     }
     
     ~Project() {
-        
-        // cleanup existing and opened windows
-        
-        for (std::vector<juce::DialogWindow*>::iterator it = openWindows.begin();it != openWindows.end();) {
-            if ((*it) != nullptr) {
-                if ((*it)->isVisible()){
-                    (*it)->setVisible(false);
-                    delete (*it);
-                }
-            }
-            it = openWindows.erase(it);
-        }
-        
+
+        // Dialog windows are top-level windows managed by JUCE's Desktop.
+        // After the main window is deleted, calling UI methods (isVisible,
+        // setVisible) on them is unsafe. Just drop the references.
+        openWindows.clear();
+
         // check if supplemental tab is still open (tab at the bottom side)
-        
+
         if (supplementalTab != nullptr) {
             supplementalTab->clearTabs();
             delete supplementalTab;
         }
-        
+
         // finally delete the according resources
-        
+
         delete undoManager;
         delete lookAndFeel;
         delete config;

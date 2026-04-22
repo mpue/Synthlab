@@ -28,7 +28,13 @@ PluginModule::PluginModule(double sampleRate, int buffersize)
 	createProperties();
 }
 
-PluginModule::~PluginModule() = default;
+PluginModule::~PluginModule()
+{
+    if (pluginValue)
+        pluginValue->removeListener(pluginListener);
+    delete pluginListener;
+    delete pluginValue;
+}
 
 void PluginModule::openPluginWindow()
 {
@@ -67,9 +73,19 @@ void PluginModule::selectPlugin(String name)
 					return;
 				}
 
-				plugin.reset(instance.release());
-				plugin->prepareToPlay(sampleRate, buffersize);				
-				
+				// Call prepareToPlay on the new instance before it becomes
+				// visible to the audio thread. Use the device's actual values
+				// (same ones used in createPluginInstance above) to avoid
+				// crashes in strict AU plugins that validate these match.
+				instance->prepareToPlay(device->getCurrentSampleRate(),
+				                        device->getCurrentBufferSizeSamples());
+
+				// Swap under the lock so the audio thread cannot be inside
+				// processBlock while we destruct the old plugin instance.
+				{
+					const ScopedLock sl(lock);
+					plugin.reset(instance.release());
+				}
 			}
 		}
 

@@ -14,6 +14,10 @@
 #include "MainComponent.h"
 #include "Project/Project.h"
 #include "AudioManager.h"
+#include "Session.h"
+#include "Mixer.h"
+#include "PrefabFactory.h"
+#include "MessageBus/MessageBus.h"
 #include "Plugins/PluginManager.h"
 // #include <gtest.h>
 #include "HTTPServer.h"
@@ -77,10 +81,16 @@ public:
 	{
 		if (mainWindow != nullptr)
 			mainWindow->setLookAndFeel(nullptr);
+		LookAndFeel::setDefaultLookAndFeel(nullptr);
 		delete mainWindow; // (deletes our window)
 #if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
 		PluginManager::getInstance()->destroy();
 #endif
+		Mixer::getInstance()->removeAllChangeListeners();
+		Mixer::destroy();
+		Session::getInstance()->removeAllChangeListeners();
+		Session::destroy();
+		MessageBus::destroy();
 		AudioManager::getInstance()->destroy();
 
 		server->stop();

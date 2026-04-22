@@ -63,6 +63,10 @@ public:
     
     virtual void reset() {
     }
+
+    // Consolidate: bake all loop repetitions into the region data and
+    // reset loopCount to 0 so the region plays as a single flat clip.
+    virtual void consolidate() {}
     
     // component dragger used to drag and drop regions
     void setDragger(MultiComponentDragger* dragger);

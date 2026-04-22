@@ -71,6 +71,8 @@ public:
 		// empty implementation, audio regions are not quantized
     }
 
+    void consolidate() override;
+
 private:
 
     struct PitchListener : juce::Value::Listener

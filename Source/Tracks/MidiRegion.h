@@ -78,6 +78,7 @@ public:
     std::pair<MidiRegion*, MidiRegion*> splitAt(long splitSample, MultiComponentDragger* dragger);
 
 	void quantize(int quantizeGridSamples) override;
+    void consolidate() override;
 
     MidiMessageSequence* getMidiMessageSequence();
 
@@ -94,7 +95,7 @@ public:
 
     void sanitize();
 
-    // Methode um die Region nach direkten Änderungen zu aktualisieren
+    // Methode um die Region nach direkten ï¿½nderungen zu aktualisieren
     void notifyDirectEdit() {
         rebuildThumbnail();
         updateThumb();
