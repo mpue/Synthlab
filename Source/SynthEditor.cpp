@@ -1449,6 +1449,14 @@ void SynthEditor::openTracks(File file)
 
 	ValueTree audio = ValueTree::fromXml(*audioXml.get());
 
+	// Restore tempo before creating any regions so MidiRegion constructors
+	// pick up the correct value via updateTempoFromProject().
+	float savedTempo = (float)(double)audio.getProperty("tempo", (double)Project::DEFAULT_TEMPO);
+	if (savedTempo > 0.0f) {
+		Project::getInstance()->setTempo(savedTempo);
+		FastBus::getInstance().publish("tempo", savedTempo);
+	}
+
 	audio = audio.getChild(0);
 
 	for (int i = 0; i < audio.getNumChildren(); i++) {

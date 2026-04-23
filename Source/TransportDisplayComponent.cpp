@@ -6,7 +6,7 @@ using namespace juce;
 
 TransportDisplayComponent::TransportDisplayComponent()
 {
-    startTimerHz(30); // für BPM-Animation
+    startTimerHz(30); // fï¿½r BPM-Animation
     setOpaque(true);
 
     tempoLabel = std::make_unique<Label>("TempoLabel", "BPM:");
@@ -37,6 +37,10 @@ TransportDisplayComponent::TransportDisplayComponent()
 		sendChangeMessage();
     };
     addAndMakeVisible(*tempoEditor);
+
+    bus.subscribe<float>("tempo", [this](const FastTopic<float>& topic) {
+        tempoEditor->setText(String(topic.getValue(), 1), dontSendNotification);
+    });
 }
 
 void TransportDisplayComponent::setTransportState(double samplePos, double sampleRate, double bpm, int numerator, int denominator)
@@ -150,7 +154,7 @@ void TransportDisplayComponent::drawHorizontalLayout(Graphics& g)
         g.fillEllipse(pulseArea.toFloat().reduced(6));
     }
 
-    bounds.removeFromLeft(20); // Platz für Puls
+    bounds.removeFromLeft(20); // Platz fï¿½r Puls
 
     // Buttons
     metronomeArea = bounds.removeFromLeft(40);

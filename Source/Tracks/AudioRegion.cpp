@@ -552,7 +552,10 @@ juce::Array<juce::PropertyComponent*>& AudioRegion::getProperties()
 
 void AudioRegion::createProperties()
 {
-    Region::createProperties();
+    // Region::createProperties() is already called by Region::Region() during base-class
+    // construction (where virtual dispatch resolves to Region::createProperties, not here).
+    // Calling it again here would overwrite nameValue/nameListener raw pointers without
+    // freeing the previous objects, leaking one SimpleValueSource per AudioRegion instance.
     pitchValue = new Value();
     pitchListener = new PitchListener(*pitchValue, this);
     pitchValue->setValue(pitch);

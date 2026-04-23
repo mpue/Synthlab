@@ -174,12 +174,37 @@ void MasterChannelPanel::paint (Graphics& g)
     //[UserPrePaint] Add your own custom painting code here..
     //[/UserPrePaint]
 
-    g.setColour (Colour (0xff434242));
-    g.fillRect (0, 0, 90, 250);
+    // Background — slightly tinted per channel type
+    juce::Colour bg(0xff434242);
+    juce::Colour stripe(0xff555555);
+    if (channel != nullptr) {
+        switch (channel->channelType) {
+            case Mixer::Channel::Type::IN:
+                bg     = juce::Colour(0xff363d4a);
+                stripe = juce::Colour(0xff2255cc);
+                break;
+            case Mixer::Channel::Type::OUT:
+                bg     = juce::Colour(0xff364240);
+                stripe = juce::Colour(0xff22aa55);
+                break;
+            case Mixer::Channel::Type::AUX:
+                bg     = juce::Colour(0xff433e36);
+                stripe = juce::Colour(0xffcc7700);
+                break;
+            default: break;
+        }
+    }
+
+    g.setColour(bg);
+    g.fillRect(0, 0, 90, 250);
+
+    // 6px coloured stripe at very top (fits above the pan knob at y=8)
+    g.setColour(stripe);
+    g.fillRect(0, 0, 90, 6);
 
     g.setColour (Colour (0xff3f3f3f));
     g.drawRect (0, 0, 90, 250, 1);
-    	
+
     //[UserPaint] Add your own custom painting code here..
     g.drawRect (getBounds().reduced(2), 1);   // draw an outline around the component
     //[/UserPaint]
@@ -317,6 +342,13 @@ void MasterChannelPanel::setMagnitude(int channel, float magnitude) {
 
 }
 
+void MasterChannelPanel::updateMeter() {
+    if (channel) {
+        vuSliderL->setValue(channel->magnitudeLeft  * channelVolume->getValue());
+        vuSliderR->setValue(channel->magnitudeRight * channelVolume->getValue());
+    }
+}
+
 void MasterChannelPanel::changeListenerCallback(ChangeBroadcaster * source) {
 
     if(Mixer::getInstance() == source){
@@ -377,6 +409,15 @@ int MasterChannelPanel::getIndex() {
 
 void MasterChannelPanel::setChannel(Mixer::Channel *channel) {
     this->channel = channel;
+}
+
+Mixer::Channel::Type MasterChannelPanel::getChannelType() {
+    return channel ? channel->channelType : Mixer::Channel::Type::OUT;
+}
+
+void MasterChannelPanel::setChannelType(Mixer::Channel::Type type) {
+    if (channel)
+        channel->channelType = type;
 }
 
 void MasterChannelPanel::setVolume(float volume) {

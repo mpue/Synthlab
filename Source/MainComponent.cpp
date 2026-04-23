@@ -614,10 +614,8 @@ void MainComponent::createPlayerLayout() {
 void MainComponent::timerCallback() {
 
 	if (mixerPanel != nullptr) {
-		for (int i = 0; i < Mixer::getInstance()->getChannels().size(); i++) {
-			mixerPanel->getChannels().at(i)->setMagnitude(0, Mixer::getInstance()->getChannels().at(i)->magnitudeLeft);
-			mixerPanel->getChannels().at(i)->setMagnitude(1, Mixer::getInstance()->getChannels().at(i)->magnitudeRight);
-		}
+		for (auto* panel : mixerPanel->getChannels())
+			panel->updateMeter();
 	}
 
 	if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
@@ -790,9 +788,8 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 			const float* auxSrc = auxBuf->getReadPointer(0);
 			if (!auxSrc) continue;
 
-			// Determine which output channels to send aux to (typically aux sends go to hardware outputs)
-			// For now, let's assume aux channels 0,1 go to hardware outputs 2,3 (if available)
-			int auxHwIndex = 2 + a * 2 + (int)p; // aux 0 -> hw 2,3, aux 1 -> hw 4,5, etc.
+			// Aux channels are mixed into the main stereo output (hw 0 = L, hw 1 = R).
+			int auxHwIndex = (int)p;
 
 			if (auxHwIndex < outNumChans && outputData[auxHwIndex]) {
 				float auxGain = (p == 0) ? auxGainL * auxVol : auxGainR * auxVol;

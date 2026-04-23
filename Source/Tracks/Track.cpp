@@ -215,7 +215,7 @@ void Track::duplicateRegion(Region* region) {
 Region* Track::addRegion(String refId, File file, double sampleRate, long sampleOffset) {
 	AudioRegion* region = new AudioRegion(file, refId, *manager, sampleRate);
 	region->setDragger(dragger);
-	Rectangle<int>* bounds = new Rectangle<int>(0, 0, region->getWidth() * zoom, getHeight());
+	Rectangle<int>* bounds = new Rectangle<int>(0, 0, region->getWidth(), getHeight());
 	region->setBounds(markerPosition, 0, region->getWidth(), getHeight());
 	region->setThumbnailBounds(bounds);
 	region->setLoopCount(0);
@@ -258,7 +258,7 @@ void Track::addRegion(String refId, File file, double sampleRate) {
 
 	AudioRegion* region = new AudioRegion(file, refId, *manager, sampleRate);
 	region->setDragger(dragger);
-	Rectangle<int>* bounds = new Rectangle<int>(0, 0, region->getWidth() * zoom, getHeight());
+	Rectangle<int>* bounds = new Rectangle<int>(0, 0, region->getWidth(), getHeight());
 	region->setBounds(markerPosition, 0, region->getWidth(), getHeight());
 	region->setThumbnailBounds(bounds);
 	region->setLoopCount(0);
@@ -302,7 +302,7 @@ void Track::addRegion(String refId, File file, double sampleRate) {
 void Track::addRegion(juce::String refId, juce::File file, double sampleRate, long samplePosition, long regionLength) {
 	AudioRegion* region = new AudioRegion(file, refId, *manager, sampleRate);
 	region->setDragger(dragger);
-	Rectangle<int>* bounds = new Rectangle<int>(0, 0, region->getWidth() * zoom, getHeight());
+	Rectangle<int>* bounds = new Rectangle<int>(0, 0, region->getWidth(), getHeight());
 	region->setBounds(markerPosition, 0, region->getWidth(), getHeight());
 	region->setThumbnailBounds(bounds);
 	region->setLoopCount(0);

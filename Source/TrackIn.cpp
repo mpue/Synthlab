@@ -161,7 +161,8 @@
 			outL = getPins().at(2)->getAudioBuffer()->getWritePointer(0);
 			outR = getPins().at(3)->getAudioBuffer()->getWritePointer(0);
 
-			if (track != nullptr && (navigator->isPlaying() || isBouncing())) {
+			if (track != nullptr && (navigator->isPlaying() || isBouncing()
+                || (navigator->isRecording() && !track->isRecording()))) {
 
 				double pan = track->getPan();
 

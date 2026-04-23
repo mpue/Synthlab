@@ -264,7 +264,8 @@ int PluginModule::getCurrentProgram()
 void PluginModule::setCurrentProgram(int program)
 {
 	currentProgram = program;
-	if (plugin) plugin->setCurrentProgram(program);
+	if (plugin && program >= 0 && program < plugin->getNumPrograms())
+		plugin->setCurrentProgram(program);
 }
 
 void PluginModule::setPluginState(String state)

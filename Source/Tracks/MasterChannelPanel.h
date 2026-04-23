@@ -64,6 +64,7 @@ public:
     virtual void changeListenerCallback(ChangeBroadcaster * source) override;
     void setName(String name);
     void setMagnitude(int channel, float magnitude);
+    void updateMeter();
     void setMute(bool mute);
     void setSolo(bool solo);
     bool getMute();

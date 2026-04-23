@@ -4,12 +4,23 @@ using juce::Graphics;
 using juce::ChangeBroadcaster;
 using juce::String;
 
+// Height of the group-label header drawn by MixerPanel itself.
+static constexpr int HEADER_H = 15;
+// Channel strip height (below the header).
+static constexpr int STRIP_H  = 250;
+// Total mixer panel height.
+static constexpr int PANEL_H  = HEADER_H + STRIP_H;
+// Width of each channel strip.
+static constexpr int STRIP_W  = 90;
+// Pixel gap inserted between different channel-type groups.
+static constexpr int GROUP_GAP = 4;
+
 MixerPanel::MixerPanel ()
 {
 	outputChannels.reserve(2);
 	inputChannels.reserve(2);
 	auxChannels.reserve(2);
-    setSize(600, 400);
+    setSize(600, PANEL_H);
 }
 
 MixerPanel::~MixerPanel()
@@ -24,37 +35,61 @@ MixerPanel::~MixerPanel()
 
 void MixerPanel::paint (Graphics& g)
 {
-    g.fillAll (Colour (0xff1a1a1a));
+    g.fillAll(juce::Colour(0xff1a1a1a));
+
+    // Draw group-label header bands spanning each contiguous block of the same type.
+    struct GroupBand { int x, w; juce::String label; juce::Colour colour; };
+    std::vector<GroupBand> bands;
+
+    for (auto* ch : channels) {
+        auto type = ch->getChannelType();
+        juce::Colour col;
+        juce::String lbl;
+        switch (type) {
+            case Mixer::Channel::Type::IN:  col = juce::Colour(0xff2255cc); lbl = "INPUTS";   break;
+            case Mixer::Channel::Type::OUT: col = juce::Colour(0xff22aa55); lbl = "OUTPUTS";  break;
+            case Mixer::Channel::Type::AUX: col = juce::Colour(0xffcc7700); lbl = "AUX";      break;
+            default:                        col = juce::Colour(0xff555555); lbl = "";          break;
+        }
+        int chX = ch->getX();
+        if (bands.empty() || bands.back().label != lbl) {
+            bands.push_back({ chX, STRIP_W, lbl, col });
+        } else {
+            bands.back().w = chX + STRIP_W - bands.back().x;
+        }
+    }
+
+    g.setFont(juce::Font(10.0f, juce::Font::bold));
+    for (auto& b : bands) {
+        g.setColour(b.colour);
+        g.fillRect(b.x, 0, b.w, HEADER_H);
+        g.setColour(juce::Colours::white);
+        g.drawText(b.label, b.x, 0, b.w, HEADER_H, juce::Justification::centred);
+    }
 }
 
 void MixerPanel::resized()
 {
-    setBounds(0, 0, 90 * static_cast<int>(channels.size()),250);
- }
+    int w = (currentX > 0) ? currentX : STRIP_W;
+    setBounds(0, 0, w, PANEL_H);
+}
 
 std::vector<MasterChannelPanel*> MixerPanel::getChannels() {
     return channels;
 }
 
 void MixerPanel::timerCallback() {
-    /*
-    for (int i = 0; i < mcc->getNavigator()->getTracks().size();i++) {
-        Track* t = mcc->getNavigator()->getTracks().at(i);
-        channels.at(i)->setMagnitude(t->magnitudeLeft);
-    }
-    masterChannel->setMagnitude(mcc->getMagnitude(0));
-    */
 }
 
 void MixerPanel::changeListenerCallback (ChangeBroadcaster* source) {
-    
+
     MasterChannelPanel* panel = nullptr;
-    
+
     panel = dynamic_cast<MasterChannelPanel*>(source);
-    
+
     if (panel != nullptr) {
-         
-    }    
+
+    }
 }
 
 int MixerPanel::addChannel(String name, Mixer::Channel::Type channeltype) {
@@ -63,26 +98,50 @@ int MixerPanel::addChannel(String name, Mixer::Channel::Type channeltype) {
 
     MasterChannelPanel* panel = new MasterChannelPanel();
     panel->setIndex(index);
-    panel->setName (name);
+    panel->setName(name);
     panel->addChangeListener(this);
-    panel->setBounds (90 * static_cast<int>(channels.size()),0, 90, 250);
 
     Mixer::Channel* channel = new Mixer::Channel();
     channel->index = panel->getIndex();
     Mixer::getInstance()->addChannel(channel);
     channel->channelType = channeltype;
     panel->setChannel(channel);
-    
+
     channels.push_back(panel);
     addAndMakeVisible(panel);
-    setBounds(0, 0, 90 * static_cast<int>(channels.size()),250);
-    repaint();
-    
+
+    repositionAllChannels();
+
     return index;
 }
 
+void MixerPanel::repositionAllChannels() {
+    // Sort: IN (0) before OUT (1) before AUX (2).
+    std::sort(channels.begin(), channels.end(), [](MasterChannelPanel* a, MasterChannelPanel* b) {
+        return static_cast<int>(a->getChannelType()) < static_cast<int>(b->getChannelType());
+    });
+
+    int x = 0;
+    bool first = true;
+    Mixer::Channel::Type lastType = Mixer::Channel::Type::IN;
+
+    for (auto* ch : channels) {
+        auto type = ch->getChannelType();
+        if (!first && type != lastType)
+            x += GROUP_GAP;
+        ch->setBounds(x, HEADER_H, STRIP_W, STRIP_H);
+        x += STRIP_W;
+        lastType = type;
+        first = false;
+    }
+
+    currentX = x;
+    setBounds(0, 0, currentX > 0 ? currentX : STRIP_W, PANEL_H);
+    repaint();
+}
+
 void MixerPanel::setVolume(int channelIndex, float volume) {
-    for (int i = 0; i < channels.size();i++) {
+    for (int i = 0; i < (int)channels.size();i++) {
         if (channels.at(i)->getIndex() == channelIndex){
             channels.at(i)->setVolume(volume);
             break;
@@ -91,7 +150,7 @@ void MixerPanel::setVolume(int channelIndex, float volume) {
 }
 
 void MixerPanel::setModule(int channelIndex, VolumeAdjustable* v) {
-    for (int i = 0; i < channels.size();i++) {
+    for (int i = 0; i < (int)channels.size();i++) {
         if (channels.at(i)->getIndex() == channelIndex){
             channels.at(i)->setModule(v);
             v->addChangeListener(channels.at(i));
@@ -102,8 +161,8 @@ void MixerPanel::setModule(int channelIndex, VolumeAdjustable* v) {
 
 int MixerPanel::getNextFreeChannelIndex() {
     int index = 0;
-    
-    for (int i = 0; i < channels.size();i++) {
+
+    for (int i = 0; i < (int)channels.size();i++) {
         if (channels.at(i)->getIndex() > index) {
             index = channels.at(i)->getIndex();
         }
@@ -123,8 +182,9 @@ void MixerPanel::removeChannel(int index) {
         }
         else {
             ++it;
-        }        
+        }
     }
+    repositionAllChannels();
 }
 
 void MixerPanel::removeAllChannels() {
@@ -134,8 +194,8 @@ void MixerPanel::removeAllChannels() {
         (*it)->removeAllChangeListeners();
         delete (*it);
         it = channels.erase(it);
-        
     }
+    currentX = 0;
 }
 
 bool MixerPanel::channelIsValid(int channel) {
@@ -169,14 +229,8 @@ std::vector<AuxOut*>& MixerPanel::getAuxChannels() {
 }
 
 void MixerPanel::clearChannels() {
-	
-	if (outputChannels.size() > 0)
-		outputChannels.clear();
-    
-	if (inputChannels.size() > 0) 
-		inputChannels.clear();
-
-	if (auxChannels.size() > 0)
-		auxChannels.clear();
-
+	outputChannels.clear();
+	inputChannels.clear();
+	auxChannels.clear();
+    currentX = 0;
 }

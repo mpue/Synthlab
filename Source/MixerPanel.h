@@ -67,6 +67,7 @@ public:
     bool channelIsValid(int channel);
     bool auxChannelIsValid(int channel, int subchannel);
     void clearChannels();
+    void repositionAllChannels();
     //[/UserMethods]
     
     void paint (juce::Graphics& g) override;
@@ -82,6 +83,9 @@ private:
     std::vector<AudioOut*> outputChannels;
     std::vector<AudioIn*> inputChannels;
     std::vector<AuxOut*> auxChannels;
+
+    // Tracks the next x-position for a new channel strip (accounts for group separators).
+    int currentX = 0;
     //[/UserVariables]
 
     //==============================================================================
