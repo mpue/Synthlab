@@ -7,11 +7,11 @@ using juce::String;
 // Height of the group-label header drawn by MixerPanel itself.
 static constexpr int HEADER_H = 15;
 // Channel strip height (below the header).
-static constexpr int STRIP_H  = 250;
+static constexpr int STRIP_H  = 340;
 // Total mixer panel height.
 static constexpr int PANEL_H  = HEADER_H + STRIP_H;
 // Width of each channel strip.
-static constexpr int STRIP_W  = 90;
+static constexpr int STRIP_W  = 110;
 // Pixel gap inserted between different channel-type groups.
 static constexpr int GROUP_GAP = 4;
 

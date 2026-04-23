@@ -122,7 +122,7 @@ MasterChannelPanel::MasterChannelPanel ()
     //[UserPreSize]
     //[/UserPreSize]
 
-    setSize (90, 250);
+    setSize (110, 340);
 
 
     //[Constructor] You can add your own custom stuff here..
@@ -195,18 +195,87 @@ void MasterChannelPanel::paint (Graphics& g)
         }
     }
 
+    auto bounds = getLocalBounds();
+    int W = bounds.getWidth();
+
     g.setColour(bg);
-    g.fillRect(0, 0, 90, 250);
+    g.fillRect(bounds);
 
-    // 6px coloured stripe at very top (fits above the pan knob at y=8)
+    // 6px coloured stripe at very top
     g.setColour(stripe);
-    g.fillRect(0, 0, 90, 6);
+    g.fillRect(0, 0, W, 6);
 
-    g.setColour (Colour (0xff3f3f3f));
-    g.drawRect (0, 0, 90, 250, 1);
+    g.setColour(juce::Colour(0xff3f3f3f));
+    g.drawRect(bounds, 1);
 
     //[UserPaint] Add your own custom painting code here..
-    g.drawRect (getBounds().reduced(2), 1);   // draw an outline around the component
+
+    // --- dB scale to the right of the fader (fader: x=26, w=20 → right edge x=46) ---
+    // The scale is drawn in the clear area x=50..W-4, aligned to fader track.
+    const int faderTop = 72;
+    const int faderH   = 166;
+    const int scaleX   = 50;
+    const int tickLen  = 4;
+
+    // Approximate fader thumb inset (half thumb height ~5px each end)
+    const int trackTop = faderTop + 5;
+    const int trackH   = faderH - 10;
+
+    struct DbMark { float db; bool major; };
+    static const DbMark marks[] = {
+        {  0.0f, true  },
+        { -3.0f, false },
+        { -6.0f, true  },
+        {-12.0f, true  },
+        {-18.0f, false },
+        {-24.0f, false },
+    };
+
+    g.setFont(juce::Font(8.0f));
+    for (const auto& m : marks) {
+        float gain = juce::Decibels::decibelsToGain(m.db);
+        int   y    = trackTop + (int)(trackH * (1.0f - gain));
+
+        if (m.major)
+            g.setColour(juce::Colours::white.withAlpha(0.75f));
+        else
+            g.setColour(juce::Colours::white.withAlpha(0.4f));
+
+        g.drawLine((float)scaleX, (float)y, (float)(scaleX + tickLen), (float)y, 1.0f);
+
+        juce::String label = (m.db == 0.0f) ? "0" : juce::String((int)m.db);
+        g.drawText(label, scaleX + tickLen + 1, y - 5, 26, 10,
+                   juce::Justification::centredLeft, false);
+    }
+
+    // --- FX slot placeholders ---
+    const int fxY     = 265;    // starts just after mute/solo buttons (bottom ~262)
+    const int fxSlotH = 14;
+    const int fxGap   = 3;
+    const int fxX     = 4;
+    const int fxW     = W - 8;
+
+    // Tiny "FX" header
+    g.setFont(juce::Font(8.0f, juce::Font::bold));
+    g.setColour(juce::Colours::white.withAlpha(0.45f));
+    g.drawText("FX", fxX, fxY, 20, 9, juce::Justification::centredLeft, false);
+
+    // Separator line
+    g.setColour(juce::Colours::white.withAlpha(0.15f));
+    g.drawLine(fxX + 18, fxY + 4, (float)(fxX + fxW), fxY + 4, 1.0f);
+
+    for (int i = 0; i < 4; ++i) {
+        int slotY = fxY + 11 + i * (fxSlotH + fxGap);
+        g.setColour(juce::Colour(0xff262626));
+        g.fillRect(fxX, slotY, fxW, fxSlotH);
+        g.setColour(juce::Colour(0xff4a4a4a));
+        g.drawRect(fxX, slotY, fxW, fxSlotH, 1);
+        g.setFont(juce::Font(8.0f));
+        g.setColour(juce::Colours::grey);
+        g.drawText("- empty -", fxX + 3, slotY, fxW - 6, fxSlotH,
+                   juce::Justification::centredLeft, false);
+    }
+
     //[/UserPaint]
 }
 
@@ -215,15 +284,17 @@ void MasterChannelPanel::resized()
     //[UserPreResize] Add your own custom resize code here..
     //[/UserPreResize]
 
-    vuSliderL->setBounds (24, 48, 6, 128);
-    channelVolume->setBounds (48, 40, 16, 136);
-    panSlider->setBounds (40, 8, 32, 32);
-    nameLabel->setBounds (11, 219, 64, 24);
-    muteButton->setBounds (19, 200, 16, 16);
-    soloButton->setBounds (48, 200, 16, 16);
-    M->setBounds (18, 200, 22, 16);
-    S->setBounds (48, 200, 20, 16);
-    vuSliderR->setBounds (32, 48, 6, 128);
+    panSlider->setBounds (37, 8, 36, 36);          // pan knob, centred in 110px strip
+    nameLabel->setBounds (6, 50, 98, 16);          // channel name below pan knob
+
+    vuSliderL->setBounds (4, 72, 8, 166);          // left VU meter
+    vuSliderR->setBounds (14, 72, 8, 166);         // right VU meter
+    channelVolume->setBounds (26, 72, 20, 166);    // volume fader
+
+    muteButton->setBounds (8, 242, 20, 20);        // mute button
+    M->setBounds (8, 242, 20, 20);                 // "M" label overlay
+    soloButton->setBounds (54, 242, 20, 20);       // solo button
+    S->setBounds (54, 242, 20, 20);                // "S" label overlay
     //[UserResized] Add your own custom resize handling here..
     //[/UserResized]
 }
