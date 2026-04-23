@@ -145,6 +145,12 @@ MasterChannelPanel::MasterChannelPanel ()
     muteButton->setClickingTogglesState(true);
     soloButton->setClickingTogglesState(true);
 
+    // VU sliders are replaced by custom paint — hide them
+    vuSliderL->setVisible(false);
+    vuSliderR->setVisible(false);
+
+    startTimerHz(60);   // 60 Hz animation timer for smooth VU decay
+
     //[/Constructor]
 }
 
@@ -209,6 +215,70 @@ void MasterChannelPanel::paint (Graphics& g)
     g.drawRect(bounds, 1);
 
     //[UserPaint] Add your own custom painting code here..
+
+    // --- Custom VU meter bars (L: x=4, R: x=14, y=72, w=8, h=166) ---
+    {
+        const int vuX[2]    = { 4, 14 };
+        const int vuY       = 72;
+        const int vuW       = 8;
+        const int vuH       = 166;
+        const float vals[2] = { smoothedL, smoothedR };
+        const float pkVals[2] = { peakL,   peakR };
+
+        // Zone heights (measured upward from bottom of bar)
+        const int greenH  = (int)(0.70f * vuH);   // bottom 70%
+        const int yellowH = (int)(0.20f * vuH);   // middle 20%
+        // top 10% = red
+
+        for (int ch = 0; ch < 2; ++ch) {
+            const int bx = vuX[ch];
+
+            // Background
+            g.setColour(juce::Colour(0xff1a1a1a));
+            g.fillRect(bx, vuY, vuW, vuH);
+
+            const int fill = juce::jlimit(0, vuH, (int)(vals[ch] * vuH));
+
+            if (fill > 0) {
+                // Green zone
+                const int gFill = juce::jmin(fill, greenH);
+                g.setColour(juce::Colour(0xff22bb22));
+                g.fillRect(bx, vuY + vuH - gFill, vuW, gFill);
+
+                // Yellow zone
+                if (fill > greenH) {
+                    const int yFill = juce::jmin(fill - greenH, yellowH);
+                    g.setColour(juce::Colour(0xffddcc00));
+                    g.fillRect(bx, vuY + vuH - greenH - yFill, vuW, yFill);
+                }
+
+                // Red zone
+                if (fill > greenH + yellowH) {
+                    const int rFill = fill - greenH - yellowH;
+                    g.setColour(juce::Colour(0xffcc2200));
+                    g.fillRect(bx, vuY + vuH - greenH - yellowH - rFill, vuW, rFill);
+                }
+            }
+
+            // Peak-hold line (2px bright horizontal bar)
+            const int peakFill = juce::jlimit(0, vuH, (int)(pkVals[ch] * vuH));
+            if (peakFill > 1) {
+                const int py = vuY + vuH - peakFill;
+                // Colour matches the zone the peak is in
+                if (pkVals[ch] > 0.90f)
+                    g.setColour(juce::Colour(0xffff6644));
+                else if (pkVals[ch] > 0.70f)
+                    g.setColour(juce::Colour(0xffffff44));
+                else
+                    g.setColour(juce::Colour(0xff88ff88));
+                g.fillRect(bx, py, vuW, 2);
+            }
+
+            // Subtle border
+            g.setColour(juce::Colours::black.withAlpha(0.5f));
+            g.drawRect(bx, vuY, vuW, vuH, 1);
+        }
+    }
 
     // --- dB scale to the right of the fader (fader: x=26, w=20 → right edge x=46) ---
     // The scale is drawn in the clear area x=50..W-4, aligned to fader track.
@@ -414,10 +484,54 @@ void MasterChannelPanel::setMagnitude(int channel, float magnitude) {
 }
 
 void MasterChannelPanel::updateMeter() {
+    // Called at ~25 Hz from MainComponent — just capture the latest peak values.
     if (channel) {
-        vuSliderL->setValue(channel->magnitudeLeft  * channelVolume->getValue());
-        vuSliderR->setValue(channel->magnitudeRight * channelVolume->getValue());
+        const float vol = (float)channelVolume->getValue();
+        targetL = channel->magnitudeLeft  * vol;
+        targetR = channel->magnitudeRight * vol;
     }
+}
+
+void MasterChannelPanel::timerCallback() {
+    // Called at 60 Hz — smoothly animate the VU bars toward the target.
+    // Attack: instant snap up.  Decay: exponential fall (~1.5 s at 60 Hz).
+    static constexpr float kDecay      = 0.95f;
+    static constexpr float kPeakDecay  = 0.97f;  // peak falls a bit slower
+    static constexpr int   kHoldTicks  = 120;     // 2 s hold at 60 Hz
+
+    const float prevL = smoothedL, prevR = smoothedR;
+    const float prevPL = peakL,    prevPR = peakR;
+
+    // --- Main bar decay ---
+    smoothedL = (targetL >= smoothedL) ? targetL : smoothedL * kDecay;
+    smoothedR = (targetR >= smoothedR) ? targetR : smoothedR * kDecay;
+
+    // --- Peak hold + decay ---
+    // Left
+    if (smoothedL >= peakL) {
+        peakL = smoothedL;
+        peakHoldL = kHoldTicks;
+    } else if (peakHoldL > 0) {
+        --peakHoldL;
+    } else {
+        peakL *= kPeakDecay;
+    }
+    // Right
+    if (smoothedR >= peakR) {
+        peakR = smoothedR;
+        peakHoldR = kHoldTicks;
+    } else if (peakHoldR > 0) {
+        --peakHoldR;
+    } else {
+        peakR *= kPeakDecay;
+    }
+
+    const bool changed = std::abs(smoothedL - prevL)  > 0.001f
+                      || std::abs(smoothedR - prevR)  > 0.001f
+                      || std::abs(peakL     - prevPL) > 0.001f
+                      || std::abs(peakR     - prevPR) > 0.001f;
+    if (changed)
+        repaint();
 }
 
 void MasterChannelPanel::changeListenerCallback(ChangeBroadcaster * source) {

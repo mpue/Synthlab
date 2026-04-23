@@ -43,7 +43,8 @@ class MasterChannelPanel  : public Component,
                             public ChangeListener,
                             public ChangeBroadcaster,
                             public Slider::Listener,
-                            public Button::Listener
+                            public Button::Listener,
+                            public juce::Timer
 {
 public:
     //==============================================================================
@@ -85,6 +86,7 @@ public:
     void resized() override;
     void sliderValueChanged (Slider* sliderThatWasMoved) override;
     void buttonClicked (Button* buttonThatWasClicked) override;
+    void timerCallback() override;
 
     // Binary resources:
     static const char* peaks_png;
@@ -107,6 +109,18 @@ private:
 
     double volume = 1.0f;
     double pan = 0.0f;
+
+    // VU meter animation: target = raw peak, smoothed = animated display value
+    float targetL   = 0.0f;
+    float targetR   = 0.0f;
+    float smoothedL = 0.0f;
+    float smoothedR = 0.0f;
+
+    // Peak-hold indicator: holds for ~2 s then falls smoothly
+    float peakL       = 0.0f;
+    float peakR       = 0.0f;
+    int   peakHoldL   = 0;     // countdown in timer ticks (60 Hz)
+    int   peakHoldR   = 0;
 
     Track* track = nullptr;
 
