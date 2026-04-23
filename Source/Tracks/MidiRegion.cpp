@@ -796,18 +796,18 @@ void MidiRegion::quantizeToBeats(double beatGrid) {
     updateThumb();
 }
 
-MidiMessageSequence* MidiRegion::getMidiMessageSequence()
+MidiMessageSequence MidiRegion::getMidiMessageSequence()
 {
-    MidiMessageSequence* seq = new MidiMessageSequence();
+    MidiMessageSequence seq;
     for (auto* msg : midiMessageList)
     {
         if (msg != nullptr) {
-            seq->addEvent(*msg);
+            seq.addEvent(*msg);
         }
     }
-    Logger::getCurrentLogger()->writeToLog("MidiRegion::getMidiMessageSequence: " + String(seq->getNumEvents()) + " events");
+    Logger::getCurrentLogger()->writeToLog("MidiRegion::getMidiMessageSequence: " + String(seq.getNumEvents()) + " events");
 
-    seq->updateMatchedPairs();
+    seq.updateMatchedPairs();
 
     return seq;
 }

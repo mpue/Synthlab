@@ -228,7 +228,10 @@ void PluginModule::eventReceived(Event* e)
 
 	auto msg = e->getMessage();
 
-	if (msg.getVelocity() == 0)
+	// Only convert note-on with velocity 0 to note-off (standard MIDI convention).
+	// getVelocity() returns 0 for ALL non-note messages (CC, pitchbend, etc.),
+	// so checking it here would silently drop every controller event.
+	if (msg.isNoteOn() && msg.getVelocity() == 0)
 		msg = MidiMessage::noteOff(msg.getChannel(), msg.getNoteNumber());
 
 	msg.setTimeStamp(0);

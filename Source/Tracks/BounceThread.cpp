@@ -272,12 +272,12 @@ MidiBuffer BounceThread::buildMidiBufferForTrack(Track* track, double sampleRate
 	{
 		if (auto* midiRegion = dynamic_cast<MidiRegion*>(region))
 		{
-			MidiMessageSequence* sequence = midiRegion->getMidiMessageSequence();
+			MidiMessageSequence sequence = midiRegion->getMidiMessageSequence();
 			const int regionStartSample = midiRegion->getSampleOffset();
 
-			for (int i = 0; i < sequence->getNumEvents(); ++i)
+			for (int i = 0; i < sequence.getNumEvents(); ++i)
 			{
-				const auto& msg = sequence->getEventPointer(i)->message;
+				const auto& msg = sequence.getEventPointer(i)->message;
 
 				int samplePos = static_cast<int>(msg.getTimeStamp()) + regionStartSample;
 				buffer.addEvent(msg, samplePos);

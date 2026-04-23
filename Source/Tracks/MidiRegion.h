@@ -80,7 +80,7 @@ public:
 	void quantize(int quantizeGridSamples) override;
     void consolidate() override;
 
-    MidiMessageSequence* getMidiMessageSequence();
+    MidiMessageSequence getMidiMessageSequence();
 
     void setMidiMessageSequence(const MidiMessageSequence& seq);
 
