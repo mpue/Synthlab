@@ -27,6 +27,12 @@
 #include "../Mixer.h"
 #include "DragConstrainer.h"
 #include "../VolumeAdjustable.h"
+
+// Forward declarations to avoid circular includes
+class SynthEditor;
+class PluginModule;
+class Module;
+class Pin;
 //[/Headers]
 
 
@@ -80,6 +86,7 @@ public:
     void setChannelType(Mixer::Channel::Type type);
     void setChannel(Mixer::Channel* channel);
     void setModule(VolumeAdjustable* v);
+    void setSynthEditor(SynthEditor* editor);
     //[/UserMethods]
 
     void paint (Graphics& g) override;
@@ -129,7 +136,25 @@ private:
     int index = 0;
     Mixer::Channel* channel;
     VolumeAdjustable* module;
-    
+
+    // --- FX chain ---
+    static constexpr int NUM_FX = 4;
+    SynthEditor*  synthEditor = nullptr;
+    PluginModule* fxChain[NUM_FX]      = {};
+    juce::TextButton* fxOpenButtons[NUM_FX] = {};
+
+    // Source modules/pins feeding into the AudioOut before any FX
+    Module* chainSourceModL = nullptr;
+    Module* chainSourceModR = nullptr;
+    Pin*    chainSourcePinL = nullptr;
+    Pin*    chainSourcePinR = nullptr;
+
+    int  getSlotAtPoint(juce::Point<int> pos) const;
+    void onFXSlotClicked(int slotIndex);
+    void insertFX(int slotIndex, juce::String pluginName);
+    void removeFX(int slotIndex);
+    void rewireChain();
+    void updateFXButtons();
     //[/UserVariables]
 
     //==============================================================================

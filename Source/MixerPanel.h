@@ -28,6 +28,9 @@
 #include "AudioOut.h"
 #include "VolumeAdjustable.h"
 
+// Forward declaration — SynthEditor.h includes MixerPanel.h, so we cannot include it here.
+class SynthEditor;
+
 //[/Headers]
 
 
@@ -68,6 +71,7 @@ public:
     bool auxChannelIsValid(int channel, int subchannel);
     void clearChannels();
     void repositionAllChannels();
+    void setSynthEditor(SynthEditor* se);
     //[/UserMethods]
     
     void paint (juce::Graphics& g) override;
@@ -86,6 +90,8 @@ private:
 
     // Tracks the next x-position for a new channel strip (accounts for group separators).
     int currentX = 0;
+
+    SynthEditor* synthEditor = nullptr;
     //[/UserVariables]
 
     //==============================================================================

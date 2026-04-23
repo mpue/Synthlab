@@ -1,4 +1,5 @@
 #include "MixerPanel.h"
+#include "SynthEditor.h"
 
 using juce::Graphics;
 using juce::ChangeBroadcaster;
@@ -100,6 +101,9 @@ int MixerPanel::addChannel(String name, Mixer::Channel::Type channeltype) {
     panel->setIndex(index);
     panel->setName(name);
     panel->addChangeListener(this);
+
+    if (synthEditor != nullptr)
+        panel->setSynthEditor(synthEditor);
 
     Mixer::Channel* channel = new Mixer::Channel();
     channel->index = panel->getIndex();
@@ -233,4 +237,10 @@ void MixerPanel::clearChannels() {
 	inputChannels.clear();
 	auxChannels.clear();
     currentX = 0;
+}
+
+void MixerPanel::setSynthEditor(SynthEditor* se) {
+    synthEditor = se;
+    for (auto* ch : channels)
+        ch->setSynthEditor(se);
 }

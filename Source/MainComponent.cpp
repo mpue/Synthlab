@@ -348,6 +348,7 @@ void MainComponent::createStudioLayout() {
 	editorView = std::make_unique<EditorComponent>(sampleRate, buffersize, propertyView.get(), *parser, transportDisplay.get());
 	editor = editorView.get()->getEditor();
 	mixerPanel = editorView->getMixerPanel();
+	mixerPanel->setSynthEditor(editor);
 
 	if (navigator == nullptr) {
 		navigator = editorView->getNavigator();
@@ -607,6 +608,7 @@ void MainComponent::createPlayerLayout() {
 	editor = new SynthEditor(sampleRate, buffersize);
 	mixerPanel = std::make_shared<MixerPanel>();
 	editor->setMixer(mixerPanel);
+	mixerPanel->setSynthEditor(editor);
 	addAndMakeVisible(editor);
 	addChildComponent(mixerPanel.get());
 }

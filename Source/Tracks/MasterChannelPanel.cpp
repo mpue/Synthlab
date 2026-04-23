@@ -22,6 +22,13 @@
 #include "../Mixer.h"
 #include "../Project/Project.h"
 #include "../Session.h"
+#include "../SynthEditor.h"
+#include "../PluginModule.h"
+#include "../AudioOut.h"
+#include "../AudioManager.h"
+#include "../ModuleUtils.h"
+#include "../Connection.h"
+#include "../Plugins/PluginManager.h"
 //[/Headers]
 
 #include "MasterChannelPanel.h"
@@ -149,6 +156,13 @@ MasterChannelPanel::MasterChannelPanel ()
     vuSliderL->setVisible(false);
     vuSliderR->setVisible(false);
 
+    // Create FX open ("E") buttons — one per slot, hidden until a plugin is inserted
+    for (int i = 0; i < NUM_FX; ++i) {
+        fxOpenButtons[i] = new juce::TextButton("E");
+        addChildComponent(fxOpenButtons[i]);
+        fxOpenButtons[i]->addListener(this);
+    }
+
     startTimerHz(60);   // 60 Hz animation timer for smooth VU decay
 
     //[/Constructor]
@@ -171,6 +185,10 @@ MasterChannelPanel::~MasterChannelPanel()
 
 
     //[Destructor]. You can add your own custom destruction code here..
+    for (int i = 0; i < NUM_FX; ++i) {
+        delete fxOpenButtons[i];
+        fxOpenButtons[i] = nullptr;
+    }
     //[/Destructor]
 }
 
@@ -341,9 +359,16 @@ void MasterChannelPanel::paint (Graphics& g)
         g.setColour(juce::Colour(0xff4a4a4a));
         g.drawRect(fxX, slotY, fxW, fxSlotH, 1);
         g.setFont(juce::Font(8.0f));
-        g.setColour(juce::Colours::grey);
-        g.drawText("- empty -", fxX + 3, slotY, fxW - 6, fxSlotH,
-                   juce::Justification::centredLeft, false);
+        if (fxChain[i] != nullptr) {
+            // Occupied slot: show plugin name, leave 16px for the "E" button on right
+            g.setColour(juce::Colours::white.withAlpha(0.85f));
+            g.drawText(fxChain[i]->getPluginName(), fxX + 3, slotY, fxW - 19, fxSlotH,
+                       juce::Justification::centredLeft, true);
+        } else {
+            g.setColour(juce::Colours::grey);
+            g.drawText("- empty -", fxX + 3, slotY, fxW - 6, fxSlotH,
+                       juce::Justification::centredLeft, false);
+        }
     }
 
     //[/UserPaint]
@@ -366,6 +391,15 @@ void MasterChannelPanel::resized()
     soloButton->setBounds (54, 242, 20, 20);       // solo button
     S->setBounds (54, 242, 20, 20);                // "S" label overlay
     //[UserResized] Add your own custom resize handling here..
+    {
+        const int fxY = 265, fxSlotH = 14, fxGap = 3, btnW = 15;
+        for (int i = 0; i < NUM_FX; ++i) {
+            if (fxOpenButtons[i] != nullptr) {
+                int slotY = fxY + 11 + i * (fxSlotH + fxGap);
+                fxOpenButtons[i]->setBounds(getWidth() - btnW - 4, slotY, btnW, fxSlotH);
+            }
+        }
+    }
     //[/UserResized]
 }
 
@@ -427,6 +461,15 @@ void MasterChannelPanel::buttonClicked (Button* buttonThatWasClicked)
     //[UserbuttonClicked_Pre]
     //[/UserbuttonClicked_Pre]
 
+    // FX open buttons: open the plugin editor window
+    for (int i = 0; i < NUM_FX; ++i) {
+        if (buttonThatWasClicked == fxOpenButtons[i]) {
+            if (fxChain[i] != nullptr)
+                fxChain[i]->openPluginWindow();
+            return;
+        }
+    }
+
     if (buttonThatWasClicked == muteButton)
     {
         //[UserButtonCode_muteButton] -- add your button handler code here..
@@ -466,6 +509,9 @@ double MasterChannelPanel::getPan() {
 void MasterChannelPanel::mouseDown (const MouseEvent& e)
 {
     // dragger.startDraggingComponent (this, e);
+    int slot = getSlotAtPoint(e.getPosition());
+    if (slot >= 0)
+        onFXSlotClicked(slot);
 }
 void MasterChannelPanel::mouseDrag (const MouseEvent& e)
 {
@@ -612,6 +658,237 @@ void MasterChannelPanel::setVolume(float volume) {
 
 void MasterChannelPanel::setModule(VolumeAdjustable *v) {
     this->module = v;
+}
+
+void MasterChannelPanel::setSynthEditor(SynthEditor* editor) {
+    synthEditor = editor;
+}
+
+// Returns the FX slot index (0-3) at a given component-local position, or -1.
+int MasterChannelPanel::getSlotAtPoint(juce::Point<int> pos) const {
+    const int fxY = 265, fxSlotH = 14, fxGap = 3;
+    const int fxX = 4, fxW = getWidth() - 8;
+    for (int i = 0; i < NUM_FX; ++i) {
+        int slotY = fxY + 11 + i * (fxSlotH + fxGap);
+        juce::Rectangle<int> r(fxX, slotY, fxW, fxSlotH);
+        if (r.contains(pos))
+            return i;
+    }
+    return -1;
+}
+
+// Called when the user clicks on an FX slot.
+void MasterChannelPanel::onFXSlotClicked(int slotIndex) {
+    if (!synthEditor) return;
+
+    if (fxChain[slotIndex] != nullptr) {
+        // Occupied: offer to open the editor or remove the plugin
+        juce::PopupMenu menu;
+        menu.addItem(1, "Open plugin editor");
+        menu.addItem(2, "Remove plugin");
+        const int result = menu.show();
+        if (result == 1)
+            fxChain[slotIndex]->openPluginWindow();
+        else if (result == 2)
+            removeFX(slotIndex);
+    } else {
+        // Empty: show list of available plugins
+        const juce::StringArray& plugins = PluginManager::getInstance()->getPlugins();
+        if (plugins.isEmpty()) return;
+
+        juce::PopupMenu menu;
+        for (int i = 0; i < plugins.size(); ++i)
+            menu.addItem(i + 1, plugins[i]);
+
+        const int result = menu.show();
+        if (result > 0)
+            insertFX(slotIndex, plugins[result - 1]);
+    }
+}
+
+// Insert a new PluginModule into the graph at slotIndex.
+void MasterChannelPanel::insertFX(int slotIndex, juce::String pluginName) {
+    if (!synthEditor) return;
+
+    auto* audioOut = dynamic_cast<AudioOut*>(module);
+    if (!audioOut) return;
+
+    Module* root = synthEditor->getModule();
+    if (!root) return;
+    auto* connections = root->getConnections();
+
+    // On first FX insertion: save what currently feeds AudioOut's L and R inputs.
+    bool isFirst = true;
+    for (int i = 0; i < NUM_FX; ++i)
+        if (fxChain[i] != nullptr) { isFirst = false; break; }
+
+    if (isFirst) {
+        // audioOut->pins[0] is L IN, pins[1] is R IN.
+        // getConnections() on an IN pin returns the OUT pins feeding it.
+        auto& connsL = audioOut->pins[0]->getConnections();
+        auto& connsR = audioOut->pins[1]->getConnections();
+
+        if (!connsL.empty()) {
+            chainSourcePinL = connsL[0];
+            for (auto* m : *root->getModules()) {
+                for (auto* p : m->pins)
+                    if (p == chainSourcePinL) { chainSourceModL = m; break; }
+                if (chainSourceModL) break;
+            }
+        }
+        if (!connsR.empty()) {
+            chainSourcePinR = connsR[0];
+            for (auto* m : *root->getModules()) {
+                for (auto* p : m->pins)
+                    if (p == chainSourcePinR) { chainSourceModR = m; break; }
+                if (chainSourceModR) break;
+            }
+        }
+    }
+
+    // Determine current audio device parameters.
+    auto* dev = AudioManager::getInstance()->getDeviceManager()->getCurrentAudioDevice();
+    const double sr = dev ? dev->getCurrentSampleRate()       : 44100.0;
+    const int    bs = dev ? dev->getCurrentBufferSizeSamples() : 512;
+
+    PluginModule* fx = new PluginModule(sr, bs);
+    fx->configurePins();
+    fx->selectPlugin(pluginName);
+
+    root->getModules()->push_back(fx);
+    synthEditor->addAndMakeVisible(fx);
+
+    // Position the module above (or to the left of) the AudioOut in the graph.
+    // Place successive FX slots offset upward so they don't stack on top of each other.
+    const int offsetX = -160;
+    const int offsetY = -(slotIndex + 1) * 80;
+    fx->setTopLeftPosition(audioOut->getX() + offsetX, audioOut->getY() + offsetY);
+
+    fxChain[slotIndex] = fx;
+
+    rewireChain();
+    updateFXButtons();
+    repaint();
+}
+
+// Remove the PluginModule at slotIndex from the graph.
+void MasterChannelPanel::removeFX(int slotIndex) {
+    if (!synthEditor || fxChain[slotIndex] == nullptr) return;
+
+    PluginModule* fx = fxChain[slotIndex];
+    fxChain[slotIndex] = nullptr;
+
+    Module* root = synthEditor->getModule();
+    auto* connections = root->getConnections();
+
+    // Remove all Connection objects that involve any of this FX's pins.
+    const auto& fxPins = fx->pins;
+    connections->erase(
+        std::remove_if(connections->begin(), connections->end(),
+            [&fxPins](Connection* c) {
+                for (auto* p : fxPins)
+                    if (c->a == p || c->b == p) { delete c; return true; }
+                return false;
+            }),
+        connections->end());
+
+    // Clear pin-level connection references for this FX's pins.
+    for (auto* p : fxPins)
+        p->getConnections().clear();
+
+    // Rebuild the rest of the chain (this also clears stale AudioOut pin refs).
+    rewireChain();
+
+    // Remove module from graph and component tree.
+    auto* mods = root->getModules();
+    mods->erase(std::remove(mods->begin(), mods->end(), fx), mods->end());
+    synthEditor->removeChildComponent(fx);
+    delete fx;
+
+    // If no FX remain, reset chain-source bookkeeping.
+    bool anyActive = false;
+    for (int i = 0; i < NUM_FX; ++i)
+        if (fxChain[i]) { anyActive = true; break; }
+    if (!anyActive) {
+        chainSourceModL = chainSourceModR = nullptr;
+        chainSourcePinL = chainSourcePinR = nullptr;
+    }
+
+    updateFXButtons();
+    repaint();
+}
+
+// Rebuild connections from saved chain source through active FX slots into AudioOut.
+void MasterChannelPanel::rewireChain() {
+    if (!synthEditor) return;
+
+    auto* audioOut = dynamic_cast<AudioOut*>(module);
+    if (!audioOut) return;
+
+    Module* root = synthEditor->getModule();
+    if (!root) return;
+    auto* connections = root->getConnections();
+
+    // Collect active (non-null) FX in slot order.
+    std::vector<PluginModule*> active;
+    for (int i = 0; i < NUM_FX; ++i)
+        if (fxChain[i]) active.push_back(fxChain[i]);
+
+    // Gather all IN pins that need their connections rebuilt.
+    std::vector<Pin*> watchedINpins;
+    watchedINpins.push_back(audioOut->pins[0]);
+    watchedINpins.push_back(audioOut->pins[1]);
+    for (auto* fx : active) {
+        watchedINpins.push_back(fx->pins[0]);
+        watchedINpins.push_back(fx->pins[1]);
+    }
+
+    // Clear pin-level references for those IN pins.
+    for (auto* pin : watchedINpins)
+        pin->getConnections().clear();
+
+    // Remove Connection objects whose IN pin (c->a) is in watchedINpins.
+    connections->erase(
+        std::remove_if(connections->begin(), connections->end(),
+            [&watchedINpins](Connection* c) {
+                for (auto* p : watchedINpins)
+                    if (c->a == p) { delete c; return true; }
+                return false;
+            }),
+        connections->end());
+
+    if (!chainSourceModL || !chainSourcePinL) return;
+
+    if (active.empty()) {
+        // No FX: restore direct connections from source to AudioOut.
+        ModuleUtils::addConnection(audioOut, audioOut->pins[0], chainSourceModL, chainSourcePinL, connections);
+        if (chainSourceModR && chainSourcePinR)
+            ModuleUtils::addConnection(audioOut, audioOut->pins[1], chainSourceModR, chainSourcePinR, connections);
+    } else {
+        // Source → first FX
+        ModuleUtils::addConnection(active[0], active[0]->pins[0], chainSourceModL, chainSourcePinL, connections);
+        if (chainSourceModR && chainSourcePinR)
+            ModuleUtils::addConnection(active[0], active[0]->pins[1], chainSourceModR, chainSourcePinR, connections);
+
+        // FX[i] → FX[i+1]  (pins[2]=L OUT, pins[3]=R OUT)
+        for (int i = 0; i < (int)active.size() - 1; ++i) {
+            ModuleUtils::addConnection(active[i+1], active[i+1]->pins[0], active[i], active[i]->pins[2], connections);
+            ModuleUtils::addConnection(active[i+1], active[i+1]->pins[1], active[i], active[i]->pins[3], connections);
+        }
+
+        // Last FX → AudioOut
+        auto* last = active.back();
+        ModuleUtils::addConnection(audioOut, audioOut->pins[0], last, last->pins[2], connections);
+        ModuleUtils::addConnection(audioOut, audioOut->pins[1], last, last->pins[3], connections);
+    }
+
+    synthEditor->repaint();
+}
+
+// Show or hide the "E" open buttons depending on whether a slot is occupied.
+void MasterChannelPanel::updateFXButtons() {
+    for (int i = 0; i < NUM_FX; ++i)
+        fxOpenButtons[i]->setVisible(fxChain[i] != nullptr);
 }
 
 //[/MiscUserCode]
