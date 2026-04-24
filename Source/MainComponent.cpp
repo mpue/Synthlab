@@ -305,7 +305,7 @@ void MainComponent::createToolbar() {
 	lockButton->setImages(false, true, true, normalImage, 1.0f, juce::Colours::white, normalImage, 1.0, juce::Colours::white, downImage, 1.0f, juce::Colours::white);
 	lockButton->setClickingTogglesState(true);
 	lockButton->setSize(24, 24);
-	lockButton->setTopLeftPosition(1950, 10);
+	lockButton->setTopLeftPosition(1028 + 480 + 6, 13);
 	toolbar->addAndMakeVisible(lockButton);
 
 	lockButton->addListener(this);
@@ -338,11 +338,11 @@ void MainComponent::createStudioLayout() {
 	transportDisplay = std::make_unique<TransportDisplayComponent>();
 	transportDisplay->setTransportState(0, sampleRate, 120.0, 4, 4);
 	transportDisplay->setMetronomeState(false);
-	transportDisplay->setSize(760, 48);
+	transportDisplay->setSize(480, 48);
 #if JUCE_MAC
-	transportDisplay->setTopLeftPosition(1180, 1);
+	transportDisplay->setTopLeftPosition(1028, 1);
 #else
-	transportDisplay->setTopLeftPosition(1180, 26);
+	transportDisplay->setTopLeftPosition(1028, 26);
 #endif
 	addAndMakeVisible(transportDisplay.get());
 

@@ -118,28 +118,28 @@ void TransportDisplayComponent::drawGlassEffect(Graphics& g, const Rectangle<flo
 
 void TransportDisplayComponent::drawHorizontalLayout(Graphics& g)
 {
-    auto bounds = getLocalBounds().reduced(16);
+    auto bounds = getLocalBounds().reduced(10);
 
     // Zeit
     g.setFont(lookAndFeel.mainFont);
     g.setColour(lookAndFeel.text);
     String timeStr = getTimeAsString(currentSamplePos, currentSampleRate);
-    g.drawFittedText(timeStr, bounds.removeFromLeft(170), Justification::left, 1);
+    g.drawFittedText(timeStr, bounds.removeFromLeft(100), Justification::left, 1);
 
     // Bar.Beat.Tick
     String barBeatStr = getBarBeatString(currentSamplePos, currentSampleRate, currentBpm, timeSigNumerator, timeSigDenominator);
     g.setColour(lookAndFeel.accent);
-    g.drawFittedText(barBeatStr, bounds.removeFromLeft(120), Justification::left, 1);
+    g.drawFittedText(barBeatStr, bounds.removeFromLeft(80), Justification::left, 1);
 
     // Sample Rate
     g.setFont(lookAndFeel.secondaryFont);
     g.setColour(lookAndFeel.textSecondary);
     String sampleRateStr = String((int)currentSampleRate) + " Hz";
-    g.drawFittedText(sampleRateStr, bounds.removeFromLeft(80), Justification::left, 1);
+    g.drawFittedText(sampleRateStr, bounds.removeFromLeft(55), Justification::left, 1);
 
     // Time Signature
     String timeSigStr = String(timeSigNumerator) + "/" + String(timeSigDenominator);
-    g.drawFittedText(timeSigStr, bounds.removeFromLeft(60), Justification::left, 1);
+    g.drawFittedText(timeSigStr, bounds.removeFromLeft(40), Justification::left, 1);
 
     // BPM Puls-Anzeige
     if (bpmPulse * 2 % 60 < 10) // Kurzes Aufleuchten
@@ -154,15 +154,13 @@ void TransportDisplayComponent::drawHorizontalLayout(Graphics& g)
         g.fillEllipse(pulseArea.toFloat().reduced(6));
     }
 
-    bounds.removeFromLeft(20); // Platz f�r Puls
-
     // Buttons
-    metronomeArea = bounds.removeFromLeft(40);
+    metronomeArea = bounds.removeFromLeft(32);
     drawMetronomeButton(g, metronomeArea);
 
-    bounds.removeFromLeft(8); // Spacing
+    bounds.removeFromLeft(5); // Spacing
 
-    loopArea = bounds.removeFromLeft(40);
+    loopArea = bounds.removeFromLeft(32);
     drawLoopButton(g, loopArea);
 }
 
@@ -254,9 +252,9 @@ void TransportDisplayComponent::resized()
 {
     if (layoutMode == LayoutMode::Horizontal)
     {
-        int tempoX = getWidth() - 140;
-        tempoLabel->setBounds(tempoX, 16, 35, 20);
-        tempoEditor->setBounds(tempoX + 35, 14, 60, 24);
+        int tempoX = getWidth() - 110;
+        tempoLabel->setBounds(tempoX, 15, 35, 20);
+        tempoEditor->setBounds(tempoX + 35, 13, 60, 22);
     }
     else
     {

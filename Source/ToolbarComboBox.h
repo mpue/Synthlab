@@ -44,9 +44,9 @@ public:
         if (isVertical)
             return false;
         
-        preferredSize = 250;
-        minSize = 80;
-        maxSize = 300;
+        preferredSize = 125;
+        minSize = 40;
+        maxSize = 150;
         return true;
     }
     
