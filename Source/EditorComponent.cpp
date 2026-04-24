@@ -41,11 +41,11 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView*
     editorView->setWantsKeyboardFocus(false);
     editorView->setMouseClickGrabsKeyboardFocus(false);
 
-    // Keyboard-Focus für SynthEditor einrichten
+    // Keyboard-Focus fï¿½r SynthEditor einrichten
     editor->setWantsKeyboardFocus(true);
     editor->setMouseClickGrabsKeyboardFocus(true);
     
-    // SynthEditor als KeyListener für das Top-Level-Component registrieren
+    // SynthEditor als KeyListener fï¿½r das Top-Level-Component registrieren
     if (auto* topLevel = getTopLevelComponent())
     {
         topLevel->addKeyListener(editor.get());
@@ -316,6 +316,10 @@ MainTabbedComponent* EditorComponent::getEditorTab() {
     return topTab.get();
 }
 
+MainTabbedComponent* EditorComponent::getBottomTab() {
+    return bottomTab.get();
+}
+
 void EditorComponent::openConsole() {
     console = std::make_unique<ShellConsoleComponent>(parser);
     bottomTab->addTab("Console", Colours::darkgrey, console.get(), false);
@@ -344,8 +348,19 @@ void EditorComponent::OpenTrackView()
         navigator->setInterceptsMouseClicks(true, true);
         navigator->toFront(false);
     }
-    topTab->addTab("Navigator", juce::Colours::grey, trackView.get(), false);
-    topTab->setCurrentTabIndex(1);
+    // Only add the Navigator tab once
+    bool navigatorTabExists = false;
+    for (int i = 0; i < topTab->getNumTabs(); i++) {
+        if (topTab->getTabNames()[i] == "Navigator") {
+            navigatorTabExists = true;
+            topTab->setCurrentTabIndex(i);
+            break;
+        }
+    }
+    if (!navigatorTabExists) {
+        topTab->addTab("Navigator", juce::Colours::grey, trackView.get(), false);
+        topTab->setCurrentTabIndex(topTab->getNumTabs() - 1);
+    }
     navigator->setInterceptsMouseClicks(true, true);
     navigator->toFront(true);
 }

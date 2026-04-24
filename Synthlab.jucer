@@ -234,9 +234,16 @@
         <FILE id="C20i76" name="MessageBus.h" compile="0" resource="0" file="Source/MessageBus/MessageBus.h"/>
         <FILE id="xCo42k" name="Topic.cpp" compile="1" resource="0" file="Source/MessageBus/Topic.cpp"/>
         <FILE id="jloBCb" name="Topic.h" compile="0" resource="0" file="Source/MessageBus/Topic.h"/>
+        <FILE id="aB1cDe" name="BusListener.h" compile="0" resource="0" file="Source/MessageBus/BusListener.h"/>
       </GROUP>
       <FILE id="xFR6SE" name="EditorListener.h" compile="0" resource="0"
             file="Source/EditorListener.h"/>
+      <FILE id="tU8nVw" name="IEditor.h" compile="0" resource="0" file="Source/IEditor.h"/>
+      <FILE id="qX9oYp" name="Macros.h" compile="0" resource="0" file="Source/Macros.h"/>
+      <FILE id="rZ0pAq" name="NamedItem.h" compile="0" resource="0" file="Source/NamedItem.h"/>
+      <FILE id="uA1bBr" name="OneShotTimer.h" compile="0" resource="0" file="Source/OneShotTimer.h"/>
+      <FILE id="vC2cCs" name="Terminal.h" compile="0" resource="0" file="Source/Terminal.h"/>
+      <FILE id="wD3dDt" name="Monophonic.h" compile="0" resource="0" file="Source/Monophonic.h"/>
       <GROUP id="{FB7BC6C4-6B07-639E-1335-421CB2A3BBB4}" name="MidiRecorder">
         <FILE id="TPjNlE" name="Logger.h" compile="0" resource="0" file="Source/MidiRecorder/Logger.h"/>
         <FILE id="CiitqG" name="MidiEventEditor.cpp" compile="1" resource="0"
@@ -257,6 +264,8 @@
         <FILE id="c8waHE" name="PluginManager.cpp" compile="1" resource="0"
               file="Source/Plugins/PluginManager.cpp"/>
         <FILE id="toYp5l" name="PluginManager.h" compile="0" resource="0" file="Source/Plugins/PluginManager.h"/>
+        <FILE id="pB2cFg" name="PluginBrowserComponent.h" compile="0" resource="0"
+              file="Source/Plugins/PluginBrowserComponent.h"/>
       </GROUP>
       <GROUP id="{77AE62B9-7144-98DD-6972-2AE372C2CB32}" name="Actions">
         <FILE id="d4mKKq" name="AddConnectionAction.cpp" compile="1" resource="0"
@@ -305,6 +314,10 @@
               file="Source/Actions/SetGainForRegionAction.cpp"/>
         <FILE id="hSLVIv" name="SetGainForRegionAction.h" compile="0" resource="0"
               file="Source/Actions/SetGainForRegionAction.h"/>
+        <FILE id="xzQp1A" name="SplitRegionAction.cpp" compile="1" resource="0"
+              file="Source/Actions/SplitRegionAction.cpp"/>
+        <FILE id="mN8kPw" name="SplitRegionAction.h" compile="0" resource="0"
+              file="Source/Actions/SplitRegionAction.h"/>
       </GROUP>
       <GROUP id="{A79C9093-D329-37A0-AEE1-CF7BDC5C60DE}" name="AudioEngine">
         <FILE id="HVUNoB" name="MidiProcessor.cpp" compile="1" resource="0"
@@ -385,6 +398,8 @@
         <FILE id="gh5DcG" name="Voice.h" compile="0" resource="0" file="Source/AudioEngine/Voice.h"/>
         <FILE id="qiQl6a" name="WhiteNoise.cpp" compile="1" resource="0" file="Source/AudioEngine/WhiteNoise.cpp"/>
         <FILE id="RO3JEM" name="WhiteNoise.h" compile="0" resource="0" file="Source/AudioEngine/WhiteNoise.h"/>
+        <FILE id="cD3eFh" name="AudioProcessorModule.h" compile="0" resource="0"
+              file="Source/AudioEngine/AudioProcessorModule.h"/>
       </GROUP>
       <GROUP id="{F7A67158-9DD4-9E2C-0BDC-1B58ED967D9B}" name="Editor">
         <FILE id="Rt5n54" name="PianoRollComponent.cpp" compile="1" resource="0"
@@ -620,6 +635,10 @@
                 file="Source/PublisherModule.cpp"/>
           <FILE id="yqFyOO" name="PublisherModule.h" compile="0" resource="0"
                 file="Source/PublisherModule.h"/>
+          <FILE id="nK6pQr" name="RadioGroupModule.cpp" compile="1" resource="0"
+                file="Source/RadioGroupModule.cpp"/>
+          <FILE id="sL7mRt" name="RadioGroupModule.h" compile="0" resource="0"
+                file="Source/RadioGroupModule.h"/>
           <FILE id="yPE3Xy" name="KeyboardModule.cpp" compile="1" resource="0"
                 file="Source/KeyboardModule.cpp"/>
           <FILE id="LlNnSk" name="KeyboardModule.h" compile="0" resource="0"
@@ -661,6 +680,10 @@
           <FILE id="Tg2QZR" name="ADSRModule.h" compile="0" resource="0" file="Source/ADSRModule.h"/>
           <FILE id="I2KB5k" name="AudioIn.cpp" compile="1" resource="0" file="Source/AudioIn.cpp"/>
           <FILE id="r5vcRg" name="AudioIn.h" compile="0" resource="0" file="Source/AudioIn.h"/>
+          <FILE id="gH4iJk" name="AudioInSelector.cpp" compile="1" resource="0"
+                file="Source/AudioInSelector.cpp"/>
+          <FILE id="fE5jLm" name="AudioInSelector.h" compile="0" resource="0"
+                file="Source/AudioInSelector.h"/>
           <FILE id="bl08fP" name="AudioOut.cpp" compile="1" resource="0" file="Source/AudioOut.cpp"/>
           <FILE id="tqfYhi" name="AudioOut.h" compile="0" resource="0" file="Source/AudioOut.h"/>
           <FILE id="qF57bh" name="Constant.cpp" compile="1" resource="0" file="Source/Constant.cpp"/>
@@ -738,11 +761,19 @@
       <FILE id="prQp1n" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
       <FILE id="SXYkCq" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
+      <FILE id="xE4eFu" name="GainDialog.cpp" compile="1" resource="0" file="Source/GainDialog.cpp"/>
+      <FILE id="yF5fGv" name="GainDialog.h" compile="0" resource="0" file="Source/GainDialog.h"/>
+      <FILE id="zA6gHw" name="SilenceDialog.cpp" compile="1" resource="0"
+            file="Source/SilenceDialog.cpp"/>
+      <FILE id="aB7hIx" name="SilenceDialog.h" compile="0" resource="0" file="Source/SilenceDialog.h"/>
+      <FILE id="bC8iJy" name="TrimDialog.cpp" compile="1" resource="0" file="Source/TrimDialog.cpp"/>
+      <FILE id="cD9jKz" name="TrimDialog.h" compile="0" resource="0" file="Source/TrimDialog.h"/>
       <FILE id="BZiBf9" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
     </GROUP>
   </MAINGROUP>
   <EXPORTFORMATS>
-    <XCODE_MAC targetFolder="Builds/MacOSX" smallIcon="udjGbx" bigIcon="udjGbx">
+    <XCODE_MAC targetFolder="Builds/MacOSX" smallIcon="udjGbx" bigIcon="udjGbx"
+               microphonePermissionNeeded="1">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest&#10;"/>
         <CONFIGURATION isDebug="0" name="Release" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest"/>

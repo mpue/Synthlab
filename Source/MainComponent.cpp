@@ -339,7 +339,11 @@ void MainComponent::createStudioLayout() {
 	transportDisplay->setTransportState(0, sampleRate, 120.0, 4, 4);
 	transportDisplay->setMetronomeState(false);
 	transportDisplay->setSize(760, 48);
+#if JUCE_MAC
+	transportDisplay->setTopLeftPosition(1180, 1);
+#else
 	transportDisplay->setTopLeftPosition(1180, 26);
+#endif
 	addAndMakeVisible(transportDisplay.get());
 
 	metronome = std::make_unique<Metronome>(44100, 128);
@@ -954,17 +958,17 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 
 		menu.addSubMenu("Samples", samplesMenu);
 
-
 		menu.addItem(999, "Exit", true, false, nullptr);
 	}
 	else if (index == 1) {
 #if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
 		menu.addItem(200, "Manage plugins", true, false, nullptr);
 #endif
+		menu.addSeparator();
 		menu.addItem(201, "Tracks", true, false, nullptr);
 		menu.addItem(202, "Console", true, false, nullptr);
-		menu.addItem(202, "Level Meters", true, false, nullptr);
-		menu.addItem(202, "Input Spectrum", true, false, nullptr);
+		menu.addItem(203, "Level Meters", true, false, nullptr);
+		menu.addItem(204, "Input Spectrum", true, false, nullptr);
 	}
 	else if (index == 2) {
 
@@ -1053,24 +1057,26 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 #endif
 	else if (menuItemID == 201) {
 		editorView->OpenTrackView();
-		editorView->getNavigator()->addChangeListener(this);
+		if (editorView->getNavigator() != nullptr)
+			editorView->getNavigator()->addChangeListener(this);
 	}
 	else if (menuItemID == 202) {
 		editorView->openConsole();
 	}
+
 	else if (menuItemID == 203) {
 		if (levelMeter == nullptr) {
 			levelMeter = std::make_unique<AudioLevelMeter>();
-			Project::getInstance()->getSupplemental()->addTab("Level Meter", Colours::darkgrey, levelMeter.get(), false);
 		}
+        Project::getInstance()->getSupplemental()->addTab("Level Meter", Colours::darkgrey, levelMeter.get(), false);
 
 	}
 	else if (menuItemID == 204) {
 		if (spectrumAnalyzer == nullptr) {
 			spectrumAnalyzer = std::make_unique<SpectrumAnalyzer>();
 			spectrumAnalyzer->setNumberOfBars(128);
-			Project::getInstance()->getSupplemental()->addTab("Spektrum", Colours::darkgrey, spectrumAnalyzer.get(), false);
 		}
+        Project::getInstance()->getSupplemental()->addTab("Spektrum", Colours::darkgrey, spectrumAnalyzer.get(), false);
 	}
 
 	else if (menuItemID == 8) {
@@ -1115,7 +1121,6 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 
 	else if (menuItemID == 31) {
 		editor->duplicateSelected();
-
 	}
 #if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
 	else if (menuItemID > 100 && menuItemID < 999) {

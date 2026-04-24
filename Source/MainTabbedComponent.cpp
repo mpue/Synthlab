@@ -78,7 +78,10 @@ TabBarButton* MainTabbedComponent::createTabButton(const juce::String &tabName, 
     TabBarButton* tb = new TabBarButton(tabName,getTabbedButtonBar());
     tb->setName(String(tabIndex));
     tb->addMouseListener(this, true);
-    
+
+    if (tabIndex == 0)
+        return tb;
+
     ImageButton* ib = new ImageButton();
     ib->setName(String(tabIndex));
     ib->setSize(16,16);

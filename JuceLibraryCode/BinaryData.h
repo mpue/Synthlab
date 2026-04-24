@@ -81,13 +81,13 @@ namespace BinaryData
     const int            auxmodule_pngSize = 4961;
 
     extern const char*   backwardsolid_png;
-    const int            backwardsolid_pngSize = 1801;
+    const int            backwardsolid_pngSize = 2660;
 
     extern const char*   chorus_png;
     const int            chorus_pngSize = 2834;
 
     extern const char*   circlesolid_png;
-    const int            circlesolid_pngSize = 1922;
+    const int            circlesolid_pngSize = 3045;
 
     extern const char*   clock_png;
     const int            clock_pngSize = 5554;
@@ -108,13 +108,13 @@ namespace BinaryData
     const int            Fader_pngSize = 5763;
 
     extern const char*   fastbackwardsolid_png;
-    const int            fastbackwardsolid_pngSize = 1851;
+    const int            fastbackwardsolid_pngSize = 2682;
 
     extern const char*   fastforwardsolid_png;
-    const int            fastforwardsolid_pngSize = 1828;
+    const int            fastforwardsolid_pngSize = 2901;
 
     extern const char*   forwardsolid_png;
-    const int            forwardsolid_pngSize = 1806;
+    const int            forwardsolid_pngSize = 2890;
 
     extern const char*   hp_png;
     const int            hp_pngSize = 2941;
@@ -189,10 +189,10 @@ namespace BinaryData
     const int            p2f_pngSize = 3817;
 
     extern const char*   pausesolid_png;
-    const int            pausesolid_pngSize = 1638;
+    const int            pausesolid_pngSize = 2131;
 
     extern const char*   playsolid_png;
-    const int            playsolid_pngSize = 1804;
+    const int            playsolid_pngSize = 2453;
 
     extern const char*   plugin_png;
     const int            plugin_pngSize = 20569;
@@ -255,7 +255,7 @@ namespace BinaryData
     const int            stereodelay_pngSize = 4796;
 
     extern const char*   stop_png;
-    const int            stop_pngSize = 3332;
+    const int            stop_pngSize = 3529;
 
     extern const char*   synthlab_png;
     const int            synthlab_pngSize = 58873;

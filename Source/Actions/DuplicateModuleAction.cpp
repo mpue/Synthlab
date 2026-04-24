@@ -13,6 +13,7 @@
 #include "../PrefabFactory.h"
 #include "../AudioManager.h"
 #include "../ModuleUtils.h"
+#include "../PluginModule.h"
 
 using juce::String;
 
@@ -21,6 +22,9 @@ DuplicateModuleAction::DuplicateModuleAction(SynthEditor* editor, juce::Point<in
     this->position = position;
     this->moduleId = original->getId();
     this->module = original;
+
+    if (auto* pm = dynamic_cast<PluginModule*>(original))
+        this->pluginName = pm->getPluginName();
 }
 
 bool DuplicateModuleAction::undo() {
@@ -93,12 +97,17 @@ bool DuplicateModuleAction::perform() {
             }
             
             editor->addChangeListener(m);
+
+            if (pluginName.isNotEmpty()) {
+                if (auto* pm = dynamic_cast<PluginModule*>(m))
+                    pm->selectPlugin(pluginName);
+            }
         }
         else {
             m = ModuleUtils::createCopy(this->module, editor);
         }
     }
-    
+
     m->setTopLeftPosition(position);
     
     editor->addAndMakeVisible(m);

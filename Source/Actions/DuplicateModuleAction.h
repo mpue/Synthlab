@@ -22,12 +22,13 @@ public:
 
     
 private:
-    
+
     SynthEditor* editor;
     juce::Point<int> position;
     int moduleId;
     Module* module = nullptr;
-    
+    juce::String pluginName;
+
 };
 
 

@@ -38,11 +38,12 @@ public:
     std::shared_ptr<MixerPanel> getMixerPanel();
     TrackNavigator* getNavigator();
     MainTabbedComponent* getEditorTab();
+    MainTabbedComponent* getBottomTab();
     void OpenTrackView();
 	void openConsole();
     virtual void changeListenerCallback (juce::ChangeBroadcaster* source) override;
     
-    // Keyboard-Focus-Setup nach der vollständigen Initialisierung
+    // Keyboard-Focus-Setup nach der vollstï¿½ndigen Initialisierung
     void setupKeyboardFocus();
 
 private:
