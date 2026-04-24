@@ -120,6 +120,11 @@ public:
     void copySelectedRegions();
     void duplicateRegion(Region* region);
     void splitRegion();
+
+    void attachRegion(Region* r);
+    void detachRegion(Region* r);
+
+    MultiComponentDragger* getDragger() { return dragger; }
     
     void setSamplePosition(int position);
     int getSamplePosition();

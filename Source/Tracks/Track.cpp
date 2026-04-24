@@ -12,6 +12,8 @@
 #include "Track.h"
 #include "../Session.h"
 #include "MasterChannelPanel.h"
+#include "../Actions/SplitRegionAction.h"
+#include "../Project/Project.h"
 #include <iostream>
 #include "../MessageBus/FastBus.h"
 
@@ -437,119 +439,80 @@ AudioRegion* Track::addRegion(AudioSampleBuffer* source, double sampleRate, long
 	return region;
 }
 
-void Track::splitRegion() {
+void Track::attachRegion(Region* r)
+{
+    r->addChangeListener(this);
+    r->setDragger(dragger);
+    addAndMakeVisible(r);
+    regions.push_back(r);
+    if (zoom > 0)
+        r->setZoom(zoom);
+}
 
-	long sampleNum = getSamplePosition();
-	
-	Region* baseRegion = getRegionAt(sampleNum);
-	if (!baseRegion || !baseRegion->isSelected())
-		return;
+void Track::detachRegion(Region* r)
+{
+    r->removeAllChangeListeners();
+    removeChildComponent(r);
+    if (dragger->isSelected(r))
+        dragger->setSelected(r, false);
+    auto it = std::find(regions.begin(), regions.end(), r);
+    if (it != regions.end())
+        regions.erase(it);
+}
 
-	if (AudioRegion* region = dynamic_cast<AudioRegion*>(baseRegion)) {
+void Track::splitRegion()
+{
+    long sampleNum = getSamplePosition();
 
-		if (region == NULL) {
-			return;
-		}
+    Region* baseRegion = getRegionAt(sampleNum);
+    if (!baseRegion || !baseRegion->isSelected())
+        return;
 
-		if (region->isSelected()) {
+    if (AudioRegion* region = dynamic_cast<AudioRegion*>(baseRegion)) {
+        long numLeftSamples  = sampleNum - region->getSampleOffset();
+        long numRightSamples = region->getNumSamples() - numLeftSamples;
 
-			long numLeftSamples = sampleNum - region->getSampleOffset();
-			long numRightSamples = region->getNumSamples() - numLeftSamples;
+        AudioRegion* leftRegion  = new AudioRegion(region, *manager, sampleRate, 0, numLeftSamples);
+        AudioRegion* rightRegion = new AudioRegion(region, *manager, sampleRate, numLeftSamples, numRightSamples);
 
-			AudioRegion* leftRegion = new AudioRegion(region, *manager, sampleRate, 0, numLeftSamples);
-			AudioRegion* rightRegion = new AudioRegion(region, *manager, sampleRate, numLeftSamples, numRightSamples);
+        Rectangle<int>* leftBounds  = new Rectangle<int>(0, 0, leftRegion->getThumbnail()->getTotalLength() * 20, getHeight());
+        Rectangle<int>* rightBounds = new Rectangle<int>(0, 0, rightRegion->getThumbnail()->getTotalLength() * 20, getHeight());
 
-			leftRegion->setDragger(dragger);
-			rightRegion->setDragger(dragger);
+        leftRegion->setBounds(region->getX(), 0, leftRegion->getWidth(), getHeight());
+        leftRegion->setThumbnailBounds(leftBounds);
 
-			Rectangle<int>* leftBounds = new Rectangle<int>(0, 0, leftRegion->getThumbnail()->getTotalLength() * 20, getHeight());
-			Rectangle<int>* rightBounds = new Rectangle<int>(0, 0, rightRegion->getThumbnail()->getTotalLength() * 20, getHeight());
+        rightRegion->setBounds(markerPosition, 0, rightRegion->getWidth(), getHeight());
+        rightRegion->setThumbnailBounds(rightBounds);
 
-			leftRegion->setBounds(region->getX(), 0, leftRegion->getWidth(), getHeight());
-			leftRegion->setThumbnailBounds(leftBounds);
+        leftRegion->setSampleOffset(region->getSampleOffset(), false, false);
+        leftRegion->setOffset(region->getOffset());
 
-			rightRegion->setBounds(markerPosition, 0, rightRegion->getWidth(), getHeight());
-			rightRegion->setThumbnailBounds(rightBounds);
+        rightRegion->setSampleOffset(sampleNum, false, false);
+        rightRegion->setOffset((double)sampleNum / sampleRate);
 
-			this->regions.push_back(leftRegion);
-			leftRegion->addChangeListener(this);
-			this->regions.push_back(rightRegion);
-			rightRegion->addChangeListener(this);
+        Project::getInstance()->getUndoManager()->beginNewTransaction();
+        Project::getInstance()->getUndoManager()->perform(
+            new SplitRegionAction(this, region, leftRegion, rightRegion));
+        return;
+    }
 
-			addAndMakeVisible(leftRegion);
-			addAndMakeVisible(rightRegion);
+    if (MidiRegion* region = dynamic_cast<MidiRegion*>(baseRegion)) {
+        auto [leftRegion, rightRegion] = region->splitAt(sampleNum, dragger);
+        if (!leftRegion || !rightRegion)
+            return;
 
-			if (dragger->isSelected(region))
-				dragger->setSelected(region, false);
+        const int leftX = region->getX();
+        const int rightX = (int)((sampleNum / sampleRate) * zoom);
+        const int leftW  = (int)((leftRegion->getNumSamples()  / sampleRate) * zoom);
+        const int rightW = (int)((rightRegion->getNumSamples() / sampleRate) * zoom);
 
-			leftRegion->setSampleOffset(region->getSampleOffset(), false, false);
-			leftRegion->setOffset(region->getOffset());
+        leftRegion->setBounds(leftX,  0, leftW,  getHeight());
+        rightRegion->setBounds(rightX, 0, rightW, getHeight());
 
-			rightRegion->setSampleOffset(sampleNum, false, false);
-			rightRegion->setOffset((double)sampleNum / sampleRate);
-
-			if (zoom > 0) {
-				leftRegion->setZoom(zoom);
-				rightRegion->setZoom(zoom);
-			}
-
-			clearSelection();
-
-			region->setSelected(true);
-			dragger->setSelected(region, true);
-
-			removeSelectedRegions(false);
-
-			leftRegion->setSelected(true);
-			rightRegion->setSelected(true);
-		}
-		return;
-	}
-	
-	if (MidiRegion* region = dynamic_cast<MidiRegion*>(baseRegion)) {
-		auto [leftRegion, rightRegion] = region->splitAt(sampleNum, dragger);
-		if (!leftRegion || !rightRegion)
-			return;
-
-		const int leftX = region->getX(); // Original X bleibt
-		const int rightX = (int)((sampleNum / sampleRate) * zoom);  // ✅ korrekt berechnetes X
-
-		const int leftW = (int)((leftRegion->getNumSamples() / sampleRate) * zoom);
-		const int rightW = (int)((rightRegion->getNumSamples() / sampleRate) * zoom);
-
-		leftRegion->setBounds(leftX, 0, leftW, getHeight());
-		rightRegion->setBounds(rightX, 0, rightW, getHeight());
-
-		leftRegion->setDragger(dragger);
-		rightRegion->setDragger(dragger);
-
-		if (dragger->isSelected(region))
-			dragger->setSelected(region, false);
-
-		// Entferne alte Region
-		auto it = std::find(regions.begin(), regions.end(), region);
-		if (it != regions.end()) {
-			region->removeAllChangeListeners();
-			removeChildComponent(region);
-			delete region;
-			regions.erase(it);
-		}
-
-		// Sichtbar machen und registrieren
-		leftRegion->addChangeListener(this);
-		rightRegion->addChangeListener(this);
-		addAndMakeVisible(leftRegion);
-		addAndMakeVisible(rightRegion);
-		regions.push_back(leftRegion);
-		regions.push_back(rightRegion);
-
-		clearSelection();
-		dragger->setSelected(leftRegion, true);
-		dragger->setSelected(rightRegion, true);
-		repaint();
-	}
-
-
+        Project::getInstance()->getUndoManager()->beginNewTransaction();
+        Project::getInstance()->getUndoManager()->perform(
+            new SplitRegionAction(this, region, leftRegion, rightRegion));
+    }
 }
 
 void Track::setSamplePosition(int position)
