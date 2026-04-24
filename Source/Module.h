@@ -151,15 +151,29 @@ public:
     {
         NameListener (juce::Value& v, Module* module) : module(module),  value (v) { value.addListener (this); }
         ~NameListener()  {}  // no need to remove the listener
-        
+
         void valueChanged (juce::Value& value) override {
             module->setName(value.toString());
         }
         Module* module;
         juce::Value value;
     };
-    
-    
+
+    struct DisplayRootListener : juce::Value::Listener
+    {
+        DisplayRootListener(juce::Value& v, Module* module) : module(module), value(v) { value.addListener(this); }
+        ~DisplayRootListener() {}
+
+        void valueChanged(juce::Value& value) override {
+            module->setDisplayAtRootLevel(value.toString().getIntValue() > 0);
+        }
+        Module* module;
+        juce::Value value;
+    };
+
+    bool getDisplayAtRootLevel() const { return displayAtRootLevel; }
+    void setDisplayAtRootLevel(bool val) { displayAtRootLevel = val; }
+
     virtual juce::Array<juce::PropertyComponent*>& getProperties();
     virtual void createProperties();
     
@@ -193,9 +207,13 @@ protected:
     NameListener* nameListener;
     juce::Value* nameValue;
 
+    DisplayRootListener* displayRootListener = nullptr;
+    juce::Value* displayRootValue = nullptr;
+    bool displayAtRootLevel = false;
+
     juce::PropertyComponent* nameProp;
     juce::Array <juce::PropertyComponent*> properties;
-    
+
     bool selected = false;
 	long index;
     bool editable = true;

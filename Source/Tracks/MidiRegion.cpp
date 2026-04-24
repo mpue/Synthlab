@@ -48,8 +48,11 @@ MidiRegion::MidiRegion(long startSample, long sampleLength, double sampleRate, M
 
     auto& bus = FastBus::getInstance();
 
-    bus.subscribe<float>("tempo", [this](const FastTopic<float>& topic) {
-		handleTempoChange(topic.getValue());
+    tempoSubscriptionAlive = std::make_shared<bool>(true);
+    std::weak_ptr<bool> weakAlive = tempoSubscriptionAlive;
+    bus.subscribe<float>("tempo", [this, weakAlive](const FastTopic<float>& topic) {
+        if (weakAlive.lock())
+            handleTempoChange(topic.getValue());
     });
 
 }
@@ -88,16 +91,20 @@ MidiRegion::MidiRegion(MidiBuffer* buffer, double sampleRate) {
 
     auto& bus = FastBus::getInstance();
 
-    bus.subscribe<float>("tempo", [this](const FastTopic<float>& topic) {
-        handleTempoChange(topic.getValue());
+    tempoSubscriptionAlive = std::make_shared<bool>(true);
+    std::weak_ptr<bool> weakAlive = tempoSubscriptionAlive;
+    bus.subscribe<float>("tempo", [this, weakAlive](const FastTopic<float>& topic) {
+        if (weakAlive.lock())
+            handleTempoChange(topic.getValue());
     });
 
 }
 
 MidiRegion::~MidiRegion() {
 
-    auto& bus = FastBus::getInstance();
-	bus.removeTopic<float>("tempo");
+    // Invalidate the tempo subscription sentinel so the lambda becomes a no-op.
+    // Do NOT call removeTopic — that would remove all other MidiRegion subscribers.
+    tempoSubscriptionAlive.reset();
 
     removeAllChangeListeners();
 

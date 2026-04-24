@@ -4,6 +4,9 @@
 PianoRollComponent::PianoRollComponent(MidiRegion* region, double sampleRate)
     : midiRegion(region), sampleRate(sampleRate)
 {
+    if (midiRegion != nullptr)
+        midiRegion->addComponentListener(this);
+
     setWantsKeyboardFocus(true);
     setMouseClickGrabsKeyboardFocus(true);
     setInterceptsMouseClicks(true, true);
@@ -23,7 +26,26 @@ PianoRollComponent::PianoRollComponent(MidiRegion* region, double sampleRate)
     setMouseCursor(getCursorForTool(currentTool));
 }
 
-PianoRollComponent::~PianoRollComponent() = default;
+PianoRollComponent::~PianoRollComponent()
+{
+    if (midiRegion != nullptr)
+        midiRegion->removeComponentListener(this);
+}
+
+void PianoRollComponent::componentBeingDeleted(juce::Component& /*component*/)
+{
+    // The MidiRegion we're editing is being destroyed. Sever the pointer,
+    // clear any state that references it, and repaint to show the empty state.
+    midiRegion = nullptr;
+    selectedMessages.clear();
+    resizingMessage = nullptr;
+    resizingPartner = nullptr;
+    isDragging = false;
+    isResizing = false;
+    isVelocityEditing = false;
+    dragPreviewNotes.clear();
+    repaint();
+}
 
 void PianoRollComponent::timerCallback()
 {
@@ -41,6 +63,15 @@ void PianoRollComponent::timerCallback()
 
 void PianoRollComponent::paint(juce::Graphics& g)
 {
+    if (midiRegion == nullptr)
+    {
+        g.fillAll(juce::Colour(0xff1a1a1a));
+        g.setColour(juce::Colours::grey);
+        g.setFont(16.0f);
+        g.drawFittedText("Region deleted", getLocalBounds(), juce::Justification::centred, 1);
+        return;
+    }
+
     // Performance optimization: clip drawing region
     auto clipBounds = g.getClipBounds();
 
@@ -1049,7 +1080,7 @@ bool PianoRollComponent::keyPressed(const juce::KeyPress& key, juce::Component*)
 // Enhanced method to move selected notes with proper validation and undo support
 void PianoRollComponent::moveSelectedNotes(double deltaTime, int deltaPitch)
 {
-    if (selectedMessages.empty()) return;
+    if (selectedMessages.empty() || midiRegion == nullptr) return;
 
     // Create undo action first
     std::vector<NotePositionData> originalPositions;
@@ -1263,7 +1294,7 @@ void PianoRollComponent::modifierKeysChanged(const juce::ModifierKeys& modifiers
 
 MidiMessage* PianoRollComponent::findNoteOffForNoteOn(MidiMessage* noteOn)
 {
-    if (!noteOn || !noteOn->isNoteOn()) return nullptr;
+    if (!noteOn || !noteOn->isNoteOn() || midiRegion == nullptr) return nullptr;
 
     auto& messages = midiRegion->getMidiMessageList();
     int channel = noteOn->getChannel();
@@ -1299,7 +1330,7 @@ double PianoRollComponent::getNoteDuration(MidiMessage* noteOn)
 
 void PianoRollComponent::addNotePair(int pitch, double startTime, double duration, int velocity, int channel)
 {
-    // Fix: Ensure proper sample alignment
+    if (midiRegion == nullptr) return;
     if (snapToGrid) {
         startTime = snapTimeToGrid(startTime);
 
@@ -1335,6 +1366,7 @@ void PianoRollComponent::addNotePair(int pitch, double startTime, double duratio
 
 void PianoRollComponent::deleteNotePair(MidiMessage* noteOn)
 {
+    if (noteOn == nullptr || midiRegion == nullptr) return;
     MidiMessage* noteOff = findNoteOffForNoteOn(noteOn);
 
     // Create undo action
@@ -1344,7 +1376,8 @@ void PianoRollComponent::deleteNotePair(MidiMessage* noteOn)
 
         pushUndoAction("Delete Note",
             [this, onCopy, offCopy]() {
-                // Undo: restore notes
+                // Undo: restore notes from value copies
+                if (midiRegion == nullptr) return;
                 MidiMessage* newOn = new MidiMessage(onCopy);
                 MidiMessage* newOff = new MidiMessage(offCopy);
                 midiRegion->getMidiMessageList().push_back(newOn);
@@ -1352,17 +1385,31 @@ void PianoRollComponent::deleteNotePair(MidiMessage* noteOn)
                 midiRegion->rebuildThumbnail();
                 midiRegion->updateThumb();
             },
-            [this, noteOn, noteOff]() {
-                // Redo: delete again
+            [this, onCopy, offCopy]() {
+                // Redo: find by value and delete — do NOT use the original pointers,
+                // they were freed during perform() and would be dangling here.
+                if (midiRegion == nullptr) return;
                 auto& messages = midiRegion->getMidiMessageList();
-                messages.erase(std::remove(messages.begin(), messages.end(), noteOn), messages.end());
-                messages.erase(std::remove(messages.begin(), messages.end(), noteOff), messages.end());
-                delete noteOn;
-                delete noteOff;
+                auto removeByValue = [&](const MidiMessage& target, bool wantNoteOn) {
+                    auto it = std::find_if(messages.begin(), messages.end(),
+                        [&](MidiMessage* m) {
+                            return m != nullptr
+                                && (wantNoteOn ? m->isNoteOn() : m->isNoteOff())
+                                && m->getNoteNumber() == target.getNoteNumber()
+                                && m->getChannel()    == target.getChannel()
+                                && m->getTimeStamp()  == target.getTimeStamp();
+                        });
+                    if (it != messages.end()) { delete *it; messages.erase(it); }
+                };
+                removeByValue(onCopy, true);
+                removeByValue(offCopy, false);
                 midiRegion->rebuildThumbnail();
                 midiRegion->updateThumb();
             });
     }
+
+    // Remove from selection before freeing to prevent stale pointers in selectedMessages
+    selectedMessages.erase(noteOn);
 
     auto& messages = midiRegion->getMidiMessageList();
     messages.erase(std::remove(messages.begin(), messages.end(), noteOn), messages.end());
@@ -1499,6 +1546,7 @@ juce::Rectangle<int> PianoRollComponent::getVelocityRect(const juce::MidiMessage
 // Hit testing
 MidiMessage* PianoRollComponent::getNoteAt(juce::Point<int> position)
 {
+    if (midiRegion == nullptr) return nullptr;
     auto& messages = midiRegion->getMidiMessageList();
 
     for (auto* msg : messages) {
@@ -1518,6 +1566,7 @@ MidiMessage* PianoRollComponent::getNoteAt(juce::Point<int> position)
 std::vector<MidiMessage*> PianoRollComponent::getNotesInRect(juce::Rectangle<int> rect)
 {
     std::vector<MidiMessage*> result;
+    if (midiRegion == nullptr) return result;
     auto& messages = midiRegion->getMidiMessageList();
 
     for (auto* msg : messages) {
@@ -1544,6 +1593,7 @@ bool PianoRollComponent::isOverNoteEdge(juce::Point<int> position, MidiMessage* 
 void PianoRollComponent::selectAll()
 {
     selectedMessages.clear();
+    if (midiRegion == nullptr) return;
     auto& messages = midiRegion->getMidiMessageList();
 
     for (auto* msg : messages) {

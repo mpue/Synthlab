@@ -60,6 +60,10 @@ public:
     void saveModule(Module* m);
     void configureAudioModule(Module *m, ChangeBroadcaster* broadcaster);
     void addVirtualInstrumentTrack();
+
+    // Smart layout helpers
+    juce::Point<int> findFreePosition(juce::Point<int> desired, int w, int h) const;
+    juce::Point<int> getNextTrackStartPosition() const;
     
     // audio processing
 
@@ -256,7 +260,18 @@ private:
     TrackNavigator* navigator = nullptr;
 
     bool isMiddleMouseDown = false;
-    
+
+    struct RootLevelProxy {
+        Module* module = nullptr;
+        juce::Component* originalParent = nullptr;
+        juce::Point<int> originalPosition;
+    };
+
+    std::vector<RootLevelProxy> rootLevelProxies;
+
+    void collectRootLevelControls(Module* container);
+    void restoreRootLevelControls();
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SynthEditor)
 };
 

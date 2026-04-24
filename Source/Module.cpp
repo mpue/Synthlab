@@ -41,6 +41,7 @@ using juce::NotificationType;
 using juce::ImageCache;
 using juce::RectanglePlacement;
 using juce::TextPropertyComponent;
+using juce::BooleanPropertyComponent;
 using juce::Logger;
 using juce::Array;
 using juce::PropertyComponent;
@@ -103,6 +104,9 @@ Module::Module ()
 void Module::createProperties() {
     nameValue = new Value();
     nameListener = new NameListener(*nameValue, this);
+
+    displayRootValue = new Value();
+    displayRootListener = new DisplayRootListener(*displayRootValue, this);
 }
 
 Module::~Module()
@@ -111,6 +115,8 @@ Module::~Module()
     removeAllChangeListeners();
     delete nameListener;
     delete nameValue;
+    delete displayRootListener;
+    delete displayRootValue;
     delete resizer;
     //[/Destructor_pre]
 
@@ -449,9 +455,11 @@ void Module::eventReceived(Event *e) {
 }
 
  Array<PropertyComponent*>& Module::getProperties() {
-    nameProp = new TextPropertyComponent(*nameValue,"Name",16, false,true);
+    nameProp = new TextPropertyComponent(*nameValue, "Name", 16, false, true);
+    auto* displayRootProp = new BooleanPropertyComponent(*displayRootValue, "Display at root", "Enabled");
     properties = Array<PropertyComponent*>();
     properties.add(nameProp);
+    properties.add(displayRootProp);
     return properties;
 }
 

@@ -317,6 +317,7 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
 	m->savePosition();
 	m->setUiPosition(mod.getProperty("ui_x").toString().getIntValue(), mod.getProperty("ui_y").toString().getIntValue());
 	m->saveUiPosition();
+	m->setDisplayAtRootLevel(mod.getProperty("displayAtRootLevel").toString().getIntValue() > 0);
 	return m;
 }
 
@@ -525,6 +526,7 @@ void ModuleUtils::saveStructure(std::vector<Module*>* modules, std::vector<Conne
 		file.setProperty("ui_y", (*it)->getUiPosition().getY(), nullptr);
 		file.setProperty("isPrefab", (*it)->isPrefab(), nullptr);
 		file.setProperty("prefabId", (*it)->getId(), nullptr);
+		file.setProperty("displayAtRootLevel", (*it)->getDisplayAtRootLevel(), nullptr);
 
 		Knob* k;
 

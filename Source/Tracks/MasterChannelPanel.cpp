@@ -771,11 +771,28 @@ void MasterChannelPanel::insertFX(int slotIndex, juce::String pluginName) {
     root->getModules()->push_back(fx);
     synthEditor->addAndMakeVisible(fx);
 
-    // Position the module above (or to the left of) the AudioOut in the graph.
-    // Place successive FX slots offset upward so they don't stack on top of each other.
-    const int offsetX = -160;
-    const int offsetY = -(slotIndex + 1) * 80;
-    fx->setTopLeftPosition(audioOut->getX() + offsetX, audioOut->getY() + offsetY);
+    // Place the FX module in the signal path between the source module and AudioOut.
+    // If the source position is known, distribute FX evenly along the horizontal path.
+    // Otherwise, stack FX modules to the left of AudioOut.
+    const int fxW = fx->getWidth() > 0 ? fx->getWidth() : 120;
+    const int fxH = fx->getHeight() > 0 ? fx->getHeight() : 120;
+
+    int fxX, fxY;
+    if (chainSourceModL != nullptr) {
+        int srcX  = chainSourceModL->getRight();
+        int outX  = audioOut->getX();
+        int srcY  = chainSourceModL->getY();
+        int outY  = audioOut->getY();
+
+        // Evenly distribute NUM_FX slots in the gap between source and AudioOut
+        float t = (float)(slotIndex + 1) / (float)(NUM_FX + 1);
+        fxX = srcX + (int)((outX - srcX) * t) - fxW / 2;
+        fxY = srcY + (int)((outY - srcY) * t);
+    } else {
+        fxX = audioOut->getX() - (slotIndex + 1) * (fxW + 20);
+        fxY = audioOut->getY();
+    }
+    fx->setTopLeftPosition(fxX, fxY);
 
     fxChain[slotIndex] = fx;
 

@@ -124,6 +124,7 @@ private:
     int calculateActualLength() const;
     MidiThumbnail* midiThumbnail = nullptr;
     int numSamples = 0;
+    std::shared_ptr<bool> tempoSubscriptionAlive;
     MidiBuffer::Iterator* iterator = NULL;
     MidiMessage message;
     MidiMessageSequence* sequence;

@@ -1133,6 +1133,8 @@ void SynthEditor::timerCallback() {
 
 void SynthEditor::setCurrentLayer(int layer) {
 
+	restoreRootLevelControls();
+
 	currentLayer = static_cast<Module::Layer>(layer);
 
 	selectionModel.setCurrentLayer(layer);
@@ -1156,8 +1158,41 @@ void SynthEditor::setCurrentLayer(int layer) {
 			root->getModules()->at(i)->setVisible(false);
 		}
 	}
+
+	if (currentLayer == Module::Layer::GUI)
+		collectRootLevelControls(root.get());
+
 	repaint();
 	resized();
+}
+
+void SynthEditor::collectRootLevelControls(Module* container) {
+	for (auto* m : *container->getModules()) {
+		if (m->getLayer() == Module::Layer::GUI && m->getDisplayAtRootLevel() && m->getParentComponent() != this) {
+			RootLevelProxy proxy;
+			proxy.module = m;
+			proxy.originalParent = m->getParentComponent();
+			proxy.originalPosition = m->getPosition();
+
+			auto posInRoot = getLocalPoint(m->getParentComponent(), m->getPosition());
+			m->setTopLeftPosition(posInRoot.x, posInRoot.y);
+			addAndMakeVisible(m);
+
+			rootLevelProxies.push_back(proxy);
+		}
+		if (!m->getModules()->empty())
+			collectRootLevelControls(m);
+	}
+}
+
+void SynthEditor::restoreRootLevelControls() {
+	for (auto& proxy : rootLevelProxies) {
+		if (proxy.originalParent != nullptr && proxy.module != nullptr) {
+			proxy.module->setTopLeftPosition(proxy.originalPosition.x, proxy.originalPosition.y);
+			proxy.originalParent->addAndMakeVisible(proxy.module);
+		}
+	}
+	rootLevelProxies.clear();
 }
 
 int SynthEditor::getCurrentLayer() {
@@ -1852,11 +1887,54 @@ void SynthEditor::configureAudioModule(Module* m, ChangeBroadcaster* broadcaster
 	broadcaster->addChangeListener(m);
 }
 
+juce::Point<int> SynthEditor::findFreePosition(juce::Point<int> desired, int w, int h) const
+{
+    const int margin = 10;
+    const int step   = 20;
+
+    auto isFree = [&](juce::Point<int> p) -> bool {
+        juce::Rectangle<int> candidate(p.x, p.y, w, h);
+        for (auto* m : *root->getModules()) {
+            if (m->getBounds().expanded(margin).intersects(candidate))
+                return false;
+        }
+        return true;
+    };
+
+    if (isFree(desired))
+        return desired;
+
+    // Scan right, then below, then diagonal — preference: stay near the original Y
+    for (int dist = step; dist < 3000; dist += step) {
+        juce::Point<int> candidates[] = {
+            { desired.x + dist, desired.y },
+            { desired.x,        desired.y + dist },
+            { desired.x + dist, desired.y + dist },
+        };
+        for (auto& p : candidates)
+            if (isFree(p)) return p;
+    }
+    return desired;
+}
+
+juce::Point<int> SynthEditor::getNextTrackStartPosition() const
+{
+    if (root->getModules()->empty())
+        return { 20, 40 };
+
+    // Find the bottom edge of all current modules, then add padding
+    int maxBottom = 0;
+    for (auto* m : *root->getModules())
+        maxBottom = juce::jmax(maxBottom, m->getBottom());
+
+    return { 20, maxBottom + 30 };
+}
+
 void SynthEditor::addVirtualInstrumentTrack()
 {
 	PluginBrowserComponent::show([this](juce::String selectedPlugin)
 	{
-		Point<int> pos = Point<int>(50, 50);
+		Point<int> pos = getNextTrackStartPosition();
 		TrackUtil::createVirtualInstrumentTrack(selectedPlugin, pos, navigator, this);
 		repaint();
 	});

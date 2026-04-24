@@ -26,36 +26,37 @@ public:
         delete instance;
     }
     
-    class PluginWindow    : public juce::DocumentWindow
+    class PluginWindow : public juce::DocumentWindow
     {
     public:
-        PluginWindow (juce::String name, juce::AudioProcessorEditor* editor)  : DocumentWindow (name,
-                                                                                    juce::Colours::lightgrey,
-                                                                                    DocumentWindow::allButtons)
+        // onClose is called when the user clicks the X button; the owner
+        // should respond by resetting the unique_ptr that holds this window.
+        PluginWindow(juce::String name,
+                     juce::AudioProcessorEditor* editor,
+                     std::function<void()> onClose)
+            : DocumentWindow(name, juce::Colours::lightgrey, DocumentWindow::allButtons),
+              closeCallback(std::move(onClose))
         {
+            jassert(editor != nullptr);
             setUsingNativeTitleBar(true);
-            this->plugin = editor;
-            setContentOwned (editor, true);
+            setContentOwned(editor, true);
             setAlwaysOnTop(true);
-            setResizable (true, true);
-            centreWithSize(editor->getWidth(),editor->getHeight()+25);
-            //setVisible (true);
-            
+            setResizable(true, true);
+            centreWithSize(editor->getWidth(), editor->getHeight() + 25);
         }
 
-        // float getDesktopScaleFactor() const override { return 2.0f; }
-        
-        ~PluginWindow() {
-            //delete plugin;
-        }
-        
+        ~PluginWindow() override = default;
+
         void closeButtonPressed() override
         {
-            this->setVisible(false);
+            // Notify the owner so it can reset its unique_ptr, which destroys
+            // this window and properly releases the editor via setContentOwned.
+            if (closeCallback)
+                closeCallback();
         }
-        
-	private:
-            juce::AudioProcessorEditor* plugin;
+
+    private:
+        std::function<void()> closeCallback;
     };
     
     void scanPlugins();

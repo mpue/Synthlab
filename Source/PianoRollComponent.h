@@ -8,12 +8,16 @@
 class PianoRollComponent : public juce::Component,
     public juce::KeyListener,
     public juce::Timer,
-    public juce::ApplicationCommandTarget
+    public juce::ApplicationCommandTarget,
+    public juce::ComponentListener
 {
 public:
     // === CORE ===
     PianoRollComponent(MidiRegion* region, double sampleRate);
     ~PianoRollComponent() override;
+
+    // ComponentListener — fires when the observed MidiRegion is deleted
+    void componentBeingDeleted(juce::Component& component) override;
 
     struct DragPreviewNote {
         MidiMessage* originalNote = nullptr;

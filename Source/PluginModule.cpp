@@ -38,12 +38,26 @@ PluginModule::~PluginModule()
 
 void PluginModule::openPluginWindow()
 {
-	if (!plugin) return;
-	auto editor = plugin->createEditorIfNeeded();
-	if (!win)
-		win = std::make_unique<PluginManager::PluginWindow>(pluginName, editor);
+    if (!plugin) return;
 
-	win->setVisible(true);
+    // Window already exists — just bring it to the front.
+    if (win != nullptr)
+    {
+        win->setVisible(true);
+        win->toFront(true);
+        return;
+    }
+
+    // Create a fresh editor. Guard against plugins that return nullptr.
+    auto* editor = plugin->createEditorIfNeeded();
+    if (editor == nullptr) return;
+
+    // Pass a close callback so the window destroys itself cleanly via win.reset().
+    win = std::make_unique<PluginManager::PluginWindow>(
+        pluginName, editor,
+        [this]() { win.reset(); });
+
+    win->setVisible(true);
 }
 
 void PluginModule::selectPlugin(String name)

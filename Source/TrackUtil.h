@@ -160,7 +160,8 @@ public:
 		int rightInputChannel = audioTrackCount * 2 + 1;
 
 		// Create AudioIn L module
-		Point<int> pos = Point<int>(10, 10);
+		Point<int> origin = editor->getNextTrackStartPosition();
+		Point<int> pos = origin;
 		AddModuleAction* amAL = new AddModuleAction(editor, pos, 76);
 		Project::getInstance()->getUndoManager()->beginNewTransaction();
 		Project::getInstance()->getUndoManager()->perform(amAL);
@@ -178,7 +179,7 @@ public:
 			audioInR->setSelectedAudioInput(rightInputChannel);
 
 		// Create TrackIn module to the right of the AudioIn pair
-		pos = Point<int>(180, 80);
+		pos = Point<int>(origin.x + 170, origin.y + 70);
 		AddModuleAction* am = new AddModuleAction(editor, pos, 48);
 		Project::getInstance()->getUndoManager()->beginNewTransaction();
 		Project::getInstance()->getUndoManager()->perform(am);
@@ -203,7 +204,7 @@ public:
 		}
 
 		// Find or create AudioOut and connect TrackIn output pins (2=L, 3=R) to it
-		pos = Point<int>(340, 80);
+		pos = Point<int>(origin.x + 330, origin.y + 70);
 		AudioOut* audioOut = nullptr;
 
 		for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
@@ -230,7 +231,7 @@ public:
 	{
 		int channel = getNextFreeMidiChannel(navigator);
 
-		Point<int> pos = Point<int>(10, 10);
+		Point<int> pos = editor->getNextTrackStartPosition();
 
 		AddModuleAction* am = new AddModuleAction(editor, pos, 61);
 		Project::getInstance()->getUndoManager()->beginNewTransaction();
