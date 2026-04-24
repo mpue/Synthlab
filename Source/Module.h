@@ -103,6 +103,8 @@ public:
     bool isEditable() { return editable;}
     bool isPrefab() { return prefab;};
 
+    void setResizable(bool r);
+
     void eventReceived(Event* e) override;
     void changeListenerCallback (juce::ChangeBroadcaster* source) override;
     virtual void process();
@@ -215,7 +217,9 @@ protected:
     juce::DropShadower* shadower = nullptr;
 
     Layer currentLayer = Layer::ALL;
-    
+
+    juce::ResizableCornerComponent* resizer = nullptr;
+
     //[/UserVariables]
 
     //==============================================================================

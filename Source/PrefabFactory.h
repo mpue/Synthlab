@@ -168,6 +168,8 @@ private:
         prefabs[98] = Prefab("Not","Logic");
         prefabs[99] = Prefab("Vocoder","FX");
         prefabs[100] = Prefab("Gain","Audio");
+        prefabs[101] = Prefab("Audio selector","Audio");
+        prefabs[102] = Prefab("Radio group","Controls");
         prefabImages[38] = juce::ImageCache::getFromMemory(BinaryData::infinity_png, BinaryData::infinity_pngSize);
         prefabImages[38] = juce::ImageCache::getFromMemory(BinaryData::transform_png, BinaryData::transform_pngSize);
         prefabImages[39] = juce::ImageCache::getFromMemory(BinaryData::merge_png, BinaryData::merge_pngSize);
@@ -232,7 +234,9 @@ private:
         prefabImages[98] = juce::ImageCache::getFromMemory(BinaryData::logic_not_png, BinaryData::logic_not_pngSize);
         prefabImages[99] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[100] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
-        
+        prefabImages[101] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[102] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+
         categories = new juce::StringArray();
 
         categories->add("Audio");

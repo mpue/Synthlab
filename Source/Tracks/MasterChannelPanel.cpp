@@ -29,6 +29,7 @@
 #include "../ModuleUtils.h"
 #include "../Connection.h"
 #include "../Plugins/PluginManager.h"
+#include "../Plugins/PluginBrowserComponent.h"
 //[/Headers]
 
 #include "MasterChannelPanel.h"
@@ -75,10 +76,11 @@ MasterChannelPanel::MasterChannelPanel ()
                                               TRANS("Name\n")));
     nameLabel->setFont (Font (12.00f, Font::plain));
     nameLabel->setJustificationType (Justification::centred);
-    nameLabel->setEditable (false, false, false);
+    nameLabel->setEditable (false, true, false);
     nameLabel->setColour (Label::textColourId, Colours::white);
     nameLabel->setColour (TextEditor::textColourId, Colours::black);
     nameLabel->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
+    nameLabel->addListener (this);
 
     addAndMakeVisible (muteButton = new ImageButton ("muteButton"));
     muteButton->setButtonText (TRANS("new button"));
@@ -234,6 +236,18 @@ void MasterChannelPanel::paint (Graphics& g)
 
     //[UserPaint] Add your own custom painting code here..
 
+    // Draw instrument/plugin name subtitle below the channel name for INSTRUMENT tracks.
+    if (track != nullptr && track->getType() == Track::Type::INSTRUMENT)
+    {
+        juce::String pluginName = track->getInstrumentName();
+        if (pluginName.isNotEmpty())
+        {
+            g.setFont(juce::Font(8.5f, juce::Font::italic));
+            g.setColour(juce::Colour(0xff999999));
+            g.drawText(pluginName, 4, 59, W - 8, 11, juce::Justification::centred, true);
+        }
+    }
+
     // --- Custom VU meter bars (L: x=4, R: x=14, y=72, w=8, h=166) ---
     {
         const int vuX[2]    = { 4, 14 };
@@ -380,7 +394,7 @@ void MasterChannelPanel::resized()
     //[/UserPreResize]
 
     panSlider->setBounds (37, 8, 36, 36);          // pan knob, centred in 110px strip
-    nameLabel->setBounds (6, 50, 98, 16);          // channel name below pan knob
+    nameLabel->setBounds (6, 44, 98, 14);          // channel name below pan knob
 
     vuSliderL->setBounds (4, 72, 8, 166);          // left VU meter
     vuSliderR->setBounds (14, 72, 8, 166);         // right VU meter
@@ -628,6 +642,12 @@ void MasterChannelPanel::setSolo(bool solo) {
 void MasterChannelPanel::setTrack(Track *t) {
     this->track = t;
     setName(track->getName());
+    Mixer::getInstance()->addChangeListener(this);
+}
+
+void MasterChannelPanel::labelTextChanged(Label* labelThatHasChanged) {
+    if (labelThatHasChanged == nameLabel && track != nullptr)
+        track->setName(nameLabel->getText());
 }
 
 void MasterChannelPanel::setIndex(int index) {
@@ -692,17 +712,10 @@ void MasterChannelPanel::onFXSlotClicked(int slotIndex) {
         else if (result == 2)
             removeFX(slotIndex);
     } else {
-        // Empty: show list of available plugins
-        const juce::StringArray& plugins = PluginManager::getInstance()->getPlugins();
-        if (plugins.isEmpty()) return;
-
-        juce::PopupMenu menu;
-        for (int i = 0; i < plugins.size(); ++i)
-            menu.addItem(i + 1, plugins[i]);
-
-        const int result = menu.show();
-        if (result > 0)
-            insertFX(slotIndex, plugins[result - 1]);
+        // Empty: open the plugin browser dialog
+        PluginBrowserComponent::show([this, slotIndex](juce::String name) {
+            insertFX(slotIndex, name);
+        });
     }
 }
 

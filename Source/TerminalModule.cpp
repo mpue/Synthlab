@@ -46,8 +46,10 @@ TerminalModule::TerminalModule(Direction dir, Type type) : Module("T"), directio
 
 TerminalModule::~TerminalModule() {
     delete nameListener;
-    delete typeListener;
+    nameListener = nullptr;   // prevent double-delete in Module::~Module()
     delete nameValue;
+    nameValue = nullptr;      // prevent double-delete in Module::~Module()
+    delete typeListener;
     delete typeValue;
     removeAllChangeListeners();
 }

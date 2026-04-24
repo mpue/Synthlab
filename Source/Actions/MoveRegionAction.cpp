@@ -34,7 +34,8 @@ MoveRegionAction::~MoveRegionAction()
 bool MoveRegionAction::perform()
 {
     if (region != nullptr) {
-        region->setSampleOffset(newSampleOffset, false, true);
+        region->setSampleOffset(newSampleOffset, true, true);
+        region->setZoom(region->getZoom());
         return true;
     }
     return false;
@@ -43,7 +44,8 @@ bool MoveRegionAction::perform()
 bool MoveRegionAction::undo()
 {
     if (region != nullptr) {
-        region->setSampleOffset(oldSampleOffset, false, true);
+        region->setSampleOffset(oldSampleOffset, true, true);
+        region->setZoom(region->getZoom());
         return true;
     }
     return false;

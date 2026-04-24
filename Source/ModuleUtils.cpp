@@ -36,6 +36,7 @@
 #include "CompareModule.h"
 #include "MidiOut.h"
 #include "VocoderModule.h"
+#include "RadioGroupModule.h"
 
 void ModuleUtils::loadStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections, juce::ValueTree* v, ChangeBroadcaster* broadcaster) {
 	ValueTree mods = v->getChildWithName("Modules");
@@ -43,6 +44,7 @@ void ModuleUtils::loadStructure(std::vector<Module*>* modules, std::vector<Conne
 	for (int i = 0; i < mods.getNumChildren(); i++) {
 		ValueTree mod = mods.getChild(i);
 		Module* m = loadModule(mod, broadcaster);
+		if (m == nullptr) continue;
 		configureModule(m, mod, broadcaster);
 		modules->push_back(m);
 
@@ -58,6 +60,23 @@ void ModuleUtils::loadStructure(std::vector<Module*>* modules, std::vector<Conne
 			t->setIndex(mod.getProperty("index").toString().getLargeIntValue());
 		}
 		connectTerminals(m);
+
+		if (!m->isPrefab() && m->getModules()->size() > 0) {
+			int w = (int)mod.getProperty("width", 0);
+			int h = (int)mod.getProperty("height", 0);
+			if (w > 0 && h > 0) {
+				m->setSize(w, h);
+				m->setResizable(true);
+			}
+		}
+
+		RadioGroupModule* rgm = nullptr;
+		if ((rgm = dynamic_cast<RadioGroupModule*>(m)) != nullptr) {
+			int nb = (int)mod.getProperty("numButtons", 3);
+			int sel = (int)mod.getProperty("selection", 0);
+			rgm->setNumButtons(nb);
+			rgm->setSelection(sel);
+		}
 
 		VolumeAdjustable* _v;
 
@@ -182,10 +201,16 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
 	Module* m = nullptr;
 
 	if (mod.getProperty("isPrefab").toString().getIntValue() == 1) {
-		float sampleRate = AudioManager::getInstance()->getDeviceManager()->getCurrentAudioDevice()->getCurrentSampleRate();
-		int bufferSize = AudioManager::getInstance()->getDeviceManager()->getCurrentAudioDevice()->getCurrentBufferSizeSamples();
+		float sampleRate = 44100.0f;
+		int bufferSize = 512;
+		auto* device = AudioManager::getInstance()->getDeviceManager()->getCurrentAudioDevice();
+		if (device != nullptr) {
+			sampleRate = static_cast<float>(device->getCurrentSampleRate());
+			bufferSize = device->getCurrentBufferSizeSamples();
+		}
 
 		m = PrefabFactory::getInstance()->getPrefab(mod.getProperty("prefabId").toString().getIntValue(), sampleRate, bufferSize);
+		if (m == nullptr) return nullptr;
 		broadcaster->addChangeListener(m);
 		m->setIndex(static_cast<long>(mod.getProperty("index").toString().getLargeIntValue()));
 
@@ -620,6 +645,17 @@ void ModuleUtils::saveStructure(std::vector<Module*>* modules, std::vector<Conne
 			file.setProperty("channel", km->getChannel(), nullptr);
 			file.setProperty("width", km->getWidth(), nullptr);
 			file.setProperty("height", km->getHeight(), nullptr);
+		}
+
+		if (!(*it)->isPrefab() && (*it)->getModules()->size() > 0) {
+			file.setProperty("width", (*it)->getWidth(), nullptr);
+			file.setProperty("height", (*it)->getHeight(), nullptr);
+		}
+
+		RadioGroupModule* rgm = nullptr;
+		if ((rgm = dynamic_cast<RadioGroupModule*>(*it)) != nullptr) {
+			file.setProperty("numButtons", rgm->getNumButtons(), nullptr);
+			file.setProperty("selection",  rgm->getSelection(),  nullptr);
 		}
 
 		ValueTree pins = ValueTree("Pins");

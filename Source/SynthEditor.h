@@ -93,6 +93,7 @@ public:
     void addControl(Module* module, int pinIndex);
     void addConstant(Module* module, int pinIndex);
     void addTerminal(Module* module, int pinIndex);
+    void createModuleFromSelection();
     void connect(Module* root, Module* c, Module* module , int pinIndex, int mouseY);
     
     // drag and drop
@@ -142,6 +143,7 @@ public:
     void setIndex(int index);    
     void setTab(TabbedComponent* t);
     void setModule(std::unique_ptr<Module> m, bool deleteWhenRemoved);
+    void setModuleRef(Module* m);
     Module* getModule();
     void setMixer(std::shared_ptr<MixerPanel> mixer);
     std::shared_ptr<MixerPanel> getMixer();

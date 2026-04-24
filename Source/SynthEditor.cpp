@@ -16,6 +16,9 @@
 #include "ADSRModule.h"
 #include <stdio.h>
 #include <string.h>
+#include <set>
+#include <map>
+#include <algorithm>
 #include "Actions/AddModuleAction.h"
 #include "Actions/AddConnectionAction.h"
 #include "Actions/DuplicateModuleAction.h"
@@ -38,7 +41,7 @@
 #include "AudioRecorderModule.h"
 #include "ImageModule.h"
 #include "AudioRecorderEditor.h"
-#include "PluginSelectorDialog.h"
+#include "Plugins/PluginBrowserComponent.h"
 #include "TrackUtil.h"
 #include "GeometryViewComponent.h"
 #include "GeometryModule.h"
@@ -723,9 +726,11 @@ void SynthEditor::showCommonContextMenu(Point<int> position) {
 	PopupMenu menu = PopupMenu();
 
 	// Add general items
-	menu.addItem(1, "Add module");	
-	menu.addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::DELETE_SELECTED);	
+	menu.addItem(1, "Add module");
+	menu.addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::DELETE_SELECTED);
 	menu.addItem(3, "Load module");
+	if (selectionModel.getSelectedModules().size() > 1)
+		menu.addItem(98, "Create Module from Selection");
 	menu.addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::SAVE_MODULE);
 	menu.addCommandItem(Project::getInstance()->getCommandManager(), CommandIds::SAVE_SCREENSHOT);
 
@@ -779,6 +784,9 @@ void SynthEditor::showCommonContextMenu(Point<int> position) {
 		setRunning(false);
 		loadModule();
 		setRunning(true);
+	}
+	else if (result == 98) {
+		createModuleFromSelection();
 	}
 	else if (result == 99) {
 		setLocked(!locked);
@@ -915,6 +923,171 @@ void SynthEditor::addTerminal(Module* module, int pinIndex) {
 	addAndMakeVisible(t);
 	getModule()->repaint();
 
+}
+
+void SynthEditor::createModuleFromSelection() {
+
+    auto& sel = selectionModel.getSelectedModules();
+    if (sel.size() < 2) return;
+
+    // 1. Compute bounding box of selected modules
+    int minX = sel[0]->getX(), maxX = sel[0]->getX() + sel[0]->getWidth();
+    int minY = sel[0]->getY(), maxY = sel[0]->getY() + sel[0]->getHeight();
+    for (auto* m : sel) {
+        if (m->getX() < minX)                    minX = m->getX();
+        if (m->getY() < minY)                    minY = m->getY();
+        if (m->getX() + m->getWidth()  > maxX)   maxX = m->getX() + m->getWidth();
+        if (m->getY() + m->getHeight() > maxY)   maxY = m->getY() + m->getHeight();
+    }
+
+    const int padding = 24;
+    int groupX = minX - padding;
+    int groupY = minY - padding;
+    int groupW = (maxX - minX) + 2 * padding;
+    int groupH = (maxY - minY) + 2 * padding;
+
+    // 2. Create the container module
+    Module* group = new Module("Group");
+    group->setIndex(PrefabFactory::getInstance()->getNextModuleIndex());
+    group->setSize(groupW, groupH);
+    group->setTopLeftPosition(groupX, groupY);
+
+    // Build a set of selected modules for fast lookup
+    std::set<Module*> selSet(sel.begin(), sel.end());
+    auto isInSel = [&selSet](Module* m) { return m != nullptr && selSet.count(m) > 0; };
+
+    // 3. Move selected modules into the group
+    //    Adjust their positions to be relative to the group interior
+    for (auto* m : sel) {
+        auto& rootMods = *root->getModules();
+        rootMods.erase(std::remove(rootMods.begin(), rootMods.end(), m), rootMods.end());
+        removeChildComponent(m);
+        m->setTopLeftPosition(m->getX() - groupX, m->getY() - groupY);
+        group->getModules()->push_back(m);
+    }
+
+    // 4. Classify and rewire connections crossing the selection boundary
+    // Track source pins that already have an OUT terminal to avoid duplicates
+    std::map<Pin*, Pin*> outTerminalForPin; // internal source pin → group extPin
+
+    std::vector<Connection*> allRootConns = *root->getConnections();
+    int inTermY  = padding;
+    int outTermY = padding;
+
+    for (auto* conn : allRootConns) {
+        bool srcIn = isInSel(conn->source);
+        bool tgtIn = isInSel(conn->target);
+
+        if (srcIn && tgtIn) {
+            // Pure internal: move connection to the group
+            auto& rc = *root->getConnections();
+            rc.erase(std::remove(rc.begin(), rc.end(), conn), rc.end());
+            group->addConnection(conn);
+
+        } else if (!srcIn && tgtIn) {
+            // Crossing IN: external source feeds internal target
+            Pin* tgtPin = conn->b;
+
+            auto* term = dynamic_cast<TerminalModule*>(
+                PrefabFactory::getInstance()->getPrefab(83, getSampleRate(), getBufferSize()));
+            if (!term) continue;
+
+            term->setType(tgtPin->getType());
+
+            Pin* extPin = new Pin(tgtPin->getType());
+            term->getPins().at(0)->setTerminal(extPin);
+            term->getPins().at(0)->setType(tgtPin->getType());
+            extPin->listeners.push_back(term);
+            extPin->setName(term->getName());
+            term->addChangeListener(extPin);
+
+            group->addPin(Pin::Direction::IN, extPin);
+            term->setIndex(extPin->index);
+
+            // Position terminal on the left edge of the group interior
+            term->setSize(80, 40);
+            term->setTopLeftPosition(4, inTermY);
+            inTermY += 44;
+
+            // Internal connection: term.out → target.tgtPin
+            auto* internalConn = new Connection(term, term->getPins().at(0), conn->target, tgtPin);
+            tgtPin->getConnections().push_back(term->getPins().at(0));
+            // Remove old source pin from tgtPin's connections list
+            auto& tc = tgtPin->getConnections();
+            tc.erase(std::remove(tc.begin(), tc.end(), conn->a), tc.end());
+
+            group->getModules()->push_back(term);
+            group->addConnection(internalConn);
+
+            // Redirect external connection to the group
+            extPin->getConnections().push_back(conn->a);
+            conn->target = group;
+            conn->b = extPin;
+
+        } else if (srcIn && !tgtIn) {
+            // Crossing OUT: internal source feeds external target
+            Pin* srcPin = conn->a;
+
+            Pin* extPin = nullptr;
+
+            if (outTerminalForPin.count(srcPin) == 0) {
+                // First time we see this source pin crossing out: create an OUT terminal
+                auto* term = dynamic_cast<TerminalModule*>(
+                    PrefabFactory::getInstance()->getPrefab(84, getSampleRate(), getBufferSize()));
+                if (!term) continue;
+
+                term->setType(srcPin->getType());
+
+                extPin = new Pin(srcPin->getType());
+                term->getPins().at(0)->setTerminal(extPin);
+                term->getPins().at(0)->setType(srcPin->getType());
+                extPin->listeners.push_back(term);
+                extPin->setName(term->getName());
+                term->addChangeListener(extPin);
+
+                group->addPin(Pin::Direction::OUT, extPin);
+                term->setIndex(extPin->index);
+
+                // Position terminal on the right edge of the group interior
+                term->setSize(80, 40);
+                term->setTopLeftPosition(groupW - 84, outTermY);
+                outTermY += 44;
+
+                // Internal connection: source.srcPin → term.in
+                auto* internalConn = new Connection(conn->source, srcPin, term, term->getPins().at(0));
+                term->getPins().at(0)->getConnections().push_back(srcPin);
+
+                group->getModules()->push_back(term);
+                group->addConnection(internalConn);
+
+                outTerminalForPin[srcPin] = extPin;
+            } else {
+                extPin = outTerminalForPin[srcPin];
+            }
+
+            // Redirect external connection to come from the group
+            auto& tc = conn->b->getConnections();
+            tc.erase(std::remove(tc.begin(), tc.end(), conn->a), tc.end());
+            tc.push_back(extPin);
+
+            conn->source = group;
+            conn->a = extPin;
+        }
+        // else: neither endpoint in selection → leave unchanged
+    }
+
+    // 5. Add the group to the root and make it visible
+    group->setResizable(true);
+    root->getModules()->push_back(group);
+    addAndMakeVisible(group);
+
+    // 6. Select only the group
+    selectionModel.clearSelection();
+    group->setSelected(true);
+    selectionModel.getSelectedModules().push_back(group);
+
+    repaint();
+    resized();
 }
 
 void SynthEditor::itemDropped(const SourceDetails& dragSourceDetails) {
@@ -1314,8 +1487,7 @@ void SynthEditor::openEditor(Module* m) {
 	editorView->setScrollOnDragEnabled(false);
 	editorView->setWantsKeyboardFocus(false);
 	editorView->setMouseClickGrabsKeyboardFocus(false);
-	std::unique_ptr<Module> ptr(m);
-	editor->setModule(std::move(ptr), false);
+	editor->setModuleRef(m);
 	editor->setIndex(static_cast<int>(m->getIndex()));
 	editor->setTab(tab);
 	editor->addEditorListener(Project::getInstance()->getPropertyView());
@@ -1620,13 +1792,31 @@ void SynthEditor::loadMidiRegions(juce::ValueTree& track, Track* t) {
 }
 
 void SynthEditor::configureAudioModule(Module* m, ChangeBroadcaster* broadcaster) {
+	if (m == nullptr || mixer == nullptr) return;
+
 	AudioManager* am = AudioManager::getInstance();
+	if (am == nullptr) {
+		broadcaster->addChangeListener(m);
+		return;
+	}
+
+	auto* device = am->getDeviceManager()->getCurrentAudioDevice();
 
 	AudioOut* out;
 
 	if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
 		mixer->getOutputChannels().push_back(out);
-		String channelName = am->getOutputChannelNames().getReference(static_cast<int>(mixer->getOutputChannels().size()) - 1);
+		int idx = static_cast<int>(mixer->getOutputChannels().size()) - 1;
+		String channelName;
+		if (device != nullptr) {
+			auto names = device->getOutputChannelNames();
+			if (idx >= 0 && idx < names.size())
+				channelName = names[idx];
+			else
+				channelName = "Out " + String(idx + 1);
+		} else {
+			channelName = "Out " + String(idx + 1);
+		}
 		int channelIndex = addChannel(channelName, Mixer::Channel::Type::OUT);
 		out->setChannelIndex(channelIndex);
 		mixer->setVolume(channelIndex, out->getVolume());
@@ -1636,9 +1826,11 @@ void SynthEditor::configureAudioModule(Module* m, ChangeBroadcaster* broadcaster
 	AudioIn* in;
 
 	if ((in = dynamic_cast<AudioIn*>(m)) != NULL) {
-		if (am->getInputChannelNames().size() > 0) {
+		if (device != nullptr && device->getInputChannelNames().size() > 0) {
 			mixer->getInputChannels().push_back(in);
-			String channelName = am->getInputChannelNames().getReference(static_cast<int>(mixer->getInputChannels().size()) - 1);
+			int idx = static_cast<int>(mixer->getInputChannels().size()) - 1;
+			auto names = device->getInputChannelNames();
+			String channelName = (idx >= 0 && idx < names.size()) ? names[idx] : ("In " + String(idx + 1));
 			int channelIndex = addChannel(channelName, Mixer::Channel::Type::IN);
 			in->setChannelIndex(channelIndex);
 			mixer->setVolume(channelIndex, in->getVolume());
@@ -1662,16 +1854,10 @@ void SynthEditor::configureAudioModule(Module* m, ChangeBroadcaster* broadcaster
 
 void SynthEditor::addVirtualInstrumentTrack()
 {
-	Array<var> values = Array<var>();
-
-	for (int i = 0; i < PluginManager::getInstance()->getPlugins().size(); i++) {
-		values.add(PluginManager::getInstance()->getPlugins().getReference(i));
-	}
-
-	PluginSelectorDialog::show(values, [this](juce::String selectedPlugin)
+	PluginBrowserComponent::show([this](juce::String selectedPlugin)
 	{
 		Point<int> pos = Point<int>(50, 50);
-		Track* t = TrackUtil::createVirtualInstrumentTrack(selectedPlugin, pos, navigator, this);
+		TrackUtil::createVirtualInstrumentTrack(selectedPlugin, pos, navigator, this);
 		repaint();
 	});
 }
@@ -1702,6 +1888,19 @@ void SynthEditor::setModule(std::unique_ptr<Module> m, bool deleteWhenRemoved) {
 	}
 
 	repaint();
+}
+
+void SynthEditor::setModuleRef(Module* m) {
+    if (root != nullptr)
+        root = nullptr;
+    selectionModel.setRoot(m);
+    // Non-owning shared_ptr: no-op deleter ensures we never delete the module
+    this->root = std::shared_ptr<Module>(m, [](Module*){});
+    isRoot = false;
+    deleteModuleWhenRemoved = false;
+    for (auto* mod : *root->getModules())
+        addAndMakeVisible(mod);
+    repaint();
 }
 
 Module* SynthEditor::getModule() {

@@ -72,6 +72,8 @@
 #include "ValueToEvent.h"
 #include "VocoderModule.h"
 #include "GainModule.h"
+#include "AudioInSelector.h"
+#include "RadioGroupModule.h"
 
 using juce::Image;
 
@@ -272,6 +274,12 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Gain") {
         m = new GainModule(sampleRate, bufferSize);
+    }
+    else if (prefabs[id].getName() == "Audio selector") {
+        m = new AudioInSelector(bufferSize);
+    }
+    else if (prefabs[id].getName() == "Radio group") {
+        m = new RadioGroupModule(bufferSize);
     }
     else if (prefabs[id].getName() == "Trigger timer") {
         m = new TriggerTimerModule();

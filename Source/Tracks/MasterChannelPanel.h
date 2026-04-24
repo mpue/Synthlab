@@ -50,6 +50,7 @@ class MasterChannelPanel  : public Component,
                             public ChangeBroadcaster,
                             public Slider::Listener,
                             public Button::Listener,
+                            public Label::Listener,
                             public juce::Timer
 {
 public:
@@ -93,6 +94,7 @@ public:
     void resized() override;
     void sliderValueChanged (Slider* sliderThatWasMoved) override;
     void buttonClicked (Button* buttonThatWasClicked) override;
+    void labelTextChanged (Label* labelThatHasChanged) override;
     void timerCallback() override;
 
     // Binary resources:

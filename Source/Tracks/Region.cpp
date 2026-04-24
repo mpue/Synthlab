@@ -142,6 +142,7 @@ void Region::setZoom(float zoom) {
 
 void Region::mouseDown(const MouseEvent & e)
 {
+    dragStartSampleOffset = getSampleOffset();
     if (dragger != nullptr)
         dragger->handleMouseDown(this, e);
 }
@@ -150,6 +151,13 @@ void Region::mouseUp(const MouseEvent & e)
 {
     if (dragger != nullptr)
         dragger->handleMouseUp(this, e);
+
+    long endOffset = getSampleOffset();
+    if (endOffset != dragStartSampleOffset) {
+        Project::getInstance()->getUndoManager()->beginNewTransaction();
+        Project::getInstance()->getUndoManager()->perform(
+            new MoveRegionAction(this, dragStartSampleOffset, endOffset));
+    }
 }
 
 void Region::mouseDrag(const MouseEvent & e)

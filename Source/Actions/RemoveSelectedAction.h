@@ -13,22 +13,27 @@
 #include "../ModuleUtils.h"
 
 class RemoveSelectedAction : public juce::UndoableAction {
-    
+
 public:
     RemoveSelectedAction(SynthEditor* editor);
-    ~RemoveSelectedAction(){};
-    
+    ~RemoveSelectedAction();
+
     virtual bool perform() override;
     virtual bool undo() override;
     void removeSelectedItem();
 
-    
 private:
-    
+
+    struct PinLink {
+        Pin* outer;   // pin on a module that stays in the editor
+        Pin* inner;   // pin on a removed module
+    };
+
     SynthEditor* editor;
-    Module* module = nullptr;
     std::vector<Connection*> removedConnections;
-    std::vector<Module*> removedModules;
+    std::vector<Module*>     removedModules;
+    std::vector<PinLink>     removedPinLinks;
+    bool modulesInEditor = true;
 };
 
 

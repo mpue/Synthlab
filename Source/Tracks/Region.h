@@ -24,6 +24,7 @@ public:
     virtual void resized() override = 0;
 
     virtual void setZoom(float zoom);
+    float getZoom() const { return zoom; }
 
     void setName(String name);
     String getName();
@@ -95,6 +96,7 @@ protected:
     };
 
     bool dirty;
+    long dragStartSampleOffset = 0;
 
     float zoom = 20;
     String name;

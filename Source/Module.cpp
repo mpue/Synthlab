@@ -111,6 +111,7 @@ Module::~Module()
     removeAllChangeListeners();
     delete nameListener;
     delete nameValue;
+    delete resizer;
     //[/Destructor_pre]
 
     nameEditor = nullptr;
@@ -177,7 +178,7 @@ void Module::paint(Graphics& g)
     }
     g.drawRect(moduleArea.toFloat());
 
-    //// 4. Icon zeichnen (Position anpassen für reduzierten Bereich)
+    //// 4. Icon zeichnen (Position anpassen fï¿½r reduzierten Bereich)
     //{
     //    int x = 28, y = 44, width = 64, height = 64;
     //    g.setColour(Colours::black);        
@@ -232,6 +233,9 @@ void Module::resized()
     const int labelHeight = 24;
     const int bottomMargin = 8;
     nameLabel->setBounds(0, getHeight() - labelHeight - bottomMargin, getWidth(), labelHeight);
+
+    if (resizer != nullptr)
+        resizer->setTopLeftPosition(getWidth() - 10, getHeight() - 10);
 }
 
 void Module::mouseDoubleClick (const MouseEvent& e)
@@ -553,6 +557,24 @@ String Module::getCategory() {
 
 String Module::getDescription() {
     return "not available";
+}
+
+void Module::setResizable(bool r) {
+    if (r && resizer == nullptr) {
+        resizer = new juce::ResizableCornerComponent(this, nullptr);
+        resizer->setSize(10, 10);
+        resizer->setTopLeftPosition(getWidth() - 10, getHeight() - 10);
+        addAndMakeVisible(resizer);
+        resizer->toFront(true);
+        // Allow child components (the resizer) to receive mouse events
+        setInterceptsMouseClicks(false, true);
+    }
+    else if (!r && resizer != nullptr) {
+        removeChildComponent(resizer);
+        delete resizer;
+        resizer = nullptr;
+        setInterceptsMouseClicks(false, false);
+    }
 }
 
 //[/MiscUserCode]

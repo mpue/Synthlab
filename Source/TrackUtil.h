@@ -92,6 +92,25 @@ public:
 
 
 		ConnectAudioOut(audioOut, pm, pos, 2, 3, editor->getModule(), editor);
+
+		// Wire the Track to its mixer channel panel so the strip shows the instrument name
+		if (audioOut != nullptr)
+		{
+			auto mixer = editor->getMixer();
+			if (mixer != nullptr)
+			{
+				int chIdx = audioOut->getChannelIndex();
+				for (auto* panel : mixer->getChannels())
+				{
+					if (panel->getIndex() == chIdx)
+					{
+						panel->setTrack(t);
+						break;
+					}
+				}
+			}
+		}
+
 		return t;
 	}
 
