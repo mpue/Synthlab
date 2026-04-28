@@ -192,8 +192,11 @@ public:
             return;
         }
         
-        if (!e.mods.isShiftDown())			
+        if (!e.mods.isShiftDown())
             delta.x = (int)UITools::snap(delta.x, raster, tolerance);
+
+        if (lockHorizontal)
+            delta.y = -totalDragDelta.y;
 
         for (auto comp: selectedComponents)
         {
@@ -211,6 +214,8 @@ public:
         totalDragDelta += delta;
     }
     
+    void setLockHorizontal(bool lock) { lockHorizontal = lock; }
+
     void setRaster(int raster) {
         this->raster = raster;
     }
@@ -299,6 +304,7 @@ private:
 
     bool constrainToParent {true};
     bool shiftConstrainsDirection {false};
+    bool lockHorizontal {false};
 
     bool didJustSelect {false};
     bool didStartDragging {false};

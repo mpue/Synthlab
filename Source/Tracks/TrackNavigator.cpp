@@ -48,6 +48,7 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 	marker->setZoom(zoom); // Zoom gleich mitgeben	
 	this->position = 0;
 	this->dragger = new MultiComponentDragger();
+	this->dragger->setLockHorizontal(true);
 	
 	double beatsPerSecond = Project::getInstance()->getTempo() / 60.0;
 	double samplesPerBeat = Project::getInstance()->getSampleRate() / beatsPerSecond;
