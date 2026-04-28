@@ -43,6 +43,7 @@
 #include "AudioUtils.h"
 #include "Actions/NormalizeRegionAction.h"
 #include "Actions/FadeRegionAction.h"
+#include "Actions/TrackDeleteAction.h"
 
 using juce::String;
 using juce::File;
@@ -999,6 +1000,8 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 	}
 	else if (index == 4) {
 
+		menu.addItem(60, "Delete Track", true, false, nullptr);
+		menu.addSeparator();
 		menu.addItem(41, "Quantize", true, false, nullptr);
 		menu.addItem(43, "Duplicate", true, false, nullptr);
 		menu.addItem(44, "Split at marker", true, false, nullptr);
@@ -1238,6 +1241,13 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 				region->consolidate();
 		}
 	}
+	else if (menuItemID == 60) {
+		if (navigator != nullptr && navigator->getCurrentTrack() != nullptr) {
+			auto* action = new TrackDeleteAction(navigator, editor);
+			Project::getInstance()->getUndoManager()->beginNewTransaction();
+			Project::getInstance()->getUndoManager()->perform(action);
+		}
+	}
 	else if (menuItemID == undoCommand) {
 		Project::getInstance()->getUndoManager()->undo();
 	}
@@ -1473,9 +1483,9 @@ void MainComponent::buttonClicked(Button* b)
 						PluginModule* module = nullptr;
 
 						if ((module = dynamic_cast<PluginModule*>(editor->getModule()->getModules()->at(i))) != nullptr) {
-							module->getPlayHead().setPlaying(false);
-							module->getPlayHead().setRecording(false);
-							module->getPlugin()->reset();
+							module->getPlayHead()->setPlaying(false);
+							module->getPlayHead()->setRecording(false);
+							module->resetPlugin();
 						}
 					}
 				}
@@ -1493,9 +1503,10 @@ void MainComponent::buttonClicked(Button* b)
 
 				PluginModule* module = nullptr;
 
-				// make sure we do not send this event to a plugin module
-
-				if ((module = dynamic_cast<PluginModule*>(editor->getModule()->getModules()->at(i))) == nullptr) {
+				if ((module = dynamic_cast<PluginModule*>(editor->getModule()->getModules()->at(i))) != nullptr) {
+					module->getPlayHead()->setPlaying(true);
+				}
+				else {
 					midiProcessor->sendMidiStartMessage(editor->getModule()->getModules()->at(i), 1);
 				}
 			}
@@ -1504,6 +1515,18 @@ void MainComponent::buttonClicked(Button* b)
 		else if (tb->getItemId() == toolbarFactory->app_record) {
 			if (navigator != nullptr)
 				navigator->setRecording(true);
+            
+            for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
+
+                PluginModule* module = nullptr;
+
+                if ((module = dynamic_cast<PluginModule*>(editor->getModule()->getModules()->at(i))) != nullptr) {
+                    module->getPlayHead()->setPlaying(false);
+                    module->getPlayHead()->setRecording(true);
+                    module->resetPlugin();
+                }
+            }
+            
 		}
 		else if (tb->getItemId() == toolbarFactory->app_fast_backwards) {
 			if (navigator != nullptr)

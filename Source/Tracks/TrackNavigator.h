@@ -57,6 +57,8 @@ public:
 	void addTrack(Track* t);
 	Track* addTrack(Track::Type type, double sampleRate);
 	void removeSelectedTrack();
+	Track* detachSelectedTrack(int& outIndex);
+	void insertTrackAt(Track* track, int index);
 	Track* getCurrentTrack();
 	std::vector<Track*> getTracks();
 	StringArray getTrackList();

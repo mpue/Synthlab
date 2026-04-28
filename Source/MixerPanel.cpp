@@ -244,3 +244,12 @@ void MixerPanel::setSynthEditor(SynthEditor* se) {
     for (auto* ch : channels)
         ch->setSynthEditor(se);
 }
+
+// Called once after a project has been fully loaded — at that point the
+// module graph is settled and each MasterChannelPanel can rebuild its
+// fxChain[] mirror from the existing connections.
+void MixerPanel::reconstructAllFXChains() {
+    for (auto* ch : channels)
+        if (ch != nullptr)
+            ch->reconstructFXChainFromGraph();
+}

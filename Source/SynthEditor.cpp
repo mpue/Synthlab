@@ -1334,6 +1334,13 @@ void SynthEditor::loadFromString(juce::String in) {
 	setRunning(false);
 	ModuleUtils::loadStructure(root->getModules(), root->getConnections(), &v, this);
 
+	{
+		long maxIdx = 0;
+		for (auto* m : *root->getModules())
+			if (m->getIndex() > maxIdx) maxIdx = m->getIndex();
+		PrefabFactory::getInstance()->updateLastModuleIndex(maxIdx);
+	}
+
 	for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
 		addAndMakeVisible((*it));
 		configureAudioModule((*it), this);
@@ -1342,6 +1349,9 @@ void SynthEditor::loadFromString(juce::String in) {
 			im->toBack();
 		}
 	}
+
+	if (mixer != nullptr)
+		mixer->reconstructAllFXChains();
 
 	setCurrentLayer(v.getProperty("layer").toString().getIntValue());
 	setLocked(v.getProperty("lock").toString().getIntValue() > 0);
@@ -1606,6 +1616,13 @@ void SynthEditor::openFile() {
 		setRunning(false);
 		ModuleUtils::loadStructure(root->getModules(), root->getConnections(), &v, this);
 
+		{
+			long maxIdx = 0;
+			for (auto* m : *root->getModules())
+				if (m->getIndex() > maxIdx) maxIdx = m->getIndex();
+			PrefabFactory::getInstance()->updateLastModuleIndex(maxIdx);
+		}
+
 		for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
 			addAndMakeVisible((*it));
 			configureAudioModule((*it), this);
@@ -1614,6 +1631,12 @@ void SynthEditor::openFile() {
 				im->toBack();
 			}
 		}
+
+		// Modules and connections are loaded — let the mixer panels mirror any
+		// FX PluginModules that sit between a source and an AudioOut into their
+		// fxChain[] slot UI.
+		if (mixer != nullptr)
+			mixer->reconstructAllFXChains();
 
 		Project::getInstance()->setRoot(root.get());
 

@@ -1,49 +1,38 @@
-/*
-  ==============================================================================
-
-    OfflinePlayHead.h
-    Created: 15 Jul 2025 7:43:06pm
-    Author:  mpue
-
-  ==============================================================================
-*/
-#pragma once
-#include "../JuceLibraryCode/JuceHeader.h"
-
 struct OfflinePlayHead : public juce::AudioPlayHead
 {
-    juce::AudioPlayHead::PositionInfo info;
-
-    virtual Optional<PositionInfo> getPosition() const
+    Optional<PositionInfo> getPosition() const override
     {
-        return info;
+        // Atomic load: sehe entweder den ganzen alten oder den ganzen neuen State
+        return infoSnapshot.load();
     }
 
     void setPositionInfo(int64_t samplePos, double sampleRate, double bpm)
     {
+        PositionInfo local;  // lokale Kopie auf Stack
+        
         double timeInSeconds = samplePos / sampleRate;
         double ppq = timeInSeconds * (bpm / 60.0);
+        double beatsPerBar = 4.0;
+        double ppqBarStart = std::floor(ppq / beatsPerBar) * beatsPerBar;
 
-        info.setTimeInSamples(samplePos);
-        info.setTimeInSeconds(samplePos / sampleRate);
-        info.setBpm(bpm);
-		info.setTimeSignature(TimeSignature(4, 4)); // Default time signature
+        local.setTimeInSamples(samplePos);
+        local.setTimeInSeconds(timeInSeconds);
+        local.setBpm(bpm);
+        local.setTimeSignature(TimeSignature(4, 4));
+        local.setPpqPosition(ppq);
+        local.setPpqPositionOfLastBarStart(ppqBarStart);
+        local.setIsLooping(false);
+        local.setIsPlaying(playing.load());
+        local.setIsRecording(recording.load());
 
-        info.setPpqPosition(ppq);
-        info.setPpqPositionOfLastBarStart(0.0);
-
-        info.setIsPlaying(true);
-        info.setIsRecording(false);
+        infoSnapshot.store(local);  // atomic swap, ein Aufruf
     }
 
-    void setRecording(bool recording)
-    {
-        info.setIsRecording(recording);
-	}
+    void setPlaying(bool p)   { playing.store(p); }
+    void setRecording(bool r) { recording.store(r); }
 
-    void setPlaying(bool playing)
-    {
-        info.setIsPlaying(playing);
-    }
-
+private:
+    std::atomic<PositionInfo> infoSnapshot;
+    std::atomic<bool> playing { false };
+    std::atomic<bool> recording { false };
 };

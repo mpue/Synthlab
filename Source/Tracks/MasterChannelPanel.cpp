@@ -25,9 +25,11 @@
 #include "../SynthEditor.h"
 #include "../PluginModule.h"
 #include "../AudioOut.h"
+#include "../AuxOut.h"
 #include "../AudioManager.h"
 #include "../ModuleUtils.h"
 #include "../Connection.h"
+#include "../PrefabFactory.h"
 #include "../Plugins/PluginManager.h"
 #include "../Plugins/PluginBrowserComponent.h"
 //[/Headers]
@@ -723,7 +725,12 @@ void MasterChannelPanel::onFXSlotClicked(int slotIndex) {
 void MasterChannelPanel::insertFX(int slotIndex, juce::String pluginName) {
     if (!synthEditor) return;
 
-    auto* audioOut = dynamic_cast<AudioOut*>(module);
+    Module* audioOut = dynamic_cast<AudioOut*>(module);
+
+    if (!audioOut) {
+        audioOut = dynamic_cast<AuxOut*>(module);
+    }
+
     if (!audioOut) return;
 
     Module* root = synthEditor->getModule();
@@ -764,12 +771,24 @@ void MasterChannelPanel::insertFX(int slotIndex, juce::String pluginName) {
     const double sr = dev ? dev->getCurrentSampleRate()       : 44100.0;
     const int    bs = dev ? dev->getCurrentBufferSizeSamples() : 512;
 
-    PluginModule* fx = new PluginModule(sr, bs);
-    fx->configurePins();
+    // Use the prefab factory so the module gets a valid prefab id and a unique
+    // module index — without those, save/load of the patch silently drops the
+    // FX (loadModule sees prefabId=0 and skips it).
+    auto* factory = PrefabFactory::getInstance();
+    int pluginPrefabId = 0;
+    for (auto& kv : factory->getPrefabNames()) {
+        if (kv.second.getName() == "Plugin") { pluginPrefabId = kv.first; break; }
+    }
+    if (pluginPrefabId == 0) return;
+
+    auto* fxModule = factory->getPrefab(pluginPrefabId, (float)sr, bs);
+    auto* fx = dynamic_cast<PluginModule*>(fxModule);
+    if (fx == nullptr) { delete fxModule; return; }
     fx->selectPlugin(pluginName);
 
     root->getModules()->push_back(fx);
     synthEditor->addAndMakeVisible(fx);
+    synthEditor->addChangeListener(fx);
 
     // Place the FX module in the signal path between the source module and AudioOut.
     // If the source position is known, distribute FX evenly along the horizontal path.
@@ -833,6 +852,7 @@ void MasterChannelPanel::removeFX(int slotIndex) {
     auto* mods = root->getModules();
     mods->erase(std::remove(mods->begin(), mods->end(), fx), mods->end());
     synthEditor->removeChildComponent(fx);
+    synthEditor->removeChangeListener(fx);
     delete fx;
 
     // If no FX remain, reset chain-source bookkeeping.
@@ -852,7 +872,12 @@ void MasterChannelPanel::removeFX(int slotIndex) {
 void MasterChannelPanel::rewireChain() {
     if (!synthEditor) return;
 
-    auto* audioOut = dynamic_cast<AudioOut*>(module);
+    Module* audioOut = dynamic_cast<AudioOut*>(module);
+
+    if (!audioOut) {
+        audioOut = dynamic_cast<AuxOut*>(module);
+    }
+
     if (!audioOut) return;
 
     Module* root = synthEditor->getModule();
@@ -919,6 +944,103 @@ void MasterChannelPanel::rewireChain() {
 void MasterChannelPanel::updateFXButtons() {
     for (int i = 0; i < NUM_FX; ++i)
         fxOpenButtons[i]->setVisible(fxChain[i] != nullptr);
+}
+
+// Rebuild fxChain[] and chainSource* from the current connection graph.
+// Called once after a full project load, when the module graph is settled
+// and every PluginModule between a source and this panel's AudioOut should
+// be exposed as an FX slot in the UI.
+void MasterChannelPanel::reconstructFXChainFromGraph() {
+    for (int i = 0; i < NUM_FX; ++i) fxChain[i] = nullptr;
+    chainSourceModL = chainSourceModR = nullptr;
+    chainSourcePinL = chainSourcePinR = nullptr;
+
+    if (synthEditor == nullptr) { updateFXButtons(); return; }
+    Module* audioOut = dynamic_cast<AudioOut*>(module);
+    if (audioOut == nullptr)
+        audioOut = dynamic_cast<AuxOut*>(module);
+    if (audioOut == nullptr) { updateFXButtons(); return; }
+    if (audioOut->pins.size() < 2) { updateFXButtons(); return; }
+    Module* root = synthEditor->getModule();
+    if (root == nullptr || root->getModules() == nullptr) { updateFXButtons(); return; }
+
+    auto findModuleForPin = [root](Pin* pin) -> Module* {
+        if (pin == nullptr) return nullptr;
+        for (auto* m : *root->getModules()) {
+            if (m == nullptr) continue;
+            for (auto* p : m->pins)
+                if (p == pin) return m;
+        }
+        return nullptr;
+    };
+
+    // Walk backward from AudioOut's L IN, collecting PluginModules in
+    // reverse slot order (the one closest to AudioOut comes first). Cap the
+    // number of hops so a malformed graph cannot loop forever.
+    std::vector<PluginModule*> reverseChain;
+    Pin* curIn = audioOut->pins[0];
+    Module* srcModL = nullptr;
+    Pin*    srcPinL = nullptr;
+
+    for (int hops = 0; hops < NUM_FX + 1 && curIn != nullptr; ++hops) {
+        auto& conns = curIn->getConnections();
+        if (conns.empty()) break;
+        Pin* feedOutPin = conns[0];
+        Module* feedMod = findModuleForPin(feedOutPin);
+        if (feedMod == nullptr) break;
+
+        if (auto* pm = dynamic_cast<PluginModule*>(feedMod)) {
+            if (pm->pins.size() < 2) break;
+            reverseChain.push_back(pm);
+            curIn = pm->pins[0];
+        } else {
+            srcModL = feedMod;
+            srcPinL = feedOutPin;
+            break;
+        }
+    }
+
+    if (reverseChain.empty()) {
+        updateFXButtons();
+        return;
+    }
+
+    // Reverse to slot order: index 0 = closest to source, last = closest to AudioOut.
+    std::reverse(reverseChain.begin(), reverseChain.end());
+
+    chainSourceModL = srcModL;
+    chainSourcePinL = srcPinL;
+
+    // Mirror the walk on the R channel to recover chainSourceModR/PinR.
+    Pin* rIn = audioOut->pins[1];
+    for (size_t i = 0; i < reverseChain.size() && rIn != nullptr; ++i) {
+        auto& conns = rIn->getConnections();
+        if (conns.empty()) { rIn = nullptr; break; }
+        Pin* feedOutPin = conns[0];
+        Module* feedMod = findModuleForPin(feedOutPin);
+        if (feedMod == nullptr) { rIn = nullptr; break; }
+        if (auto* pm = dynamic_cast<PluginModule*>(feedMod)) {
+            if (pm->pins.size() < 2) { rIn = nullptr; break; }
+            rIn = pm->pins[1];
+        } else {
+            chainSourceModR = feedMod;
+            chainSourcePinR = feedOutPin;
+            rIn = nullptr;
+        }
+    }
+    if (rIn != nullptr) {
+        auto& conns = rIn->getConnections();
+        if (!conns.empty()) {
+            chainSourcePinR = conns[0];
+            chainSourceModR = findModuleForPin(chainSourcePinR);
+        }
+    }
+
+    for (int i = 0; i < (int)reverseChain.size() && i < NUM_FX; ++i)
+        fxChain[i] = reverseChain[i];
+
+    updateFXButtons();
+    repaint();
 }
 
 //[/MiscUserCode]

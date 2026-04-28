@@ -28,6 +28,8 @@ public:
 	AudioPluginInstance* getPlugin() { return plugin.get(); }
     void openPluginWindow();
     void eventReceived(Event* e) override;
+    void addMidiMessage(const juce::MidiMessage& msg);
+    void resetPlugin();
 
     juce::Array<juce::PropertyComponent*>& getProperties() override;
     void createProperties() override;
@@ -38,10 +40,13 @@ public:
 	bool isBounceMode() const { return bounceMode; }
     void setBounceMode(bool mode) { bounceMode = mode; }
 
-	void setCurrentSample(int sample) { currentSample = sample; }
+    void setCurrentSample(int64_t sample) { nextSamplePosition.store(sample); }
 
-	OfflinePlayHead& getPlayHead() { return playHead; }
+	OfflinePlayHead* getPlayHead() { return playHead; }
 
+    void requestReset() { needsReset.store(true); }
+    void requestPositionReset(int64_t pos) { nextSamplePosition.store(pos); }
+    
 private:
     std::vector<std::unique_ptr<juce::PropertyComponent>> ownedProperties;
     juce::Array<juce::PropertyComponent*> propertyPtrs;
@@ -63,6 +68,9 @@ private:
         PluginModule* m;
         juce::Value value;
     };
+    
+    std::atomic<bool> needsReset { false };
+    std::atomic<int64_t> nextSamplePosition { -1 };  // -1 = no change
 
     std::unique_ptr<float[]> bufferLeft;
     std::unique_ptr<float[]> bufferRight;
@@ -81,16 +89,17 @@ private:
     juce::Array<juce::PropertyComponent*> properties;
 
     int currentProgram = 0;
-    int currentSample = 0;
+    std::atomic<int64_t> currentSample { 0 };
 
     double sampleRate;
     int buffersize;
 
     int internalLatency = 8192;
 
-    juce::CriticalSection lock;
+    juce::CriticalSection lock;     // guards plugin lifetime (processBlock / selectPlugin)
+    juce::CriticalSection midiLock; // guards midiBuffer (eventReceived vs processInternal)
 
-    OfflinePlayHead playHead;
+    OfflinePlayHead* playHead;
 
 	bool bounceMode = false;
 

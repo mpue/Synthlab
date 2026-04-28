@@ -11,6 +11,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Tracks/Track.h"
+#include <algorithm>
 
 class Mixer : public ChangeListener, public ChangeBroadcaster {
 
@@ -51,6 +52,12 @@ public:
 	inline void addTrack(Track* track) {
 		this->tracks.push_back(track);
 		track->addChangeListener(this);
+		sendChangeMessage();
+	}
+
+	inline void removeTrack(Track* track) {
+		track->removeChangeListener(this);
+		tracks.erase(std::remove(tracks.begin(), tracks.end(), track), tracks.end());
 		sendChangeMessage();
 	}
 

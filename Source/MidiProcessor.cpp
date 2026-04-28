@@ -195,11 +195,8 @@ void MidiProcessor::sendControllerMessage(Module* module, int targetChannel, int
 		}
 	}
 	else if(auto* plugin = dynamic_cast<PluginModule*>(module)) {
-		MidiMessage msg = MidiMessage::controllerEvent(
-			midiInChannel, controller, static_cast<int>(value));
-		Event* event = new Event("controller", Event::Type::CONTROLLER);
-		event->setMessage(msg);
-		plugin->eventReceived(event);
+		plugin->addMidiMessage(MidiMessage::controllerEvent(
+			midiInChannel, controller, static_cast<int>(value)));
 	}
 	else if (auto* trackin = dynamic_cast<TrackIn*>(module)) {
 		MidiMessage msg = MidiMessage::controllerEvent(

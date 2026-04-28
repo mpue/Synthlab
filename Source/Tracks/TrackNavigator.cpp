@@ -200,8 +200,7 @@ bool TrackNavigator::isInterestedInDragSource(const SourceDetails& dragSourceDet
 		name.endsWith(".aiff") || name.endsWith(".aif")) {
 		return true;
 	}
-	return false;
-}
+	return false;	}
 
 // Neue Methode f�r externe Datei-Drops hinzuf�gen:
 bool TrackNavigator::isInterestedInFileDrag(const StringArray& files)
@@ -394,6 +393,7 @@ void TrackNavigator::setPosition(double position) {
 	this->samplePosition = alignToBufferSize(this->samplePosition);
 
 	marker->setSamplePosition(samplePosition);
+    
 	transportDisplay->setTransportState(samplePosition, Project::getInstance()->getSampleRate(), Project::getInstance()->getTempo(), 4, 4);
 	startTimer(50);
 }
@@ -404,13 +404,24 @@ int TrackNavigator::getSamplePosition() {
 
 void TrackNavigator::ResetMarkerPosition()
 {
-	setPosition(0);
-	for (int i = 0; i < tracks.size(); i++) {
-		tracks.at(i)->setSamplePosition(0);
-		tracks.at(i)->setCurrentMarkerPosition(0);
-	}
-	sendChangeMessage();
-
+    setPosition(0);
+    for (int i = 0; i < tracks.size(); i++) {
+        tracks.at(i)->setSamplePosition(0);
+        tracks.at(i)->setCurrentMarkerPosition(0);
+    }
+    
+    // Synchronisiere auch die PluginModules, sonst sieht ein
+    // tempo-sync-empfindlicher Synth (Avenger) beim nächsten Play
+    // einen Transport-Sprung und spinnt.
+    for (int i = 0; i < Project::getInstance()->getRoot()->getModules()->size(); i++) {
+        if (auto* module = dynamic_cast<PluginModule*>(
+                Project::getInstance()->getRoot()->getModules()->at(i))) {
+            module->requestPositionReset(0);
+            module->requestReset();
+        }
+    }
+    
+    sendChangeMessage();
 }
 
 void TrackNavigator::setSamplePosition(int position) {
@@ -428,6 +439,15 @@ void TrackNavigator::setSamplePosition(int position) {
 	for (int i = 0; i < tracks.size(); i++) {
 		tracks.at(i)->setSamplePosition(this->getSamplePosition());
 	}
+    
+    for (int i = 0; i < Project::getInstance()->getRoot()->getModules()->size(); i++) {
+        if (auto* module = dynamic_cast<PluginModule*>(
+                Project::getInstance()->getRoot()->getModules()->at(i))) {
+            module->setCurrentSample(this->samplePosition);
+        }
+    }
+
+    
 	this->position = (float)samplePosition / Project::getInstance()->getSampleRate();
 }
 
@@ -447,9 +467,15 @@ double TrackNavigator::getMaxLength() {
 }
 
 void TrackNavigator::setPlaying(bool playing) {
+    if (playing)
+        Logger::getCurrentLogger()->writeToLog("Playing start");
+    else
+        Logger::getCurrentLogger()->writeToLog("Playing stop");
+
 	this->playing = playing;
-	if (playing)
-		startTimer(50);
+    if (playing) {
+        startTimer(50);
+    }
 	else {
 		stopTimer();
 		allNotesOff();
@@ -467,9 +493,13 @@ void TrackNavigator::setPlaying(bool playing) {
 		PluginModule* module = nullptr;
 
 		if ((module = dynamic_cast<PluginModule*>(Project::getInstance()->getRoot()->getModules()->at(i))) != nullptr) {
-			module->getPlayHead().setRecording(false);
-			module->getPlayHead().setPlaying(playing);
-		}
+			module->getPlayHead()->setRecording(false);
+            module->getPlayHead()->setPlaying(playing);
+            if (playing) {
+                // 	module->requestPositionReset(0);
+                module->requestReset();
+            }
+        }
 	}
 
 	sendChangeMessage();
@@ -485,7 +515,11 @@ void TrackNavigator::noteOffForAll() {
 }
 
 void TrackNavigator::setRecording(bool recording) {
-
+    if (recording)
+        Logger::getCurrentLogger()->writeToLog("Recording start");
+    else
+        Logger::getCurrentLogger()->writeToLog("Recording stop");
+    
 	if (Project::getInstance()->getRoot() != nullptr) {
 		for (int i = 0; i < Project::getInstance()->getRoot()->getModules()->size(); i++) {
 
@@ -494,8 +528,16 @@ void TrackNavigator::setRecording(bool recording) {
 			// make sure we do not send this event to a plugin module
 
 			if ((module = dynamic_cast<PluginModule*>(Project::getInstance()->getRoot()->getModules()->at(i))) != nullptr) {
-				module->getPlayHead().setRecording(recording);
-				module->getPlayHead().setPlaying(false);
+                
+                if (recording) {
+                    module->getPlayHead()->setRecording(true);
+                    module->getPlayHead()->setPlaying(true);
+                }
+                else {
+                    module->getPlayHead()->setRecording(false);
+                    module->getPlayHead()->setPlaying(false);
+                    module->requestReset();
+                }
 			}
 		}
 	}
@@ -777,6 +819,57 @@ void TrackNavigator::removeSelectedTrack()
 
 }
 
+Track* TrackNavigator::detachSelectedTrack(int& outIndex)
+{
+	for (int i = 0; i < (int)tracks.size(); i++) {
+		if (tracks[i]->isSelected()) {
+			Track* track = tracks[i];
+			outIndex = i;
+			tracks.erase(tracks.begin() + i);
+			track->removeChangeListener(this);
+			removeChildComponent(track);
+
+			// Restack remaining tracks
+			if (!tracks.empty()) {
+				tracks[0]->setTopLeftPosition(tracks[0]->getX(), timelineOffset);
+				for (int j = 1; j < (int)tracks.size(); j++)
+					tracks[j]->setTopLeftPosition(tracks[j-1]->getX(),
+					                              tracks[j-1]->getY() + tracks[j-1]->getHeight());
+			}
+
+			if (currentTrack == track)
+				currentTrack = tracks.empty() ? nullptr : tracks[0];
+
+			adjustHeight();
+			repaint();
+			sendChangeMessage();
+			return track;
+		}
+	}
+	return nullptr;
+}
+
+void TrackNavigator::insertTrackAt(Track* track, int index)
+{
+	index = jlimit(0, (int)tracks.size(), index);
+	tracks.insert(tracks.begin() + index, track);
+	track->setNavigator(this);
+	track->addChangeListener(this);
+	addAndMakeVisible(track);
+
+	// Restack all tracks
+	int yPos = timelineOffset;
+	for (auto* t : tracks) {
+		t->setTopLeftPosition(t->getX(), yPos);
+		yPos += t->getHeight();
+	}
+
+	currentTrack = track;
+	adjustHeight();
+	repaint();
+	sendChangeMessage();
+}
+
 Track* TrackNavigator::getCurrentTrack()
 {
 	return this->currentTrack;
@@ -940,7 +1033,15 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 			tracks.at(i)->setCurrentMarkerPosition(position);
 		}
 		sendChangeMessage();
-		marker->repaint();		
+		marker->repaint();
+        for (int i = 0; i < Project::getInstance()->getRoot()->getModules()->size(); i++)
+        {
+            if (auto* module = dynamic_cast<PluginModule*>(Project::getInstance()->getRoot()->getModules()->at(i)))
+            {
+                // module->requestReset();
+                module->requestPositionReset(samplePosition);
+            }
+        }
 	}
 	//else
 	if (Track* r = dynamic_cast<Track*>(event.eventComponent)) {		

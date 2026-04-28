@@ -88,6 +88,7 @@ public:
     void setChannel(Mixer::Channel* channel);
     void setModule(VolumeAdjustable* v);
     void setSynthEditor(SynthEditor* editor);
+    void reconstructFXChainFromGraph();
     //[/UserMethods]
 
     void paint (Graphics& g) override;

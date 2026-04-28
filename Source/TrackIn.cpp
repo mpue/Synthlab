@@ -114,7 +114,7 @@
 				r->addMessage(m, Time::getMillisecondCounterHiRes() / 1000, samplePosition);
 			}
 			else {
-				Logger::writeToLog("No region found at " + String(track->getSamplePosition()));
+				// Logger::writeToLog("No region found at " + String(track->getSamplePosition()));
 			}
 		
 		}

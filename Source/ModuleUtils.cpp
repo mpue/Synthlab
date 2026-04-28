@@ -181,13 +181,11 @@ void ModuleUtils::addConnection(Module* source, Pin* a, Module* target, Pin* b, 
 			Logger::writeToLog("Connecting pin " + String(b->index) + " to pin " + String(a->index));
 		}
 
-		// Connection* c = new Connection(target, b, source, a);
-		// root->getConnections()->push_back(c);
 		Connection* c = new Connection();
-		c->a = b;
-		c->b = a;
-		c->source = target;
-		c->target = source;
+		c->a = a;
+		c->b = b;
+		c->source = source;
+		c->target = target;
 		if (!connectionExists(*connections, c)) {
 			Logger::writeToLog("Adding connection from module " + source->getName() + ", index " + String(source->getIndex()) + " to module " + target->getName() + ", index : " + String(target->getIndex()));
 			connections->push_back(c);

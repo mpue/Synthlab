@@ -91,6 +91,10 @@ public:
     long getNextModuleIndex();
     void reset();
     void init(TrackNavigator* navigator);
+    void updateLastModuleIndex(long maxUsedIndex) {
+        if (maxUsedIndex >= lastModuleIndex)
+            lastModuleIndex = maxUsedIndex + 1;
+    }
 
 private:
     static PrefabFactory* instance;

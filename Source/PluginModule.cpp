@@ -1,4 +1,4 @@
-﻿#include "PluginModule.h"
+#include "PluginModule.h"
 #include "Connection.h"
 #include "AudioManager.h"
 #include "Plugins/PluginManager.h"
@@ -25,7 +25,11 @@ PluginModule::PluginModule(double sampleRate, int buffersize)
 	bufferRight = std::make_unique<float[]>(buffersize);
 	audioBuffer = std::make_unique<AudioBuffer<float>>(2, buffersize);
 
+	// Pre-allocate so addEvent never calls malloc on the hot path.
+	midiBuffer.ensureSize(4096);
+
 	createProperties();
+    playHead = new OfflinePlayHead();
 }
 
 PluginModule::~PluginModule()
@@ -34,6 +38,7 @@ PluginModule::~PluginModule()
         pluginValue->removeListener(pluginListener);
     delete pluginListener;
     delete pluginValue;
+    delete playHead;
 }
 
 void PluginModule::openPluginWindow()
@@ -106,12 +111,10 @@ void PluginModule::selectPlugin(String name)
 		pluginName = name;
 		pluginValue->setValue(name);
 
-		playHead = OfflinePlayHead();
-
 		if (!plugin)
 			return;
 
-		plugin->setPlayHead(&playHead);
+		plugin->setPlayHead(playHead);
 
 	}
 }
@@ -176,7 +179,17 @@ void PluginModule::processInternal(MidiBuffer* externalBuffer, int numSamples)
 	if (!plugin)
 		return;
 
-	playHead.setPositionInfo(currentSample, sampleRate, Project::getInstance()->getTempo());	
+    // Apply pending state changes from the message thread.
+    // Doing this in the audio thread avoids racing plugin->reset()
+    // against plugin->processBlock().
+    if (needsReset.exchange(false))
+        plugin->reset();
+    
+    int64_t newPos = nextSamplePosition.exchange(-1);
+    if (newPos >= 0)
+        currentSample = newPos;
+    
+	playHead->setPositionInfo(currentSample.load(), sampleRate, Project::getInstance()->getTempo());
 
 	const int numIn = plugin->getTotalNumInputChannels();
 	const int numOut = plugin->getTotalNumOutputChannels();
@@ -199,15 +212,26 @@ void PluginModule::processInternal(MidiBuffer* externalBuffer, int numSamples)
 		audioBuffer->copyFrom(1, 0, *pins[1]->getConnections()[0]->getAudioBuffer(), 0, 0, numSamples);
 	}
 
-	{
-		const ScopedLock sl(lock);
-		MidiBuffer* midiInBuffer = externalBuffer ? externalBuffer : &midiBuffer;
-		plugin->processBlock(*audioBuffer, *midiInBuffer);
+	// Snapshot MIDI under midiLock before acquiring the plugin lock — the two
+	// locks must never be held simultaneously to prevent deadlock with
+	// VPSAvenger2's long processBlock() call.
+	// Use copy+clear (not swapWith) so midiBuffer keeps its pre-allocated storage
+	// across every audio block; addEvent on the message thread never calls malloc.
+	MidiBuffer midiSnapshot;
+	if (!externalBuffer)
+	{	
+		const ScopedLock ml(midiLock);
+		midiSnapshot = midiBuffer;  // deep-copy events into snapshot
+		midiBuffer.clear();          // reset used-size; pre-allocated storage is kept
 	}
 
-	if (!externalBuffer)
-		midiBuffer.clear();
-
+	
+	{
+		const ScopedLock sl(lock);
+		MidiBuffer* midiInBuffer = externalBuffer ? externalBuffer : &midiSnapshot;
+		plugin->processBlock(*audioBuffer, *midiInBuffer);
+	}
+    
 	if (numOut >= 2 && pins.size() >= 4)
 	{
 		auto* leftOut = pins[2]->getAudioBuffer();
@@ -231,26 +255,43 @@ void PluginModule::processInternal(MidiBuffer* externalBuffer, int numSamples)
 	}
 
 	if (!bounceMode)
-		currentSample = (currentSample + numSamples); //;% static_cast<int>(sampleRate);
+        currentSample.store(currentSample.load() + numSamples);
 }
 
 
 void PluginModule::eventReceived(Event* e)
 {
-	const ScopedLock sl(lock);
 	if (!e) return;
 
+	// Copy the message then delete the event BEFORE acquiring midiLock.
+	// If VPSAvenger2's processBlock holds the malloc lock (sample streaming),
+	// the heap free would block; holding midiLock during that would deadlock
+	// the audio thread's next processInternal swap.
 	auto msg = e->getMessage();
+	delete e;
 
-	// Only convert note-on with velocity 0 to note-off (standard MIDI convention).
-	// getVelocity() returns 0 for ALL non-note messages (CC, pitchbend, etc.),
-	// so checking it here would silently drop every controller event.
 	if (msg.isNoteOn() && msg.getVelocity() == 0)
 		msg = MidiMessage::noteOff(msg.getChannel(), msg.getNoteNumber());
 
 	msg.setTimeStamp(0);
+
+	const ScopedLock ml(midiLock);
 	midiBuffer.addEvent(msg, 0);
-	delete e;
+}
+
+void PluginModule::addMidiMessage(const MidiMessage& msg)
+{
+	const ScopedLock ml(midiLock);
+	midiBuffer.addEvent(msg, 0);
+}
+
+void PluginModule::resetPlugin()
+{
+	// Signal the audio thread to call reset() at the start of the next
+	// processBlock. Calling reset() directly from the message thread would
+	// race with the audio thread's processBlock (no lock around it anymore),
+	// corrupting VPSAvenger2's internal state and causing CPU spin at 100%.
+	needsReset.store(true);
 }
 
 void PluginModule::createProperties()
