@@ -60,6 +60,10 @@ void BounceThread::run()
 		}
 	}
 
+	// Prepare master FX plugins for non-realtime
+	if (auto* masterPan = main->getEditor()->getMixer()->getMasterPanel())
+		masterPan->setFXNonRealtime(true);
+
 	main->setRunning(false);
 
 	// Build MIDI buffers for all tracks
@@ -202,6 +206,23 @@ void BounceThread::run()
 			}
 		}
 
+		// Apply master FX chain
+		if (auto* masterPan = main->getEditor()->getMixer()->getMasterPanel())
+			masterPan->processMasterFX(mixBuffer);
+
+		// Apply master volume/mute/pan
+		{
+			Mixer::Channel* master = Mixer::getInstance()->getMasterChannel();
+			if (master) {
+				const float masterVol = master->mute ? 0.0f : (float)master->volume;
+				const double masterPan = master->pan;
+				const float gainL = fastCos((M_PI * (masterPan + 1) / 4));
+				const float gainR = fastSin((M_PI * (masterPan + 1) / 4));
+				if (numChannels > 0) mixBuffer.applyGain(0, 0, numSamples, gainL * masterVol);
+				if (numChannels > 1) mixBuffer.applyGain(1, 0, numSamples, gainR * masterVol);
+			}
+		}
+
 		mixBuffer.applyGain(1.0f);
 
 		float blockMag = mixBuffer.getMagnitude(0, numSamples);
@@ -243,6 +264,9 @@ void BounceThread::run()
 	}
 
 	// reset plugins to realtime mode
+	if (auto* masterPan = main->getEditor()->getMixer()->getMasterPanel())
+		masterPan->setFXNonRealtime(false);
+
 	for (auto* mod : *main->getEditor()->getModule()->getModules())
 	{
 		if (auto* pm = dynamic_cast<PluginModule*>(mod))

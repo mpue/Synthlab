@@ -491,14 +491,13 @@ std::pair<MidiRegion*, MidiRegion*> MidiRegion::splitAt(long splitSample, MultiC
     auto* left = new MidiRegion(sampleOffset, relativeSplit, sampleRate, dragger);
     auto* right = new MidiRegion(splitSample, numSamples - relativeSplit, sampleRate, dragger);
 
-    // Tempo-Einstellungen übertragen
+    // Tempo-Einstellungen übertragen (snapToGrid erst NACH dem Hinzufügen
+    // der Messages setzen, damit addMessage die Timestamps nicht verändert)
     left->setTempo(currentBPM);
     left->setQuantizeGrid(quantizeGridBeats);
-    left->setSnapToGrid(snapToGrid);
 
     right->setTempo(currentBPM);
     right->setQuantizeGrid(quantizeGridBeats);
-    right->setSnapToGrid(snapToGrid);
 
     // Paare tracken
     std::multimap<int, MidiMessage*> noteOnMap;
@@ -586,6 +585,10 @@ std::pair<MidiRegion*, MidiRegion*> MidiRegion::splitAt(long splitSample, MultiC
             right->addMessage(copy, 0, relT + splitSample);
         }
     }
+
+    // Snap erst jetzt aktivieren, nachdem alle Messages hinzugefügt wurden
+    left->setSnapToGrid(snapToGrid);
+    right->setSnapToGrid(snapToGrid);
 
     // Zoom und Bounds
     left->setZoom(zoom);

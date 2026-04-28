@@ -731,6 +731,12 @@ void MasterChannelPanel::processMasterFX(juce::AudioBuffer<float>& buf) {
             fxChain[i]->processBuffer(buf);
 }
 
+void MasterChannelPanel::setFXNonRealtime(bool nonRealtime) {
+    for (int i = 0; i < NUM_FX; ++i)
+        if (fxChain[i] != nullptr && fxChain[i]->getPlugin() != nullptr)
+            fxChain[i]->getPlugin()->setNonRealtime(nonRealtime);
+}
+
 // Insert a new PluginModule into the graph at slotIndex.
 void MasterChannelPanel::insertFX(int slotIndex, juce::String pluginName) {
     if (!synthEditor) return;

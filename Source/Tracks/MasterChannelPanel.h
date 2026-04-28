@@ -90,6 +90,7 @@ public:
     void setSynthEditor(SynthEditor* editor);
     void reconstructFXChainFromGraph();
     void processMasterFX(juce::AudioBuffer<float>& buf);
+    void setFXNonRealtime(bool nonRealtime);
     //[/UserMethods]
 
     void paint (Graphics& g) override;
