@@ -262,7 +262,10 @@ void PluginModule::processInternal(MidiBuffer* externalBuffer, int numSamples)
 		}
 	}
 
-	if (!bounceMode)
+	// Nur weiterzählen, wenn das Transport tatsächlich spielt. Sonst driftet
+	// die ppqPosition während STOP und Plugins mit eigenem Sequenzer (Avenger,
+	// Step-Sequencer, Arps) verlieren die Synchronisation.
+	if (!bounceMode && playHead->isPlaying())
         currentSample.store(currentSample.load() + numSamples);
 }
 

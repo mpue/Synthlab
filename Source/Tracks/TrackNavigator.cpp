@@ -497,7 +497,7 @@ void TrackNavigator::setPlaying(bool playing) {
 			module->getPlayHead()->setRecording(false);
             module->getPlayHead()->setPlaying(playing);
             if (playing) {
-                // 	module->requestPositionReset(0);
+                module->requestPositionReset(this->samplePosition);
                 module->requestReset();
             }
         }
