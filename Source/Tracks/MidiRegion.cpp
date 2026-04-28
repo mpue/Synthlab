@@ -242,29 +242,31 @@ void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bo
     if (wasMoved) {
         long newSampleOffset = std::round((getBounds().getX() / zoom) * sampleRate);
 
-        // Optional: An Grid snappen
         if (snapToGrid) {
-            newSampleOffset = snapSampleToGrid(newSampleOffset) - sampleOffset + newSampleOffset;
+            newSampleOffset = snapSampleToGrid(newSampleOffset);
+            // Correct visual bounds to match the snapped sample position
+            double lengthInSeconds = numSamples / sampleRate;
+            setBounds((int)std::round(newSampleOffset / sampleRate * zoom), getY(),
+                      (int)std::round(lengthInSeconds * zoom), getHeight());
         }
 
-        long delta = newSampleOffset - sampleOffset;
         sampleOffset = newSampleOffset;
 
-        Logger::getCurrentLogger()->writeToLog("Region moved - synchronizing bounds with sampleOffset");
-
-        // WICHTIG: Bounds mit neuem Offset synchronisieren
-        double lengthInSeconds = numSamples / sampleRate;
-        setBounds((int)(sampleOffset / sampleRate * zoom), getY(),
-            (int)(lengthInSeconds * zoom), getHeight());
-
         rebuildThumbnail();
+        updateThumb();
+    }
+
+    if (wasResized) {
+        long newNumSamples = (long)std::round((double)getWidth() / zoom * sampleRate);
+        if (newNumSamples > 0)
+            numSamples = newNumSamples;
         updateThumb();
     }
 }
 
 void MidiRegion::setNumSamples(int numSamples) {
     this->numSamples = numSamples;
-    setBounds(getX(), getY(), numSamples / sampleRate * zoom, getHeight());
+    setBounds(getX(), getY(), (int)std::round(numSamples / sampleRate * zoom), getHeight());
     updateThumb();
 }
 
@@ -289,8 +291,12 @@ void MidiRegion::setZoom(float newZoom) {
 
     // Bounds mit neuem Zoom aktualisieren
     double lengthInSeconds = numSamples / sampleRate;
-    setBounds((int)(sampleOffset / sampleRate * zoom), getY(),
-        (int)(lengthInSeconds * zoom), getHeight());
+    setBounds((int)std::round(sampleOffset / sampleRate * zoom), getY(),
+        (int)std::round(lengthInSeconds * zoom), getHeight());
+
+    // Constrainer maxWidth an neuen Zoom anpassen, damit kein Sprung beim Resize
+    int maxW = (int)(Project::getInstance()->getTrackLength() * zoom);
+    constrainer->setMaxWidth(maxW > 0 ? maxW : 1000000);
 
     this->midiThumbnail->setZoom(zoom);
     updateThumb();

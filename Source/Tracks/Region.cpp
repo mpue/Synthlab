@@ -130,12 +130,14 @@ void Region::setZoom(float zoom) {
 
     this->zoom = zoom;
     
-    int newOffset = (this->sampleOffset / this->sampleRate) * zoom;
+    int newOffset = (int)std::round((this->sampleOffset / this->sampleRate) * zoom);
     
     this->setOffset(newOffset);
     this->setTopLeftPosition(newOffset, 0);
     this->updateThumb();
-    dragger->setRaster(this->zoom / 4);
+    double bpm = Project::getInstance()->getTempo();
+    int raster = (int)std::round(zoom * 30.0 / bpm); // pixels per 8th note, BPM-aware
+    dragger->setRaster(raster);
     
     repaint();
 }
