@@ -46,6 +46,8 @@ public:
 
     void requestReset() { needsReset.store(true); }
     void requestPositionReset(int64_t pos) { nextSamplePosition.store(pos); }
+
+    void processBuffer(juce::AudioBuffer<float>& buf);
     
 private:
     std::vector<std::unique_ptr<juce::PropertyComponent>> ownedProperties;

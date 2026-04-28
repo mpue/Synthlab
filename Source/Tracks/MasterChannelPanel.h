@@ -89,6 +89,7 @@ public:
     void setModule(VolumeAdjustable* v);
     void setSynthEditor(SynthEditor* editor);
     void reconstructFXChainFromGraph();
+    void processMasterFX(juce::AudioBuffer<float>& buf);
     //[/UserMethods]
 
     void paint (Graphics& g) override;

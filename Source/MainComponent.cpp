@@ -869,6 +869,15 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 		}
 	}
 
+	// Process master FX chain (before master fader)
+	if (mixerPanel) {
+		auto* masterPan = mixerPanel->getMasterPanel();
+		if (masterPan) {
+			juce::AudioBuffer<float> masterBuf(outputData, outNumChans, numSamples);
+			masterPan->processMasterFX(masterBuf);
+		}
+	}
+
 	// Apply master channel (volume, mute, pan) to final output
 	{
 		Mixer::Channel* master = Mixer::getInstance()->getMasterChannel();

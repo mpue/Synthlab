@@ -41,6 +41,14 @@ PluginModule::~PluginModule()
     delete playHead;
 }
 
+void PluginModule::processBuffer(juce::AudioBuffer<float>& buf) {
+    const juce::ScopedLock sl(lock);
+    if (plugin) {
+        juce::MidiBuffer emptyMidi;
+        plugin->processBlock(buf, emptyMidi);
+    }
+}
+
 void PluginModule::openPluginWindow()
 {
     if (!plugin) return;

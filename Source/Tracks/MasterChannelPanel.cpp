@@ -725,9 +725,38 @@ void MasterChannelPanel::onFXSlotClicked(int slotIndex) {
     }
 }
 
+void MasterChannelPanel::processMasterFX(juce::AudioBuffer<float>& buf) {
+    for (int i = 0; i < NUM_FX; ++i)
+        if (fxChain[i] != nullptr)
+            fxChain[i]->processBuffer(buf);
+}
+
 // Insert a new PluginModule into the graph at slotIndex.
 void MasterChannelPanel::insertFX(int slotIndex, juce::String pluginName) {
     if (!synthEditor) return;
+
+    // Master channel: create plugin without wiring it into the module graph.
+    if (channel && channel->channelType == Mixer::Channel::Type::MASTER) {
+        auto* dev = AudioManager::getInstance()->getDeviceManager()->getCurrentAudioDevice();
+        const double sr = dev ? dev->getCurrentSampleRate()        : 44100.0;
+        const int    bs = dev ? dev->getCurrentBufferSizeSamples() : 512;
+
+        auto* factory = PrefabFactory::getInstance();
+        int pluginPrefabId = 0;
+        for (auto& kv : factory->getPrefabNames())
+            if (kv.second.getName() == "Plugin") { pluginPrefabId = kv.first; break; }
+        if (pluginPrefabId == 0) return;
+
+        auto* fxModule = factory->getPrefab(pluginPrefabId, (float)sr, bs);
+        auto* fx = dynamic_cast<PluginModule*>(fxModule);
+        if (fx == nullptr) { delete fxModule; return; }
+        fx->selectPlugin(pluginName);
+
+        fxChain[slotIndex] = fx;
+        updateFXButtons();
+        repaint();
+        return;
+    }
 
     Module* audioOut = dynamic_cast<AudioOut*>(module);
 
@@ -827,6 +856,15 @@ void MasterChannelPanel::insertFX(int slotIndex, juce::String pluginName) {
 // Remove the PluginModule at slotIndex from the graph.
 void MasterChannelPanel::removeFX(int slotIndex) {
     if (!synthEditor || fxChain[slotIndex] == nullptr) return;
+
+    // Master channel: just delete the plugin, no graph cleanup needed.
+    if (channel && channel->channelType == Mixer::Channel::Type::MASTER) {
+        delete fxChain[slotIndex];
+        fxChain[slotIndex] = nullptr;
+        updateFXButtons();
+        repaint();
+        return;
+    }
 
     PluginModule* fx = fxChain[slotIndex];
     fxChain[slotIndex] = nullptr;

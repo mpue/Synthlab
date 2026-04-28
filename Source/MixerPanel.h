@@ -73,6 +73,7 @@ public:
     void repositionAllChannels();
     void setSynthEditor(SynthEditor* se);
     void reconstructAllFXChains();
+    MasterChannelPanel* getMasterPanel() { return masterPanel; }
     //[/UserMethods]
     
     void paint (juce::Graphics& g) override;
