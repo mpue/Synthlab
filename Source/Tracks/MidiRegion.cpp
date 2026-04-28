@@ -10,6 +10,7 @@
 */
 
 #include "MidiRegion.h"
+#include "Track.h"
 
 MidiRegion::MidiRegion(long startSample, long sampleLength, double sampleRate, MultiComponentDragger* dragger) {
     this->dragger = dragger;
@@ -239,13 +240,24 @@ void MidiRegion::updateThumb() {
 }
 
 void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bool wasResized) {
-    if (wasMoved) {
-        long newSampleOffset = std::round((getBounds().getX() / zoom) * sampleRate);
+    Track* parentTrack = dynamic_cast<Track*>(getParentComponent());
 
-        if (snapToGrid) {
+    if (wasMoved) {
+        const long rawSampleOffset = std::round((getBounds().getX() / zoom) * sampleRate);
+        long newSampleOffset = rawSampleOffset;
+
+        if (snapToGrid)
             newSampleOffset = snapSampleToGrid(newSampleOffset);
-            // Correct visual bounds to match the snapped sample position
-            double lengthInSeconds = numSamples / sampleRate;
+
+        // Overlap-Clamp gegen die Nachbarregionen.
+        if (parentTrack != nullptr)
+            newSampleOffset = parentTrack->clampOffsetForRegion(this, newSampleOffset, numSamples);
+
+        // Bounds nur dann visuell korrigieren, wenn snap/clamp die Position
+        // tatsächlich verändert hat — sonst entsteht wegen Pixel-Rundung
+        // Ping-Pong durch das recursive componentMovedOrResized.
+        if (newSampleOffset != rawSampleOffset) {
+            const double lengthInSeconds = numSamples / sampleRate;
             setBounds((int)std::round(newSampleOffset / sampleRate * zoom), getY(),
                       (int)std::round(lengthInSeconds * zoom), getHeight());
         }
@@ -258,6 +270,18 @@ void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bo
 
     if (wasResized) {
         long newNumSamples = (long)std::round((double)getWidth() / zoom * sampleRate);
+
+        // Begrenze die Länge so, dass die rechte Kante nicht in die nächste Region läuft.
+        if (parentTrack != nullptr) {
+            const long maxLen = parentTrack->clampLengthForRegion(this, sampleOffset, newNumSamples);
+            if (maxLen < newNumSamples) {
+                newNumSamples = maxLen;
+                const int clampedWidth = (int)std::round((double)newNumSamples / sampleRate * zoom);
+                if (clampedWidth != getWidth())
+                    setSize(clampedWidth, getHeight());
+            }
+        }
+
         if (newNumSamples > 0)
             numSamples = newNumSamples;
         updateThumb();

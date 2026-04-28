@@ -115,6 +115,12 @@ public:
     Region* getRegionAt(long sample);
     Region* getCurrentRegion();
 
+    // Overlap prevention. `moving` is the region being placed/resized
+    // (excluded from the check); pass nullptr when inserting a new region.
+    long clampOffsetForRegion(Region* moving, long desiredOffset, long length) const;
+    long clampLengthForRegion(Region* moving, long offset, long desiredLength) const;
+    long findNextFreeOffset(Region* moving, long desiredOffset, long length) const;
+
     void removeSelectedRegions(bool clear);
     void duplicateSelectedRegions();
     void copySelectedRegions();
@@ -239,6 +245,8 @@ public:
     }
 
 private:
+
+    void dispatchMidiMessages(const std::vector<juce::MidiMessage*>& messages);
 
     juce::StringArray getTypeNames() const
     {

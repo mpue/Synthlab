@@ -15,6 +15,8 @@
 #include "../Actions/SplitRegionAction.h"
 #include "../Project/Project.h"
 #include <iostream>
+#include <limits>
+#include <cstdlib>
 #include "../MessageBus/FastBus.h"
 
 //==============================================================================
@@ -159,6 +161,10 @@ void Track::duplicateRegion(Region* region) {
 		// Berechne Sample-Offset aus der X-Position (in Pixeln)
 		long newSampleOffset = (long)((newX / zoom) * sampleRate);
 
+		// Falls die Stelle bereits belegt ist, an die nächste freie Position rücken.
+		newSampleOffset = findNextFreeOffset(nullptr, newSampleOffset, numSamplesToCopy);
+		newX = (int)((double)newSampleOffset / sampleRate * zoom);
+
 		// WICHTIG: Setze Bounds NACHDEM der Konstruktor die initiale Größe gesetzt hat
 		// und überschreibe die Breite mit der tatsächlichen Breite der Originalregion
 		Rectangle<int>* bounds = new Rectangle<int>(0, 0, region->getWidth(), getHeight());
@@ -200,9 +206,12 @@ void Track::duplicateRegion(Region* region) {
 	}
 	else if (MidiRegion* mregion = dynamic_cast<MidiRegion*>(region)) {
 		long newOffset = mregion->getSampleOffset() + mregion->getNumSamples();
+		// Falls die Stelle bereits belegt ist, an die nächste freie Position rücken.
+		newOffset = findNextFreeOffset(nullptr, newOffset, mregion->getNumSamples());
+		const int newX = (int)((double)newOffset / sampleRate * zoom);
 		MidiRegion* clone = mregion->clone(newOffset);
 		clone->setDragger(dragger);
-		clone->setBounds(region->getX() + region->getWidth(), 0, region->getWidth(), getHeight());
+		clone->setBounds(newX, 0, region->getWidth(), getHeight());
 		clone->addChangeListener(this);
 
 		this->regions.push_back(clone);
@@ -515,9 +524,41 @@ void Track::splitRegion()
     }
 }
 
+void Track::dispatchMidiMessages(const std::vector<juce::MidiMessage*>& messages)
+{
+	for (auto* m : messages) {
+		if (m == nullptr)
+			continue;
+
+		Event* e = new Event();
+		e->setMessage(*m);
+		e->setType(Event::Type::GATE);
+		e->setNote(m->getNoteNumber());
+		if (m->getVelocity() > 127)
+			m->setVelocity(127);
+		e->setValue(m->isNoteOn() ? m->getVelocity() : 0);
+
+		// Track which notes are currently on. find+erase(iterator) makes one
+		// NoteOff remove exactly one entry from the multiset — important when
+		// two NoteOns for the same pitch overlap (duplicate notes in piano roll).
+		if (m->isNoteOn() && m->getVelocity() > 0) {
+			activeNoteNumbers.insert(m->getNoteNumber());
+		}
+		else {
+			auto it = activeNoteNumbers.find(m->getNoteNumber());
+			if (it != activeNoteNumbers.end())
+				activeNoteNumbers.erase(it);
+		}
+
+		notifyListeners(e);
+	}
+}
+
 void Track::setSamplePosition(int position)
 {
 	if ((type == MIDI || type == INSTRUMENT) && position != samplePosition) {
+
+		const int bufferSize = Project::getInstance()->getBufferSize();
 
 		MidiRegion* r = dynamic_cast<MidiRegion*>(getRegionAt(position));
 
@@ -532,33 +573,43 @@ void Track::setSamplePosition(int position)
 			// Use exact bufferSize window – bufferSize*2 caused each message to
 			// appear in two consecutive windows, firing Note-Ons twice but
 			// Note-Offs only once, resulting in stuck notes.
-			vector<MidiMessage*> messages = r->getMessages(position - r->getSampleOffset(),
-				Project::getInstance()->getBufferSize());
+			dispatchMidiMessages(r->getMessages(position - r->getSampleOffset(), bufferSize));
+		}
 
-			for (auto* m : messages) {
-				if (m != nullptr) {
-					Event* e = new Event();
-					e->setMessage(*m);
-					e->setType(Event::Type::GATE);
-					e->setNote(m->getNoteNumber());
-					if (m->getVelocity() > 127)
-						m->setVelocity(127);
-					e->setValue(m->isNoteOn() ? m->getVelocity() : 0);
-
-					// Track which notes are currently on.
-					// Use find+erase(iterator) so that one NoteOff removes exactly
-					// one entry from the multiset - important when two NoteOns for
-					// the same pitch overlap (duplicate notes in the piano roll).
-					if (m->isNoteOn() && m->getVelocity() > 0) {
-						activeNoteNumbers.insert(m->getNoteNumber());
-					}
-					else {
-						auto it = activeNoteNumbers.find(m->getNoteNumber());
-						if (it != activeNoteNumbers.end())
-							activeNoteNumbers.erase(it);
-					}
-
-					notifyListeners(e);
+		// If the upcoming block straddles the boundary into the next region,
+		// also dispatch the leading events of that next region. Otherwise events
+		// at the very start of an abutting region (e.g. a NoteOn at relative
+		// time 0) get skipped because the block window in the current region
+		// can't extend past the region's end, and the next call to
+		// setSamplePosition starts the window past the region's beginning.
+		const long blockEnd = (long)position + bufferSize;
+		if (r != nullptr) {
+			const long rEnd = r->getSampleOffset() + r->getNumSamples();
+			if (rEnd > position && rEnd < blockEnd) {
+				MidiRegion* nextR = dynamic_cast<MidiRegion*>(getRegionAt(rEnd));
+				if (nextR != nullptr && nextR != r) {
+					if (!activeNoteNumbers.empty())
+						sendAllNotesOff();
+					lastActiveRegion = nextR;
+					const long leadLen = blockEnd - rEnd;
+					dispatchMidiMessages(nextR->getMessages(0, (int)leadLen));
+				}
+			}
+		}
+		else {
+			// Currently between regions. If a region begins inside this block,
+			// dispatch its head so its first event isn't missed.
+			for (Region* base : regions) {
+				MidiRegion* mr = dynamic_cast<MidiRegion*>(base);
+				if (mr == nullptr) continue;
+				const long rStart = mr->getSampleOffset();
+				if (rStart > position && rStart < blockEnd) {
+					if (!activeNoteNumbers.empty())
+						sendAllNotesOff();
+					lastActiveRegion = mr;
+					const long leadLen = blockEnd - rStart;
+					dispatchMidiMessages(mr->getMessages(0, (int)leadLen));
+					break;
 				}
 			}
 		}
@@ -678,6 +729,105 @@ Region* Track::getCurrentRegion()
 	Region* current = nullptr;
 	current = getRegionAt(samplePosition);
 	return current;
+}
+
+// Clamps `desiredOffset` so [desiredOffset, desiredOffset+length) does not
+// intersect any other region on this track. If the desired range overlaps
+// a neighbour, the offset is pushed up against that neighbour's edge (the
+// closer one). If no valid placement exists, returns the moving region's
+// current offset (i.e. revert).
+long Track::clampOffsetForRegion(Region* moving, long desiredOffset, long length) const {
+	if (length <= 0)
+		return desiredOffset;
+	if (desiredOffset < 0)
+		desiredOffset = 0;
+
+	long minStart = 0;
+	long maxStart = std::numeric_limits<long>::max();
+
+	for (Region* r : regions) {
+		if (r == nullptr || r == moving)
+			continue;
+		const long rStart = r->getSampleOffset();
+		const long rEnd   = rStart + r->getNumSamples();
+		if (rEnd <= rStart)
+			continue;
+
+		if (rEnd <= desiredOffset) {
+			// neighbour entirely to the left
+			if (rEnd > minStart) minStart = rEnd;
+		}
+		else if (rStart >= desiredOffset + length) {
+			// neighbour entirely to the right
+			const long candidate = rStart - length;
+			if (candidate < maxStart) maxStart = candidate;
+		}
+		else {
+			// overlap with neighbour — push to whichever side is closer
+			const long pushLeftOffset  = rEnd;
+			const long pushRightOffset = rStart - length;
+			const long distLeft  = std::abs(pushLeftOffset  - desiredOffset);
+			const long distRight = std::abs(pushRightOffset - desiredOffset);
+			if (distLeft <= distRight) {
+				if (rEnd > minStart) minStart = rEnd;
+			}
+			else {
+				if (pushRightOffset < maxStart) maxStart = pushRightOffset;
+			}
+		}
+	}
+
+	if (minStart > maxStart) {
+		// no room — revert
+		return moving != nullptr ? moving->getSampleOffset() : desiredOffset;
+	}
+
+	long clamped = desiredOffset;
+	if (clamped < minStart) clamped = minStart;
+	if (clamped > maxStart) clamped = maxStart;
+	if (clamped < 0) clamped = 0;
+	return clamped;
+}
+
+// Returns the maximum length the region can have at `offset` without
+// running into the next region on the right.
+long Track::clampLengthForRegion(Region* moving, long offset, long desiredLength) const {
+	long maxLen = desiredLength;
+	for (Region* r : regions) {
+		if (r == nullptr || r == moving)
+			continue;
+		const long rStart = r->getSampleOffset();
+		if (rStart >= offset) {
+			const long allowed = rStart - offset;
+			if (allowed < maxLen) maxLen = allowed;
+		}
+	}
+	if (maxLen < 0) maxLen = 0;
+	return maxLen;
+}
+
+// First sample offset >= desiredOffset where a region of `length` samples
+// fits without overlap. Walks past blocking neighbours sequentially.
+long Track::findNextFreeOffset(Region* moving, long desiredOffset, long length) const {
+	long candidate = desiredOffset < 0 ? 0 : desiredOffset;
+	bool moved = true;
+	while (moved) {
+		moved = false;
+		for (Region* r : regions) {
+			if (r == nullptr || r == moving)
+				continue;
+			const long rStart = r->getSampleOffset();
+			const long rEnd   = rStart + r->getNumSamples();
+			if (rEnd <= rStart)
+				continue;
+			if (candidate < rEnd && candidate + length > rStart) {
+				candidate = rEnd;
+				moved = true;
+				break;
+			}
+		}
+	}
+	return candidate;
 }
 
 const float Track::getSample(int channel, long sample) {

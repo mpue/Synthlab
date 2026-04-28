@@ -10,6 +10,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "AudioRegion.h"
+#include "Track.h"
 #include "../Project/Project.h"
 #include "../AudioEngine/SmartSample.h"
 
@@ -448,6 +449,8 @@ int AudioRegion::getNumSamples() {
 
 void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, bool wasResized) {
 
+    Track* parentTrack = dynamic_cast<Track*>(getParentComponent());
+
     if (wasMoved) {
         long tracklen = Project::getInstance()->getTrackLength();
         double sampleRate = Project::getInstance()->getSampleRate();
@@ -462,6 +465,10 @@ void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, b
         if (sampleNum % 2 != 0)
             sampleNum -= 1;
 
+        // Overlap-Clamp gegen die Nachbarregionen.
+        if (parentTrack != nullptr)
+            sampleNum = parentTrack->clampOffsetForRegion(this, sampleNum, getNumSamples());
+
         oldOffset = sampleNum;
 
         if (sampleNum != getSampleOffset()) {
@@ -475,8 +482,14 @@ void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, b
             setSampleOffset(maxOffset, false, false);
         }
 
-        // Position visuell korrigieren falls durch Snap ver�ndert
-        int correctedX = (getSampleOffset() / sampleRate) * zoom;
+        // Position visuell korrigieren falls durch Snap verändert.
+        // std::round statt int-Truncation: durch die bufferSize-Quantisierung in
+        // Region::setSampleOffset verliert sampleOffset einige Samples (z.B.
+        // 44100 → 44032). Mit Truncation würde correctedX dann auf 19 statt 20
+        // landen, und der MultiComponentDragger könnte die Region nicht mehr
+        // sauber an die linke Kante zurückbewegen, weil delta=-19 vom Snap
+        // wieder auf 0 gerundet wird.
+        int correctedX = (int)std::round((double)getSampleOffset() / sampleRate * zoom);
         if (correctedX != getBounds().getX()) {
             setTopLeftPosition(correctedX, getY());
         }
@@ -485,6 +498,17 @@ void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, b
     }
 
     if (wasResized) {
+        // Begrenze die rechte Kante so, dass sie nicht in die nächste Region läuft.
+        if (parentTrack != nullptr) {
+            const long offset = getSampleOffset();
+            const long currentLen = (long)((double)getWidth() / zoom * sampleRate);
+            const long maxLen = parentTrack->clampLengthForRegion(this, offset, currentLen);
+            if (maxLen < currentLen) {
+                const int clampedWidth = (int)((double)maxLen / sampleRate * zoom);
+                if (clampedWidth != getWidth())
+                    setSize(clampedWidth, getHeight());
+            }
+        }
         sendChangeMessage();
     }
 
