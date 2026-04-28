@@ -22,6 +22,12 @@ MixerPanel::MixerPanel ()
 	inputChannels.reserve(2);
 	auxChannels.reserve(2);
     setSize(600, PANEL_H);
+
+    masterPanel = new MasterChannelPanel();
+    masterPanel->setName("Master");
+    masterPanel->setChannel(Mixer::getInstance()->getMasterChannel());
+    masterPanel->setIndex(-1);
+    addAndMakeVisible(masterPanel);
 }
 
 MixerPanel::~MixerPanel()
@@ -31,6 +37,13 @@ MixerPanel::~MixerPanel()
         (*it)->removeAllChangeListeners();
         delete (*it);
         it = channels.erase(it);
+    }
+
+    if (masterPanel) {
+        masterPanel->setLookAndFeel(nullptr);
+        masterPanel->removeAllChangeListeners();
+        delete masterPanel;
+        masterPanel = nullptr;
     }
 }
 
@@ -67,6 +80,13 @@ void MixerPanel::paint (Graphics& g)
         g.setColour(juce::Colours::white);
         g.drawText(b.label, b.x, 0, b.w, HEADER_H, juce::Justification::centred);
     }
+
+    if (masterPanel) {
+        g.setColour(juce::Colour(0xffaa22aa));
+        g.fillRect(masterPanel->getX(), 0, STRIP_W, HEADER_H);
+        g.setColour(juce::Colours::white);
+        g.drawText("MASTER", masterPanel->getX(), 0, STRIP_W, HEADER_H, juce::Justification::centred);
+    }
 }
 
 void MixerPanel::resized()
@@ -76,7 +96,10 @@ void MixerPanel::resized()
 }
 
 std::vector<MasterChannelPanel*> MixerPanel::getChannels() {
-    return channels;
+    auto result = channels;
+    if (masterPanel)
+        result.push_back(masterPanel);
+    return result;
 }
 
 void MixerPanel::timerCallback() {
@@ -137,6 +160,13 @@ void MixerPanel::repositionAllChannels() {
         x += STRIP_W;
         lastType = type;
         first = false;
+    }
+
+    // Place master channel at far right with a larger gap
+    if (masterPanel) {
+        if (!first) x += GROUP_GAP * 3;
+        masterPanel->setBounds(x, HEADER_H, STRIP_W, STRIP_H);
+        x += STRIP_W;
     }
 
     currentX = x;
@@ -243,6 +273,8 @@ void MixerPanel::setSynthEditor(SynthEditor* se) {
     synthEditor = se;
     for (auto* ch : channels)
         ch->setSynthEditor(se);
+    if (masterPanel)
+        masterPanel->setSynthEditor(se);
 }
 
 // Called once after a project has been fully loaded — at that point the
@@ -252,4 +284,6 @@ void MixerPanel::reconstructAllFXChains() {
     for (auto* ch : channels)
         if (ch != nullptr)
             ch->reconstructFXChainFromGraph();
+    if (masterPanel)
+        masterPanel->reconstructFXChainFromGraph();
 }

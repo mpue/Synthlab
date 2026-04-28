@@ -869,6 +869,32 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 		}
 	}
 
+	// Apply master channel (volume, mute, pan) to final output
+	{
+		Mixer::Channel* master = Mixer::getInstance()->getMasterChannel();
+		if (master) {
+			const float masterVol = master->mute ? 0.0f : (float)master->volume;
+			const double masterPan = master->pan;
+			const float gainL = fastCos((M_PI * (masterPan + 1) / 4));
+			const float gainR = fastSin((M_PI * (masterPan + 1) / 4));
+
+			for (int ch = 0; ch < outNumChans; ++ch) {
+				if (!outputData[ch]) continue;
+				const float gain = (ch % 2 == 0) ? gainL * masterVol : gainR * masterVol;
+				for (int i = 0; i < numSamples; ++i)
+					outputData[ch][i] *= gain;
+			}
+
+			float magL = 0.0f, magR = 0.0f;
+			if (outNumChans > 0 && outputData[0])
+				for (int i = 0; i < numSamples; ++i) magL = std::max(magL, std::abs(outputData[0][i]));
+			if (outNumChans > 1 && outputData[1])
+				for (int i = 0; i < numSamples; ++i) magR = std::max(magR, std::abs(outputData[1][i]));
+			master->magnitudeLeft  = magL;
+			master->magnitudeRight = magR;
+		}
+	}
+
 	if (!isBouncing()) {
 		long duration = (long)juce::Time::getMillisecondCounterHiRes() - startTime;
 		cpuLoad = ((float)duration / (float)lastTime) * 100.0f;

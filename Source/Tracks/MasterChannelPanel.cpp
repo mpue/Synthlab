@@ -219,6 +219,10 @@ void MasterChannelPanel::paint (Graphics& g)
                 bg     = juce::Colour(0xff433e36);
                 stripe = juce::Colour(0xffcc7700);
                 break;
+            case Mixer::Channel::Type::MASTER:
+                bg     = juce::Colour(0xff3a3040);
+                stripe = juce::Colour(0xffaa22aa);
+                break;
             default: break;
         }
     }

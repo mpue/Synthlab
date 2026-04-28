@@ -12,11 +12,20 @@
 Mixer *Mixer::instance = NULL;
 
 Mixer::Mixer() {
-    
+    masterChannel = new Channel();
+    masterChannel->channelType = Channel::Type::MASTER;
+    masterChannel->volume = 1.0;
+    masterChannel->pan    = 0.0;
+    masterChannel->mute   = false;
+    masterChannel->solo   = false;
+    masterChannel->name   = "Master";
+    masterChannel->index  = -1;
 }
 
 Mixer::~Mixer() {
     removeAllChannels();
+    delete masterChannel;
+    masterChannel = nullptr;
 }
 
 void Mixer::addChannel(Mixer::Channel *channel) {

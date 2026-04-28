@@ -89,6 +89,8 @@ private:
     std::vector<AudioIn*> inputChannels;
     std::vector<AuxOut*> auxChannels;
 
+    MasterChannelPanel* masterPanel = nullptr;
+
     // Tracks the next x-position for a new channel strip (accounts for group separators).
     int currentX = 0;
 

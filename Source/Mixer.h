@@ -34,7 +34,8 @@ public:
 		enum Type {
 			IN,
 			OUT,
-			AUX
+			AUX,
+			MASTER
 		};
 
 		double volume;
@@ -86,6 +87,8 @@ public:
 	void addChannel(Channel* channel);
 	void removeChannel(int index);
 	void removeAllChannels();
+
+	Channel* getMasterChannel() { return masterChannel; }
 
 	Channel* getChannel(Mixer::Channel::Type type, int index);
 
@@ -139,6 +142,8 @@ private:
 	~Mixer();
 
 	static Mixer* instance;
+
+	Channel* masterChannel = nullptr;
 
 	vector<Track*> tracks;
 	Track* lastModified = NULL;
