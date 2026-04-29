@@ -186,7 +186,13 @@ void SynthEditor::resized()
 		return;
 	}
 
-	setSize(getParentWidth() * 1.5, getParentHeight() * 1.5);
+	// Logical canvas size: 1.5× of the parent gives some scrollable headroom.
+	// Multiplying by editorZoom keeps the bounds in sync with the visual
+	// size produced by the AffineTransform — without this, the parent
+	// Viewport's scrollbars don't cover the zoomed-in content.
+	const int logicalW = (int)(getParentWidth() * 1.5);
+	const int logicalH = (int)(getParentHeight() * 1.5);
+	setSize((int)(logicalW * editorZoom), (int)(logicalH * editorZoom));
 
 	if (root != nullptr && root->getConnections() != nullptr) {
 		for (int i = 0; i < root->getConnections()->size(); i++) {
@@ -552,6 +558,54 @@ void SynthEditor::mouseDoubleClick(const MouseEvent& e)
 			}
 		}
 	}
+}
+
+void SynthEditor::mouseWheelMove(const MouseEvent& e, const MouseWheelDetails& wheel)
+{
+	// Cmd/Ctrl + wheel zooms the editor canvas. Plain wheel falls through to
+	// the parent Viewport so vertical scrolling keeps working as before.
+	if (!(e.mods.isCommandDown() || e.mods.isCtrlDown())) {
+		Component::mouseWheelMove(e, wheel);
+		return;
+	}
+
+	const float factor = 1.0f + wheel.deltaY * 0.25f;
+	const float newZoom = juce::jlimit(kMinZoom, kMaxZoom, editorZoom * factor);
+	if (std::abs(newZoom - editorZoom) < 1.0e-4f)
+		return;
+
+	setEditorZoom(newZoom, e.getPosition());
+}
+
+void SynthEditor::setEditorZoom(float newZoom, juce::Point<int> anchorInLocalCoords)
+{
+	newZoom = juce::jlimit(kMinZoom, kMaxZoom, newZoom);
+	if (std::abs(newZoom - editorZoom) < 1.0e-4f)
+		return;
+
+	// Anchor the zoom around `anchorInLocalCoords` (local untransformed coords).
+	// The visual position of that point is `anchor * editorZoom`. After
+	// changing zoom it becomes `anchor * newZoom`. Compensate by shifting
+	// the parent Viewport's view position by the visual delta.
+	juce::Viewport* vp = findParentComponentOfClass<juce::Viewport>();
+	const juce::Point<float> anchorF = anchorInLocalCoords.toFloat();
+	const juce::Point<float> visualBefore = anchorF * editorZoom;
+	const juce::Point<float> visualAfter  = anchorF * newZoom;
+	const juce::Point<int> visualDelta = (visualAfter - visualBefore).toInt();
+
+	editorZoom = newZoom;
+	setTransform(juce::AffineTransform::scale(editorZoom));
+
+	// Recompute bounds so the Viewport sees the scaled canvas size and the
+	// scrollbars cover the full zoomed-in content.
+	resized();
+
+	if (vp != nullptr) {
+		const auto pos = vp->getViewPosition();
+		vp->setViewPosition(pos + visualDelta);
+	}
+
+	repaint();
 }
 
 bool::SynthEditor::showPinContextMenu(Point<int> position, Module* module, int pinIndex) {
@@ -1353,6 +1407,14 @@ void SynthEditor::loadFromString(juce::String in) {
 	if (mixer != nullptr)
 		mixer->reconstructAllFXChains();
 
+	// Master FX live outside the module graph and are persisted as a
+	// separate ValueTree child. Apply them here.
+	if (mixer != nullptr && mixer->getMasterPanel() != nullptr) {
+		ValueTree masterFX = v.getChildWithName("MasterFXChain");
+		if (masterFX.isValid())
+			mixer->getMasterPanel()->applyFXChainState(masterFX);
+	}
+
 	setCurrentLayer(v.getProperty("layer").toString().getIntValue());
 	setLocked(v.getProperty("lock").toString().getIntValue() > 0);
 
@@ -1434,6 +1496,14 @@ void SynthEditor::saveFile() {
 	v->setProperty("lock", isLocked(), nullptr);
 	v->setProperty("layer", static_cast<int>(currentLayer), nullptr);
 
+	// Master-channel FX live outside the module graph and aren't covered by
+	// saveStructure; persist them here so they reappear on load.
+	if (mixer != nullptr && mixer->getMasterPanel() != nullptr) {
+		ValueTree masterFX = mixer->getMasterPanel()->getFXChainState();
+		if (masterFX.isValid() && masterFX.getNumChildren() > 0)
+			v->appendChild(masterFX, nullptr);
+	}
+
 	if (Project::getInstance()->isNewFile()) {
 
 		FileChooser chooser("Select target file...", outputDir, "*");
@@ -1466,6 +1536,14 @@ void SynthEditor::saveFile() {
 	v->setProperty("layer", static_cast<int>(currentLayer), nullptr);
 
 	ModuleUtils::saveStructure(root->getModules(), root->getConnections(), v);
+
+	// Master-channel FX live outside the module graph and aren't covered by
+	// saveStructure; persist them here so they reappear on load.
+	if (mixer != nullptr && mixer->getMasterPanel() != nullptr) {
+		ValueTree masterFX = mixer->getMasterPanel()->getFXChainState();
+		if (masterFX.isValid() && masterFX.getNumChildren() > 0)
+			v->appendChild(masterFX, nullptr);
+	}
 
 	if (Project::getInstance()->isNewFile()) {
 
@@ -1637,6 +1715,14 @@ void SynthEditor::openFile() {
 		// fxChain[] slot UI.
 		if (mixer != nullptr)
 			mixer->reconstructAllFXChains();
+
+		// Master FX live outside the module graph (see MasterChannelPanel::insertFX)
+		// and are persisted as a separate ValueTree child. Apply them here.
+		if (mixer != nullptr && mixer->getMasterPanel() != nullptr) {
+			ValueTree masterFX = v.getChildWithName("MasterFXChain");
+			if (masterFX.isValid())
+				mixer->getMasterPanel()->applyFXChainState(masterFX);
+		}
 
 		Project::getInstance()->setRoot(root.get());
 

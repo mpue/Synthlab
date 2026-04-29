@@ -91,6 +91,13 @@ public:
     void reconstructFXChainFromGraph();
     void processMasterFX(juce::AudioBuffer<float>& buf);
     void setFXNonRealtime(bool nonRealtime);
+
+    // Persistence for the master FX chain. Master-channel FX modules live
+    // outside the module graph (see insertFX), so the regular saveStructure
+    // path doesn't see them — these helpers serialize plugin name, program
+    // and state for each occupied slot.
+    juce::ValueTree getFXChainState() const;
+    void applyFXChainState(const juce::ValueTree& state);
     //[/UserMethods]
 
     void paint (Graphics& g) override;

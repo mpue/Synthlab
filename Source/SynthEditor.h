@@ -114,6 +114,11 @@ public:
     void mouseDrag (const MouseEvent& e) override;
     void mouseUp (const MouseEvent& e) override;
     void mouseDoubleClick (const MouseEvent& e) override;
+    void mouseWheelMove (const MouseEvent& e, const MouseWheelDetails& wheel) override;
+
+    // Editor canvas zoom (Cmd/Ctrl + mouse wheel).
+    void setEditorZoom(float newZoom, juce::Point<int> anchorInLocalCoords);
+    float getEditorZoom() const { return editorZoom; }
     bool keyPressed (const KeyPress& key, Component* originatingComponent) override;
     bool keyStateChanged (bool isKeyDown) override;
     void modifierKeysChanged (const ModifierKeys& modifiers) override;
@@ -260,6 +265,10 @@ private:
     TrackNavigator* navigator = nullptr;
 
     bool isMiddleMouseDown = false;
+
+    float editorZoom = 1.0f;
+    static constexpr float kMinZoom = 0.25f;
+    static constexpr float kMaxZoom = 4.0f;
 
     struct RootLevelProxy {
         Module* module = nullptr;

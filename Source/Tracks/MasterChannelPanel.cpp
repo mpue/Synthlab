@@ -916,6 +916,54 @@ void MasterChannelPanel::removeFX(int slotIndex) {
     repaint();
 }
 
+juce::ValueTree MasterChannelPanel::getFXChainState() const {
+    juce::ValueTree state("MasterFXChain");
+    for (int i = 0; i < NUM_FX; ++i) {
+        if (fxChain[i] == nullptr)
+            continue;
+        juce::ValueTree slot("Slot");
+        slot.setProperty("index",   i,                                       nullptr);
+        slot.setProperty("plugin",  fxChain[i]->getPluginName(),             nullptr);
+        slot.setProperty("program", fxChain[i]->getCurrentProgram(),         nullptr);
+        slot.setProperty("state",   fxChain[i]->getPluginState(),            nullptr);
+        state.appendChild(slot, nullptr);
+    }
+    return state;
+}
+
+void MasterChannelPanel::applyFXChainState(const juce::ValueTree& state) {
+    if (!state.isValid())
+        return;
+
+    // Clear any existing slots first so a re-load doesn't accumulate plugins.
+    for (int i = 0; i < NUM_FX; ++i)
+        if (fxChain[i] != nullptr)
+            removeFX(i);
+
+    for (int i = 0; i < state.getNumChildren(); ++i) {
+        const auto slot = state.getChild(i);
+        const int idx          = (int)slot.getProperty("index", -1);
+        const juce::String name = slot.getProperty("plugin", "").toString();
+        if (idx < 0 || idx >= NUM_FX || name.isEmpty())
+            continue;
+
+        insertFX(idx, name);
+        if (fxChain[idx] == nullptr)
+            continue;
+
+        const int program = (int)slot.getProperty("program", 0);
+        if (program > 0)
+            fxChain[idx]->setCurrentProgram(program);
+
+        const juce::String pluginState = slot.getProperty("state", "").toString();
+        if (pluginState.isNotEmpty())
+            fxChain[idx]->setPluginState(pluginState);
+    }
+
+    updateFXButtons();
+    repaint();
+}
+
 // Rebuild connections from saved chain source through active FX slots into AudioOut.
 void MasterChannelPanel::rewireChain() {
     if (!synthEditor) return;
