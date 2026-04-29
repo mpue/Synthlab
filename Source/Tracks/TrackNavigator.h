@@ -27,6 +27,89 @@
 #include "../TransportDisplayComponent.h"
 #include "../PianoRollComponent.h"
 //==============================================================================
+
+// Big centered zoom-level overlay. Fades in on zoom changes and fades back
+// out about a second after the last change. Lives inside TrackNavigator and
+// is repositioned to stay centered in the visible viewport area.
+class ZoomDisplay : public juce::Component, private juce::Timer
+{
+public:
+	ZoomDisplay()
+	{
+		setInterceptsMouseClicks(false, false);
+		setAlwaysOnTop(true);
+		setAlpha(0.0f);
+		setVisible(false);
+	}
+
+	void showZoom(float zoomLevel)
+	{
+		currentZoom = zoomLevel;
+		// Hold full opacity until 1 s after the most recent zoom event.
+		// Successive showZoom calls during a fast +/- burst keep extending
+		// the hold so the display doesn't flicker between fade-in/fade-out.
+		holdUntilMs = juce::Time::getMillisecondCounterHiRes() + 1000.0;
+		fadingOut = false;
+		if (!isVisible())
+			setVisible(true);
+		toFront(false);
+		if (!isTimerRunning())
+			startTimerHz(60);
+		repaint();
+	}
+
+	void paint(juce::Graphics& g) override
+	{
+		auto bounds = getLocalBounds().toFloat();
+		g.setColour(juce::Colours::black.withAlpha(0.65f));
+		g.fillRoundedRectangle(bounds, 18.0f);
+		g.setColour(juce::Colours::white.withAlpha(0.25f));
+		g.drawRoundedRectangle(bounds.reduced(1.0f), 18.0f, 1.5f);
+
+		g.setColour(juce::Colours::white);
+		g.setFont(juce::Font(40.0f, juce::Font::bold));
+		// Allow drawFittedText to shrink horizontally down to 50% so longer
+		// values (e.g. four-digit zoom) don't get truncated to "...".
+		g.drawFittedText("Zoom: " + juce::String(currentZoom, 1),
+		                 getLocalBounds().reduced(20),
+		                 juce::Justification::centred, 1, 0.5f);
+	}
+
+private:
+	void timerCallback() override
+	{
+		const double now = juce::Time::getMillisecondCounterHiRes();
+		float a = getAlpha();
+
+		if (now < holdUntilMs)
+		{
+			// Fade in (or stay at full opacity once we're there).
+			fadingOut = false;
+			if (a < 1.0f)
+				a = std::min(1.0f, a + 0.18f);
+		}
+		else
+		{
+			// Hold expired — fade out.
+			fadingOut = true;
+			a -= 0.06f;
+			if (a <= 0.0f)
+			{
+				a = 0.0f;
+				setAlpha(0.0f);
+				setVisible(false);
+				stopTimer();
+				return;
+			}
+		}
+		setAlpha(a);
+	}
+
+	float currentZoom = 0.0f;
+	double holdUntilMs = 0.0;
+	bool fadingOut = false;
+};
+
 /*
 */
 class TrackNavigator : public Component,
@@ -172,7 +255,9 @@ private:
 
 	bool loopEnabled = false;
 
-	Region* recordingRegion = nullptr;	
+	Region* recordingRegion = nullptr;
+
+	std::unique_ptr<ZoomDisplay> zoomDisplay;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TrackNavigator)
 };

@@ -223,6 +223,105 @@ void Track::duplicateRegion(Region* region) {
 	}
 }
 
+Region* Track::pasteRegion(Region* source, long targetSampleOffset) {
+	if (source == nullptr)
+		return nullptr;
+
+	if (AudioRegion* a = dynamic_cast<AudioRegion*>(source)) {
+		if (type != AUDIO)
+			return nullptr;
+
+		const int numSamplesToCopy = a->getNumSamples();
+
+		AudioRegion* duplicate = new AudioRegion(a, *manager, sampleRate, 0, numSamplesToCopy);
+		duplicate->setDragger(dragger);
+
+		long newSampleOffset = findNextFreeOffset(nullptr, targetSampleOffset, numSamplesToCopy);
+		int newX = (int)((double)newSampleOffset / sampleRate * zoom);
+
+		Rectangle<int>* bounds = new Rectangle<int>(0, 0, source->getWidth(), getHeight());
+		duplicate->setBounds(newX, 0, source->getWidth(), source->getHeight());
+		duplicate->setThumbnailBounds(bounds);
+		duplicate->setLoopCount(0);
+
+		this->regions.push_back(duplicate);
+		this->currentRegion = duplicate;
+		this->currentRegion->toFront(true);
+		addAndMakeVisible(duplicate);
+
+		clearSelection();
+		dragger->setSelected(duplicate, true);
+
+		duplicate->setSampleOffset(newSampleOffset, false, false);
+		duplicate->setOffset(newX);
+		duplicate->setClipRefId(a->getClipRefid());
+		duplicate->addChangeListener(this);
+
+		if (zoom > 0)
+			duplicate->setZoom(zoom);
+
+		// Mirror the duplicate's audio into the track's shared audioBuffer
+		// at the new offset, matching what duplicateRegion does.
+		if (duplicate->getBuffer()->getNumChannels() == 1) {
+			audioBuffer->copyFrom(0, newSampleOffset, *duplicate->getBuffer(), 0, 0, numSamplesToCopy);
+			audioBuffer->copyFrom(1, newSampleOffset, *duplicate->getBuffer(), 0, 0, numSamplesToCopy);
+		}
+		else {
+			audioBuffer->copyFrom(0, newSampleOffset, *duplicate->getBuffer(), 0, 0, numSamplesToCopy);
+			audioBuffer->copyFrom(1, newSampleOffset, *duplicate->getBuffer(), 1, 0, numSamplesToCopy);
+		}
+
+		repaint();
+		return duplicate;
+	}
+
+	if (MidiRegion* m = dynamic_cast<MidiRegion*>(source)) {
+		if (type != MIDI && type != INSTRUMENT)
+			return nullptr;
+
+		long newOffset = findNextFreeOffset(nullptr, targetSampleOffset, m->getNumSamples());
+		const int newX = (int)((double)newOffset / sampleRate * zoom);
+
+		MidiRegion* clone = m->clone(newOffset);
+		clone->setDragger(dragger);
+		clone->setBounds(newX, 0, source->getWidth(), getHeight());
+		clone->addChangeListener(this);
+
+		this->regions.push_back(clone);
+		this->currentRegion = clone;
+		addAndMakeVisible(clone);
+
+		clearSelection();
+		dragger->setSelected(clone, true);
+
+		if (zoom > 0)
+			clone->setZoom(zoom);
+
+		repaint();
+		return clone;
+	}
+
+	return nullptr;
+}
+
+void Track::pasteRegions(long startSampleOffset) {
+	const auto& clipboard = Session::getInstance()->getRegionsClipboard();
+	if (clipboard.empty())
+		return;
+
+	long cursor = startSampleOffset;
+	clearSelection();
+
+	for (Region* source : clipboard) {
+		Region* placed = pasteRegion(source, cursor);
+		if (placed != nullptr) {
+			// Stack subsequent pastes after the previous one so multi-region
+			// pastes stay sequential instead of stomping the same offset.
+			cursor = placed->getSampleOffset() + placed->getNumSamples();
+		}
+	}
+}
+
 Region* Track::addRegion(String refId, File file, double sampleRate, long sampleOffset) {
 	AudioRegion* region = new AudioRegion(file, refId, *manager, sampleRate);
 	region->setDragger(dragger);

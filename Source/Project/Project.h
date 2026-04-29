@@ -153,9 +153,39 @@ public:
     float getTempo() {
         return tempo;
     }
-    
+
     void setTempo(float tempo) {
         this->tempo = tempo;
+    }
+
+    bool isSnapToGridEnabled() const {
+        return snapToGridEnabled;
+    }
+
+    void setSnapToGridEnabled(bool enabled) {
+        snapToGridEnabled = enabled;
+        sendChangeMessage();
+    }
+
+    // Round a sample position to the nearest grid step using the project
+    // tempo. Below the high-zoom threshold the grid is one bar (4 beats);
+    // at zoom >= 100 the grid switches to a quarter-bar (= one beat in 4/4),
+    // because at that resolution per-bar snapping feels too coarse. When
+    // fineMode is true (Shift held while dragging), the step becomes 1/4 of
+    // the otherwise-active grid for finer placement.
+    // Returns the input unchanged if tempo or sample rate aren't available.
+    long snapSampleToGrid(long sample, float zoom, bool fineMode = false) {
+        const double sr = getSampleRate();
+        if (tempo <= 0.0f || sr <= 0.0)
+            return sample;
+        double beatsPerStep = (zoom >= 100.0f) ? 1.0 : 4.0;
+        if (fineMode)
+            beatsPerStep *= 0.25;
+        const double samplesPerStep = (60.0 / tempo) * beatsPerStep * sr;
+        if (samplesPerStep <= 0.0)
+            return sample;
+        const long step = (long)std::round((double)sample / samplesPerStep);
+        return (long)std::round((double)step * samplesPerStep);
     }
     
     void saveCurrent(File output) {
@@ -291,13 +321,14 @@ protected:
     bool newFile = true;
     bool dirty = false;
     
-    int tolerance = 1;   
+    int tolerance = 1;
 
     String name;
     long tracklength;
     double sampleRate = 44100;
     int bufferSize = 128;
     float tempo = DEFAULT_TEMPO;
+    bool snapToGridEnabled = true;
     
     map<String, String> projectAudio;
     

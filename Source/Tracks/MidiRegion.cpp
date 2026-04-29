@@ -262,8 +262,16 @@ void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bo
         const long rawSampleOffset = std::round((getBounds().getX() / zoom) * sampleRate);
         long newSampleOffset = rawSampleOffset;
 
-        if (snapToGrid)
-            newSampleOffset = snapSampleToGrid(newSampleOffset);
+        // Snap der Region auf das Taktraster, wenn global aktiv. Vorrang vor
+        // dem feineren MIDI-Note-Quantisierungsraster (snapSampleToGrid),
+        // weil das hier den Region-Anfang und nicht eine einzelne Note betrifft.
+        // Granularität: bei zoom >= 100 auf 1/4 Takt, sonst ganze Takte.
+        // Mit gehaltener Shift-Taste: 1/4 des aktuellen Rasters für feinere
+        // Platzierung.
+        if (Project::getInstance()->isSnapToGridEnabled()) {
+            const bool fine = juce::ModifierKeys::getCurrentModifiersRealtime().isShiftDown();
+            newSampleOffset = Project::getInstance()->snapSampleToGrid(newSampleOffset, zoom, fine);
+        }
 
         // Overlap-Clamp gegen die Nachbarregionen.
         if (parentTrack != nullptr)

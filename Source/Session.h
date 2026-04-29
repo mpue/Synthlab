@@ -39,19 +39,23 @@ public:
     inline void copyRegion(Region* region) {
         regionsClipboard.push_back(region);
     }
-    
+
+    inline const std::vector<Region*>& getRegionsClipboard() const {
+        return regionsClipboard;
+    }
+
     inline Region* pasteRegion(long position) {
-        
+
         if (AudioRegion* region = dynamic_cast<AudioRegion*>(regionsClipboard.back())) {
             AudioRegion* copy = new AudioRegion(region,*manager,Project::getInstance()->getSampleRate());
             copy->setSampleOffset(position, false, false);
             return copy;
         }
-        
+
         return NULL;
-        
+
     }
-    
+
     inline void clearRegionsClipboard() {
         regionsClipboard.clear();
     }

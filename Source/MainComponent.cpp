@@ -1032,6 +1032,9 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addItem(10, "Add Instrument Track", true, false, nullptr);
 		menu.addItem(11, "Add MIDI Clip", true, false, nullptr);
 		menu.addSubMenu("Align", alignMenu);
+		menu.addSeparator();
+		menu.addItem(80, "Snap to Grid", true,
+			Project::getInstance()->isSnapToGridEnabled());
 	}
 	else if (index == 4) {
 
@@ -1146,6 +1149,12 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	{
 		if (editorView->getNavigator()->getCurrentTrack() != nullptr)
 			editorView->getNavigator()->getCurrentTrack()->addMidiRegion(48000, editorView->getNavigator()->getSamplePosition(), 480000);
+	}
+	else if (menuItemID == 80) {
+		Project* p = Project::getInstance();
+		p->setSnapToGridEnabled(!p->isSnapToGridEnabled());
+		// MenuBarModel rebuilds the menu on next open, so the tick state
+		// reflects the new value automatically next time it's shown.
 	}
 
 	else if (menuItemID == 12) {

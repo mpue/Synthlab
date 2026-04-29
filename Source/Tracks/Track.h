@@ -125,6 +125,14 @@ public:
     void duplicateSelectedRegions();
     void copySelectedRegions();
     void duplicateRegion(Region* region);
+    // Paste every compatible region from Session's clipboard onto this track,
+    // starting at startSampleOffset. Audio-only into AUDIO tracks, MIDI-only
+    // into MIDI/INSTRUMENT tracks; incompatible entries are skipped.
+    void pasteRegions(long startSampleOffset);
+    // Paste a single region (typically from the clipboard) onto this track at
+    // targetSampleOffset. Returns the placed region or nullptr if the source
+    // type doesn't match this track's type.
+    Region* pasteRegion(Region* source, long targetSampleOffset);
     void splitRegion();
 
     void attachRegion(Region* r);

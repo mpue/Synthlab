@@ -62,6 +62,9 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 	marker->setBounds(0, 0, 2, getHeight());
 	this->view = view;
 	view->getHorizontalScrollBar().addListener(this);
+
+	this->zoomDisplay = std::make_unique<ZoomDisplay>();
+	addChildComponent(zoomDisplay.get());
 	setWantsKeyboardFocus(true);
 	setMouseClickGrabsKeyboardFocus(true);
 	setInterceptsMouseClicks(true, true);
@@ -139,7 +142,19 @@ void TrackNavigator::setZoom(float zoom) {
 	double samplesPerBeat = Project::getInstance()->getSampleRate() / beatsPerSecond;
 	int raster = (int)(samplesPerBeat * zoom) / Project::getInstance()->getSampleRate(); // Viertelnoten
 	dragger->setRaster(raster);
-	
+
+	if (zoomDisplay != nullptr && view != nullptr) {
+		// Center the overlay in the viewport's visible area. The TrackNavigator
+		// scrolls inside `view`, so map the visible rect back into our own
+		// coords via getViewArea().
+		const int displayW = 320;
+		const int displayH = 100;
+		const auto visible = view->getViewArea();
+		const int x = visible.getX() + (visible.getWidth()  - displayW) / 2;
+		const int y = visible.getY() + (visible.getHeight() - displayH) / 2;
+		zoomDisplay->setBounds(x, y, displayW, displayH);
+		zoomDisplay->showZoom(zoom);
+	}
 
 	// constrainer.set
 	// (this->zoom / 4);
@@ -954,9 +969,17 @@ bool TrackNavigator::keyPressed(const KeyPress& key, Component* originatingCompo
 			}
 		}
 		else if (key.getKeyCode() == 67) { // C
+			// Replace clipboard contents — otherwise repeated Cmd-C pushes
+			// duplicates of the same region and Cmd-V pastes them all.
+			Session::getInstance()->clearRegionsClipboard();
 			for (int i = 0; i < tracks.size(); i++) {
 				tracks.at(i)->copySelectedRegions();
 			}
+		}
+		else if (key.getKeyCode() == 86) { // V — paste at playhead into current track
+			Track* dest = getCurrentTrack();
+			if (dest != nullptr)
+				dest->pasteRegions((long)samplePosition);
 		}
 		else if (key.getKeyCode() == 68) { // D
 			for (int i = 0; i < tracks.size(); i++) {

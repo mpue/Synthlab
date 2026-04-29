@@ -474,8 +474,14 @@ void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, b
         // Berechne Sample-Position basierend auf X-Position
         long sampleNum = (getBounds().getX() / zoom) * sampleRate;
 
-        // Snap auf Viertelnote
-        sampleNum = snapToQuarterNote(sampleNum);
+        // Snap auf Taktraster wenn global aktiviert (sonst freie Position).
+        // Granularität: bei zoom >= 100 auf 1/4 Takt, sonst ganze Takte.
+        // Mit gehaltener Shift-Taste: 1/4 des aktuellen Rasters für feinere
+        // Platzierung.
+        if (Project::getInstance()->isSnapToGridEnabled()) {
+            const bool fine = juce::ModifierKeys::getCurrentModifiersRealtime().isShiftDown();
+            sampleNum = Project::getInstance()->snapSampleToGrid(sampleNum, zoom, fine);
+        }
 
         // Gerade Sample-Zahl sicherstellen
         if (sampleNum % 2 != 0)
