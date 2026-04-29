@@ -132,7 +132,7 @@ public:
 
     MultiComponentDragger* getDragger() { return dragger; }
     
-    void setSamplePosition(int position);
+    void setSamplePosition(int position, bool dispatchEvents = true);
     int getSamplePosition();
     void forcePositionReset();  // invalidates samplePosition so next setSamplePosition always dispatches MIDI
 

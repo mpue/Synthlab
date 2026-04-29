@@ -366,10 +366,13 @@ MidiRegion* Track::addMidiRegion(double sampleRate, long samplePosition, long re
 	clearSelection();
 	region->setSelected(true);
 
-	/*
+	// Match the track's current zoom — without this the new region keeps the
+	// MidiRegion constructor default (40), so on a track at any other zoom it
+	// renders at the wrong x and width and visually overlaps the previously
+	// recorded region. Newly-recorded notes then appear to land "inside" the
+	// old region.
 	if (zoom > 0)
 		region->setZoom(zoom);
-	*/
 
 	region->updateThumb();
 
@@ -554,7 +557,7 @@ void Track::dispatchMidiMessages(const std::vector<juce::MidiMessage*>& messages
 	}
 }
 
-void Track::setSamplePosition(int position)
+void Track::setSamplePosition(int position, bool dispatchEvents)
 {
 	if ((type == MIDI || type == INSTRUMENT) && position != samplePosition) {
 
@@ -568,6 +571,14 @@ void Track::setSamplePosition(int position)
 			sendAllNotesOff();
 		}
 		lastActiveRegion = r;
+
+		// Silent seek: update samplePosition and lastActiveRegion (so
+		// getCurrentRegion etc. still work) but don't fire any MIDI. Used
+		// when the user moves the playhead while the transport is stopped.
+		if (!dispatchEvents) {
+			this->samplePosition = position;
+			return;
+		}
 
 		if (r != nullptr) {
 			// Use exact bufferSize window – bufferSize*2 caused each message to
@@ -889,17 +900,25 @@ void Track::createProperties()
 
 void Track::setSample(int channel, int sampleNum, float sample)
 {
-	currentRegion = getRegionAt(sample);
-
+	// Trust currentRegion to already point at the recording region — set by
+	// addRegion() in TrackNavigator::setRecording. The previous lookup here
+	// (getRegionAt(sample)) treated the audio sample VALUE as a timeline
+	// position, which collapsed every write onto the region at sample 0
+	// (typically the first recorded region) regardless of where the new
+	// recording actually started.
 	if (currentRegion != nullptr) {
 		AudioSampleBuffer* buf = getBuffer();
 		if (buf != nullptr) {
 			if (sampleNum >= buf->getNumSamples()) {
 				AudioRegion* ar = dynamic_cast<AudioRegion*>(currentRegion);
+				if (ar == nullptr)
+					return;  // not an AudioRegion — refuse to write
 				// TODO : from card
 				ar->resizeAudio(256);
 			}
 			buf = getBuffer(); // reassign, because of resizing
+			if (buf == nullptr || sampleNum >= buf->getNumSamples())
+				return;
 			buf->setSample(channel, sampleNum, sample);
 			currentRegion->setDirty(true);
 		}

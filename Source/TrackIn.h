@@ -115,6 +115,7 @@ private:
 
     int currentRecordingSample = 0;
     int numRecordedSamples = 0;
+    bool wasRecording = false;  // tracks transition into recording so per-region counters reset
 
     int currentPlaybackSample = 0;
     int numPlayedSamples = 0;

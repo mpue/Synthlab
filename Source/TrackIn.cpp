@@ -164,6 +164,7 @@
 			if (track != nullptr && (navigator->isPlaying() || isBouncing()
                 || (navigator->isRecording() && !track->isRecording()))) {
 
+				wasRecording = false;
 				double pan = track->getPan();
 
 				float gainLeft = cos((M_PI * (pan + 1) / 4));
@@ -185,10 +186,21 @@
 			}
 			else if (track != nullptr && navigator->isRecording()) {
 
+				// Reset the in-region buffer index at the start of each recording.
+				// Otherwise the counter keeps climbing across stop/start cycles
+				// and the next recording writes past the new region's buffer end
+				// (or, combined with the old getRegionAt bug in Track::setSample,
+				// into the previous region).
+				if (!wasRecording) {
+					currentRecordingSample = 0;
+					numRecordedSamples = 0;
+					wasRecording = true;
+				}
+
 				for (int i = 0; i < buffersize; i++) {
 
 					if (inL != nullptr && track != nullptr) {
-						track->setSample(0, currentRecordingSample, inL[i] * track->getVolume());							
+						track->setSample(0, currentRecordingSample, inL[i] * track->getVolume());
 						outL[i] = inL[i] * track->getVolume();
 					}
 					else {
@@ -208,11 +220,12 @@
 
 					currentRecordingSample = (currentRecordingSample + 1);
 					numRecordedSamples++;
-					
+
 				}
 			}
 
 			else {
+				wasRecording = false;
 				for (int i = 0; i < buffersize; i++) {
 					if (navigator->isRecording()) {					
 						if (inL != nullptr && outL != nullptr) {

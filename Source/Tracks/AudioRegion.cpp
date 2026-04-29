@@ -75,7 +75,7 @@ AudioRegion::AudioRegion(AudioSampleBuffer* source, AudioFormatManager& manager,
     this->thumbnail->addChangeListener(this);
     
     audioBuffer = new AudioSampleBuffer(2, sampleLength);
-    
+
     if (source != nullptr) {
 
         if (source->getNumChannels() == 1) {
@@ -86,6 +86,14 @@ AudioRegion::AudioRegion(AudioSampleBuffer* source, AudioFormatManager& manager,
             audioBuffer->copyFrom(0, 0, *source, 0, 0, sampleLength);
             audioBuffer->copyFrom(1, 0, *source, 1, 0, sampleLength);
         }
+    }
+    else {
+        // Recording case: AudioSampleBuffer leaves memory uninitialised, so
+        // without this clear the new region shows whatever heap garbage was
+        // previously freed at that address — frequently the prior recording's
+        // buffer, which made it look like the old audio "leaked" into the
+        // new region.
+        audioBuffer->clear();
     }
     
     this->thumbnail->reset(2, sampleRate);
@@ -326,6 +334,7 @@ AudioSampleBuffer* AudioRegion::getBuffer() {
 void AudioRegion::setZoom(float zoom) {
     this->zoom = zoom;
 
+    zoomInProgress = true;
     if (loop) {
         setSize((getNumSamples() / sampleRate * (loopCount + 1)) * this->zoom, getHeight());
     }
@@ -338,6 +347,7 @@ void AudioRegion::setZoom(float zoom) {
     int newOffset = (snappedOffset / this->sampleRate) * zoom;
     this->setOffset(newOffset);
     this->setTopLeftPosition(newOffset, 0);
+    zoomInProgress = false;
 
     resizerR->setSize(5, getHeight());
     resizerR->setTopLeftPosition(getWidth() - 5, 0);
@@ -448,6 +458,12 @@ int AudioRegion::getNumSamples() {
 }
 
 void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, bool wasResized) {
+
+    // Skip when the move/resize was triggered by setZoom — recomputing
+    // sampleOffset from the new pixel position would drift it (rounding +
+    // snap-to-quarter), shifting the region on every zoom change.
+    if (zoomInProgress)
+        return;
 
     Track* parentTrack = dynamic_cast<Track*>(getParentComponent());
 
@@ -587,12 +603,22 @@ void AudioRegion::createProperties()
 
 void AudioRegion::resizeAudio(int length)
 {
-    AudioSampleBuffer* temp = new AudioSampleBuffer(2, audioBuffer->getNumSamples() + length);
-    temp->copyFrom(0, 0, audioBuffer->getReadPointer(0), audioBuffer->getNumSamples());
-    temp->copyFrom(1, 0, audioBuffer->getReadPointer(1), audioBuffer->getNumSamples());
+    const int oldSize = audioBuffer->getNumSamples();
+    AudioSampleBuffer* temp = new AudioSampleBuffer(2, oldSize + length);
+    temp->copyFrom(0, 0, audioBuffer->getReadPointer(0), oldSize);
+    temp->copyFrom(1, 0, audioBuffer->getReadPointer(1), oldSize);
+    // Zero the appended tail — it is uninitialised heap memory until
+    // setSample fills it in, and the thumbnail can read it before then.
+    temp->clear(oldSize, length);
 
-    delete audioBuffer;
+    // Publish the new buffer before deleting the old one. The thumbnail
+    // timer (UI thread) reads audioBuffer concurrently with this audio-thread
+    // resize; a brief delete-before-assign window let it dereference a freed
+    // pointer and crash. Pointer assignment is atomic on supported platforms,
+    // so the reader either sees the old or new buffer — never a dangling one.
+    AudioSampleBuffer* old = audioBuffer;
     audioBuffer = temp;
+    delete old;
 }
 
 double AudioRegion::getQuarterNoteLength() {

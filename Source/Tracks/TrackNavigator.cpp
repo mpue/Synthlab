@@ -406,8 +406,9 @@ int TrackNavigator::getSamplePosition() {
 void TrackNavigator::ResetMarkerPosition()
 {
     setPosition(0);
+    const bool transportActive = isPlaying() || isRecording();
     for (int i = 0; i < tracks.size(); i++) {
-        tracks.at(i)->setSamplePosition(0);
+        tracks.at(i)->setSamplePosition(0, transportActive);
         tracks.at(i)->setCurrentMarkerPosition(0);
     }
     
@@ -1029,8 +1030,13 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 		double positionInSeconds = (double)x / zoom;
 		setPosition(positionInSeconds);
 		marker->setSamplePosition(getSamplePosition());
+		// While stopped, manually moving the playhead must not fire notes
+		// at the new position. Pass dispatchEvents=false so the track
+		// updates its position silently (samplePosition + lastActiveRegion
+		// still move so getCurrentRegion/PianoRoll work).
+		const bool transportActive = isPlaying() || isRecording();
 		for (int i = 0; i < tracks.size(); i++) {
-			tracks.at(i)->setSamplePosition(samplePosition);
+			tracks.at(i)->setSamplePosition(samplePosition, transportActive);
 			tracks.at(i)->setCurrentMarkerPosition(position);
 		}
 		sendChangeMessage();

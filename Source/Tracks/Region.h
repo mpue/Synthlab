@@ -98,6 +98,13 @@ protected:
     bool dirty;
     long dragStartSampleOffset = 0;
 
+    // True while setZoom is mid-flight. Subclass componentMovedOrResized
+    // implementations must skip recomputing sampleOffset from pixel coords
+    // in that case — otherwise rounding/snap drift in the zoom-induced move
+    // shifts the region (and any recorded MIDI timestamps) by a sample or a
+    // whole grid step on every zoom change.
+    bool zoomInProgress = false;
+
     float zoom = 20;
     String name;
     int offset = 0;

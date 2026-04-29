@@ -17,7 +17,16 @@ MidiRegion::MidiRegion(long startSample, long sampleLength, double sampleRate, M
     this->midiBuffer = new MidiBuffer();
     this->midiThumbnail = new MidiThumbnail(sampleRate);
     this->sampleRate = sampleRate;
-    this->sampleOffset = startSample;
+    // Align to bufferSize so the raw sampleOffset member matches what
+    // getSampleOffset() returns. Otherwise visual rendering (uses raw
+    // sampleOffset) and MIDI dispatch / timestamping (uses the aligned
+    // getSampleOffset) drift apart by up to bufferSize-1 samples — invisible
+    // at low zoom, but at high zoom that gap turns into many pixels of
+    // apparent note misalignment.
+    {
+        const int bs = Project::getInstance()->getBufferSize();
+        this->sampleOffset = bs > 0 ? (startSample / bs) * bs : startSample;
+    }
     this->name = "new";
     this->zoom = 40;
     this->numSamples = sampleLength;
@@ -240,6 +249,13 @@ void MidiRegion::updateThumb() {
 }
 
 void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bool wasResized) {
+    // A zoom change calls setBounds with new pixel coords derived from the
+    // existing sampleOffset. Re-deriving sampleOffset from those pixels here
+    // is not just redundant — rounding and snap-to-grid drift the offset on
+    // every zoom step, which silently shifts recorded MIDI timestamps.
+    if (zoomInProgress)
+        return;
+
     Track* parentTrack = dynamic_cast<Track*>(getParentComponent());
 
     if (wasMoved) {
@@ -262,7 +278,9 @@ void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bo
                       (int)std::round(lengthInSeconds * zoom), getHeight());
         }
 
-        sampleOffset = newSampleOffset;
+        // Align so raw sampleOffset matches getSampleOffset(); see constructor.
+        const int bs = Project::getInstance()->getBufferSize();
+        sampleOffset = bs > 0 ? (newSampleOffset / bs) * bs : newSampleOffset;
 
         rebuildThumbnail();
         updateThumb();
@@ -315,8 +333,10 @@ void MidiRegion::setZoom(float newZoom) {
 
     // Bounds mit neuem Zoom aktualisieren
     double lengthInSeconds = numSamples / sampleRate;
+    zoomInProgress = true;
     setBounds((int)std::round(sampleOffset / sampleRate * zoom), getY(),
         (int)std::round(lengthInSeconds * zoom), getHeight());
+    zoomInProgress = false;
 
     // Constrainer maxWidth an neuen Zoom anpassen, damit kein Sprung beim Resize
     int maxW = (int)(Project::getInstance()->getTrackLength() * zoom);
