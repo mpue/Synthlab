@@ -11,6 +11,7 @@
 
 #include "MidiRegion.h"
 #include "Track.h"
+#include "TrackNavigator.h"
 
 MidiRegion::MidiRegion(long startSample, long sampleLength, double sampleRate, MultiComponentDragger* dragger) {
     this->dragger = dragger;
@@ -128,6 +129,11 @@ MidiRegion::~MidiRegion() {
     delete midiThumbnail;
     delete midiBuffer;
     delete sequence;
+}
+
+void MidiRegion::mouseDoubleClick(const MouseEvent& /*e*/) {
+    if (auto* nav = findParentComponentOfClass<TrackNavigator>())
+        nav->openPianoRoll(this);
 }
 
 // Tempo-bezogene Methoden
@@ -931,11 +937,26 @@ void MidiRegion::handleTempoChange(double newBPM) {
     double oldBPM = this->currentBPM;
     this->currentBPM = newBPM;
 
-    // Skaliere alle MIDI-Events entsprechend
     if (oldBPM > 0 && this->currentBPM > 0) {
         rescaleMidiEvents(oldBPM, this->currentBPM);
+
+        // Keep musical length and position constant: scale samples by oldBPM/newBPM.
+        // Without this an empty region would collapse to ~100ms (updateBoundsFromTempo
+        // derives length from the last event), and the region's start position would
+        // stay fixed in seconds — drifting away from its bar/beat anchor.
+        const double scale = oldBPM / this->currentBPM;
+
+        numSamples = std::max(1L, (long)std::llround((double)numSamples * scale));
+
+        const long scaledOffset = (long)std::llround((double)sampleOffset * scale);
+        const int bs = Project::getInstance()->getBufferSize();
+        sampleOffset = bs > 0 ? (scaledOffset / bs) * bs : scaledOffset;
+
+        const double lengthInSeconds = (double)numSamples / sampleRate;
+        setBounds((int)std::round(sampleOffset / sampleRate * zoom), getY(),
+                  (int)std::round(lengthInSeconds * zoom), getHeight());
     }
-	updateBoundsFromTempo();
+
     rebuildThumbnail();
     updateThumb();
     constrainer->setMaximumWidth(getBounds().getWidth());

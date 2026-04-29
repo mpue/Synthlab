@@ -1926,7 +1926,12 @@ void SynthEditor::loadMidiRegions(juce::ValueTree& track, Track* t) {
 
 			if (validMessage) {
 				int timestamp = int(event.getProperty("timestamp"));
-				mr->addMessage(new MidiMessage(msg), timestamp, timestamp);
+				// Saved timestamp is relative to the region start. addMessage()
+				// expects an *absolute* sampleNum and re-relativises it via
+				// `sampleNum - getSampleOffset()`. Without adding the offset back
+				// here, every reload re-subtracts sampleOffset and the round-trip
+				// drives timestamps negative on the next save.
+				mr->addMessage(new MidiMessage(msg), timestamp, timestamp + (int)mr->getSampleOffset());
 				loadedCount++;
 			}
 		}

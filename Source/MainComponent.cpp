@@ -1148,7 +1148,17 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	else if (menuItemID == 11)
 	{
 		if (editorView->getNavigator()->getCurrentTrack() != nullptr)
-			editorView->getNavigator()->getCurrentTrack()->addMidiRegion(48000, editorView->getNavigator()->getSamplePosition(), 480000);
+		{
+			const double sr  = Project::getInstance()->getSampleRate();
+			const float  bpm = Project::getInstance()->getTempo();
+			const int    beatsPerBar = 4;
+			const long   oneBarSamples = (long)(beatsPerBar * (60.0 / bpm) * sr);
+
+			editorView->getNavigator()->getCurrentTrack()->addMidiRegion(
+				sr,
+				editorView->getNavigator()->getSamplePosition(),
+				oneBarSamples);
+		}
 	}
 	else if (menuItemID == 80) {
 		Project* p = Project::getInstance();

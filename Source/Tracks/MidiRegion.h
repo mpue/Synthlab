@@ -31,6 +31,8 @@ public:
     
     virtual void paint (Graphics&) override;
     virtual void resized() override;
+
+    void mouseDoubleClick(const MouseEvent& e) override;
   
     void setNumSamples(int numSamples);
     virtual int getNumSamples() override;
