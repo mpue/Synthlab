@@ -90,6 +90,12 @@ public:
     void showBounceDialog();
     juce::String tryExecuteChatInstruction(const std::string& jsonString);
 
+    // Persistierter Claude API Key — gespeichert in ~/.Synthlab/claude_api_key.txt.
+    // Plain text, dasselbe Verzeichnis-Schema wie der bestehende Plugin-/Audio-Config.
+    juce::String loadClaudeApiKey() const;
+    void saveClaudeApiKey(const juce::String& key);
+    void showClaudeApiKeyDialog();
+
     // command handling
     virtual ApplicationCommandTarget* getNextCommandTarget() override;
     virtual void getAllCommands(Array<CommandID>& commands) override;

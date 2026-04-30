@@ -545,14 +545,13 @@ void MainComponent::createStudioLayout() {
 		}, "Start the audio engine.");
 
 
-	// TODO: API Key management
-	chat = std::make_unique<ChatGPTInterface>("");
+	chat = std::make_unique<ChatGPTInterface>(loadClaudeApiKey());
 
-	parser->registerCommand("chatgpt",
+	auto claudePromptHandler =
 		[this](const std::vector<std::string>& args) -> std::string
 		{
 			if (args.empty())
-				return "Usage: chatgpt <frage>";
+				return "Usage: claude <frage>";
 
 			std::string prompt;
 			for (const auto& w : args)
@@ -562,8 +561,12 @@ void MainComponent::createStudioLayout() {
 			juce::String parsed = tryExecuteChatInstruction(response);
 
 			return parsed.toStdString();
-		},
-		"Frage an ChatGPT senden");
+		};
+
+	parser->registerCommand("claude", claudePromptHandler, "Frage an Claude senden");
+	// Alias — ChatGPTInterface ist der historische Name; Console-User tippen
+	// vermutlich "chatgpt" aus Gewohnheit.
+	parser->registerCommand("chatgpt", claudePromptHandler, "Frage an Claude senden (alias)");
 
 #if JUCE_MAC
 
@@ -991,6 +994,7 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addCommandItem(commandManager.get(), SynthEditor::CommandIds::SAVE);
 		menu.addCommandItem(commandManager.get(), SynthEditor::CommandIds::SAVE_AS);
 		menu.addItem(5, "Settings", true, false, nullptr);
+		menu.addItem(14, "Claude API Key...", true, false, nullptr);
 		menu.addItem(6, "Import Audio", true, false, nullptr);
 		menu.addItem(12, "Import MIDI", true, false, nullptr);
 		menu.addItem(7, "Play", true, false, nullptr);
@@ -1098,6 +1102,9 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	}
 	else if (menuItemID == 13) {
 		showBounceDialog();
+	}
+	else if (menuItemID == 14) {
+		showClaudeApiKeyDialog();
 	}
 	else if (menuItemID == 7) {
 		editorView->getNavigator()->setPlaying(true);
@@ -1432,6 +1439,55 @@ void MainComponent::openSettings() {
 
 }
 
+static juce::File getClaudeApiKeyFile()
+{
+	const juce::String userHome = juce::File::getSpecialLocation(juce::File::userHomeDirectory).getFullPathName();
+	juce::File appDir(userHome + "/.Synthlab");
+	if (!appDir.exists())
+		appDir.createDirectory();
+	return juce::File(userHome + "/.Synthlab/claude_api_key.txt");
+}
+
+juce::String MainComponent::loadClaudeApiKey() const
+{
+	const juce::File f = getClaudeApiKeyFile();
+	if (!f.existsAsFile())
+		return {};
+	return f.loadFileAsString().trim();
+}
+
+void MainComponent::saveClaudeApiKey(const juce::String& key)
+{
+	const juce::File f = getClaudeApiKeyFile();
+	f.replaceWithText(key.trim());
+	if (chat != nullptr)
+		chat->setApiKey(key.trim());
+}
+
+void MainComponent::showClaudeApiKeyDialog()
+{
+	auto* w = new juce::AlertWindow(
+		"Claude API Key",
+		"Trage hier deinen Anthropic API Key ein. Er wird in ~/.Synthlab/claude_api_key.txt gespeichert.",
+		juce::AlertWindow::NoIcon);
+
+	w->setLookAndFeel(Project::getInstance()->getLookAndFeel());
+	w->addTextEditor("apiKey", loadClaudeApiKey(), "API Key:", true /* isPassword */);
+	w->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+	w->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+	w->enterModalState(true,
+		juce::ModalCallbackFunction::create([this, w](int result)
+		{
+			if (result == 1)
+			{
+				const juce::String newKey = w->getTextEditorContents("apiKey");
+				saveClaudeApiKey(newKey);
+			}
+		}),
+		true /* deleteWhenDismissed */);
+}
+
 bool MainComponent::keyStateChanged(bool isKeyDown, juce::Component* originatingComponent) {
 
 	// TODO : If we provide Keyboard INput for play, we shoukd clean this up!
@@ -1733,13 +1789,63 @@ void MainComponent::startBounce(const juce::File& outputFile, double durationInS
 
 juce::String MainComponent::tryExecuteChatInstruction(const std::string& jsonString)
 {
-	juce::var parsed = juce::JSON::parse(jsonString);
+	// Claude (und auch GPT) verpacken JSON gerne in ```json ... ``` oder
+	// umgeben es mit Erklärtext, selbst wenn der Prompt strikt JSON verlangt.
+	// Wir extrahieren deshalb das erste vollständige Objekt {…} per Klammer-
+	// Zähler, statt den rohen String an JSON::parse zu geben.
+	auto extractFirstJsonObject = [](const juce::String& s) -> juce::String
+	{
+		const int first = s.indexOfChar('{');
+		if (first < 0)
+			return {};
+
+		int depth = 0;
+		bool inString = false;
+		bool escape = false;
+		for (int i = first; i < s.length(); ++i)
+		{
+			const juce_wchar c = s[i];
+			if (escape) { escape = false; continue; }
+			if (inString) {
+				if (c == '\\') escape = true;
+				else if (c == '"') inString = false;
+				continue;
+			}
+			if (c == '"') { inString = true; continue; }
+			if (c == '{') ++depth;
+			else if (c == '}') {
+				--depth;
+				if (depth == 0)
+					return s.substring(first, i + 1);
+			}
+		}
+		return {};
+	};
+
+	const juce::String cleaned = extractFirstJsonObject(juce::String(jsonString));
+	if (cleaned.isEmpty())
+		return "Claude-Antwort enthält kein JSON-Objekt.";
+
+	juce::var parsed = juce::JSON::parse(cleaned);
 	if (!parsed.isObject())
-		return " JSON ist kein Objekt.";
+		return "Claude-Antwort konnte nicht als JSON-Objekt geparst werden.";
 
-	juce::String action = parsed["action"].toString();
+	// Action-String normalisieren — Claude ist beim genauen Format unzuverlässig
+	// (mal "create_midi_region", mal "createMidiRegion", mal "create-midi-region").
+	// Vergleich daher case-insensitiv und ohne Trennzeichen.
+	const juce::String rawAction = parsed["action"].toString();
+	juce::String normAction = rawAction.toLowerCase();
+	normAction = normAction.replace("_", "").replace("-", "").replace(" ", "");
 
-	if (action == "create_midi_region")
+	const bool isCreateMidiRegion =
+		normAction == "createmidiregion" || normAction.contains("midiregion");
+
+	// Fallback: wenn ein notes-Array vorhanden ist, behandeln wir die Antwort
+	// als create_midi_region — egal wie die action heißt. Aktuell ist das die
+	// einzige unterstützte Aktion, also lieber nachsichtig sein.
+	const bool hasNotesArray = parsed.getProperty("notes", {}).isArray();
+
+	if (isCreateMidiRegion || hasNotesArray)
 	{
 		double length = parsed["length_beats"];
 		juce::Array<juce::var>* notes = parsed.getProperty("notes", {}).getArray();
@@ -1778,10 +1884,11 @@ juce::String MainComponent::tryExecuteChatInstruction(const std::string& jsonStr
 			region->addMessage(new MidiMessage(noteOff), Time::getMillisecondCounterHiRes() / 1000, (int)((start + len) * 44100));
 		}
 
-		return jsonString;
+		return "MIDI-Region erstellt: " + juce::String(notes->size())
+			+ " Noten, " + juce::String(length, 1) + " beats.";
 	}
 
-	return "Unbekannte Aktion.";
+	return "Unbekannte Aktion: \"" + rawAction + "\".";
 }
 
 juce::ApplicationCommandTarget* MainComponent::getNextCommandTarget()
