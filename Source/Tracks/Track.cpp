@@ -10,6 +10,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Track.h"
+#include "TrackNavigator.h"
 #include "../Session.h"
 #include "MasterChannelPanel.h"
 #include "../Actions/SplitRegionAction.h"
@@ -1081,18 +1082,42 @@ double Track::getMaxLength() {
 	return maxLength;
 }
 
+juce::Colour Track::getTrackColour() const {
+	// Hue aus der Position im Navigator. Goldener-Schnitt-Schritt (0.61803…)
+	// gibt auch bei wenigen Tracks eine gut verteilte Palette ohne harte
+	// Wiederholungen — gleichzeitig deterministisch, also bleibt die Farbe
+	// stabil solange der Index gleich bleibt.
+	int index = 0;
+	if (navigator != nullptr) {
+		const auto& tracks = const_cast<TrackNavigator*>(navigator)->getTracks();
+		for (size_t i = 0; i < tracks.size(); ++i) {
+			if (tracks[i] == this) { index = (int)i; break; }
+		}
+	}
+
+	const float hue = std::fmod(0.05f + index * 0.61803398875f, 1.0f);
+	// Gedämpfte Saturation/Brightness — knallige Farben würden auf dem
+	// dunklen Editor-Hintergrund die Wellenform/Notes überstrahlen.
+	return juce::Colour::fromHSV(hue, 0.55f, 0.55f, 1.0f);
+}
+
 void Track::paint(Graphics& g) {
+	const juce::Colour base = getTrackColour();
 
-	if (selected) {
-		g.setColour(Colours::darkgrey);
-	}
-	else {
-		g.setColour(Colours::darkgrey.darker());
-	}
+	// Track-Hintergrund: deutlich abgedunkelter Tint der Track-Farbe, damit
+	// der Bezug zur Region erkennbar bleibt aber nicht blendet.
+	const juce::Colour bg = selected
+		? base.withMultipliedSaturation(0.55f).withMultipliedBrightness(0.55f)
+		: base.withMultipliedSaturation(0.40f).withMultipliedBrightness(0.32f);
 
-	g.fillAll();
-	g.setColour(Colours::grey);
-	g.drawLine(0, getHeight(), getWidth(), getHeight());
+	g.fillAll(bg);
+
+	// Linker farbiger Streifen als „Track-Identifier" (wie ein Tab-Header).
+	g.setColour(base);
+	g.fillRect(0, 0, 3, getHeight());
+
+	g.setColour(Colours::black.withAlpha(0.4f));
+	g.drawLine(0, (float)getHeight(), (float)getWidth(), (float)getHeight());
 	drawGrid(g);
 }
 

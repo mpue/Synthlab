@@ -15,141 +15,171 @@
 class ElegantDarkLookAndFeel : public juce::LookAndFeel_V4
 {
 public:
+    // Moderne, leicht kühl getönte Dark-Palette. Statt der bisherigen flachen
+    // Grautöne haben Hintergründe einen Hauch Blauton (#0e0f13/#16181d/…), so
+    // wirkt die UI weniger nach Windows-95-Grau und mehr nach IDE/DAW von 2025.
+    static constexpr juce::uint32 cBgWindow      = 0xff0e0f13;  // tiefster Hintergrund
+    static constexpr juce::uint32 cBgPanel       = 0xff16181d;  // Panel/Tab-Inhalt
+    static constexpr juce::uint32 cBgInput       = 0xff1d1f25;  // TextEditor/ComboBox/Button
+    static constexpr juce::uint32 cBgInputHover  = 0xff262932;
+    static constexpr juce::uint32 cBgRaised      = 0xff2a2d36;  // Tooltips, Popups
+    static constexpr juce::uint32 cBorderSoft    = 0xff262932;  // ruhige Trennlinien
+    static constexpr juce::uint32 cBorderHard    = 0xff353945;  // betonte Outlines
+    static constexpr juce::uint32 cTextStrong    = 0xfff2f3f5;
+    static constexpr juce::uint32 cText          = 0xffd6d8de;
+    static constexpr juce::uint32 cTextMuted     = 0xff8a8e98;
+    // Akzent: ein modernes Indigo (Tailwind-Indigo-400 ~ 0xff818cf8). Hebt sich
+    // gut auf dunklem Grund ab, weniger „Standard-Blau"-Vibe.
+    static constexpr juce::uint32 cAccent        = 0xff818cf8;
+    static constexpr juce::uint32 cAccentBright  = 0xffa5b4fc;
+    static constexpr juce::uint32 cAccentSoft    = 0x33818cf8;  // halbtransparent für Halos
+
     ElegantDarkLookAndFeel()
     {
+        const juce::Colour bgWindow     (cBgWindow);
+        const juce::Colour bgPanel      (cBgPanel);
+        const juce::Colour bgInput      (cBgInput);
+        const juce::Colour bgRaised     (cBgRaised);
+        const juce::Colour borderSoft   (cBorderSoft);
+        const juce::Colour borderHard   (cBorderHard);
+        const juce::Colour text         (cText);
+        const juce::Colour textStrong   (cTextStrong);
+        const juce::Colour textMuted    (cTextMuted);
+        const juce::Colour accent       (cAccent);
+        const juce::Colour accentBright (cAccentBright);
+        const juce::Colour accentSoft   (cAccentSoft);
+
         // Basis Farbschema
-        setColour(juce::ResizableWindow::backgroundColourId, juce::Colour(0xff1a1a1a));
-        setColour(juce::DocumentWindow::backgroundColourId, juce::Colour(0xff1a1a1a));
+        setColour(juce::ResizableWindow::backgroundColourId, bgWindow);
+        setColour(juce::DocumentWindow::backgroundColourId,  bgWindow);
 
         // Text Farben
-        setColour(juce::Label::textColourId, juce::Colour(0xffe8e8e8));
-        setColour(juce::TextEditor::textColourId, juce::Colour(0xffe8e8e8));
-        setColour(juce::TextEditor::backgroundColourId, juce::Colour(0xff2a2a2a));
-        setColour(juce::TextEditor::highlightColourId, juce::Colour(0x664d9eff));
-        setColour(juce::TextEditor::outlineColourId, juce::Colour(0xff404040));
-        setColour(juce::TextEditor::focusedOutlineColourId, juce::Colour(0xff4d9eff));
+        setColour(juce::Label::textColourId,                   text);
+        setColour(juce::TextEditor::textColourId,              text);
+        setColour(juce::TextEditor::backgroundColourId,        bgInput);
+        setColour(juce::TextEditor::highlightColourId,         accentSoft);
+        setColour(juce::TextEditor::outlineColourId,           borderSoft);
+        setColour(juce::TextEditor::focusedOutlineColourId,    accent);
 
         // Button Farben
-        setColour(juce::TextButton::buttonColourId, juce::Colour(0xff2a2a2a));
-        setColour(juce::TextButton::buttonOnColourId, juce::Colour(0xff4d9eff));
-        setColour(juce::TextButton::textColourOffId, juce::Colour(0xffe8e8e8));
-        setColour(juce::TextButton::textColourOnId, juce::Colour(0xffffffff));
+        setColour(juce::TextButton::buttonColourId,    bgInput);
+        setColour(juce::TextButton::buttonOnColourId,  accent);
+        setColour(juce::TextButton::textColourOffId,   text);
+        setColour(juce::TextButton::textColourOnId,    juce::Colours::white);
 
         // ComboBox
-        setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xff2a2a2a));
-        setColour(juce::ComboBox::textColourId, juce::Colour(0xffe8e8e8));
-        setColour(juce::ComboBox::outlineColourId, juce::Colour(0xff404040));
-        setColour(juce::ComboBox::buttonColourId, juce::Colour(0xff404040));
-        setColour(juce::ComboBox::arrowColourId, juce::Colour(0xffe8e8e8));
+        setColour(juce::ComboBox::backgroundColourId, bgInput);
+        setColour(juce::ComboBox::textColourId,       text);
+        setColour(juce::ComboBox::outlineColourId,    borderSoft);
+        setColour(juce::ComboBox::buttonColourId,     borderHard);
+        setColour(juce::ComboBox::arrowColourId,      textMuted);
 
         // PopupMenu
-        setColour(juce::PopupMenu::backgroundColourId, juce::Colour(0xff2a2a2a));
-        setColour(juce::PopupMenu::textColourId, juce::Colour(0xffe8e8e8));
-        setColour(juce::PopupMenu::highlightedBackgroundColourId, juce::Colour(0xff4d9eff));
-        setColour(juce::PopupMenu::highlightedTextColourId, juce::Colour(0xffffffff));
+        setColour(juce::PopupMenu::backgroundColourId,            bgRaised);
+        setColour(juce::PopupMenu::textColourId,                  text);
+        setColour(juce::PopupMenu::highlightedBackgroundColourId, accent);
+        setColour(juce::PopupMenu::highlightedTextColourId,       juce::Colours::white);
 
         // Slider
-        setColour(juce::Slider::backgroundColourId, juce::Colour(0xff404040));
-        setColour(juce::Slider::thumbColourId, juce::Colour(0xff4d9eff));
-        setColour(juce::Slider::trackColourId, juce::Colour(0xff666666));
-        setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xff4d9eff));
-        setColour(juce::Slider::rotarySliderOutlineColourId, juce::Colour(0xff404040));
-        setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xffe8e8e8));
-        setColour(juce::Slider::textBoxBackgroundColourId, juce::Colour(0xff2a2a2a));
-        setColour(juce::Slider::textBoxOutlineColourId, juce::Colour(0xff404040));
+        setColour(juce::Slider::backgroundColourId,           borderSoft);
+        setColour(juce::Slider::thumbColourId,                accent);
+        setColour(juce::Slider::trackColourId,                borderHard);
+        setColour(juce::Slider::rotarySliderFillColourId,     accent);
+        setColour(juce::Slider::rotarySliderOutlineColourId,  borderSoft);
+        setColour(juce::Slider::textBoxTextColourId,          text);
+        setColour(juce::Slider::textBoxBackgroundColourId,    bgInput);
+        setColour(juce::Slider::textBoxOutlineColourId,       borderSoft);
 
         // ToggleButton
-        setColour(juce::ToggleButton::textColourId, juce::Colour(0xffe8e8e8));
-        setColour(juce::ToggleButton::tickColourId, juce::Colour(0xff4d9eff));
-        setColour(juce::ToggleButton::tickDisabledColourId, juce::Colour(0xff666666));
+        setColour(juce::ToggleButton::textColourId,           text);
+        setColour(juce::ToggleButton::tickColourId,           accent);
+        setColour(juce::ToggleButton::tickDisabledColourId,   borderHard);
 
         // ListBox
-        setColour(juce::ListBox::backgroundColourId, juce::Colour(0xff2a2a2a));
-        setColour(juce::ListBox::outlineColourId, juce::Colour(0xff404040));
-        setColour(juce::ListBox::textColourId, juce::Colour(0xffe8e8e8));
+        setColour(juce::ListBox::backgroundColourId, bgPanel);
+        setColour(juce::ListBox::outlineColourId,    borderSoft);
+        setColour(juce::ListBox::textColourId,       text);
 
         // TreeView
-        setColour(juce::TreeView::backgroundColourId, juce::Colour(0xff2a2a2a));
-        setColour(juce::TreeView::linesColourId, juce::Colour(0xff404040));
-        setColour(juce::TreeView::dragAndDropIndicatorColourId, juce::Colour(0xff4d9eff));
-        setColour(juce::TreeView::selectedItemBackgroundColourId, juce::Colour(0x664d9eff));
+        setColour(juce::TreeView::backgroundColourId,             bgPanel);
+        setColour(juce::TreeView::linesColourId,                  borderSoft);
+        setColour(juce::TreeView::dragAndDropIndicatorColourId,   accent);
+        setColour(juce::TreeView::selectedItemBackgroundColourId, accentSoft);
 
         // Scrollbar
-        setColour(juce::ScrollBar::backgroundColourId, juce::Colour(0xff1a1a1a));
-        setColour(juce::ScrollBar::thumbColourId, juce::Colour(0xff4d9eff));
-        setColour(juce::ScrollBar::trackColourId, juce::Colour(0xff2a2a2a));
+        setColour(juce::ScrollBar::backgroundColourId, bgPanel);
+        setColour(juce::ScrollBar::thumbColourId,      borderHard);
+        setColour(juce::ScrollBar::trackColourId,      bgPanel);
 
         // TabbedComponent
-        setColour(juce::TabbedComponent::backgroundColourId, juce::Colour(0xff1a1a1a));
-        setColour(juce::TabbedComponent::outlineColourId, juce::Colour(0xff404040));
-        setColour(juce::TabbedButtonBar::tabOutlineColourId, juce::Colour(0xff404040));
-        setColour(juce::TabbedButtonBar::frontOutlineColourId, juce::Colour(0xff4d9eff));
+        setColour(juce::TabbedComponent::backgroundColourId,     bgWindow);
+        setColour(juce::TabbedComponent::outlineColourId,        borderSoft);
+        setColour(juce::TabbedButtonBar::tabOutlineColourId,     juce::Colours::transparentBlack);
+        setColour(juce::TabbedButtonBar::frontOutlineColourId,   accent);
 
         // TableListBox
-        setColour(juce::TableListBox::backgroundColourId, juce::Colour(0xff2a2a2a));
-        setColour(juce::TableListBox::outlineColourId, juce::Colour(0xff404040));
-        setColour(juce::TableHeaderComponent::backgroundColourId, juce::Colour(0xff333333));
-        setColour(juce::TableHeaderComponent::outlineColourId, juce::Colour(0xff404040));
-        setColour(juce::TableHeaderComponent::textColourId, juce::Colour(0xffe8e8e8));
-        setColour(juce::TableHeaderComponent::highlightColourId, juce::Colour(0xff4d9eff));
+        setColour(juce::TableListBox::backgroundColourId,           bgPanel);
+        setColour(juce::TableListBox::outlineColourId,              borderSoft);
+        setColour(juce::TableHeaderComponent::backgroundColourId,   bgInput);
+        setColour(juce::TableHeaderComponent::outlineColourId,      borderSoft);
+        setColour(juce::TableHeaderComponent::textColourId,         textStrong);
+        setColour(juce::TableHeaderComponent::highlightColourId,    accent);
 
         // ProgressBar
-        setColour(juce::ProgressBar::backgroundColourId, juce::Colour(0xff404040));
-        setColour(juce::ProgressBar::foregroundColourId, juce::Colour(0xff4d9eff));
+        setColour(juce::ProgressBar::backgroundColourId, borderSoft);
+        setColour(juce::ProgressBar::foregroundColourId, accent);
 
         // GroupComponent
-        setColour(juce::GroupComponent::outlineColourId, juce::Colour(0xff404040));
-        setColour(juce::GroupComponent::textColourId, juce::Colour(0xffe8e8e8));
+        setColour(juce::GroupComponent::outlineColourId, borderSoft);
+        setColour(juce::GroupComponent::textColourId,    textMuted);
 
         // DirectoryContentsDisplayComponent
-        setColour(juce::DirectoryContentsDisplayComponent::highlightColourId, juce::Colour(0x664d9eff));
-        setColour(juce::DirectoryContentsDisplayComponent::textColourId, juce::Colour(0xffe8e8e8));
+        setColour(juce::DirectoryContentsDisplayComponent::highlightColourId, accentSoft);
+        setColour(juce::DirectoryContentsDisplayComponent::textColourId,      text);
 
         // FileBrowserComponent
-        setColour(juce::FileBrowserComponent::currentPathBoxBackgroundColourId, juce::Colour(0xff2a2a2a));
-        setColour(juce::FileBrowserComponent::currentPathBoxTextColourId, juce::Colour(0xffe8e8e8));
-        setColour(juce::FileBrowserComponent::currentPathBoxArrowColourId, juce::Colour(0xffe8e8e8));
-        setColour(juce::FileBrowserComponent::filenameBoxBackgroundColourId, juce::Colour(0xff2a2a2a));
-        setColour(juce::FileBrowserComponent::filenameBoxTextColourId, juce::Colour(0xffe8e8e8));
+        setColour(juce::FileBrowserComponent::currentPathBoxBackgroundColourId, bgInput);
+        setColour(juce::FileBrowserComponent::currentPathBoxTextColourId,       text);
+        setColour(juce::FileBrowserComponent::currentPathBoxArrowColourId,      textMuted);
+        setColour(juce::FileBrowserComponent::filenameBoxBackgroundColourId,    bgInput);
+        setColour(juce::FileBrowserComponent::filenameBoxTextColourId,          text);
 
         // AlertWindow
-        setColour(juce::AlertWindow::backgroundColourId, juce::Colour(0xff2a2a2a));
-        setColour(juce::AlertWindow::textColourId, juce::Colour(0xffe8e8e8));
-        setColour(juce::AlertWindow::outlineColourId, juce::Colour(0xff404040));
+        setColour(juce::AlertWindow::backgroundColourId, bgRaised);
+        setColour(juce::AlertWindow::textColourId,       text);
+        setColour(juce::AlertWindow::outlineColourId,    borderHard);
 
         // TooltipWindow
-        setColour(juce::TooltipWindow::backgroundColourId, juce::Colour(0xff333333));
-        setColour(juce::TooltipWindow::textColourId, juce::Colour(0xffe8e8e8));
-        setColour(juce::TooltipWindow::outlineColourId, juce::Colour(0xff404040));
+        setColour(juce::TooltipWindow::backgroundColourId, bgRaised);
+        setColour(juce::TooltipWindow::textColourId,       text);
+        setColour(juce::TooltipWindow::outlineColourId,    borderHard);
 
         // CodeEditorComponent
-        setColour(juce::CodeEditorComponent::backgroundColourId, juce::Colour(0xff1a1a1a));
-        setColour(juce::CodeEditorComponent::highlightColourId, juce::Colour(0x664d9eff));
-        setColour(juce::CodeEditorComponent::defaultTextColourId, juce::Colour(0xffe8e8e8));
-        setColour(juce::CodeEditorComponent::lineNumberBackgroundId, juce::Colour(0xff2a2a2a));
-        setColour(juce::CodeEditorComponent::lineNumberTextId, juce::Colour(0xff999999));
+        setColour(juce::CodeEditorComponent::backgroundColourId,    bgWindow);
+        setColour(juce::CodeEditorComponent::highlightColourId,     accentSoft);
+        setColour(juce::CodeEditorComponent::defaultTextColourId,   text);
+        setColour(juce::CodeEditorComponent::lineNumberBackgroundId, bgPanel);
+        setColour(juce::CodeEditorComponent::lineNumberTextId,      textMuted);
 
         // CaretComponent
-        setColour(juce::CaretComponent::caretColourId, juce::Colour(0xff4d9eff));
+        setColour(juce::CaretComponent::caretColourId, accent);
 
         // HyperlinkButton
-        setColour(juce::HyperlinkButton::textColourId, juce::Colour(0xff4d9eff));
+        setColour(juce::HyperlinkButton::textColourId, accentBright);
 
         // KeyboardComponentBase
-        setColour(juce::KeyboardComponentBase::upDownButtonBackgroundColourId, juce::Colour(0xff2a2a2a));
-        setColour(juce::KeyboardComponentBase::upDownButtonArrowColourId, juce::Colour(0xffe8e8e8));
+        setColour(juce::KeyboardComponentBase::upDownButtonBackgroundColourId, bgInput);
+        setColour(juce::KeyboardComponentBase::upDownButtonArrowColourId,      textMuted);
 
         // MidiKeyboardComponent
-        setColour(juce::MidiKeyboardComponent::whiteNoteColourId, juce::Colour(0xffe8e8e8));
-        setColour(juce::MidiKeyboardComponent::blackNoteColourId, juce::Colour(0xff1a1a1a));
-        setColour(juce::MidiKeyboardComponent::keySeparatorLineColourId, juce::Colour(0xff404040));
-        setColour(juce::MidiKeyboardComponent::mouseOverKeyOverlayColourId, juce::Colour(0x664d9eff));
-        setColour(juce::MidiKeyboardComponent::keyDownOverlayColourId, juce::Colour(0x994d9eff));
-        setColour(juce::MidiKeyboardComponent::textLabelColourId, juce::Colour(0xff1a1a1a));
-        setColour(juce::MidiKeyboardComponent::upDownButtonBackgroundColourId, juce::Colour(0xff2a2a2a));
-        setColour(juce::MidiKeyboardComponent::upDownButtonArrowColourId, juce::Colour(0xffe8e8e8));
-
-		setColour(juce::TabbedComponent::backgroundColourId, juce::Colour(0xff1a1a1a));
+        setColour(juce::MidiKeyboardComponent::whiteNoteColourId,           textStrong);
+        setColour(juce::MidiKeyboardComponent::blackNoteColourId,           bgWindow);
+        setColour(juce::MidiKeyboardComponent::keySeparatorLineColourId,    borderSoft);
+        setColour(juce::MidiKeyboardComponent::mouseOverKeyOverlayColourId, accentSoft);
+        setColour(juce::MidiKeyboardComponent::keyDownOverlayColourId,      accent.withAlpha(0.6f));
+        setColour(juce::MidiKeyboardComponent::textLabelColourId,           bgWindow);
+        setColour(juce::MidiKeyboardComponent::upDownButtonBackgroundColourId, bgInput);
+        setColour(juce::MidiKeyboardComponent::upDownButtonArrowColourId,      textMuted);
 
         gradientVertical = juce::ColourGradient(juce::Colours::red, 0, 0, juce::Colours::chartreuse, 5, 128, false);
         gradientVertical.addColour(0.2, juce::Colours::lightgrey);
@@ -157,43 +187,52 @@ public:
         gradientHorizontal = juce::ColourGradient(juce::Colours::chartreuse, 0, 0, juce::Colours::red, 128, 5, false);
         gradientHorizontal.addColour(0.8, juce::Colours::grey);
 
-        // Schriftart setzen
-        setDefaultSansSerifTypefaceName("Verdana");
+        // Default-Schriftart bewusst NICHT mehr hardcoden. JUCE nimmt dann den
+        // System-Default — auf macOS SF Pro, auf Windows Segoe UI, auf Linux
+        // den Distributions-Default. Das war der größte „altbacken"-Faktor:
+        // Verdana ist seit ~2005 das Sinnbild für Web-1.0-Forensoftware.
     }
 
-    // Custom Button Drawing mit abgerundeten Ecken und Glow-Effekt
+    // Modernes Button-Rendering: weicher Hover-Lift statt harter Outline,
+    // dezenter Top-Highlight für „angehoben"-Effekt.
     void drawButtonBackground(juce::Graphics& g, juce::Button& button, const juce::Colour& backgroundColour,
         bool isMouseOverButton, bool isButtonDown) override
     {
-        auto bounds = button.getLocalBounds().toFloat().reduced(0.5f, 0.5f);
-        auto cornerSize = 8.0f;
+        const auto bounds = button.getLocalBounds().toFloat().reduced(0.5f);
+        const float cornerSize = juce::jmin(10.0f, bounds.getHeight() * 0.35f);
 
-        if (isButtonDown)
-        {
-            g.setColour(backgroundColour.brighter(0.2f));
-        }
-        else if (isMouseOverButton)
-        {
-            g.setColour(backgroundColour.brighter(0.1f));
+        const bool isToggled = button.getToggleState();
+        const juce::Colour base =
+            isToggled ? juce::Colour(cAccent)
+                      : (isButtonDown   ? juce::Colour(cBgInput).brighter(0.10f)
+                       : isMouseOverButton ? juce::Colour(cBgInputHover)
+                                          : juce::Colour(cBgInput));
 
-            // Glow-Effekt f�r Hover
-            juce::Path glowPath;
-            glowPath.addRoundedRectangle(bounds.expanded(2.0f), cornerSize + 2.0f);
-            juce::ColourGradient glow(juce::Colour(0x334d9eff), bounds.getCentreX(), bounds.getCentreY(),
-                juce::Colour(0x004d9eff), bounds.getRight(), bounds.getBottom(), true);
-            g.setGradientFill(glow);
-            g.fillPath(glowPath);
-        }
-        else
-        {
-            g.setColour(backgroundColour);
+        // Soft drop shadow unter dem Button — nur im Default-State, damit der
+        // gedrückte Zustand wirklich „eingedrückt" wirkt.
+        if (!isButtonDown && !isToggled) {
+            g.setColour(juce::Colours::black.withAlpha(0.35f));
+            g.fillRoundedRectangle(bounds.translated(0.0f, 1.0f), cornerSize);
         }
 
+        // Vertikaler Body-Gradient — minimal, sonst wirkt es plastisch.
+        juce::ColourGradient body(base.brighter(0.04f), bounds.getX(), bounds.getY(),
+                                   base.darker(0.08f),  bounds.getX(), bounds.getBottom(), false);
+        g.setGradientFill(body);
         g.fillRoundedRectangle(bounds, cornerSize);
 
-        // Subtiler Outline
-        g.setColour(juce::Colour(0xff404040));
-        g.drawRoundedRectangle(bounds, cornerSize, 1.0f);
+        // Subtiler Top-Highlight (1 px), kein Vollumriss.
+        g.setColour(juce::Colours::white.withAlpha(isToggled ? 0.20f : 0.05f));
+        juce::Path topLine;
+        topLine.startNewSubPath(bounds.getX() + cornerSize, bounds.getY() + 0.5f);
+        topLine.lineTo(bounds.getRight() - cornerSize, bounds.getY() + 0.5f);
+        g.strokePath(topLine, juce::PathStrokeType(1.0f));
+
+        // Hover: dezenter Halo-Glow rundherum (kein gradient blob mehr).
+        if (isMouseOverButton && !isButtonDown && !isToggled) {
+            g.setColour(juce::Colour(cAccent).withAlpha(0.18f));
+            g.drawRoundedRectangle(bounds.expanded(0.5f), cornerSize, 1.2f);
+        }
     }
 
     // Hardware-style rotary knob.
@@ -600,13 +639,25 @@ public:
         return juce::Font(16.0f);
     }
 
-    // Besseres PopupMenu Styling
+    // PopupMenu: leichter Drop-Shadow durch zwei konzentrische Rahmen, plus
+    // gerundete Hintergrundfläche (statt einem rechteckigen Block mit harter
+    // 1-px-Outline, was sehr nach Win-XP aussah).
     void drawPopupMenuBackground(juce::Graphics& g, int width, int height) override
     {
-        g.fillAll(findColour(juce::PopupMenu::backgroundColourId));
+        const auto bounds = juce::Rectangle<float>(0.0f, 0.0f, (float)width, (float)height);
+        const float corner = 8.0f;
 
-        g.setColour(findColour(juce::PopupMenu::textColourId).withAlpha(0.1f));
-        g.drawRect(0, 0, width, height);
+        // Outer „shadow" stripe (nur sichtbar wenn das Popup nicht am Bildrand klebt).
+        g.setColour(juce::Colours::black.withAlpha(0.55f));
+        g.fillRoundedRectangle(bounds, corner);
+
+        // Eigentliche Fläche, leicht eingerückt — kein knallharter Vollrand.
+        g.setColour(findColour(juce::PopupMenu::backgroundColourId));
+        g.fillRoundedRectangle(bounds.reduced(1.0f), corner - 1.0f);
+
+        // Sehr dünne, kühle Innenkante.
+        g.setColour(juce::Colour(cBorderHard).withAlpha(0.6f));
+        g.drawRoundedRectangle(bounds.reduced(0.5f), corner, 0.8f);
     }
 
     void drawDocumentWindowTitleBar(juce::DocumentWindow& window,
@@ -616,16 +667,84 @@ public:
         const juce::Image* icon,
         bool drawTitleTextOnLeft) override
     {
-        // Hintergrund der Titelleiste zeichnen
-        g.fillAll(juce::Colours::darkgrey.darker());
+        // Vertikaler Verlauf statt flachem Mittelgrau — wirkt deutlich
+        // hochwertiger und passt zur abgesetzten Window-Background-Farbe.
+        const auto bounds = juce::Rectangle<float>(0.0f, 0.0f, (float)w, (float)h);
+        juce::ColourGradient grad(juce::Colour(cBgRaised),  bounds.getX(), bounds.getY(),
+                                   juce::Colour(cBgPanel),   bounds.getX(), bounds.getBottom(), false);
+        g.setGradientFill(grad);
+        g.fillRect(bounds);
 
-        // Optional: Titel-Text zeichnen
-        g.setColour(juce::Colours::white);
-        g.setFont(juce::Font(15.0f, juce::Font::bold));
+        // Dünne Trennlinie zur Inhaltsfläche.
+        g.setColour(juce::Colour(cBorderSoft));
+        g.fillRect(0, h - 1, w, 1);
 
+        // Titel: Medium-weight, leicht ausgegraut, nicht aufdringlich.
+        g.setColour(juce::Colour(cTextStrong));
+        g.setFont(juce::Font(14.0f, juce::Font::FontStyleFlags::plain));
         g.drawText(window.getName(),
             titleSpaceX, 0, titleSpaceW, h,
             juce::Justification::centred, true);
+    }
+
+    // TabBar: Underline-Style. Aktiver Tab kriegt eine 2-px-Akzent-Linie
+    // unten (wie in Linear/Vercel/VSCode), kein Box-Outline mehr.
+    void drawTabButton(juce::TabBarButton& button, juce::Graphics& g,
+                       bool isMouseOver, bool isMouseDown) override
+    {
+        const auto area = button.getActiveArea().toFloat();
+        const bool isActive = button.isFrontTab();
+
+        // Hover-/Aktiv-Hintergrund.
+        if (isActive)
+        {
+            g.setColour(juce::Colour(cBgPanel));
+            g.fillRect(area);
+        }
+        else if (isMouseOver)
+        {
+            g.setColour(juce::Colour(cBgInputHover).withAlpha(0.5f));
+            g.fillRect(area);
+        }
+
+        // Underline für aktiven Tab.
+        if (isActive)
+        {
+            g.setColour(juce::Colour(cAccent));
+            g.fillRect(area.getX(), area.getBottom() - 2.0f, area.getWidth(), 2.0f);
+        }
+
+        // Text.
+        g.setColour(isActive ? juce::Colour(cTextStrong)
+                             : juce::Colour(cTextMuted).withAlpha(isMouseOver ? 0.95f : 0.7f));
+        g.setFont(juce::Font(13.0f, isActive ? juce::Font::bold : juce::Font::plain));
+        g.drawText(button.getButtonText(), area.toNearestInt(), juce::Justification::centred, false);
+    }
+
+    // TextEditor-Outline: Default ist eine harte 1-px-Box. Wir machen sie
+    // dünner und im Focused-State doppelt — innen subtil, außen Akzent.
+    void drawTextEditorOutline(juce::Graphics& g, int width, int height,
+                               juce::TextEditor& editor) override
+    {
+        if (editor.isReadOnly() || !editor.isEnabled())
+            return;
+
+        const auto bounds = juce::Rectangle<float>(0.0f, 0.0f, (float)width, (float)height).reduced(0.5f);
+
+        if (editor.hasKeyboardFocus(true))
+        {
+            // Akzent-Border + dezenter Halo außenrum.
+            g.setColour(juce::Colour(cAccent).withAlpha(0.25f));
+            g.drawRoundedRectangle(bounds.expanded(1.0f), 5.0f, 2.0f);
+
+            g.setColour(juce::Colour(cAccent));
+            g.drawRoundedRectangle(bounds, 4.0f, 1.0f);
+        }
+        else
+        {
+            g.setColour(juce::Colour(cBorderSoft));
+            g.drawRoundedRectangle(bounds, 4.0f, 1.0f);
+        }
     }
 
     /*void drawPopupMenuItem(juce::Graphics& g, const juce::Rectangle<int>& area,

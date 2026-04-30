@@ -371,40 +371,46 @@ Rectangle<int>*  AudioRegion::getThumbnailBounds() {
 };
 
 void AudioRegion::paint (Graphics& g)
-{  
+{
     Rectangle<int> b = *this->thumbnailBounds;
     int effectiveWidth = getWidth() ;//(this->getNumSamples() / sampleRate) * this->zoom;
-    
-	if (dragger->isSelected(this)) {
-		g.setColour(Colours::steelblue.brighter());
-	}
-	else {
-		g.setColour(Colours::steelblue);
-	}
 
-    g.fillRoundedRectangle(b.getX(),b.getY(),effectiveWidth,b.getHeight(),10);
-    g.setColour(Colours::white);
-    
+    // Track-Farbe als Region-Body — so erkennt man auf einen Blick, zu welchem
+    // Track die Region gehört, auch wenn sie hin- und hergeschoben wurde.
+    juce::Colour bodyColour(0xff4682b4); // steelblue als Fallback
+    if (auto* parentTrack = dynamic_cast<Track*>(getParentComponent()))
+        bodyColour = parentTrack->getTrackColour();
+
+    const bool sel = (dragger != nullptr) && dragger->isSelected(this);
+    const juce::Colour fill   = sel ? bodyColour.brighter(0.25f) : bodyColour;
+    const juce::Colour stroke = bodyColour.darker(0.5f);
+    const juce::Colour textCol = bodyColour.contrasting(0.85f);
+
+    g.setColour(fill);
+    g.fillRoundedRectangle(b.getX(), b.getY(), effectiveWidth, b.getHeight(), 10);
+
+    // Wellenform in halbtransparentem Weiß — auf jedem Hue gut lesbar.
+    g.setColour(juce::Colours::white.withAlpha(0.85f));
     double audioLength = this->thumbnail->getTotalLength();
     this->thumbnail->drawChannels(g, b, 0.0, audioLength, 1.0f);
-    
-    g.setColour(Colours::steelblue.darker());    
-    g.drawRoundedRectangle(b.getX(),b.getY(),effectiveWidth,b.getHeight(),10,1.0f);
-    
-    g.setColour(Colours::darkblue);
+
+    g.setColour(stroke);
+    g.drawRoundedRectangle(b.getX(), b.getY(), effectiveWidth, b.getHeight(), 10, 1.0f);
+
+    g.setColour(textCol);
     g.setFont(14.0);
     g.drawText(name, 10, 10, 140, 20, juce::Justification::left);
     g.drawText(juce::String(sampleOffset), 10, 30, 140, 20, juce::Justification::left);
 
-    if(loop) {
-        for (int i = 1; i <= loopCount;i++) {
-            g.setColour(Colours::steelblue);
-            Rectangle<int> loopBounds(b.getX() + i * effectiveWidth / (loopCount + 1),b.getY(),effectiveWidth,b.getHeight());
-            g.fillRoundedRectangle(b.getX() + i * effectiveWidth / (loopCount + 1) ,b.getY(),effectiveWidth,b.getHeight(),10);
-            g.setColour(Colours::grey);
+    if (loop) {
+        for (int i = 1; i <= loopCount; i++) {
+            g.setColour(fill);
+            Rectangle<int> loopBounds(b.getX() + i * effectiveWidth / (loopCount + 1), b.getY(), effectiveWidth, b.getHeight());
+            g.fillRoundedRectangle(b.getX() + i * effectiveWidth / (loopCount + 1), b.getY(), effectiveWidth, b.getHeight(), 10);
+            g.setColour(juce::Colours::white.withAlpha(0.6f));
 
             audioLength = this->thumbnail->getTotalLength();
-            this->thumbnail->drawChannels(g, loopBounds,0.0,audioLength, 1.0f);
+            this->thumbnail->drawChannels(g, loopBounds, 0.0, audioLength, 1.0f);
         }
     }
     dirty = false;

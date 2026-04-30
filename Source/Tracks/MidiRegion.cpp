@@ -198,11 +198,23 @@ long MidiRegion::snapSampleToGrid(long sample) const {
 }
 
 void MidiRegion::paint(Graphics& g) {
-    g.setColour(dragger->isSelected(this) ? Colours::orange.brighter().brighter() : Colours::orange.brighter());
+    // Track-Farbe als Region-Body — gleiche Logik wie bei AudioRegion.
+    juce::Colour bodyColour(0xffffa500); // orange als Fallback
+    if (auto* parentTrack = dynamic_cast<Track*>(getParentComponent()))
+        bodyColour = parentTrack->getTrackColour();
+
+    const bool sel = (dragger != nullptr) && dragger->isSelected(this);
+    const juce::Colour fill = sel ? bodyColour.brighter(0.30f) : bodyColour.brighter(0.05f);
+    const juce::Colour textCol = bodyColour.contrasting(0.85f);
+
+    g.setColour(fill);
     g.fillRoundedRectangle(getLocalBounds().toFloat(), 10);
 
+    g.setColour(bodyColour.darker(0.5f));
+    g.drawRoundedRectangle(getLocalBounds().toFloat().reduced(0.5f), 10, 1.0f);
+
     // BPM-Info anzeigen
-    g.setColour(Colours::white);
+    g.setColour(textCol);
     g.setFont(Font(10.0f));
     String tempoInfo = String(currentBPM, 1) + " BPM";
     g.drawText(tempoInfo, getLocalBounds().removeFromTop(15), Justification::centredLeft);
@@ -223,7 +235,7 @@ void MidiRegion::paint(Graphics& g) {
         }
     }
 
-    g.setColour(Colours::lightgrey);
+    g.setColour(juce::Colours::white.withAlpha(0.85f));
     double visibleTime = (getNumSamples() / sampleRate);
     midiThumbnail->drawChannels(g, 0.0, visibleTime, 1.0f);
 }

@@ -102,6 +102,12 @@ public:
 		return this->navigator;
 	}
 
+    // Regenbogen-Farbe für diesen Track. Basis ist der Index des Tracks
+    // im Navigator — alle gleichzeitig sichtbaren Tracks bekommen dadurch
+    // unterschiedliche Hues. Regionen, die auf diesem Track liegen, fragen
+    // dieselbe Farbe ab, sodass der visuelle Bezug erhalten bleibt.
+    juce::Colour getTrackColour() const;
+
     juce::String getInstrumentName() {
         return instrumentName;
     }
