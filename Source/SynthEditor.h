@@ -48,7 +48,12 @@ public:
     void cleanUp();
     void newFile();
     void saveFile();
+    void saveFileAs();
     void openFile();
+    // Load a project directly from a file (no chooser). Both the chooser-based
+    // openFile() and external callers (main menu "Open Recent") route through
+    // this so every load path runs the same module+track restore sequence.
+    void openFile(juce::File file);
     void openTracks(File file);
     void loadMidiRegions(juce::ValueTree& track, Track* t);
     void openSampleEditor(SamplerModule* sm);
@@ -143,7 +148,8 @@ public:
         ALIGN_X = 11,
         RESET_GUI_POS = 12,
         EXPORT_AUDIO = 13,
-        ALIGN_TO_GRID = 14
+        ALIGN_TO_GRID = 14,
+        SAVE_AS = 15
     };
 
     // member access

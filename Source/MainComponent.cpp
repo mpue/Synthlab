@@ -973,8 +973,20 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 	if (index == 0) {
 		menu.addCommandItem(commandManager.get(), SynthEditor::CommandIds::NEW);
 		menu.addCommandItem(commandManager.get(), SynthEditor::CommandIds::LOAD);
+
+		// Open Recent submenu — IDs 2000..2099 reserved for recent files so
+		// they don't collide with the binary-resource Samples menu (1000+i)
+		// further down. The list is loaded fresh every time the menu opens.
+		PopupMenu recentMenu;
+		Project::getInstance()->loadRecentFileList();
+		const StringArray& recent = Project::getInstance()->getRecentFiles();
+		for (int i = 0; i < recent.size() && i < 100; ++i)
+			recentMenu.addItem(2000 + i, recent.getReference(i));
+		menu.addSubMenu("Open Recent", recentMenu, recent.size() > 0);
+
 		menu.addItem(13, "Export Audio...", true, false, nullptr);
 		menu.addCommandItem(commandManager.get(), SynthEditor::CommandIds::SAVE);
+		menu.addCommandItem(commandManager.get(), SynthEditor::CommandIds::SAVE_AS);
 		menu.addItem(5, "Settings", true, false, nullptr);
 		menu.addItem(6, "Import Audio", true, false, nullptr);
 		menu.addItem(12, "Import MIDI", true, false, nullptr);
@@ -1310,6 +1322,34 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	}
 	else if (menuItemID == 999) {
 		JUCEApplication::getInstance()->shutdown();
+	}
+	else if (menuItemID >= 2000 && menuItemID < 2100) {
+		// Open Recent — must run BEFORE the >=1000 samples branch below,
+		// otherwise the catch-all there would eat these IDs.
+		const StringArray& recent = Project::getInstance()->getRecentFiles();
+		const int idx = menuItemID - 2000;
+		if (idx >= 0 && idx < recent.size()) {
+			juce::File file(recent.getReference(idx));
+			editor->setRunning(false);
+			editor->openFile(file);
+			editor->setRunning(true);
+
+			// Same Navigator-tab restoration as the toolbar Open path —
+			// SynthEditor::cleanUp() strips every tab except Editor; if the
+			// loaded project has tracks, recreate the Navigator tab so the
+			// user lands on the arrange view.
+			juce::Component::SafePointer<MainComponent> safeThis(this);
+			juce::Timer::callAfterDelay(150, [safeThis]() {
+				if (auto* self = safeThis.getComponent()) {
+					if (self->editorView != nullptr
+						&& self->editorView->getNavigator() != nullptr
+						&& !self->editorView->getNavigator()->getTracks().empty())
+					{
+						self->editorView->OpenTrackView();
+					}
+				}
+			});
+		}
 	}
 	else if (menuItemID >= 1000) {
 		String xmlData = sampleData.getReference(menuItemID - 1000);

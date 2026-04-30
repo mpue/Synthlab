@@ -1481,6 +1481,21 @@ Module* SynthEditor::loadModule() {
 }
 
 
+void SynthEditor::saveFileAs() {
+	// Always show the file chooser regardless of the project's current path.
+	// Implemented as a one-shot toggle of the "new file" flag so we can reuse
+	// every code path inside saveFile() (master-FX persistence, _tracks.xml /
+	// _audio.xml siblings, dirty reset, updateProject) without duplicating it.
+	const bool wasNew = Project::getInstance()->isNewFile();
+	Project::getInstance()->setNewFile(true);
+	saveFile();
+	// saveFile() flips newFile back to false on success; if the user cancelled
+	// the chooser, restore the previous state so a stale flag doesn't surprise
+	// the next plain Save.
+	if (Project::getInstance()->isNewFile())
+		Project::getInstance()->setNewFile(wasNew);
+}
+
 void SynthEditor::saveFile() {
 
 #if JUCE_IOS
@@ -1674,22 +1689,17 @@ void SynthEditor::openFile() {
 	FileChooser chooser("Select file to open", File::getSpecialLocation(File::commonDocumentsDirectory), "*.xml;*.slb", true, true);
 
 	if (chooser.browseForFileToOpen()) {
+#if JUCE_IOS
 		cleanUp();
 		newFile();
 
-#if JUCE_IOS
 		URL url = chooser.getURLResult();
 		InputStream* is = url.createInputStream(false);
 		String data = is->readEntireStreamAsString();
 		delete is;
 
 		ScopedPointer<XmlElement> xml = XmlDocument(data).getDocumentElement();
-#else
-		File file = chooser.getResult();
-		std::unique_ptr<XmlElement> xml = XmlDocument(file).getDocumentElement();
 
-		Project::getInstance()->addRecentFile(file.getFullPathName());
-#endif
 		ValueTree v = ValueTree::fromXml(*xml.get());
 		setRunning(false);
 		ModuleUtils::loadStructure(root->getModules(), root->getConnections(), &v, this);
@@ -1710,14 +1720,9 @@ void SynthEditor::openFile() {
 			}
 		}
 
-		// Modules and connections are loaded — let the mixer panels mirror any
-		// FX PluginModules that sit between a source and an AudioOut into their
-		// fxChain[] slot UI.
 		if (mixer != nullptr)
 			mixer->reconstructAllFXChains();
 
-		// Master FX live outside the module graph (see MasterChannelPanel::insertFX)
-		// and are persisted as a separate ValueTree child. Apply them here.
 		if (mixer != nullptr && mixer->getMasterPanel() != nullptr) {
 			ValueTree masterFX = v.getChildWithName("MasterFXChain");
 			if (masterFX.isValid())
@@ -1725,27 +1730,97 @@ void SynthEditor::openFile() {
 		}
 
 		Project::getInstance()->setRoot(root.get());
-
 		resized();
-
 		setCurrentLayer(v.getProperty("layer").toString().getIntValue());
 		setLocked(v.getProperty("lock").toString().getIntValue() > 0);
-
 		notifyListeners();
-
 		xml = nullptr;
 
-		openTracks(file);
-
-#if JUCE_IOS
 		updateProject(url);
-#else
-		updateProject(file);
-#endif
-
+		Project::getInstance()->setNewFile(false);
 		setRunning(true);
+#else
+		// Desktop path delegates to the File overload so "Open Recent" runs the
+		// exact same restore sequence as the file chooser.
+		openFile(chooser.getResult());
+#endif
 	}
 }
+
+#if !JUCE_IOS
+void SynthEditor::openFile(juce::File file) {
+	if (!file.existsAsFile())
+		return;
+
+	cleanUp();
+	newFile();
+
+	std::unique_ptr<XmlElement> xml = XmlDocument(file).getDocumentElement();
+	if (xml == nullptr)
+		return;
+
+	Project::getInstance()->addRecentFile(file.getFullPathName());
+
+	ValueTree v = ValueTree::fromXml(*xml.get());
+	setRunning(false);
+	ModuleUtils::loadStructure(root->getModules(), root->getConnections(), &v, this);
+
+	{
+		long maxIdx = 0;
+		for (auto* m : *root->getModules())
+			if (m->getIndex() > maxIdx) maxIdx = m->getIndex();
+		PrefabFactory::getInstance()->updateLastModuleIndex(maxIdx);
+	}
+
+	for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
+		addAndMakeVisible((*it));
+		configureAudioModule((*it), this);
+		ImageModule* im;
+		if ((im = dynamic_cast<ImageModule*>(*it)) != NULL) {
+			im->toBack();
+		}
+	}
+
+	// Modules and connections are loaded — let the mixer panels mirror any
+	// FX PluginModules that sit between a source and an AudioOut into their
+	// fxChain[] slot UI.
+	if (mixer != nullptr)
+		mixer->reconstructAllFXChains();
+
+	// Master FX live outside the module graph (see MasterChannelPanel::insertFX)
+	// and are persisted as a separate ValueTree child. Apply them here.
+	if (mixer != nullptr && mixer->getMasterPanel() != nullptr) {
+		ValueTree masterFX = v.getChildWithName("MasterFXChain");
+		if (masterFX.isValid())
+			mixer->getMasterPanel()->applyFXChainState(masterFX);
+	}
+
+	Project::getInstance()->setRoot(root.get());
+
+	resized();
+
+	setCurrentLayer(v.getProperty("layer").toString().getIntValue());
+	setLocked(v.getProperty("lock").toString().getIntValue() > 0);
+
+	notifyListeners();
+
+	xml = nullptr;
+
+	openTracks(file);
+
+	updateProject(file);
+	// Mark the project as "has a known file" so the next Save writes back to
+	// this path instead of popping a Save-As dialog.
+	Project::getInstance()->setNewFile(false);
+
+	setRunning(true);
+}
+#else
+void SynthEditor::openFile(juce::File /*file*/) {
+	// On iOS files are accessed through URLs/InputStreams; the no-arg openFile()
+	// handles that path inline.
+}
+#endif
 
 void SynthEditor::openTracks(File file)
 {
@@ -2253,6 +2328,7 @@ void SynthEditor::getAllCommands(Array<CommandID>& commands) {
 	// commands.add({ SynthEditor::CommandIds::DUPLICATE });
 	commands.add({ SynthEditor::CommandIds::DELETE_SELECTED });
 	commands.add({ SynthEditor::CommandIds::SAVE });
+	commands.add({ SynthEditor::CommandIds::SAVE_AS });
 	commands.add({ SynthEditor::CommandIds::LOAD });
 	commands.add({ SynthEditor::CommandIds::EXPORT_AUDIO });
 	commands.add({ SynthEditor::CommandIds::LOAD_MODULE });
@@ -2281,6 +2357,10 @@ void SynthEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo& re
 	case SynthEditor::CommandIds::SAVE:
 		result.setInfo("Save", String(), String(), 0);
 		result.addDefaultKeypress('s', ModifierKeys::commandModifier);
+		break;
+	case SynthEditor::CommandIds::SAVE_AS:
+		result.setInfo("Save As...", String(), String(), 0);
+		result.addDefaultKeypress('s', ModifierKeys::commandModifier | ModifierKeys::shiftModifier);
 		break;
 	case SynthEditor::CommandIds::LOAD:
 		result.setInfo("Load", String(), String(), 0);
@@ -2344,6 +2424,10 @@ bool SynthEditor::perform(const InvocationInfo& info) {
 	}
 	else if (info.commandID == SynthEditor::CommandIds::SAVE) {
 		saveFile();
+		return true;
+	}
+	else if (info.commandID == SynthEditor::CommandIds::SAVE_AS) {
+		saveFileAs();
 		return true;
 	}
 	else if (info.commandID == SynthEditor::CommandIds::LOAD) {

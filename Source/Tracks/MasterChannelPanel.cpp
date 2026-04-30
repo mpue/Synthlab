@@ -298,6 +298,29 @@ void MasterChannelPanel::paint (Graphics& g)
                 }
             }
 
+            // LED-segment overlay: thin dark horizontal lines at a fixed pitch
+            // to break the solid bar into a stack of discrete LEDs. Drawn
+            // across the whole bar (lit and unlit alike) so the segmentation
+            // is visible even when the meter is mostly dark. A subtle vertical
+            // black line down the middle hints at a two-column LED package.
+            {
+                const int ledStep   = 4;     // ~3px LED + 1px gap
+                const float gapAlpha = 0.65f;
+                g.setColour(juce::Colours::black.withAlpha(gapAlpha));
+                for (int y = vuY + ledStep - 1; y < vuY + vuH; y += ledStep)
+                    g.fillRect(bx, y, vuW, 1);
+
+                // Faint highlight line on the top edge of each LED — sells the
+                // illusion of glassy segments catching light.
+                g.setColour(juce::Colours::white.withAlpha(0.06f));
+                for (int y = vuY; y < vuY + vuH; y += ledStep)
+                    g.fillRect(bx, y, vuW, 1);
+
+                // Vertical centre divider (1px) for a "twin-LED" look
+                g.setColour(juce::Colours::black.withAlpha(0.35f));
+                g.fillRect(bx + vuW / 2, vuY, 1, vuH);
+            }
+
             // Peak-hold line (2px bright horizontal bar)
             const int peakFill = juce::jlimit(0, vuH, (int)(pkVals[ch] * vuH));
             if (peakFill > 1) {
