@@ -176,7 +176,7 @@ public:
         {
             g.setColour(backgroundColour.brighter(0.1f));
 
-            // Glow-Effekt f�r Hover
+            // Glow-Effekt f�r Hover
             juce::Path glowPath;
             glowPath.addRoundedRectangle(bounds.expanded(2.0f), cornerSize + 2.0f);
             juce::ColourGradient glow(juce::Colour(0x334d9eff), bounds.getCentreX(), bounds.getCentreY(),
@@ -196,34 +196,178 @@ public:
         g.drawRoundedRectangle(bounds, cornerSize, 1.0f);
     }
 
-    // Custom Slider Drawing mit modernem Look
+    // Hardware-style rotary knob.
+    // Layers (back to front): tick marks → background track arc → soft glow
+    // halo on the lit portion → sharp accent value arc → drop shadow → bevel
+    // ring → metallic body gradient → glassy upper-left highlight → rim
+    // outline → recessed indent line → glowing LED indicator at the tip.
     void drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height, float sliderPos,
         const float rotaryStartAngle, const float rotaryEndAngle, juce::Slider& slider) override
     {
-        auto radius = (float)juce::jmin(width / 2, height / 2) - 4.0f;
-        auto centreX = (float)x + (float)width * 0.5f;
-        auto centreY = (float)y + (float)height * 0.5f;
-        auto rx = centreX - radius;
-        auto ry = centreY - radius;
-        auto rw = radius * 2.0f;
-        auto angle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
+        const float diameter = (float) juce::jmin(width, height);
+        const float centreX  = (float) x + (float) width  * 0.5f;
+        const float centreY  = (float) y + (float) height * 0.5f;
+        const float outerR   = diameter * 0.5f - 2.0f;
+        const float trackR   = outerR - 1.0f;
 
-        // Outer ring (track)
-        g.setColour(juce::Colour(0xff404040));
-        g.drawEllipse(rx, ry, rw, rw, 3.0f);
+        const float angle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
 
-        // Inner fill
-        juce::Path valuePath;
-        valuePath.addPieSegment(rx, ry, rw, rw, rotaryStartAngle, angle, 0.6f);
-        g.setColour(juce::Colour(0xff4d9eff));
-        g.fillPath(valuePath);
+        const juce::Colour accent      = slider.findColour(juce::Slider::rotarySliderFillColourId);
+        const juce::Colour accentBright = accent.brighter(0.40f);
+        const juce::Colour accentDim    = accent.withAlpha(0.22f);
 
-        // Thumb (Zeiger)
-        juce::Path thumb;
-        auto thumbWidth = radius * 0.15f;
-        thumb.addRectangle(-thumbWidth * 0.5f, -radius * 0.9f, thumbWidth, radius * 0.3f);
-        g.setColour(juce::Colour(0xffffffff));
-        g.fillPath(thumb, juce::AffineTransform::rotation(angle).translated(centreX, centreY));
+        const juce::Colour bevelLight (0xff70747a);
+        const juce::Colour bevelDark  (0xff0e0e10);
+        const juce::Colour bodyTop    (0xff5a5d63);
+        const juce::Colour bodyMid    (0xff35373b);
+        const juce::Colour bodyBottom (0xff1d1e21);
+        const juce::Colour trackBg    (0xff141416);
+
+        const bool active = slider.isEnabled();
+        const bool hot    = active && (slider.isMouseOverOrDragging() || slider.hasKeyboardFocus(true));
+
+        const float halfPi = juce::MathConstants<float>::halfPi;
+        auto polar = [&](float a, float r, float& outX, float& outY) {
+            outX = centreX + std::cos(a - halfPi) * r;
+            outY = centreY + std::sin(a - halfPi) * r;
+        };
+
+        // --- 1) Tick marks around the perimeter -----------------------------
+        if (diameter >= 24.0f) {
+            const int   numTicks  = 11;
+            const float tickInner = outerR + 0.5f;
+            const float tickOuter = outerR + 3.0f;
+            g.setColour(juce::Colours::white.withAlpha(active ? 0.18f : 0.10f));
+            for (int i = 0; i < numTicks; ++i) {
+                const float t = (float) i / (float) (numTicks - 1);
+                const float a = rotaryStartAngle + t * (rotaryEndAngle - rotaryStartAngle);
+                float ix, iy, ox, oy;
+                polar(a, tickInner, ix, iy);
+                polar(a, tickOuter, ox, oy);
+                g.drawLine(ix, iy, ox, oy, 1.0f);
+            }
+        }
+
+        // --- 2) Background track arc (full sweep) ---------------------------
+        {
+            juce::Path bg;
+            bg.addCentredArc(centreX, centreY, trackR, trackR, 0.0f,
+                             rotaryStartAngle, rotaryEndAngle, true);
+            g.setColour(trackBg);
+            g.strokePath(bg, juce::PathStrokeType(3.5f, juce::PathStrokeType::curved,
+                                                  juce::PathStrokeType::rounded));
+        }
+
+        // --- 3) Soft halo behind the value arc ------------------------------
+        if (active) {
+            juce::Path halo;
+            halo.addCentredArc(centreX, centreY, trackR, trackR, 0.0f,
+                               rotaryStartAngle, angle, true);
+            g.setColour(hot ? accent.withAlpha(0.40f) : accentDim);
+            g.strokePath(halo, juce::PathStrokeType(8.5f, juce::PathStrokeType::curved,
+                                                    juce::PathStrokeType::rounded));
+        }
+
+        // --- 4) Foreground value arc (sharp accent line) --------------------
+        {
+            juce::Path val;
+            val.addCentredArc(centreX, centreY, trackR, trackR, 0.0f,
+                              rotaryStartAngle, angle, true);
+            g.setColour(active ? (hot ? accentBright : accent) : juce::Colour(0xff5a5a5a));
+            g.strokePath(val, juce::PathStrokeType(3.0f, juce::PathStrokeType::curved,
+                                                   juce::PathStrokeType::rounded));
+        }
+
+        // --- 5) Knob body — drop shadow + bevel ring + metallic interior ----
+        const float bodyR = outerR - 6.0f;
+        if (bodyR <= 1.0f)
+            return; // too small to draw a meaningful body
+        const float bx = centreX - bodyR;
+        const float by = centreY - bodyR;
+        const float bw = bodyR * 2.0f;
+
+        // Drop shadow
+        g.setColour(juce::Colours::black.withAlpha(0.45f));
+        g.fillEllipse(bx + 1.0f, by + 2.0f, bw, bw);
+
+        // Outer bevel — diagonal light gradient
+        {
+            juce::ColourGradient bevel(bevelLight, bx,        by,
+                                       bevelDark,  bx + bw,   by + bw, false);
+            g.setGradientFill(bevel);
+            g.fillEllipse(bx, by, bw, bw);
+        }
+
+        // Inner body — slightly inset, vertical brushed-metal gradient
+        const float innerR = bodyR - 2.0f;
+        const float ix = centreX - innerR;
+        const float iy = centreY - innerR;
+        const float iw = innerR * 2.0f;
+        {
+            juce::ColourGradient body(bodyTop,    ix, iy,
+                                      bodyBottom, ix, iy + iw, false);
+            body.addColour(0.5, bodyMid);
+            g.setGradientFill(body);
+            g.fillEllipse(ix, iy, iw, iw);
+        }
+
+        // Glassy radial highlight on upper-left
+        {
+            const float hr = innerR * 0.9f;
+            juce::ColourGradient hi(juce::Colours::white.withAlpha(0.20f),
+                                    centreX - innerR * 0.4f, centreY - innerR * 0.4f,
+                                    juce::Colours::white.withAlpha(0.0f),
+                                    centreX + hr, centreY + hr, true);
+            g.setGradientFill(hi);
+            g.fillEllipse(ix, iy, iw, iw);
+        }
+
+        // Rim outline + inner darker ring (chamfer)
+        g.setColour(juce::Colours::black.withAlpha(0.7f));
+        g.drawEllipse(ix, iy, iw, iw, 1.0f);
+        g.setColour(juce::Colours::white.withAlpha(0.05f));
+        g.drawEllipse(ix + 1.0f, iy + 1.0f, iw - 2.0f, iw - 2.0f, 1.0f);
+
+        // --- 6) Indicator: recessed dark line with a glowing tip ------------
+        {
+            const float lineInner = innerR * 0.30f;
+            const float lineOuter = innerR * 0.92f;
+
+            float lx0, ly0, lx1, ly1;
+            polar(angle, lineInner, lx0, ly0);
+            polar(angle, lineOuter, lx1, ly1);
+
+            // Dark recessed indent
+            g.setColour(juce::Colours::black.withAlpha(0.85f));
+            g.drawLine(lx0, ly0, lx1, ly1, 2.5f);
+            // Faint highlight directly beside it (sells the recess)
+            g.setColour(juce::Colours::white.withAlpha(0.10f));
+            g.drawLine(lx0, ly0 + 1.0f, lx1, ly1 + 1.0f, 1.0f);
+
+            // Glowing LED dot at the tip
+            const float dotR = juce::jmax(2.0f, innerR * 0.11f);
+            float dotX, dotY;
+            polar(angle, lineOuter - dotR * 0.3f, dotX, dotY);
+
+            if (active) {
+                // halo
+                juce::ColourGradient dotHalo(accentBright.withAlpha(hot ? 0.70f : 0.55f),
+                                              dotX, dotY,
+                                              accentBright.withAlpha(0.0f),
+                                              dotX + dotR * 3.0f, dotY, true);
+                g.setGradientFill(dotHalo);
+                g.fillEllipse(dotX - dotR * 3.0f, dotY - dotR * 3.0f,
+                              dotR * 6.0f,         dotR * 6.0f);
+                g.setColour(accentBright);
+            } else {
+                g.setColour(juce::Colour(0xff7a7a7e));
+            }
+            g.fillEllipse(dotX - dotR, dotY - dotR, dotR * 2.0f, dotR * 2.0f);
+            // Specular speck
+            g.setColour(juce::Colours::white.withAlpha(0.85f));
+            g.fillEllipse(dotX - dotR * 0.40f, dotY - dotR * 0.55f,
+                          dotR * 0.6f,          dotR * 0.6f);
+        }
     }
 
     /*
@@ -403,7 +547,7 @@ public:
         g.fillRoundedRectangle(thumbBounds.toFloat(), cornerSize);
     }
 
-    // Bessere Fonts f�r bessere Lesbarkeit
+    // Bessere Fonts f�r bessere Lesbarkeit
     juce::Font getTextButtonFont(juce::TextButton&, int buttonHeight) override
     {
         return juce::Font(juce::jmin(15.0f, (float)buttonHeight * 0.6f), juce::Font::FontStyleFlags::plain);

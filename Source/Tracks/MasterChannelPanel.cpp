@@ -268,58 +268,118 @@ void MasterChannelPanel::paint (Graphics& g)
         const int yellowH = (int)(0.20f * vuH);   // middle 20%
         // top 10% = red
 
+        // Zone colours captured here so background tints, lit fill, halo glow
+        // and peak indicator all stay in sync without scattering hex literals.
+        const juce::Colour cGreen (0xff22bb22);
+        const juce::Colour cYellow(0xffddcc00);
+        const juce::Colour cRed   (0xffcc2200);
+
         for (int ch = 0; ch < 2; ++ch) {
             const int bx = vuX[ch];
 
-            // Background
+            // (1) Base background: solid near-black ...
             g.setColour(juce::Colour(0xff1a1a1a));
             g.fillRect(bx, vuY, vuW, vuH);
+
+            // ... plus a *very* faint per-zone tint so unlit segments still hint
+            // at the colour they would light up in. Gives the meter the
+            // "green/green/yellow/red" look even when silent.
+            const int yGreenTop  = vuY + vuH - greenH;
+            const int yYellowTop = yGreenTop - yellowH;
+            g.setColour(cGreen .withAlpha(0.10f)); g.fillRect(bx, yGreenTop,  vuW, greenH);
+            g.setColour(cYellow.withAlpha(0.10f)); g.fillRect(bx, yYellowTop, vuW, yellowH);
+            g.setColour(cRed   .withAlpha(0.12f)); g.fillRect(bx, vuY,        vuW, vuH - greenH - yellowH);
 
             const int fill = juce::jlimit(0, vuH, (int)(vals[ch] * vuH));
 
             if (fill > 0) {
-                // Green zone
+                // (2) Bright lit fill — same zone semantics as before
                 const int gFill = juce::jmin(fill, greenH);
-                g.setColour(juce::Colour(0xff22bb22));
+                g.setColour(cGreen);
                 g.fillRect(bx, vuY + vuH - gFill, vuW, gFill);
 
-                // Yellow zone
                 if (fill > greenH) {
                     const int yFill = juce::jmin(fill - greenH, yellowH);
-                    g.setColour(juce::Colour(0xffddcc00));
+                    g.setColour(cYellow);
                     g.fillRect(bx, vuY + vuH - greenH - yFill, vuW, yFill);
                 }
 
-                // Red zone
                 if (fill > greenH + yellowH) {
                     const int rFill = fill - greenH - yellowH;
-                    g.setColour(juce::Colour(0xffcc2200));
+                    g.setColour(cRed);
                     g.fillRect(bx, vuY + vuH - greenH - yellowH - rFill, vuW, rFill);
                 }
             }
 
-            // LED-segment overlay: thin dark horizontal lines at a fixed pitch
-            // to break the solid bar into a stack of discrete LEDs. Drawn
-            // across the whole bar (lit and unlit alike) so the segmentation
-            // is visible even when the meter is mostly dark. A subtle vertical
-            // black line down the middle hints at a two-column LED package.
+            // (3) LED-segment overlay: thin dark horizontal lines at a fixed
+            // pitch to break the bar into a stack of discrete LEDs, plus a
+            // faint white edge highlight on each segment.
+            const int ledStep = 4; // ~3px LED + 1px gap
             {
-                const int ledStep   = 4;     // ~3px LED + 1px gap
-                const float gapAlpha = 0.65f;
-                g.setColour(juce::Colours::black.withAlpha(gapAlpha));
+                g.setColour(juce::Colours::black.withAlpha(0.65f));
                 for (int y = vuY + ledStep - 1; y < vuY + vuH; y += ledStep)
                     g.fillRect(bx, y, vuW, 1);
 
-                // Faint highlight line on the top edge of each LED — sells the
-                // illusion of glassy segments catching light.
                 g.setColour(juce::Colours::white.withAlpha(0.06f));
                 for (int y = vuY; y < vuY + vuH; y += ledStep)
                     g.fillRect(bx, y, vuW, 1);
-
-                // Vertical centre divider (1px) for a "twin-LED" look
-                g.setColour(juce::Colours::black.withAlpha(0.35f));
-                g.fillRect(bx + vuW / 2, vuY, 1, vuH);
             }
+
+            // (4) Glass-cylinder highlight: a horizontal-axis gradient that's
+            // brightest in the middle and transparent at the edges, applied
+            // over the whole bar. Sells the illusion of a curved glass front.
+            {
+                juce::ColourGradient glass(
+                    juce::Colours::white.withAlpha(0.00f), (float)bx,           (float)vuY,
+                    juce::Colours::white.withAlpha(0.00f), (float)(bx + vuW),   (float)vuY,
+                    false);
+                glass.addColour(0.5, juce::Colours::white.withAlpha(0.18f));
+                g.setGradientFill(glass);
+                g.fillRect(bx, vuY, vuW, vuH);
+
+                // Soft inner shadow on the very edges to deepen the curve
+                juce::ColourGradient edge(
+                    juce::Colours::black.withAlpha(0.35f), (float)bx,           (float)vuY,
+                    juce::Colours::black.withAlpha(0.00f), (float)(bx + 2),     (float)vuY,
+                    false);
+                g.setGradientFill(edge);
+                g.fillRect(bx, vuY, 2, vuH);
+
+                juce::ColourGradient edge2(
+                    juce::Colours::black.withAlpha(0.00f), (float)(bx + vuW - 2), (float)vuY,
+                    juce::Colours::black.withAlpha(0.35f), (float)(bx + vuW),     (float)vuY,
+                    false);
+                g.setGradientFill(edge2);
+                g.fillRect(bx + vuW - 2, vuY, 2, vuH);
+            }
+
+            // (5) Glow halo at the top of the lit fill — a radial gradient in
+            // the zone's colour that bleeds a little above and to the sides of
+            // the highest lit LED, mimicking a real LED illuminating its
+            // surroundings. Skipped when the bar is empty.
+            if (fill > 0) {
+                const int topY  = vuY + vuH - fill;
+                const float cx  = (float)(bx + vuW / 2);
+                const float cy  = (float)topY;
+                const float rad = (float)(vuW * 2);
+
+                const juce::Colour glow = (fill > greenH + yellowH) ? cRed
+                                        : (fill > greenH)           ? cYellow
+                                                                    : cGreen;
+
+                juce::ColourGradient halo(
+                    glow.withAlpha(0.32f), cx, cy,
+                    glow.withAlpha(0.00f), cx + rad, cy,
+                    true);
+                g.setGradientFill(halo);
+                g.fillRect((int)(cx - rad), (int)(cy - rad),
+                           (int)(rad * 2),  (int)(rad * 2));
+            }
+
+            // (6) Vertical centre divider for the "twin-LED" package look —
+            // drawn after the glass highlight so it stays a crisp dark line.
+            g.setColour(juce::Colours::black.withAlpha(0.35f));
+            g.fillRect(bx + vuW / 2, vuY, 1, vuH);
 
             // Peak-hold line (2px bright horizontal bar)
             const int peakFill = juce::jlimit(0, vuH, (int)(pkVals[ch] * vuH));
