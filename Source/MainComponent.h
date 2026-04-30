@@ -48,6 +48,7 @@ inline float fastCos(float x) {
 
 class BounceThread;
 class ChatGPTInterface;
+class StatusBarComponent;
 
 class MainComponent   : public juce::AudioAppComponent,
                         public juce::MenuBarModel,
@@ -224,6 +225,9 @@ private:
     
 	std::unique_ptr<AudioLevelMeter> levelMeter = nullptr;
     std::unique_ptr<SpectrumAnalyzer> spectrumAnalyzer = nullptr;
+
+    // Statuszeile am unteren Fensterrand (Studio-Modus). CPU/RAM/Audio/Tempo.
+    std::unique_ptr<StatusBarComponent> statusBar = nullptr;
 
 	std::unique_ptr<GeometryViewComponent> rotatingCube = nullptr;
 

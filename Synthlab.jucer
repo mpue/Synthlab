@@ -768,6 +768,8 @@
       <FILE id="aB7hIx" name="SilenceDialog.h" compile="0" resource="0" file="Source/SilenceDialog.h"/>
       <FILE id="bC8iJy" name="TrimDialog.cpp" compile="1" resource="0" file="Source/TrimDialog.cpp"/>
       <FILE id="cD9jKz" name="TrimDialog.h" compile="0" resource="0" file="Source/TrimDialog.h"/>
+      <FILE id="StBar1" name="StatusBarComponent.h" compile="0" resource="0"
+            file="Source/StatusBarComponent.h"/>
       <FILE id="BZiBf9" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
     </GROUP>
   </MAINGROUP>

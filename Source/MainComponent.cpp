@@ -37,6 +37,7 @@
 #include "SilenceDialog.h"
 #include "TrimDialog.h"
 #include "ChatGPTInterface.h"
+#include "StatusBarComponent.h"
 #include "AudioEngine/BPMDetector.h"
 #include "TrackIn.h"
 #include "Module.h"
@@ -334,6 +335,9 @@ void MainComponent::createCPUMeter() {
 }
 
 void MainComponent::createStudioLayout() {
+	statusBar = std::make_unique<StatusBarComponent>();
+	addAndMakeVisible(statusBar.get());
+
 	propertyView = std::make_unique<PropertyView>();
 	parser = new CommandParser();
 	transportDisplay = std::make_unique<TransportDisplayComponent>();
@@ -653,6 +657,19 @@ void MainComponent::timerCallback() {
 			loadSlider->setValue(cpuLoad);
 			cpuLoadLabel->setText(String(cpuLoad) + "%", juce::NotificationType::dontSendNotification);
 		}
+
+		// Status-Leiste aktualisieren. CPU/Tempo/Audio sind billig — jeden
+		// Tick. Process-Memory zieht einen Syscall, daher nur alle ~10 Ticks
+		// (=~ 2.5 Sekunden bei 40 ms Timer).
+		if (statusBar != nullptr) {
+			statusBar->setCpuLoad(cpuLoad);
+			statusBar->setAudioInfo(sampleRate, buffersize);
+			statusBar->setTempo(Project::getInstance()->getTempo());
+
+			static int memTickCounter = 0;
+			if ((memTickCounter++ % 10) == 0)
+				statusBar->setMemoryUsageMB(StatusBarComponent::getProcessMemoryUsageMB());
+		}
 	}
 
 }
@@ -875,15 +892,25 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 		}
 	}
 
-	// Process master FX chain (before master fader)
+	// Process master FX chain (before master fader).
+	// Buffer auf das erste Stereo-Paar (HW 0/1) beschränken — Master-FX-Plugins
+	// sind faktisch immer Stereo (Mastering, Analyzer, …). Würde man den
+	// gesamten Multi-Out-Buffer (z.B. 6/8 Kanäle) durchschicken, clearen viele
+	// Plugins die ungenutzten Kanäle gemäß ihres Bus-Layouts — Synths, die auf
+	// höhere OUT-Channel-Paare gerouted sind, werden dann stumm, obwohl ihre
+	// Pegelanzeigen weiter ausschlagen (Pegel werden vor der FX-Schleife
+	// berechnet).
 	if (mixerPanel) {
 		auto* masterPan = mixerPanel->getMasterPanel();
 		if (masterPan) {
-			juce::AudioBuffer<float> masterBuf(outputData, outNumChans, numSamples);
-			const juce::int64 transportPos = navigator != nullptr ? navigator->getSamplePosition() : 0;
-			const bool isPlaying  = navigator != nullptr && navigator->isPlaying();
-			const bool isRecording = navigator != nullptr && navigator->isRecording();
-			masterPan->processMasterFX(masterBuf, transportPos, isPlaying, isRecording);
+			const int masterFxChans = std::min(outNumChans, 2);
+			if (masterFxChans > 0) {
+				juce::AudioBuffer<float> masterBuf(outputData, masterFxChans, numSamples);
+				const juce::int64 transportPos = navigator != nullptr ? navigator->getSamplePosition() : 0;
+				const bool isPlaying  = navigator != nullptr && navigator->isPlaying();
+				const bool isRecording = navigator != nullptr && navigator->isRecording();
+				masterPan->processMasterFX(masterBuf, transportPos, isPlaying, isRecording);
+			}
 		}
 	}
 
@@ -941,6 +968,21 @@ void MainComponent::resized()
 
 		if (toolbar != nullptr)
 			toolbar->setSize(getLocalBounds().getWidth(), 50);
+
+		// Statusleiste am ganz unteren Rand, über die volle Fensterbreite.
+		// Achtung: layOutComponents weiter unten wird mit `r.getY() + 25` und
+		// `r.getHeight()` aufgerufen — der editorView ragt also effektiv 25 px
+		// unter r.getBottom() hinaus. Wir müssen also statusH + 25 reservieren,
+		// damit der Editor die Statusleiste nicht überdeckt.
+		const int statusH = 22;
+		if (statusBar != nullptr) {
+			statusBar->setBounds(0, getHeight() - statusH, getWidth(), statusH);
+			r.removeFromBottom(statusH + 25);
+			// Sicherstellen, dass die Statusleiste über allen anderen Children
+			// liegt — sonst könnte ein nachträglich hinzugefügtes Panel sie
+			// verdecken.
+			statusBar->toFront(false);
+		}
 
 		// make a list of two of our child components that we want to reposition
 		Component* comps[] = { propertyView.get(), &resizerBar, editorView.get() };
