@@ -1297,29 +1297,36 @@ MidiMessage* PianoRollComponent::findNoteOffForNoteOn(MidiMessage* noteOn)
     if (!noteOn || !noteOn->isNoteOn() || midiRegion == nullptr) return nullptr;
 
     auto& messages = midiRegion->getMidiMessageList();
-    int channel = noteOn->getChannel();
-    int noteNumber = noteOn->getNoteNumber();
-    double onTime = noteOn->getTimeStamp();
+    const int channel = noteOn->getChannel();
+    const int noteNumber = noteOn->getNoteNumber();
 
-    // Suche das nächste Note-Off mit gleicher Channel/Note-Nummer nach der Note-On Zeit
-    MidiMessage* bestMatch = nullptr;
-    double bestTime = std::numeric_limits<double>::max();
+    // FIFO-Pairing: collect all noteOns and noteOffs at the same channel+pitch,
+    // sort each list by timestamp, then pair the k-th noteOn with the k-th noteOff.
+    // The previous "earliest noteOff after this noteOn" heuristic broke as soon as
+    // two notes shared a pitch — e.g. when a moved note steps onto an existing one,
+    // the other note's noteOff was picked and got mutated by the next move.
+    std::vector<MidiMessage*> ons, offs;
+    ons.reserve(messages.size());
+    offs.reserve(messages.size());
 
     for (auto* msg : messages) {
-        if (msg && msg->isNoteOff() &&
-            msg->getChannel() == channel &&
-            msg->getNoteNumber() == noteNumber &&
-            msg->getTimeStamp() > onTime) {
-
-            // Finde das zeitlich nächste Note-Off
-            if (msg->getTimeStamp() < bestTime) {
-                bestTime = msg->getTimeStamp();
-                bestMatch = msg;
-            }
-        }
+        if (!msg) continue;
+        if (msg->getChannel() != channel || msg->getNoteNumber() != noteNumber) continue;
+        if (msg->isNoteOn())       ons.push_back(msg);
+        else if (msg->isNoteOff()) offs.push_back(msg);
     }
 
-    return bestMatch;
+    auto byTime = [](MidiMessage* a, MidiMessage* b) {
+        return a->getTimeStamp() < b->getTimeStamp();
+    };
+    std::stable_sort(ons.begin(),  ons.end(),  byTime);
+    std::stable_sort(offs.begin(), offs.end(), byTime);
+
+    auto it = std::find(ons.begin(), ons.end(), noteOn);
+    if (it == ons.end()) return nullptr;
+
+    const size_t idx = (size_t)std::distance(ons.begin(), it);
+    return idx < offs.size() ? offs[idx] : nullptr;
 }
 double PianoRollComponent::getNoteDuration(MidiMessage* noteOn)
 {

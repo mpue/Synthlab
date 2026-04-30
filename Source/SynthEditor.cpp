@@ -1855,6 +1855,12 @@ void SynthEditor::openTracks(File file)
 				loadMidiRegions(track, t);
 			}
 		}
+
+		// Re-creating the Navigator tab and bringing it to the front is handled
+		// by MainComponent right after editor->openFile() returns. We can't do it
+		// here because the Viewport (`trackView`) that wraps the navigator is
+		// owned by EditorComponent, and SynthEditor::cleanUp() — invoked at the
+		// start of openFile() — already removed the Navigator tab from topTab.
 	}
 
 	setRunning(true);

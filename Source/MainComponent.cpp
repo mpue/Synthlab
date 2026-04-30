@@ -1491,6 +1491,25 @@ void MainComponent::buttonClicked(Button* b)
 			editor->setRunning(false);
 			editor->openFile();
 			editor->setRunning(true);
+
+			// SynthEditor::cleanUp() (called at the start of openFile) strips every
+			// tab except the Editor tab. If the freshly loaded project actually has
+			// tracks, recreate the Navigator tab and bring it to the front so the
+			// user lands on the arrange view. Deferred via callAfterDelay so any
+			// pending layout/region thumbnail work from openTracks() can settle
+			// first; without the delay the navigator can come up empty or
+			// mis-sized on heavier projects.
+			juce::Component::SafePointer<MainComponent> safeThis(this);
+			juce::Timer::callAfterDelay(150, [safeThis]() {
+				if (auto* self = safeThis.getComponent()) {
+					if (self->editorView != nullptr
+						&& self->editorView->getNavigator() != nullptr
+						&& !self->editorView->getNavigator()->getTracks().empty())
+					{
+						self->editorView->OpenTrackView();
+					}
+				}
+			});
 		}
 		else if (tb->getItemId() == toolbarFactory->app_settings) {
 			openSettings();
