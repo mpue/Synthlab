@@ -572,6 +572,9 @@ void MainComponent::createStudioLayout() {
 #endif
 	editor->addEditorListener(propertyView.get());
 	propertyView->getBrowser()->addChangeListener(editor);
+	// Hand the editor to PropertyView so its Instruments tab can spawn an
+	// Instrument track on double-click without a plugin browser dialog.
+	propertyView->setEditor(editor);
 
 	Project::getInstance()->setPropertyView(propertyView.get());
 

@@ -65,6 +65,9 @@ public:
     void saveModule(Module* m);
     void configureAudioModule(Module *m, ChangeBroadcaster* broadcaster);
     void addVirtualInstrumentTrack();
+    // Overload that skips the plugin browser dialog and creates a track for a
+    // pre-known plugin name — used by the Instruments tab in PropertyView.
+    void addVirtualInstrumentTrack(juce::String pluginName);
 
     // Smart layout helpers
     juce::Point<int> findFreePosition(juce::Point<int> desired, int w, int h) const;

@@ -303,16 +303,28 @@ void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bo
     if (wasResized) {
         long newNumSamples = (long)std::round((double)getWidth() / zoom * sampleRate);
 
+        // Snap der rechten Kante auf das Taktraster, wenn global aktiv —
+        // gleiches Verhalten wie beim Verschieben der Region. Mit gehaltener
+        // Shift-Taste 1/4 des aktuellen Rasters für feinere Platzierung.
+        if (Project::getInstance()->isSnapToGridEnabled()) {
+            const bool fine = juce::ModifierKeys::getCurrentModifiersRealtime().isShiftDown();
+            const long rightEdge = sampleOffset + newNumSamples;
+            const long snappedRightEdge = Project::getInstance()->snapSampleToGrid(rightEdge, zoom, fine);
+            const long snappedLen = snappedRightEdge - sampleOffset;
+            if (snappedLen > 0)
+                newNumSamples = snappedLen;
+        }
+
         // Begrenze die Länge so, dass die rechte Kante nicht in die nächste Region läuft.
         if (parentTrack != nullptr) {
             const long maxLen = parentTrack->clampLengthForRegion(this, sampleOffset, newNumSamples);
-            if (maxLen < newNumSamples) {
+            if (maxLen < newNumSamples)
                 newNumSamples = maxLen;
-                const int clampedWidth = (int)std::round((double)newNumSamples / sampleRate * zoom);
-                if (clampedWidth != getWidth())
-                    setSize(clampedWidth, getHeight());
-            }
         }
+
+        const int newWidth = (int)std::round((double)newNumSamples / sampleRate * zoom);
+        if (newWidth != getWidth())
+            setSize(newWidth, getHeight());
 
         if (newNumSamples > 0)
             numSamples = newNumSamples;

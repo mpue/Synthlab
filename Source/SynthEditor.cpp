@@ -2129,10 +2129,26 @@ void SynthEditor::addVirtualInstrumentTrack()
 {
 	PluginBrowserComponent::show([this](juce::String selectedPlugin)
 	{
-		Point<int> pos = getNextTrackStartPosition();
-		TrackUtil::createVirtualInstrumentTrack(selectedPlugin, pos, navigator, this);
-		repaint();
+		addVirtualInstrumentTrack(selectedPlugin);
 	});
+}
+
+void SynthEditor::addVirtualInstrumentTrack(juce::String pluginName)
+{
+	if (pluginName.isEmpty())
+		return;
+
+	// Mirror the same setup the plugin-browser path performs, but skip the
+	// dialog because the caller (Instruments tab double-click) already chose.
+	if (navigator == nullptr) {
+		// No track view yet — addTrack would crash. The caller is expected to
+		// have ensured the navigator exists; bail out quietly otherwise so a
+		// stray double-click can't tank the app.
+		return;
+	}
+	Point<int> pos = getNextTrackStartPosition();
+	TrackUtil::createVirtualInstrumentTrack(pluginName, pos, navigator, this);
+	repaint();
 }
 
 void SynthEditor::setTab(juce::TabbedComponent* t) {

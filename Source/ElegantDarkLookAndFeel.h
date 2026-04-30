@@ -489,14 +489,30 @@ public:
         else if (style == Slider::SliderStyle::LinearVertical) {
             Image fader = ImageCache::getFromMemory(BinaryData::Fader_png, BinaryData::Fader_pngSize);
 
+            // Render the fader at half its native height (matches the original look).
+            Image faderImg = fader.rescaled(fader.getWidth(), fader.getHeight() / 2);
+            const int thumbW = faderImg.getWidth();
+            const int thumbH = faderImg.getHeight();
 
-            float from = (sliderPos / maxSliderPos) * height;
-            LookAndFeel_V3::drawLinearSliderBackground(g, x, y + 10, width, height + 10, sliderPos, minSliderPos, maxSliderPos, style, slider);
+            // Track background — drawn flush with the slider bounds; the previous
+            // `+ 10` offsets were ad-hoc compensation for the broken thumb math
+            // below and shifted the track noticeably out of place.
+            LookAndFeel_V3::drawLinearSliderBackground(g, x, y, width, height,
+                                                       sliderPos, minSliderPos, maxSliderPos,
+                                                       style, slider);
 
+            // sliderPos is *already* the pixel Y of the thumb's centre — the old
+            // `(sliderPos / maxSliderPos) * height` re-derivation was wrong and
+            // caused the fader to drift out of the slider bounds at the extremes,
+            // so the bottom half of the handle got clipped at min position.
+            // We now place the image directly at sliderPos and clamp the result
+            // so it never overflows the slider bounds.
+            const int thumbCentreY = (int) sliderPos;
+            const int thumbY = juce::jlimit(y, y + height - thumbH, thumbCentreY - thumbH / 2);
+            const int thumbX = x + (width - thumbW) / 2;
 
             g.setColour(Colours::white);
-            g.drawImageAt(fader.rescaled(fader.getWidth(), fader.getHeight() / 2), 0, from - fader.getHeight() / 4 + 10);
-
+            g.drawImageAt(faderImg, thumbX, thumbY);
         }
         else {
             LookAndFeel_V4::drawLinearSlider(g, x, y, width, height, sliderPos, minSliderPos, maxSliderPos, style, slider);
@@ -506,6 +522,22 @@ public:
     }
 
     
+
+    // Constrain JUCE's sliderPos calculation so the LinearVertical fader thumb
+    // can't be placed at a Y that would draw the image past the slider bounds.
+    // Without this the thumb's reachable extreme positions would let the bottom
+    // edge of the fader graphic disappear below the slider's lower bound at
+    // min value — even with the drawLinearSlider clamp, hit-testing/drag bounds
+    // would still feel "off" because JUCE wouldn't know about our thumb size.
+    int getSliderThumbRadius(juce::Slider& slider) override {
+        if (slider.getSliderStyle() == juce::Slider::LinearVertical
+            || slider.getSliderStyle() == juce::Slider::LinearHorizontal) {
+            juce::Image fader = juce::ImageCache::getFromMemory(BinaryData::Fader_png, BinaryData::Fader_pngSize);
+            // Displayed thumb is rescaled to half height; radius = half of that.
+            return juce::jmax(6, fader.getHeight() / 4);
+        }
+        return juce::LookAndFeel_V4::getSliderThumbRadius(slider);
+    }
 
     // Custom ComboBox Arrow
     void drawComboBox(juce::Graphics& g, int width, int height, bool isButtonDown,

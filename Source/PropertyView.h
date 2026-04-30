@@ -24,8 +24,10 @@
 #include "MainTabbedComponent.h"
 #include "ExtendedFileBrowser.h"
 #include "EditorListener.h"
+#include "InstrumentBrowser.h"
 
 class Track;
+class SynthEditor;
 
 //[/Headers]
 
@@ -52,6 +54,12 @@ public:
 
     virtual int useTimeSlice() override;
     ExtendedFileBrowser* getBrowser();
+
+    // Wired by MainComponent after both PropertyView and SynthEditor exist —
+    // lets the Instruments tab create a virtual instrument track on
+    // double-click without going through the plugin chooser dialog.
+    void setEditor(SynthEditor* e) { editor = e; }
+    InstrumentBrowser* getInstrumentBrowser() { return instrumentBrowser.get(); }
     //[/UserMethods]
 
     void paint (juce::Graphics& g) override;
@@ -69,6 +77,8 @@ private:
     juce::WildcardFileFilter* filter = nullptr;
     std::unique_ptr<ExtendedFileBrowser> browser = nullptr;
     FileBrowserModel* model = nullptr;
+    std::unique_ptr<InstrumentBrowser> instrumentBrowser = nullptr;
+    SynthEditor* editor = nullptr;
     //[/UserVariables]
 
     //==============================================================================

@@ -82,6 +82,18 @@ PropertyView::PropertyView () : TimeSliceThread("PropertyWatcher")
     browser = std::make_unique<ExtendedFileBrowser>(File::getSpecialLocation(File::userHomeDirectory), filter, model);
     directoryContents->addChangeListener(browser.get());
     tabbedComponent->addTab("Browser",juce::Colours::grey, browser.get(), false);
+
+    // Instruments tab â€” lists every scanned virtual instrument and creates an
+    // Instrument track on double-click. The editor pointer is wired later via
+    // setEditor() (MainComponent does this once both objects exist), so the
+    // callback checks for nullptr defensively.
+    instrumentBrowser = std::make_unique<InstrumentBrowser>();
+    instrumentBrowser->onInstrumentDoubleClicked = [this](const juce::String& name) {
+        if (editor != nullptr)
+            editor->addVirtualInstrumentTrack(name);
+    };
+    tabbedComponent->addTab("Instruments", juce::Colours::grey, instrumentBrowser.get(), false);
+
     tabbedComponent->addTab("Description",juce::Colours::grey, descriptionEditor.get(), false);
 
     showButton = std::make_unique<juce::TextButton>("Show Plugin");
@@ -110,6 +122,7 @@ PropertyView::~PropertyView()
     tabbedComponent = nullptr;
     descriptionEditor = nullptr;
     browser = nullptr;
+    instrumentBrowser = nullptr;
 
     //[Destructor]. You can add your own custom destruction code here..
     removeTimeSliceClient(this);
@@ -155,7 +168,7 @@ void PropertyView::selectionChanged(Component* c)
 {
     propertyPanel->clear();
     selectedTrack = nullptr;
-    showButton->setVisible(false);  // standardmäßig verstecken
+    showButton->setVisible(false);  // standardmï¿½ï¿½ig verstecken
 
     if (c != nullptr)
     {
@@ -177,7 +190,7 @@ void PropertyView::selectionChanged(Component* c)
         }
     }
 
-    resized(); // für korrekte Positionierung
+    resized(); // fï¿½r korrekte Positionierung
 }
 
 

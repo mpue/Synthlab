@@ -520,17 +520,32 @@ void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, b
     }
 
     if (wasResized) {
+        const long offset = getSampleOffset();
+        long newNumSamples = (long)((double)getWidth() / zoom * sampleRate);
+
+        // Snap der rechten Kante auf das Taktraster, wenn global aktiv —
+        // gleiches Verhalten wie beim Verschieben der Region. Mit gehaltener
+        // Shift-Taste 1/4 des aktuellen Rasters für feinere Platzierung.
+        if (Project::getInstance()->isSnapToGridEnabled()) {
+            const bool fine = juce::ModifierKeys::getCurrentModifiersRealtime().isShiftDown();
+            const long rightEdge = offset + newNumSamples;
+            const long snappedRightEdge = Project::getInstance()->snapSampleToGrid(rightEdge, zoom, fine);
+            const long snappedLen = snappedRightEdge - offset;
+            if (snappedLen > 0)
+                newNumSamples = snappedLen;
+        }
+
         // Begrenze die rechte Kante so, dass sie nicht in die nächste Region läuft.
         if (parentTrack != nullptr) {
-            const long offset = getSampleOffset();
-            const long currentLen = (long)((double)getWidth() / zoom * sampleRate);
-            const long maxLen = parentTrack->clampLengthForRegion(this, offset, currentLen);
-            if (maxLen < currentLen) {
-                const int clampedWidth = (int)((double)maxLen / sampleRate * zoom);
-                if (clampedWidth != getWidth())
-                    setSize(clampedWidth, getHeight());
-            }
+            const long maxLen = parentTrack->clampLengthForRegion(this, offset, newNumSamples);
+            if (maxLen < newNumSamples)
+                newNumSamples = maxLen;
         }
+
+        const int newWidth = (int)((double)newNumSamples / sampleRate * zoom);
+        if (newWidth != getWidth())
+            setSize(newWidth, getHeight());
+
         sendChangeMessage();
     }
 
