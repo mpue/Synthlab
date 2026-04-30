@@ -521,6 +521,29 @@ int MidiRegion::calculateActualLength() const {
     return std::max({ dataLength, visualLength, 1 });
 }
 
+void MidiRegion::setMidiChannelForAllMessages(int channel) {
+    if (channel < 1 || channel > 16)
+        return;
+
+    const ScopedLock sl(lock);
+
+    for (auto* msg : midiMessageList) {
+        if (msg != nullptr && msg->getChannel() > 0)
+            msg->setChannel(channel);
+    }
+
+    // sequence wird beim Bouncen/Export verwendet — auch dort den Channel
+    // mitziehen, sonst sind die exportierten MIDI-Files inkonsistent zum
+    // hörbaren Playback.
+    if (sequence != nullptr) {
+        for (int i = 0; i < sequence->getNumEvents(); ++i) {
+            auto* ev = sequence->getEventPointer(i);
+            if (ev != nullptr && ev->message.getChannel() > 0)
+                ev->message.setChannel(channel);
+        }
+    }
+}
+
 MidiRegion* MidiRegion::clone(long newOffset) {
     const ScopedLock sl(lock);
 

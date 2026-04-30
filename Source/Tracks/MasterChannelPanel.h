@@ -89,7 +89,12 @@ public:
     void setModule(VolumeAdjustable* v);
     void setSynthEditor(SynthEditor* editor);
     void reconstructFXChainFromGraph();
-    void processMasterFX(juce::AudioBuffer<float>& buf);
+    // Reicht den Transport-State an die FX-Plugins durch — Master-FX-Plugins
+    // hängen nicht im Modul-Graph und bekommen sonst keinen Playhead-Update.
+    void processMasterFX(juce::AudioBuffer<float>& buf,
+                         juce::int64 samplePosition,
+                         bool isPlaying,
+                         bool isRecording);
     void setFXNonRealtime(bool nonRealtime);
 
     // Persistence for the master FX chain. Master-channel FX modules live

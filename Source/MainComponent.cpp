@@ -880,7 +880,10 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 		auto* masterPan = mixerPanel->getMasterPanel();
 		if (masterPan) {
 			juce::AudioBuffer<float> masterBuf(outputData, outNumChans, numSamples);
-			masterPan->processMasterFX(masterBuf);
+			const juce::int64 transportPos = navigator != nullptr ? navigator->getSamplePosition() : 0;
+			const bool isPlaying  = navigator != nullptr && navigator->isPlaying();
+			const bool isRecording = navigator != nullptr && navigator->isRecording();
+			masterPan->processMasterFX(masterBuf, transportPos, isPlaying, isRecording);
 		}
 	}
 

@@ -77,6 +77,12 @@ public:
 
     virtual void reset() override;
     MidiRegion* clone(long newOffset);
+
+    // Setzt den MIDI-Channel aller gespeicherten Messages (note on/off, CC, …)
+    // auf den angegebenen Wert (1..16). Notwendig nach einem Cross-Track-Paste:
+    // TrackIn::eventReceived verwirft Events, deren Channel nicht zum neuen
+    // Track passt — sonst wäre die kopierte Region stumm.
+    void setMidiChannelForAllMessages(int channel);
     std::pair<MidiRegion*, MidiRegion*> splitAt(long splitSample, MultiComponentDragger* dragger);
 
 	void quantize(int quantizeGridSamples) override;

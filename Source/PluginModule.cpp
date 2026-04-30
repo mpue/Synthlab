@@ -41,9 +41,18 @@ PluginModule::~PluginModule()
     delete playHead;
 }
 
-void PluginModule::processBuffer(juce::AudioBuffer<float>& buf) {
+void PluginModule::processBuffer(juce::AudioBuffer<float>& buf,
+                                 juce::int64 samplePosition,
+                                 bool isPlaying,
+                                 bool isRecording) {
     const juce::ScopedLock sl(lock);
     if (plugin) {
+        // Spiegelt den Playhead-Update aus process() — sonst sieht das Plugin
+        // im Master-Pfad nur den Default-Stand (samplePos=0, playing=false).
+        playHead->setPlaying(isPlaying);
+        playHead->setRecording(isRecording);
+        playHead->setPositionInfo(samplePosition, sampleRate, Project::getInstance()->getTempo());
+
         juce::MidiBuffer emptyMidi;
         plugin->processBlock(buf, emptyMidi);
     }

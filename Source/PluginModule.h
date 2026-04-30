@@ -47,7 +47,16 @@ public:
     void requestReset() { needsReset.store(true); }
     void requestPositionReset(int64_t pos) { nextSamplePosition.store(pos); }
 
-    void processBuffer(juce::AudioBuffer<float>& buf);
+    // Master-FX-Pfad: anders als process() hängt dieses Plugin nicht im
+    // Modul-Graph, daher gibt's hier keinen eigenen Sample-Counter. Der
+    // Aufrufer (MasterChannelPanel via MainComponent/BounceThread) muss die
+    // Transport-Position mitliefern, sonst bekommt das Plugin keinen Playhead-
+    // Update und tempo-/positions-abhängige Plugins (z.B. Output Coproducer)
+    // bleiben stumm.
+    void processBuffer(juce::AudioBuffer<float>& buf,
+                       juce::int64 samplePosition,
+                       bool isPlaying,
+                       bool isRecording);
     
 private:
     std::vector<std::unique_ptr<juce::PropertyComponent>> ownedProperties;

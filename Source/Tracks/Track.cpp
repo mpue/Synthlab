@@ -287,6 +287,11 @@ Region* Track::pasteRegion(Region* source, long targetSampleOffset) {
 		clone->setBounds(newX, 0, source->getWidth(), getHeight());
 		clone->addChangeListener(this);
 
+		// Cross-Track-Paste: Quell-Region kann auf einem anderen MIDI-Kanal
+		// liegen. Auf den Kanal des Ziel-Tracks umschreiben — TrackIn filtert
+		// eingehende Events sonst und die kopierte Region bliebe stumm.
+		clone->setMidiChannelForAllMessages(midiChannel);
+
 		this->regions.push_back(clone);
 		this->currentRegion = clone;
 		addAndMakeVisible(clone);

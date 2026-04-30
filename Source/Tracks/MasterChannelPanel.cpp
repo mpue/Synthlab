@@ -202,27 +202,17 @@ void MasterChannelPanel::paint (Graphics& g)
     //[UserPrePaint] Add your own custom painting code here..
     //[/UserPrePaint]
 
-    // Background — slightly tinted per channel type
-    juce::Colour bg(0xff434242);
+    // Hintergrund einheitlich an die Editor-Hintergrundfarbe angeglichen —
+    // farbliche Differenzierung erfolgt ausschließlich über den 6 px Stripe
+    // ganz oben.
+    const juce::Colour bg(0xff222222);
     juce::Colour stripe(0xff555555);
     if (channel != nullptr) {
         switch (channel->channelType) {
-            case Mixer::Channel::Type::IN:
-                bg     = juce::Colour(0xff363d4a);
-                stripe = juce::Colour(0xff2255cc);
-                break;
-            case Mixer::Channel::Type::OUT:
-                bg     = juce::Colour(0xff364240);
-                stripe = juce::Colour(0xff22aa55);
-                break;
-            case Mixer::Channel::Type::AUX:
-                bg     = juce::Colour(0xff433e36);
-                stripe = juce::Colour(0xffcc7700);
-                break;
-            case Mixer::Channel::Type::MASTER:
-                bg     = juce::Colour(0xff3a3040);
-                stripe = juce::Colour(0xffaa22aa);
-                break;
+            case Mixer::Channel::Type::IN:     stripe = juce::Colour(0xff2255cc); break;
+            case Mixer::Channel::Type::OUT:    stripe = juce::Colour(0xff22aa55); break;
+            case Mixer::Channel::Type::AUX:    stripe = juce::Colour(0xffcc7700); break;
+            case Mixer::Channel::Type::MASTER: stripe = juce::Colour(0xffaa22aa); break;
             default: break;
         }
     }
@@ -808,10 +798,13 @@ void MasterChannelPanel::onFXSlotClicked(int slotIndex) {
     }
 }
 
-void MasterChannelPanel::processMasterFX(juce::AudioBuffer<float>& buf) {
+void MasterChannelPanel::processMasterFX(juce::AudioBuffer<float>& buf,
+                                         juce::int64 samplePosition,
+                                         bool isPlaying,
+                                         bool isRecording) {
     for (int i = 0; i < NUM_FX; ++i)
         if (fxChain[i] != nullptr)
-            fxChain[i]->processBuffer(buf);
+            fxChain[i]->processBuffer(buf, samplePosition, isPlaying, isRecording);
 }
 
 void MasterChannelPanel::setFXNonRealtime(bool nonRealtime) {

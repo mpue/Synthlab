@@ -206,9 +206,12 @@ void BounceThread::run()
 			}
 		}
 
-		// Apply master FX chain
+		// Apply master FX chain — beim Offline-Bounce ist der "Transport"
+		// die aktuelle Position in der Render-Schleife; isPlaying = true,
+		// damit positions-/tempoabhängige Plugins (z.B. Coproducer) sich
+		// genauso verhalten wie beim Live-Playback.
 		if (auto* masterPan = main->getEditor()->getMixer()->getMasterPanel())
-			masterPan->processMasterFX(mixBuffer);
+			masterPan->processMasterFX(mixBuffer, (juce::int64)pos, true, false);
 
 		// Apply master volume/mute/pan
 		{
