@@ -103,6 +103,11 @@ public:
     // and state for each occupied slot.
     juce::ValueTree getFXChainState() const;
     void applyFXChainState(const juce::ValueTree& state);
+    // Entfernt alle FX-Plugins aus dem Insert-Chain dieses Channels. Beim
+    // Master-Kanal löschen wir die Plugin-Module direkt (sie hängen nicht im
+    // Modul-Graph), bei normalen Kanälen lassen wir removeFX die Verdrahtung
+    // im Graph mit sauber abräumen.
+    void clearFXChain();
     //[/UserMethods]
 
     void paint (Graphics& g) override;

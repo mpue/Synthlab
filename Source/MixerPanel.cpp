@@ -230,6 +230,12 @@ void MixerPanel::removeAllChannels() {
         it = channels.erase(it);
     }
     currentX = 0;
+
+    // Der Master-Strip wird hier nicht zerstört — seine FX-Plugins liegen
+    // außerhalb des Modul-Graphen und würden sonst beim "File New" stehen
+    // bleiben. Daher die Insert-Slots jetzt explizit leeren.
+    if (masterPanel != nullptr)
+        masterPanel->clearFXChain();
 }
 
 bool MixerPanel::channelIsValid(int channel) {

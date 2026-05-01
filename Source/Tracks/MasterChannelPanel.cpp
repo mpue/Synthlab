@@ -992,6 +992,17 @@ void MasterChannelPanel::removeFX(int slotIndex) {
     repaint();
 }
 
+void MasterChannelPanel::clearFXChain() {
+    for (int i = 0; i < NUM_FX; ++i) {
+        if (fxChain[i] != nullptr)
+            removeFX(i);
+    }
+    chainSourceModL = chainSourceModR = nullptr;
+    chainSourcePinL = chainSourcePinR = nullptr;
+    updateFXButtons();
+    repaint();
+}
+
 juce::ValueTree MasterChannelPanel::getFXChainState() const {
     juce::ValueTree state("MasterFXChain");
     for (int i = 0; i < NUM_FX; ++i) {

@@ -29,8 +29,9 @@ public:
     static String secondsToTime(int seconds);
     void setOffset(int offset);
     void setTempoAndTimeSignature(double bpm, int numerator, int denominator);
+    void setZoom(float zoom);
 
-    // Loop-Funktionalität
+    // Loop-Funktionalitï¿½t
     void setLoopEnabled(bool enabled);
     bool isLoopEnabled() const { return loopEnabled; }
     void setLoopStart(double startTime);
@@ -50,7 +51,7 @@ public:
     double getCurrentSampleRate() const;
     double getMinLoopDuration() const;
 
-    // Callback für Loop-Änderungen
+    // Callback fï¿½r Loop-ï¿½nderungen
     std::function<void(double, double, bool)> onLoopChanged;
 
 private:
@@ -66,6 +67,7 @@ private:
     double bpm = 120.0;
     int timeSigNumerator = 4;
     int timeSigDenominator = 4;
+    float zoom = 40.0f;
 
     // Loop-Parameter
     bool loopEnabled = false;

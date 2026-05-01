@@ -11,9 +11,12 @@
 #include "Project/Project.h"
 #include "AudioManager.h"
 
+#include <algorithm>
+
 using juce::File;
 using juce::WildcardFileFilter;
 using juce::TableListBox;
+using juce::TreeView;
 using juce::Viewport;
 using juce::Colour;
 using juce::String;
@@ -27,7 +30,7 @@ using juce::XmlDocument;
 using juce::ScopedPointer;
 
 ExtendedFileBrowser::ExtendedFileBrowser(const File& initialFileOrDirectory,const WildcardFileFilter* fileFilter, FileBrowserModel* model) : initialDir(initialFileOrDirectory) {
-    
+
     // addMouseListener(this, true);
     table = new TableListBox();
     table->getHeader().addColumn("File", 1, 350);
@@ -55,19 +58,32 @@ ExtendedFileBrowser::ExtendedFileBrowser(const File& initialFileOrDirectory,cons
     addAndMakeVisible(stopButton);
     stopButton->addListener(this);
 
+    modeButton = new juce::TextButton("Tree");
+    modeButton->setSize(50, 20);
+    modeButton->setTopLeftPosition((int)drives.size() * 35 + 40, 0);
+    addAndMakeVisible(modeButton);
+    modeButton->addListener(this);
 
     this->model = model;
     view  = new Viewport();
     view->setTopLeftPosition(0,25);
-    view->setViewedComponent(table);
+    view->setViewedComponent(table, false);
     addAndMakeVisible(view);
-    
+
+    tree = new TreeView();
+    tree->setColour(TreeView::backgroundColourId, Colour(0xff1a1a1a));
+    tree->setDefaultOpenness(false);
+    tree->setRootItemVisible(true);
+    addChildComponent(tree);
+
     sampler = Project::getInstance()->getDefaultSampler();
     table->addMouseListener(this, true);
-    
+
     loadState();
-    
+
     model->update();
+    model->rebuildSorted();
+    table->updateContent();
 	setWantsKeyboardFocus(true);
 
     repaint();
@@ -75,17 +91,23 @@ ExtendedFileBrowser::ExtendedFileBrowser(const File& initialFileOrDirectory,cons
 
 ExtendedFileBrowser::~ExtendedFileBrowser() {
     saveState();
+    if (tree != nullptr) {
+        tree->setRootItem(nullptr);
+    }
+    delete treeRoot;
+    delete tree;
     delete table;
     delete view;
     for (int i = 0; i < driveButtons.size(); i++) {
         delete driveButtons.at(i);
-    }        
+    }
+    delete modeButton;
 }
 
 void ExtendedFileBrowser::mouseDrag(const juce::MouseEvent &event) {
     /*
     var description;
-    
+
     // setDragImageForIndex(0, ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize));
     startDragging(description,table);
      */
@@ -93,86 +115,168 @@ void ExtendedFileBrowser::mouseDrag(const juce::MouseEvent &event) {
 }
 
 void ExtendedFileBrowser::paint(juce::Graphics &g) {
-    g.fillAll (Colour (0xff1a1a1a));    
+    g.fillAll (Colour (0xff1a1a1a));
     // Component::paint(g);
 }
 
 void ExtendedFileBrowser::resized() {
     if (getParentComponent() != nullptr) {
         setSize(getParentWidth(), getParentHeight());
-        view->setSize(getWidth(), getHeight());
-        table->setSize(getWidth(), getHeight() - 30);
-        
     }
+
+    const int top = 25;
+    view->setBounds(0, top, getWidth(), juce::jmax(0, getHeight() - top));
+    table->setSize(getWidth(), juce::jmax(0, getHeight() - top - 5));
+
+    if (tree != nullptr)
+        tree->setBounds(0, top, getWidth(), juce::jmax(0, getHeight() - top));
 }
 
 void ExtendedFileBrowser::changeListenerCallback (ChangeBroadcaster* source) {
-    table->updateContent();
+    if (model != nullptr)
+        model->rebuildSorted();
+    if (table != nullptr)
+        table->updateContent();
+    if (mode == Mode::Tree)
+        rebuildTree();
 }
 
 void ExtendedFileBrowser::mouseDown(const juce::MouseEvent &event) {
 
 	grabKeyboardFocus();
 
+    if (mode != Mode::Flat)
+        return;
+
     if (table->getSelectedRow() > 0) {
-        File* f = new File(model->getDirectoryList()->getFile(table->getSelectedRow()));
-        if (f->exists()) {
-            if (!f->isDirectory()) {
-                if (!f->getFileNameWithoutExtension().startsWith(".")) {
-                    if (f->getFileExtension().toLowerCase().contains("wav") || 
-                        f->getFileExtension().toLowerCase().contains("mp3") || 
-                        f->getFileExtension().toLowerCase().contains("aif") ||
-                        f->getFileExtension().toLowerCase().contains("ogg")) {
+        File f = model->getFileForRow(table->getSelectedRow());
+        if (f.exists()) {
+            if (!f.isDirectory()) {
+                if (!f.getFileNameWithoutExtension().startsWith(".")) {
+                    auto ext = f.getFileExtension().toLowerCase();
+                    if (ext.contains("wav") ||
+                        ext.contains("mp3") ||
+                        ext.contains("aif") ||
+                        ext.contains("ogg")) {
                          Project::getInstance()->getDefaultSampler()->stop();
-                        Project::getInstance()->getDefaultSampler()->loadSample(*f);
+                        Project::getInstance()->getDefaultSampler()->loadSample(f);
                         Project::getInstance()->getDefaultSampler()->play();
                     }
                 }
             }
-            
         }
-        delete f;
     }
 
 }
 
 void ExtendedFileBrowser::mouseDoubleClick(const juce::MouseEvent &event) {
-    
+
+    if (mode != Mode::Flat)
+        return;
+
     if (table->getSelectedRow() > 0) {
-        File* f = new File(model->getDirectoryList()->getFile(table->getSelectedRow()));
-        if (f->exists()) {
-            if (f->isDirectory()) {
-                model->setCurrentDir(f);
+        File f = model->getFileForRow(table->getSelectedRow());
+        if (f.exists()) {
+            if (f.isDirectory()) {
+                model->setCurrentDir(&f);
             }
             else {
-                selectedFile = f;
+                if (selectedFile != nullptr) delete selectedFile;
+                selectedFile = new File(f);
                 sendChangeMessage();
             }
         }
     }
     else {
-        File* current = new File(model->getCurrentDir());
-        File* parent = new File(current->getParentDirectory());
-        model->setCurrentDir(parent);
-        delete current;
+        File current = File(model->getCurrentDir());
+        File parent = current.getParentDirectory();
+        model->setCurrentDir(&parent);
     }
 
 }
 
 void ExtendedFileBrowser::buttonClicked(Button* button)
 {
+    if (button == modeButton) {
+        setMode(mode == Mode::Flat ? Mode::Tree : Mode::Flat);
+        return;
+    }
+
     if (button->getButtonText() == "STOP") {
         Project::getInstance()->getDefaultSampler()->stop();
     }
     else {
         juce::File* file = new juce::File(button->getButtonText() + "\\");
         model->setCurrentDir(file);
+        delete file;
     }
 
 }
 
 void ExtendedFileBrowser::timerCallback() {
-   
+
+}
+
+void ExtendedFileBrowser::setMode(Mode newMode) {
+    mode = newMode;
+
+    if (mode == Mode::Tree) {
+        rebuildTree();
+        view->setVisible(false);
+        tree->setVisible(true);
+        modeButton->setButtonText("Flat");
+    }
+    else {
+        if (tree != nullptr)
+            tree->setVisible(false);
+        view->setVisible(true);
+        modeButton->setButtonText("Tree");
+    }
+
+    resized();
+}
+
+void ExtendedFileBrowser::rebuildTree() {
+    if (tree == nullptr)
+        return;
+
+    tree->setRootItem(nullptr);
+    delete treeRoot;
+    treeRoot = nullptr;
+
+    File rootDir(model->getCurrentDir());
+    if (!rootDir.exists())
+        rootDir = File::getSpecialLocation(File::userHomeDirectory);
+
+    treeRoot = new FileTreeItem(rootDir, this);
+    tree->setRootItem(treeRoot);
+    treeRoot->setOpen(true);
+}
+
+void ExtendedFileBrowser::treeItemSelected(const juce::File& file) {
+    if (file.isDirectory())
+        return;
+
+    if (file.getFileNameWithoutExtension().startsWith("."))
+        return;
+
+    auto ext = file.getFileExtension().toLowerCase();
+    if (ext.contains("wav") || ext.contains("mp3") ||
+        ext.contains("aif") || ext.contains("ogg")) {
+        Project::getInstance()->getDefaultSampler()->stop();
+        juce::File copy = file;
+        Project::getInstance()->getDefaultSampler()->loadSample(copy);
+        Project::getInstance()->getDefaultSampler()->play();
+    }
+}
+
+void ExtendedFileBrowser::treeItemDoubleClicked(const juce::File& file) {
+    if (file.isDirectory())
+        return;
+
+    if (selectedFile != nullptr) delete selectedFile;
+    selectedFile = new juce::File(file);
+    sendChangeMessage();
 }
 
 //===========================================================================
@@ -186,56 +290,64 @@ FileBrowserModel::FileBrowserModel(DirectoryContentsList* directoryList, File& i
 }
 
 int FileBrowserModel::getNumRows() {
-    return directoryList->getNumFiles() + 1;
+    return (int)sortedFiles.size() + 1;
 }
+
 void FileBrowserModel::paintCell (Graphics& g,
                 int rowNumber,
                 int columnId,
                 int width, int height,
                 bool rowIsSelected) {
-    
+
     g.setColour(juce::Colours::black);
-    
+
     String text = "";
-    
+
     if (columnId == 1) {
- 
+
         if (rowNumber > 0) {
-            text = directoryList->getFile(rowNumber).getFileName();
+            File f = getFileForRow(rowNumber);
+            text = f.getFileName();
+            if (f.isDirectory())
+                text = "[" + text + "]";
         }
         else {
             text = "[..]";
         }
         g.setColour(juce::Colours::white);
         g.drawText(text, 0,0, width,height, juce::Justification::centredLeft);
-       
+
     }
     else if (columnId == 2) {
         if (rowNumber > 0) {
-            text = String(directoryList->getFile(rowNumber).getSize() / 1024) + "kB";
+            File f = getFileForRow(rowNumber);
+            if (f.isDirectory())
+                text = "";
+            else
+                text = String(f.getSize() / 1024) + "kB";
         }
         else {
             text = "";
         }
-        
+
         g.setColour(juce::Colours::white);
         g.drawText(text, 0,0, width,height, juce::Justification::right);
     }
-    
+
 }
 
 void FileBrowserModel::paintRowBackground (Graphics& g,
                          int rowNumber,
                          int width, int height,
                          bool rowIsSelected) {
-        
+
     if (rowIsSelected) {
         g.setColour(Colour(0xff4d9eff));
     }
     else {
         g.setColour(Colour (0xff1a1a1a));
     }
-    
+
     g.fillRect(0,0,width,height);
 }
 
@@ -248,6 +360,40 @@ void FileBrowserModel::update() {
     directoryList->refresh();
 }
 
+void FileBrowserModel::rebuildSorted() {
+    sortedFiles.clear();
+
+    const int n = directoryList->getNumFiles();
+    std::vector<juce::File> dirs;
+    std::vector<juce::File> files;
+    dirs.reserve(n);
+    files.reserve(n);
+
+    for (int i = 0; i < n; ++i) {
+        juce::File f = directoryList->getFile(i);
+        if (f.isDirectory())
+            dirs.push_back(f);
+        else
+            files.push_back(f);
+    }
+
+    auto cmp = [](const juce::File& a, const juce::File& b) {
+        return a.getFileName().compareIgnoreCase(b.getFileName()) < 0;
+    };
+    std::sort(dirs.begin(), dirs.end(), cmp);
+    std::sort(files.begin(), files.end(), cmp);
+
+    sortedFiles.reserve(dirs.size() + files.size());
+    sortedFiles.insert(sortedFiles.end(), dirs.begin(), dirs.end());
+    sortedFiles.insert(sortedFiles.end(), files.begin(), files.end());
+}
+
+juce::File FileBrowserModel::getFileForRow(int row) const {
+    if (row > 0 && (size_t)(row - 1) < sortedFiles.size())
+        return sortedFiles[(size_t)(row - 1)];
+    return {};
+}
+
 DirectoryContentsList* FileBrowserModel::getDirectoryList() {
     return directoryList;
 }
@@ -255,13 +401,13 @@ DirectoryContentsList* FileBrowserModel::getDirectoryList() {
 void ExtendedFileBrowser::saveState(){
     String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
     File appDir = File(userHome+"/.Synthlab");
-    
+
     if (!appDir.exists()) {
         appDir.createDirectory();
     }
-    
+
     File configFile = File(userHome+"/.Synthlab/state.xml");
-    
+
     if (!configFile.exists()) {
         configFile.create();
     }
@@ -269,17 +415,18 @@ void ExtendedFileBrowser::saveState(){
         configFile.deleteFile();
         configFile = File(userHome+"/.Synthlab/state.xml");
     }
-    
+
     ValueTree* v = new ValueTree("SavedState");
-    
+
     ValueTree child = ValueTree("File");
     child.setProperty("lastDirectory", model->getCurrentDir(), nullptr);
+    child.setProperty("browserMode", mode == Mode::Tree ? "tree" : "flat", nullptr);
     v->addChild(child, -1, nullptr);
-    
-    std::unique_ptr<OutputStream> os = configFile.createOutputStream();    
-    std::unique_ptr<XmlElement> xml = v->createXml();    
+
+    std::unique_ptr<OutputStream> os = configFile.createOutputStream();
+    std::unique_ptr<XmlElement> xml = v->createXml();
     xml->writeToStream(*os, "");
-    
+
     os = nullptr;
     xml = nullptr;
 
@@ -288,29 +435,32 @@ void ExtendedFileBrowser::saveState(){
 
 void ExtendedFileBrowser::loadState() {
     String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
-    
+
     File appDir = File(userHome+"/.Synthlab");
-    
+
     if (!appDir.exists()) {
         appDir.createDirectory();
     }
-    
+
     File configFile = File(userHome+"/.Synthlab/state.xml");
-    
+
     if (configFile.exists()) {
         std::unique_ptr<XmlElement> xml = XmlDocument(configFile).getDocumentElement();
         ValueTree v = ValueTree::fromXml(*xml.get());
-        
+
         if (v.getNumChildren() > 0) {
             String path = v.getChild(0).getProperty("lastDirectory");
             File* file = new File(path);
             model->setCurrentDir(file);
             delete file;
+
+            String savedMode = v.getChild(0).getProperty("browserMode", "flat");
+            setMode(savedMode == "tree" ? Mode::Tree : Mode::Flat);
         }
         xml = nullptr;
     }
 }
- 
+
 void ExtendedFileBrowser::focusLost(FocusChangeType cause)
 {
     Component::focusLost(cause);
@@ -319,4 +469,89 @@ void ExtendedFileBrowser::focusLost(FocusChangeType cause)
 
 File* ExtendedFileBrowser::getSelectedFile() {
     return selectedFile;
+}
+
+//===========================================================================
+// FileTreeItem
+//===========================================================================
+
+FileTreeItem::FileTreeItem(const juce::File& f, ExtendedFileBrowser* o)
+    : file(f), owner(o) {
+}
+
+bool FileTreeItem::mightContainSubItems() {
+    return file.isDirectory();
+}
+
+juce::String FileTreeItem::getUniqueName() const {
+    return file.getFullPathName();
+}
+
+void FileTreeItem::itemOpennessChanged(bool isNowOpen) {
+    if (isNowOpen) {
+        if (getNumSubItems() == 0)
+            loadChildren();
+    }
+    else {
+        clearSubItems();
+    }
+}
+
+void FileTreeItem::loadChildren() {
+    if (!file.isDirectory())
+        return;
+
+    juce::Array<juce::File> dirs;
+    juce::Array<juce::File> files;
+
+    for (juce::DirectoryEntry entry : juce::RangedDirectoryIterator(file, false, "*",
+            juce::File::findFilesAndDirectories)) {
+        juce::File child = entry.getFile();
+        if (child.isDirectory())
+            dirs.add(child);
+        else
+            files.add(child);
+    }
+
+    auto cmp = [](const juce::File& a, const juce::File& b) {
+        return a.getFileName().compareIgnoreCase(b.getFileName()) < 0;
+    };
+    std::sort(dirs.begin(), dirs.end(), cmp);
+    std::sort(files.begin(), files.end(), cmp);
+
+    for (auto& d : dirs)
+        addSubItem(new FileTreeItem(d, owner));
+    for (auto& f : files)
+        addSubItem(new FileTreeItem(f, owner));
+}
+
+void FileTreeItem::paintItem(juce::Graphics& g, int width, int height) {
+    if (isSelected())
+        g.fillAll(juce::Colour(0xff4d9eff));
+
+    g.setColour(juce::Colours::white);
+
+    juce::String name = file.getFileName();
+    if (name.isEmpty())
+        name = file.getFullPathName();
+    if (file.isDirectory())
+        name = "[" + name + "]";
+
+    g.drawText(name, 4, 0, width - 4, height, juce::Justification::centredLeft);
+}
+
+void FileTreeItem::itemSelectionChanged(bool isNowSelected) {
+    if (isNowSelected && owner != nullptr)
+        owner->treeItemSelected(file);
+}
+
+void FileTreeItem::itemDoubleClicked(const juce::MouseEvent& e) {
+    if (file.isDirectory())
+        juce::TreeViewItem::itemDoubleClicked(e);
+    else if (owner != nullptr)
+        owner->treeItemDoubleClicked(file);
+}
+
+juce::var FileTreeItem::getDragSourceDescription() {
+    return file.getFullPathName();
 }

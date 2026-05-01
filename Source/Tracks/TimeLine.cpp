@@ -44,14 +44,37 @@ void TimeLine::paint(Graphics& g)
         const double secondsPerBeat = 60.0 / bpm;
         const double beatsPerBar = static_cast<double>(timeSigNumerator);
         const double secondsPerBar = secondsPerBeat * beatsPerBar;
-        const int totalBars = static_cast<int>(length / secondsPerBar) + 1;
-        const double pixelsPerSecond = getWidth() / length;
+        // pixelsPerSecond muss exakt dem Track-Zoom entsprechen, sonst
+        // läuft das Raster gegenüber den Regions auseinander.
+        // Fallback: aus Breite/Length ableiten (z. B. wenn zoom noch nicht gesetzt).
+        const double pixelsPerSecond = (zoom > 0.0f) ? static_cast<double>(zoom)
+                                                     : (getWidth() / length);
+        // Anzahl Takte aus dem tatsächlich sichtbaren Pixelbereich ableiten,
+        // damit auch dann genug Bars gezeichnet werden, wenn die TimeLine
+        // breiter ist als `length` (Tracks können länger werden als
+        // Project::getTrackLength()).
+        const double visibleSeconds = (pixelsPerSecond > 0.0)
+            ? static_cast<double>(getWidth()) / pixelsPerSecond
+            : length;
+        const int totalBars = static_cast<int>(visibleSeconds / secondsPerBar) + 1;
+
+        // Bei niedrigem Zoom werden Takte/Beats sonst zu eng beieinander
+        // gezeichnet. Ab Zoomstufe <= 10 nur noch jeden 4. Takt anzeigen
+        // (ohne Beat-/Viertel-Unterteilungen).
+        const bool sparseMode = (zoom <= 10.0f);
+        const int barStep = sparseMode ? 4 : 1;
 
         // Haupt-Taktlinien und Beat-Linien zeichnen
         for (int bar = 1; bar <= totalBars; ++bar)
         {
+            const bool drawThisBar = ((bar - 1) % barStep == 0);
+            if (!drawThisBar)
+                continue;
+
             const double barStartSec = (bar - 1) * secondsPerBar;
-            for (int beat = 0; beat < timeSigNumerator; ++beat)
+            const int beatsToDraw = sparseMode ? 1 : timeSigNumerator;
+
+            for (int beat = 0; beat < beatsToDraw; ++beat)
             {
                 const double beatTimeSec = barStartSec + beat * secondsPerBeat;
                 const float x = static_cast<float>(beatTimeSec * pixelsPerSecond + offset);
@@ -62,17 +85,20 @@ void TimeLine::paint(Graphics& g)
                 g.drawLine(x, 0.0f, x, lineHeight);
 
                 // 1/4-Takt Unterteilungen zeichnen (schw�chere Linien)
-                g.setColour(Colours::lightgrey);
-                for (int quarter = 1; quarter < 4; ++quarter)
+                if (!sparseMode)
                 {
-                    const double quarterTimeSec = beatTimeSec + (quarter * secondsPerBeat / 4.0);
-                    const float quarterX = static_cast<float>(quarterTimeSec * pixelsPerSecond + offset);
-                    if (quarterX < getWidth())
+                    g.setColour(Colours::lightgrey);
+                    for (int quarter = 1; quarter < 4; ++quarter)
                     {
-                        g.drawLine(quarterX, 0.0f, quarterX, getHeight() / 6.0f);
+                        const double quarterTimeSec = beatTimeSec + (quarter * secondsPerBeat / 4.0);
+                        const float quarterX = static_cast<float>(quarterTimeSec * pixelsPerSecond + offset);
+                        if (quarterX < getWidth())
+                        {
+                            g.drawLine(quarterX, 0.0f, quarterX, getHeight() / 6.0f);
+                        }
                     }
+                    g.setColour(Colours::white);
                 }
-                g.setColour(Colours::white);
 
                 // Nur Bar-Zahlen mittig zeichnen
                 if (isBarStart)
@@ -275,6 +301,12 @@ void TimeLine::setTempoAndTimeSignature(double bpm_, int numerator, int denomina
     repaint();
 }
 
+void TimeLine::setZoom(float zoom_)
+{
+    zoom = zoom_;
+    repaint();
+}
+
 String TimeLine::secondsToTime(int seconds)
 {
     int min = (seconds % 3600) / 60;
@@ -351,6 +383,9 @@ void TimeLine::clearLoop()
 // Helper-Funktionen
 double TimeLine::pixelToTime(float pixel) const
 {
+    if (zoom > 0.0f)
+        return (pixel - offset) / static_cast<double>(zoom);
+
     if (length <= 0 || getWidth() <= 0)
         return 0.0;
 
@@ -359,6 +394,9 @@ double TimeLine::pixelToTime(float pixel) const
 
 float TimeLine::timeToPixel(double time) const
 {
+    if (zoom > 0.0f)
+        return static_cast<float>(time * zoom + offset);
+
     if (length <= 0)
         return 0.0f;
 

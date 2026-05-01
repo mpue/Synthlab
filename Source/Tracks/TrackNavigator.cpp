@@ -10,6 +10,8 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "TrackNavigator.h"
+#include "../TrackUtil.h"
+#include "../SynthEditor.h"
 #include "AudioRegion.h"
 #include "MidiRegion.h"
 #include "../Project/Project.h"
@@ -197,6 +199,10 @@ void TrackNavigator::setZoom(float zoom) {
 		tracks.at(i)->setZoom(zoom);
 	}
 	marker->setZoom(zoom);
+	if (timeLine != nullptr) {
+		timeLine->setLength(getMaxLength());
+		timeLine->setZoom(zoom);
+	}
 	double beatsPerSecond = Project::getInstance()->getTempo() / 60.0;
 	double samplesPerBeat = Project::getInstance()->getSampleRate() / beatsPerSecond;
 	int raster = (int)(samplesPerBeat * zoom) / Project::getInstance()->getSampleRate(); // Viertelnoten
@@ -256,15 +262,31 @@ void TrackNavigator::updateTrackLayout(ChangeBroadcaster* source)
 
 void TrackNavigator::adjustHeight()
 {
-	int height = 0;
+	int height = timelineOffset;
 
 	for (int i = 0; i < tracks.size(); i++) {
 		height += tracks.at(i)->getHeight();
 	}
 
-	this->marker->setBounds(kControlsWidth, 0, 2, getHeight());
+	// Mindestens so groß wie der Viewport, damit Drops auf "leeren" Bereich
+	// (kein Track) trotzdem den Navigator erreichen.
+	if (auto* p = getParentComponent()) {
+		if (p->getHeight() > height)
+			height = p->getHeight();
+	}
 
-	setSize(getWidth(), height + timelineOffset);
+	setSize(getWidth(), height);
+	this->marker->setBounds(kControlsWidth, 0, 2, getHeight());
+}
+
+void TrackNavigator::parentSizeChanged()
+{
+	adjustHeight();
+}
+
+void TrackNavigator::parentHierarchyChanged()
+{
+	adjustHeight();
 }
 
 // Bestehende isInterestedInDragSource erweitern:
@@ -298,29 +320,61 @@ bool TrackNavigator::isInterestedInFileDrag(const StringArray& files)
 	return false;
 }
 
+Track* TrackNavigator::createAudioTrackForDrop()
+{
+	if (editor != nullptr && editor->getModule() != nullptr) {
+		return TrackUtil::createAudioTrack(editor, this, editor->getModule());
+	}
+
+	// Fallback: ohne Editor/Module kennen wir keinen Modul-Graph — dann
+	// wenigstens einen reinen Track ohne Verdrahtung anlegen, damit die
+	// Region irgendwo landet.
+	return addTrack(Track::Type::AUDIO, Project::getInstance()->getSampleRate());
+}
+
+Track* TrackNavigator::trackAtY(int y) const
+{
+	int yPos = timelineOffset;
+	for (auto* t : tracks) {
+		const int h = t->getHeight();
+		if (y >= yPos && y < yPos + h)
+			return t;
+		yPos += h;
+	}
+	return nullptr;
+}
+
 void TrackNavigator::filesDropped(const StringArray& files, int x, int y)
 {
-	// Verarbeite alle Audio-Dateien
+	// Track an der Drop-Y-Position bestimmen — gibt es dort keinen, legen wir
+	// genau einen neuen Audio-Track an, in den alle gedroppten Dateien
+	// fallen (statt für jede Datei einen separaten Track zu erzeugen).
+	Track* target = trackAtY(y);
+
 	for (const auto& filename : files)
 	{
 		juce::File file(filename);
 		juce::String extension = file.getFileExtension().toLowerCase();
 
-		// Pr�fe, ob es eine unterst�tzte Audio-Datei ist
 		if (extension == ".wav" || extension == ".mp3" ||
 			extension == ".flac" || extension == ".ogg" ||
 			extension == ".aiff" || extension == ".aif" ||
 			extension == ".m4a" || extension == ".wma")
 		{
-			for (int i = 0; i < tracks.size(); i++) {
-				if (tracks.at(i)->isSelected()) {					
-					tracks.at(i)->addRegion(file.getFileNameWithoutExtension(), file, Project::getInstance()->getSampleRate());
-					Project::getInstance()->addAudioFile(file.getFileNameWithoutExtension(), file.getFullPathName());
-					repaint();
-				}
+			if (target == nullptr) {
+				target = createAudioTrackForDrop();
 			}
 
+			if (target != nullptr) {
+				target->addRegion(file.getFileNameWithoutExtension(), file, Project::getInstance()->getSampleRate());
+				Project::getInstance()->addAudioFile(file.getFileNameWithoutExtension(), file.getFullPathName());
+			}
 		}
+	}
+
+	if (target != nullptr) {
+		for (auto* t : tracks)
+			t->setSelected(t == target);
 	}
 
 	// Layout aktualisieren
@@ -331,14 +385,27 @@ void TrackNavigator::filesDropped(const StringArray& files, int x, int y)
 
 void TrackNavigator::itemDropped(const SourceDetails& dragSourceDetails)
 {
-	for (int i = 0; i < tracks.size(); i++) {
-		if (tracks.at(i)->isSelected()) {
-			juce::File file = juce::File(dragSourceDetails.description.toString());
-			tracks.at(i)->addRegion(file.getFileNameWithoutExtension(), file, Project::getInstance()->getSampleRate());
-			Project::getInstance()->addAudioFile(file.getFileNameWithoutExtension(), file.getFullPathName());
-			repaint();
-		}
+	juce::File file = juce::File(dragSourceDetails.description.toString());
+
+	Track* target = trackAtY(dragSourceDetails.localPosition.getY());
+	if (target == nullptr) {
+		target = createAudioTrackForDrop();
 	}
+
+	if (target == nullptr) {
+		Logger::getCurrentLogger()->writeToLog("Drop: konnte keinen Audio-Track anlegen.");
+		return;
+	}
+
+	target->addRegion(file.getFileNameWithoutExtension(), file, Project::getInstance()->getSampleRate());
+	Project::getInstance()->addAudioFile(file.getFileNameWithoutExtension(), file.getFullPathName());
+
+	for (auto* t : tracks)
+		t->setSelected(t == target);
+
+	adjustHeight();
+	repaint();
+	sendChangeMessage();
 
 	Logger::getCurrentLogger()->writeToLog(dragSourceDetails.description.toString());
 }
@@ -452,6 +519,52 @@ void TrackNavigator::setConfiguration(ValueTree* config)
 void TrackNavigator::scrollBarMoved(ScrollBar* scrollBarThatHasMoved, double newRangeStart)
 {
 	scrollbarOffset = newRangeStart;
+}
+
+void TrackNavigator::mouseWheelMove(const MouseEvent& event, const MouseWheelDetails& wheel)
+{
+	// Auf macOS wird Ctrl+Scroll vom OS für Accessibility-Zoom abgefangen,
+	// daher zusätzlich Cmd akzeptieren.
+	const bool isZoomModifier = event.mods.isCtrlDown() || event.mods.isCommandDown();
+
+	if (!isZoomModifier || getMaxLength() == 0)
+	{
+		// Normales Scrollen an den Viewport durchreichen.
+		Component::mouseWheelMove(event, wheel);
+		return;
+	}
+
+	const float oldZoom = this->zoom;
+
+	// Schrittweite analog zur '+' / '-' Taste.
+	const float step = (float)(Project::getInstance()->getTempo() / 8.0);
+	float delta = wheel.deltaY;
+	if (wheel.isReversed) delta = -delta;
+
+	float newZoom = oldZoom + delta * step;
+	if (newZoom < 1.0f) newZoom = 1.0f;
+	if (newZoom == oldZoom) return;
+
+	// Zeitposition unter der Maus vor dem Zoom merken, damit wir den
+	// Viewport hinterher so scrollen können, dass derselbe Punkt unter dem
+	// Cursor bleibt.
+	const int mouseX = event.getEventRelativeTo(this).x;
+	const double timeAtMouse = (double)(mouseX - kControlsWidth) / oldZoom;
+
+	this->zoom = newZoom;
+	setSize(getMaxLength() * this->zoom, getHeight());
+	setZoom(newZoom);
+
+	if (view != nullptr)
+	{
+		const int newMouseX = (int)(timeAtMouse * newZoom) + kControlsWidth;
+		const int dx = newMouseX - mouseX;
+		const auto pos = view->getViewPosition();
+		view->setViewPosition(pos.x + dx, pos.y);
+	}
+
+	repaint();
+	sendChangeMessage();
 }
 
 double TrackNavigator::getPosition() {
@@ -1021,6 +1134,9 @@ bool TrackNavigator::keyPressed(const KeyPress& key, Component* originatingCompo
 		repaint();
 		sendChangeMessage();
 	}
+
+	// Untergrenze für Zoom — sonst fällt zoom ggf. <= 0 und das Layout kollabiert.
+	if (this->zoom < 1.0f) this->zoom = 1.0f;
 
 	ModifierKeys m = key.getModifiers();
 

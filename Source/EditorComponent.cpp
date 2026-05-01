@@ -334,6 +334,7 @@ void EditorComponent::OpenTrackView()
         PrefabFactory::getInstance()->init(navigator.get());
         // addMouseListener(navigator.get(), true);
         editor->setNavigator(navigator.get());
+        navigator->setEditor(editor.get());
         trackView->setSize(500, 200);
         trackView->setViewedComponent(navigator.get());
         trackView->setScrollBarsShown(true, true);

@@ -27,6 +27,8 @@
 #include "../TransportDisplayComponent.h"
 #include "../PianoRollComponent.h"
 #include "TrackControl.h"
+
+class SynthEditor;
 //==============================================================================
 
 // Big centered zoom-level overlay. Fades in on zoom changes and fades back
@@ -134,6 +136,11 @@ public:
 	// beim horizontalen Scrollen). Wir nutzen das, um die Track-Control-Strips
 	// am sichtbaren linken Rand zu fixieren.
 	void moved() override;
+	// Sorgt dafür, dass der Navigator auch ohne Tracks die volle sichtbare
+	// Viewport-Fläche abdeckt — sonst landen Drops auf "leerem" Bereich nicht
+	// im Navigator und es entsteht kein neuer Audio-Track.
+	void parentSizeChanged() override;
+	void parentHierarchyChanged() override;
 
 	WaveSelector* getSelector();
 
@@ -144,6 +151,17 @@ public:
 	Track* addTrack(TrackConfig* tc);
 	void addTrack(Track* t);
 	Track* addTrack(Track::Type type, double sampleRate);
+
+	// Liefert den Track, dessen vertikaler Bereich Y enthält, oder nullptr,
+	// wenn an dieser Y-Position kein Track liegt (z.B. unter dem letzten
+	// Track oder oberhalb der Tracks im Timeline-Bereich).
+	Track* trackAtY(int y) const;
+
+	// Optionaler Rückverweis auf den SynthEditor — wird benötigt, damit
+	// per Drag&Drop angelegte Audio-Tracks dieselbe Verdrahtung
+	// (AudioIn L/R, TrackIn, AudioOut) bekommen wie über den Menü-Pfad.
+	void setEditor(SynthEditor* e) { editor = e; }
+	SynthEditor* getEditor() const { return editor; }
 	void removeSelectedTrack();
 	Track* detachSelectedTrack(int& outIndex);
 	void insertTrackAt(Track* track, int index);
@@ -210,12 +228,17 @@ public:
 
 	void setConfiguration(ValueTree* config);
 	void scrollBarMoved(ScrollBar* scrollBarThatHasMoved, double newRangeStart) override;
+	void mouseWheelMove(const MouseEvent& event, const MouseWheelDetails& wheel) override;
 		
 	Region* getRecordingRegion() {
 		return recordingRegion;
 	}
 
 private:
+	// Legt für einen Drop einen Audio-Track an. Geht möglichst über
+	// TrackUtil::createAudioTrack, damit dieselbe Verdrahtung wie beim
+	// Menü-Pfad entsteht; fällt sonst auf addTrack(Type::AUDIO,…) zurück.
+	Track* createAudioTrackForDrop();
 
 	MultiComponentDragger* dragger = NULL;
 	AudioDeviceManager* deviceManager;
@@ -279,6 +302,8 @@ private:
 	Region* recordingRegion = nullptr;
 
 	std::unique_ptr<ZoomDisplay> zoomDisplay;
+
+	SynthEditor* editor = nullptr;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TrackNavigator)
 };
