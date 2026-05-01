@@ -26,6 +26,7 @@
 #include "../UITools.h"
 #include "../TransportDisplayComponent.h"
 #include "../PianoRollComponent.h"
+#include "TrackControl.h"
 //==============================================================================
 
 // Big centered zoom-level overlay. Fades in on zoom changes and fades back
@@ -129,6 +130,10 @@ public:
 
 	void paint(Graphics&) override;
 	void resized() override;
+	// Wird vom Viewport aufgerufen, wenn der Navigator verschoben wird (z.B.
+	// beim horizontalen Scrollen). Wir nutzen das, um die Track-Control-Strips
+	// am sichtbaren linken Rand zu fixieren.
+	void moved() override;
 
 	WaveSelector* getSelector();
 
@@ -145,6 +150,12 @@ public:
 	Track* getCurrentTrack();
 	std::vector<Track*> getTracks();
 	StringArray getTrackList();
+
+	// Stellt sicher, dass jeder Track einen TrackControl-Strip links daneben
+	// hat (an x=0, gleiche Y wie der Track). Erzeugt fehlende, entfernt
+	// verwaiste, positioniert alle. Idempotent — kann nach jeder Track-
+	// Mutation aufgerufen werden.
+	void syncTrackControls();
 
 	void openPianoRoll(MidiRegion* r);
 	void openEventEditor(MidiRegion* r);
@@ -215,7 +226,17 @@ private:
 	Viewport* view;
 
 	std::vector<Track*> tracks;
+	// 1:1 zu `tracks` — Index N gehört zum Track N. TrackControls liegen
+	// links bei x=0..kControlsWidth, gleiche Y wie ihr Track.
+	std::vector<std::unique_ptr<TrackControl>> trackControls;
 	std::unique_ptr<WaveSelector> selector;
+
+public:
+	// Breite des linken Steuer-Strips, ab dem die eigentlichen Tracks/Marker/
+	// Timeline beginnen. Region-Coords im Track-internen System sind davon
+	// nicht betroffen — nur das Layout im Navigator.
+	static constexpr int kControlsWidth = 140;
+private:
 
 	std::atomic<bool> playing { false };
 	std::atomic<bool> recording { false };

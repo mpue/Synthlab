@@ -214,6 +214,8 @@
               file="Source/Tracks/TrackPropertyPanel.cpp"/>
         <FILE id="NToMfh" name="TrackPropertyPanel.h" compile="0" resource="0"
               file="Source/Tracks/TrackPropertyPanel.h"/>
+        <FILE id="TrCtl1" name="TrackControl.h" compile="0" resource="0"
+              file="Source/Tracks/TrackControl.h"/>
         <FILE id="ZD244F" name="TrackPropertyView.cpp" compile="1" resource="0"
               file="Source/Tracks/TrackPropertyView.cpp"/>
         <FILE id="yI1fyn" name="TrackPropertyView.h" compile="0" resource="0"

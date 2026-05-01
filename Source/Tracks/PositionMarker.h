@@ -69,8 +69,13 @@ private:
     {
         if (sampleLength > 0 && sampleRate > 0.0)
         {
+            // `x` aus setDrawingBounds wird als horizontaler Offset benutzt.
+            // Der TrackNavigator setzt darüber das X auf kControlsWidth, sodass
+            // der Marker auf gleicher Höhe wie der Track-Anfang sitzt (Tracks
+            // beginnen ab x=kControlsWidth, weil links der TrackControl-Strip
+            // liegt).
             const double seconds = (double)samplePosition / sampleRate;
-            const int newX = static_cast<int>(seconds * zoom);
+            const int newX = x + static_cast<int>(seconds * zoom);
             setTopLeftPosition(newX, y);
         }
     }

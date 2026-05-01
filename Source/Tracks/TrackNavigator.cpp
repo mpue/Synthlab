@@ -31,8 +31,10 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 	this->transportDisplay = transport;
 	this->propertyView = propertyView;
 	this->timeLine = std::make_unique<TimeLine>(Project::getInstance()->getTrackLength());
-	this->timeLine->setBounds(0, 0, getWidth(), timelineOffset);
-	this->timeLine->setSize(getWidth(), timelineOffset);
+	// Timeline und alles Sample-bezogene beginnen bei kControlsWidth — links
+	// davor liegt der Track-Control-Strip.
+	this->timeLine->setBounds(kControlsWidth, 0, getWidth() - kControlsWidth, timelineOffset);
+	this->timeLine->setSize(getWidth() - kControlsWidth, timelineOffset);
 	this->timeLine->setTempoAndTimeSignature(Project::getInstance()->getTempo(),4,4);
 	addAndMakeVisible(timeLine.get());
 	this->deviceManager = deviceManager;
@@ -59,7 +61,7 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 	addChangeListener(Mixer::getInstance());
 	addAndMakeVisible(marker);
 	marker->setAlwaysOnTop(true);
-	marker->setBounds(0, 0, 2, getHeight());
+	marker->setBounds(kControlsWidth, 0, 2, getHeight());
 	this->view = view;
 	view->getHorizontalScrollBar().addListener(this);
 
@@ -104,10 +106,67 @@ void TrackNavigator::paint(Graphics& g)
 }
 
 void TrackNavigator::clearTracks() {
+	// Erst die Controls weg — wenn der Track unter ihnen gelöscht wird, hätten
+	// sie einen Dangling-Pointer.
+	trackControls.clear();
 	for (std::vector<Track*>::iterator it = tracks.begin(); it != tracks.end(); ++it) {
 		delete* it;
 	}
 	tracks.clear();
+}
+
+void TrackNavigator::moved() {
+	// Beim horizontalen Scrollen verschiebt der Viewport den Navigator in
+	// negative X-Koordinaten (getX() wird z.B. -100, wenn 100 px nach rechts
+	// gescrollt wurde). Damit die TrackControl-Strips visuell am linken Rand
+	// des sichtbaren Bereichs kleben bleiben, ziehen wir sie um den gleichen
+	// Betrag nach rechts. Vertikal scrollen sie automatisch mit, weil sie
+	// Children des Navigators sind und auf den Y-Koordinaten der Tracks liegen.
+	const int viewX = juce::jmax(0, -getX());
+	for (auto& tc : trackControls) {
+		if (tc != nullptr)
+			tc->setTopLeftPosition(viewX, tc->getY());
+	}
+	// Marker und Timeline bleiben Sample-bezogen — die scrollen mit.
+}
+
+void TrackNavigator::syncTrackControls() {
+	// 1) Verwaiste Controls (Track wurde entfernt) löschen.
+	trackControls.erase(
+		std::remove_if(trackControls.begin(), trackControls.end(),
+			[this](const std::unique_ptr<TrackControl>& tc) {
+				if (tc == nullptr) return true;
+				for (Track* t : tracks)
+					if (t == tc->getTrack()) return false;
+				return true;
+			}),
+		trackControls.end());
+
+	// 2) Für jeden Track, der noch keinen Control hat, einen anlegen.
+	for (Track* t : tracks) {
+		if (t == nullptr) continue;
+		bool found = false;
+		for (auto& tc : trackControls)
+			if (tc->getTrack() == t) { found = true; break; }
+		if (!found) {
+			auto control = std::make_unique<TrackControl>(t);
+			addAndMakeVisible(control.get());
+			trackControls.push_back(std::move(control));
+		}
+	}
+
+	// 3) Alle Controls an die richtige Y-Position des zugehörigen Tracks
+	//    schieben und auf dessen aktuelle Höhe bringen. Die X-Position folgt
+	//    dem aktuellen Scroll-Offset, damit die Controls beim Sync nicht auf
+	//    x=0 zurückspringen, während der Navigator nach rechts gescrollt ist.
+	const int viewX = juce::jmax(0, -getX());
+	for (auto& tc : trackControls) {
+		if (tc == nullptr) continue;
+		Track* t = tc->getTrack();
+		if (t == nullptr) continue;
+		tc->setBounds(viewX, t->getY(), kControlsWidth, t->getHeight());
+		tc->syncFromTrack();
+	}
 }
 
 void TrackNavigator::eventReceived(Event* e)
@@ -185,11 +244,12 @@ void TrackNavigator::updateTrackLayout(ChangeBroadcaster* source)
 	else {
 
 		if (tracks.size() == 1) {
-			tracks.at(0)->setTopLeftPosition(0, timelineOffset);
+			tracks.at(0)->setTopLeftPosition(kControlsWidth, timelineOffset);
 		}
 
 	}
 
+	syncTrackControls();
 	adjustHeight();
 	sendChangeMessage();
 }
@@ -202,7 +262,7 @@ void TrackNavigator::adjustHeight()
 		height += tracks.at(i)->getHeight();
 	}
 
-	this->marker->setBounds(0, 0, 2, getHeight());
+	this->marker->setBounds(kControlsWidth, 0, 2, getHeight());
 
 	setSize(getWidth(), height + timelineOffset);
 }
@@ -716,13 +776,13 @@ Track* TrackNavigator::addTrack(TrackConfig* tc) {
 		height += tracks.at(i)->getHeight();
 	}
 
-	setBounds(getX(), getY(), getMaxLength() * this->zoom, height);
+	setBounds(getX(), getY(), kControlsWidth + (int)(getMaxLength() * this->zoom), height);
 
 	this->marker->setSize(2, height);
 	this->marker->setSampleLength(getMaxLength() * 300);
 	this->selector->setSize(getWidth(), getHeight());
-	this->timeLine->setBounds(0, 0, getWidth(), timelineOffset);
-	this->timeLine->setSize(getWidth(), timelineOffset);
+	this->timeLine->setBounds(kControlsWidth, 0, getWidth() - kControlsWidth, timelineOffset);
+	this->timeLine->setSize(getWidth() - kControlsWidth, timelineOffset);
 
 	repaint();
 	sendChangeMessage();
@@ -755,12 +815,13 @@ void TrackNavigator::addTrack(Track* track) {
 	// set bounds accordingly
 
 	Project* p = Project::getInstance();
-	track->setBounds(0, yPos, p->getTrackLength() * this->zoom, track->getHeight());
+	track->setBounds(kControlsWidth, yPos, p->getTrackLength() * this->zoom, track->getHeight());
 
 	this->tracks.push_back(track);
 	this->currentTrack = track;
 
 	addAndMakeVisible(track);
+	syncTrackControls();
 
 	track->addChangeListener(this);
 	track->setZoom(this->zoom);
@@ -792,13 +853,13 @@ Track* TrackNavigator::addTrack(Track::Type type, double sampleRate) {
 		height += tracks.at(i)->getHeight();
 	}
 
-	setBounds(getX(), getY(), getMaxLength() * this->zoom, height);
+	setBounds(getX(), getY(), kControlsWidth + (int)(getMaxLength() * this->zoom), height);
 
 	this->marker->setSize(2, getHeight());
 	this->marker->setSampleLength(getMaxLength() * 300);
 	this->selector->setSize(getWidth(), getHeight());
-	this->timeLine->setBounds(0, 0, getWidth(), timelineOffset);
-	this->timeLine->setSize(getWidth(), timelineOffset);
+	this->timeLine->setBounds(kControlsWidth, 0, getWidth() - kControlsWidth, timelineOffset);
+	this->timeLine->setSize(getWidth() - kControlsWidth, timelineOffset);
 
 	track->setVolume(1.0f);
 
@@ -830,6 +891,7 @@ void TrackNavigator::removeSelectedTrack()
 		}
 	}
 
+	syncTrackControls();
 	adjustHeight();
 	repaint();
 	sendChangeMessage();
@@ -857,6 +919,7 @@ Track* TrackNavigator::detachSelectedTrack(int& outIndex)
 			if (currentTrack == track)
 				currentTrack = tracks.empty() ? nullptr : tracks[0];
 
+			syncTrackControls();
 			adjustHeight();
 			repaint();
 			sendChangeMessage();
@@ -877,11 +940,12 @@ void TrackNavigator::insertTrackAt(Track* track, int index)
 	// Restack all tracks
 	int yPos = timelineOffset;
 	for (auto* t : tracks) {
-		t->setTopLeftPosition(t->getX(), yPos);
+		t->setTopLeftPosition(kControlsWidth, yPos);
 		yPos += t->getHeight();
 	}
 
 	currentTrack = track;
+	syncTrackControls();
 	adjustHeight();
 	repaint();
 	sendChangeMessage();
@@ -901,9 +965,10 @@ void TrackNavigator::resized()
 	}
 
 	this->marker->setSize(2, getHeight());
-	this->marker->setDrawingBounds(0, 25, getWidth(), getHeight());
-	this->timeLine->setBounds(0, 0, getWidth(), timelineOffset);
+	this->marker->setDrawingBounds(kControlsWidth, 25, getWidth() - kControlsWidth, getHeight());
+	this->timeLine->setBounds(kControlsWidth, 0, getWidth() - kControlsWidth, timelineOffset);
 
+	syncTrackControls();
 }
 
 WaveSelector* TrackNavigator::getSelector() {
@@ -1049,8 +1114,12 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 	}
 
 	if (!event.mods.isCtrlDown() && event.mods.isRightButtonDown()) {
-		// x ist jetzt relativ zum Navigator (inklusive gescrolltem Bereich!)
-		double positionInSeconds = (double)x / zoom;
+		// x ist relativ zum Navigator (inkl. gescrolltem Bereich). Sample 0
+		// liegt aber bei x = kControlsWidth, weil davor der TrackControl-Strip
+		// sitzt — daher den Offset abziehen, sonst springt der Playhead beim
+		// Rechtsklick auf den Track-Anfang in 3.5 s rein.
+		double positionInSeconds = (double)(x - kControlsWidth) / zoom;
+		if (positionInSeconds < 0.0) positionInSeconds = 0.0;
 		setPosition(positionInSeconds);
 		marker->setSamplePosition(getSamplePosition());
 		// While stopped, manually moving the playhead must not fire notes

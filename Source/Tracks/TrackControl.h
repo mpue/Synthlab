@@ -1,0 +1,169 @@
+/*
+  ==============================================================================
+
+    TrackControl.h
+    Schmaler Steuer-Strip links neben jedem Track im TrackNavigator.
+    Mute / Solo / Pan / Volume / Name.
+
+    Wird vom TrackNavigator pro Track angelegt und an x=0 platziert. Der
+    eigentliche Track liegt dann ab x=kControlsWidth (siehe TrackNavigator).
+    Damit bleibt die komplette Region-Logik (Pixel ↔ Sample-Offset) im
+    Track-internen Coord-System unverändert.
+
+  ==============================================================================
+*/
+
+#pragma once
+
+#include "../JuceLibraryCode/JuceHeader.h"
+#include "Track.h"
+
+class TrackControl : public juce::Component,
+                     private juce::Button::Listener,
+                     private juce::Slider::Listener
+{
+public:
+    TrackControl(Track* track) : track(track)
+    {
+        nameLabel.setText(track->getName(), juce::dontSendNotification);
+        nameLabel.setFont(juce::Font(12.0f, juce::Font::bold));
+        nameLabel.setColour(juce::Label::textColourId, juce::Colour(0xfff0f0f2));
+        nameLabel.setJustificationType(juce::Justification::centredLeft);
+        nameLabel.setInterceptsMouseClicks(false, false);
+        addAndMakeVisible(nameLabel);
+
+        muteButton.setButtonText("M");
+        muteButton.setClickingTogglesState(true);
+        muteButton.setToggleState(track->isMute(), juce::dontSendNotification);
+        muteButton.setColour(juce::TextButton::buttonOnColourId, juce::Colour(0xffd34d4d));
+        muteButton.addListener(this);
+        addAndMakeVisible(muteButton);
+
+        soloButton.setButtonText("S");
+        soloButton.setClickingTogglesState(true);
+        soloButton.setToggleState(track->isSolo(), juce::dontSendNotification);
+        soloButton.setColour(juce::TextButton::buttonOnColourId, juce::Colour(0xffe0a64a));
+        soloButton.addListener(this);
+        addAndMakeVisible(soloButton);
+
+        panSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+        panSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+        panSlider.setRange(-1.0, 1.0, 0.01);
+        panSlider.setDoubleClickReturnValue(true, 0.0);
+        panSlider.setValue(track->getPan(), juce::dontSendNotification);
+        panSlider.addListener(this);
+        addAndMakeVisible(panSlider);
+
+        volSlider.setSliderStyle(juce::Slider::LinearHorizontal);
+        volSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+        volSlider.setRange(0.0, 1.5, 0.01);
+        volSlider.setDoubleClickReturnValue(true, 1.0);
+        volSlider.setValue(track->getVolume(), juce::dontSendNotification);
+        volSlider.addListener(this);
+        addAndMakeVisible(volSlider);
+
+        panLabel.setText("Pan", juce::dontSendNotification);
+        panLabel.setFont(juce::Font(9.5f));
+        panLabel.setColour(juce::Label::textColourId, juce::Colour(0xff8a8e98));
+        panLabel.setInterceptsMouseClicks(false, false);
+        addAndMakeVisible(panLabel);
+
+        volLabel.setText("Vol", juce::dontSendNotification);
+        volLabel.setFont(juce::Font(9.5f));
+        volLabel.setColour(juce::Label::textColourId, juce::Colour(0xff8a8e98));
+        volLabel.setInterceptsMouseClicks(false, false);
+        addAndMakeVisible(volLabel);
+    }
+
+    ~TrackControl() override
+    {
+        muteButton.removeListener(this);
+        soloButton.removeListener(this);
+        panSlider.removeListener(this);
+        volSlider.removeListener(this);
+    }
+
+    void paint(juce::Graphics& g) override
+    {
+        // Hintergrund: dezenter Tint der Track-Farbe — passt zur Track-Reihe
+        // visuell zusammen, ohne dass die Buttons drauf untergehen.
+        const juce::Colour base = track != nullptr ? track->getTrackColour()
+                                                   : juce::Colour(0xff2a2a2a);
+        const juce::Colour bg = base.withMultipliedSaturation(0.45f)
+                                    .withMultipliedBrightness(0.30f);
+        g.fillAll(bg);
+
+        // Farbiger 4-px-Streifen links als Track-Marker (analog zum Track selbst).
+        g.setColour(base);
+        g.fillRect(0, 0, 4, getHeight());
+
+        // Trennlinie zum Track rechts daneben.
+        g.setColour(juce::Colours::black.withAlpha(0.5f));
+        g.fillRect(getWidth() - 1, 0, 1, getHeight());
+    }
+
+    void resized() override
+    {
+        auto r = getLocalBounds().reduced(6, 4);
+        r.removeFromLeft(4); // Platz für den farbigen Marker-Streifen
+
+        nameLabel.setBounds(r.removeFromTop(16));
+        r.removeFromTop(2);
+
+        // M / S Buttons + Pan-Slider in einer Reihe
+        auto row1 = r.removeFromTop(18);
+        muteButton.setBounds(row1.removeFromLeft(20));
+        row1.removeFromLeft(2);
+        soloButton.setBounds(row1.removeFromLeft(20));
+        row1.removeFromLeft(6);
+        panLabel.setBounds(row1.removeFromLeft(22));
+        panSlider.setBounds(row1);
+
+        r.removeFromTop(3);
+
+        auto row2 = r.removeFromTop(16);
+        row2.removeFromLeft(2);
+        volLabel.setBounds(row2.removeFromLeft(22));
+        volSlider.setBounds(row2);
+    }
+
+    // Vom Navigator aufgerufen, wenn die Werte am Track von außen geändert
+    // wurden (z.B. via Property-Panel). Hält UI und Track in Sync.
+    void syncFromTrack()
+    {
+        if (track == nullptr) return;
+        nameLabel.setText(track->getName(), juce::dontSendNotification);
+        muteButton.setToggleState(track->isMute(), juce::dontSendNotification);
+        soloButton.setToggleState(track->isSolo(), juce::dontSendNotification);
+        panSlider.setValue(track->getPan(), juce::dontSendNotification);
+        volSlider.setValue(track->getVolume(), juce::dontSendNotification);
+        repaint();
+    }
+
+    Track* getTrack() const { return track; }
+
+private:
+    void buttonClicked(juce::Button* b) override
+    {
+        if (track == nullptr) return;
+        if (b == &muteButton) track->setMute(muteButton.getToggleState());
+        else if (b == &soloButton) track->setSolo(soloButton.getToggleState());
+    }
+
+    void sliderValueChanged(juce::Slider* s) override
+    {
+        if (track == nullptr) return;
+        if (s == &panSlider) track->setPan((float)panSlider.getValue());
+        else if (s == &volSlider) track->setVolume((float)volSlider.getValue());
+    }
+
+    Track* track = nullptr;
+
+    juce::Label       nameLabel;
+    juce::TextButton  muteButton;
+    juce::TextButton  soloButton;
+    juce::Slider      panSlider, volSlider;
+    juce::Label       panLabel, volLabel;
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TrackControl)
+};

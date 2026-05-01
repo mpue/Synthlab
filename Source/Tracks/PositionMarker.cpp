@@ -57,7 +57,10 @@ public:
 private:
 	void updatePosition()
 	{
-		const int newX = static_cast<int>((double)samplePosition / zoom);
+		// `x` aus setDrawingBounds wird als horizontaler Offset benutzt — der
+		// Navigator stellt darüber sicher, dass der Marker den Track-Control-
+		// Strip links nicht überschneidet.
+		const int newX = x + static_cast<int>((double)samplePosition / zoom);
 		setTopLeftPosition(newX, y);
 	}
 
