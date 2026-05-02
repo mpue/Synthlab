@@ -92,6 +92,13 @@ public:
 
 	Channel* getChannel(Mixer::Channel::Type type, int index);
 
+	// Realtime-safe O(1) accessor for the audio thread. Maintained as a
+	// by-type cache rebuilt on every add/remove. Read-only — do not mutate
+	// while the audio thread might be iterating.
+	inline const std::vector<Channel*>& getChannelsByType(Channel::Type t) const {
+		return byType[(int)t];
+	}
+
 	int getNumOutputs();
 	int getNumInputs();
 	int getNumAuxBusses();
@@ -149,6 +156,9 @@ private:
 	Track* lastModified = NULL;
 
 	std::vector<Channel*> channels;
+	// Index-by-type for O(1) audio-thread lookups (F1). Rebuilt by rebuildByType().
+	std::vector<Channel*> byType[4]; // IN, OUT, AUX, MASTER
+	void rebuildByType();
 
 	StringArray availableInputChannels;
 	StringArray availableOutputChannels;

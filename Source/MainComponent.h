@@ -24,6 +24,7 @@
 #include "AudioLevelMeter.h"
 #include "SpektrumAnalyzer.h"
 #include "GeometryViewComponent.h"
+#include "QuickstartComponent.h"
 
 #define _USE_MATH_DEFINES
 #ifndef M_PI
@@ -149,6 +150,7 @@ private:
     std::atomic<bool> bouncing{ false };
     std::atomic<bool> running{ false };
     void openSettings();
+    void openQuickstart();
     
 	SynthEditor* editor = nullptr;
     std::unique_ptr<MainTabbedComponent> tab = nullptr;
@@ -225,6 +227,7 @@ private:
     
 	std::unique_ptr<AudioLevelMeter> levelMeter = nullptr;
     std::unique_ptr<SpectrumAnalyzer> spectrumAnalyzer = nullptr;
+    std::unique_ptr<QuickstartComponent> quickstart = nullptr;
 
     // Statuszeile am unteren Fensterrand (Studio-Modus). CPU/RAM/Audio/Tempo.
     std::unique_ptr<StatusBarComponent> statusBar = nullptr;

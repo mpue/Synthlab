@@ -130,8 +130,10 @@ int MixerPanel::addChannel(String name, Mixer::Channel::Type channeltype) {
 
     Mixer::Channel* channel = new Mixer::Channel();
     channel->index = panel->getIndex();
-    Mixer::getInstance()->addChannel(channel);
     channel->channelType = channeltype;
+    // channelType muss VOR addChannel gesetzt sein, sonst landet der Channel
+    // im Mixer-Type-Cache mit dem uninitialisierten Default → Audio stumm.
+    Mixer::getInstance()->addChannel(channel);
     panel->setChannel(channel);
 
     channels.push_back(panel);

@@ -7,6 +7,7 @@
 //
 
 #include "PluginManager.h"
+#include "PluginManagerDialog.h"
 #include "../Project/Project.h"
 
 using juce::AudioPluginFormatManager;
@@ -53,38 +54,50 @@ void PluginManager::scanPlugins() {
     }
     
     File file = File(userHome+"/.Synthlab/plugin.properties");
-    PropertiesFile* props = new PropertiesFile(file,options);
-    
-    pluginListComponent = new PluginListComponent(*apfm,*pluginList,File(), props);
-    pluginListComponent->setLookAndFeel(Project::getInstance()->getLookAndFeel());
+    auto props = std::make_unique<PropertiesFile>(file, options);
 
-    DialogWindow::LaunchOptions launchOptions;
-    launchOptions.dialogTitle = ("Manage Plugins");
-    launchOptions.escapeKeyTriggersCloseButton = true;
-    launchOptions.resizable = true;    
-    launchOptions.useNativeTitleBar = false;
-    launchOptions.useBottomRightCornerResizer = true;
-    launchOptions.componentToCentreAround = nullptr;
-    launchOptions.content.setOwned(pluginListComponent);
-    launchOptions.content->setSize(600, 580);
-    //Project::getInstance()->getOpenWindows().push_back(launchOptions.launchAsync());
-    launchOptions.runModal();
-    
-    File pluginDir = File(userHome+"/.Synthlab/plugins");
-    
-    if (!pluginDir.exists()) {
-        pluginDir.createDirectory();
-    }
-    
-    for (int i = 0; i < pluginList->getNumTypes();i++) {
-        std::unique_ptr<XmlElement> xml = pluginList->getType(i)->createXml();
-        
-        xml->writeToFile(File(userHome+"/.Synthlab/plugins/"+pluginList->getType(i)->name),"");
-        xml = nullptr;
-    }
-    
-    delete props;
+    auto* dialog = PluginManagerDialog::show(*apfm, *pluginList, props.get(),
+                                             Project::getInstance()->getLookAndFeel());
 
+    // Persist scan results when the user closes the dialog. We can't block
+    // here (the dialog is async), so attach a callback that fires on close.
+    auto saveResults = [list = pluginList, userHome]()
+    {
+        File pluginDir = File(userHome + "/.Synthlab/plugins");
+        if (!pluginDir.exists())
+            pluginDir.createDirectory();
+
+        // Wipe stale XML files so removed plugins don't keep getting picked up
+        // by updatePluginList() on next launch.
+        juce::Array<File> existing;
+        pluginDir.findChildFiles(existing, File::findFiles, false);
+        for (auto& f : existing)
+            f.deleteFile();
+
+        for (int i = 0; i < list->getNumTypes(); ++i)
+        {
+            auto xml = list->getType(i)->createXml();
+            xml->writeToFile(File(userHome + "/.Synthlab/plugins/" + list->getType(i)->name), "");
+        }
+    };
+
+    if (dialog != nullptr)
+    {
+        juce::ModalComponentManager::getInstance()->attachCallback(
+            dialog,
+            juce::ModalCallbackFunction::create([saveResults, propsRaw = props.release()](int)
+            {
+                saveResults();
+                propsRaw->saveIfNeeded();
+                delete propsRaw;
+            }));
+    }
+    else
+    {
+        // Fallback: dialog couldn't be created — keep old behaviour so the
+        // user still has *some* feedback.
+        saveResults();
+    }
 }
 
 void PluginManager::configureBusLayout(AudioPluginInstance* plugin, AudioDeviceManager* deviceManager, AudioAppComponent* component) {

@@ -266,6 +266,10 @@
         <FILE id="c8waHE" name="PluginManager.cpp" compile="1" resource="0"
               file="Source/Plugins/PluginManager.cpp"/>
         <FILE id="toYp5l" name="PluginManager.h" compile="0" resource="0" file="Source/Plugins/PluginManager.h"/>
+        <FILE id="PMDgHd" name="PluginManagerDialog.h" compile="0" resource="0"
+              file="Source/Plugins/PluginManagerDialog.h"/>
+        <FILE id="PMDgCp" name="PluginManagerDialog.cpp" compile="1" resource="0"
+              file="Source/Plugins/PluginManagerDialog.cpp"/>
         <FILE id="pB2cFg" name="PluginBrowserComponent.h" compile="0" resource="0"
               file="Source/Plugins/PluginBrowserComponent.h"/>
       </GROUP>
@@ -763,6 +767,14 @@
       <FILE id="prQp1n" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
       <FILE id="SXYkCq" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
+      <FILE id="QkStHd" name="QuickstartComponent.h" compile="0" resource="0"
+            file="Source/QuickstartComponent.h"/>
+      <FILE id="QkStCp" name="QuickstartComponent.cpp" compile="1" resource="0"
+            file="Source/QuickstartComponent.cpp"/>
+      <FILE id="ASDgHd" name="AudioSettingsDialog.h" compile="0" resource="0"
+            file="Source/AudioSettingsDialog.h"/>
+      <FILE id="ASDgCp" name="AudioSettingsDialog.cpp" compile="1" resource="0"
+            file="Source/AudioSettingsDialog.cpp"/>
       <FILE id="xE4eFu" name="GainDialog.cpp" compile="1" resource="0" file="Source/GainDialog.cpp"/>
       <FILE id="yF5fGv" name="GainDialog.h" compile="0" resource="0" file="Source/GainDialog.h"/>
       <FILE id="zA6gHw" name="SilenceDialog.cpp" compile="1" resource="0"

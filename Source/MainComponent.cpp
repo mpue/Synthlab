@@ -31,6 +31,9 @@
 #include "MidiRecorderModule.h"
 #include "TrackUtil.h"
 #include "Tracks/BounceThread.h"
+#include "Tracks/Track.h"
+#include "Tracks/TrackNavigator.h"
+#include "AudioSettingsDialog.h"
 #include "BounceDialog.h"
 #include "FadeDialog.h"
 #include "GainDialog.h"
@@ -168,6 +171,17 @@ MainComponent::MainComponent() : resizerBar(&stretchableManager, 1, true)
 		editor->setLocked(true);
 	}
 	commandManager->registerAllCommandsForTarget(this);
+
+	// Show the Quickstart wizard tab on first start (or whenever the user
+	// has the "Show on startup" toggle enabled). Deferred so the editor tab
+	// layout is fully realised before we add to it.
+	if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO
+		&& QuickstartComponent::getShowOnStartup())
+	{
+		juce::MessageManager::callAsync([this]() {
+			openQuickstart();
+		});
+	}
 };
 
 MainComponent::~MainComponent()
@@ -757,9 +771,9 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 
 	auto& mixer = *editor->getMixer();
 
-	std::vector<AudioOut*> outputChannels = mixer.getOutputChannels();
-	std::vector<AudioIn*>  inputChannels = mixer.getInputChannels();
-	std::vector<AuxOut*>   auxChannels = mixer.getAuxChannels();
+	const std::vector<AudioOut*>& outputChannels = mixer.getOutputChannels();
+	const std::vector<AudioIn*>&  inputChannels  = mixer.getInputChannels();
+	const std::vector<AuxOut*>&   auxChannels    = mixer.getAuxChannels();
 
 	// --- Host -> Mixer Inputs ---
 	int numInputPairs = std::min(Mixer::getInstance()->getNumInputs(), (int)inputChannels.size());
@@ -823,9 +837,7 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 
 			if (auxHwIndex < outNumChans && outputData[auxHwIndex]) {
 				float auxGain = (p == 0) ? auxGainL * auxVol : auxGainR * auxVol;
-				for (int i = 0; i < numSamples; ++i) {
-					outputData[auxHwIndex][i] += auxSrc[i] * auxGain;
-				}
+				juce::FloatVectorOperations::addWithMultiply(outputData[auxHwIndex], auxSrc, auxGain, numSamples);
 			}
 		}
 
@@ -859,8 +871,7 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 			if (!src || !outputData[hwIndex]) continue;
 
 			float gain = (p == 0) ? gainL * chVol : gainR * chVol;
-			for (int i = 0; i < numSamples; ++i)
-				outputData[hwIndex][i] += src[i] * gain;
+			juce::FloatVectorOperations::addWithMultiply(outputData[hwIndex], src, gain, numSamples);
 		}
 
 		// Pegelberechnung
@@ -883,12 +894,12 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 		if (outNumChans > 0) {
 			auto* destL = bufferToFill.buffer->getWritePointer(0, bufferToFill.startSample);
 			auto* srcL = metronomeBuffer.getReadPointer(0);
-			for (int i = 0; i < numSamples; ++i) destL[i] += srcL[i];
+			juce::FloatVectorOperations::add(destL, srcL, numSamples);
 		}
 		if (outNumChans > 1) {
 			auto* destR = bufferToFill.buffer->getWritePointer(1, bufferToFill.startSample);
 			auto* srcR = metronomeBuffer.getReadPointer(metronomeBuffer.getNumChannels() > 1 ? 1 : 0);
-			for (int i = 0; i < numSamples; ++i) destR[i] += srcR[i];
+			juce::FloatVectorOperations::add(destR, srcR, numSamples);
 		}
 	}
 
@@ -926,17 +937,15 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 			for (int ch = 0; ch < outNumChans; ++ch) {
 				if (!outputData[ch]) continue;
 				const float gain = (ch % 2 == 0) ? gainL * masterVol : gainR * masterVol;
-				for (int i = 0; i < numSamples; ++i)
-					outputData[ch][i] *= gain;
+				juce::FloatVectorOperations::multiply(outputData[ch], gain, numSamples);
 			}
 
-			float magL = 0.0f, magR = 0.0f;
-			if (outNumChans > 0 && outputData[0])
-				for (int i = 0; i < numSamples; ++i) magL = std::max(magL, std::abs(outputData[0][i]));
-			if (outNumChans > 1 && outputData[1])
-				for (int i = 0; i < numSamples; ++i) magR = std::max(magR, std::abs(outputData[1][i]));
-			master->magnitudeLeft  = magL;
-			master->magnitudeRight = magR;
+			auto absMax = [](const float* d, int n) {
+				juce::Range<float> r = juce::FloatVectorOperations::findMinAndMax(d, n);
+				return std::max(std::abs(r.getStart()), std::abs(r.getEnd()));
+			};
+			master->magnitudeLeft  = (outNumChans > 0 && outputData[0]) ? absMax(outputData[0], numSamples) : 0.0f;
+			master->magnitudeRight = (outNumChans > 1 && outputData[1]) ? absMax(outputData[1], numSamples) : 0.0f;
 		}
 	}
 
@@ -1069,6 +1078,8 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addItem(202, "Console", true, false, nullptr);
 		menu.addItem(203, "Level Meters", true, false, nullptr);
 		menu.addItem(204, "Input Spectrum", true, false, nullptr);
+		menu.addSeparator();
+		menu.addItem(205, "Quickstart", true, false, nullptr);
 	}
 	else if (index == 2) {
 
@@ -1185,6 +1196,9 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 			spectrumAnalyzer->setNumberOfBars(128);
 		}
         Project::getInstance()->getSupplemental()->addTab("Spektrum", Colours::darkgrey, spectrumAnalyzer.get(), false);
+	}
+	else if (menuItemID == 205) {
+		openQuickstart();
 	}
 
 	else if (menuItemID == 8) {
@@ -1429,26 +1443,81 @@ StringArray MainComponent::getMenuBarNames() {
 
 }
 
+void MainComponent::openQuickstart() {
+	if (editorView == nullptr)
+		return;
+
+	auto* tabs = editorView->getEditorTab();
+	if (tabs == nullptr)
+		return;
+
+	// Already open? Just bring it to front.
+	for (int i = 0; i < tabs->getNumTabs(); ++i) {
+		if (tabs->getTabNames()[i] == "Quickstart") {
+			tabs->setCurrentTabIndex(i);
+			return;
+		}
+	}
+
+	if (quickstart == nullptr) {
+		quickstart = std::make_unique<QuickstartComponent>();
+
+		quickstart->setOnConfigureAudio([this]() {
+			openSettings();
+		});
+
+#if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
+		quickstart->setOnScanPlugins([]() {
+			PluginManager::getInstance()->scanPlugins();
+		});
+#else
+		quickstart->setOnScanPlugins([]() {});
+#endif
+
+		quickstart->setOnCreateInstrumentTrack([this]() {
+			if (editorView->getNavigator() == nullptr) {
+				editorView->OpenTrackView();
+				editorView->getNavigator()->addChangeListener(this);
+			}
+			editor->addVirtualInstrumentTrack();
+			editor->repaint();
+		});
+
+		quickstart->setAudioConfiguredProvider([this]() {
+			return deviceManager.getCurrentAudioDevice() != nullptr
+				&& deviceManager.getCurrentAudioDevice()->isOpen();
+		});
+
+#if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
+		quickstart->setPluginsScannedProvider([]() {
+			return PluginManager::getInstance()->getPlugins().size() > 0;
+		});
+#else
+		quickstart->setPluginsScannedProvider([]() { return false; });
+#endif
+
+		quickstart->setInstrumentTrackProvider([this]() {
+			auto* nav = editorView->getNavigator();
+			if (nav == nullptr) return false;
+			for (auto* t : nav->getTracks()) {
+				if (t != nullptr && t->getType() == Track::INSTRUMENT)
+					return true;
+			}
+			return false;
+		});
+	}
+
+	tabs->addTab("Quickstart", Colour(0xff1b1b25), quickstart.get(), false);
+	tabs->setCurrentTabIndex(tabs->getNumTabs() - 1);
+}
+
 void MainComponent::openSettings() {
 
-	AudioDeviceSelectorComponent* selector = new AudioDeviceSelectorComponent(deviceManager, 2, 16, 2, 16, true, true, true, false);
-	DialogWindow::LaunchOptions launchOptions;
-
-	selector->setLookAndFeel(Project::getInstance()->getLookAndFeel());
-	launchOptions.dialogTitle = ("Audio Settings");
-	launchOptions.escapeKeyTriggersCloseButton = true;
-	launchOptions.resizable = false;
-	launchOptions.useNativeTitleBar = false;
-	launchOptions.useBottomRightCornerResizer = true;
-	launchOptions.componentToCentreAround = getParentComponent();
-	launchOptions.content.setOwned(selector);
-	launchOptions.content->setSize(600, 580);
-	launchOptions.dialogBackgroundColour = Colour(0xff222222);
-
-	DialogWindow* window = launchOptions.launchAsync();
+	DialogWindow* window = AudioSettingsDialog::show(deviceManager,
+		Project::getInstance()->getLookAndFeel());
 
 	std::function<void(int)> lambda =
-		[this, selector](int result) {
+		[this](int /*result*/) {
 		AudioDeviceManager::AudioDeviceSetup setup;
 
 		deviceManager.getAudioDeviceSetup(setup);
@@ -1473,8 +1542,6 @@ void MainComponent::openSettings() {
 			config = nullptr;
 		}
 		Project::getInstance()->setSampleRate(setup.sampleRate);
-		delete selector;
-
 		};
 
 	ModalComponentManager::Callback* callback = ModalCallbackFunction::create(lambda);

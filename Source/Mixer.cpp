@@ -30,6 +30,16 @@ Mixer::~Mixer() {
 
 void Mixer::addChannel(Mixer::Channel *channel) {
     channels.push_back(channel);
+    rebuildByType();
+}
+
+void Mixer::rebuildByType() {
+    for (auto& v : byType) v.clear();
+    for (auto* c : channels) {
+        if (c == nullptr) continue;
+        const int t = (int)c->channelType;
+        if (t >= 0 && t < 4) byType[t].push_back(c);
+    }
 }
 
 std::vector<Mixer::Channel*>& Mixer::getChannels() {
@@ -77,18 +87,8 @@ int Mixer::getNumAuxBusses() {
 }
 
 Mixer::Channel* Mixer::getChannel(Mixer::Channel::Type type, int index) {
-    
-    int channelNum = 0;
-    
-    for (int i = 0; i < channels.size();i++) {
-        if (channels.at(i)->channelType == type) {
-            if( channelNum == index) {
-                return channels.at(i);
-            }
-            channelNum++;
-        }       
-    }
-    return nullptr;
+    const auto& v = byType[(int)type];
+    return (index >= 0 && index < (int)v.size()) ? v[index] : nullptr;
 }
 
 void  Mixer::removeChannel(int index) {
@@ -101,11 +101,13 @@ void  Mixer::removeChannel(int index) {
             ++it;
         }
     }
+    rebuildByType();
 }
 
-void Mixer::removeAllChannels() {   
+void Mixer::removeAllChannels() {
     for (std::vector<Channel*>::iterator it = channels.begin();it != channels.end();) {
         delete (*it);
         it = this->channels.erase(it);
     }
+    rebuildByType();
 }
