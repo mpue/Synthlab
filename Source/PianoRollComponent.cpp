@@ -1496,12 +1496,18 @@ int PianoRollComponent::getPitchAtY(int y)
 
 int PianoRollComponent::getXForTime(double sampleTime)
 {
-    return pianoWidth + (int)(sampleTime * xZoom + panOffset.x);
+    // sampleTime ist BUFFER-relativ (gleiche Zeitachse wie midiMessageList-
+    // Timestamps). Der Piano-Roll zeigt nur den sichtbaren Ausschnitt der
+    // Region — bei links-getrimmten Regionen verschiebt sourceStartSample die
+    // Achse: x=pianoWidth entspricht buffer-time = sourceStartSample.
+    const double base = midiRegion != nullptr ? (double) midiRegion->getSourceStartSample() : 0.0;
+    return pianoWidth + (int)((sampleTime - base) * xZoom + panOffset.x);
 }
 
 double PianoRollComponent::getTimeAtX(int x)
 {
-    return (x - pianoWidth - panOffset.x) / xZoom;
+    const double base = midiRegion != nullptr ? (double) midiRegion->getSourceStartSample() : 0.0;
+    return base + (x - pianoWidth - panOffset.x) / xZoom;
 }
 
 double PianoRollComponent::snapTimeToGrid(double time)
