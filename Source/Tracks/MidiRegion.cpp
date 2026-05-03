@@ -292,6 +292,13 @@ void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bo
     if (zoomInProgress)
         return;
 
+    // Consolidate hat eben Modell+Bounds finalisiert — der reentrant resize-
+    // Handler darf hier nicht wieder snappen und das Right-Edge nach oben
+    // verschieben (Folge waere ein wachsendes numSamples und Overlap mit
+    // Nachbar nach Save/Reload).
+    if (consolidateInProgress)
+        return;
+
     Track* parentTrack = dynamic_cast<Track*>(getParentComponent());
 
     // Linkskanten-Resize triggert beides: wasMoved + wasResized. Die separaten
@@ -879,7 +886,14 @@ void MidiRegion::consolidate()
         }
     }
 
-    setBounds(getX(), getY(), (int)(numSamples / sampleRate * zoom), getHeight());
+    // Resize-Handler suppressen: ohne Flag wuerde wasResized im
+    // componentMovedOrResized den right-edge snap erneut anwenden und
+    // numSamples potenziell hoch-snappen — die Region wuerde wachsen und
+    // nach Save/Reload den Nachbarn ueberlappen. Wir wissen hier exakt was
+    // wir wollen (numSamples bereits final), also nur visuell gleichschalten.
+    consolidateInProgress = true;
+    setBounds(getX(), getY(), (int) std::round((double) numSamples / sampleRate * zoom), getHeight());
+    consolidateInProgress = false;
     rebuildThumbnail();
     updateThumb();
     repaint();

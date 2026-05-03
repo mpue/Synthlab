@@ -132,6 +132,10 @@ private:
     int calculateActualLength() const;
     MidiThumbnail* midiThumbnail = nullptr;
     int numSamples = 0;
+    // True waehrend consolidate() — verhindert, dass das interne setBounds
+    // im resize-Handler die rechte Kante hochsnappt und numSamples wachsen
+    // laesst (das wuerde nach Save/Reload den Nachbarn ueberlappen).
+    bool consolidateInProgress = false;
 
     // Sample-Offset INNERHALB des Message-Buffers, an dem die linke Kante der
     // Region beginnt. Wird beim Links-Trim erhoeht, damit die Notenpositionen
