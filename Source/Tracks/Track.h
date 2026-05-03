@@ -281,10 +281,38 @@ public:
     synthlab::automation::Model&       getAutomationModel()       { return automationModel; }
     const synthlab::automation::Model& getAutomationModel() const { return automationModel; }
 
-    // ParameterId fuer den Plugin-Parameter an Listen-Index `idx`. Stabil ueber
-    // Save/Load fuer dasselbe Plugin (paramID wenn das Plugin
-    // AudioProcessorParameterWithID nutzt; sonst index:name als Fallback).
+    // ParameterId fuer den Plugin-Parameter an Listen-Index `idx` *im
+    // Instrument-Plugin*. Stabil ueber Save/Load.
     juce::String automationParameterIdFor(int idx) const;
+
+    // ----- Multi-Plugin Automation -------------------------------------------
+    // Ein Track hat heute bis zu vier FX-Slots zusaetzlich zum Instrument.
+    // Slot-Namen ("instr", "fx0".."fx3") fungieren als Scope, damit
+    // gleichnamige Parameter unterschiedlicher Plugins kollisionsfrei
+    // automatisierbar sind.
+    static constexpr int NUM_FX_SLOTS = 4;
+    static const char*   kInstrumentSlotName;  // "instr"
+    static juce::String  fxSlotName(int idx) { return "fx" + juce::String(idx); }
+
+    // Wird vom MasterChannelPanel nach insertFX/removeFX/Reconstruct gerufen.
+    void setFxPlugin(int slot, PluginModule* pm);
+    PluginModule* getFxPlugin(int slot) const
+    {
+        return (slot >= 0 && slot < NUM_FX_SLOTS) ? fxPlugins[slot] : nullptr;
+    }
+
+    // Liefert alle automatisierbaren Plugin-Slots dieses Tracks
+    // (Instrument + belegte FX-Slots) als (Slot-Name, PluginModule*).
+    std::vector<std::pair<juce::String, PluginModule*>> getAutomationTargets() const;
+
+    // Bindet die UI-Lane an die Lane fuer (slot, paramIdInPlugin). Ersatz fuer
+    // setAutomationParameterIndex, der weiterhin den Instrument-Slot verwaltet.
+    void setAutomationTarget(const juce::String& slot, const juce::String& paramIdInPlugin);
+
+    // Aktuell im UI gewaehlte Lane-Identifikation, fuer die TrackControl-
+    // Wiederherstellung beim Repaint/Refresh.
+    juce::String getAutomationCurrentSlot()   const { return automationCurrentSlot; }
+    juce::String getAutomationCurrentParamId() const { return automationCurrentParamId; }
 
 private:
 
@@ -433,7 +461,12 @@ private:
     std::unique_ptr<AutomationLane> automationLane;
     bool automationVisible = false;
     int  automationParamIndex = -1;
-    juce::String automationCurrentParamId;
+    juce::String automationCurrentParamId; // gescoped: "slot:paramId"
+    juce::String automationCurrentSlot;    // "instr" | "fx0"..
+
+    // Mirror der FX-Plugin-Pointer aus dem MasterChannelPanel. Wird vom Panel
+    // gepflegt (insertFX/removeFX/applyFXChainState/reconstructFXChainFromGraph).
+    PluginModule* fxPlugins[NUM_FX_SLOTS] = {};
 
     // Datenmodell fuer alle Lanes dieses Tracks. Die Lane des aktuell im UI
     // gewaehlten Parameters bindet `automationLane` an sich; alle anderen
@@ -441,9 +474,14 @@ private:
     // angewandt.
     synthlab::automation::Model automationModel;
 
-    // Vorberechnete paramIds parallel zur Plugin-Parameterliste. Wird vom
-    // Audio-Thread alloc-frei gelesen.
-    std::vector<juce::String> cachedAutomationParamIds;
+    // Vorberechneter Cache: gescoped paramId -> AudioProcessorParameter*.
+    // Wird vom Audio-Thread alloc-frei gelesen, vom UI-Thread bei Plugin-/
+    // FX-Wechsel via rebuildAutomationParamIdCache() neu gebaut.
+    struct CachedAutomationParam {
+        juce::String                   scopedId;   // "instr:foo", "fx0:bar"
+        juce::AudioProcessorParameter* parameter = nullptr;
+    };
+    std::vector<CachedAutomationParam> cachedAutomationParams;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Track)
 };

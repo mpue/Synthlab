@@ -676,27 +676,22 @@ void Track::setSamplePosition(int position, bool dispatchEvents)
 	// Lane-Automation: bei jedem Block den interpolierten Wert ans Plugin
 	// schicken — solange das Overlay aktiv ist und ein Parameter gewählt
 	// wurde. Auch bei Audio-Tracks erlaubt, falls dort ein Insert-Plugin hängt.
-	// Multi-Lane Playback: alle Lanes im Modell auf die zugehoerigen Plugin-
-	// Parameter anwenden. Unabhaengig davon, ob das Overlay sichtbar ist —
-	// gespeicherte Automation soll auch ohne offene Lane wirken. Die
-	// paramId-Liste ist vorberechnet (cachedAutomationParamIds) — der Vergleich
-	// hier ist eine reine String-Compare ohne Allokation.
-	if (dispatchEvents && pluginModule != nullptr && pluginModule->getPlugin() != nullptr
-	    && !cachedAutomationParamIds.empty())
+	// Multi-Plugin Multi-Lane Playback: alle Lanes im Modell auf die
+	// zugehoerigen Plugin-Parameter anwenden, ueber Instrument + FX-Slots.
+	// cachedAutomationParams ist vorberechnet — kein String-Build hier.
+	if (dispatchEvents && !cachedAutomationParams.empty())
 	{
-		auto* plugin = pluginModule->getPlugin();
-		const auto& params = plugin->getParameters();
 		for (int li = 0; li < automationModel.numLanes(); ++li)
 		{
 			auto* lane = automationModel.laneAt(li);
 			if (lane == nullptr || lane->isEmpty()) continue;
 			const juce::String& laneId = lane->getParameterId();
 			juce::AudioProcessorParameter* target = nullptr;
-			for (size_t pi = 0; pi < cachedAutomationParamIds.size() && (int) pi < params.size(); ++pi)
+			for (const auto& entry : cachedAutomationParams)
 			{
-				if (cachedAutomationParamIds[pi] == laneId)
+				if (entry.scopedId == laneId)
 				{
-					target = params[(int) pi];
+					target = entry.parameter;
 					break;
 				}
 			}
@@ -1367,52 +1362,112 @@ void Track::setAutomationVisible(bool visible)
 	repaint();
 }
 
+// Slot-Konstanten.
+const char* Track::kInstrumentSlotName = "instr";
+
+// Lokale Helfer: Plugin-eigene paramId (ohne Slot-Prefix).
+static juce::String localParamId(juce::AudioProcessorParameter* p, int indexInPlugin)
+{
+	if (p == nullptr) return {};
+	if (auto* withId = dynamic_cast<juce::AudioProcessorParameterWithID*>(p))
+		return withId->paramID;
+	return juce::String(indexInPlugin) + ":" + p->getName(64);
+}
+
+static juce::String scopedParamId(const juce::String& slot, const juce::String& localId)
+{
+	return slot + ":" + localId;
+}
+
 void Track::setAutomationParameterIndex(int idx)
 {
+	// Backward-compatible: bezieht sich auf das Instrument-Plugin. Delegiert
+	// an setAutomationTarget().
 	this->automationParamIndex = idx;
 	if (automationLane != nullptr)
 		automationLane->setParameterIndex(idx);
 
-	// Lane im Modell idempotent finden/anlegen und an die UI binden. Bei -1
-	// wird die UI auf Scratch zurueckgesetzt.
-	if (idx < 0)
+	if (idx < 0 || pluginModule == nullptr || pluginModule->getPlugin() == nullptr)
 	{
+		automationCurrentSlot.clear();
 		automationCurrentParamId.clear();
 		if (automationLane != nullptr) automationLane->setBoundLane(nullptr);
 		return;
 	}
-	const auto paramId = automationParameterIdFor(idx);
-	if (paramId.isEmpty()) return;
-	automationCurrentParamId = paramId;
-	auto& lane = automationModel.findOrCreate(paramId);
+	const auto& params = pluginModule->getPlugin()->getParameters();
+	if (idx >= params.size()) return;
+	const juce::String local = localParamId(params[idx], idx);
+	if (local.isEmpty()) return;
+	setAutomationTarget(juce::String(kInstrumentSlotName), local);
+}
+
+void Track::setAutomationTarget(const juce::String& slot, const juce::String& paramIdInPlugin)
+{
+	if (slot.isEmpty() || paramIdInPlugin.isEmpty())
+	{
+		automationCurrentSlot.clear();
+		automationCurrentParamId.clear();
+		if (automationLane != nullptr) automationLane->setBoundLane(nullptr);
+		return;
+	}
+	const juce::String full = scopedParamId(slot, paramIdInPlugin);
+	automationCurrentSlot     = slot;
+	automationCurrentParamId  = full;
+	auto& lane = automationModel.findOrCreate(full);
 	if (automationLane != nullptr) automationLane->setBoundLane(&lane);
+}
+
+std::vector<std::pair<juce::String, PluginModule*>> Track::getAutomationTargets() const
+{
+	std::vector<std::pair<juce::String, PluginModule*>> out;
+	if (pluginModule != nullptr && pluginModule->getPlugin() != nullptr)
+		out.emplace_back(kInstrumentSlotName, pluginModule);
+	for (int i = 0; i < NUM_FX_SLOTS; ++i)
+		if (fxPlugins[i] != nullptr && fxPlugins[i]->getPlugin() != nullptr)
+			out.emplace_back(fxSlotName(i), fxPlugins[i]);
+	return out;
+}
+
+void Track::setFxPlugin(int slot, PluginModule* pm)
+{
+	if (slot < 0 || slot >= NUM_FX_SLOTS) return;
+	if (fxPlugins[slot] == pm) return;
+	fxPlugins[slot] = pm;
+	rebuildAutomationParamIdCache();
 }
 
 void Track::rebuildAutomationParamIdCache()
 {
-	cachedAutomationParamIds.clear();
-	if (pluginModule == nullptr || pluginModule->getPlugin() == nullptr) return;
-	const auto& params = pluginModule->getPlugin()->getParameters();
-	cachedAutomationParamIds.reserve((size_t) params.size());
-	for (int i = 0; i < params.size(); ++i)
-		cachedAutomationParamIds.push_back(automationParameterIdFor(i));
+	cachedAutomationParams.clear();
+	for (const auto& kv : getAutomationTargets())
+	{
+		const juce::String& slot = kv.first;
+		PluginModule* pm = kv.second;
+		if (pm == nullptr || pm->getPlugin() == nullptr) continue;
+		const auto& params = pm->getPlugin()->getParameters();
+		for (int i = 0; i < params.size(); ++i)
+		{
+			auto* p = params[i];
+			if (p == nullptr) continue;
+			CachedAutomationParam entry;
+			entry.scopedId  = scopedParamId(slot, localParamId(p, i));
+			entry.parameter = p;
+			cachedAutomationParams.push_back(entry);
+		}
+	}
 }
 
 juce::String Track::automationParameterIdFor(int idx) const
 {
+	// Liefert die GESCOPETE paramId fuer den Instrument-Slot — Aufrufer wie
+	// TrackControl::populateParamBox brauchen weiterhin diese Bequemlichkeit.
 	if (idx < 0 || pluginModule == nullptr || pluginModule->getPlugin() == nullptr)
 		return {};
 	const auto& params = pluginModule->getPlugin()->getParameters();
 	if (idx >= params.size()) return {};
-
-	auto* p = params[idx];
-	if (p == nullptr) return {};
-	if (auto* withId = dynamic_cast<juce::AudioProcessorParameterWithID*>(p))
-		return withId->paramID;
-	// Fallback: index:name. Stabil pro Plugin-Instanz innerhalb derselben
-	// Session und reproduzierbar nach reload, solange das Plugin dieselbe
-	// Parameter-Liste exposed.
-	return juce::String(idx) + ":" + p->getName(64);
+	const auto local = localParamId(params[idx], idx);
+	if (local.isEmpty()) return {};
+	return scopedParamId(kInstrumentSlotName, local);
 }
 
 // ----- AutomationLane Glue (hier definiert, weil Zugriff auf PluginModule) ---

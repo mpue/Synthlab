@@ -103,6 +103,9 @@ public:
     // and state for each occupied slot.
     juce::ValueTree getFXChainState() const;
     void applyFXChainState(const juce::ValueTree& state);
+    // Spiegelt den aktuellen Stand von fxChain[] in den verbundenen Track,
+    // damit Track::getAutomationTargets() FX-Plugins findet.
+    void syncTrackFXPlugins();
     // Entfernt alle FX-Plugins aus dem Insert-Chain dieses Channels. Beim
     // Master-Kanal löschen wir die Plugin-Module direkt (sie hängen nicht im
     // Modul-Graph), bei normalen Kanälen lassen wir removeFX die Verdrahtung

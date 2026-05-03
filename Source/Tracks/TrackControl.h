@@ -124,6 +124,11 @@ public:
         volLabel.setInterceptsMouseClicks(false, false);
         addAndMakeVisible(volLabel);
 
+        pluginBox.setTextWhenNothingSelected("Plugin…");
+        pluginBox.setLookAndFeel(&sharedComboLook());
+        pluginBox.addListener(this);
+        addChildComponent(pluginBox); // unsichtbar, bis Automation aktiv ist
+
         paramBox.setTextWhenNothingSelected("Parameter…");
         paramBox.setLookAndFeel(&sharedComboLook());
         paramBox.addListener(this);
@@ -137,6 +142,8 @@ public:
         autoButton.removeListener(this);
         panSlider.removeListener(this);
         volSlider.removeListener(this);
+        pluginBox.removeListener(this);
+        pluginBox.setLookAndFeel(nullptr);
         paramBox.removeListener(this);
         paramBox.setLookAndFeel(nullptr);
     }
@@ -188,7 +195,12 @@ public:
 
         r.removeFromTop(3);
 
-        // ComboBox sitzt unter den Slidern; nur sichtbar bei aktiver Automation.
+        // ComboBoxen unter den Slidern. Nur sichtbar bei aktiver Automation.
+        if (pluginBox.isVisible())
+        {
+            pluginBox.setBounds(r.removeFromTop(26));
+            r.removeFromTop(2);
+        }
         if (paramBox.isVisible())
             paramBox.setBounds(r.removeFromTop(26));
     }
@@ -217,22 +229,78 @@ private:
         const bool show = track != nullptr && track->isAutomationVisible();
         if (show)
         {
+            populatePluginBox();
             populateParamBox();
+            pluginBox.setVisible(true);
             paramBox.setVisible(true);
         }
         else
         {
+            pluginBox.setVisible(false);
             paramBox.setVisible(false);
         }
         resized();
     }
 
+    // Fuellt die Plugin-ComboBox aus track->getAutomationTargets(): Instrument
+    // (falls vorhanden) gefolgt von den belegten FX-Slots. Wenn keiner
+    // existiert, zeigt die Box "(kein Plugin)" und Parameter-Box ist leer.
+    void populatePluginBox()
+    {
+        pluginBox.clear(juce::dontSendNotification);
+        currentPluginTargets.clear();
+        if (track == nullptr) return;
+
+        currentPluginTargets = track->getAutomationTargets();
+        if (currentPluginTargets.empty())
+        {
+            pluginBox.addItem("(kein Plugin)", 1);
+            pluginBox.setSelectedId(0, juce::dontSendNotification);
+            pluginBox.setEnabled(false);
+            return;
+        }
+        pluginBox.setEnabled(true);
+        for (size_t i = 0; i < currentPluginTargets.size(); ++i)
+        {
+            const auto& slot = currentPluginTargets[i].first;
+            auto* pm = currentPluginTargets[i].second;
+            juce::String label = (slot == juce::String("instr"))
+                ? juce::String("Instrument")
+                : juce::String("FX ") + juce::String(slot.substring(2).getIntValue() + 1);
+            label += "  —  " + (pm != nullptr ? pm->getPluginName() : juce::String("?"));
+            pluginBox.addItem(label, (int) i + 1);
+        }
+
+        // Aktuelle Auswahl wiederherstellen — wenn der Track sich an einen
+        // Slot erinnert, den wir kennen, vorselektieren.
+        const auto curSlot = track->getAutomationCurrentSlot();
+        for (size_t i = 0; i < currentPluginTargets.size(); ++i)
+            if (currentPluginTargets[i].first == curSlot)
+            {
+                pluginBox.setSelectedId((int) i + 1, juce::dontSendNotification);
+                break;
+            }
+        if (pluginBox.getSelectedId() == 0)
+            pluginBox.setSelectedId(1, juce::dontSendNotification);
+    }
+
+    // Fuellt die Parameter-ComboBox fuer das aktuell in pluginBox gewaehlte
+    // Plugin. Verwendet currentPluginTargets[selectedId-1].second.
     void populateParamBox()
     {
         paramBox.clear(juce::dontSendNotification);
         if (track == nullptr) return;
 
-        auto* pm = track->getPluginModule();
+        const int sel = pluginBox.getSelectedId();
+        if (sel <= 0 || sel > (int) currentPluginTargets.size())
+        {
+            paramBox.addItem("(kein Plugin)", 1);
+            paramBox.setSelectedId(0, juce::dontSendNotification);
+            paramBox.setEnabled(false);
+            return;
+        }
+
+        auto* pm = currentPluginTargets[(size_t)(sel - 1)].second;
         if (pm == nullptr || pm->getPlugin() == nullptr)
         {
             paramBox.addItem("(kein Plugin)", 1);
@@ -247,17 +315,10 @@ private:
         for (auto* p : params)
         {
             if (p == nullptr) continue;
-            // Nicht-automatisierbare Parameter ausblenden (z.B. Bypass-Latches
-            // einiger Plugins) — wären sonst nur Karteileichen im Dropdown.
             if (!p->isAutomatable()) { ++id; continue; }
             paramBox.addItem(p->getName(40), id);
             ++id;
         }
-
-        // Aktuelle Auswahl spiegeln.
-        const int idx = track->getAutomationParameterIndex();
-        if (idx >= 0)
-            paramBox.setSelectedId(idx + 1, juce::dontSendNotification);
     }
 
     void buttonClicked(juce::Button* b) override
@@ -281,10 +342,38 @@ private:
 
     void comboBoxChanged(juce::ComboBox* c) override
     {
-        if (track == nullptr || c != &paramBox) return;
-        const int sel = paramBox.getSelectedId(); // 1-based
-        if (sel <= 0) return;
-        track->setAutomationParameterIndex(sel - 1);
+        if (track == nullptr) return;
+        if (c == &pluginBox)
+        {
+            populateParamBox();
+            return;
+        }
+        if (c != &paramBox) return;
+
+        const int paramSel  = paramBox.getSelectedId();  // 1-based
+        const int pluginSel = pluginBox.getSelectedId(); // 1-based
+        if (paramSel <= 0 || pluginSel <= 0
+            || pluginSel > (int) currentPluginTargets.size()) return;
+
+        const auto& slot = currentPluginTargets[(size_t)(pluginSel - 1)].first;
+        auto* pm = currentPluginTargets[(size_t)(pluginSel - 1)].second;
+        if (pm == nullptr || pm->getPlugin() == nullptr) return;
+
+        const auto& params = pm->getPlugin()->getParameters();
+        const int idxInPlugin = paramSel - 1;
+        if (idxInPlugin < 0 || idxInPlugin >= params.size()) return;
+
+        auto* p = params[idxInPlugin];
+        if (p == nullptr) return;
+
+        // Plugin-eigene paramId aufloesen — gleiche Logik wie Track::localParamId().
+        juce::String localId;
+        if (auto* withId = dynamic_cast<juce::AudioProcessorParameterWithID*>(p))
+            localId = withId->paramID;
+        else
+            localId = juce::String(idxInPlugin) + ":" + p->getName(64);
+
+        track->setAutomationTarget(slot, localId);
     }
 
     Track* track = nullptr;
@@ -295,7 +384,12 @@ private:
     juce::TextButton  autoButton;
     juce::Slider      panSlider, volSlider;
     juce::Label       panLabel, volLabel;
-    juce::ComboBox    paramBox;
+    juce::ComboBox    pluginBox;  // Instrument + FX-Slots
+    juce::ComboBox    paramBox;   // Parameter im gewaehlten Plugin
+
+    // Spiegel der Plugin-Targets, die in pluginBox gelistet sind, in der
+    // gleichen Reihenfolge. Wird in populatePluginBox() gefuellt.
+    std::vector<std::pair<juce::String, PluginModule*>> currentPluginTargets;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TrackControl)
 };

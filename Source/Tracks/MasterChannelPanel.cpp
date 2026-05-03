@@ -722,6 +722,15 @@ void MasterChannelPanel::setTrack(Track *t) {
     this->track = t;
     setName(track->getName());
     Mixer::getInstance()->addChangeListener(this);
+    // Falls die FX-Chain bereits aufgebaut ist (z.B. nach load), den Track
+    // jetzt mit den Pointers versorgen.
+    syncTrackFXPlugins();
+}
+
+void MasterChannelPanel::syncTrackFXPlugins() {
+    if (track == nullptr) return;
+    for (int i = 0; i < NUM_FX; ++i)
+        track->setFxPlugin(i, fxChain[i]);
 }
 
 void MasterChannelPanel::labelTextChanged(Label* labelThatHasChanged) {
@@ -835,6 +844,7 @@ void MasterChannelPanel::insertFX(int slotIndex, juce::String pluginName) {
         fx->selectPlugin(pluginName);
 
         fxChain[slotIndex] = fx;
+        syncTrackFXPlugins();
         updateFXButtons();
         repaint();
         return;
@@ -929,6 +939,7 @@ void MasterChannelPanel::insertFX(int slotIndex, juce::String pluginName) {
     fx->setTopLeftPosition(fxX, fxY);
 
     fxChain[slotIndex] = fx;
+    syncTrackFXPlugins();
 
     rewireChain();
     updateFXButtons();
@@ -943,6 +954,7 @@ void MasterChannelPanel::removeFX(int slotIndex) {
     if (channel && channel->channelType == Mixer::Channel::Type::MASTER) {
         delete fxChain[slotIndex];
         fxChain[slotIndex] = nullptr;
+        syncTrackFXPlugins();
         updateFXButtons();
         repaint();
         return;
@@ -950,6 +962,7 @@ void MasterChannelPanel::removeFX(int slotIndex) {
 
     PluginModule* fx = fxChain[slotIndex];
     fxChain[slotIndex] = nullptr;
+    syncTrackFXPlugins();
 
     Module* root = synthEditor->getModule();
     auto* connections = root->getConnections();
@@ -1047,6 +1060,7 @@ void MasterChannelPanel::applyFXChainState(const juce::ValueTree& state) {
             fxChain[idx]->setPluginState(pluginState);
     }
 
+    syncTrackFXPlugins();
     updateFXButtons();
     repaint();
 }
@@ -1222,6 +1236,7 @@ void MasterChannelPanel::reconstructFXChainFromGraph() {
     for (int i = 0; i < (int)reverseChain.size() && i < NUM_FX; ++i)
         fxChain[i] = reverseChain[i];
 
+    syncTrackFXPlugins();
     updateFXButtons();
     repaint();
 }
