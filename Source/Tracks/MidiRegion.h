@@ -132,6 +132,17 @@ private:
     int calculateActualLength() const;
     MidiThumbnail* midiThumbnail = nullptr;
     int numSamples = 0;
+
+    // Sample-Offset INNERHALB des Message-Buffers, an dem die linke Kante der
+    // Region beginnt. Wird beim Links-Trim erhoeht, damit die Notenpositionen
+    // im Timeline-System unveraendert bleiben (Noten links der neuen linken
+    // Kante werden geclippt; Noten rechts bleiben am gleichen Platz).
+    long sourceStartSample = 0;
+
+public:
+    long getSourceStartSample() const { return sourceStartSample; }
+    void setSourceStartSample(long s) { sourceStartSample = juce::jmax(0L, s); }
+private:
     std::shared_ptr<bool> tempoSubscriptionAlive;
     MidiBuffer::Iterator* iterator = NULL;
     MidiMessage message;

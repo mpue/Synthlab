@@ -2051,6 +2051,10 @@ void SynthEditor::loadMidiRegions(juce::ValueTree& track, Track* t) {
 		bounds.setWidth(int(region.getProperty("width")));
 		mr->setBounds(bounds);
 
+		// Buffer-Offset wiederherstellen, sonst springen Noten beim Reload
+		// einer links-getrimmten Region zurueck zur ungetrimmten Position.
+		mr->setSourceStartSample((long)(juce::int64) region.getProperty("sourceStartSample", (juce::int64) 0));
+
 		ValueTree events = region.getChild(0);
 		int numEvents = events.getNumChildren();
 		DBG("Loading " + String(numEvents) + " events.");

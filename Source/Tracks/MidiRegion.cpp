@@ -244,8 +244,14 @@ void MidiRegion::paint(Graphics& g) {
     g.setColour(juce::Colours::white.withAlpha(0.85f));
     if (midiThumbnail != nullptr && sampleRate > 0.0)
     {
-        const double visibleTime = (double) getNumSamples() / sampleRate;
-        midiThumbnail->drawChannels(g, 0.0, visibleTime, 1.0f);
+        // Die sichtbaren Zeitgrenzen sind die Buffer-Position, an der die
+        // linke Kante der Region steht (sourceStartSample), bis dahin plus
+        // sichtbare Laenge. drawChannels filtert Events ausserhalb des
+        // Bereichs aus und rendert die uebrigen relativ zu startTime — so
+        // bleiben Noten beim Resize an ihrer Timeline-Position.
+        const double startTime = (double) sourceStartSample / sampleRate;
+        const double endTime   = (double) (sourceStartSample + getNumSamples()) / sampleRate;
+        midiThumbnail->drawChannels(g, startTime, endTime, 1.0f);
     }
 }
 
@@ -311,6 +317,8 @@ void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bo
             if (candidate <= maxLeft) snappedLeft = candidate;
         }
 
+        const long deltaLeft = snappedLeft - sampleOffset; // wie weit die linke Kante in der Timeline gewandert ist
+
         const long newNumSamples_ = currentRightSample - snappedLeft;
         const int newX     = (int) std::round((double) snappedLeft / sampleRate * zoom);
         const int newWidth = (int) std::round((double) newNumSamples_ / sampleRate * zoom);
@@ -321,6 +329,13 @@ void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bo
         const int bs = Project::getInstance()->getBufferSize();
         sampleOffset = bs > 0 ? (snappedLeft / bs) * bs : snappedLeft;
         numSamples   = newNumSamples_;
+
+        // Source-Offset im Buffer um deltaLeft erhoehen. Damit bleiben Noten
+        // an ihrer Timeline-Position stehen statt mit der linken Kante mit-
+        // zuwandern. Negative Werte (Region wird nach links groesser gezogen)
+        // schieben den Buffer-Read-Offset zurueck, ggf. auf 0 geclamp't.
+        sourceStartSample += deltaLeft;
+        if (sourceStartSample < 0) sourceStartSample = 0;
 
         rebuildThumbnail();
         updateThumb();
@@ -521,14 +536,19 @@ vector<MidiMessage*> MidiRegion::getActiveMessages(int localSamplePos) {
 
 vector<MidiMessage*> MidiRegion::getMessages(int sampleNum, int numSamples)
 {
+    // Der Aufrufer uebergibt sampleNum relativ zur Region (0 = linke Kante).
+    // Im Buffer beginnt die linke Kante bei sourceStartSample — also den
+    // Offset hier dazurechnen, sonst wuerden Noten nach Links-Trim falsche
+    // Buffer-Positionen referenzieren.
     vector<MidiMessage*> foundMessages;
-    const int endSample = sampleNum + numSamples;
+    const int startInBuffer = sampleNum  + (int) sourceStartSample;
+    const int endInBuffer   = startInBuffer + numSamples;
 
     for (auto* m : midiMessageList)
     {
         if (m != nullptr &&
-            m->getTimeStamp() >= sampleNum &&
-            m->getTimeStamp() < endSample &&
+            m->getTimeStamp() >= startInBuffer &&
+            m->getTimeStamp() < endInBuffer &&
             (m->isNoteOnOrOff() || m->isMidiClock() || m->isController()))
         {
             foundMessages.push_back(m);

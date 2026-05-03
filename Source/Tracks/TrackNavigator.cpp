@@ -487,6 +487,7 @@ ValueTree TrackNavigator::getConfiguration()
 				if (auto* mr = dynamic_cast<MidiRegion*>(tracks.at(i)->getRegions().at(j))) {
 					region.setProperty("sampleOffset", (int)mr->getSampleOffset(), nullptr);
 					region.setProperty("numSamples", mr->getNumSamples(), nullptr);
+					region.setProperty("sourceStartSample", (juce::int64) mr->getSourceStartSample(), nullptr);
 					region.setProperty("width", mr->getWidth(), nullptr);
 
 					ValueTree events("Events");
