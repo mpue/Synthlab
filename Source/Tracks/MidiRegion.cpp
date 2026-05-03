@@ -317,20 +317,27 @@ void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bo
             if (candidate <= maxLeft) snappedLeft = candidate;
         }
 
-        const long deltaLeft = snappedLeft - sampleOffset; // wie weit die linke Kante in der Timeline gewandert ist
+        // Konstruktor + addMessage richten sampleOffset / Note-Timestamps an
+        // bufferSize aus. Der Trim muss DENSELBEN aligned-Wert verwenden,
+        // sonst rutschen sourceStartSample (uncorrected snap-delta) und
+        // sampleOffset (aligned) auseinander — Folge: eine Note, die genau am
+        // neuen Front-Edge liegen soll (Buffer-Position == sourceStartSample),
+        // wird im Playback-Fenster knapp daneben gesucht und nicht gefunden.
+        const int bs = Project::getInstance()->getBufferSize();
+        const long snappedAligned = bs > 0 ? (snappedLeft / bs) * bs : snappedLeft;
+        const long deltaLeft = snappedAligned - sampleOffset;
 
-        const long newNumSamples_ = currentRightSample - snappedLeft;
-        const int newX     = (int) std::round((double) snappedLeft / sampleRate * zoom);
+        const long newNumSamples_ = currentRightSample - snappedAligned;
+        const int newX     = (int) std::round((double) snappedAligned / sampleRate * zoom);
         const int newWidth = (int) std::round((double) newNumSamples_ / sampleRate * zoom);
 
         // WICHTIG: erst Modell aktualisieren, dann setBounds. setBounds ruft
         // componentMovedOrResized reentrant auf — wenn dort sampleOffset noch
         // alt waere, wuerde deltaLeft erneut berechnet und sourceStartSample
-        // ein zweites Mal erhoeht (Noten waeren um 2x Trim-Distanz versetzt).
-        // Mit dem Modell-First wird beim Reentry deltaLeft = 0 -> idempotent.
-        const int bs = Project::getInstance()->getBufferSize();
-        sampleOffset = bs > 0 ? (snappedLeft / bs) * bs : snappedLeft;
-        numSamples   = newNumSamples_;
+        // ein zweites Mal erhoeht. Mit Modell-First wird beim Reentry
+        // deltaLeft = 0 -> idempotent.
+        sampleOffset       = snappedAligned;
+        numSamples         = newNumSamples_;
         sourceStartSample += deltaLeft;
         if (sourceStartSample < 0) sourceStartSample = 0;
 
