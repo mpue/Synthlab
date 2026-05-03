@@ -1,8 +1,21 @@
 # Project Status (May 2026)
 
-Reactivated for the `the-big-overhaul` branch — see
-[docs/the-big-overhaul-status.md](docs/the-big-overhaul-status.md) for the
-current work plan, architecture rules and baseline findings.
+Reactivated for the `the-big-overhaul` branch. The branch ships:
+
+- Three static checks under `tools/` (lock-free audio path, save-isolation,
+  TODO-issue-refs) wired into a pre-commit hook and GitHub Actions.
+- A new automation data model (`Source/Automation/`) with stable Uuids,
+  idempotent lane creation and unit tests.
+- UI editing for automation lanes (multi-select, drag, delete, snap,
+  visibility-culling for 1k+ points) in `Source/Tracks/AutomationLane.h`.
+- A `ProjectSnapshot` + atomic holder for race-free save during playback.
+- Vertical track zoom on Shift+Ctrl/Cmd+Wheel with mouse-anchored center.
+- Voice-pool refactor for SineModule, SawtoothModule and OscillatorModule
+  — no more `new`/`delete` on the audio thread (RT baseline 8 -> 2).
+
+See [docs/the-big-overhaul-status.md](docs/the-big-overhaul-status.md) for
+the full work plan, architecture rules, baseline tracker and remaining
+work (Projucer re-save, manual smoke tests, sanitizer runs).
 
 # Project Status (February 2026)
 

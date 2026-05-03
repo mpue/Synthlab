@@ -102,6 +102,23 @@ Source/Tracks/Track.cpp:1039   from card
 
 ---
 
+## Smoke-Tests (manuell, von Hand vor Merge)
+
+Die sieben Smoke-Tests aus dem Briefing **muessen** vor einem Merge nach
+`master` an einem real gebuildeten Synthlab durchgespielt werden — sie
+sind in dieser autonomen Session nicht ausfuehrbar (keine Xcode-Toolchain,
+kein lauffaehiger Build).
+
+| # | Test | Wie pruefen | Status |
+|---|---|---|---|
+| 1 | Leeres Projekt -> Audio-Track -> Audio importieren -> abspielen | Manuell | offen |
+| 2 | Plugin laden, Parameter automatisieren (5 Punkte), save/close/open, Wiedergabe identisch | Manuell | offen — Persistenz-Wiring der Lanes haengt noch (siehe Phase 3 Tabelle) |
+| 3 | Zweiten Parameter automatisieren -> erste Lane unangetastet | UnitTest deckt das Modell ab; UI-Pfad manuell | tests **gruen** |
+| 4 | Region splitten, kopieren, einfuegen, verschieben + Undo | Manuell — Cut-Semantik wurde korrigiert (Phase 5 commit) | offen |
+| 5 | Shift+Ctrl/Cmd+Wheel zoomt vertikal, Maus-Y als Zentrum | Manuell | offen |
+| 6 | Save waehrend Wiedergabe -> kein Crash, kein Glitch | Manuell — Snapshot-Architektur erlaubt es jetzt | offen |
+| 7 | 30 min Pudutzki-Session, keine XRuns, kein Speicheranstieg | Manuell + Sanitizer-Lauf | offen |
+
 ## Stand der Arbeitspakete
 
 | # | Paket | Status |
