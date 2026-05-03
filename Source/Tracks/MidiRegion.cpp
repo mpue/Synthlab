@@ -288,6 +288,45 @@ void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bo
 
     Track* parentTrack = dynamic_cast<Track*>(getParentComponent());
 
+    // Linkskanten-Resize triggert beides: wasMoved + wasResized. Die separaten
+    // Branches unten wuerden setTopLeftPosition (Breite konstant, rechte Kante
+    // wandert) und setSize (X konstant) hintereinander rufen — Region haut
+    // nach rechts ab. Hier zusammen behandeln, rechte Kante aus den (vom
+    // Constrainer schon korrigierten) bounds halten.
+    if (wasMoved && wasResized) {
+        const long currentLeftSample  = (long) std::round((double) getBounds().getX() / zoom * sampleRate);
+        const long currentRightSample = (long) std::round((double)(getBounds().getX() + getBounds().getWidth()) / zoom * sampleRate);
+
+        long snappedLeft = currentLeftSample;
+        if (Project::getInstance()->isSnapToGridEnabled()) {
+            const bool fine = juce::ModifierKeys::getCurrentModifiersRealtime().isShiftDown();
+            snappedLeft = Project::getInstance()->snapSampleToGrid(snappedLeft, zoom, fine);
+        }
+        if (snappedLeft < 0) snappedLeft = 0;
+        if (snappedLeft >= currentRightSample) snappedLeft = currentLeftSample;
+
+        if (parentTrack != nullptr) {
+            const long maxLeft = currentRightSample - 1;
+            long candidate = parentTrack->clampOffsetForRegion(this, snappedLeft, currentRightSample - snappedLeft);
+            if (candidate <= maxLeft) snappedLeft = candidate;
+        }
+
+        const long newNumSamples_ = currentRightSample - snappedLeft;
+        const int newX     = (int) std::round((double) snappedLeft / sampleRate * zoom);
+        const int newWidth = (int) std::round((double) newNumSamples_ / sampleRate * zoom);
+        if (newX != getBounds().getX() || newWidth != getWidth()) {
+            setBounds(newX, getY(), newWidth, getHeight());
+        }
+
+        const int bs = Project::getInstance()->getBufferSize();
+        sampleOffset = bs > 0 ? (snappedLeft / bs) * bs : snappedLeft;
+        numSamples   = newNumSamples_;
+
+        rebuildThumbnail();
+        updateThumb();
+        return;
+    }
+
     if (wasMoved) {
         const long rawSampleOffset = std::round((getBounds().getX() / zoom) * sampleRate);
         long newSampleOffset = rawSampleOffset;

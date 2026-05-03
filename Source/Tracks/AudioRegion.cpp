@@ -480,6 +480,52 @@ void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, b
 
     Track* parentTrack = dynamic_cast<Track*>(getParentComponent());
 
+    // Linkskanten-Resize triggert beides: wasMoved (X aendert sich) UND
+    // wasResized (Breite aendert sich). Die untenstehenden separaten Branches
+    // wuerden dann naheinander setTopLeftPosition() (haelt Breite fest, rechte
+    // Kante wandert) und setSize() (haelt X fest) rufen — Ergebnis: die rechte
+    // Kante haut nach rechts ab. Hier zusammen behandeln, rechte Kante aus den
+    // (vom Constrainer bereits korrigierten) bounds halten, linke snappen,
+    // Breite = right - left.
+    if (wasMoved && wasResized) {
+        const double sr = Project::getInstance()->getSampleRate();
+        const long currentLeftSample  = (long) std::round((double) getBounds().getX() / zoom * sr);
+        const long currentRightSample = (long) std::round((double)(getBounds().getX() + getBounds().getWidth()) / zoom * sr);
+
+        long snappedLeft = currentLeftSample;
+        if (Project::getInstance()->isSnapToGridEnabled()) {
+            const bool fine = juce::ModifierKeys::getCurrentModifiersRealtime().isShiftDown();
+            snappedLeft = Project::getInstance()->snapSampleToGrid(snappedLeft, zoom, fine);
+        }
+        if (snappedLeft < 0) snappedLeft = 0;
+        if (snappedLeft >= currentRightSample) snappedLeft = currentLeftSample; // sanity
+
+        // Overlap-Clamp: nur die linke Kante darf nicht in die Vorgaengerregion
+        // hineinragen. Wir lassen clampOffsetForRegion entscheiden — die Laenge
+        // wird hinterher entsprechend angepasst.
+        if (parentTrack != nullptr) {
+            const long maxLeft = currentRightSample - 1;
+            long candidate = snappedLeft;
+            candidate = parentTrack->clampOffsetForRegion(this, candidate, currentRightSample - candidate);
+            if (candidate <= maxLeft) snappedLeft = candidate;
+        }
+
+        const long newNumSamples = currentRightSample - snappedLeft;
+
+        const int newX     = (int) std::round((double) snappedLeft / sr * zoom);
+        const int newWidth = (int) std::round((double) newNumSamples / sr * zoom);
+        if (newX != getBounds().getX() || newWidth != getWidth()) {
+            setBounds(newX, getY(), newWidth, getHeight());
+        }
+        oldOffset = snappedLeft;
+        if (snappedLeft != getSampleOffset())
+            setSampleOffset(snappedLeft, true, true);
+
+        sendChangeMessage();
+        dirty = true;
+        return;
+    }
+
     if (wasMoved) {
         long tracklen = Project::getInstance()->getTrackLength();
         double sampleRate = Project::getInstance()->getSampleRate();
