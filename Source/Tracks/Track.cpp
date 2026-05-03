@@ -565,7 +565,7 @@ AudioRegion* Track::addRegion(AudioSampleBuffer* source, double sampleRate, long
 	return region;
 }
 
-AudioRegion* Track::bounceRegionInPlace(Region* sourceRegion)
+juce::AudioSampleBuffer* Track::bounceRegionToBuffer(Region* sourceRegion)
 {
 	if (sourceRegion == nullptr) return nullptr;
 	auto* mr = dynamic_cast<MidiRegion*>(sourceRegion);
@@ -575,18 +575,15 @@ AudioRegion* Track::bounceRegionInPlace(Region* sourceRegion)
 	auto* plugin = pluginModule->getPlugin();
 	const int sr        = (int) Project::getInstance()->getSampleRate();
 	const int blockSize = juce::jmax(64, Project::getInstance()->getBufferSize());
-	const long startTimeline = mr->getSampleOffset();
-	const long lenSamples    = mr->getNumSamples();
+	const long lenSamples = mr->getNumSamples();
 	if (lenSamples <= 0 || sr <= 0) return nullptr;
 
-	// Ziel-Buffer: stereo, exakt die Region-Laenge.
 	auto* outBuffer = new juce::AudioSampleBuffer(2, (int) lenSamples);
 	outBuffer->clear();
 
-	// Alle MIDI-Events der Region einsammeln und in eine bounce-relative
-	// MidiBuffer (0 == linke Kante der Region) packen. sourceStartSample
-	// abziehen: getMessageAt liefert Buffer-relative Timestamps; wir
-	// brauchen "ab dem Front-Edge gemessen".
+	// MIDI-Events einsammeln und auf bounce-relative Sampletimes mappen
+	// (0 == linke Kante der sichtbaren Region). sourceStartSample abziehen,
+	// damit links-getrimmte Regionen nicht den Pre-Trim-Bereich rendern.
 	juce::MidiBuffer regionMidi;
 	const long sss = mr->getSourceStartSample();
 	for (int k = 0; k < mr->getNumMessages(); ++k)
@@ -598,8 +595,7 @@ AudioRegion* Track::bounceRegionInPlace(Region* sourceRegion)
 		regionMidi.addEvent(*msg, t);
 	}
 
-	// Plugin offline vorbereiten. Nach dem Bounce zurueckschalten — auch
-	// im Fehlerpfad, daher mit RAII-aehnlichem Wrapper.
+	// Plugin offline vorbereiten + RAII-Reset.
 	struct PluginGuard {
 		PluginModule* pm; juce::AudioPluginInstance* p;
 		~PluginGuard() {
@@ -612,13 +608,11 @@ AudioRegion* Track::bounceRegionInPlace(Region* sourceRegion)
 	pluginModule->setBounceMode(true);
 	plugin->prepareToPlay((double) sr, blockSize);
 
-	// Block-fuer-Block rendern.
 	juce::AudioSampleBuffer blockBuf(juce::jmax(2, plugin->getTotalNumOutputChannels()), blockSize);
 	for (int pos = 0; pos < (int) lenSamples; pos += blockSize)
 	{
 		const int n = juce::jmin(blockSize, (int) lenSamples - pos);
 
-		// MIDI-Slice fuer [pos, pos+n)
 		juce::MidiBuffer slice;
 		for (const auto md : regionMidi)
 		{
@@ -633,33 +627,10 @@ AudioRegion* Track::bounceRegionInPlace(Region* sourceRegion)
 		const int chs = juce::jmin(2, blockBuf.getNumChannels());
 		for (int ch = 0; ch < chs; ++ch)
 			outBuffer->copyFrom(ch, pos, blockBuf, ch, 0, n);
-		// Mono-Quelle auf rechten Kanal duplizieren.
 		if (chs == 1)
 			outBuffer->copyFrom(1, pos, blockBuf, 0, 0, n);
 	}
-
-	// Source-Region entfernen, AudioRegion an gleicher Timeline-Position
-	// einsetzen. addRegion(buffer, sr, samplePosition, len) baut intern eine
-	// AudioRegion und uebernimmt den Buffer-Inhalt per Copy.
-	const long savedOffset = startTimeline;
-
-	// Erst entfernen (loescht das MidiRegion-Component samt midiMessageList).
-	const auto it = std::find(regions.begin(), regions.end(), sourceRegion);
-	if (it != regions.end())
-	{
-		regions.erase(it);
-		removeChildComponent(sourceRegion);
-		delete sourceRegion;
-	}
-
-	AudioRegion* newRegion = addRegion(outBuffer, (double) sr, savedOffset, lenSamples);
-	delete outBuffer; // addRegion kopiert den Inhalt — wir behalten kein eigenes Eigentum.
-	if (newRegion != nullptr)
-	{
-		newRegion->setSampleOffset(savedOffset, false, false);
-		newRegion->repaint();
-	}
-	return newRegion;
+	return outBuffer;
 }
 
 void Track::attachRegion(Region* r)

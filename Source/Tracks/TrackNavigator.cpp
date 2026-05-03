@@ -1305,16 +1305,62 @@ bool TrackNavigator::keyPressed(const KeyPress& key, Component* originatingCompo
 				tracks.at(i)->splitRegion();
 			}
 		}
-		else if (key.getKeyCode() == 66) { // B — Bounce-In-Place der selektierten Region
+		else if (key.getKeyCode() == 66) { // B — Bounce-In-Place der selektierten Regionen
+			// Pro selektierter MIDI-Region: bouncen, neuen Audio-Track DIREKT
+			// unter dem Source-Track anlegen, AudioRegion an gleicher Timeline-
+			// Position einsetzen. Source-Region bleibt unangetastet.
+			if (editor == nullptr) return false;
+
+			// Snapshot von (sourceTrack, region)-Paaren, weil wir gleich tracks
+			// modifizieren — Iterieren waehrend insertTrackAt() ist unsicher.
+			std::vector<std::pair<Track*, Region*>> jobs;
 			for (auto* t : tracks) {
 				if (t == nullptr) continue;
-				// Pro Track: alle selektierten MidiRegions bouncen.
-				// Snapshot der Liste, bevor wir sie modifizieren.
-				std::vector<Region*> snapshot;
 				for (auto* r : t->getRegions())
-					if (r != nullptr && r->isSelected()) snapshot.push_back(r);
-				for (auto* r : snapshot)
-					t->bounceRegionInPlace(r);
+					if (r != nullptr && r->isSelected()) jobs.emplace_back(t, r);
+			}
+
+			const double sr = Project::getInstance()->getSampleRate();
+			for (auto& job : jobs) {
+				Track* sourceTrack = job.first;
+				Region* sourceRegion = job.second;
+				if (sourceTrack == nullptr || sourceRegion == nullptr) continue;
+
+				const long offset = sourceRegion->getSampleOffset();
+				const long len    = (long) sourceRegion->getNumSamples();
+
+				std::unique_ptr<juce::AudioSampleBuffer> rendered (sourceTrack->bounceRegionToBuffer(sourceRegion));
+				if (rendered == nullptr) continue;
+
+				// Neuen Audio-Track anlegen — TrackUtil haengt ihn ans Ende
+				// der tracks-Liste.
+				Track* newAudio = TrackUtil::createAudioTrack(editor, this, editor->getModule());
+				if (newAudio == nullptr) continue;
+				newAudio->setName(sourceTrack->getName() + " (bounce)");
+
+				// In die Position direkt unterhalb des Source-Tracks
+				// verschieben.
+				const auto srcIt = std::find(tracks.begin(), tracks.end(), sourceTrack);
+				const auto newIt = std::find(tracks.begin(), tracks.end(), newAudio);
+				if (srcIt != tracks.end() && newIt != tracks.end() && srcIt + 1 != newIt) {
+					tracks.erase(newIt);
+					const auto refresh = std::find(tracks.begin(), tracks.end(), sourceTrack);
+					tracks.insert(refresh + 1, newAudio);
+
+					// Re-Layout (analog zu insertTrackAt).
+					int yPos = timelineOffset;
+					for (auto* tt : tracks) {
+						tt->setTopLeftPosition(kControlsWidth, yPos);
+						yPos += tt->getHeight();
+					}
+					syncTrackControls();
+					adjustHeight();
+					repaint();
+					sendChangeMessage();
+				}
+
+				// AudioRegion mit gerendertem Buffer auf den neuen Track.
+				newAudio->addRegion(rendered.get(), sr, offset, len);
 			}
 		}
 	}

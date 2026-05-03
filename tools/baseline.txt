@@ -21,4 +21,4 @@ TODO:Source/RandomModule.cpp:125               Phase 7 cleanup
 TODO:Source/RandomModule.cpp:126               Phase 7 cleanup
 TODO:Source/SynthEditor.cpp:2680               Phase 7 cleanup
 TODO:Source/Tracks/Track.cpp:414               Phase 4 (region edits)
-TODO:Source/Tracks/Track.cpp:1158              Phase 7 cleanup
+TODO:Source/Tracks/Track.cpp:1129              Phase 7 cleanup
