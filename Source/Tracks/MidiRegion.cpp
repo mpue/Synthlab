@@ -867,23 +867,23 @@ void MidiRegion::consolidate()
     }
     else
     {
-        // Non-looping case: trim MIDI events to the current visual (dragged) length.
-        // numSamples holds the original data length; use the component width directly.
-        int trimSamples = (int)((getWidth() / zoom) * sampleRate);
-        if (trimSamples > 0 && trimSamples < numSamples)
-        {
-            midiMessageList.erase(
-                std::remove_if(midiMessageList.begin(), midiMessageList.end(),
-                    [trimSamples](MidiMessage* m) {
-                        if (m->getTimeStamp() >= trimSamples) {
-                            delete m;
-                            return true;
-                        }
-                        return false;
-                    }),
-                midiMessageList.end());
-            numSamples = trimSamples;
-        }
+        // Non-looping case: alles ausserhalb des sichtbaren Bereichs IMMER
+        // wegwerfen. Das ist der Sinn von Consolidate — Daten, die durch
+        // Resize-vorne/-hinten "versteckt" wurden, werden jetzt endgueltig
+        // entfernt. Front-Trim haben wir schon oben (und sourceStartSample
+        // wurde auf 0 gesetzt), hier bleibt nur die rechte Kante.
+        const long visibleEnd = (long) numSamples;
+        midiMessageList.erase(
+            std::remove_if(midiMessageList.begin(), midiMessageList.end(),
+                [visibleEnd](MidiMessage* m) {
+                    if (m == nullptr) return true;
+                    if ((long) m->getTimeStamp() >= visibleEnd) {
+                        delete m;
+                        return true;
+                    }
+                    return false;
+                }),
+            midiMessageList.end());
     }
 
     // Resize-Handler suppressen: ohne Flag wuerde wasResized im
