@@ -114,7 +114,7 @@ public:
         return m != nullptr && (m == chainSourceModL || m == chainSourceModR);
     }
     // True, wenn pm in der reconstruierten FX-Chain dieses Channels steckt.
-    bool fxChainContains(Module* pm) const noexcept
+    bool fxChainContains(PluginModule* pm) const noexcept
     {
         if (pm == nullptr) return false;
         for (int i = 0; i < NUM_FX; ++i) if (fxChain[i] == pm) return true;
