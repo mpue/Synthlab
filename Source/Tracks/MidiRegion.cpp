@@ -474,16 +474,25 @@ void MidiRegion::addMessage(MidiMessage* m, double time, int sampleNum) {
         sampleNum = snappedSample + getSampleOffset();
     }
 
-    m->setTimeStamp(sampleNum - getSampleOffset());
+    // Timestamp ist buffer-relativ. Buffer-Position 0 entspricht der
+    // ORIGINAL-linken-Kante der Region (vor jedem Links-Trim) — nach einem
+    // Links-Trim ist die sichtbare linke Kante (sampleOffset) bei Buffer-
+    // Position sourceStartSample. Eine neue Note an Timeline=sampleNum hat
+    // also Buffer-Timestamp = (sampleNum - sampleOffset) + sourceStartSample.
+    // Ohne sourceStartSample-Korrektur landete die Note bei Buffer-Position
+    // 0..N, waehrend Playback/Draw ab sourceStartSample lesen — sie wuerde
+    // ignoriert und beim Consolidate ausgefiltert.
+    const int relSample   = sampleNum - getSampleOffset();
+    const int bufTimeStamp = relSample + (int) sourceStartSample;
+    m->setTimeStamp(bufTimeStamp);
 
     midiMessageList.push_back(m);
 
-    int relativeSample = sampleNum - getSampleOffset();
-    if (relativeSample > numSamples) {
-        setNumSamples(relativeSample);
+    if (relSample > numSamples) {
+        setNumSamples(relSample);
     }
 
-    midiThumbnail->addMessage(sampleNum - getSampleOffset(), m);
+    midiThumbnail->addMessage(bufTimeStamp, m);
     updateThumb();
 }
 
@@ -795,6 +804,33 @@ std::pair<MidiRegion*, MidiRegion*> MidiRegion::splitAt(long splitSample, MultiC
 void MidiRegion::consolidate()
 {
     const ScopedLock sl(lock);
+
+    // Erst den Front-Trim einarbeiten, falls die Region links gekuerzt wurde:
+    // Events vor sourceStartSample wegwerfen, alle uebrigen um -sourceStartSample
+    // verschieben, dann sourceStartSample auf 0 zuruecksetzen. Ohne diesen
+    // Schritt wuerden Noten am links-getrimmten Rand (mit Buffer-Timestamp ==
+    // sourceStartSample) den darunter liegenden Trim-Filter im non-looping-
+    // Branch nicht ueberleben — sie liegen ja per Konstruktion VOR dem
+    // sichtbaren Bereich, gemessen vom alten Buffer-Anfang aus.
+    if (sourceStartSample > 0)
+    {
+        const long sss = sourceStartSample;
+        midiMessageList.erase(
+            std::remove_if(midiMessageList.begin(), midiMessageList.end(),
+                [sss](MidiMessage* m) {
+                    if (m == nullptr) return true;
+                    if ((long) m->getTimeStamp() < sss) {
+                        delete m;
+                        return true;
+                    }
+                    return false;
+                }),
+            midiMessageList.end());
+        for (auto* m : midiMessageList)
+            if (m != nullptr)
+                m->setTimeStamp(m->getTimeStamp() - (double) sss);
+        sourceStartSample = 0;
+    }
 
     if (loop && loopCount > 0)
     {
