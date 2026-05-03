@@ -1850,8 +1850,8 @@ void SynthEditor::openTracks(File file)
 	audio = audio.getChild(0);
 
 	for (int i = 0; i < audio.getNumChildren(); i++) {
-		path = audio.getChild(i).getProperty("path");
-		String id = audio.getChild(i).getProperty("refId");
+		String path = audio.getChild(i).getProperty("path");
+		String id   = audio.getChild(i).getProperty("refId");
 
 		Project::getInstance()->addAudioFile(id, path);
 	}
