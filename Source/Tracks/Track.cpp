@@ -1263,6 +1263,11 @@ void Track::drawGrid(Graphics& g) {
 	long samplesPerGrid = getGridSizeInSamples();
 	if (samplesPerGrid <= 0) return;
 
+	// Bar-1-Strich (= Beschriftung "1" auf der Timeline, sample == 1 Takt
+	// Laenge) deutlich hervorheben — analog zur Timeline.
+	const double samplesPerBeat = sampleRate / (bpm / 60.0);
+	const long   samplesPerBar  = (long) std::round(samplesPerBeat * 4.0);
+
 	// WICHTIG: Verwende exakte Multiplikation statt akkumulierte Addition
 	int gridCount = (int)(getWidth() * sampleRate / (zoom * samplesPerGrid)) + 2;
 
@@ -1273,7 +1278,15 @@ void Track::drawGrid(Graphics& g) {
 		int pixelPos = (int)std::round(exactPixel);
 
 		if (pixelPos >= 0 && pixelPos < getWidth()) {
-			g.drawVerticalLine(pixelPos, 0, getHeight());
+			if (exactSample == samplesPerBar) {
+				// Dicker, deutlich sichtbarer Strich am Ende von Takt 0 /
+				// Beginn von Takt 1.
+				g.setColour(Colours::white.withAlpha(0.65f));
+				g.fillRect((float) pixelPos - 1.5f, 0.0f, 3.0f, (float) getHeight());
+				g.setColour(Colours::lightgrey.withAlpha(0.3f));
+			} else {
+				g.drawVerticalLine(pixelPos, 0, getHeight());
+			}
 		}
 	}
 }
