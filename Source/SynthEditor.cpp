@@ -1584,6 +1584,28 @@ void SynthEditor::saveFile() {
 
 		if (navigator != nullptr) {
 			ValueTree tracks = navigator->getConfiguration();
+
+			// FX-Slot-Map pro Track anreichern: Channel-Strip zu jedem Track
+			// suchen und dessen User-Slot-Zuordnung ans Track-XML haengen.
+			// Ohne das verlieren wir nach reload die Position der FX im Strip.
+			if (mixer != nullptr) {
+				const auto& navTracks = navigator->getTracks();
+				const int numTracks = juce::jmin((int) navTracks.size(), tracks.getNumChildren());
+				for (int ti = 0; ti < numTracks; ++ti) {
+					Track* t = navTracks.at((size_t) ti);
+					if (t == nullptr) continue;
+					for (auto* panel : mixer->getChannels()) {
+						if (panel == nullptr) continue;
+						if (panel->getTrack() == t) {
+							auto trackChild = tracks.getChild(ti);
+							if (trackChild.isValid())
+								trackChild.appendChild(panel->getFXSlotMap(), nullptr);
+							break;
+						}
+					}
+				}
+			}
+
 			xml = tracks.createXml();
 			// juce::File::getChildFile baut plattformkorrekt — vorher war hier
 			// "\\" hardcoded und auf macOS landete die Datei nie wo sie sollte.
@@ -1955,7 +1977,27 @@ void SynthEditor::openTracks(File file)
 	// Folge: Track::fxPlugins[] wird nie befuellt und FX-Plugin-Automation
 	// spielt nicht ab. Match: panel->chainSourceMod == TrackIn dieses Tracks,
 	// fallback ueber fxChainContains(track->pluginModule).
+	//
+	// Anschliessend pro Track die gespeicherte FX-Slot-Map auf das Panel
+	// anwenden — sonst rutschen alle Plugins nach reconstructFXChainFromGraph
+	// linksbuendig zusammen und das Instrument landet als fxChain[0].
 	if (mixer != nullptr) {
+		// Map TrackIn -> ValueTree (das geladene Track-Element) aufbauen,
+		// damit wir spaeter die FXSlots-Property finden koennen.
+		std::map<TrackIn*, juce::ValueTree> tiToConfig;
+		// v ist hier der oben geladene tracks-Tree.
+		for (int i = 0; i < v.getNumChildren(); ++i) {
+			juce::ValueTree trackCfg = v.getChild(i);
+			// Reihenfolge in tracks.xml entspricht der TrackIn-Reihenfolge im Modul-Graph.
+			int j = 0;
+			for (auto* mod : *getModule()->getModules()) {
+				auto* ti = dynamic_cast<TrackIn*>(mod);
+				if (ti == nullptr) continue;
+				if (j == i) { tiToConfig[ti] = trackCfg; break; }
+				++j;
+			}
+		}
+
 		for (auto* mod : *getModule()->getModules()) {
 			auto* ti = dynamic_cast<TrackIn*>(mod);
 			if (ti == nullptr) continue;
@@ -1965,6 +2007,13 @@ void SynthEditor::openTracks(File file)
 				if (panel == nullptr) continue;
 				if (panel->isFedBy(ti) || panel->fxChainContains(t->getPluginModule())) {
 					panel->setTrack(t); // ruft syncTrackFXPlugins() -> Cache rebuild
+					// FX-Slot-Map aus dem geladenen Track-XML anwenden, falls vorhanden.
+					auto cfgIt = tiToConfig.find(ti);
+					if (cfgIt != tiToConfig.end()) {
+						auto slotMap = cfgIt->second.getChildWithName("FXSlots");
+						if (slotMap.isValid())
+							panel->applyFXSlotMap(slotMap);
+					}
 					break;
 				}
 			}

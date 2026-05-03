@@ -103,6 +103,17 @@ public:
     // and state for each occupied slot.
     juce::ValueTree getFXChainState() const;
     void applyFXChainState(const juce::ValueTree& state);
+
+    // Slot-Map fuer non-master Tracks: fxChain[i] -> Module::getIndex().
+    // Wird im Track-XML pro Track persistiert (ueber TrackNavigator), damit
+    // beim Reload reconstructFXChainFromGraph nicht alles linksbuendig
+    // zusammenrutscht und das Instrument-Plugin nicht als fxChain[0] landet.
+    juce::ValueTree getFXSlotMap() const;
+    // Permutiert fxChain[] aus dem aktuellen Reconstruct-Zustand zurueck in
+    // die User-Slot-Zuordnung. Setzt chainSourceMod/Pin auf das Instrument-
+    // Plugin (track->getPluginModule()), sodass rewireChain bei spaeterem
+    // insertFX/removeFX sauber ab dort verkabelt.
+    void applyFXSlotMap(const juce::ValueTree& slotMap);
     // Spiegelt den aktuellen Stand von fxChain[] in den verbundenen Track,
     // damit Track::getAutomationTargets() FX-Plugins findet.
     void syncTrackFXPlugins();

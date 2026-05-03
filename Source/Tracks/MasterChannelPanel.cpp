@@ -733,6 +733,70 @@ void MasterChannelPanel::syncTrackFXPlugins() {
         track->setFxPlugin(i, fxChain[i]);
 }
 
+juce::ValueTree MasterChannelPanel::getFXSlotMap() const {
+    juce::ValueTree map("FXSlots");
+    for (int i = 0; i < NUM_FX; ++i) {
+        if (fxChain[i] == nullptr) continue;
+        // Das Instrument-Plugin gehoert nicht in die FX-Slot-Map — es ist
+        // ueber Track::pluginModule erreichbar. Wenn der Panel das Instrument
+        // doch in fxChain[0] hat (Folge von reconstructFXChainFromGraph in
+        // einer NICHT-permutierten Session), den Eintrag ueberspringen.
+        if (track != nullptr && fxChain[i] == track->getPluginModule()) continue;
+        juce::ValueTree slot("Slot");
+        slot.setProperty("index",       i,                              nullptr);
+        slot.setProperty("moduleIndex", (juce::int64) fxChain[i]->getIndex(), nullptr);
+        map.appendChild(slot, nullptr);
+    }
+    return map;
+}
+
+void MasterChannelPanel::applyFXSlotMap(const juce::ValueTree& slotMap) {
+    if (!slotMap.isValid() || track == nullptr) return;
+    if (synthEditor == nullptr) return;
+
+    // Modul-Lookup nach getIndex() im Root-Modul-Graph.
+    auto* root = synthEditor->getModule();
+    if (root == nullptr || root->getModules() == nullptr) return;
+
+    auto findPluginByModuleIndex = [&] (juce::int64 idx) -> PluginModule* {
+        for (auto* m : *root->getModules())
+            if (m != nullptr && (juce::int64) m->getIndex() == idx)
+                return dynamic_cast<PluginModule*>(m);
+        return nullptr;
+    };
+
+    // Slot-Belegung neu aufbauen: erstmal alles auf null, dann aus der Map
+    // wieder einsortieren. Das Instrument-Plugin landet hier nie hinein.
+    for (int i = 0; i < NUM_FX; ++i) fxChain[i] = nullptr;
+
+    for (int i = 0; i < slotMap.getNumChildren(); ++i) {
+        const auto child = slotMap.getChild(i);
+        if (!child.hasType("Slot")) continue;
+        const int slot = (int) child.getProperty("index", -1);
+        const juce::int64 moduleIndex = (juce::int64) child.getProperty("moduleIndex", (juce::int64) -1);
+        if (slot < 0 || slot >= NUM_FX || moduleIndex < 0) continue;
+        if (auto* pm = findPluginByModuleIndex(moduleIndex))
+            fxChain[slot] = pm;
+    }
+
+    // chainSourceMod auf das Instrument-Plugin setzen, sodass rewireChain
+    // bei spaeterem insertFX/removeFX vom Instrument zur AudioOut verkabelt
+    // (und nicht vom TrackIn ueber das Instrument bypassend, wie es nach
+    // reconstructFXChainFromGraph waere).
+    if (auto* pm = track->getPluginModule()) {
+        if (pm->pins.size() > 3) {
+            chainSourceModL = pm;
+            chainSourcePinL = pm->pins[2]; // L OUT
+            chainSourceModR = pm;
+            chainSourcePinR = pm->pins[3]; // R OUT
+        }
+    }
+
+    syncTrackFXPlugins();
+    updateFXButtons();
+    repaint();
+}
+
 void MasterChannelPanel::labelTextChanged(Label* labelThatHasChanged) {
     if (labelThatHasChanged == nameLabel && track != nullptr)
         track->setName(nameLabel->getText());

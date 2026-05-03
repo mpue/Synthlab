@@ -529,6 +529,10 @@ ValueTree TrackNavigator::getConfiguration()
 		// Plugin-Parameter, mit stabiler Uuid).
 		track.addChild(tracks.at(i)->getAutomationModel().toValueTree(), -1, nullptr);
 
+		// FX-Slot-Map (welches Plugin in welchem User-Slot) wird in
+		// SynthEditor::saveFile() pro Track angereichert — TrackNavigator
+		// hat keinen Zugriff auf MixerPanel/Channel-Strips.
+
 		v.addChild(track, -1, nullptr);
 	}
 
