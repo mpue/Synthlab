@@ -228,6 +228,13 @@ TrackPropertyPanel::TrackPropertyPanel ()
 TrackPropertyPanel::~TrackPropertyPanel()
 {
     //[Destructor_pre]. You can add your own custom destruction code here..
+    // TrackPropertyView::addTrack registriert this als Listener von Mixer.
+    // Beim Destroy wieder austragen, sonst behaelt Mixer einen dangling
+    // Pointer und der naechste sendChangeMessage()-Call kracht in
+    // ChangeBroadcaster::callListeners (klassisch sichtbar bei "Open File A,
+    // dann sofort Open File B").
+    if (auto* m = Mixer::getInstance())
+        m->removeChangeListener(this);
     //[/Destructor_pre]
 
     nameLabel = nullptr;

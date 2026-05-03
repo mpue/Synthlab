@@ -1164,6 +1164,14 @@ bool SynthEditor::isRunning() {
 
 void SynthEditor::setRunning(bool running) {
 
+	// Idempotent: enter/exit nur bei tatsaechlichem Zustandswechsel, sonst
+	// koennen aufeinanderfolgende setRunning(false)-Calls den AudioCallback-
+	// Lock rekursiv mehrfach betreten und ein spaeteres setRunning(true)
+	// haelt den Lock weiter — Audio bleibt dann stumm bzw. spaetere
+	// File-Open-Sequenzen verbleiben in einem inkonsistenten Lock-Zaehlerstand.
+	if (this->running == running)
+		return;
+
 	auto& bus = FastBus::getInstance();
 
 	bus.publish("running", running);
@@ -1776,6 +1784,12 @@ void SynthEditor::openFile(juce::File file) {
 	if (!file.existsAsFile())
 		return;
 
+	// Audio-Thread VOR cleanUp anhalten — sonst iteriert er bei jedem Wechsel
+	// ueber bereits-geloeschte Module/Tracks und es kracht entweder im Audio-
+	// Pfad oder per ChangeBroadcaster, sobald Mixer broadcastet (z.B. bei
+	// Mixer::addTrack waehrend des Loads von File B).
+	setRunning(false);
+
 	cleanUp();
 	newFile();
 
@@ -1786,7 +1800,6 @@ void SynthEditor::openFile(juce::File file) {
 	Project::getInstance()->addRecentFile(file.getFullPathName());
 
 	ValueTree v = ValueTree::fromXml(*xml.get());
-	setRunning(false);
 	ModuleUtils::loadStructure(root->getModules(), root->getConnections(), &v, this);
 
 	{

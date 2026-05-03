@@ -175,6 +175,11 @@ MasterChannelPanel::MasterChannelPanel ()
 MasterChannelPanel::~MasterChannelPanel()
 {
     //[Destructor_pre]. You can add your own custom destruction code here..
+    // setTrack() registriert this als Listener von Mixer — beim Destroy wieder
+    // austragen, sonst behaelt Mixer einen dangling Pointer und der naechste
+    // sendChangeMessage()-Call kracht in ChangeBroadcaster::callListeners.
+    if (auto* m = Mixer::getInstance())
+        m->removeChangeListener(this);
     //[/Destructor_pre]
 
     vuSliderL = nullptr;

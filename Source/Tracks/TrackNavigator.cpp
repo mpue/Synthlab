@@ -130,6 +130,13 @@ void TrackNavigator::clearTracks() {
 	// sie einen Dangling-Pointer.
 	trackControls.clear();
 	for (std::vector<Track*>::iterator it = tracks.begin(); it != tracks.end(); ++it) {
+		// Mixer haelt eine parallele tracks-Liste (Mixer::addTrack) UND einen
+		// Listener-Eintrag pro Track. Beides austragen, sonst bleibt nach
+		// einem File-Wechsel ein dangling Track* im Mixer-Vector und/oder ein
+		// dangling Listener-Pointer — der naechste Mixer::sendChangeMessage()
+		// kracht dann in ChangeBroadcaster::callListeners.
+		if (auto* m = Mixer::getInstance())
+			m->removeTrack(*it);
 		delete* it;
 	}
 	tracks.clear();
