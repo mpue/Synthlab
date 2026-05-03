@@ -100,10 +100,11 @@ void TimeLine::paint(Graphics& g)
                     g.setColour(Colours::white);
                 }
 
-                // Nur Bar-Zahlen mittig zeichnen
+                // Nur Bar-Zahlen mittig zeichnen. Beschriftung beginnt bei 0
+                // (am Timeline-Anfang) — bar laeuft 1..totalBars, also -1.
                 if (isBarStart)
                 {
-                    String label = String(bar);
+                    String label = String(bar - 1);
                     const int textWidth = 30;
                     const int textHeight = 12;
                     g.drawText(label,
