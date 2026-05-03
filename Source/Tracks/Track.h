@@ -143,6 +143,13 @@ public:
     Region* pasteRegion(Region* source, long targetSampleOffset);
     void splitRegion();
 
+    // Bounce-in-place: rendert die uebergebene MIDI-Region durch das
+    // Instrument-Plugin offline und ersetzt sie an gleicher Timeline-
+    // Position durch eine AudioRegion mit dem gerenderten Material. Gibt
+    // die neu erzeugte AudioRegion zurueck (nullptr bei Fehler — z.B.
+    // kein Plugin gebunden, kein MIDI-Region-Cast moeglich).
+    AudioRegion* bounceRegionInPlace(Region* sourceRegion);
+
     void attachRegion(Region* r);
     void detachRegion(Region* r);
 

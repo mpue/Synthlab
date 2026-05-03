@@ -1305,6 +1305,18 @@ bool TrackNavigator::keyPressed(const KeyPress& key, Component* originatingCompo
 				tracks.at(i)->splitRegion();
 			}
 		}
+		else if (key.getKeyCode() == 66) { // B — Bounce-In-Place der selektierten Region
+			for (auto* t : tracks) {
+				if (t == nullptr) continue;
+				// Pro Track: alle selektierten MidiRegions bouncen.
+				// Snapshot der Liste, bevor wir sie modifizieren.
+				std::vector<Region*> snapshot;
+				for (auto* r : t->getRegions())
+					if (r != nullptr && r->isSelected()) snapshot.push_back(r);
+				for (auto* r : snapshot)
+					t->bounceRegionInPlace(r);
+			}
+		}
 	}
 
 	return false;
