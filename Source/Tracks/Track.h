@@ -28,6 +28,7 @@ using namespace std;
 
 class TrackNavigator;
 class PluginModule;
+class AutomationLane;
 
 class Track : public Component, public ChangeBroadcaster, public ChangeListener
 {
@@ -258,6 +259,17 @@ public:
 		this->bpm = bpm;
     }
 
+    // ----- Lane-Automation -----------------------------------------------------
+    // Overlay zum Zeichnen einer Parameter-Automation. Wird vom TrackControl
+    // per Toggle ein-/ausgeblendet; im aktiven Zustand fängt es Mausklicks ab.
+    void setAutomationVisible(bool visible);
+    bool isAutomationVisible() const { return automationVisible; }
+
+    void setAutomationParameterIndex(int idx);
+    int  getAutomationParameterIndex() const { return automationParamIndex; }
+
+    AutomationLane* getAutomationLane() const { return automationLane.get(); }
+
 private:
 
     void dispatchMidiMessages(const std::vector<juce::MidiMessage*>& messages);
@@ -401,6 +413,11 @@ private:
 
 	bool gridEnabled = true;
     double bpm = 120.0;
+
+    std::unique_ptr<AutomationLane> automationLane;
+    bool automationVisible = false;
+    int  automationParamIndex = -1;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Track)
 };
 

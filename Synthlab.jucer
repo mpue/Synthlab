@@ -180,6 +180,8 @@
       <GROUP id="{38D83862-585A-00E2-D1DD-47C4FF4AB77C}" name="Tracks">
         <FILE id="QALREW" name="AudioRegion.cpp" compile="1" resource="0" file="Source/Tracks/AudioRegion.cpp"/>
         <FILE id="TK7Jo6" name="AudioRegion.h" compile="0" resource="0" file="Source/Tracks/AudioRegion.h"/>
+        <FILE id="AuLn01" name="AutomationLane.h" compile="0" resource="0"
+              file="Source/Tracks/AutomationLane.h"/>
         <FILE id="PbUXLG" name="BounceThread.cpp" compile="1" resource="0"
               file="Source/Tracks/BounceThread.cpp"/>
         <FILE id="q7srJ3" name="BounceThread.h" compile="0" resource="0" file="Source/Tracks/BounceThread.h"/>

@@ -19,6 +19,8 @@
 #include <limits>
 #include <cstdlib>
 #include "../MessageBus/FastBus.h"
+#include "AutomationLane.h"
+#include "../PluginModule.h"
 
 //==============================================================================
 Track::Track(Type type, double sampleRate, MultiComponentDragger* dragger)
@@ -38,7 +40,14 @@ Track::Track(Type type, double sampleRate, MultiComponentDragger* dragger)
 	this->dragger = dragger;
 	this->midiChannel = 1;
 	this->bufferSize = Project::getInstance()->getBufferSize();
-	addAndMakeVisible(resizer);	
+	addAndMakeVisible(resizer);
+
+	// Automation-Lane als Child anlegen (anfangs unsichtbar). Wird vom
+	// TrackControl-Toggle ein-/ausgeblendet und verfolgt Track-Größe + Zoom.
+	automationLane = std::make_unique<AutomationLane>(this, sampleRate);
+	automationLane->setZoom(zoom);
+	addChildComponent(automationLane.get());
+
 	setHeight(Project::DEFAULT_TRACK_HEIGHT);
 	// setMouseClickGrabsKeyboardFocus(true);
 	resized();
@@ -664,6 +673,12 @@ void Track::dispatchMidiMessages(const std::vector<juce::MidiMessage*>& messages
 
 void Track::setSamplePosition(int position, bool dispatchEvents)
 {
+	// Lane-Automation: bei jedem Block den interpolierten Wert ans Plugin
+	// schicken — solange das Overlay aktiv ist und ein Parameter gewählt
+	// wurde. Auch bei Audio-Tracks erlaubt, falls dort ein Insert-Plugin hängt.
+	if (dispatchEvents && automationLane != nullptr && automationVisible)
+		automationLane->applyAt(position);
+
 	if ((type == MIDI || type == INSTRUMENT) && position != samplePosition) {
 
 		const int bufferSize = Project::getInstance()->getBufferSize();
@@ -789,6 +804,9 @@ void Track::setZoom(float zoom)
 	for (std::vector<Region*>::iterator it = regions.begin(); it != regions.end(); ++it) {
 		(*it)->setZoom(zoom);
 	}
+
+	if (automationLane != nullptr)
+		automationLane->setZoom(zoom);
 }
 
 String Track::getName()
@@ -1173,6 +1191,14 @@ void Track::resized() {
 	resizer->setSize(getWidth(), 5);
 	resizer->setTopLeftPosition(0, getHeight() - 5);
 	constrainer->setMaxWidth(getWidth());
+
+	if (automationLane != nullptr) {
+		// Lane überspannt den ganzen Track (außer dem unteren Resize-Griff).
+		automationLane->setBounds(0, 0, getWidth(), juce::jmax(0, getHeight() - 5));
+		if (automationVisible)
+			automationLane->toFront(false);
+	}
+
 	sendChangeMessage();
 }
 
@@ -1298,4 +1324,79 @@ void Track::setMono(bool mono) {
 
 bool Track::isMono() {
 	return mono;
+}
+
+// ----- Lane-Automation -------------------------------------------------------
+
+void Track::setAutomationVisible(bool visible)
+{
+	this->automationVisible = visible;
+	if (automationLane != nullptr) {
+		automationLane->setVisible(visible);
+		automationLane->setOverlayActive(visible);
+		if (visible)
+			automationLane->toFront(false);
+	}
+	repaint();
+}
+
+void Track::setAutomationParameterIndex(int idx)
+{
+	this->automationParamIndex = idx;
+	if (automationLane != nullptr)
+		automationLane->setParameterIndex(idx);
+}
+
+// ----- AutomationLane Glue (hier definiert, weil Zugriff auf PluginModule) ---
+
+juce::AudioProcessorParameter* AutomationLane::getTargetParameter() const
+{
+	if (track == nullptr || paramIndex < 0)
+		return nullptr;
+	auto* pm = track->getPluginModule();
+	if (pm == nullptr || pm->getPlugin() == nullptr)
+		return nullptr;
+	const auto& params = pm->getPlugin()->getParameters();
+	if (paramIndex >= params.size())
+		return nullptr;
+	return params[paramIndex];
+}
+
+void AutomationLane::applyAt(long sample)
+{
+	if (!overlayActive || points.empty())
+		return;
+	auto* p = getTargetParameter();
+	if (p == nullptr)
+		return;
+
+	// Linear interpolieren zwischen umgebenden Stützstellen.
+	float v = points.front().value;
+	if (sample <= points.front().sample) {
+		v = points.front().value;
+	}
+	else if (sample >= points.back().sample) {
+		v = points.back().value;
+	}
+	else {
+		// Binäre Suche nach dem ersten Punkt mit sample > query.
+		auto it = std::upper_bound(points.begin(), points.end(), sample,
+			[](long s, const Point& pt){ return s < pt.sample; });
+		if (it == points.begin()) {
+			v = it->value;
+		}
+		else {
+			auto prev = std::prev(it);
+			const long s0 = prev->sample;
+			const long s1 = it->sample;
+			const float v0 = prev->value;
+			const float v1 = it->value;
+			const float t = (s1 == s0) ? 0.0f
+			                           : (float)(sample - s0) / (float)(s1 - s0);
+			v = v0 + (v1 - v0) * t;
+		}
+	}
+
+	// setValueNotifyingHost erwartet 0..1 — unsere Werte sind bereits normiert.
+	p->setValueNotifyingHost(juce::jlimit(0.0f, 1.0f, v));
 }

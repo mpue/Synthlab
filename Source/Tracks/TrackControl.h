@@ -3,7 +3,7 @@
 
     TrackControl.h
     Schmaler Steuer-Strip links neben jedem Track im TrackNavigator.
-    Mute / Solo / Pan / Volume / Name.
+    Mute / Solo / Pan / Volume / Name + Toggle für die Lane-Automation.
 
     Wird vom TrackNavigator pro Track angelegt und an x=0 platziert. Der
     eigentliche Track liegt dann ab x=kControlsWidth (siehe TrackNavigator).
@@ -17,12 +17,51 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Track.h"
+#include "AutomationLane.h"
+#include "../PluginModule.h"
 
 class TrackControl : public juce::Component,
                      private juce::Button::Listener,
-                     private juce::Slider::Listener
+                     private juce::Slider::Listener,
+                     private juce::ComboBox::Listener
 {
 public:
+    // Eigene LookAndFeel für das Parameter-Dropdown — die Default-Font des
+    // Editor-LookAndFeel ist im Popup so klein, dass die Plugin-Parameternamen
+    // praktisch unlesbar sind. Hier nur Schriftgrößen overridden, alles
+    // andere bleibt am Parent-Look hängen.
+    struct AutoComboLookAndFeel : public juce::LookAndFeel_V4
+    {
+        juce::Font getComboBoxFont(juce::ComboBox&) override
+        {
+            return juce::Font(16.0f);
+        }
+        juce::Font getPopupMenuFont() override
+        {
+            return juce::Font(18.0f);
+        }
+        // Mindesthöhe für Popup-Items, sonst können Themes die Items unter
+        // die Font-Größe zusammenquetschen.
+        void getIdealPopupMenuItemSize(const juce::String& text,
+                                       bool isSeparator,
+                                       int standardMenuItemHeight,
+                                       int& idealWidth,
+                                       int& idealHeight) override
+        {
+            juce::LookAndFeel_V4::getIdealPopupMenuItemSize(text, isSeparator,
+                juce::jmax(standardMenuItemHeight, 26),
+                idealWidth, idealHeight);
+            if (idealHeight < 26) idealHeight = 26;
+        }
+        int getPopupMenuBorderSize() override { return 6; }
+    };
+
+    static AutoComboLookAndFeel& sharedComboLook()
+    {
+        static AutoComboLookAndFeel instance;
+        return instance;
+    }
+
     TrackControl(Track* track) : track(track)
     {
         nameLabel.setText(track->getName(), juce::dontSendNotification);
@@ -45,6 +84,17 @@ public:
         soloButton.setColour(juce::TextButton::buttonOnColourId, juce::Colour(0xffe0a64a));
         soloButton.addListener(this);
         addAndMakeVisible(soloButton);
+
+        // Automation-Toggle (kleiner Button "A"). Schaltet das Lane-Overlay am
+        // Track ein/aus. Erst wenn das Overlay an ist, blenden wir die ComboBox
+        // mit der Parameter-Auswahl ein.
+        autoButton.setButtonText("A");
+        autoButton.setClickingTogglesState(true);
+        autoButton.setToggleState(track != nullptr && track->isAutomationVisible(),
+                                  juce::dontSendNotification);
+        autoButton.setColour(juce::TextButton::buttonOnColourId, juce::Colour(0xfff0c060));
+        autoButton.addListener(this);
+        addAndMakeVisible(autoButton);
 
         panSlider.setSliderStyle(juce::Slider::LinearHorizontal);
         panSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
@@ -73,14 +123,22 @@ public:
         volLabel.setColour(juce::Label::textColourId, juce::Colour(0xff8a8e98));
         volLabel.setInterceptsMouseClicks(false, false);
         addAndMakeVisible(volLabel);
+
+        paramBox.setTextWhenNothingSelected("Parameter…");
+        paramBox.setLookAndFeel(&sharedComboLook());
+        paramBox.addListener(this);
+        addChildComponent(paramBox); // unsichtbar, bis Automation aktiv ist
     }
 
     ~TrackControl() override
     {
         muteButton.removeListener(this);
         soloButton.removeListener(this);
+        autoButton.removeListener(this);
         panSlider.removeListener(this);
         volSlider.removeListener(this);
+        paramBox.removeListener(this);
+        paramBox.setLookAndFeel(nullptr);
     }
 
     void paint(juce::Graphics& g) override
@@ -110,11 +168,13 @@ public:
         nameLabel.setBounds(r.removeFromTop(16));
         r.removeFromTop(2);
 
-        // M / S Buttons + Pan-Slider in einer Reihe
+        // M / S / A Buttons + Pan-Slider in einer Reihe
         auto row1 = r.removeFromTop(18);
         muteButton.setBounds(row1.removeFromLeft(20));
         row1.removeFromLeft(2);
         soloButton.setBounds(row1.removeFromLeft(20));
+        row1.removeFromLeft(2);
+        autoButton.setBounds(row1.removeFromLeft(20));
         row1.removeFromLeft(6);
         panLabel.setBounds(row1.removeFromLeft(22));
         panSlider.setBounds(row1);
@@ -125,6 +185,12 @@ public:
         row2.removeFromLeft(2);
         volLabel.setBounds(row2.removeFromLeft(22));
         volSlider.setBounds(row2);
+
+        r.removeFromTop(3);
+
+        // ComboBox sitzt unter den Slidern; nur sichtbar bei aktiver Automation.
+        if (paramBox.isVisible())
+            paramBox.setBounds(r.removeFromTop(26));
     }
 
     // Vom Navigator aufgerufen, wenn die Werte am Track von außen geändert
@@ -135,19 +201,75 @@ public:
         nameLabel.setText(track->getName(), juce::dontSendNotification);
         muteButton.setToggleState(track->isMute(), juce::dontSendNotification);
         soloButton.setToggleState(track->isSolo(), juce::dontSendNotification);
+        autoButton.setToggleState(track->isAutomationVisible(), juce::dontSendNotification);
         panSlider.setValue(track->getPan(), juce::dontSendNotification);
         volSlider.setValue(track->getVolume(), juce::dontSendNotification);
+
+        refreshParamBoxVisibility();
         repaint();
     }
 
     Track* getTrack() const { return track; }
 
 private:
+    void refreshParamBoxVisibility()
+    {
+        const bool show = track != nullptr && track->isAutomationVisible();
+        if (show)
+        {
+            populateParamBox();
+            paramBox.setVisible(true);
+        }
+        else
+        {
+            paramBox.setVisible(false);
+        }
+        resized();
+    }
+
+    void populateParamBox()
+    {
+        paramBox.clear(juce::dontSendNotification);
+        if (track == nullptr) return;
+
+        auto* pm = track->getPluginModule();
+        if (pm == nullptr || pm->getPlugin() == nullptr)
+        {
+            paramBox.addItem("(kein Plugin)", 1);
+            paramBox.setSelectedId(0, juce::dontSendNotification);
+            paramBox.setEnabled(false);
+            return;
+        }
+
+        paramBox.setEnabled(true);
+        const auto& params = pm->getPlugin()->getParameters();
+        int id = 1;
+        for (auto* p : params)
+        {
+            if (p == nullptr) continue;
+            // Nicht-automatisierbare Parameter ausblenden (z.B. Bypass-Latches
+            // einiger Plugins) — wären sonst nur Karteileichen im Dropdown.
+            if (!p->isAutomatable()) { ++id; continue; }
+            paramBox.addItem(p->getName(40), id);
+            ++id;
+        }
+
+        // Aktuelle Auswahl spiegeln.
+        const int idx = track->getAutomationParameterIndex();
+        if (idx >= 0)
+            paramBox.setSelectedId(idx + 1, juce::dontSendNotification);
+    }
+
     void buttonClicked(juce::Button* b) override
     {
         if (track == nullptr) return;
         if (b == &muteButton) track->setMute(muteButton.getToggleState());
         else if (b == &soloButton) track->setSolo(soloButton.getToggleState());
+        else if (b == &autoButton)
+        {
+            track->setAutomationVisible(autoButton.getToggleState());
+            refreshParamBoxVisibility();
+        }
     }
 
     void sliderValueChanged(juce::Slider* s) override
@@ -157,13 +279,23 @@ private:
         else if (s == &volSlider) track->setVolume((float)volSlider.getValue());
     }
 
+    void comboBoxChanged(juce::ComboBox* c) override
+    {
+        if (track == nullptr || c != &paramBox) return;
+        const int sel = paramBox.getSelectedId(); // 1-based
+        if (sel <= 0) return;
+        track->setAutomationParameterIndex(sel - 1);
+    }
+
     Track* track = nullptr;
 
     juce::Label       nameLabel;
     juce::TextButton  muteButton;
     juce::TextButton  soloButton;
+    juce::TextButton  autoButton;
     juce::Slider      panSlider, volSlider;
     juce::Label       panLabel, volLabel;
+    juce::ComboBox    paramBox;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TrackControl)
 };
