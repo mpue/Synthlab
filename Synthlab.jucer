@@ -227,6 +227,18 @@
               file="Source/Tracks/WaveSelector.cpp"/>
         <FILE id="ZVVF10" name="WaveSelector.h" compile="0" resource="0" file="Source/Tracks/WaveSelector.h"/>
       </GROUP>
+      <GROUP id="{8B0AD2A1-2F44-4E1B-9D3A-001A20260501}" name="Automation">
+        <FILE id="AuTy01" name="AutomationTypes.h" compile="0" resource="0"
+              file="Source/Automation/AutomationTypes.h"/>
+        <FILE id="AuLn02" name="AutomationLane.h" compile="0" resource="0"
+              file="Source/Automation/AutomationLane.h"/>
+        <FILE id="AuMd01" name="AutomationModel.h" compile="0" resource="0"
+              file="Source/Automation/AutomationModel.h"/>
+      </GROUP>
+      <GROUP id="{8B0AD2A1-2F44-4E1B-9D3A-001A20260502}" name="Tests">
+        <FILE id="AuMt01" name="AutomationModelTests.cpp" compile="1" resource="0"
+              file="Source/Tests/AutomationModelTests.cpp"/>
+      </GROUP>
       <GROUP id="{42923399-C36E-5718-8223-3A3628A02212}" name="Mixer"/>
       <GROUP id="{5AE00788-8DD0-B80C-C433-5E1588E70C5C}" name="Server">
         <FILE id="p8msgg" name="HTTPServer.cpp" compile="1" resource="0" file="Source/HTTPServer.cpp"/>

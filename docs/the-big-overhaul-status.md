@@ -34,6 +34,21 @@ Konfiguration:
 
 ---
 
+## Bekannte Build-Stolperstein
+
+Im aktuellen `JuceLibraryCode/JuceHeader.h` wird ein `juce_audio_processors_headless`
+referenziert, das in dieser JUCE-Checkout-Version nicht existiert. Das ist ein
+bestehender Defekt, unabhaengig vom Overhaul. Workaround fuer eigene neue
+Header: nicht `JuceHeader.h`, sondern direkt die einzelnen Module einbinden
+(`<juce_core/juce_core.h>` etc.). Sobald Projucer auf einer kompatiblen
+JUCE-Version laeuft oder das fehlende Modul aus `JuceHeader.h` entfernt wird,
+erledigt sich das.
+
+Auf diesem Setup ist kein Xcode installiert (nur Command Line Tools), daher
+kein `xcodebuild`. `Synthlab runTests` muss vom Anwender lokal mit Xcode
+gestartet werden, sobald Projucer den `Tests`-Group aus dem `.jucer` in das
+Xcode-Projekt regeneriert hat.
+
 ## Bestandsverletzungen zu Beginn des Branches
 
 ### Regel A — Audio-Thread lock-free
@@ -93,8 +108,8 @@ Source/Tracks/Track.cpp:1039   from card
 | # | Paket | Status |
 |---|---|---|
 | 0 | Tools + Bestandsaufnahme | **done** |
-| 0 | Pre-Commit/CI-Einbindung | offen |
-| 1 | Automation Datenmodell | offen |
+| 0 | Pre-Commit/CI-Einbindung | **done** |
+| 1 | Automation Datenmodell | **done** (`Source/Automation/`, Tests `Source/Tests/AutomationModelTests.cpp`) |
 | 2 | Automation UI | offen |
 | 3 | Automation Persistenz (inkl. Snapshot) | offen |
 | 4 | Region-Editing | offen |

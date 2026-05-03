@@ -3,7 +3,7 @@
 # Symlink/Kopie nach .git/hooks/pre-commit oder via core.hooksPath setzen.
 set -euo pipefail
 
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+ROOT="$(git rev-parse --show-toplevel)"
 
 fail=0
 "$ROOT/tools/check_realtime.sh"       || fail=1
