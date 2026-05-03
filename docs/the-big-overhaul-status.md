@@ -110,7 +110,7 @@ Source/Tracks/Track.cpp:1039   from card
 | 0 | Tools + Bestandsaufnahme | **done** |
 | 0 | Pre-Commit/CI-Einbindung | **done** |
 | 1 | Automation Datenmodell | **done** (`Source/Automation/`, Tests `Source/Tests/AutomationModelTests.cpp`) |
-| 2 | Automation UI | offen |
+| 2 | Automation UI | **done** (Multi-Select, Drag-Move, Delete, Snap, Visibility-Culling in `Source/Tracks/AutomationLane.h`) |
 | 3 | Automation Persistenz (inkl. Snapshot) | offen |
 | 4 | Region-Editing | offen |
 | 5 | Vertikales Zoom | offen |
