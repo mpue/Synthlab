@@ -322,20 +322,21 @@ void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bo
         const long newNumSamples_ = currentRightSample - snappedLeft;
         const int newX     = (int) std::round((double) snappedLeft / sampleRate * zoom);
         const int newWidth = (int) std::round((double) newNumSamples_ / sampleRate * zoom);
-        if (newX != getBounds().getX() || newWidth != getWidth()) {
-            setBounds(newX, getY(), newWidth, getHeight());
-        }
 
+        // WICHTIG: erst Modell aktualisieren, dann setBounds. setBounds ruft
+        // componentMovedOrResized reentrant auf — wenn dort sampleOffset noch
+        // alt waere, wuerde deltaLeft erneut berechnet und sourceStartSample
+        // ein zweites Mal erhoeht (Noten waeren um 2x Trim-Distanz versetzt).
+        // Mit dem Modell-First wird beim Reentry deltaLeft = 0 -> idempotent.
         const int bs = Project::getInstance()->getBufferSize();
         sampleOffset = bs > 0 ? (snappedLeft / bs) * bs : snappedLeft;
         numSamples   = newNumSamples_;
-
-        // Source-Offset im Buffer um deltaLeft erhoehen. Damit bleiben Noten
-        // an ihrer Timeline-Position stehen statt mit der linken Kante mit-
-        // zuwandern. Negative Werte (Region wird nach links groesser gezogen)
-        // schieben den Buffer-Read-Offset zurueck, ggf. auf 0 geclamp't.
         sourceStartSample += deltaLeft;
         if (sourceStartSample < 0) sourceStartSample = 0;
+
+        if (newX != getBounds().getX() || newWidth != getWidth()) {
+            setBounds(newX, getY(), newWidth, getHeight());
+        }
 
         rebuildThumbnail();
         updateThumb();

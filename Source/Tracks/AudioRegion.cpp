@@ -514,12 +514,16 @@ void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, b
 
         const int newX     = (int) std::round((double) snappedLeft / sr * zoom);
         const int newWidth = (int) std::round((double) newNumSamples / sr * zoom);
-        if (newX != getBounds().getX() || newWidth != getWidth()) {
-            setBounds(newX, getY(), newWidth, getHeight());
-        }
+
+        // Modell zuerst, dann setBounds — setBounds ruft componentMovedOr-
+        // Resized reentrant auf; wir brauchen idempotentes Verhalten.
         oldOffset = snappedLeft;
         if (snappedLeft != getSampleOffset())
             setSampleOffset(snappedLeft, true, true);
+
+        if (newX != getBounds().getX() || newWidth != getWidth()) {
+            setBounds(newX, getY(), newWidth, getHeight());
+        }
 
         sendChangeMessage();
         dirty = true;
