@@ -106,6 +106,21 @@ public:
     // Spiegelt den aktuellen Stand von fxChain[] in den verbundenen Track,
     // damit Track::getAutomationTargets() FX-Plugins findet.
     void syncTrackFXPlugins();
+    // True, wenn `m` als Quelle in die FX-Chain dieses Channels einspeist —
+    // also die Wurzel des Audio-Pfads, der hier endet. Fuer das Re-Linking
+    // Track <-> Panel beim Project-Load.
+    bool isFedBy(Module* m) const noexcept
+    {
+        return m != nullptr && (m == chainSourceModL || m == chainSourceModR);
+    }
+    // True, wenn pm in der reconstruierten FX-Chain dieses Channels steckt.
+    bool fxChainContains(Module* pm) const noexcept
+    {
+        if (pm == nullptr) return false;
+        for (int i = 0; i < NUM_FX; ++i) if (fxChain[i] == pm) return true;
+        return false;
+    }
+    Track* getTrack() const noexcept { return track; }
     // Entfernt alle FX-Plugins aus dem Insert-Chain dieses Channels. Beim
     // Master-Kanal löschen wir die Plugin-Module direkt (sie hängen nicht im
     // Modul-Graph), bei normalen Kanälen lassen wir removeFX die Verdrahtung

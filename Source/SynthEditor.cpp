@@ -1949,6 +1949,28 @@ void SynthEditor::openTracks(File file)
 		// start of openFile() — already removed the Navigator tab from topTab.
 	}
 
+	// Track <-> MasterChannelPanel re-linken. Beim NEU-Anlegen eines Tracks
+	// macht das TrackUtil::AddInstrumentTrack() inline; im Lade-Pfad fehlt es
+	// bisher und damit weiss kein Channel-Strip, zu welchem Track er gehoert.
+	// Folge: Track::fxPlugins[] wird nie befuellt und FX-Plugin-Automation
+	// spielt nicht ab. Match: panel->chainSourceMod == TrackIn dieses Tracks,
+	// fallback ueber fxChainContains(track->pluginModule).
+	if (mixer != nullptr) {
+		for (auto* mod : *getModule()->getModules()) {
+			auto* ti = dynamic_cast<TrackIn*>(mod);
+			if (ti == nullptr) continue;
+			Track* t = ti->getTrack();
+			if (t == nullptr) continue;
+			for (auto* panel : mixer->getChannels()) {
+				if (panel == nullptr) continue;
+				if (panel->isFedBy(ti) || panel->fxChainContains(t->getPluginModule())) {
+					panel->setTrack(t); // ruft syncTrackFXPlugins() -> Cache rebuild
+					break;
+				}
+			}
+		}
+	}
+
 	setRunning(true);
 }
 

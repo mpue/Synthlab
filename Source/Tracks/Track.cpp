@@ -1431,6 +1431,11 @@ std::vector<std::pair<juce::String, PluginModule*>> Track::getAutomationTargets(
 void Track::setFxPlugin(int slot, PluginModule* pm)
 {
 	if (slot < 0 || slot >= NUM_FX_SLOTS) return;
+	// reconstructFXChainFromGraph haengt das Instrument-Plugin als ersten
+	// Eintrag in den panel->fxChain — fuer den Track ist das aber bereits
+	// ueber pluginModule erreichbar. Doppelt im Cache → doppelte
+	// Parameter-Eintraege. Hier herausfiltern.
+	if (pm == pluginModule) pm = nullptr;
 	if (fxPlugins[slot] == pm) return;
 	fxPlugins[slot] = pm;
 	rebuildAutomationParamIdCache();
