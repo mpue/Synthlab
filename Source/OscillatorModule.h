@@ -74,7 +74,9 @@ private:
     float fine = 0;
     juce::Image* image = nullptr;
     T* monoOscillator;
-    T* oscillator[128];
+    // Voice-Pool: vorab im Konstruktor allozieren — nie im process() (#7).
+    T*   oscillator[128];
+    bool voiceActive[128];
     int currentSample = 0;
     bool mono;
     float pitchBend = 1;
@@ -105,10 +107,12 @@ template<typename T> OscillatorModule<T>::OscillatorModule(double sampleRate, in
     this->sampleRate = sampleRate;
     this->buffersize = buffersize;
     
-    for (int i = 0; i < 128;i++){
-        oscillator[i] = nullptr;
+    for (int i = 0; i < 128; i++) {
+        oscillator[i]  = new T(sampleRate, buffersize);
+        oscillator[i]->setVolume(0.0f);
+        voiceActive[i] = false;
     }
-    
+
     monoOscillator = new T(sampleRate, buffersize);
     
     setSize(120,140);
@@ -124,11 +128,11 @@ template<typename T> OscillatorModule<T>::~OscillatorModule()
 {
     out = nullptr;
     
-    for (int i = 0; i < 128;i++){
-        if (oscillator[i] != nullptr)
-            delete oscillator[i];
+    for (int i = 0; i < 128; i++) {
+        delete oscillator[i];
+        oscillator[i] = nullptr;
     }
-    
+
     delete monoOscillator;
     if (image != nullptr) {
         delete image;
@@ -287,26 +291,17 @@ template<typename T> void OscillatorModule<T>::process() {
                 pins.at(4)->setValue(abs(value + 1));
             }
             else {
-                for (int j = 0; j < 128;j++){
-                    
-                    if(gatePin->dataEnabled[j]) {
-                        if (oscillator[j] ==  nullptr) {
-                            oscillator[j] = new T(sampleRate, buffersize);
-                            
-                            
-                        }
-                        float volume = gatePin->data[j];
+                for (int j = 0; j < 128; j++) {
+                    if (gatePin->dataEnabled[j]) {
+                        if (!voiceActive[j]) voiceActive[j] = true;
                         oscillator[j]->setFrequency((440 * pow(2.0,((j+pitch)-69.0)/12.0)) * pitchBend);
-                        this->oscillator[j]->setVolume(volume);
+                        oscillator[j]->setVolume(gatePin->data[j]);
                     }
-                    else {
-                        if (oscillator[j] != nullptr) {
-                            
-                            delete this->oscillator[j];
-                            this->oscillator[j] = nullptr;
-                        }
+                    else if (voiceActive[j]) {
+                        voiceActive[j] = false;
+                        oscillator[j]->setVolume(0.0f);
                     }
-                    if (oscillator[j] != nullptr)
+                    if (voiceActive[j])
                         value += oscillator[j]->process();
                 }
             }

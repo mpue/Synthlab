@@ -7,14 +7,10 @@
 # Wenn ein Fix gemerged wird, den Eintrag hier streichen.
 
 # --- check_realtime ---
-RT:Source/PluginModule.cpp:48                  ScopedLock im plugin->processBlock-Aufruf, Phase 7
-RT:Source/OscillatorModule.h:294               new T() im voice-allocation, Phase 7 (Voice-Pool)
-RT:Source/OscillatorModule.h:305               delete im voice-allocation, Phase 7 (Voice-Pool)
-RT:Source/SineModule.cpp:121                   new Sine() im voice-allocation, Phase 7
-RT:Source/SineModule.cpp:131                   delete im voice-allocation, Phase 7
-RT:Source/SawtoothModule.cpp:179               new Sawtooth() im voice-allocation, Phase 7
-RT:Source/SawtoothModule.cpp:190               delete im voice-allocation, Phase 7
-RT:Source/ValueToEvent.cpp:110                 new Event() im event dispatch, Phase 7
+RT:Source/PluginModule.cpp:48                  ScopedLock im plugin->processBlock-Aufruf, Phase 7 (offen)
+RT:Source/ValueToEvent.cpp:110                 new Event() im event dispatch, Phase 7 (offen) — feuert nur bei Wertaenderung, niedrige Frequenz
+# Sine/Sawtooth/OscillatorModule Voice-Pool: behoben — Voices werden im
+# Konstruktor vorab alloziert, process() macht nur noch Aktivierung/Volume.
 
 # --- check_todos ---
 TODO:Source/HTTPServer.cpp:102                 Phase 7 cleanup

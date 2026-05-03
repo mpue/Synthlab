@@ -53,17 +53,16 @@ Xcode-Projekt regeneriert hat.
 
 ### Regel A — Audio-Thread lock-free
 
-8 Treffer (Stand: heute). Alle bekannt; Bereinigung gehoert in Phase 7
-(Aufraeumen, Stabilitaet) — *nicht* mit den Automation-/Region-Aenderungen
-vermischen.
+Stand: 2 Restverstoesse (zu Beginn 8). Voice-Lifecycle aus dem Audio-Thread
+gezogen.
 
-| Datei | Zeile | Verstoss |
-|---|---|---|
-| Source/PluginModule.cpp | 48 | `juce::ScopedLock sl(lock)` im `process()` |
-| Source/OscillatorModule.h | 294, 305 | `new T(...)` / `delete` im Template-`process()` |
-| Source/SineModule.cpp | 121, 131 | `new Sine(...)` / `delete` im `process()` |
-| Source/SawtoothModule.cpp | 179, 190 | `new Sawtooth(...)` / `delete` im `process()` |
-| Source/ValueToEvent.cpp | 110 | `new Event(e)` im `process()` |
+| Datei | Zeile | Verstoss | Status |
+|---|---|---|---|
+| Source/PluginModule.cpp | 48 | `juce::ScopedLock sl(lock)` im `process()` | offen |
+| Source/ValueToEvent.cpp | 110 | `new Event(e)` im `process()` | offen, niedrige Rate |
+| Source/OscillatorModule.h | 294, 305 | `new T(...)` / `delete` | **fixed** (Voice-Pool) |
+| Source/SineModule.cpp | 121, 131 | `new Sine(...)` / `delete` | **fixed** (Voice-Pool) |
+| Source/SawtoothModule.cpp | 179, 190 | `new Sawtooth(...)` / `delete` | **fixed** (Voice-Pool) |
 
 **Fixstrategie (geplant fuer Phase 7):** Voice-Lifecycle aus dem
 Audio-Thread ziehen. Oszillator-Pool vorab allozieren, im `process()` nur
@@ -119,4 +118,6 @@ Source/Tracks/Track.cpp:1039   from card
 | 5 | Vertikales Zoom | **done** (`TrackNavigator::verticalZoomAtMouse`, Shift+Ctrl/Cmd+Wheel, Maus-Y als Zentrum, [24..400]px) |
 | 6 | UndoManager-Vereinheitlichung | **already in place** (`Project::getInstance()->getUndoManager()` ist die einzige Quelle, Actions perform daran) |
 | 6 | Snap-to-Grid Toggle | **available via Edit menu** (id 80) — Tastenkombination optional, kann spaeter ueber den ApplicationCommandManager nachgereicht werden |
-| 7 | Aufraeumen, Sanitizers | offen |
+| 7 | Voice-Pool fuer SineModule, SawtoothModule, OscillatorModule | **done** (RT-Bestand 8 -> 2) |
+| 7 | PluginModule ScopedLock, ValueToEvent::process new Event | offen — beide brauchen die Lifecycle-Diskussion mit dem Plugin-Host bzw. eine pre-allocated Event-Pool. Niedrige Aufrufrate, kein Blocker. |
+| 7 | Sanitizers / CPU-Meter / Stresstests | offen — braucht echte Builds (xcodebuild fehlt auf diesem Setup) |
