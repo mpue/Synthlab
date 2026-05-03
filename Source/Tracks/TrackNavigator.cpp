@@ -90,6 +90,25 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 
 TrackNavigator::~TrackNavigator()
 {
+	// Listener-Registrierungen aus dem Konstruktor sauber zurueckziehen — sonst
+	// schickt Project::setTempo() o.ae. ChangeMessages an einen toten this-
+	// Pointer (Crash in ChangeBroadcaster::callListeners beim naechsten Open).
+	if (auto* p = Project::getInstance())
+		p->removeChangeListener(this);
+	if (auto* m = Mixer::getInstance())
+		removeChangeListener(m);
+
+	if (view != nullptr) {
+		view->getHorizontalScrollBar().removeListener(this);
+	}
+
+	if (selector != nullptr)
+		selector->removeChangeListener(this);
+
+	for (auto* t : tracks) {
+		if (t != nullptr) t->removeChangeListener(this);
+	}
+
 	timeLine = nullptr;
 	selector = nullptr;
 
@@ -99,7 +118,6 @@ TrackNavigator::~TrackNavigator()
 
 	delete dragger;
 	delete marker;
-
 }
 
 void TrackNavigator::paint(Graphics& g)

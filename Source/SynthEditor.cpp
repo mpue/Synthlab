@@ -1585,12 +1585,14 @@ void SynthEditor::saveFile() {
 		if (navigator != nullptr) {
 			ValueTree tracks = navigator->getConfiguration();
 			xml = tracks.createXml();
-			xml->writeToFile(file.getParentDirectory().getFullPathName() + "\\" + file.getFileNameWithoutExtension() + "_tracks.xml", "");
+			// juce::File::getChildFile baut plattformkorrekt — vorher war hier
+			// "\\" hardcoded und auf macOS landete die Datei nie wo sie sollte.
+			xml->writeToFile(file.getParentDirectory().getChildFile(file.getFileNameWithoutExtension() + "_tracks.xml"), "");
 			xml = nullptr;
 		}
 
 		setDirty(false);
-		Project::getInstance()->save(file.getParentDirectory().getFullPathName() + "\\" + file.getFileNameWithoutExtension() + "_audio.xml");
+		Project::getInstance()->save(file.getParentDirectory().getChildFile(file.getFileNameWithoutExtension() + "_audio.xml"));
 		Project::getInstance()->setNewFile(false);
 		updateProject(file);
 	}
@@ -1825,15 +1827,12 @@ void SynthEditor::openFile(juce::File /*file*/) {
 void SynthEditor::openTracks(File file)
 {
 
-	String path = file.getParentDirectory().getFullPathName();
+	// Plattformkorrekt: getChildFile statt String-Konkatenation mit "\\".
+	File parent = file.getParentDirectory();
+	File audioDataFile = parent.getChildFile(file.getFileNameWithoutExtension() + "_audio.xml");
+	File trackDataFile = parent.getChildFile(file.getFileNameWithoutExtension() + "_tracks.xml");
 
-	String audioDataFileName = file.getFileNameWithoutExtension() + "_audio.xml";
-	String trackDataFileName = file.getFileNameWithoutExtension() + "_tracks.xml";
-
-	audioDataFileName = path + "\\" + audioDataFileName;
-	trackDataFileName = path + "\\" + trackDataFileName;
-
-	std::unique_ptr<XmlElement> audioXml = XmlDocument(File(audioDataFileName)).getDocumentElement();
+	std::unique_ptr<XmlElement> audioXml = XmlDocument(audioDataFile).getDocumentElement();
 
 	if (audioXml == nullptr)
 		return;
@@ -1857,7 +1856,7 @@ void SynthEditor::openTracks(File file)
 		Project::getInstance()->addAudioFile(id, path);
 	}
 
-	std::unique_ptr<XmlElement> xml = XmlDocument(File(trackDataFileName)).getDocumentElement();
+	std::unique_ptr<XmlElement> xml = XmlDocument(trackDataFile).getDocumentElement();
 
 	ValueTree v = ValueTree::fromXml(*xml.get());
 	setRunning(false);
