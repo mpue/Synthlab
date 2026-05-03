@@ -44,16 +44,31 @@ public:
                               bool isStretchingLeft,
                               bool isStretchingBottom,
                               bool isStretchingRight) override {
-        
+
         int width = bounds.getWidth();
-        
+
         if (width > maxWidth) {
             width = maxWidth;
         }
-        
+
         // width = UITools::snap(width,this->raster,4);
-        
-        bounds.setWidth(width);
+
+        // Beim Links-Resize muss die RECHTE Kante stehenbleiben — also X aus
+        // der vorherigen rechten Kante minus der geclampten Breite ableiten.
+        // Die base class wuerde das machen; wir ueberschreiben checkBounds aber
+        // komplett, also hier explizit.
+        if (isStretchingLeft) {
+            const int rightEdge = previousBounds.getRight();
+            int newX = rightEdge - width;
+            if (newX < 0) {
+                newX = 0;
+                width = rightEdge;
+            }
+            bounds.setX(newX);
+            bounds.setWidth(width);
+        } else {
+            bounds.setWidth(width);
+        }
     }
     
     

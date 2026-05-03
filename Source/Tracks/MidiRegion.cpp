@@ -54,6 +54,9 @@ MidiRegion::MidiRegion(long startSample, long sampleLength, double sampleRate, M
     resizerR = new ResizableEdgeComponent(this, constrainer, ResizableEdgeComponent::rightEdge);
     resizerR->setSize(5, getHeight());
     addAndMakeVisible(resizerR);
+    resizerL = new ResizableEdgeComponent(this, constrainer, ResizableEdgeComponent::leftEdge);
+    resizerL->setSize(5, getHeight());
+    addAndMakeVisible(resizerL);
 
     addComponentListener(this);
 
@@ -97,6 +100,9 @@ MidiRegion::MidiRegion(MidiBuffer* buffer, double sampleRate) {
     resizerR = new ResizableEdgeComponent(this, constrainer, ResizableEdgeComponent::rightEdge);
     resizerR->setSize(5, getHeight());
     addAndMakeVisible(resizerR);
+    resizerL = new ResizableEdgeComponent(this, constrainer, ResizableEdgeComponent::leftEdge);
+    resizerL->setSize(5, getHeight());
+    addAndMakeVisible(resizerL);
 
     addComponentListener(this);
 
@@ -252,6 +258,9 @@ void MidiRegion::resized() {
     }
     if (resizerR != nullptr) {
         resizerR->setBounds(getWidth() - 5, 0, 5, getHeight());
+    }
+    if (resizerL != nullptr) {
+        resizerL->setBounds(0, 0, 5, getHeight());
     }
 }
 
