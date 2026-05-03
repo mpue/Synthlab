@@ -1163,12 +1163,19 @@ void MasterChannelPanel::rewireChain() {
     for (auto* pin : watchedINpins)
         pin->getConnections().clear();
 
-    // Remove Connection objects whose IN pin (c->a) is in watchedINpins.
+    // Remove Connection objects that touch any watched IN pin via EITHER
+    // endpoint. Im Codebase werden Connections mit zwei verschiedenen
+    // a/b-Konventionen erzeugt: ModuleUtils::addConnection setzt c->a auf das
+    // IN-Pin, TrackUtil::ConnectAudioOut setzt c->a auf das OUT-Pin. Pruefen
+    // wir nur c->a, bleiben TrackUtil-Connections (z.B. die ursprungliche
+    // instrument->audioOut-Verbindung) als Karteileichen in der globalen
+    // Connection-Liste — bei save+load werden sie zusaetzlich zu den neuen
+    // Insert-Connections wieder geladen, das Signal wird doppelt geroutet.
     connections->erase(
         std::remove_if(connections->begin(), connections->end(),
             [&watchedINpins](Connection* c) {
                 for (auto* p : watchedINpins)
-                    if (c->a == p) { delete c; return true; }
+                    if (c->a == p || c->b == p) { delete c; return true; }
                 return false;
             }),
         connections->end());
