@@ -1483,6 +1483,13 @@ void MainComponent::openQuickstart() {
 			editor->repaint();
 		});
 
+		quickstart->setOnOpenExistingTrack([this]() {
+			// Gleicher Pfad wie der "Open"-Toolbar-Button.
+			editor->setRunning(false);
+			editor->openFile();
+			editor->setRunning(true);
+		});
+
 		quickstart->setAudioConfiguredProvider([this]() {
 			return deviceManager.getCurrentAudioDevice() != nullptr
 				&& deviceManager.getCurrentAudioDevice()->isOpen();
@@ -1504,6 +1511,13 @@ void MainComponent::openQuickstart() {
 					return true;
 			}
 			return false;
+		});
+
+		quickstart->setExistingTrackOpenedProvider([]() {
+			// Done sobald ein Projekt mit bekanntem Pfad aktiv ist (also nicht
+			// ein frisches "New File"). Project::isNewFile() ist true bis zum
+			// ersten Save / Load.
+			return ! Project::getInstance()->isNewFile();
 		});
 	}
 

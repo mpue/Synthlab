@@ -72,6 +72,11 @@ QuickstartComponent::QuickstartComponent()
     steps[2].description = "Add a virtual instrument and start playing. Pick from your scanned plugins or one of the built-in synths.";
     steps[2].actionLabel = "Add Instrument Track";
 
+    steps[3].number      = 4;
+    steps[3].title       = "Open an existing track";
+    steps[3].description = "Pick a previously saved Synthlab project and continue where you left off.";
+    steps[3].actionLabel = "Open Existing Track";
+
     for (auto& step : steps)
     {
         step.button = std::make_unique<juce::TextButton>(step.actionLabel);
@@ -302,18 +307,9 @@ void QuickstartComponent::paintStep(juce::Graphics& g, const StepCard& step)
     g.setFont(juce::Font(13.5f));
     g.drawFittedText(step.description, textArea, juce::Justification::topLeft, 3);
 
-    // "Done" label next to the button when complete.
-    if (step.done && step.button != nullptr)
-    {
-        g.setColour(kAccentSuccess);
-        g.setFont(juce::Font(12.0f, juce::Font::bold));
-        const int labelW = 80;
-        g.drawText("DONE",
-                   step.button->getX() - labelW - 8,
-                   step.button->getY(),
-                   labelW, step.button->getHeight(),
-                   juce::Justification::centredRight, false);
-    }
+    // Der visuelle Status wird ausschliesslich ueber den gruenen Akzent-
+    // Streifen am linken Kartenrand und das Check-Mark im Badge ausgedrueckt
+    // — keine zusaetzliche "DONE"-Beschriftung neben dem Button.
 }
 
 void QuickstartComponent::buttonClicked(juce::Button* b)
@@ -333,6 +329,7 @@ void QuickstartComponent::buttonClicked(juce::Button* b)
                 case 0: if (onConfigureAudio)        onConfigureAudio();        break;
                 case 1: if (onScanPlugins)           onScanPlugins();           break;
                 case 2: if (onCreateInstrumentTrack) onCreateInstrumentTrack(); break;
+                case 3: if (onOpenExistingTrack)     onOpenExistingTrack();     break;
                 default: break;
             }
             return;
@@ -357,6 +354,7 @@ void QuickstartComponent::timerCallback()
     refresh(steps[0], isAudioConfigured);
     refresh(steps[1], isPluginsScanned);
     refresh(steps[2], hasInstrumentTrack);
+    refresh(steps[3], hasOpenedExistingTrack);
 
     if (changed)
         repaint();

@@ -27,6 +27,7 @@ public:
     void setOnConfigureAudio(ActionCallback cb)         { onConfigureAudio = std::move(cb); }
     void setOnScanPlugins(ActionCallback cb)            { onScanPlugins = std::move(cb); }
     void setOnCreateInstrumentTrack(ActionCallback cb)  { onCreateInstrumentTrack = std::move(cb); }
+    void setOnOpenExistingTrack(ActionCallback cb)      { onOpenExistingTrack = std::move(cb); }
 
     // Status providers — called periodically to render a check mark next to
     // the relevant step. Each should return true once the user has completed
@@ -34,6 +35,7 @@ public:
     void setAudioConfiguredProvider(StatusProvider p)   { isAudioConfigured = std::move(p); }
     void setPluginsScannedProvider(StatusProvider p)    { isPluginsScanned = std::move(p); }
     void setInstrumentTrackProvider(StatusProvider p)   { hasInstrumentTrack = std::move(p); }
+    void setExistingTrackOpenedProvider(StatusProvider p) { hasOpenedExistingTrack = std::move(p); }
 
     // Persisted setting — true if the user wants the Quickstart tab to open
     // automatically on app start.
@@ -63,16 +65,18 @@ private:
     void paintHeader(juce::Graphics&, juce::Rectangle<int> area);
     void paintStep(juce::Graphics&, const StepCard& step);
 
-    std::array<StepCard, 3> steps;
+    std::array<StepCard, 4> steps;
     std::unique_ptr<juce::ToggleButton> showOnStartupToggle;
 
     ActionCallback onConfigureAudio;
     ActionCallback onScanPlugins;
     ActionCallback onCreateInstrumentTrack;
+    ActionCallback onOpenExistingTrack;
 
     StatusProvider isAudioConfigured;
     StatusProvider isPluginsScanned;
     StatusProvider hasInstrumentTrack;
+    StatusProvider hasOpenedExistingTrack;
 
     juce::Rectangle<int> headerBounds;
     juce::Rectangle<int> contentBounds;
