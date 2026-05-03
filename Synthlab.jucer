@@ -171,6 +171,8 @@
         <FILE id="DQbPpi" name="ProjectConfig.cpp" compile="1" resource="0"
               file="Source/Project/ProjectConfig.cpp"/>
         <FILE id="o2Im5s" name="ProjectConfig.h" compile="0" resource="0" file="Source/Project/ProjectConfig.h"/>
+        <FILE id="PrSn01" name="ProjectSnapshot.h" compile="0" resource="0"
+              file="Source/Project/ProjectSnapshot.h"/>
         <FILE id="xvfOe6" name="RegionConfig.cpp" compile="1" resource="0"
               file="Source/Project/RegionConfig.cpp"/>
         <FILE id="Mr5aTY" name="RegionConfig.h" compile="0" resource="0" file="Source/Project/RegionConfig.h"/>

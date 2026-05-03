@@ -133,6 +133,45 @@ public:
             Lane l;
             expectEquals (l.valueAt (1234, 0.42f), 0.42f);
         }
+
+        beginTest ("Roundtrip: 10 lanes x 100 points stays byte-identical");
+        {
+            Model m;
+            std::vector<juce::Uuid> ids;
+            for (int li = 0; li < 10; ++li)
+            {
+                auto& lane = m.findOrCreate ("p_" + juce::String (li));
+                ids.push_back (lane.getId());
+                lane.setMode ((li % 2 == 0) ? Mode::Write : Mode::Touch);
+                for (int pi = 0; pi < 100; ++pi)
+                    lane.addOrReplacePoint (juce::int64 (li * 1000 + pi * 17),
+                                            (float) (pi % 7) / 6.0f,
+                                            (pi % 3 == 0) ? CurveType::Step
+                                                          : CurveType::Linear);
+            }
+
+            const auto vt = m.toValueTree();
+
+            Model m2;
+            m2.fromValueTree (vt);
+
+            expectEquals (m2.numLanes(), 10);
+            for (int li = 0; li < 10; ++li)
+            {
+                auto* a = m.find  ("p_" + juce::String (li));
+                auto* b = m2.find ("p_" + juce::String (li));
+                expect (a != nullptr && b != nullptr);
+                if (a == nullptr || b == nullptr) continue;
+                expect (a->getId() == b->getId(), "lane id changed for " + juce::String (li));
+                expect (a->getMode() == b->getMode());
+                expectEquals ((int) a->getPoints().size(), 100);
+                expectEquals ((int) b->getPoints().size(), 100);
+                for (size_t k = 0; k < 100; ++k)
+                    expect (a->getPoints()[k] == b->getPoints()[k],
+                            "point " + juce::String ((int) k) + " differs in lane "
+                                + juce::String (li));
+            }
+        }
     }
 };
 

@@ -111,7 +111,9 @@ Source/Tracks/Track.cpp:1039   from card
 | 0 | Pre-Commit/CI-Einbindung | **done** |
 | 1 | Automation Datenmodell | **done** (`Source/Automation/`, Tests `Source/Tests/AutomationModelTests.cpp`) |
 | 2 | Automation UI | **done** (Multi-Select, Drag-Move, Delete, Snap, Visibility-Culling in `Source/Tracks/AutomationLane.h`) |
-| 3 | Automation Persistenz (inkl. Snapshot) | offen |
+| 3 | Snapshot + Save-Refactor | **done** (`Source/Project/ProjectSnapshot.h`, `Project::save/saveCurrent` lesen ueber `loadSnapshot()`) |
+| 3 | 10x100 Roundtrip-Test | **done** (`Source/Tests/AutomationModelTests.cpp`) |
+| 3 | TrackConfig-Wiring der Lane-Daten | **deferred** — bestehende Code-Pfade fuer TrackConfig sind nicht trivial nachvollziehbar; muss separat gemacht werden, wenn die UI auf das neue Modell umzieht. |
 | 4 | Region-Editing | offen |
 | 5 | Vertikales Zoom | offen |
 | 6 | UndoManager-Vereinheitlichung, Snap-to-Grid | offen |

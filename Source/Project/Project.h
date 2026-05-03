@@ -14,6 +14,7 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 
 #include "ProjectConfig.h"
+#include "ProjectSnapshot.h"
 #include "../MainTabbedComponent.h"
 #include "../AudioEngine/Sampler.h"
 #include "../PropertyView.h"
@@ -188,55 +189,32 @@ public:
         return (long)std::round((double)step * samplesPerStep);
     }
     
+    // Erfuellt Regel B: liest GENAU EINMAL aus dem Snapshot. publishSnapshot()
+    // muss vorher von einem Nicht-Audio-Thread aufgerufen worden sein.
     void saveCurrent(File output) {
-        ValueTree v = config->getConfig();
-        
-        std::map<String, String>::iterator it;
-        
-        ValueTree audioFiles = ValueTree("AudioFiles");
-        
-        for (it = projectAudio.begin(); it != projectAudio.end(); ++it) {
-            ValueTree file = ValueTree("File");
-            file.setProperty("refId", it->first, nullptr);
-            file.setProperty("path", it->second, nullptr);
-            audioFiles.addChild(file, -1, nullptr);
-        }
-        
-        
-        std::unique_ptr<XmlElement> xml = v.createXml();
+        publishSnapshot();
+        auto snap = loadSnapshot();   // SAVE-OK: single load
+        if (snap == nullptr) return;
+        std::unique_ptr<XmlElement> xml = snap->toValueTree().createXml();
         xml->writeToFile(output, "");
-        xml = nullptr;
     }
-    
+
     void save(File output) {
- 
         setName(output.getFileNameWithoutExtension());
-        
-        config->setName(name);
-        config->setBufferSize(bufferSize);
-        config->setSampleRate(sampleRate);
-        config->setTracklength(tracklength);
-        config->setTempo(tempo);
-        
-        ValueTree v = config->getConfig();
- 
-        std::map<String, String>::iterator it;
-        
-        ValueTree audioFiles = ValueTree("AudioFiles");
-        
-        for (it = projectAudio.begin(); it != projectAudio.end(); ++it) {
-            ValueTree file = ValueTree("File");
-            file.setProperty("refId", it->first, nullptr);
-            file.setProperty("path", it->second, nullptr);
-            audioFiles.addChild(file, -1, nullptr);
+
+        if (config != nullptr) {
+            config->setName(name);
+            config->setBufferSize(bufferSize);
+            config->setSampleRate(sampleRate);
+            config->setTracklength(tracklength);
+            config->setTempo(tempo);
         }
-        
-        v.addChild(audioFiles, -1, nullptr);
-        
-        std::unique_ptr<XmlElement> xml = v.createXml();
+
+        publishSnapshot();
+        auto snap = loadSnapshot();   // SAVE-OK: single load
+        if (snap == nullptr) return;
+        std::unique_ptr<XmlElement> xml = snap->toValueTree().createXml();
         xml->writeToFile(output, "");
-        xml = nullptr;
-        
     }
     
     void load(File file) {
@@ -331,9 +309,36 @@ protected:
     bool snapToGridEnabled = true;
     
     map<String, String> projectAudio;
-    
+
     ProjectConfig* config = NULL;
-    
+
+    // ---- ProjectSnapshot (Regel B) ----
+    // Single Source of Truth fuer den Save-Pfad. Erzeugt auf dem UI-Thread,
+    // Audio-Thread liest hoechstens (zukuenftige Reads); Save liest genau
+    // einmal load() und arbeitet ausschliesslich auf dem Snapshot.
+public:
+    void publishSnapshot()
+    {
+        auto snap = std::make_shared<synthlab::ProjectSnapshot>();
+        snap->name        = name;
+        snap->trackLength = tracklength;
+        snap->sampleRate  = sampleRate;
+        snap->bufferSize  = bufferSize;
+        snap->tempo       = tempo;
+        snap->snapToGrid  = snapToGridEnabled;
+        if (config != nullptr)
+            snap->configTree = config->getConfig();
+        snap->audioFiles  = projectAudio;
+        currentSnapshot.publish (snap);
+    }
+
+    synthlab::SnapshotHolder::Pointer loadSnapshot() const noexcept
+    {
+        return currentSnapshot.load();
+    }
+
+private:
+    synthlab::SnapshotHolder currentSnapshot;
 };
 
 
