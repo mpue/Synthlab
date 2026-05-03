@@ -218,8 +218,7 @@
               file="Source/Tracks/TrackPropertyPanel.cpp"/>
         <FILE id="NToMfh" name="TrackPropertyPanel.h" compile="0" resource="0"
               file="Source/Tracks/TrackPropertyPanel.h"/>
-        <FILE id="TrCtl1" name="TrackControl.h" compile="0" resource="0"
-              file="Source/Tracks/TrackControl.h"/>
+        <FILE id="TrCtl1" name="TrackControl.h" compile="0" resource="0" file="Source/Tracks/TrackControl.h"/>
         <FILE id="ZD244F" name="TrackPropertyView.cpp" compile="1" resource="0"
               file="Source/Tracks/TrackPropertyView.cpp"/>
         <FILE id="yI1fyn" name="TrackPropertyView.h" compile="0" resource="0"
@@ -340,6 +339,10 @@
               file="Source/Actions/SplitRegionAction.cpp"/>
         <FILE id="mN8kPw" name="SplitRegionAction.h" compile="0" resource="0"
               file="Source/Actions/SplitRegionAction.h"/>
+        <FILE id="H5p8Wv" name="TrackDeleteAction.cpp" compile="1" resource="0"
+              file="Source/Actions/TrackDeleteAction.cpp"/>
+        <FILE id="ktBcES" name="TrackDeleteAction.h" compile="0" resource="0"
+              file="Source/Actions/TrackDeleteAction.h"/>
       </GROUP>
       <GROUP id="{A79C9093-D329-37A0-AEE1-CF7BDC5C60DE}" name="AudioEngine">
         <FILE id="HVUNoB" name="MidiProcessor.cpp" compile="1" resource="0"

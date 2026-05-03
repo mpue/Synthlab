@@ -3,12 +3,18 @@
 
     AutomationLane.h
     Per-Track-Overlay zum Zeichnen einer Parameter-Automation. Liegt als Child
-    über den Regions des Tracks und wird vom TrackControl-Toggle ein-/ausge-
-    blendet. Der Anwender wählt im TrackControl per ComboBox einen automati-
-    sierbaren Plugin-Parameter; mit gedrückter Maustaste lässt sich dann ein
-    Verlauf in den Track zeichnen. Während der Wiedergabe ruft Track::setSample-
-    Position() applyAt(samplePosition) auf, was den Wert linear interpoliert
-    und über setValueNotifyingHost() ans Plugin schickt.
+    ueber den Regions des Tracks und wird vom TrackControl-Toggle ein-/aus-
+    geblendet. Der Anwender waehlt im TrackControl per ComboBox einen automati-
+    sierbaren Plugin-Parameter; mit gedrueckter Maustaste laesst sich dann ein
+    Verlauf in den Track zeichnen.
+
+    Datenhaltung: das Overlay haelt KEINE eigenen Punkte mehr — es ist an
+    eine `synthlab::automation::Lane` aus dem Track-Modell gebunden
+    (`Track::getAutomationModel()`). Track::setAutomationParameterIndex(idx)
+    waehlt die zu zeigende Lane, falls noch nicht vorhanden wird sie idempotent
+    angelegt. Wenn keine Lane gebunden ist, wird ein interner Scratch-Lane
+    benutzt, damit Mausinteraktionen vor der Parameter-Auswahl nichts ins Leere
+    schreiben.
 
   ==============================================================================
 */
@@ -17,6 +23,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "../Project/Project.h"
+#include "../Automation/AutomationLane.h"
 #include <set>
 
 class Track;
@@ -24,16 +31,13 @@ class Track;
 class AutomationLane : public juce::Component
 {
 public:
-    struct Point {
-        long  sample = 0;   // Sample-Offset im Track-Timeline
-        float value  = 0.f; // normalisiert 0..1
-    };
+    using Point = synthlab::automation::Point;
 
     AutomationLane(Track* owner, double sampleRate)
         : track(owner), sampleRate(sampleRate)
     {
         setOpaque(false);
-        setInterceptsMouseClicks(false, false); // erst bei aktivem Overlay an
+        setInterceptsMouseClicks(false, false);
         setWantsKeyboardFocus(true);
     }
 
@@ -42,31 +46,48 @@ public:
     void setOverlayActive(bool on)
     {
         overlayActive = on;
-        // Wenn aktiv, fängt das Overlay alle Klicks ab — Regions sollen nur in
-        // ausgeschaltetem Zustand selektierbar bleiben. setAlwaysOnTop sorgt
-        // dafür, dass spätere addRegion()-Aufrufe (die toFront auf die neue
-        // Region machen) die Lane nicht unter die Regions schieben.
         setInterceptsMouseClicks(on, false);
         setAlwaysOnTop(on);
-        if (on)
-            toFront(false);
+        if (on) toFront(false);
         repaint();
     }
 
     bool isOverlayActive() const { return overlayActive; }
 
-    // Setzt den Parameter-Index relativ zur Plugin-Parameterliste. -1 = keiner.
     void setParameterIndex(int idx) { paramIndex = idx; repaint(); }
     int  getParameterIndex() const  { return paramIndex; }
 
     void setZoom(float z) { zoom = z; repaint(); }
     float getZoom() const { return zoom; }
 
-    void clearPoints() { points.clear(); repaint(); }
+    // ----- Lane-Binding -------------------------------------------------------
+    // boundLane darf nullptr sein — dann wird auf scratchLane geschrieben,
+    // damit Mausinteraktionen vor der Parameter-Auswahl nichts ins Leere
+    // schreiben (sie verschwinden dann eben beim Parameter-Wechsel).
+    void setBoundLane(synthlab::automation::Lane* lane)
+    {
+        boundLane = lane;
+        selectedIndices.clear();
+        dragOrigins.clear();
+        repaint();
+    }
 
-    const std::vector<Point>& getPoints() const { return points; }
+    synthlab::automation::Lane* getBoundLane() const noexcept { return boundLane; }
 
-    // Während der Wiedergabe vom Track aufgerufen. Liest den interpolierten
+    void clearPoints()
+    {
+        if (auto* l = activeLane()) l->clear();
+        selectedIndices.clear();
+        repaint();
+    }
+
+    const std::vector<Point>& getPoints() const
+    {
+        return activeLane() != nullptr ? activeLane()->getPoints()
+                                       : scratchLane.getPoints();
+    }
+
+    // Waehrend der Wiedergabe vom Track aufgerufen. Liest den interpolierten
     // Wert an `sample` und ruft setValueNotifyingHost() am Ziel-Parameter.
     void applyAt(long sample);
 
@@ -78,11 +99,9 @@ public:
 
         auto bounds = getLocalBounds().toFloat();
 
-        // Halbtransparenter Schleier, damit klar ist: jetzt im Automation-Modus.
         g.setColour(juce::Colour(0x33000000));
         g.fillRect(bounds);
 
-        // Header-Text mit dem aktuellen Parameter-Namen.
         g.setColour(juce::Colours::white.withAlpha(0.8f));
         g.setFont(juce::Font(11.0f, juce::Font::bold));
         juce::String label = "Automation";
@@ -90,8 +109,8 @@ public:
             label += " : " + p->getName(40);
         g.drawText(label, 4, 2, getWidth() - 8, 14, juce::Justification::topLeft, true);
 
-        // Verlauf zeichnen.
-        if (points.size() == 0)
+        const auto& points = getPoints();
+        if (points.empty())
         {
             g.setColour(juce::Colours::white.withAlpha(0.35f));
             g.drawText("Mit der Maus zeichnen…", getLocalBounds(),
@@ -99,27 +118,24 @@ public:
             return;
         }
 
-        // Visibility culling: berechne den Sample-Bereich, der sichtbar ist.
-        // Das haelt das Path-Drawing auch bei tausenden Punkten flott
-        // (>= 60 fps target, siehe Phase-2-Akzeptanzkriterium).
+        // Visibility culling: nur Punkte im sichtbaren Sample-Bereich zeichnen
+        // — haelt die Lane fluessig auch bei tausenden Punkten (Phase 2).
         const auto clip = g.getClipBounds();
-        const long visStart = pixelToSample(juce::jmax(0, clip.getX() - 4));
-        const long visEnd   = pixelToSample(clip.getRight() + 4);
+        const juce::int64 visStart = pixelToSample(juce::jmax(0, clip.getX() - 4));
+        const juce::int64 visEnd   = pixelToSample(clip.getRight() + 4);
 
-        // ersten Punkt links der Sicht und ersten rechts der Sicht behalten,
-        // damit die Linie an den Kanten nicht abrupt endet.
         auto firstVis = std::lower_bound(points.begin(), points.end(), visStart,
-            [](const Point& p, long t){ return p.sample < t; });
+            [](const Point& p, juce::int64 t){ return p.sampleTime < t; });
         if (firstVis != points.begin()) --firstVis;
         auto lastVis = std::upper_bound(points.begin(), points.end(), visEnd,
-            [](long t, const Point& p){ return t < p.sample; });
+            [](juce::int64 t, const Point& p){ return t < p.sampleTime; });
         if (lastVis != points.end()) ++lastVis;
 
         juce::Path path;
         bool first = true;
         for (auto it = firstVis; it != lastVis; ++it)
         {
-            const float x = (float) sampleToPixel(it->sample);
+            const float x = (float) sampleToPixel(it->sampleTime);
             const float y = valueToY(it->value);
             if (first) { path.startNewSubPath(x, y); first = false; }
             else        path.lineTo(x, y);
@@ -129,12 +145,11 @@ public:
         g.strokePath(path, juce::PathStrokeType(3.0f,
             juce::PathStrokeType::curved, juce::PathStrokeType::rounded));
 
-        // Handles nur fuer sichtbare Punkte. Selektierte gelb gefuellt.
         const float handle = 7.0f;
         for (auto it = firstVis; it != lastVis; ++it)
         {
             const int idx = (int)(it - points.begin());
-            const float x = (float) sampleToPixel(it->sample);
+            const float x = (float) sampleToPixel(it->sampleTime);
             const float y = valueToY(it->value);
             const juce::Rectangle<float> r (x - handle * 0.5f,
                                             y - handle * 0.5f,
@@ -146,7 +161,6 @@ public:
             g.drawRect(r, 1.0f);
         }
 
-        // Optionales Auswahl-Rechteck (Drag-Box) waehrend der Selektion.
         if (selectionBoxActive)
         {
             const auto box = currentSelectionBox().toFloat();
@@ -162,7 +176,6 @@ public:
         if (!overlayActive) return;
         grabKeyboardFocus();
 
-        // Rechtsklick: naechstgelegenen Punkt loeschen.
         if (e.mods.isRightButtonDown())
         {
             removeNearest(pixelToSample(e.x), 6);
@@ -170,7 +183,6 @@ public:
             return;
         }
 
-        // Treffer auf existierenden Punkt -> Selektion + Drag vorbereiten.
         const int hit = hitTestPoint(e.x, e.y, 6);
         if (hit >= 0)
         {
@@ -192,7 +204,6 @@ public:
             return;
         }
 
-        // Klick mit Modifier auf leeren Bereich: Box-Auswahl beginnen.
         if (e.mods.isShiftDown() || e.mods.isAltDown())
         {
             selectionBoxActive = true;
@@ -203,9 +214,8 @@ public:
             return;
         }
 
-        // Sonst: neuen Punkt setzen und sofort selektieren, bereit zum Drag.
         selectedIndices.clear();
-        const long s = applySnap(pixelToSample(e.x));
+        const juce::int64 s = applySnap(pixelToSample(e.x));
         addOrReplacePoint(s, yToValue(e.y));
         const int newIdx = indexAtSample(s);
         if (newIdx >= 0) selectedIndices.insert(newIdx);
@@ -237,25 +247,49 @@ public:
 
         if (dragMode == DragMode::movePoints && !selectedIndices.empty())
         {
+            auto* lane = activeLane();
+            if (lane == nullptr) return;
+
             const int dxPix = e.x - dragStartX;
             const int dyPix = e.y - dragStartY;
 
-            // Punkte verschieben. Sample-Reihenfolge wird durch
-            // rebuildAfterMove() korrigiert (kann Indizes umsortieren).
+            // Punkte neu berechnen: aus dragOrigins die Soll-Werte ableiten,
+            // Lane neu aufbauen, danach Selektion auf die neuen Indizes mappen.
+            // Wir loeschen die Originalpunkte und fuegen die verschobenen neu
+            // ein (idempotent ueber addOrReplacePoint).
+            std::vector<std::pair<juce::int64, float>> newTargets;
             for (auto& kv : dragOrigins)
             {
-                const int origIdx = kv.first;
-                if (origIdx < 0 || origIdx >= (int) points.size()) continue;
-                const long origSample = kv.second.first;
-                const float origValue = kv.second.second;
+                const auto origSample = kv.second.first;
+                const auto origValue  = kv.second.second;
                 const int origPx      = sampleToPixel(origSample);
                 const float origPy    = valueToY(origValue);
-                const long newSample  = applySnap(pixelToSample(origPx + dxPix));
-                const float newValue  = yToValue((int) origPy + dyPix);
-                points[(size_t) origIdx].sample = juce::jmax(0L, newSample);
-                points[(size_t) origIdx].value  = juce::jlimit(0.0f, 1.0f, newValue);
+                const juce::int64 newSample = juce::jmax((juce::int64) 0,
+                                                         applySnap(pixelToSample(origPx + dxPix)));
+                const float newValue        = juce::jlimit(0.0f, 1.0f,
+                                                           yToValue((int) origPy + dyPix));
+                newTargets.emplace_back(newSample, newValue);
             }
-            rebuildAfterMove();
+            // Original-Sampletimes loeschen.
+            for (auto& kv : dragOrigins)
+                lane->removePointAt(kv.second.first);
+            // Neue Targets einsetzen.
+            for (auto& t : newTargets)
+                lane->addOrReplacePoint(t.first, t.second);
+
+            // Selektion neu zusammensetzen aus den neuen Sampletimes.
+            selectedIndices.clear();
+            const auto& pts = lane->getPoints();
+            std::set<juce::int64> newSamples;
+            for (auto& t : newTargets) newSamples.insert(t.first);
+            for (size_t i = 0; i < pts.size(); ++i)
+                if (newSamples.count(pts[i].sampleTime) > 0)
+                    selectedIndices.insert((int) i);
+
+            // dragOrigins fuer den naechsten Frame auf die NEUEN Positionen
+            // setzen, damit weitere Drag-Schritte relativ zur Origin laufen.
+            captureDragOriginsForSelected();
+
             repaint();
         }
     }
@@ -279,65 +313,36 @@ public:
         if (key == juce::KeyPress('a', juce::ModifierKeys::commandModifier, 0))
         {
             selectedIndices.clear();
-            for (int i = 0; i < (int) points.size(); ++i) selectedIndices.insert(i);
+            const auto& pts = getPoints();
+            for (int i = 0; i < (int) pts.size(); ++i) selectedIndices.insert(i);
             repaint();
             return true;
         }
         return false;
     }
 
-    // ValueTree-Persistenz (Save/Load durch das Projekt).
-    juce::ValueTree toValueTree() const
-    {
-        juce::ValueTree v("Automation");
-        v.setProperty("active",       overlayActive, nullptr);
-        v.setProperty("paramIndex",   paramIndex,    nullptr);
-        juce::ValueTree pts("Points");
-        for (const auto& p : points)
-        {
-            juce::ValueTree e("P");
-            e.setProperty("s", (int) p.sample, nullptr);
-            e.setProperty("v", p.value,        nullptr);
-            pts.addChild(e, -1, nullptr);
-        }
-        v.addChild(pts, -1, nullptr);
-        return v;
-    }
-
-    void fromValueTree(const juce::ValueTree& v)
-    {
-        if (!v.hasType("Automation")) return;
-        overlayActive = (bool) v.getProperty("active", false);
-        paramIndex    = (int)  v.getProperty("paramIndex", -1);
-        points.clear();
-        auto pts = v.getChildWithName("Points");
-        for (int i = 0; i < pts.getNumChildren(); ++i)
-        {
-            auto e = pts.getChild(i);
-            Point p;
-            p.sample = (long)  (int)   e.getProperty("s", 0);
-            p.value  = (float) (double)e.getProperty("v", 0.0);
-            points.push_back(p);
-        }
-        std::sort(points.begin(), points.end(),
-                  [](const Point& a, const Point& b){ return a.sample < b.sample; });
-        setInterceptsMouseClicks(overlayActive, false);
-        repaint();
-    }
-
 private:
-    long pixelToSample(int x) const
+    synthlab::automation::Lane* activeLane()
+    {
+        return boundLane != nullptr ? boundLane : &scratchLane;
+    }
+    const synthlab::automation::Lane* activeLane() const
+    {
+        return boundLane != nullptr ? boundLane : &scratchLane;
+    }
+
+    juce::int64 pixelToSample(int x) const
     {
         if (zoom <= 0.0f) return 0;
-        long s = (long) (((double) x / (double) zoom) * sampleRate);
+        juce::int64 s = (juce::int64)(((double) x / (double) zoom) * sampleRate);
         if (s < 0) s = 0;
         return s;
     }
 
-    int sampleToPixel(long sample) const
+    int sampleToPixel(juce::int64 sample) const
     {
         if (sampleRate <= 0.0) return 0;
-        return (int) (((double) sample / sampleRate) * (double) zoom);
+        return (int)(((double) sample / sampleRate) * (double) zoom);
     }
 
     float yToValue(int y) const
@@ -355,56 +360,45 @@ private:
         return (float) top + (1.0f - juce::jlimit(0.0f, 1.0f, v)) * (float) h;
     }
 
-    void addOrReplacePoint(long sample, float value)
+    void addOrReplacePoint(juce::int64 sample, float value)
     {
-        // Punkte werden in Sample-Buckets gespeichert, deren Breite einem
-        // Pixel-Quantum entspricht — sonst würde ein einzelner Drag hunderte
-        // Punkte pro Pixel ablegen und die Wiedergabe verteuern.
-        long bucket = (long)((double) sampleRate / juce::jmax(1.0f, zoom));
+        // Pixel-Bucket-Quantisierung — sonst legt ein Drag hunderte Punkte
+        // pro Pixel ab.
+        juce::int64 bucket = (juce::int64)((double) sampleRate / juce::jmax(1.0f, zoom));
         if (bucket < 1) bucket = 1;
-        const long key = (sample / bucket) * bucket;
-
-        // Existierenden Bucket aktualisieren oder einsortieren.
-        auto it = std::lower_bound(points.begin(), points.end(), key,
-            [](const Point& p, long k){ return p.sample < k; });
-
-        if (it != points.end() && it->sample == key)
-        {
-            it->value = value;
-        }
-        else
-        {
-            Point p; p.sample = key; p.value = value;
-            points.insert(it, p);
-        }
+        const juce::int64 key = (sample / bucket) * bucket;
+        if (auto* l = activeLane()) l->addOrReplacePoint(key, value);
     }
 
-    void removeNearest(long sample, int pixelRadius)
+    void removeNearest(juce::int64 sample, int pixelRadius)
     {
-        if (points.empty()) return;
+        auto* lane = activeLane();
+        if (lane == nullptr || lane->isEmpty()) return;
+        const auto& pts = lane->getPoints();
         const int xRef = sampleToPixel(sample);
-        auto best = points.end();
+        int best = -1;
         int bestDist = pixelRadius;
-        for (auto it = points.begin(); it != points.end(); ++it)
+        for (size_t i = 0; i < pts.size(); ++i)
         {
-            const int dx = std::abs(sampleToPixel(it->sample) - xRef);
-            if (dx <= bestDist) { bestDist = dx; best = it; }
+            const int dx = std::abs(sampleToPixel(pts[i].sampleTime) - xRef);
+            if (dx <= bestDist) { bestDist = dx; best = (int) i; }
         }
-        if (best != points.end())
+        if (best >= 0)
         {
-            const int idx = (int)(best - points.begin());
-            points.erase(best);
-            removeIndexFromSelection(idx);
+            const auto t = pts[(size_t) best].sampleTime;
+            lane->removePointAt(t);
+            removeIndexFromSelection(best);
         }
     }
 
     int hitTestPoint(int x, int y, int pixelRadius) const
     {
+        const auto& points = getPoints();
         int best = -1;
         int bestDist = pixelRadius * pixelRadius + 1;
         for (size_t i = 0; i < points.size(); ++i)
         {
-            const int px = sampleToPixel(points[i].sample);
+            const int px = sampleToPixel(points[i].sampleTime);
             if (std::abs(px - x) > pixelRadius) continue;
             const int py = (int) valueToY(points[i].value);
             const int dx = px - x, dy = py - y;
@@ -414,18 +408,19 @@ private:
         return best;
     }
 
-    int indexAtSample(long sample) const
+    int indexAtSample(juce::int64 sample) const
     {
+        const auto& points = getPoints();
         for (size_t i = 0; i < points.size(); ++i)
-            if (points[i].sample == sample) return (int) i;
+            if (points[i].sampleTime == sample) return (int) i;
         return -1;
     }
 
-    long applySnap(long sample) const
+    juce::int64 applySnap(juce::int64 sample) const
     {
         auto* pr = Project::getInstance();
         if (pr == nullptr || !pr->isSnapToGridEnabled()) return sample;
-        return pr->snapSampleToGrid(sample, zoom, false);
+        return (juce::int64) pr->snapSampleToGrid((long) sample, zoom, false);
     }
 
     juce::Rectangle<int> currentSelectionBox() const
@@ -440,11 +435,12 @@ private:
     void applySelectionBox(bool additive)
     {
         if (!additive) selectedIndices.clear();
+        const auto& pts = getPoints();
         const auto box = currentSelectionBox();
-        for (size_t i = 0; i < points.size(); ++i)
+        for (size_t i = 0; i < pts.size(); ++i)
         {
-            const int px = sampleToPixel(points[i].sample);
-            const int py = (int) valueToY(points[i].value);
+            const int px = sampleToPixel(pts[i].sampleTime);
+            const int py = (int) valueToY(pts[i].value);
             if (box.contains(px, py)) selectedIndices.insert((int) i);
         }
     }
@@ -452,30 +448,10 @@ private:
     void captureDragOriginsForSelected()
     {
         dragOrigins.clear();
+        const auto& pts = getPoints();
         for (int i : selectedIndices)
-            dragOrigins[i] = { points[(size_t) i].sample, points[(size_t) i].value };
-    }
-
-    // Nach einem Drag koennen sich die Sample-Werte so verschoben haben, dass
-    // die globale Reihenfolge nicht mehr stimmt. Hier neu sortieren und die
-    // Index-basierte Selektion sauber neu zusammensetzen.
-    void rebuildAfterMove()
-    {
-        // Snapshot aktueller Selektion mit Identitaet ueber sample/value.
-        std::vector<std::pair<long,float>> selSnapshot;
-        for (int i : selectedIndices)
-            if (i >= 0 && i < (int) points.size())
-                selSnapshot.emplace_back(points[(size_t) i].sample,
-                                         points[(size_t) i].value);
-
-        std::sort(points.begin(), points.end(),
-                  [](const Point& a, const Point& b){ return a.sample < b.sample; });
-
-        selectedIndices.clear();
-        for (const auto& key : selSnapshot)
-            for (size_t i = 0; i < points.size(); ++i)
-                if (points[i].sample == key.first && points[i].value == key.second)
-                    { selectedIndices.insert((int) i); break; }
+            if (i >= 0 && i < (int) pts.size())
+                dragOrigins[i] = { pts[(size_t) i].sampleTime, pts[(size_t) i].value };
     }
 
     void removeIndexFromSelection(int removedIdx)
@@ -492,12 +468,16 @@ private:
     void deleteSelected()
     {
         if (selectedIndices.empty()) return;
-        // In absteigender Reihenfolge loeschen, damit Indizes gueltig bleiben.
-        std::vector<int> toDel(selectedIndices.begin(), selectedIndices.end());
-        std::sort(toDel.begin(), toDel.end(), std::greater<int>());
-        for (int i : toDel)
-            if (i >= 0 && i < (int) points.size())
-                points.erase(points.begin() + i);
+        auto* lane = activeLane();
+        if (lane == nullptr) return;
+        // Erst die Samplezeiten der zu loeschenden Punkte sammeln, dann jeden
+        // einzeln im Lane entfernen — Indizes wuerden sich sonst verschieben.
+        const auto& pts = lane->getPoints();
+        std::vector<juce::int64> toDel;
+        for (int i : selectedIndices)
+            if (i >= 0 && i < (int) pts.size())
+                toDel.push_back(pts[(size_t) i].sampleTime);
+        for (auto t : toDel) lane->removePointAt(t);
         selectedIndices.clear();
         repaint();
     }
@@ -509,10 +489,13 @@ private:
     bool overlayActive = false;
     int  paramIndex = -1;
     float zoom = 40.0f;
-    std::vector<Point> points;
+
+    // Datenhaltung: gebunden an die Lane im Track-Modell, oder Scratch.
+    synthlab::automation::Lane* boundLane = nullptr;
+    synthlab::automation::Lane  scratchLane;
 
     std::set<int> selectedIndices;
-    std::map<int, std::pair<long, float>> dragOrigins;
+    std::map<int, std::pair<juce::int64, float>> dragOrigins;
     DragMode dragMode = DragMode::none;
     int      dragStartX = 0, dragStartY = 0;
     bool     selectionBoxActive = false;

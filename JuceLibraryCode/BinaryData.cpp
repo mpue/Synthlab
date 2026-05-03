@@ -11,6 +11,25 @@ namespace BinaryData
 
 //================== README.md ==================
 static const unsigned char temp_binary_data_0[] =
+"# Project Status (May 2026)\n"
+"\n"
+"Reactivated for the `the-big-overhaul` branch. The branch ships:\n"
+"\n"
+"- Three static checks under `tools/` (lock-free audio path, save-isolation,\n"
+"  TODO-issue-refs) wired into a pre-commit hook and GitHub Actions.\n"
+"- A new automation data model (`Source/Automation/`) with stable Uuids,\n"
+"  idempotent lane creation and unit tests.\n"
+"- UI editing for automation lanes (multi-select, drag, delete, snap,\n"
+"  visibility-culling for 1k+ points) in `Source/Tracks/AutomationLane.h`.\n"
+"- A `ProjectSnapshot` + atomic holder for race-free save during playback.\n"
+"- Vertical track zoom on Shift+Ctrl/Cmd+Wheel with mouse-anchored center.\n"
+"- Voice-pool refactor for SineModule, SawtoothModule and OscillatorModule\n"
+"  \xe2\x80\x94 no more `new`/`delete` on the audio thread (RT baseline 8 -> 2).\n"
+"\n"
+"See [docs/the-big-overhaul-status.md](docs/the-big-overhaul-status.md) for\n"
+"the full work plan, architecture rules, baseline tracker and remaining\n"
+"work (Projucer re-save, manual smoke tests, sanitizer runs).\n"
+"\n"
 "# Project Status (February 2026)\n"
 "\n"
 "After 466 commits and years of work, I'm archiving this project.\n"
@@ -42176,7 +42195,7 @@ const char* getNamedResource (const char* resourceNameUTF8, int& numBytes)
 
     switch (hash)
     {
-        case 0x64791dc8:  numBytes = 2545; return README_md;
+        case 0x64791dc8:  numBytes = 3544; return README_md;
         case 0xbff7e428:  numBytes = 8449; return _2osc_gate_slb;
         case 0x126b2978:  numBytes = 15803; return _3osc_broad_slb;
         case 0xea0a5b91:  numBytes = 17120; return _3oscV2_slb;

@@ -18,6 +18,7 @@
 #include <vector>
 #include <set>
 #include "../MultiComponentDragger.h"
+#include "../Automation/AutomationModel.h"
 
 
 //==============================================================================
@@ -249,7 +250,12 @@ public:
 
     void setPluginModule(PluginModule* module) {
         this->pluginModule = module;
+        rebuildAutomationParamIdCache();
 	}
+
+    // Wird vom Track gepflegt, damit setSamplePosition() im Audio-Thread keine
+    // juce::String-Allokationen mehr braucht (#7).
+    void rebuildAutomationParamIdCache();
 
     PluginModule* getPluginModule() {
         return this->pluginModule;
@@ -269,6 +275,16 @@ public:
     int  getAutomationParameterIndex() const { return automationParamIndex; }
 
     AutomationLane* getAutomationLane() const { return automationLane.get(); }
+
+    // ----- Multi-Lane Automation (Phase 1+3 Wiring) ----------------------------
+    // Pro Plugin-Parameter eine Lane oder keine. Stabile Uuids ueber Save/Load.
+    synthlab::automation::Model&       getAutomationModel()       { return automationModel; }
+    const synthlab::automation::Model& getAutomationModel() const { return automationModel; }
+
+    // ParameterId fuer den Plugin-Parameter an Listen-Index `idx`. Stabil ueber
+    // Save/Load fuer dasselbe Plugin (paramID wenn das Plugin
+    // AudioProcessorParameterWithID nutzt; sonst index:name als Fallback).
+    juce::String automationParameterIdFor(int idx) const;
 
 private:
 
@@ -417,6 +433,17 @@ private:
     std::unique_ptr<AutomationLane> automationLane;
     bool automationVisible = false;
     int  automationParamIndex = -1;
+    juce::String automationCurrentParamId;
+
+    // Datenmodell fuer alle Lanes dieses Tracks. Die Lane des aktuell im UI
+    // gewaehlten Parameters bindet `automationLane` an sich; alle anderen
+    // bleiben in `automationModel` und werden bei Wiedergabe trotzdem
+    // angewandt.
+    synthlab::automation::Model automationModel;
+
+    // Vorberechnete paramIds parallel zur Plugin-Parameterliste. Wird vom
+    // Audio-Thread alloc-frei gelesen.
+    std::vector<juce::String> cachedAutomationParamIds;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Track)
 };

@@ -1879,6 +1879,7 @@ void SynthEditor::openTracks(File file)
 			ValueTree track = v.getChild(i);
 			TrackIn* ti = tracks.at(i);
 
+			Track* loadedTrack = nullptr;
 			if (track.getProperty("type") == "audio") {
 				Track* t = navigator->addTrack(Track::Type::AUDIO, Project::getInstance()->getSampleRate());
 				ti->setTrack(t);
@@ -1894,6 +1895,7 @@ void SynthEditor::openTracks(File file)
 					bounds.setWidth(region.getProperty("width"));
 					r->setBounds(bounds);
 				}
+				loadedTrack = t;
 			}
 			else if (track.getProperty("type") == "midi") {
 				juce::Point<int> pos = juce::Point<int>(10, 10);
@@ -1902,6 +1904,7 @@ void SynthEditor::openTracks(File file)
 				t->setMidiChannel(track.getProperty("midiChannel").toString().getIntValue(), false);
 				t->setMidiOutputDevice(track.getProperty("interface").toString());
 				loadMidiRegions(track, t);
+				loadedTrack = t;
 			}
 			else if (track.getProperty("type") == "instrument") {
 				juce::Point<int> pos = juce::Point<int>(10, 10);
@@ -1928,6 +1931,15 @@ void SynthEditor::openTracks(File file)
 				}
 
 				loadMidiRegions(track, t);
+				loadedTrack = t;
+			}
+
+			// Automation pro Track laden — gleiche Stelle, an der getConfiguration()
+			// das ValueTree als "Automation"-Child geschrieben hat.
+			if (loadedTrack != nullptr) {
+				ValueTree autoTree = track.getChildWithName("Automation");
+				if (autoTree.isValid())
+					loadedTrack->getAutomationModel().fromValueTree(autoTree);
 			}
 		}
 

@@ -2,8 +2,7 @@
 // Aktivierung ueber Kommandozeile:  Synthlab runTests
 // (siehe Source/Main.cpp).
 
-#include <juce_core/juce_core.h>
-#include <juce_data_structures/juce_data_structures.h>
+#include <JuceHeader.h>
 #include "../Automation/AutomationModel.h"
 
 using namespace synthlab::automation;

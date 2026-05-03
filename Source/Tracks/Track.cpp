@@ -676,8 +676,35 @@ void Track::setSamplePosition(int position, bool dispatchEvents)
 	// Lane-Automation: bei jedem Block den interpolierten Wert ans Plugin
 	// schicken — solange das Overlay aktiv ist und ein Parameter gewählt
 	// wurde. Auch bei Audio-Tracks erlaubt, falls dort ein Insert-Plugin hängt.
-	if (dispatchEvents && automationLane != nullptr && automationVisible)
-		automationLane->applyAt(position);
+	// Multi-Lane Playback: alle Lanes im Modell auf die zugehoerigen Plugin-
+	// Parameter anwenden. Unabhaengig davon, ob das Overlay sichtbar ist —
+	// gespeicherte Automation soll auch ohne offene Lane wirken. Die
+	// paramId-Liste ist vorberechnet (cachedAutomationParamIds) — der Vergleich
+	// hier ist eine reine String-Compare ohne Allokation.
+	if (dispatchEvents && pluginModule != nullptr && pluginModule->getPlugin() != nullptr
+	    && !cachedAutomationParamIds.empty())
+	{
+		auto* plugin = pluginModule->getPlugin();
+		const auto& params = plugin->getParameters();
+		for (int li = 0; li < automationModel.numLanes(); ++li)
+		{
+			auto* lane = automationModel.laneAt(li);
+			if (lane == nullptr || lane->isEmpty()) continue;
+			const juce::String& laneId = lane->getParameterId();
+			juce::AudioProcessorParameter* target = nullptr;
+			for (size_t pi = 0; pi < cachedAutomationParamIds.size() && (int) pi < params.size(); ++pi)
+			{
+				if (cachedAutomationParamIds[pi] == laneId)
+				{
+					target = params[(int) pi];
+					break;
+				}
+			}
+			if (target != nullptr)
+				target->setValueNotifyingHost(juce::jlimit(0.0f, 1.0f,
+				                                           lane->valueAt(position)));
+		}
+	}
 
 	if ((type == MIDI || type == INSTRUMENT) && position != samplePosition) {
 
@@ -1345,6 +1372,47 @@ void Track::setAutomationParameterIndex(int idx)
 	this->automationParamIndex = idx;
 	if (automationLane != nullptr)
 		automationLane->setParameterIndex(idx);
+
+	// Lane im Modell idempotent finden/anlegen und an die UI binden. Bei -1
+	// wird die UI auf Scratch zurueckgesetzt.
+	if (idx < 0)
+	{
+		automationCurrentParamId.clear();
+		if (automationLane != nullptr) automationLane->setBoundLane(nullptr);
+		return;
+	}
+	const auto paramId = automationParameterIdFor(idx);
+	if (paramId.isEmpty()) return;
+	automationCurrentParamId = paramId;
+	auto& lane = automationModel.findOrCreate(paramId);
+	if (automationLane != nullptr) automationLane->setBoundLane(&lane);
+}
+
+void Track::rebuildAutomationParamIdCache()
+{
+	cachedAutomationParamIds.clear();
+	if (pluginModule == nullptr || pluginModule->getPlugin() == nullptr) return;
+	const auto& params = pluginModule->getPlugin()->getParameters();
+	cachedAutomationParamIds.reserve((size_t) params.size());
+	for (int i = 0; i < params.size(); ++i)
+		cachedAutomationParamIds.push_back(automationParameterIdFor(i));
+}
+
+juce::String Track::automationParameterIdFor(int idx) const
+{
+	if (idx < 0 || pluginModule == nullptr || pluginModule->getPlugin() == nullptr)
+		return {};
+	const auto& params = pluginModule->getPlugin()->getParameters();
+	if (idx >= params.size()) return {};
+
+	auto* p = params[idx];
+	if (p == nullptr) return {};
+	if (auto* withId = dynamic_cast<juce::AudioProcessorParameterWithID*>(p))
+		return withId->paramID;
+	// Fallback: index:name. Stabil pro Plugin-Instanz innerhalb derselben
+	// Session und reproduzierbar nach reload, solange das Plugin dieselbe
+	// Parameter-Liste exposed.
+	return juce::String(idx) + ":" + p->getName(64);
 }
 
 // ----- AutomationLane Glue (hier definiert, weil Zugriff auf PluginModule) ---
@@ -1362,41 +1430,10 @@ juce::AudioProcessorParameter* AutomationLane::getTargetParameter() const
 	return params[paramIndex];
 }
 
+// applyAt() ist obsolet — Track::setSamplePosition iteriert jetzt selbst alle
+// Lanes des Modells. Die Methode bleibt als no-op fuer eventuelle alte
+// Aufrufer und fuer zukuenftige UI-Spezialfaelle.
 void AutomationLane::applyAt(long sample)
 {
-	if (!overlayActive || points.empty())
-		return;
-	auto* p = getTargetParameter();
-	if (p == nullptr)
-		return;
-
-	// Linear interpolieren zwischen umgebenden Stützstellen.
-	float v = points.front().value;
-	if (sample <= points.front().sample) {
-		v = points.front().value;
-	}
-	else if (sample >= points.back().sample) {
-		v = points.back().value;
-	}
-	else {
-		// Binäre Suche nach dem ersten Punkt mit sample > query.
-		auto it = std::upper_bound(points.begin(), points.end(), sample,
-			[](long s, const Point& pt){ return s < pt.sample; });
-		if (it == points.begin()) {
-			v = it->value;
-		}
-		else {
-			auto prev = std::prev(it);
-			const long s0 = prev->sample;
-			const long s1 = it->sample;
-			const float v0 = prev->value;
-			const float v1 = it->value;
-			const float t = (s1 == s0) ? 0.0f
-			                           : (float)(sample - s0) / (float)(s1 - s0);
-			v = v0 + (v1 - v0) * t;
-		}
-	}
-
-	// setValueNotifyingHost erwartet 0..1 — unsere Werte sind bereits normiert.
-	p->setValueNotifyingHost(juce::jlimit(0.0f, 1.0f, v));
+	juce::ignoreUnused(sample);
 }

@@ -129,7 +129,7 @@ kein lauffaehiger Build).
 | 2 | Automation UI | **done** (Multi-Select, Drag-Move, Delete, Snap, Visibility-Culling in `Source/Tracks/AutomationLane.h`) |
 | 3 | Snapshot + Save-Refactor | **done** (`Source/Project/ProjectSnapshot.h`, `Project::save/saveCurrent` lesen ueber `loadSnapshot()`) |
 | 3 | 10x100 Roundtrip-Test | **done** (`Source/Tests/AutomationModelTests.cpp`) |
-| 3 | TrackConfig-Wiring der Lane-Daten | **deferred** — bestehende Code-Pfade fuer TrackConfig sind nicht trivial nachvollziehbar; muss separat gemacht werden, wenn die UI auf das neue Modell umzieht. |
+| 3 | Multi-Lane Wiring (Track+UI+Save+Load+Playback) | **done** — Track haelt `synthlab::automation::Model`, AutomationLane Component bindet an Lane via `setBoundLane()`, `TrackNavigator::getConfiguration()` schreibt Automation-Tree, `SynthEditor::openTracks()` liest ihn, `Track::setSamplePosition()` iteriert alle Lanes pro Block. ParamId-Cache (`cachedAutomationParamIds`) verhindert String-Allokation auf dem Audio-Thread. |
 | 4 | Region-Editing | offen |
 | 4 | Region-Editing | **mostly done** (Split per Cmd+T, Copy/Cut/Paste per Cmd+C/X/V — Cut korrigiert auf Standard-Semantik, Move/Resize/Trim/Crossfade ueber bestehende `Source/Actions/`-Klassen) |
 | 5 | Vertikales Zoom | **done** (`TrackNavigator::verticalZoomAtMouse`, Shift+Ctrl/Cmd+Wheel, Maus-Y als Zentrum, [24..400]px) |

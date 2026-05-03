@@ -506,6 +506,11 @@ ValueTree TrackNavigator::getConfiguration()
 		}
 
 		track.addChild(regions, -1, nullptr);
+
+		// Automation-Daten persistieren — alle Lanes des Tracks (eine pro
+		// Plugin-Parameter, mit stabiler Uuid).
+		track.addChild(tracks.at(i)->getAutomationModel().toValueTree(), -1, nullptr);
+
 		v.addChild(track, -1, nullptr);
 	}
 
