@@ -229,7 +229,8 @@ public:
 	void setConfiguration(ValueTree* config);
 	void scrollBarMoved(ScrollBar* scrollBarThatHasMoved, double newRangeStart) override;
 	void mouseWheelMove(const MouseEvent& event, const MouseWheelDetails& wheel) override;
-		
+	void verticalZoomAtMouse(const MouseEvent& event, const MouseWheelDetails& wheel);
+
 	Region* getRecordingRegion() {
 		return recordingRegion;
 	}

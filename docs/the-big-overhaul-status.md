@@ -115,6 +115,8 @@ Source/Tracks/Track.cpp:1039   from card
 | 3 | 10x100 Roundtrip-Test | **done** (`Source/Tests/AutomationModelTests.cpp`) |
 | 3 | TrackConfig-Wiring der Lane-Daten | **deferred** — bestehende Code-Pfade fuer TrackConfig sind nicht trivial nachvollziehbar; muss separat gemacht werden, wenn die UI auf das neue Modell umzieht. |
 | 4 | Region-Editing | offen |
-| 5 | Vertikales Zoom | offen |
-| 6 | UndoManager-Vereinheitlichung, Snap-to-Grid | offen |
+| 4 | Region-Editing | **mostly done** (Split per Cmd+T, Copy/Cut/Paste per Cmd+C/X/V — Cut korrigiert auf Standard-Semantik, Move/Resize/Trim/Crossfade ueber bestehende `Source/Actions/`-Klassen) |
+| 5 | Vertikales Zoom | **done** (`TrackNavigator::verticalZoomAtMouse`, Shift+Ctrl/Cmd+Wheel, Maus-Y als Zentrum, [24..400]px) |
+| 6 | UndoManager-Vereinheitlichung | **already in place** (`Project::getInstance()->getUndoManager()` ist die einzige Quelle, Actions perform daran) |
+| 6 | Snap-to-Grid Toggle | **available via Edit menu** (id 80) — Tastenkombination optional, kann spaeter ueber den ApplicationCommandManager nachgereicht werden |
 | 7 | Aufraeumen, Sanitizers | offen |

@@ -526,6 +526,13 @@ void TrackNavigator::mouseWheelMove(const MouseEvent& event, const MouseWheelDet
 	// Auf macOS wird Ctrl+Scroll vom OS für Accessibility-Zoom abgefangen,
 	// daher zusätzlich Cmd akzeptieren.
 	const bool isZoomModifier = event.mods.isCtrlDown() || event.mods.isCommandDown();
+	const bool isVerticalZoom = isZoomModifier && event.mods.isShiftDown();
+
+	if (isVerticalZoom)
+	{
+		verticalZoomAtMouse(event, wheel);
+		return;
+	}
 
 	if (!isZoomModifier || getMaxLength() == 0)
 	{
@@ -561,6 +568,74 @@ void TrackNavigator::mouseWheelMove(const MouseEvent& event, const MouseWheelDet
 		const int dx = newMouseX - mouseX;
 		const auto pos = view->getViewPosition();
 		view->setViewPosition(pos.x + dx, pos.y);
+	}
+
+	repaint();
+	sendChangeMessage();
+}
+
+void TrackNavigator::verticalZoomAtMouse(const MouseEvent& event, const MouseWheelDetails& wheel)
+{
+	if (tracks.empty()) return;
+
+	// Skalierung pro Wheel-Tick. exp() liefert symmetrisches Zoom-In/Out.
+	float delta = wheel.deltaY;
+	if (wheel.isReversed) delta = -delta;
+	const float factor = std::exp(delta * 0.5f);
+	if (std::abs(factor - 1.0f) < 1e-4f) return;
+
+	const int mouseY = event.getEventRelativeTo(this).y;
+
+	// Erst den Track unter dem Maus-Cursor finden und seine relative Y-Position
+	// in seiner eigenen Bounding-Box festhalten — danach koennen wir die
+	// Heights aendern und das Layout reparieren.
+	int hostIndex   = -1;
+	int hostOffsetY = 0;
+	for (int i = 0; i < (int) tracks.size(); ++i)
+	{
+		auto* t = tracks.at(i);
+		const int top = t->getY();
+		const int bot = top + t->getHeight();
+		if (mouseY >= top && mouseY < bot)
+		{
+			hostIndex   = i;
+			hostOffsetY = mouseY - top;
+			break;
+		}
+	}
+
+	const int kMinTrackHeight = 24;
+	const int kMaxTrackHeight = 400;
+
+	for (auto* t : tracks)
+	{
+		const int newH = juce::jlimit(kMinTrackHeight, kMaxTrackHeight,
+		                              (int) std::round(t->getHeight() * factor));
+		t->setHeight(newH);
+	}
+
+	// Re-Layout (analog zu insertTrackAt).
+	int yPos = timelineOffset;
+	for (auto* t : tracks)
+	{
+		t->setTopLeftPosition(kControlsWidth, yPos);
+		yPos += t->getHeight();
+	}
+
+	syncTrackControls();
+	adjustHeight();
+
+	// Viewport so verschieben, dass der Track unter dem Cursor an derselben
+	// Bildschirm-Y bleibt.
+	if (view != nullptr && hostIndex >= 0 && hostIndex < (int) tracks.size())
+	{
+		auto* t = tracks.at(hostIndex);
+		// Mouse-Position im neuen Layout (im Navigator-Koordinatensystem)
+		const float scaledOffset = (float) hostOffsetY * factor;
+		const int newMouseY = t->getY() + (int) scaledOffset;
+		const int dy = newMouseY - mouseY;
+		const auto pos = view->getViewPosition();
+		view->setViewPosition(pos.x, pos.y + dy);
 	}
 
 	repaint();
@@ -1181,7 +1256,11 @@ bool TrackNavigator::keyPressed(const KeyPress& key, Component* originatingCompo
 				}
 			}
 		}
-		else if (key.getKeyCode() == 88) { // X
+		else if (key.getKeyCode() == 88) { // X — standard cut: copy to clipboard, then remove.
+			Session::getInstance()->clearRegionsClipboard();
+			for (int i = 0; i < tracks.size(); i++) {
+				tracks.at(i)->copySelectedRegions();
+			}
 			for (int i = 0; i < tracks.size(); i++) {
 				tracks.at(i)->removeSelectedRegions(true);
 			}
