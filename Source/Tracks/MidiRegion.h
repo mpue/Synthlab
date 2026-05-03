@@ -144,7 +144,7 @@ private:
     long sourceStartSample = 0;
 
 public:
-    long getSourceStartSample() const { return sourceStartSample; }
+    long getSourceStartSample() const override { return sourceStartSample; }
     void setSourceStartSample(long s) { sourceStartSample = juce::jmax(0L, s); }
 private:
     std::shared_ptr<bool> tempoSubscriptionAlive;

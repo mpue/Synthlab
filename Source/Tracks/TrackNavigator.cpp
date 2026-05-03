@@ -480,6 +480,7 @@ ValueTree TrackNavigator::getConfiguration()
 					region.setProperty("clipRefId", ar->getClipRefid(), nullptr);
 					region.setProperty("sampleOffset", (int)ar->getSampleOffset(), nullptr);
 					region.setProperty("numSamples", ar->getNumSamples(), nullptr);
+					region.setProperty("sourceStartSample", (juce::int64) ar->getSourceStartSample(), nullptr);
 					region.setProperty("width", ar->getWidth(), nullptr);
 				}
 			}

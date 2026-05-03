@@ -290,25 +290,36 @@ void AudioRegion::consolidate()
     }
     else
     {
-        // Non-looping case: trim the audio buffer to the current visual (dragged) length.
-        // Use the component width directly — independent of thumbnailBounds state.
-        int trimmedSamples = (int)((getWidth() / zoom) * sampleRate);
-        if (trimmedSamples > 0 && trimmedSamples < audioBuffer->getNumSamples())
-        {
-            auto* newBuffer = new AudioSampleBuffer(numChannels, trimmedSamples);
-            for (int ch = 0; ch < numChannels; ch++)
-                newBuffer->copyFrom(ch, 0, *audioBuffer, ch, 0, trimmedSamples);
-            delete audioBuffer;
-            audioBuffer = newBuffer;
+        // Konsolidierter Bereich = [sourceStartSample, sourceStartSample + numSamples).
+        // Alles davor / danach wird endgueltig aus dem audioBuffer entfernt,
+        // sourceStartSample faellt auf 0. Reine Right-Trim-Faelle haben
+        // sourceStartSample == 0, dann ist es ein normaler Trim am Ende.
+        const long visibleLen = (long) std::round((double) getWidth() / zoom * sampleRate);
+        const long sss        = sourceStartSample;
+        if (visibleLen <= 0) return;
 
-            // Rebuild thumbnail for the new (shorter) buffer.
-            this->thumbnail->reset(numChannels, sampleRate);
-            this->thumbnail->addBlock(0, *audioBuffer, 0, trimmedSamples);
-            // Align thumbnailBounds so getNumSamples() returns the buffer size going forward.
+        // Out-of-bounds-Schutz: visibleLen darf nicht ueber den Buffer
+        // hinauslaufen (kann passieren wenn die Region durch Resize-zurueck
+        // groesser wurde als die Quelle).
+        const long maxAvailable = (long) audioBuffer->getNumSamples() - sss;
+        const long copyLen = juce::jlimit(0L, maxAvailable, visibleLen);
+        if (copyLen <= 0) return;
+
+        auto* newBuffer = new AudioSampleBuffer(numChannels, (int) visibleLen);
+        newBuffer->clear();
+        for (int ch = 0; ch < numChannels; ch++)
+            newBuffer->copyFrom(ch, 0, *audioBuffer, ch, (int) sss, (int) copyLen);
+        delete audioBuffer;
+        audioBuffer = newBuffer;
+        sourceStartSample = 0;
+
+        // Thumbnail neu aus dem getrimmten Buffer aufbauen.
+        this->thumbnail->reset(numChannels, sampleRate);
+        this->thumbnail->addBlock(0, *audioBuffer, 0, (int) visibleLen);
+        if (this->thumbnailBounds != nullptr)
             this->thumbnailBounds->setWidth(getWidth());
-            dirty = true;
-            repaint();
-        }
+        dirty = true;
+        repaint();
     }
 }
 
@@ -514,6 +525,14 @@ void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, b
 
         const int newX     = (int) std::round((double) snappedLeft / sr * zoom);
         const int newWidth = (int) std::round((double) newNumSamples / sr * zoom);
+
+        // Buffer-Read-Offset analog zur MidiRegion: linke Kante wandert in
+        // Timeline um deltaLeft -> sourceStartSample wandert im Audio-Buffer
+        // um den gleichen Betrag. Negative Werte (Region wird nach links
+        // verlaengert) clampen auf 0.
+        const long oldSampleOffset = getSampleOffset();
+        const long deltaLeft = snappedLeft - oldSampleOffset;
+        sourceStartSample = juce::jmax(0L, sourceStartSample + deltaLeft);
 
         // Modell zuerst, dann setBounds — setBounds ruft componentMovedOr-
         // Resized reentrant auf; wir brauchen idempotentes Verhalten.

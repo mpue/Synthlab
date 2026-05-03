@@ -6,6 +6,7 @@
 #include "AudioOut.h"
 #include "AudioIn.h"
 #include "TrackIn.h"
+#include "Tracks/AudioRegion.h"
 #include "AuxOut.h"
 #include "SawtoothModule.h"
 #include "NoiseModule.h"
@@ -1928,6 +1929,8 @@ void SynthEditor::openTracks(File file)
 					Rectangle<int> bounds = r->getBounds();
 					bounds.setWidth(region.getProperty("width"));
 					r->setBounds(bounds);
+					if (auto* ar = dynamic_cast<AudioRegion*>(r))
+						ar->setSourceStartSample((long)(juce::int64) region.getProperty("sourceStartSample", (juce::int64) 0));
 				}
 				loadedTrack = t;
 			}

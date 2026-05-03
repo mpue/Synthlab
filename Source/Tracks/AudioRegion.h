@@ -73,6 +73,13 @@ public:
 
     void consolidate() override;
 
+    // Sample-Offset INNERHALB des Audio-Buffers, an dem die linke Kante der
+    // Region beginnt. Wird beim Links-Trim erhoeht; getNumSamples() bleibt
+    // die sichtbare (bzw. spielende) Laenge ab diesem Offset. consolidate()
+    // baked das in den Buffer ein und setzt zurueck auf 0.
+    long getSourceStartSample() const override { return sourceStartSample; }
+    void setSourceStartSample(long s) { sourceStartSample = juce::jmax(0L, s); }
+
 private:
 
     struct PitchListener : juce::Value::Listener
@@ -90,6 +97,7 @@ private:
 
     AudioSampleBuffer* audioBuffer;
     AudioSampleBuffer* audioBufferProcessed = nullptr;
+    long sourceStartSample = 0;
     AudioThumbnail* thumbnail;
     AudioThumbnailCache* thumbnailCache;
     ScopedPointer<AudioFormatReaderSource> readerSource;

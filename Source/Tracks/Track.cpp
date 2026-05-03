@@ -1061,14 +1061,19 @@ const float Track::getSample(int channel, long sample) {
 	currentRegion = getRegionAt(sample);
 
 	if (currentRegion != nullptr) {
-		if (sample - currentRegion->getSampleOffset() < getBuffer()->getNumSamples() && sample - currentRegion->getSampleOffset() > 0) {
-
-			if (getBuffer()->getNumChannels() == 1) {
-				return getBuffer()->getSample(0, sample - currentRegion->getSampleOffset());
+		// Region-relative position innerhalb der Quell-Daten ableiten.
+		// sourceStartSample > 0 nach Resize-vorne: der Lookup verschiebt sich
+		// um diesen Betrag in den Buffer hinein. Konsolidierte Region: sss=0.
+		const long inSource = (sample - currentRegion->getSampleOffset())
+		                    + currentRegion->getSourceStartSample();
+		auto* buf = getBuffer();
+		if (buf != nullptr && inSource >= 0 && inSource < buf->getNumSamples()) {
+			if (buf->getNumChannels() == 1) {
+				return buf->getSample(0, inSource);
 			}
 			else {
-				return getBuffer()->getSample(channel, sample - currentRegion->getSampleOffset());
-			}			
+				return buf->getSample(channel, inSource);
+			}
 		}
 	}
 	return 0;
