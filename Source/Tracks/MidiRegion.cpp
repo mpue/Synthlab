@@ -475,6 +475,16 @@ void MidiRegion::clear() {
     sequence->clear();
 }
 
+void MidiRegion::addMessageRaw(juce::MidiMessage* m, juce::int64 bufferTimestamp)
+{
+    if (m == nullptr) return;
+    ScopedLock c(lock);
+    m->setTimeStamp((double) bufferTimestamp);
+    midiMessageList.push_back(m);
+    if (midiThumbnail != nullptr)
+        midiThumbnail->addMessage((int) bufferTimestamp, m);
+}
+
 void MidiRegion::addMessage(MidiMessage* m, double time, int sampleNum) {
 
     // sampleNum -= sampleNum % Project::getInstance()->getBufferSize();

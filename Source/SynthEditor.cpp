@@ -2108,13 +2108,14 @@ void SynthEditor::loadMidiRegions(juce::ValueTree& track, Track* t) {
 			}
 
 			if (validMessage) {
-				int timestamp = int(event.getProperty("timestamp"));
-				// Saved timestamp is relative to the region start. addMessage()
-				// expects an *absolute* sampleNum and re-relativises it via
-				// `sampleNum - getSampleOffset()`. Without adding the offset back
-				// here, every reload re-subtracts sampleOffset and the round-trip
-				// drives timestamps negative on the next save.
-				mr->addMessage(new MidiMessage(msg), timestamp, timestamp + (int)mr->getSampleOffset());
+				const juce::int64 timestamp = (juce::int64) event.getProperty("timestamp");
+				// Saved timestamp is BUFFER-relativ — d.h. enthaelt bereits
+				// sourceStartSample (wenn die Region links getrimmt war). Den
+				// raw-Pfad nehmen, der den Wert 1:1 setzt; addMessage() wuerde
+				// sourceStartSample ein zweites Mal addieren und die Notes nach
+				// dem Reload sichtbar verschieben (und im konsolidierten Save
+				// hinter den rechten Rand schieben, sodass sie verschwinden).
+				mr->addMessageRaw(new juce::MidiMessage(msg), timestamp);
 				loadedCount++;
 			}
 		}

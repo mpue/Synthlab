@@ -62,6 +62,13 @@ public:
     long getNumMessages() {
         return midiMessageList.size();
     }
+
+    // Append im Load-Pfad: Timestamp ist BUFFER-relativ (so wie er gespeichert
+    // wurde). KEINE Korrektur durch sourceStartSample — der saved Timestamp
+    // enthaelt sourceStartSample bereits. addMessage() vs addMessageRaw():
+    // addMessage rechnet die User-Klick-Position in Buffer-Zeit um (addiert
+    // sourceStartSample), addMessageRaw nimmt die Buffer-Zeit direkt.
+    void addMessageRaw(juce::MidiMessage* m, juce::int64 bufferTimestamp);
     MidiMessage* getMessageAt(int index) {
         return midiMessageList.at(index);
     }
