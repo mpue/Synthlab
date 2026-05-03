@@ -1,3 +1,9 @@
+# Project Status (May 2026)
+
+Reactivated for the `the-big-overhaul` branch — see
+[docs/the-big-overhaul-status.md](docs/the-big-overhaul-status.md) for the
+current work plan, architecture rules and baseline findings.
+
 # Project Status (February 2026)
 
 After 466 commits and years of work, I'm archiving this project.
