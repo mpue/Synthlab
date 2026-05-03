@@ -236,8 +236,11 @@ void MidiRegion::paint(Graphics& g) {
     }
 
     g.setColour(juce::Colours::white.withAlpha(0.85f));
-    double visibleTime = (getNumSamples() / sampleRate);
-    midiThumbnail->drawChannels(g, 0.0, visibleTime, 1.0f);
+    if (midiThumbnail != nullptr && sampleRate > 0.0)
+    {
+        const double visibleTime = (double) getNumSamples() / sampleRate;
+        midiThumbnail->drawChannels(g, 0.0, visibleTime, 1.0f);
+    }
 }
 
 void MidiRegion::resized() {
