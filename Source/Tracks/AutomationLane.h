@@ -68,7 +68,7 @@ public:
     {
         boundLane = lane;
         selectedIndices.clear();
-        dragOrigins.clear();
+        dragSlots.clear();
         repaint();
     }
 
@@ -199,7 +199,7 @@ public:
             dragMode      = DragMode::movePoints;
             dragStartX    = e.x;
             dragStartY    = e.y;
-            captureDragOriginsForSelected();
+            captureDragSlotsForSelected();
             repaint();
             return;
         }
@@ -222,7 +222,7 @@ public:
         dragMode    = DragMode::movePoints;
         dragStartX  = e.x;
         dragStartY  = e.y;
-        captureDragOriginsForSelected();
+        captureDragSlotsForSelected();
         repaint();
     }
 
@@ -245,50 +245,46 @@ public:
             return;
         }
 
-        if (dragMode == DragMode::movePoints && !selectedIndices.empty())
+        if (dragMode == DragMode::movePoints && !dragSlots.empty())
         {
             auto* lane = activeLane();
             if (lane == nullptr) return;
 
+            // Delta IMMER relativ zur Original-Mausposition. dragStartX/Y und
+            // die Origin-Positionen in dragSlots[] werden waehrend des Drags
+            // NICHT veraendert — sonst akkumuliert sich die Bewegung.
             const int dxPix = e.x - dragStartX;
             const int dyPix = e.y - dragStartY;
 
-            // Punkte neu berechnen: aus dragOrigins die Soll-Werte ableiten,
-            // Lane neu aufbauen, danach Selektion auf die neuen Indizes mappen.
-            // Wir loeschen die Originalpunkte und fuegen die verschobenen neu
-            // ein (idempotent ueber addOrReplacePoint).
-            std::vector<std::pair<juce::int64, float>> newTargets;
-            for (auto& kv : dragOrigins)
+            // Erst die Punkte loeschen, die wir im LETZTEN Frame platziert
+            // haben (currentSample). Beim allerersten Frame sind currentSample
+            // == origSample, also werden die Originale weggeraeumt.
+            for (const auto& s : dragSlots)
+                lane->removePointAt(s.currentSample);
+
+            // Ziel-Position aus der ORIGINAL-Position + delta-from-start
+            // berechnen — so bleibt 1px Mausbewegung == 1px Punktbewegung.
+            for (auto& s : dragSlots)
             {
-                const auto origSample = kv.second.first;
-                const auto origValue  = kv.second.second;
-                const int origPx      = sampleToPixel(origSample);
-                const float origPy    = valueToY(origValue);
+                const int origPx = sampleToPixel(s.origSample);
+                const float origPy = valueToY(s.origValue);
                 const juce::int64 newSample = juce::jmax((juce::int64) 0,
                                                          applySnap(pixelToSample(origPx + dxPix)));
                 const float newValue        = juce::jlimit(0.0f, 1.0f,
                                                            yToValue((int) origPy + dyPix));
-                newTargets.emplace_back(newSample, newValue);
+                lane->addOrReplacePoint(newSample, newValue);
+                s.currentSample = newSample;
+                s.currentValue  = newValue;
             }
-            // Original-Sampletimes loeschen.
-            for (auto& kv : dragOrigins)
-                lane->removePointAt(kv.second.first);
-            // Neue Targets einsetzen.
-            for (auto& t : newTargets)
-                lane->addOrReplacePoint(t.first, t.second);
 
-            // Selektion neu zusammensetzen aus den neuen Sampletimes.
+            // Selektions-Indizes auf die neuen Punkt-Positionen mappen.
             selectedIndices.clear();
             const auto& pts = lane->getPoints();
-            std::set<juce::int64> newSamples;
-            for (auto& t : newTargets) newSamples.insert(t.first);
+            std::set<juce::int64> targetSamples;
+            for (const auto& s : dragSlots) targetSamples.insert(s.currentSample);
             for (size_t i = 0; i < pts.size(); ++i)
-                if (newSamples.count(pts[i].sampleTime) > 0)
+                if (targetSamples.count(pts[i].sampleTime) > 0)
                     selectedIndices.insert((int) i);
-
-            // dragOrigins fuer den naechsten Frame auf die NEUEN Positionen
-            // setzen, damit weitere Drag-Schritte relativ zur Origin laufen.
-            captureDragOriginsForSelected();
 
             repaint();
         }
@@ -298,7 +294,7 @@ public:
     {
         if (dragMode == DragMode::selectionBox) selectionBoxActive = false;
         dragMode = DragMode::none;
-        dragOrigins.clear();
+        dragSlots.clear();
         repaint();
     }
 
@@ -445,13 +441,18 @@ private:
         }
     }
 
-    void captureDragOriginsForSelected()
+    void captureDragSlotsForSelected()
     {
-        dragOrigins.clear();
+        dragSlots.clear();
         const auto& pts = getPoints();
         for (int i : selectedIndices)
             if (i >= 0 && i < (int) pts.size())
-                dragOrigins[i] = { pts[(size_t) i].sampleTime, pts[(size_t) i].value };
+            {
+                DragSlot s;
+                s.origSample    = s.currentSample = pts[(size_t) i].sampleTime;
+                s.origValue     = s.currentValue  = pts[(size_t) i].value;
+                dragSlots.push_back(s);
+            }
     }
 
     void removeIndexFromSelection(int removedIdx)
@@ -495,7 +496,19 @@ private:
     synthlab::automation::Lane  scratchLane;
 
     std::set<int> selectedIndices;
-    std::map<int, std::pair<juce::int64, float>> dragOrigins;
+
+    // Drag-Tracking pro selektiertem Punkt:
+    //   orig*    — Position bei Drag-Start, fest, fuer die Ziel-Berechnung
+    //   current* — wo wir den Punkt im LETZTEN Frame platziert haben, fuer
+    //              das Loeschen des alten Eintrags vorm Re-Insert
+    struct DragSlot {
+        juce::int64 origSample    = 0;
+        float       origValue     = 0.0f;
+        juce::int64 currentSample = 0;
+        float       currentValue  = 0.0f;
+    };
+    std::vector<DragSlot> dragSlots;
+
     DragMode dragMode = DragMode::none;
     int      dragStartX = 0, dragStartY = 0;
     bool     selectionBoxActive = false;
