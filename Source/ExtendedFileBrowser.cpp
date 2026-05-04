@@ -150,22 +150,25 @@ void ExtendedFileBrowser::resized() {
         setSize(getParentWidth(), getParentHeight());
     }
 
-    const int top    = 25;
+    // Layout:  Buttons-Reihe (y=0..20) | Filter-Reihe (y=25..47) | Tabelle/Tree
+    // Der Filter liegt direkt unterhalb der Drive/Mode-Buttons. Die
+    // Tabelle/der Tree starten dahinter.
+    const int filterY = 25;
     const int filterH = 22;
-    const int filterY = juce::jmax(top, getHeight() - filterH - 4);
 
     if (filterLabel != nullptr)
         filterLabel->setBounds(4, filterY, 36, filterH);
     if (filterEditor != nullptr)
         filterEditor->setBounds(40, filterY, juce::jmax(40, getWidth() - 44), filterH);
 
-    const int contentH = juce::jmax(0, filterY - top - 4);
+    const int contentTop = filterY + filterH + 4;
+    const int contentH   = juce::jmax(0, getHeight() - contentTop);
 
-    view->setBounds(0, top, getWidth(), contentH);
+    view->setBounds(0, contentTop, getWidth(), contentH);
     table->setSize(getWidth(), juce::jmax(0, contentH - 5));
 
     if (tree != nullptr)
-        tree->setBounds(0, top, getWidth(), contentH);
+        tree->setBounds(0, contentTop, getWidth(), contentH);
 }
 
 void ExtendedFileBrowser::applyFilter() {
