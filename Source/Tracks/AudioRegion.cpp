@@ -27,19 +27,31 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
     this->thumbnail = new AudioThumbnail(512, manager, *this->thumbnailCache);
     this->thumbnail->addChangeListener(this);
     
-    audioBuffer = new AudioSampleBuffer(2, numSamples);
+    audioBuffer = new AudioSampleBuffer(2, (int) numSamples);
+    audioBuffer->clear();
 
-    if (other->getBuffer()->getNumChannels() == 1) {
-        audioBuffer->copyFrom(0, 0, *other->getBuffer(), 0, startSample, numSamples);
-        audioBuffer->copyFrom(1, 0, *other->getBuffer(), 0, startSample, numSamples);
+    // Out-of-bounds-Schutz: wenn der Aufrufer numSamples > "verfuegbare
+    // Source-Samples ab startSample" angefragt hat (Resize-zurueck ueber das
+    // Original hinaus), nur den verfuegbaren Teil kopieren — der Rest bleibt
+    // Stille. Vermeidet UB im copyFrom.
+    if (other != nullptr && other->getBuffer() != nullptr) {
+        const auto& src = *other->getBuffer();
+        const long srcLen   = (long) src.getNumSamples();
+        const long s0       = juce::jlimit(0L, srcLen, (long) startSample);
+        const long copyLen  = juce::jlimit(0L, srcLen - s0, (long) numSamples);
+        if (copyLen > 0) {
+            if (src.getNumChannels() == 1) {
+                audioBuffer->copyFrom(0, 0, src, 0, (int) s0, (int) copyLen);
+                audioBuffer->copyFrom(1, 0, src, 0, (int) s0, (int) copyLen);
+            } else {
+                audioBuffer->copyFrom(0, 0, src, 0, (int) s0, (int) copyLen);
+                audioBuffer->copyFrom(1, 0, src, 1, (int) s0, (int) copyLen);
+            }
+        }
     }
-    else {
-        audioBuffer->copyFrom(0, 0, *other->getBuffer(), 0, startSample, numSamples);
-        audioBuffer->copyFrom(1, 0, *other->getBuffer(), 1, startSample, numSamples);
-    }
-        
+
     this->thumbnail->reset(2, sampleRate);
-    this->thumbnail->addBlock(0, *audioBuffer, 0, numSamples);
+    this->thumbnail->addBlock(0, *audioBuffer, 0, (int) numSamples);
     
     this->name = other->getName();
     

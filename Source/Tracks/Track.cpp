@@ -160,9 +160,16 @@ void Track::duplicateRegion(Region* region) {
 		// Berechne die tatsächliche Anzahl der Samples (berücksichtigt Resizing)
 		int numSamplesToCopy = _region->getNumSamples();
 
-		// Erstelle Duplikat mit NUR den tatsächlich verwendeten Samples
-		// Verwende den Konstruktor, der startSample und numSamples akzeptiert
-		AudioRegion* duplicate = new AudioRegion(_region, *manager, sampleRate, 0, numSamplesToCopy);
+		// Bei links-getrimmtem Original liegt der sichtbare Inhalt im Buffer
+		// erst ab sourceStartSample. Wenn wir hier weiter mit startSample=0
+		// kopieren, bekommt das Duplikat die abgeschnittene Front statt der
+		// sichtbaren Region — und Track::getSample (das jetzt mit
+		// inSource=sample-offset+sourceStartSample liest) findet im
+		// Duplikat-Buffer auch nichts Sinnvolles. Daher den Source-Offset
+		// uebernehmen; das Duplikat selbst bleibt konsolidiert (sss=0).
+		const long srcStart = (long) _region->getSourceStartSample();
+
+		AudioRegion* duplicate = new AudioRegion(_region, *manager, sampleRate, srcStart, numSamplesToCopy);
 		duplicate->setDragger(dragger);
 
 		// Berechne die neue X-Position: direkt nach der ursprünglichen Region
@@ -203,13 +210,22 @@ void Track::duplicateRegion(Region* region) {
 			duplicate->setZoom(zoom);
 
 		// Kopiere nur die tatsächlich verwendeten Samples in den Track-Buffer
-		if (duplicate->getBuffer()->getNumChannels() == 1) {
-			audioBuffer->copyFrom(0, newSampleOffset, *duplicate->getBuffer(), 0, 0, numSamplesToCopy);
-			audioBuffer->copyFrom(1, newSampleOffset, *duplicate->getBuffer(), 0, 0, numSamplesToCopy);
-		}
-		else {
-			audioBuffer->copyFrom(0, newSampleOffset, *duplicate->getBuffer(), 0, 0, numSamplesToCopy);
-			audioBuffer->copyFrom(1, newSampleOffset, *duplicate->getBuffer(), 1, 0, numSamplesToCopy);
+		// (Magnitude-Anzeige). audioBuffer kann kuerzer sein, wenn die Region
+		// ueber das Track-Ende hinausragt — clampen.
+		if (audioBuffer != nullptr && duplicate->getBuffer() != nullptr) {
+			const long copyLen = juce::jmin((long) numSamplesToCopy,
+			                                (long) audioBuffer->getNumSamples() - newSampleOffset,
+			                                (long) duplicate->getBuffer()->getNumSamples());
+			if (copyLen > 0) {
+				if (duplicate->getBuffer()->getNumChannels() == 1) {
+					audioBuffer->copyFrom(0, newSampleOffset, *duplicate->getBuffer(), 0, 0, (int) copyLen);
+					audioBuffer->copyFrom(1, newSampleOffset, *duplicate->getBuffer(), 0, 0, (int) copyLen);
+				}
+				else {
+					audioBuffer->copyFrom(0, newSampleOffset, *duplicate->getBuffer(), 0, 0, (int) copyLen);
+					audioBuffer->copyFrom(1, newSampleOffset, *duplicate->getBuffer(), 1, 0, (int) copyLen);
+				}
+			}
 		}
 
 		repaint();
@@ -242,8 +258,11 @@ Region* Track::pasteRegion(Region* source, long targetSampleOffset) {
 			return nullptr;
 
 		const int numSamplesToCopy = a->getNumSamples();
+		// Bei links-getrimmtem Source den sichtbaren Inhalt kopieren, nicht
+		// das Pre-Trim-Material. Siehe duplicateRegion fuer Details.
+		const long srcStart = (long) a->getSourceStartSample();
 
-		AudioRegion* duplicate = new AudioRegion(a, *manager, sampleRate, 0, numSamplesToCopy);
+		AudioRegion* duplicate = new AudioRegion(a, *manager, sampleRate, srcStart, numSamplesToCopy);
 		duplicate->setDragger(dragger);
 
 		long newSampleOffset = findNextFreeOffset(nullptr, targetSampleOffset, numSamplesToCopy);
@@ -271,14 +290,21 @@ Region* Track::pasteRegion(Region* source, long targetSampleOffset) {
 			duplicate->setZoom(zoom);
 
 		// Mirror the duplicate's audio into the track's shared audioBuffer
-		// at the new offset, matching what duplicateRegion does.
-		if (duplicate->getBuffer()->getNumChannels() == 1) {
-			audioBuffer->copyFrom(0, newSampleOffset, *duplicate->getBuffer(), 0, 0, numSamplesToCopy);
-			audioBuffer->copyFrom(1, newSampleOffset, *duplicate->getBuffer(), 0, 0, numSamplesToCopy);
-		}
-		else {
-			audioBuffer->copyFrom(0, newSampleOffset, *duplicate->getBuffer(), 0, 0, numSamplesToCopy);
-			audioBuffer->copyFrom(1, newSampleOffset, *duplicate->getBuffer(), 1, 0, numSamplesToCopy);
+		// at the new offset (Magnitude). Mit Out-of-bounds-Schutz.
+		if (audioBuffer != nullptr && duplicate->getBuffer() != nullptr) {
+			const long copyLen = juce::jmin((long) numSamplesToCopy,
+			                                (long) audioBuffer->getNumSamples() - newSampleOffset,
+			                                (long) duplicate->getBuffer()->getNumSamples());
+			if (copyLen > 0) {
+				if (duplicate->getBuffer()->getNumChannels() == 1) {
+					audioBuffer->copyFrom(0, newSampleOffset, *duplicate->getBuffer(), 0, 0, (int) copyLen);
+					audioBuffer->copyFrom(1, newSampleOffset, *duplicate->getBuffer(), 0, 0, (int) copyLen);
+				}
+				else {
+					audioBuffer->copyFrom(0, newSampleOffset, *duplicate->getBuffer(), 0, 0, (int) copyLen);
+					audioBuffer->copyFrom(1, newSampleOffset, *duplicate->getBuffer(), 1, 0, (int) copyLen);
+				}
+			}
 		}
 
 		repaint();
