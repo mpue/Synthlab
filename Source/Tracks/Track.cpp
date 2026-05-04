@@ -243,7 +243,13 @@ void Track::duplicateRegion(Region* region) {
 		const int newX = (int)((double)newOffset / sampleRate * zoom);
 		MidiRegion* clone = mregion->clone(newOffset);
 		clone->setDragger(dragger);
+		// Resize-Handler beim initialen Bounds-Set ausschalten — gleiche
+		// Logik wie im AudioRegion-Pfad: das setBounds aendert X und Width
+		// gleichzeitig, der combined-resize-Branch in MidiRegion wuerde das
+		// sonst als User-Trim verstehen und sourceStartSample falsch setzen.
+		clone->setBoundsUpdateInProgress(true);
 		clone->setBounds(newX, 0, region->getWidth(), getHeight());
+		clone->setBoundsUpdateInProgress(false);
 		clone->addChangeListener(this);
 
 		this->regions.push_back(clone);
@@ -328,7 +334,9 @@ Region* Track::pasteRegion(Region* source, long targetSampleOffset) {
 
 		MidiRegion* clone = m->clone(newOffset);
 		clone->setDragger(dragger);
+		clone->setBoundsUpdateInProgress(true);
 		clone->setBounds(newX, 0, source->getWidth(), getHeight());
+		clone->setBoundsUpdateInProgress(false);
 		clone->addChangeListener(this);
 
 		// Cross-Track-Paste: Quell-Region kann auf einem anderen MIDI-Kanal
