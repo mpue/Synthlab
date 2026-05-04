@@ -58,11 +58,23 @@ public:
         return juce::var();
     }
 
+    // Verwirft den rekursiven Audio-Cache — z.B. wenn das aktuelle
+    // Verzeichnis geaendert wurde.
+    void invalidateRecursiveCache() { recursiveCacheValid = false; }
+
 private:
+    // Baut bei Bedarf eine rekursive Liste aller Audio-Files unter
+    // currentDirectory (lazy). Wird ueber rebuildSorted aufgerufen.
+    void ensureRecursiveAudioCache();
+    static bool isAudioFile(const juce::File& f);
+
     juce::DirectoryContentsList* directoryList;
     juce::String currentDirectory;
     juce::String filterText;
     std::vector<juce::File> sortedFiles;
+    std::vector<juce::File> recursiveAudioCache; // Audio-Files unter currentDirectory
+    juce::String            recursiveCacheDir;    // Pfad fuer den der Cache gilt
+    bool                    recursiveCacheValid = false;
 };
 
 class FileTreeItem : public juce::TreeViewItem {

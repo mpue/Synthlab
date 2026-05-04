@@ -426,6 +426,37 @@ void FileBrowserModel::paintRowBackground (Graphics& g,
 void FileBrowserModel::setCurrentDir(juce::File* dir){
     this->currentDirectory = dir->getFullPathName();
     directoryList->setDirectory(*dir, true, true);
+    // Verzeichnis gewechselt -> rekursiver Audio-Cache nicht mehr gueltig.
+    invalidateRecursiveCache();
+}
+
+bool FileBrowserModel::isAudioFile(const juce::File& f) {
+    if (f.isDirectory()) return false;
+    auto ext = f.getFileExtension().toLowerCase();
+    if (ext.isEmpty()) return false;
+    // Hand-gepflegte Whitelist statt einer breiten Suche — was hier nicht
+    // dabei ist, kann der Default-Sampler ohnehin nicht laden.
+    return ext == ".wav" || ext == ".aif" || ext == ".aiff"
+        || ext == ".mp3" || ext == ".ogg" || ext == ".flac";
+}
+
+void FileBrowserModel::ensureRecursiveAudioCache() {
+    if (recursiveCacheValid && recursiveCacheDir == currentDirectory)
+        return;
+
+    recursiveAudioCache.clear();
+    recursiveCacheDir = currentDirectory;
+
+    juce::File root(currentDirectory);
+    if (root.isDirectory()) {
+        for (juce::DirectoryEntry entry : juce::RangedDirectoryIterator(
+                 root, /*recursive*/ true, "*", juce::File::findFiles)) {
+            const juce::File f = entry.getFile();
+            if (isAudioFile(f))
+                recursiveAudioCache.push_back(f);
+        }
+    }
+    recursiveCacheValid = true;
 }
 
 void FileBrowserModel::update() {
@@ -441,19 +472,15 @@ void FileBrowserModel::rebuildSorted() {
 
     if (filterText.isNotEmpty()) {
         // Mit aktivem Filter: rekursive Suche unter currentDirectory und
-        // flache Trefferliste anzeigen — keine Ordner, der Nutzer soll nicht
-        // mehr in Subfolders durchwuehlen muessen. RangedDirectoryIterator
-        // mit recursive=true macht das in einem Rutsch.
-        juce::File root (currentDirectory);
-        if (root.isDirectory()) {
-            for (juce::DirectoryEntry entry : juce::RangedDirectoryIterator(
-                     root, /*recursive*/ true, "*", juce::File::findFiles)) {
-                juce::File f = entry.getFile();
-                if (f.getFileName().containsIgnoreCase(filterText))
-                    sortedFiles.push_back(f);
-            }
-            std::sort(sortedFiles.begin(), sortedFiles.end(), cmp);
-        }
+        // flache Trefferliste — auf Audio-Formate beschraenkt. Den
+        // rekursiven Walk machen wir nur EINMAL pro Verzeichnis (Cache),
+        // jeder weitere Tastendruck filtert nur noch im Cache.
+        ensureRecursiveAudioCache();
+        sortedFiles.reserve(recursiveAudioCache.size());
+        for (const auto& f : recursiveAudioCache)
+            if (f.getFileName().containsIgnoreCase(filterText))
+                sortedFiles.push_back(f);
+        std::sort(sortedFiles.begin(), sortedFiles.end(), cmp);
         return;
     }
 
