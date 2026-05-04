@@ -180,10 +180,28 @@ void ExtendedFileBrowser::applyFilter() {
         table->updateContent();
         table->repaint();
     }
-    // Tree-Mode: komplett neu aufbauen, damit FileTreeItem::loadChildren
-    // den aktuellen Filter beim Sammeln der Children anwendet.
-    if (mode == Mode::Tree)
-        rebuildTree();
+
+    const bool filterActive = filterText.isNotEmpty();
+
+    // Wenn ein Filter aktiv ist, blenden wir den Tree aus und zeigen die
+    // flache Trefferliste in der Tabelle — egal welchen Mode der Nutzer
+    // sonst eingestellt hat. Sobald der Filter wieder leer ist, kehrt der
+    // urspruengliche Mode zurueck.
+    if (filterActive) {
+        if (tree != nullptr) tree->setVisible(false);
+        if (view != nullptr) view->setVisible(true);
+    } else {
+        if (mode == Mode::Tree) {
+            if (view != nullptr) view->setVisible(false);
+            if (tree != nullptr) {
+                tree->setVisible(true);
+                rebuildTree(); // Tree neu aus aktuellem Verzeichnis aufbauen
+            }
+        } else {
+            if (tree != nullptr) tree->setVisible(false);
+            if (view != nullptr) view->setVisible(true);
+        }
+    }
 }
 
 void ExtendedFileBrowser::changeListenerCallback (ChangeBroadcaster* source) {
@@ -417,30 +435,43 @@ void FileBrowserModel::update() {
 void FileBrowserModel::rebuildSorted() {
     sortedFiles.clear();
 
+    auto cmp = [](const juce::File& a, const juce::File& b) {
+        return a.getFileName().compareIgnoreCase(b.getFileName()) < 0;
+    };
+
+    if (filterText.isNotEmpty()) {
+        // Mit aktivem Filter: rekursive Suche unter currentDirectory und
+        // flache Trefferliste anzeigen — keine Ordner, der Nutzer soll nicht
+        // mehr in Subfolders durchwuehlen muessen. RangedDirectoryIterator
+        // mit recursive=true macht das in einem Rutsch.
+        juce::File root (currentDirectory);
+        if (root.isDirectory()) {
+            for (juce::DirectoryEntry entry : juce::RangedDirectoryIterator(
+                     root, /*recursive*/ true, "*", juce::File::findFiles)) {
+                juce::File f = entry.getFile();
+                if (f.getFileName().containsIgnoreCase(filterText))
+                    sortedFiles.push_back(f);
+            }
+            std::sort(sortedFiles.begin(), sortedFiles.end(), cmp);
+        }
+        return;
+    }
+
+    // Kein Filter: normales Verhalten — Verzeichnisse oben, Files unten.
     const int n = directoryList->getNumFiles();
     std::vector<juce::File> dirs;
     std::vector<juce::File> files;
     dirs.reserve(n);
     files.reserve(n);
 
-    const bool hasFilter = filterText.isNotEmpty();
-
     for (int i = 0; i < n; ++i) {
         juce::File f = directoryList->getFile(i);
-        if (f.isDirectory()) {
-            // Verzeichnisse bleiben sichtbar — sonst koennte der Nutzer nicht
-            // navigieren.
+        if (f.isDirectory())
             dirs.push_back(f);
-        } else {
-            if (hasFilter && !f.getFileName().containsIgnoreCase(filterText))
-                continue;
+        else
             files.push_back(f);
-        }
     }
 
-    auto cmp = [](const juce::File& a, const juce::File& b) {
-        return a.getFileName().compareIgnoreCase(b.getFileName()) < 0;
-    };
     std::sort(dirs.begin(), dirs.end(), cmp);
     std::sort(files.begin(), files.end(), cmp);
 
