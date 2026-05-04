@@ -40,6 +40,12 @@ public:
         return currentDirectory;
     }
 
+    // Filter-String (case-insensitive substring). Wird in rebuildSorted()
+    // beruecksichtigt, Verzeichnisse bleiben sichtbar (sonst koennte der
+    // Nutzer nicht navigieren).
+    void setFilter(const juce::String& f) { filterText = f.trim(); }
+    const juce::String& getFilter() const { return filterText; }
+
     juce::var getDragSourceDescription (const juce::SparseSet<int>& currentlySelectedRows) override{
 
         if (!currentlySelectedRows.getTotalRange().isEmpty()) {
@@ -55,6 +61,7 @@ public:
 private:
     juce::DirectoryContentsList* directoryList;
     juce::String currentDirectory;
+    juce::String filterText;
     std::vector<juce::File> sortedFiles;
 };
 
@@ -125,8 +132,13 @@ public:
     void treeItemSelected(const juce::File& file);
     void treeItemDoubleClicked(const juce::File& file);
 
+    // Filter-Text fuer Tree-Mode-Filterung — FileTreeItem::loadChildren
+    // fragt den ab, um non-Directories beim Sammeln auszufiltern.
+    juce::String getFilterText() const { return filterText; }
+
 private:
     void rebuildTree();
+    void applyFilter();
 
     FileBrowserModel* model = nullptr;
     const juce::File& initialDir;
@@ -137,6 +149,9 @@ private:
     juce::TreeView* tree = nullptr;
     FileTreeItem* treeRoot = nullptr;
     juce::TextButton* modeButton = nullptr;
+    juce::TextEditor* filterEditor = nullptr;
+    juce::Label*      filterLabel  = nullptr;
+    juce::String      filterText;
     Mode mode = Mode::Flat;
     Sampler* sampler;
     bool playing = false;

@@ -79,6 +79,30 @@ ExtendedFileBrowser::ExtendedFileBrowser(const File& initialFileOrDirectory,cons
     sampler = Project::getInstance()->getDefaultSampler();
     table->addMouseListener(this, true);
 
+    // Filter-Eingabezeile unten links — substring-match (case-insensitive).
+    // Greift sowohl im Flat- als auch im Tree-Mode. Verzeichnisse bleiben
+    // immer sichtbar, damit der Nutzer noch navigieren kann.
+    filterLabel = new juce::Label({}, "Filter");
+    filterLabel->setColour(juce::Label::textColourId, juce::Colours::white);
+    filterLabel->setFont(juce::Font(11.0f));
+    addAndMakeVisible(filterLabel);
+
+    filterEditor = new juce::TextEditor();
+    filterEditor->setColour(juce::TextEditor::backgroundColourId, juce::Colour(0xff2a2a2a));
+    filterEditor->setColour(juce::TextEditor::textColourId, juce::Colours::white);
+    filterEditor->setColour(juce::TextEditor::outlineColourId, juce::Colour(0xff4d9eff).withAlpha(0.5f));
+    filterEditor->setTextToShowWhenEmpty("type to filter samples...", juce::Colours::grey);
+    filterEditor->onTextChange = [this]() {
+        filterText = filterEditor->getText().trim();
+        applyFilter();
+    };
+    filterEditor->onEscapeKey = [this]() {
+        filterEditor->setText({}, juce::dontSendNotification);
+        filterText.clear();
+        applyFilter();
+    };
+    addAndMakeVisible(filterEditor);
+
     loadState();
 
     model->update();
@@ -102,6 +126,8 @@ ExtendedFileBrowser::~ExtendedFileBrowser() {
         delete driveButtons.at(i);
     }
     delete modeButton;
+    delete filterEditor;
+    delete filterLabel;
 }
 
 void ExtendedFileBrowser::mouseDrag(const juce::MouseEvent &event) {
@@ -124,12 +150,37 @@ void ExtendedFileBrowser::resized() {
         setSize(getParentWidth(), getParentHeight());
     }
 
-    const int top = 25;
-    view->setBounds(0, top, getWidth(), juce::jmax(0, getHeight() - top));
-    table->setSize(getWidth(), juce::jmax(0, getHeight() - top - 5));
+    const int top    = 25;
+    const int filterH = 22;
+    const int filterY = juce::jmax(top, getHeight() - filterH - 4);
+
+    if (filterLabel != nullptr)
+        filterLabel->setBounds(4, filterY, 36, filterH);
+    if (filterEditor != nullptr)
+        filterEditor->setBounds(40, filterY, juce::jmax(40, getWidth() - 44), filterH);
+
+    const int contentH = juce::jmax(0, filterY - top - 4);
+
+    view->setBounds(0, top, getWidth(), contentH);
+    table->setSize(getWidth(), juce::jmax(0, contentH - 5));
 
     if (tree != nullptr)
-        tree->setBounds(0, top, getWidth(), juce::jmax(0, getHeight() - top));
+        tree->setBounds(0, top, getWidth(), contentH);
+}
+
+void ExtendedFileBrowser::applyFilter() {
+    if (model != nullptr) {
+        model->setFilter(filterText);
+        model->rebuildSorted();
+    }
+    if (table != nullptr) {
+        table->updateContent();
+        table->repaint();
+    }
+    // Tree-Mode: komplett neu aufbauen, damit FileTreeItem::loadChildren
+    // den aktuellen Filter beim Sammeln der Children anwendet.
+    if (mode == Mode::Tree)
+        rebuildTree();
 }
 
 void ExtendedFileBrowser::changeListenerCallback (ChangeBroadcaster* source) {
@@ -369,12 +420,19 @@ void FileBrowserModel::rebuildSorted() {
     dirs.reserve(n);
     files.reserve(n);
 
+    const bool hasFilter = filterText.isNotEmpty();
+
     for (int i = 0; i < n; ++i) {
         juce::File f = directoryList->getFile(i);
-        if (f.isDirectory())
+        if (f.isDirectory()) {
+            // Verzeichnisse bleiben sichtbar — sonst koennte der Nutzer nicht
+            // navigieren.
             dirs.push_back(f);
-        else
+        } else {
+            if (hasFilter && !f.getFileName().containsIgnoreCase(filterText))
+                continue;
             files.push_back(f);
+        }
     }
 
     auto cmp = [](const juce::File& a, const juce::File& b) {
@@ -504,13 +562,19 @@ void FileTreeItem::loadChildren() {
     juce::Array<juce::File> dirs;
     juce::Array<juce::File> files;
 
+    const juce::String filter = (owner != nullptr) ? owner->getFilterText() : juce::String();
+    const bool hasFilter = filter.isNotEmpty();
+
     for (juce::DirectoryEntry entry : juce::RangedDirectoryIterator(file, false, "*",
             juce::File::findFilesAndDirectories)) {
         juce::File child = entry.getFile();
-        if (child.isDirectory())
+        if (child.isDirectory()) {
             dirs.add(child);
-        else
+        } else {
+            if (hasFilter && !child.getFileName().containsIgnoreCase(filter))
+                continue;
             files.add(child);
+        }
     }
 
     auto cmp = [](const juce::File& a, const juce::File& b) {
