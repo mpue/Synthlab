@@ -15,10 +15,19 @@
 
 class ExtendedFileBrowser;
 
-class FileBrowserModel : public juce::TableListBoxModel {
+class FileBrowserModel : public juce::TableListBoxModel,
+                         private juce::Thread {
 public:
 
     FileBrowserModel(juce::DirectoryContentsList* directoryList, juce::File& initalDir);
+    ~FileBrowserModel() override;
+
+    // Wird im Anschluss an einen Background-Scan auf dem MessageThread
+    // gerufen — typischerweise haengt der Browser hier ein
+    // table->updateContent() / repaint() ein.
+    std::function<void()> onScanFinished;
+
+    bool isScanning() const noexcept { return scanInProgress.load(); }
 
     virtual void paintRowBackground (juce::Graphics& g,
                                      int rowNumber,
@@ -59,22 +68,31 @@ public:
     }
 
     // Verwirft den rekursiven Audio-Cache — z.B. wenn das aktuelle
-    // Verzeichnis geaendert wurde.
-    void invalidateRecursiveCache() { recursiveCacheValid = false; }
+    // Verzeichnis geaendert wurde. Bricht einen laufenden Scan ab.
+    void invalidateRecursiveCache();
 
 private:
-    // Baut bei Bedarf eine rekursive Liste aller Audio-Files unter
-    // currentDirectory (lazy). Wird ueber rebuildSorted aufgerufen.
-    void ensureRecursiveAudioCache();
+    // Startet den rekursiven Scan im Background-Thread, wenn der Cache
+    // noch nicht gueltig ist. Nicht-blockierend.
+    void requestRecursiveScan();
+
+    // Thread::run() — fuehrt den rekursiven Walk durch und published
+    // das Ergebnis in den Cache, dann onScanFinished via callAsync.
+    void run() override;
+
     static bool isAudioFile(const juce::File& f);
 
     juce::DirectoryContentsList* directoryList;
     juce::String currentDirectory;
     juce::String filterText;
     std::vector<juce::File> sortedFiles;
-    std::vector<juce::File> recursiveAudioCache; // Audio-Files unter currentDirectory
-    juce::String            recursiveCacheDir;    // Pfad fuer den der Cache gilt
+
+    juce::CriticalSection   cacheLock;
+    std::vector<juce::File> recursiveAudioCache; // unter cacheLock geschuetzt
+    juce::String            recursiveCacheDir;
     bool                    recursiveCacheValid = false;
+    std::atomic<bool>       scanInProgress { false };
+    juce::String            scanTargetDir;        // was der laufende Scan gerade scannt
 };
 
 class FileTreeItem : public juce::TreeViewItem {

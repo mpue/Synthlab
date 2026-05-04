@@ -79,6 +79,10 @@ ExtendedFileBrowser::ExtendedFileBrowser(const File& initialFileOrDirectory,cons
     sampler = Project::getInstance()->getDefaultSampler();
     table->addMouseListener(this, true);
 
+    // Wenn der Background-Scan fertig ist: erneut filtern (jetzt aus dem
+    // gefuellten Cache) und Tabelle refreshen.
+    model->onScanFinished = [this]() { applyFilter(); };
+
     // Filter-Eingabezeile unten links — substring-match (case-insensitive).
     // Greift sowohl im Flat- als auch im Tree-Mode. Verzeichnisse bleiben
     // immer sichtbar, damit der Nutzer noch navigieren kann.
@@ -217,7 +221,10 @@ void ExtendedFileBrowser::mouseDown(const juce::MouseEvent &event) {
 
 	grabKeyboardFocus();
 
-    if (mode != Mode::Flat)
+    // Prelisten greift, sobald die Tabelle sichtbar ist — also entweder im
+    // Flat-Mode oder im Tree-Mode mit aktivem Filter (dann zeigen wir die
+    // flache Trefferliste in der Tabelle).
+    if (table == nullptr || ! table->isVisible())
         return;
 
     if (table->getSelectedRow() > 0) {
@@ -243,7 +250,7 @@ void ExtendedFileBrowser::mouseDown(const juce::MouseEvent &event) {
 
 void ExtendedFileBrowser::mouseDoubleClick(const juce::MouseEvent &event) {
 
-    if (mode != Mode::Flat)
+    if (table == nullptr || ! table->isVisible())
         return;
 
     if (table->getSelectedRow() > 0) {
@@ -355,13 +362,21 @@ void ExtendedFileBrowser::treeItemDoubleClicked(const juce::File& file) {
 // Model
 //===========================================================================
 
-FileBrowserModel::FileBrowserModel(DirectoryContentsList* directoryList, File& initalDir) {
+FileBrowserModel::FileBrowserModel(DirectoryContentsList* directoryList, File& initalDir)
+    : juce::Thread("BrowserScan") {
     this->directoryList = directoryList;
     this->currentDirectory = initalDir.getFullPathName();
     directoryList->setDirectory(initalDir, true,true);
 }
 
+FileBrowserModel::~FileBrowserModel() {
+    // Thread sauber abbrechen bevor Members verschwinden.
+    stopThread(2000);
+}
+
 int FileBrowserModel::getNumRows() {
+    if (scanInProgress.load())
+        return 1; // "Scanning..."-Zeile waehrend Background-Scan
     return (int)sortedFiles.size() + 1;
 }
 
@@ -377,7 +392,10 @@ void FileBrowserModel::paintCell (Graphics& g,
 
     if (columnId == 1) {
 
-        if (rowNumber > 0) {
+        if (scanInProgress.load() && rowNumber == 0) {
+            text = "Scanning audio files...";
+        }
+        else if (rowNumber > 0) {
             File f = getFileForRow(rowNumber);
             text = f.getFileName();
             if (f.isDirectory())
@@ -426,37 +444,72 @@ void FileBrowserModel::paintRowBackground (Graphics& g,
 void FileBrowserModel::setCurrentDir(juce::File* dir){
     this->currentDirectory = dir->getFullPathName();
     directoryList->setDirectory(*dir, true, true);
-    // Verzeichnis gewechselt -> rekursiver Audio-Cache nicht mehr gueltig.
     invalidateRecursiveCache();
+}
+
+void FileBrowserModel::invalidateRecursiveCache() {
+    // Laufenden Scan abbrechen und Cache verwerfen.
+    if (isThreadRunning())
+        stopThread(2000);
+    const juce::ScopedLock sl(cacheLock);
+    recursiveAudioCache.clear();
+    recursiveCacheDir.clear();
+    recursiveCacheValid = false;
 }
 
 bool FileBrowserModel::isAudioFile(const juce::File& f) {
     if (f.isDirectory()) return false;
     auto ext = f.getFileExtension().toLowerCase();
     if (ext.isEmpty()) return false;
-    // Hand-gepflegte Whitelist statt einer breiten Suche — was hier nicht
-    // dabei ist, kann der Default-Sampler ohnehin nicht laden.
+    // Hand-gepflegte Whitelist — was hier nicht dabei ist, kann der
+    // Default-Sampler ohnehin nicht laden.
     return ext == ".wav" || ext == ".aif" || ext == ".aiff"
         || ext == ".mp3" || ext == ".ogg" || ext == ".flac";
 }
 
-void FileBrowserModel::ensureRecursiveAudioCache() {
-    if (recursiveCacheValid && recursiveCacheDir == currentDirectory)
-        return;
+void FileBrowserModel::requestRecursiveScan() {
+    {
+        const juce::ScopedLock sl(cacheLock);
+        if (recursiveCacheValid && recursiveCacheDir == currentDirectory)
+            return; // Cache passt schon
+    }
+    if (scanInProgress.load() && scanTargetDir == currentDirectory)
+        return; // selber Scan laeuft schon
+    if (isThreadRunning())
+        stopThread(2000);
+    scanTargetDir = currentDirectory;
+    scanInProgress.store(true);
+    startThread();
+}
 
-    recursiveAudioCache.clear();
-    recursiveCacheDir = currentDirectory;
+void FileBrowserModel::run() {
+    const juce::String dir = scanTargetDir;
+    std::vector<juce::File> result;
 
-    juce::File root(currentDirectory);
+    juce::File root(dir);
     if (root.isDirectory()) {
         for (juce::DirectoryEntry entry : juce::RangedDirectoryIterator(
                  root, /*recursive*/ true, "*", juce::File::findFiles)) {
+            if (threadShouldExit()) return; // sauber abbrechen
             const juce::File f = entry.getFile();
             if (isAudioFile(f))
-                recursiveAudioCache.push_back(f);
+                result.push_back(f);
         }
     }
-    recursiveCacheValid = true;
+
+    {
+        const juce::ScopedLock sl(cacheLock);
+        recursiveAudioCache = std::move(result);
+        recursiveCacheDir   = dir;
+        recursiveCacheValid = true;
+    }
+    scanInProgress.store(false);
+
+    // Auf den MessageThread fallen lassen, damit der Browser
+    // table->updateContent() / repaint() machen kann ohne Race.
+    juce::MessageManager::callAsync([this]() {
+        if (onScanFinished) onScanFinished();
+    });
 }
 
 void FileBrowserModel::update() {
@@ -471,13 +524,24 @@ void FileBrowserModel::rebuildSorted() {
     };
 
     if (filterText.isNotEmpty()) {
-        // Mit aktivem Filter: rekursive Suche unter currentDirectory und
-        // flache Trefferliste — auf Audio-Formate beschraenkt. Den
-        // rekursiven Walk machen wir nur EINMAL pro Verzeichnis (Cache),
-        // jeder weitere Tastendruck filtert nur noch im Cache.
-        ensureRecursiveAudioCache();
-        sortedFiles.reserve(recursiveAudioCache.size());
-        for (const auto& f : recursiveAudioCache)
+        // Mit aktivem Filter: aus dem rekursiven Audio-Cache filtern. Wenn
+        // der Cache fuer das aktuelle Verzeichnis noch nicht gebaut ist,
+        // im Background-Thread anstossen (nicht-blockierend) und
+        // momentan eine leere Liste zeichnen — die UI bleibt antwortbar
+        // und der "Scanning..."-Indicator kommt aus getNumRows/paintCell.
+        bool cacheReady = false;
+        std::vector<juce::File> snapshot;
+        {
+            const juce::ScopedLock sl(cacheLock);
+            cacheReady = (recursiveCacheValid && recursiveCacheDir == currentDirectory);
+            if (cacheReady) snapshot = recursiveAudioCache;
+        }
+        if (!cacheReady) {
+            requestRecursiveScan();
+            return; // sortedFiles bleibt leer; getNumRows zeigt waehrenddessen "Scanning..."
+        }
+        sortedFiles.reserve(snapshot.size());
+        for (const auto& f : snapshot)
             if (f.getFileName().containsIgnoreCase(filterText))
                 sortedFiles.push_back(f);
         std::sort(sortedFiles.begin(), sortedFiles.end(), cmp);
