@@ -54,6 +54,12 @@ public:
     // barer Bereich startet bei Buffer-Position 0). AudioRegion und MidiRegion
     // ueberschreiben fuer Resize-vorne-Persistenz.
     virtual long getSourceStartSample() const { return 0; }
+
+    // Wenn external (Track::duplicateRegion / pasteRegion etc.) groessere
+    // Bounds-Updates macht, soll der Subclass-componentMovedOrResized-Handler
+    // diese als "kein User-Edit" behandeln und nichts neu berechnen. Selbe
+    // Semantik wie das intern fuer setZoom benutzte Flag.
+    void setBoundsUpdateInProgress(bool b) { zoomInProgress = b; }
     
     long getOldOffset();
     double getSampleRate();

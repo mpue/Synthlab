@@ -183,9 +183,15 @@ void Track::duplicateRegion(Region* region) {
 		newX = (int)((double)newSampleOffset / sampleRate * zoom);
 
 		// WICHTIG: Setze Bounds NACHDEM der Konstruktor die initiale Größe gesetzt hat
-		// und überschreibe die Breite mit der tatsächlichen Breite der Originalregion
+		// und überschreibe die Breite mit der tatsächlichen Breite der Originalregion.
+		// Flag setzen, damit der componentMovedOrResized-Handler dieses setBounds
+		// nicht als User-Resize interpretiert (er wuerde sonst sourceStartSample
+		// auf newSampleOffset hochsetzen, der Lookup im Track::getSample landete
+		// dann hinter dem Buffer-Inhalt und die Region waere stumm).
 		Rectangle<int>* bounds = new Rectangle<int>(0, 0, region->getWidth(), getHeight());
+		duplicate->setBoundsUpdateInProgress(true);
 		duplicate->setBounds(newX, 0, region->getWidth(), region->getHeight());
+		duplicate->setBoundsUpdateInProgress(false);
 		duplicate->setThumbnailBounds(bounds);
 		duplicate->setLoopCount(0);
 
@@ -269,7 +275,9 @@ Region* Track::pasteRegion(Region* source, long targetSampleOffset) {
 		int newX = (int)((double)newSampleOffset / sampleRate * zoom);
 
 		Rectangle<int>* bounds = new Rectangle<int>(0, 0, source->getWidth(), getHeight());
+		duplicate->setBoundsUpdateInProgress(true);
 		duplicate->setBounds(newX, 0, source->getWidth(), source->getHeight());
+		duplicate->setBoundsUpdateInProgress(false);
 		duplicate->setThumbnailBounds(bounds);
 		duplicate->setLoopCount(0);
 

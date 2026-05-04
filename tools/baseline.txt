@@ -20,5 +20,5 @@ TODO:Source/Project/Project.h:122              Phase 3 (snapshot/persistence)
 TODO:Source/RandomModule.cpp:125               Phase 7 cleanup
 TODO:Source/RandomModule.cpp:126               Phase 7 cleanup
 TODO:Source/SynthEditor.cpp:2684               Phase 7 cleanup
-TODO:Source/Tracks/Track.cpp:440               Phase 4 (region edits)
-TODO:Source/Tracks/Track.cpp:1160              Phase 7 cleanup
+TODO:Source/Tracks/Track.cpp:448               Phase 4 (region edits)
+TODO:Source/Tracks/Track.cpp:1168              Phase 7 cleanup
