@@ -2211,6 +2211,162 @@ void PianoRollComponent::addChord(int rootNote, double startTime, double duratio
     repaint();
 }
 
+void PianoRollComponent::insertPattern(Pattern p)
+{
+    if (midiRegion == nullptr) return;
+
+    // GM-Drum-Pitches — alle Drum-Patterns laufen auf Channel 10.
+    constexpr int kKick      = 36;
+    constexpr int kSnare     = 38;
+    constexpr int kClosedHat = 42;
+    constexpr int kOpenHat   = 46;
+    constexpr int kRide      = 51;
+    constexpr int kCrash     = 49;
+    constexpr int kDrumChan  = 10;
+
+    const double quarter   = (60.0 / bpm) * sampleRate;
+    const double bar       = quarter * 4.0;
+    const double eighth    = quarter / 2.0;
+    const double sixteenth = quarter / 4.0;
+    const double thirtysecond = quarter / 8.0;
+
+    // Anchor: aktueller Playback-Marker, sonst 0. Snap auf das aktive Grid,
+    // damit eingefuegte Patterns nicht mitten im Takt landen.
+    double anchor = playbackPosition >= 0.0 ? playbackPosition : 0.0;
+    if (snapToGrid) anchor = snapTimeToGrid(anchor);
+
+    // Snapshot von neuen Notes; addNotePair mutiert die midiMessageList und
+    // sortiert sie, also nicht waehrend der Schleife direkt einfuegen waere
+    // unnoetiger Overhead — wir koennen aber bedenkenlos addNotePair direkt
+    // rufen, weil das Pattern keine Selektion mutiert.
+    auto add = [&](int pitch, double offset, double dur, int vel, int ch) {
+        addNotePair(pitch, anchor + offset, dur, vel, ch);
+    };
+
+    // Hilfsfunktion: tiefste selektierte Note als Root, sonst MIDI 48 (C3).
+    auto melodicRoot = [&]() {
+        int lowest = 127;
+        bool found = false;
+        for (auto* on : selectedMessages)
+            if (on != nullptr && on->isNoteOn()) {
+                lowest = juce::jmin(lowest, on->getNoteNumber());
+                found = true;
+            }
+        return found ? lowest : 48;
+    };
+
+    switch (p) {
+        case Pattern::FourOnTheFloor: {
+            // Kick auf jede Viertel, leichtes Velocity-Akzent auf 1.
+            for (int i = 0; i < 4; ++i)
+                add(kKick, i * quarter, eighth, i == 0 ? 120 : 110, kDrumChan);
+            break;
+        }
+        case Pattern::EighthHat: {
+            // 8tel-Hihat ueber einen Takt, off-beats etwas leiser.
+            for (int i = 0; i < 8; ++i)
+                add(kClosedHat, i * eighth, sixteenth, (i % 2 == 0) ? 90 : 70, kDrumChan);
+            break;
+        }
+        case Pattern::SixteenthHat: {
+            // 16tel-Hihat, Akzent auf jeder Viertel.
+            for (int i = 0; i < 16; ++i) {
+                int vel = (i % 4 == 0) ? 100 : (i % 2 == 0 ? 75 : 60);
+                add(kClosedHat, i * sixteenth, thirtysecond, vel, kDrumChan);
+            }
+            break;
+        }
+        case Pattern::Backbeat: {
+            // Snare auf 2 und 4 (Backbeat).
+            add(kSnare, 1 * quarter, eighth, 110, kDrumChan);
+            add(kSnare, 3 * quarter, eighth, 110, kDrumChan);
+            break;
+        }
+        case Pattern::BoomBap: {
+            // Kick 1 + 3, Snare 2 + 4, plus 8tel-Hihat — klassisches Hip-Hop-Schema.
+            add(kKick, 0 * quarter, eighth, 120, kDrumChan);
+            add(kKick, 2 * quarter, eighth, 115, kDrumChan);
+            add(kSnare, 1 * quarter, eighth, 110, kDrumChan);
+            add(kSnare, 3 * quarter, eighth, 110, kDrumChan);
+            for (int i = 0; i < 8; ++i)
+                add(kClosedHat, i * eighth, sixteenth, (i % 2 == 0) ? 80 : 60, kDrumChan);
+            break;
+        }
+        case Pattern::HouseGroove: {
+            // 4-on-the-floor Kick + Snare 2/4 + Open Hat auf den Off-Beats.
+            for (int i = 0; i < 4; ++i)
+                add(kKick, i * quarter, eighth, 115, kDrumChan);
+            add(kSnare, 1 * quarter, eighth, 105, kDrumChan);
+            add(kSnare, 3 * quarter, eighth, 105, kDrumChan);
+            for (int i = 0; i < 4; ++i)
+                add(kOpenHat, i * quarter + eighth, eighth, 90, kDrumChan);
+            break;
+        }
+        case Pattern::DnBBreak: {
+            // "Amen-Break"-artige Anordnung in einem Takt — angedeutet, nicht 1:1.
+            add(kKick,  0 * sixteenth, eighth, 120, kDrumChan);
+            add(kKick, 10 * sixteenth, eighth, 110, kDrumChan);
+            add(kSnare, 4 * sixteenth, eighth, 115, kDrumChan);
+            add(kSnare, 12 * sixteenth, eighth, 115, kDrumChan);
+            add(kSnare, 14 * sixteenth, sixteenth, 80, kDrumChan); // Ghost-Snare
+            for (int i = 0; i < 16; ++i)
+                add(kClosedHat, i * sixteenth, thirtysecond, (i % 4 == 0) ? 95 : 70, kDrumChan);
+            add(kRide, 0, eighth, 90, kDrumChan);
+            break;
+        }
+        case Pattern::SnareRoll: {
+            // Build-up: 32stel Snare ueber einen Takt mit linearem Velocity-Crescendo.
+            const int n = 32;
+            for (int i = 0; i < n; ++i) {
+                const float t = (float) i / (float)(n - 1);
+                const int vel = juce::jlimit(40, 127, (int) (45.0f + t * 80.0f));
+                add(kSnare, i * thirtysecond, thirtysecond, vel, kDrumChan);
+            }
+            // Crash am Ende (= Anfang vom naechsten Takt).
+            add(kCrash, bar, quarter, 120, kDrumChan);
+            break;
+        }
+        case Pattern::OctaveBass: {
+            // Quarter-Note Octave-Bouncer auf der tiefsten selektierten Note
+            // (Root). Klassischer "boom-pum" Synth-Bass.
+            const int root = juce::jlimit(0, 115, melodicRoot());
+            for (int i = 0; i < 4; ++i) {
+                const int pitch = (i % 2 == 0) ? root : (root + 12);
+                add(pitch, i * quarter, eighth + sixteenth, 110, 1);
+            }
+            break;
+        }
+        case Pattern::AscendingArp: {
+            // 16tel-Arpeggio ueber die aktive Skala (oder chromatisch wenn leer),
+            // beginnt am Root und steigt einen Takt lang.
+            const int root = juce::jlimit(0, 127, melodicRoot());
+            const std::vector<int>& sc = customScale;
+            const bool useScale = !sc.empty();
+            for (int i = 0; i < 16; ++i) {
+                int pitch;
+                if (useScale) {
+                    const int N = (int) sc.size();
+                    const int rootClass = ((root % 12) + 12) % 12;
+                    int rootDeg = 0;
+                    for (int k = 0; k < N; ++k) if (sc[k] == rootClass) { rootDeg = k; break; }
+                    const int deg = (rootDeg + i) % N;
+                    const int oct = (rootDeg + i) / N;
+                    pitch = (root - rootClass) + sc[deg] + 12 * oct;
+                } else {
+                    pitch = root + i;
+                }
+                add(juce::jlimit(0, 127, pitch), i * sixteenth, sixteenth, 95, 1);
+            }
+            break;
+        }
+    }
+
+    midiRegion->rebuildThumbnail();
+    midiRegion->updateThumb();
+    notifyRegionModified();
+    repaint();
+}
+
 void PianoRollComponent::buildChordsFromScaleForSelection()
 {
     if (customScale.empty() || selectedMessages.empty() || midiRegion == nullptr)
