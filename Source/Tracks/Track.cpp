@@ -12,6 +12,7 @@
 #include "Track.h"
 #include "TrackNavigator.h"
 #include "../Session.h"
+#include "../Mixer.h"
 #include "MasterChannelPanel.h"
 #include "../Actions/SplitRegionAction.h"
 #include "../Project/Project.h"
@@ -834,6 +835,18 @@ void Track::setSamplePosition(int position, bool dispatchEvents)
 		// getCurrentRegion etc. still work) but don't fire any MIDI. Used
 		// when the user moves the playhead while the transport is stopped.
 		if (!dispatchEvents) {
+			this->samplePosition = position;
+			return;
+		}
+
+		// Mute / Solo: stumm geschaltete bzw. nicht-solo'te MIDI-/Instrument-
+		// Tracks duerfen keine Events mehr an Plugins/MIDI-Out feuern. Vorher
+		// noch alle aktiven Noten beenden, sonst bleiben sie haengen, sobald
+		// jemand Mute/Solo waehrend des Spielens umlegt.
+		const bool anySolo = Mixer::getInstance()->anyTrackSoloed();
+		if (isMute() || (anySolo && !isSolo())) {
+			if (!activeNoteNumbers.empty())
+				sendAllNotesOff();
 			this->samplePosition = position;
 			return;
 		}
