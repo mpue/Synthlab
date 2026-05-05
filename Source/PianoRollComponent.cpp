@@ -2211,6 +2211,70 @@ void PianoRollComponent::addChord(int rootNote, double startTime, double duratio
     repaint();
 }
 
+void PianoRollComponent::buildChordsFromScaleForSelection()
+{
+    if (customScale.empty() || selectedMessages.empty() || midiRegion == nullptr)
+        return;
+
+    // Skala ist als sortierte Tonklassen 0..11 hinterlegt (siehe
+    // PianoRollEditor::applySelectedScale). Diatonischer Triad = Root +
+    // dritte und fuenfte Skalenstufe ueber dem Root, mit Octave-Wrap, wenn
+    // wir oben aus der Skala herauslaufen.
+    const std::vector<int>& scale = customScale;
+    const int N = (int) scale.size();
+
+    // pitch des Skalenstufen-Schritts `step` ueber `rootPitch` ermitteln.
+    auto pitchForStep = [&](int rootPitch, int rootDeg, int step) -> int {
+        const int deg          = (rootDeg + step) % N;
+        const int octaveOffset = (rootDeg + step) / N;
+        const int rootClass    = ((rootPitch % 12) + 12) % 12;
+        const int rootOctBase  = rootPitch - rootClass; // tiefstes C dieser Oktave
+        int candidate = rootOctBase + scale[deg] + 12 * octaveOffset;
+        // Sicherheitsnetz: falls der candidate doch unter dem Root landet
+        // (z.B. wenn die Skala nicht streng aufsteigend ist), oktavweise
+        // hochziehen bis er ueber dem Root liegt.
+        while (candidate <= rootPitch) candidate += 12;
+        return juce::jlimit(0, 127, candidate);
+    };
+
+    // Snapshot machen, um waehrend der Iteration nicht in die selbe Liste
+    // hinein zu addieren.
+    struct ChordNote { int pitch; double start; double duration; int velocity; int channel; };
+    std::vector<ChordNote> toAdd;
+
+    for (auto* on : selectedMessages) {
+        if (on == nullptr || !on->isNoteOn()) continue;
+        MidiMessage* off = findNoteOffForNoteOn(on);
+        if (off == nullptr) continue;
+
+        const int rootPitch = on->getNoteNumber();
+        const int rootClass = ((rootPitch % 12) + 12) % 12;
+
+        // Skalenstufe des Roots finden.
+        int rootDeg = -1;
+        for (int i = 0; i < N; ++i) {
+            if (scale[i] == rootClass) { rootDeg = i; break; }
+        }
+        if (rootDeg < 0) continue; // Root nicht in Skala -> ueberspringen.
+
+        const double start    = on->getTimeStamp();
+        const double duration = off->getTimeStamp() - start;
+        const int    velocity = on->getVelocity();
+        const int    channel  = on->getChannel();
+
+        toAdd.push_back({ pitchForStep(rootPitch, rootDeg, 2), start, duration, velocity, channel }); // 3rd
+        toAdd.push_back({ pitchForStep(rootPitch, rootDeg, 4), start, duration, velocity, channel }); // 5th
+    }
+
+    for (const auto& c : toAdd)
+        addNotePair(c.pitch, c.start, c.duration, c.velocity, c.channel);
+
+    midiRegion->rebuildThumbnail();
+    midiRegion->updateThumb();
+    notifyRegionModified();
+    repaint();
+}
+
 void PianoRollComponent::arpeggiate(double noteSpacing)
 {
     if (selectedMessages.empty()) return;
