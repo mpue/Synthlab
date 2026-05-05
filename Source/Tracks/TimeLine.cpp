@@ -205,6 +205,10 @@ void TimeLine::mouseMove(const MouseEvent& event)
 
 void TimeLine::mouseDown(const MouseEvent& event)
 {
+    // Mittlere Maustaste ist fuers Pannen reserviert.
+    if (event.mods.isMiddleButtonDown())
+        return;
+
     if (!loopEnabled)
         return;
 

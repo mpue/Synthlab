@@ -271,17 +271,25 @@ void MidiRegion::resized() {
 }
 
 void MidiRegion::updateThumb() {
-    std::function<void(void)> changeLambda = [=]() {
-        int x = (int)((sampleOffset / sampleRate) * zoom);
-        int w = (int)((getNumSamples() / sampleRate) * zoom);
-        midiThumbnail->setBounds(x, getY(), w, getHeight());
-        midiThumbnail->setZoom(zoom);
-        midiThumbnail->repaint();
+    // Wenn waehrend einer laufenden Aufnahme die Region geloescht wird, ist
+    // die Region beim Lambda-Aufruf moeglicherweise schon zerstoert. SafePointer
+    // erkennt das und macht aus dem Crash einen No-Op.
+    juce::Component::SafePointer<MidiRegion> safe(this);
+    juce::MessageManager::callAsync([safe]()
+    {
+        auto* self = safe.getComponent();
+        if (self == nullptr) return;
 
-        resized();
-        repaint();
-        };
-    juce::MessageManager::callAsync(changeLambda);
+        const int x = (int)((self->sampleOffset / self->sampleRate) * self->zoom);
+        const int w = (int)((self->getNumSamples() / self->sampleRate) * self->zoom);
+        if (self->midiThumbnail != nullptr) {
+            self->midiThumbnail->setBounds(x, self->getY(), w, self->getHeight());
+            self->midiThumbnail->setZoom(self->zoom);
+            self->midiThumbnail->repaint();
+        }
+        self->resized();
+        self->repaint();
+    });
 }
 
 void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bool wasResized) {
@@ -361,20 +369,30 @@ void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bo
         const long rawSampleOffset = std::round((getBounds().getX() / zoom) * sampleRate);
         long newSampleOffset = rawSampleOffset;
 
-        // Snap der Region auf das Taktraster, wenn global aktiv. Vorrang vor
-        // dem feineren MIDI-Note-Quantisierungsraster (snapSampleToGrid),
-        // weil das hier den Region-Anfang und nicht eine einzelne Note betrifft.
-        // Granularität: bei zoom >= 100 auf 1/4 Takt, sonst ganze Takte.
-        // Mit gehaltener Shift-Taste: 1/4 des aktuellen Rasters für feinere
-        // Platzierung.
-        if (Project::getInstance()->isSnapToGridEnabled()) {
-            const bool fine = juce::ModifierKeys::getCurrentModifiersRealtime().isShiftDown();
-            newSampleOffset = Project::getInstance()->snapSampleToGrid(newSampleOffset, zoom, fine);
-        }
+        // Multi-Drag-Folger: Snap/Clamp pro Region wuerde die Gruppe
+        // auseinanderziehen — der Leader hat schon gerastert, alle anderen
+        // bekommen vom Dragger den gleichen effektiven Pixel-Delta.
+        const bool isMultiFollower =
+            dragger != nullptr
+            && dragger->isMultiDragInProgress()
+            && dragger->getComponentBeingDragged() != this;
 
-        // Overlap-Clamp gegen die Nachbarregionen.
-        if (parentTrack != nullptr)
-            newSampleOffset = parentTrack->clampOffsetForRegion(this, newSampleOffset, numSamples);
+        if (!isMultiFollower) {
+            // Snap der Region auf das Taktraster, wenn global aktiv. Vorrang vor
+            // dem feineren MIDI-Note-Quantisierungsraster (snapSampleToGrid),
+            // weil das hier den Region-Anfang und nicht eine einzelne Note betrifft.
+            // Granularität: bei zoom >= 100 auf 1/4 Takt, sonst ganze Takte.
+            // Mit gehaltener Shift-Taste: 1/4 des aktuellen Rasters für feinere
+            // Platzierung.
+            if (Project::getInstance()->isSnapToGridEnabled()) {
+                const bool fine = juce::ModifierKeys::getCurrentModifiersRealtime().isShiftDown();
+                newSampleOffset = Project::getInstance()->snapSampleToGrid(newSampleOffset, zoom, fine);
+            }
+
+            // Overlap-Clamp gegen die Nachbarregionen.
+            if (parentTrack != nullptr)
+                newSampleOffset = parentTrack->clampOffsetForRegion(this, newSampleOffset, numSamples);
+        }
 
         // Bounds nur dann visuell korrigieren, wenn snap/clamp die Position
         // tatsächlich verändert hat — sonst entsteht wegen Pixel-Rundung
@@ -839,6 +857,30 @@ void MidiRegion::consolidate()
     if (sourceStartSample > 0)
     {
         const long sss = sourceStartSample;
+
+        // Vor dem Cull noteOn/noteOff paaren: laeuft eine Note ueber die neue
+        // linke Kante (on < sss, off >= sss), das noteOn auf sss ziehen — sonst
+        // verschwindet es im naechsten remove_if und der noteOff bleibt als
+        // haengende Note zurueck.
+        {
+            std::map<int, MidiMessage*> openOn;
+            for (auto* m : midiMessageList) {
+                if (m == nullptr) continue;
+                if (m->isNoteOn()) {
+                    openOn[(m->getChannel() - 1) * 128 + m->getNoteNumber()] = m;
+                } else if (m->isNoteOff()) {
+                    const int key = (m->getChannel() - 1) * 128 + m->getNoteNumber();
+                    auto it = openOn.find(key);
+                    if (it != openOn.end()) {
+                        MidiMessage* on = it->second;
+                        if ((long) on->getTimeStamp() < sss && (long) m->getTimeStamp() >= sss)
+                            on->setTimeStamp((double) sss);
+                        openOn.erase(it);
+                    }
+                }
+            }
+        }
+
         midiMessageList.erase(
             std::remove_if(midiMessageList.begin(), midiMessageList.end(),
                 [sss](MidiMessage* m) {
@@ -883,6 +925,32 @@ void MidiRegion::consolidate()
         // entfernt. Front-Trim haben wir schon oben (und sourceStartSample
         // wurde auf 0 gesetzt), hier bleibt nur die rechte Kante.
         const long visibleEnd = (long) numSamples;
+
+        // Noten, die innerhalb starten aber ueber die rechte Kante laufen,
+        // muessen ihren noteOff in den sichtbaren Bereich gezogen bekommen
+        // (visibleEnd - 1) — sonst killt der Cull den noteOff und die Note
+        // haengt bis zum naechsten All-Notes-Off / Region-Ende.
+        if (visibleEnd > 0)
+        {
+            const long clipped = visibleEnd - 1;
+            std::map<int, MidiMessage*> openOn;
+            for (auto* m : midiMessageList) {
+                if (m == nullptr) continue;
+                if (m->isNoteOn()) {
+                    openOn[(m->getChannel() - 1) * 128 + m->getNoteNumber()] = m;
+                } else if (m->isNoteOff()) {
+                    const int key = (m->getChannel() - 1) * 128 + m->getNoteNumber();
+                    auto it = openOn.find(key);
+                    if (it != openOn.end()) {
+                        MidiMessage* on = it->second;
+                        if ((long) on->getTimeStamp() < visibleEnd && (long) m->getTimeStamp() >= visibleEnd)
+                            m->setTimeStamp((double) clipped);
+                        openOn.erase(it);
+                    }
+                }
+            }
+        }
+
         midiMessageList.erase(
             std::remove_if(midiMessageList.begin(), midiMessageList.end(),
                 [visibleEnd](MidiMessage* m) {

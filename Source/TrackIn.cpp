@@ -106,7 +106,7 @@
 			if (e->getMessage().getChannel() != track->getMidiChannel()) {
 				return;
 			}
-			MidiRegion* r = dynamic_cast<MidiRegion*>(track->getNavigator()->getRecordingRegion());
+			MidiRegion* r = dynamic_cast<MidiRegion*>(track->getRecordingRegion());
 			if (r != nullptr) {
 				long samplePosition = track->getNavigator()->getSamplePosition();
 				MidiMessage* m = new MidiMessage(e->getMessage(), samplePosition - r->getSampleOffset());

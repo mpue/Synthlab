@@ -64,75 +64,102 @@ public:
 
     TrackControl(Track* track) : track(track)
     {
+        // Gemeinsame Palette — Track-Farbe als Akzent, dunkler Slate als Off-
+        // Hintergrund, helle Texte. Wird unten an jedes Sub-Control verteilt.
+        const juce::Colour base    = track != nullptr ? track->getTrackColour()
+                                                      : juce::Colour(0xff5a8fff);
+        const juce::Colour accent  = base.withMultipliedSaturation(1.05f)
+                                         .withMultipliedBrightness(1.10f);
+        const juce::Colour btnOff  = juce::Colour(0xff1c1f25);
+        const juce::Colour trackBg = juce::Colour(0xff15171c);
+        const juce::Colour textHi  = juce::Colour(0xffe8e9ec);
+        const juce::Colour textLo  = juce::Colour(0xffa8acb4);
+
         nameLabel.setText(track->getName(), juce::dontSendNotification);
         nameLabel.setFont(juce::Font(12.0f, juce::Font::bold));
-        nameLabel.setColour(juce::Label::textColourId, juce::Colour(0xfff0f0f2));
+        nameLabel.setColour(juce::Label::textColourId, textHi);
         nameLabel.setJustificationType(juce::Justification::centredLeft);
         nameLabel.setInterceptsMouseClicks(false, false);
         addAndMakeVisible(nameLabel);
 
+        auto styleToggle = [&](juce::TextButton& b, juce::Colour onColour)
+        {
+            b.setClickingTogglesState(true);
+            b.setColour(juce::TextButton::buttonColourId,    btnOff);
+            b.setColour(juce::TextButton::buttonOnColourId,  onColour);
+            b.setColour(juce::TextButton::textColourOffId,   textLo);
+            b.setColour(juce::TextButton::textColourOnId,    juce::Colours::white);
+            b.addListener(this);
+            addAndMakeVisible(b);
+        };
+
         muteButton.setButtonText("M");
-        muteButton.setClickingTogglesState(true);
         muteButton.setToggleState(track->isMute(), juce::dontSendNotification);
-        muteButton.setColour(juce::TextButton::buttonOnColourId, juce::Colour(0xffd34d4d));
-        muteButton.addListener(this);
-        addAndMakeVisible(muteButton);
+        styleToggle(muteButton, juce::Colour(0xffd34d4d));
 
         soloButton.setButtonText("S");
-        soloButton.setClickingTogglesState(true);
         soloButton.setToggleState(track->isSolo(), juce::dontSendNotification);
-        soloButton.setColour(juce::TextButton::buttonOnColourId, juce::Colour(0xffe0a64a));
-        soloButton.addListener(this);
-        addAndMakeVisible(soloButton);
+        styleToggle(soloButton, juce::Colour(0xffe0a64a));
 
         // Automation-Toggle (kleiner Button "A"). Schaltet das Lane-Overlay am
         // Track ein/aus. Erst wenn das Overlay an ist, blenden wir die ComboBox
         // mit der Parameter-Auswahl ein.
         autoButton.setButtonText("A");
-        autoButton.setClickingTogglesState(true);
         autoButton.setToggleState(track != nullptr && track->isAutomationVisible(),
                                   juce::dontSendNotification);
-        autoButton.setColour(juce::TextButton::buttonOnColourId, juce::Colour(0xfff0c060));
-        autoButton.addListener(this);
-        addAndMakeVisible(autoButton);
+        styleToggle(autoButton, juce::Colour(0xfff0c060));
 
-        panSlider.setSliderStyle(juce::Slider::LinearHorizontal);
-        panSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+        auto styleSlider = [&](juce::Slider& s, juce::Colour fill)
+        {
+            s.setSliderStyle(juce::Slider::LinearHorizontal);
+            s.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+            s.setColour(juce::Slider::backgroundColourId, trackBg);
+            s.setColour(juce::Slider::trackColourId,      fill);
+            s.setColour(juce::Slider::thumbColourId,      juce::Colours::white);
+            s.addListener(this);
+            addAndMakeVisible(s);
+        };
+
         panSlider.setRange(-1.0, 1.0, 0.01);
         panSlider.setDoubleClickReturnValue(true, 0.0);
         panSlider.setValue(track->getPan(), juce::dontSendNotification);
-        panSlider.addListener(this);
-        addAndMakeVisible(panSlider);
+        // Pan ist symmetrisch um 0 — die Fill-Bar von links wuerde irrefuehren,
+        // also Fill und Hintergrund gleich faerben (nur der Thumb zeigt Wert).
+        styleSlider(panSlider, trackBg);
 
-        volSlider.setSliderStyle(juce::Slider::LinearHorizontal);
-        volSlider.setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
         volSlider.setRange(0.0, 1.5, 0.01);
         volSlider.setDoubleClickReturnValue(true, 1.0);
         volSlider.setValue(track->getVolume(), juce::dontSendNotification);
-        volSlider.addListener(this);
-        addAndMakeVisible(volSlider);
+        styleSlider(volSlider, accent);
 
         panLabel.setText("Pan", juce::dontSendNotification);
-        panLabel.setFont(juce::Font(9.5f));
-        panLabel.setColour(juce::Label::textColourId, juce::Colour(0xff8a8e98));
+        panLabel.setFont(juce::Font(10.5f, juce::Font::bold));
+        panLabel.setColour(juce::Label::textColourId, textLo);
         panLabel.setInterceptsMouseClicks(false, false);
         addAndMakeVisible(panLabel);
 
         volLabel.setText("Vol", juce::dontSendNotification);
-        volLabel.setFont(juce::Font(9.5f));
-        volLabel.setColour(juce::Label::textColourId, juce::Colour(0xff8a8e98));
+        volLabel.setFont(juce::Font(10.5f, juce::Font::bold));
+        volLabel.setColour(juce::Label::textColourId, textLo);
         volLabel.setInterceptsMouseClicks(false, false);
         addAndMakeVisible(volLabel);
 
+        auto styleCombo = [&](juce::ComboBox& c)
+        {
+            c.setLookAndFeel(&sharedComboLook());
+            c.setColour(juce::ComboBox::backgroundColourId, btnOff);
+            c.setColour(juce::ComboBox::outlineColourId,    accent.withAlpha(0.55f));
+            c.setColour(juce::ComboBox::textColourId,       textHi);
+            c.setColour(juce::ComboBox::arrowColourId,      accent);
+            c.addListener(this);
+            addChildComponent(c); // unsichtbar, bis Automation aktiv ist
+        };
+
         pluginBox.setTextWhenNothingSelected("Plugin…");
-        pluginBox.setLookAndFeel(&sharedComboLook());
-        pluginBox.addListener(this);
-        addChildComponent(pluginBox); // unsichtbar, bis Automation aktiv ist
+        styleCombo(pluginBox);
 
         paramBox.setTextWhenNothingSelected("Parameter…");
-        paramBox.setLookAndFeel(&sharedComboLook());
-        paramBox.addListener(this);
-        addChildComponent(paramBox); // unsichtbar, bis Automation aktiv ist
+        styleCombo(paramBox);
     }
 
     ~TrackControl() override

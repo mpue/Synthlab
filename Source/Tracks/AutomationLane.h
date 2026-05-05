@@ -88,7 +88,8 @@ public:
     }
 
     // Waehrend der Wiedergabe vom Track aufgerufen. Liest den interpolierten
-    // Wert an `sample` und ruft setValueNotifyingHost() am Ziel-Parameter.
+    // Wert an `sample` und schreibt ihn per setValue() ins Ziel-Parameter
+    // (Audio-thread-safe, ohne synchrone Listener-Notification).
     void applyAt(long sample);
 
     juce::AudioProcessorParameter* getTargetParameter() const;

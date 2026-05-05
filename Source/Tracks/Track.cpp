@@ -114,6 +114,10 @@ void Track::removeSelectedRegions(bool clear) {
 
 	for (std::vector<Region*>::iterator it = regions.begin(); it != regions.end();) {
 		if (dragger->isSelected((*it))) {
+			// Falls genau diese Region die laufende Aufnahme aufnimmt, den
+			// per-Track-Pointer wegnehmen — sonst greift der naechste
+			// TrackIn::eventReceived auf einen freed-pointer zu.
+			clearRecordingRegionIfMatches(*it);
 			(*it)->removeAllChangeListeners();
 			if (clear)
 				audioBuffer->clear((*it)->getSampleOffset(), (*it)->getNumSamples());
@@ -783,12 +787,15 @@ void Track::dispatchMidiMessages(const std::vector<juce::MidiMessage*>& messages
 
 void Track::setSamplePosition(int position, bool dispatchEvents)
 {
-	// Lane-Automation: bei jedem Block den interpolierten Wert ans Plugin
-	// schicken — solange das Overlay aktiv ist und ein Parameter gewählt
-	// wurde. Auch bei Audio-Tracks erlaubt, falls dort ein Insert-Plugin hängt.
-	// Multi-Plugin Multi-Lane Playback: alle Lanes im Modell auf die
-	// zugehoerigen Plugin-Parameter anwenden, ueber Instrument + FX-Slots.
-	// cachedAutomationParams ist vorberechnet — kein String-Build hier.
+	// Lane-Automation: bei jedem Block den interpolierten Wert puffern, damit
+	// der Message-Thread (Track::applyPendingAutomation, getriggert vom
+	// TrackNavigator-Timer) ihn ans Plugin durchreicht.
+	//
+	// Wir rufen hier explizit *nicht* setValue/setValueNotifyingHost am
+	// Plugin-Parameter — VST3 setParamNormalized ist per Spec message-thread,
+	// und viele Plugins triggern aus dem setValue-Pfad synchron ihre UI
+	// (z.B. MainUI::parameterChanged), was vom Audio-Thread aus crasht,
+	// sobald das Plugin-Fenster offen ist.
 	if (dispatchEvents && !cachedAutomationParams.empty())
 	{
 		for (int li = 0; li < automationModel.numLanes(); ++li)
@@ -796,18 +803,17 @@ void Track::setSamplePosition(int position, bool dispatchEvents)
 			auto* lane = automationModel.laneAt(li);
 			if (lane == nullptr || lane->isEmpty()) continue;
 			const juce::String& laneId = lane->getParameterId();
-			juce::AudioProcessorParameter* target = nullptr;
-			for (const auto& entry : cachedAutomationParams)
+			for (auto& entry : cachedAutomationParams)
 			{
-				if (entry.scopedId == laneId)
+				if (entry == nullptr) continue;
+				if (entry->scopedId == laneId)
 				{
-					target = entry.parameter;
+					const float v = juce::jlimit(0.0f, 1.0f, lane->valueAt(position));
+					entry->pendingValue.store(v, std::memory_order_relaxed);
+					entry->hasPending.store(true, std::memory_order_release);
 					break;
 				}
 			}
-			if (target != nullptr)
-				target->setValueNotifyingHost(juce::jlimit(0.0f, 1.0f,
-				                                           lane->valueAt(position)));
 		}
 	}
 
@@ -1582,11 +1588,33 @@ void Track::rebuildAutomationParamIdCache()
 		{
 			auto* p = params[i];
 			if (p == nullptr) continue;
-			CachedAutomationParam entry;
-			entry.scopedId  = scopedParamId(slot, localParamId(p, i));
-			entry.parameter = p;
-			cachedAutomationParams.push_back(entry);
+			auto entry = std::make_unique<CachedAutomationParam>();
+			entry->scopedId  = scopedParamId(slot, localParamId(p, i));
+			entry->parameter = p;
+			cachedAutomationParams.push_back(std::move(entry));
 		}
+	}
+}
+
+void Track::applyPendingAutomation()
+{
+	// Message-Thread: jetzt darf gefahrlos ans Plugin-Parameter geschrieben
+	// werden. Plugin-UIs reagieren in ihrem normalen Listener-Pfad, statt
+	// synchron aus dem Audio-Callback heraus.
+	for (auto& entry : cachedAutomationParams)
+	{
+		if (entry == nullptr || entry->parameter == nullptr) continue;
+		// exchange holt den Pending-Flag und setzt ihn in einem Schritt zurueck
+		// — kein Verlust, wenn der Audio-Thread parallel neue Werte schreibt.
+		if (!entry->hasPending.exchange(false, std::memory_order_acquire))
+			continue;
+		const float v = entry->pendingValue.load(std::memory_order_relaxed);
+		// Doppel-Pushes auf identische Werte sparen wir uns — manche Plugins
+		// notifyien bei jedem Aufruf ihre UI, das macht im Idle nur unnoetig
+		// Last.
+		if (v == entry->lastApplied) continue;
+		entry->lastApplied = v;
+		entry->parameter->setValueNotifyingHost(v);
 	}
 }
 

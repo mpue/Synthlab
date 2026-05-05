@@ -144,6 +144,11 @@ void Region::setZoom(float zoom) {
 
 void Region::mouseDown(const MouseEvent & e)
 {
+    // Mittlere Maustaste ist fuer's Pannen des Track-Navigators reserviert —
+    // weder Auswahl noch Drag-Vorbereitung anstossen.
+    if (e.mods.isMiddleButtonDown())
+        return;
+
     dragStartSampleOffset = getSampleOffset();
     if (dragger != nullptr)
         dragger->handleMouseDown(this, e);
@@ -151,6 +156,9 @@ void Region::mouseDown(const MouseEvent & e)
 
 void Region::mouseUp(const MouseEvent & e)
 {
+    if (e.mods.isMiddleButtonDown())
+        return;
+
     if (dragger != nullptr)
         dragger->handleMouseUp(this, e);
 
@@ -164,6 +172,9 @@ void Region::mouseUp(const MouseEvent & e)
 
 void Region::mouseDrag(const MouseEvent & e)
 {
+    if (e.mods.isMiddleButtonDown())
+        return;
+
     if (dragger != nullptr)
         dragger->handleMouseDrag(e);
 }

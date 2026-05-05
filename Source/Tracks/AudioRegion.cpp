@@ -345,14 +345,20 @@ AudioSampleBuffer* AudioRegion::getBuffer() {
 }
 
 void AudioRegion::setZoom(float zoom) {
+    // Sichtbare Sample-Laenge JETZT festhalten — solange this->zoom noch den
+    // alten Wert hat, liefert getNumSamples() den korrekten getrimmten Stand.
+    // Erst danach den neuen Zoom uebernehmen, sonst rechnet getNumSamples()
+    // die Pixel-Breite mit dem neuen Zoom zurueck und der Trim wird verfaelscht.
+    const long visibleSamples = (long) getNumSamples();
+
     this->zoom = zoom;
 
     zoomInProgress = true;
     if (loop) {
-        setSize((getNumSamples() / sampleRate * (loopCount + 1)) * this->zoom, getHeight());
+        setSize((int) std::round((double) visibleSamples / sampleRate * (loopCount + 1) * this->zoom), getHeight());
     }
     else {
-        setSize((getNumSamples() / sampleRate) * this->zoom, getHeight());
+        setSize((int) std::round((double) visibleSamples / sampleRate * this->zoom), getHeight());
     }
 
     // Snap auf Viertelnoten anwenden
@@ -369,7 +375,13 @@ void AudioRegion::setZoom(float zoom) {
         resizerL->setTopLeftPosition(0, 0);
     }
 
-    this->thumbnailBounds->setSize(getWidth(), getHeight());
+    // thumbnailBounds.width muss dem VOLLEN Buffer-Extent entsprechen, sonst
+    // verliert getNumSamples() seine Trim-Detektion: die vergleicht
+    // getWidth() (sichtbar) mit thumbnailBounds.width (voll). Setzt man die
+    // hier auf getWidth(), sind beide gleich und die Region gilt naechstes
+    // Mal als "nicht getrimmt" — sie springt auf die Original-Laenge zurueck.
+    const int fullWidth = (int) std::round((double) audioBuffer->getNumSamples() / sampleRate * this->zoom);
+    this->thumbnailBounds->setSize(fullWidth, getHeight());
 
     // Aktualisiere Snap-Einstellungen f�r Viertelnoten
     updateSnapSettings();
@@ -556,22 +568,34 @@ void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, b
         // Berechne Sample-Position basierend auf X-Position
         long sampleNum = (getBounds().getX() / zoom) * sampleRate;
 
-        // Snap auf Taktraster wenn global aktiviert (sonst freie Position).
-        // Granularität: bei zoom >= 100 auf 1/4 Takt, sonst ganze Takte.
-        // Mit gehaltener Shift-Taste: 1/4 des aktuellen Rasters für feinere
-        // Platzierung.
-        if (Project::getInstance()->isSnapToGridEnabled()) {
-            const bool fine = juce::ModifierKeys::getCurrentModifiersRealtime().isShiftDown();
-            sampleNum = Project::getInstance()->snapSampleToGrid(sampleNum, zoom, fine);
+        // Multi-Drag-Folger: Per-Region-Snap und -Clamp ueberspringen, sonst
+        // raster jeder Follower auf sein eigenes Grid-Ziel und die Gruppe
+        // driftet auseinander. Der Leader hat sein Snap/Clamp bereits
+        // erledigt, der Dragger uebersetzt alle anderen mit dem effektiven
+        // Pixel-Delta.
+        const bool isMultiFollower =
+            dragger != nullptr
+            && dragger->isMultiDragInProgress()
+            && dragger->getComponentBeingDragged() != this;
+
+        if (!isMultiFollower) {
+            // Snap auf Taktraster wenn global aktiviert (sonst freie Position).
+            // Granularität: bei zoom >= 100 auf 1/4 Takt, sonst ganze Takte.
+            // Mit gehaltener Shift-Taste: 1/4 des aktuellen Rasters für feinere
+            // Platzierung.
+            if (Project::getInstance()->isSnapToGridEnabled()) {
+                const bool fine = juce::ModifierKeys::getCurrentModifiersRealtime().isShiftDown();
+                sampleNum = Project::getInstance()->snapSampleToGrid(sampleNum, zoom, fine);
+            }
+
+            // Gerade Sample-Zahl sicherstellen
+            if (sampleNum % 2 != 0)
+                sampleNum -= 1;
+
+            // Overlap-Clamp gegen die Nachbarregionen.
+            if (parentTrack != nullptr)
+                sampleNum = parentTrack->clampOffsetForRegion(this, sampleNum, getNumSamples());
         }
-
-        // Gerade Sample-Zahl sicherstellen
-        if (sampleNum % 2 != 0)
-            sampleNum -= 1;
-
-        // Overlap-Clamp gegen die Nachbarregionen.
-        if (parentTrack != nullptr)
-            sampleNum = parentTrack->clampOffsetForRegion(this, sampleNum, getNumSamples());
 
         oldOffset = sampleNum;
 

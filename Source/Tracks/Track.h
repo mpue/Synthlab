@@ -17,6 +17,9 @@
 #include "Region.h"
 #include <vector>
 #include <set>
+#include <memory>
+#include <atomic>
+#include <limits>
 #include "../MultiComponentDragger.h"
 #include "../Automation/AutomationModel.h"
 
@@ -183,6 +186,12 @@ public:
     
     inline Region* getCurrentRecorder() {
         return currentRegion;
+    }
+
+    Region* getRecordingRegion() const { return recordingRegion; }
+    void setRecordingRegion(Region* r) { recordingRegion = r; }
+    void clearRecordingRegionIfMatches(Region* r) {
+        if (recordingRegion == r) recordingRegion = nullptr;
     }
     
     inline void addChangeListener (ChangeListener* listener)  {
@@ -412,6 +421,7 @@ private:
     ResizeConstrainer* constrainer;
 
     bool recording = false;
+    Region* recordingRegion = nullptr;
     bool solo = false;
     bool mute = false;
     bool mono = false;
@@ -483,11 +493,34 @@ private:
     // Vorberechneter Cache: gescoped paramId -> AudioProcessorParameter*.
     // Wird vom Audio-Thread alloc-frei gelesen, vom UI-Thread bei Plugin-/
     // FX-Wechsel via rebuildAutomationParamIdCache() neu gebaut.
+    //
+    // Threading: Der Audio-Thread schreibt waehrend setSamplePosition()
+    // nur in pendingValue/hasPending — er ruft NICHT setValue() am Plugin.
+    // Der Message-Thread (TrackNavigator-Timer -> applyPendingAutomation())
+    // liest die Atomics und schickt die Werte erst hier ans Plugin.
+    // Hintergrund: VST3 IEditController::setParamNormalized ist per Spec
+    // message-thread, viele Plugins triggern aus setValue/setParamNormalized
+    // synchron ihre UI-Listener (z.B. MainUI::parameterChanged) — das crasht,
+    // sobald das Plugin-Fenster offen ist und der Aufruf vom Audio-Thread
+    // kommt.
     struct CachedAutomationParam {
         juce::String                   scopedId;   // "instr:foo", "fx0:bar"
         juce::AudioProcessorParameter* parameter = nullptr;
+        std::atomic<float>             pendingValue { 0.0f };
+        std::atomic<bool>              hasPending   { false };
+        float                          lastApplied  = std::numeric_limits<float>::quiet_NaN();
     };
-    std::vector<CachedAutomationParam> cachedAutomationParams;
+    // unique_ptr, weil CachedAutomationParam wegen der Atomics weder
+    // copy- noch move-konstruierbar ist und ein std::vector also nicht direkt
+    // damit umgehen kann.
+    std::vector<std::unique_ptr<CachedAutomationParam>> cachedAutomationParams;
+
+public:
+    // Vom Message-Thread aufzurufen (TrackNavigator-Timer). Schiebt die vom
+    // Audio-Thread bereitgestellten Pending-Werte ins Plugin — message-thread-
+    // safe.
+    void applyPendingAutomation();
+private:
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Track)
 };
