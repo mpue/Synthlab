@@ -33,6 +33,7 @@
 #include "Tracks/BounceThread.h"
 #include "Tracks/Track.h"
 #include "Tracks/TrackNavigator.h"
+#include "Session.h"
 #include "AudioSettingsDialog.h"
 #include "BounceDialog.h"
 #include "FadeDialog.h"
@@ -1115,14 +1116,19 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 
 		menu.addItem(60, "Delete Track", true, false, nullptr);
 		menu.addSeparator();
-		menu.addItem(41, "Quantize", true, false, nullptr);
+		// Region-weite Edits — funktionieren auf der aktuellen Selektion und
+		// spiegeln die Cmd-Shortcuts (X / C / V / D / T / B) im Track-View.
+		menu.addItem(71, "Cut", true, false, nullptr);
+		menu.addItem(72, "Copy", true, false, nullptr);
+		menu.addItem(73, "Paste at marker", true, false, nullptr);
 		menu.addItem(43, "Duplicate", true, false, nullptr);
 		menu.addItem(44, "Split at marker", true, false, nullptr);
 		menu.addItem(49, "Consolidate", true, false, nullptr);
+		menu.addItem(70, "Bounce in Place", true, false, nullptr);
 		menu.addItem(45, "Delete", true, false, nullptr);
+		menu.addSeparator();
 
 		PopupMenu audioMenu = PopupMenu();
-
 		audioMenu.addItem(42, "Detect BPM", true, false, nullptr);
 		audioMenu.addItem(46, "Reverse", true, false, nullptr);
 		audioMenu.addItem(47, "Normalize", true, false, nullptr);
@@ -1140,6 +1146,15 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		*/
 
 		menu.addSubMenu("Audio", audioMenu);
+
+		// MIDI-spezifische Funktionen analog zum Audio-Submenu — Quantize ist
+		// nur fuer MIDI-Regionen sinnvoll, und die beiden Editor-Fenster
+		// (Piano Roll + Event Editor) gibt's bisher nur ueber Tastenkuerzel.
+		PopupMenu midiMenu = PopupMenu();
+		midiMenu.addItem(74, "Open Piano Roll", true, false, nullptr);
+		midiMenu.addItem(75, "Open Message Editor", true, false, nullptr);
+		midiMenu.addItem(41, "Quantize", true, false, nullptr);
+		menu.addSubMenu("MIDI", midiMenu);
 	}
 
 	return menu;
@@ -1381,6 +1396,48 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 			auto* action = new TrackDeleteAction(navigator, editor);
 			Project::getInstance()->getUndoManager()->beginNewTransaction();
 			Project::getInstance()->getUndoManager()->perform(action);
+		}
+	}
+	// Region menu — entries spiegeln die im TrackNavigator schon verkabelten
+	// Cmd-Shortcuts. Die Logik liegt jeweils in TrackNavigator/Track, der
+	// Menupfad ruft sie nur auf.
+	else if (menuItemID == 70) { // Bounce in Place
+		if (navigator != nullptr)
+			navigator->bounceSelectedRegionsInPlace();
+	}
+	else if (menuItemID == 71) { // Cut
+		if (navigator != nullptr) {
+			Session::getInstance()->clearRegionsClipboard();
+			for (auto* t : navigator->getTracks())
+				if (t != nullptr) t->copySelectedRegions();
+			for (auto* t : navigator->getTracks())
+				if (t != nullptr) t->removeSelectedRegions(true);
+		}
+	}
+	else if (menuItemID == 72) { // Copy
+		if (navigator != nullptr) {
+			Session::getInstance()->clearRegionsClipboard();
+			for (auto* t : navigator->getTracks())
+				if (t != nullptr) t->copySelectedRegions();
+		}
+	}
+	else if (menuItemID == 73) { // Paste at marker
+		if (navigator != nullptr) {
+			Track* dest = navigator->getCurrentTrack();
+			if (dest != nullptr)
+				dest->pasteRegions((long) navigator->getSamplePosition());
+		}
+	}
+	else if (menuItemID == 74) { // Open Piano Roll (MIDI)
+		if (navigator != nullptr && navigator->getCurrentTrack() != nullptr) {
+			if (auto* mr = dynamic_cast<MidiRegion*>(navigator->getCurrentTrack()->getCurrentRegion()))
+				navigator->openPianoRoll(mr);
+		}
+	}
+	else if (menuItemID == 75) { // Open Message Editor (MIDI)
+		if (navigator != nullptr && navigator->getCurrentTrack() != nullptr) {
+			if (auto* mr = dynamic_cast<MidiRegion*>(navigator->getCurrentTrack()->getCurrentRegion()))
+				navigator->openEventEditor(mr);
 		}
 	}
 	else if (menuItemID == undoCommand) {
