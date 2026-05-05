@@ -602,7 +602,9 @@ void PianoRollComponent::handlePencilTool(const juce::MouseEvent& e)
 
     int pitch = getPitchAtY(e.y);
     double start = snapToGrid ? snapTimeToGrid(getTimeAtX(e.x)) : getTimeAtX(e.x);
-    double duration = sampleRate * gridResolution;
+    // Note-Laenge = ein Grid-Step (BPM-bewusst). Vorher: sampleRate *
+    // gridResolution — das ist BPM-frei und korrekt nur bei 60 BPM.
+    double duration = getGridTimeStep();
 
     pitch = snapPitchToScale(pitch);
 
@@ -897,7 +899,9 @@ void PianoRollComponent::mouseDoubleClick(const juce::MouseEvent& e)
     // Double-click to create note
     int pitch = getPitchAtY(e.y);
     double start = snapToGrid ? snapTimeToGrid(getTimeAtX(e.x)) : getTimeAtX(e.x);
-    double duration = sampleRate * gridResolution;
+    // Note-Laenge = ein Grid-Step (BPM-bewusst). Vorher: sampleRate *
+    // gridResolution — das ist BPM-frei und korrekt nur bei 60 BPM.
+    double duration = getGridTimeStep();
 
     pitch = snapPitchToScale(pitch);
     addNotePair(pitch, start, duration);
@@ -1067,7 +1071,9 @@ bool PianoRollComponent::keyPressed(const juce::KeyPress& key, juce::Component*)
     if (it != keyToNote.end() && playbackPosition >= 0.0) {
         // Play note at current playback position
         int pitch = it->second;
-        double duration = sampleRate * gridResolution;
+        // Note-Laenge = ein Grid-Step (BPM-bewusst). Vorher: sampleRate *
+    // gridResolution — das ist BPM-frei und korrekt nur bei 60 BPM.
+    double duration = getGridTimeStep();
         addNotePair(pitch, playbackPosition, duration);
         notifyRegionModified();
         repaint();
@@ -2270,7 +2276,15 @@ void PianoRollComponent::setLoopRegion(double startSample, double endSample)
 
 void PianoRollComponent::setGridResolution(int denominator)
 {
-    gridResolution = 1.0f / denominator;
+    // gridResolution wird im Rest des Codes als "Bruchteil einer Viertelnote"
+    // verwendet (siehe paint, getGridTimeStep, snapTimeToGrid). Eine 1/N-Note
+    // entspricht 4/N einer Viertelnote — z.B. 1/16-Note = 4/16 einer Viertel.
+    // Vorher stand hier 1.0f / denominator, was bei setGridResolution(16) den
+    // Grid-Step auf Viertel/16 = 1/64-Note gesetzt hat: Pfeiltasten haben
+    // dann pro Druck nur 1/64 verschoben und es sah aus, als wuerde die Note
+    // zufaellig springen.
+    if (denominator <= 0) return;
+    gridResolution = 4.0f / denominator;
     repaint();
 }
 
