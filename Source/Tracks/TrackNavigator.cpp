@@ -448,7 +448,7 @@ void TrackNavigator::timerCallback()
 	marker->setSamplePosition(this->samplePosition);
 	transportDisplay->setTransportState(samplePosition, Project::getInstance()->getSampleRate(), Project::getInstance()->getTempo(), 4, 4);
 	if (pianoRoll != nullptr)
-		pianoRoll->setPlaybackPosition(this->samplePosition);
+		pianoRoll->getRoll().setPlaybackPosition(this->samplePosition);
 
 	// Pending Automation-Werte aus dem Audio-Thread auf die Plugin-Parameter
 	// anwenden — auf dem Message-Thread, damit Plugin-Editoren (z.B.
@@ -956,15 +956,18 @@ void TrackNavigator::openPianoRoll(MidiRegion* r)
 	if (pianoRoll != nullptr) {
 		pianoRoll = nullptr;
 	}
-	pianoRoll = std::make_unique<PianoRollComponent>(r, Project::getInstance()->getSampleRate());
+	// PianoRollEditor wrappt PianoRollComponent + Toolbar (Tool / Grid /
+	// Scale / Snap). Die eigentlichen Callbacks haengen weiterhin am inneren
+	// Roll, damit der Transport-Sync und der Playback-Marker funktionieren.
+	pianoRoll = std::make_unique<PianoRollEditor>(r, Project::getInstance()->getSampleRate());
 
-	pianoRoll->setGridResolution(16);
+	pianoRoll->getRoll().setGridResolution(16);
 
-	pianoRoll->onPlayToggle = [this]() {
+	pianoRoll->getRoll().onPlayToggle = [this]() {
 		setPlaying(!isPlaying());
 	};
 
-	pianoRoll->onMarkerPositionChanged = [this](double samplePos) {
+	pianoRoll->getRoll().onMarkerPositionChanged = [this](double samplePos) {
 		double posInSeconds = samplePos / Project::getInstance()->getSampleRate();
 		setPosition(posInSeconds);
 		for (int i = 0; i < tracks.size(); i++) {

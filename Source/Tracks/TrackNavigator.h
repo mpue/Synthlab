@@ -26,6 +26,7 @@
 #include "../UITools.h"
 #include "../TransportDisplayComponent.h"
 #include "../PianoRollComponent.h"
+#include "../PianoRollEditor.h"
 #include "TrackControl.h"
 
 class SynthEditor;
@@ -302,7 +303,7 @@ private:
 	virtual bool keyPressed(const KeyPress& key, Component* originatingComponent) override;
 	virtual void mouseDrag(const MouseEvent& event) override;
 
-	std::unique_ptr<PianoRollComponent> pianoRoll = nullptr;
+	std::unique_ptr<PianoRollEditor> pianoRoll = nullptr;
 
 	double loopStart = 0;
 	double loopEnd = 0;
