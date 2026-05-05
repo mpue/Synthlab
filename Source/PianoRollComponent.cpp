@@ -2441,6 +2441,7 @@ void PianoRollComponent::setCurrentTool(Tool newTool)
         currentTool = newTool;
         setMouseCursor(getCursorForTool(currentTool));
         repaint();
+        if (onToolChanged) onToolChanged(currentTool);
     }
 }
 

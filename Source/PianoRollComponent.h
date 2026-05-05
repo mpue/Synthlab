@@ -69,6 +69,20 @@ public:
     };
     void setCurrentTool(Tool tool);
     Tool getCurrentTool() const { return currentTool; }
+    // Optionaler Callback fuer Toolbars/Wrapper, die ihre Buttons im Lockstep
+    // halten muessen — feuert bei jedem Tool-Wechsel (auch ueber Tasten 1..5).
+    std::function<void(Tool)> onToolChanged;
+
+    // Skala fuer Pencil/Maus-Pfade (bestimmt Hintergrund-Highlight und das
+    // Pitch-Snapping bei Note-Erzeugung). Leerer Vector = chromatisch, kein
+    // Snap. Wird vom Toolbar-Wrapper aus gesetzt.
+    void setCustomScale(const std::vector<int>& scale) { customScale = scale; repaint(); }
+    const std::vector<int>& getCustomScale() const { return customScale; }
+    bool isSnapToGrid() const { return snapToGrid; }
+    int  getGridDenominator() const {
+        // gridResolution = 4/N → N = 4/gridResolution.
+        return gridResolution > 0.0f ? (int) std::round(4.0f / gridResolution) : 16;
+    }
 
     // === PLAYBACK ===
     void setPlaybackPosition(double samplePosition);
