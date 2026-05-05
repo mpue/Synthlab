@@ -2215,14 +2215,21 @@ void PianoRollComponent::insertPattern(Pattern p)
 {
     if (midiRegion == nullptr) return;
 
-    // GM-Drum-Pitches — alle Drum-Patterns laufen auf Channel 10.
+    // GM-Drum-Pitches. Channel = aktueller Track-Kanal: TrackIn filtert
+    // beim Playback auf Track::getMidiChannel(); ein hartcodierter Kanal 10
+    // wuerde sonst geschluckt, sobald der Track auf einem anderen Kanal
+    // liegt (Default ist 1). Der Nutzer wechselt seinen Drum-Track ggf.
+    // selbst auf 10, GM-Pitches passen dann auch klanglich.
     constexpr int kKick      = 36;
     constexpr int kSnare     = 38;
     constexpr int kClosedHat = 42;
     constexpr int kOpenHat   = 46;
     constexpr int kRide      = 51;
     constexpr int kCrash     = 49;
-    constexpr int kDrumChan  = 10;
+    int trackChannel = 1;
+    if (auto* parentTrack = dynamic_cast<Track*>(midiRegion->getParentComponent()))
+        trackChannel = parentTrack->getMidiChannel();
+    const int kDrumChan = trackChannel;
 
     const double quarter   = (60.0 / bpm) * sampleRate;
     const double bar       = quarter * 4.0;
@@ -2332,7 +2339,7 @@ void PianoRollComponent::insertPattern(Pattern p)
             const int root = juce::jlimit(0, 115, melodicRoot());
             for (int i = 0; i < 4; ++i) {
                 const int pitch = (i % 2 == 0) ? root : (root + 12);
-                add(pitch, i * quarter, eighth + sixteenth, 110, 1);
+                add(pitch, i * quarter, eighth + sixteenth, 110, trackChannel);
             }
             break;
         }
@@ -2355,7 +2362,7 @@ void PianoRollComponent::insertPattern(Pattern p)
                 } else {
                     pitch = root + i;
                 }
-                add(juce::jlimit(0, 127, pitch), i * sixteenth, sixteenth, 95, 1);
+                add(juce::jlimit(0, 127, pitch), i * sixteenth, sixteenth, 95, trackChannel);
             }
             break;
         }
