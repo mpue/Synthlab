@@ -231,6 +231,13 @@ private:
     bool isBoxSelecting = false;
     bool isVelocityEditing = false;
 
+    // Pencil-Tool-Live-Drag: nach mouseDown verlaengert mouseDrag den
+    // pencilNoteOff-Timestamp, mouseUp finalisiert.
+    bool          isPencilDrawing = false;
+    MidiMessage*  pencilNoteOn    = nullptr;
+    MidiMessage*  pencilNoteOff   = nullptr;
+    double        pencilStartTime = 0.0;
+
     juce::Point<int> panStart;
     MidiMessage* resizingMessage = nullptr;
     MidiMessage* resizingPartner = nullptr;
@@ -313,7 +320,10 @@ private:
     // === NOTE MANIPULATION ===
     MidiMessage* findNoteOffForNoteOn(MidiMessage* noteOn);
     double getNoteDuration(MidiMessage* noteOn);
-    void addNotePair(int pitch, double startTime, double duration, int velocity = 100, int channel = 1);
+    // Liefert die noteOn-Message des neu erzeugten Paars (oder nullptr bei
+    // Fehler). Wird vom Pencil-Tool verwendet, um die in-progress-Note
+    // waehrend des Drags zu verlaengern.
+    juce::MidiMessage* addNotePair(int pitch, double startTime, double duration, int velocity = 100, int channel = 1);
     void deleteNotePair(MidiMessage* noteOn);
     void moveNote(MidiMessage* noteOn, double deltaTime, int deltaPitch);
     void resizeNote(MidiMessage* noteOn, double newDuration);

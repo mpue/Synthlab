@@ -600,25 +600,35 @@ void PianoRollComponent::handlePencilTool(const juce::MouseEvent& e)
 {
     if (e.getPosition().x <= pianoWidth) return;
 
-    int pitch = getPitchAtY(e.y);
-    double start = snapToGrid ? snapTimeToGrid(getTimeAtX(e.x)) : getTimeAtX(e.x);
-    // Note-Laenge = ein Grid-Step (BPM-bewusst). Vorher: sampleRate *
-    // gridResolution — das ist BPM-frei und korrekt nur bei 60 BPM.
-    double duration = getGridTimeStep();
-
-    pitch = snapPitchToScale(pitch);
-
-    // Check if there's already a note here
-    MidiMessage* existingNote = getNoteAt(e.getPosition());
-    if (existingNote) {
-        deleteNotePair(existingNote);
+    // Rechte Maustaste: Note unter Cursor loeschen — Standardverhalten in
+    // jedem DAW-Pencil-Modus, ohne Toolwechsel zum Eraser.
+    if (e.mods.isRightButtonDown()) {
+        if (auto* hit = getNoteAt(e.getPosition())) {
+            selectedMessages.erase(hit);
+            deleteNotePair(hit);
+            notifySelectionChanged();
+            notifyRegionModified();
+            repaint();
+        }
+        return;
     }
-    else {
-        int velocity = velocitySensitive ?
-            juce::jlimit(1, 127, (int)(127 * (1.0f - e.y / (float)getHeight()))) :
-            baseVelocity;
 
-        addNotePair(pitch, start, duration, velocity);
+    // Linke Maustaste: neue Note an Klickposition mit minimaler Anfangs-
+    // laenge anlegen; mouseDrag verlaengert sie, mouseUp finalisiert.
+    int pitch = snapPitchToScale(getPitchAtY(e.y));
+    double start    = snapToGrid ? snapTimeToGrid(getTimeAtX(e.x)) : getTimeAtX(e.x);
+    double duration = getGridTimeStep();
+    int velocity = velocitySensitive
+        ? juce::jlimit(1, 127, (int)(127 * (1.0f - e.y / (float)getHeight())))
+        : baseVelocity;
+
+    if (auto* on = addNotePair(pitch, start, duration, velocity)) {
+        pencilNoteOn    = on;
+        pencilNoteOff   = findNoteOffForNoteOn(on);
+        // addNotePair snappt startTime auf das Grid — den geclippten Wert
+        // direkt vom NoteOn lesen, sonst verschiebt sich der Drag-Anker.
+        pencilStartTime = on->getTimeStamp();
+        isPencilDrawing = (pencilNoteOff != nullptr);
     }
 
     notifyRegionModified();
@@ -676,6 +686,23 @@ void PianoRollComponent::mouseDrag(const juce::MouseEvent& e)
         panOffset.x = juce::jmin(panOffset.x, 0.0f);
         panStart = e.getPosition();
         repaint();
+        return;
+    }
+
+    // Pencil: in-progress note bis zur aktuellen Mausposition verlaengern.
+    // Untere Grenze = ein Grid-Step (sonst kann die Note unhoerbar kurz
+    // werden, wenn man nach links zieht).
+    if (currentTool == Tool::PENCIL && isPencilDrawing && pencilNoteOff != nullptr) {
+        double t = snapToGrid ? snapTimeToGrid(getTimeAtX(e.x)) : getTimeAtX(e.x);
+        const double minLen = getGridTimeStep();
+        const double newEnd = juce::jmax(pencilStartTime + minLen, t);
+        if (newEnd != pencilNoteOff->getTimeStamp()) {
+            pencilNoteOff->setTimeStamp(newEnd);
+            if (midiRegion != nullptr)
+                midiRegion->rebuildThumbnail();
+            notifyRegionModified();
+            repaint();
+        }
         return;
     }
 
@@ -754,6 +781,18 @@ void PianoRollComponent::mouseUp(const juce::MouseEvent& e)
 
     if (wasDragging && !selectedMessages.empty() && currentTool == Tool::SELECT) {
         finalizeMove();
+    }
+
+    // Pencil-Drag abschliessen: Thumbnail final aktualisieren, State raeumen.
+    if (isPencilDrawing) {
+        if (midiRegion != nullptr) {
+            midiRegion->rebuildThumbnail();
+            midiRegion->updateThumb();
+        }
+        notifyRegionModified();
+        isPencilDrawing = false;
+        pencilNoteOn    = nullptr;
+        pencilNoteOff   = nullptr;
     }
 
     // Reset all drag states
@@ -1344,9 +1383,9 @@ double PianoRollComponent::getNoteDuration(MidiMessage* noteOn)
 }
 
 
-void PianoRollComponent::addNotePair(int pitch, double startTime, double duration, int velocity, int channel)
+juce::MidiMessage* PianoRollComponent::addNotePair(int pitch, double startTime, double duration, int velocity, int channel)
 {
-    if (midiRegion == nullptr) return;
+    if (midiRegion == nullptr) return nullptr;
     if (snapToGrid) {
         startTime = snapTimeToGrid(startTime);
 
@@ -1378,6 +1417,7 @@ void PianoRollComponent::addNotePair(int pitch, double startTime, double duratio
 
     midiRegion->rebuildThumbnail();
     midiRegion->updateThumb();
+    return on;
 }
 
 void PianoRollComponent::deleteNotePair(MidiMessage* noteOn)
