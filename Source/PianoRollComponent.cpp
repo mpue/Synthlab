@@ -1125,10 +1125,13 @@ void PianoRollComponent::moveSelectedNotes(double deltaTime, int deltaPitch)
             newStartTime = snapTimeToGrid(newStartTime);
         }
 
-        // Apply pitch snapping if enabled
-        if (!customScale.empty() && deltaPitch != 0) {
-            newPitch = snapPitchToScale(newPitch);
-        }
+        // Pitch-Snap zur Skala wird hier bewusst NICHT angewandt: Cursor-Tasten
+        // sind eine explizite "transponiere um genau N Halbtoene"-Geste. Bei
+        // C-Dur als customScale wuerde C->C# (out of scale) auf den naechsten
+        // In-Scale-Ton snappen — und dabei wegen der Tie-Break-Reihenfolge auf
+        // C zurueckfallen, wodurch sich beim Pfeil-nach-oben gar nichts mehr
+        // bewegt. Tonleiter-Constraint gehoert in den Mauspfad (Pencil/Drag),
+        // nicht in die explizite Tastatursteuerung.
 
         // Check if position actually changed
         if (newStartTime != originalStart || newPitch != originalPitch) {
