@@ -1,5 +1,6 @@
 #include "PianoRollComponent.h"
 #include "Tracks/MidiRegion.h"
+#include "Tracks/Track.h"
 
 PianoRollComponent::PianoRollComponent(MidiRegion* region, double sampleRate)
     : midiRegion(region), sampleRate(sampleRate)
@@ -2632,6 +2633,84 @@ void PianoRollComponent::insertPattern(Pattern p)
                 const int interval = (i % 3 == 0) ? 0 : ((i % 3 == 1) ? 7 : 12);
                 add(juce::jlimit(0, 127, root + interval),
                     i * eighth, sixteenth, 95, trackChannel);
+            }
+            break;
+        }
+
+        // ============================================================
+        // Chord Progressions
+        // 4 Bars, je ein Akkord pro Bar (whole note minus 16tel-Atemluft,
+        // damit der Synth zwischen Akkorden re-triggert). Intervalle als
+        // Halbtonschritte ueber `melodicRoot()`. Akkordfolgen in Dur klingen
+        // auf einem Moll-Root entsprechend modal — der Nutzer waehlt den
+        // gewuenschten Mode ueber die tiefste selektierte Note.
+        // ============================================================
+        case Pattern::AxisProgression:
+        case Pattern::FiftiesProgression:
+        case Pattern::PopSimple:
+        case Pattern::SadPop:
+        case Pattern::TranceEpicProgression:
+        case Pattern::MinorTranceProgression:
+        case Pattern::DeepHouseVamp:
+        case Pattern::JazzyHouse7ths:
+        case Pattern::JazzCadence:
+        case Pattern::AndalusianDescent: {
+            const int root = juce::jlimit(0, 127 - 24, melodicRoot());
+            const double chordDur = bar - sixteenth;
+
+            // Akkord-Tabelle pro Progression — jeweils vier Akkorde, jeder
+            // Akkord ist ein Vector mit Halbton-Offsets ueber dem Root.
+            std::vector<std::vector<int>> chords;
+            switch (p) {
+                case Pattern::AxisProgression:
+                    // I - V - vi - IV  (e.g. C - G - Am - F in C major)
+                    chords = { {0,4,7}, {7,11,14}, {9,12,16}, {5,9,12} };
+                    break;
+                case Pattern::FiftiesProgression:
+                    // I - vi - IV - V (Doo-Wop)
+                    chords = { {0,4,7}, {9,12,16}, {5,9,12}, {7,11,14} };
+                    break;
+                case Pattern::PopSimple:
+                    // I - IV - V - I
+                    chords = { {0,4,7}, {5,9,12}, {7,11,14}, {0,4,7} };
+                    break;
+                case Pattern::SadPop:
+                    // vi - iii - IV - V
+                    chords = { {9,12,16}, {4,7,11}, {5,9,12}, {7,11,14} };
+                    break;
+                case Pattern::TranceEpicProgression:
+                    // vi - IV - I - V (klassischer Trance Anchor)
+                    chords = { {9,12,16}, {5,9,12}, {0,4,7}, {7,11,14} };
+                    break;
+                case Pattern::MinorTranceProgression:
+                    // i - VI - III - VII (natural minor / aeolian)
+                    chords = { {0,3,7}, {8,12,15}, {3,7,10}, {10,14,17} };
+                    break;
+                case Pattern::DeepHouseVamp:
+                    // i - iv - bVII - bIII (modal vamp)
+                    chords = { {0,3,7}, {5,8,12}, {10,14,17}, {3,7,10} };
+                    break;
+                case Pattern::JazzyHouse7ths:
+                    // iim7 - V7 - Imaj7 - Imaj7
+                    chords = { {2,5,9,12}, {7,11,14,17}, {0,4,7,11}, {0,4,7,11} };
+                    break;
+                case Pattern::JazzCadence:
+                    // ii - V - I - I  (klassische Kadenz)
+                    chords = { {2,5,9}, {7,11,14}, {0,4,7}, {0,4,7} };
+                    break;
+                case Pattern::AndalusianDescent:
+                    // i - bVII - bVI - V (Phrygian-Cadence)
+                    chords = { {0,3,7}, {10,14,17}, {8,12,15}, {7,11,14} };
+                    break;
+                default: break;
+            }
+
+            for (size_t ci = 0; ci < chords.size(); ++ci) {
+                const double offset = (double) ci * bar;
+                for (int interval : chords[ci]) {
+                    const int pitch = juce::jlimit(0, 127, root + interval);
+                    add(pitch, offset, chordDur, 90, trackChannel);
+                }
             }
             break;
         }
