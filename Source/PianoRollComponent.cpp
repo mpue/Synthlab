@@ -1679,7 +1679,12 @@ void PianoRollComponent::quantizeSelected(int gridDivision)
 {
     if (selectedMessages.empty()) return;
 
-    double gridSamples = (60.0 / bpm) * sampleRate / gridDivision;
+    // gridDivision = N steht fuer 1/N-Note. Eine 1/N-Note ist 4/N einer
+    // Viertelnote — analog zur Konvention im Rest der Datei (gridResolution
+    // ist 4/N). Vorher stand hier nur "/ gridDivision", was bei N=16 in
+    // Wahrheit auf 1/64 quantisiert hat.
+    if (gridDivision <= 0) return;
+    double gridSamples = (60.0 / bpm) * sampleRate * 4.0 / (double) gridDivision;
 
     for (auto* msg : selectedMessages) {
         MidiMessage* noteOff = findNoteOffForNoteOn(msg);
