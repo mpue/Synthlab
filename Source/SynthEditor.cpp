@@ -1942,11 +1942,20 @@ void SynthEditor::openTracks(File file)
 					else
 						targetWidth = (int) region.getProperty("width", 0);
 
-					if (targetWidth > 0 && targetWidth != r->getWidth())
-						r->setSize(targetWidth, r->getHeight());
-
 					if (auto* ar = dynamic_cast<AudioRegion*>(r))
 						ar->setSourceStartSample((long)(juce::int64) region.getProperty("sourceStartSample", (juce::int64) 0));
+
+					// Trim mit unterdruecktem componentMovedOrResized-Handler
+					// setzen — der Snap/Clamp-Pfad in der wasResized-Branch
+					// laesst sonst eine soeben geladene Nachbar-Region sich an
+					// einer abutting Region "vorbeisnappen" und macht den Trim
+					// rueckgaengig. Wir trust dem gespeicherten Stand: setSize
+					// direkt, dann freigeben.
+					if (targetWidth > 0 && targetWidth != r->getWidth()) {
+						r->setBoundsUpdateInProgress(true);
+						r->setSize(targetWidth, r->getHeight());
+						r->setBoundsUpdateInProgress(false);
+					}
 				}
 				loadedTrack = t;
 			}
