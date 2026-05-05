@@ -1402,22 +1402,7 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 			editor->setRunning(false);
 			editor->openFile(file);
 			editor->setRunning(true);
-
-			// Same Navigator-tab restoration as the toolbar Open path —
-			// SynthEditor::cleanUp() strips every tab except Editor; if the
-			// loaded project has tracks, recreate the Navigator tab so the
-			// user lands on the arrange view.
-			juce::Component::SafePointer<MainComponent> safeThis(this);
-			juce::Timer::callAfterDelay(150, [safeThis]() {
-				if (auto* self = safeThis.getComponent()) {
-					if (self->editorView != nullptr
-						&& self->editorView->getNavigator() != nullptr
-						&& !self->editorView->getNavigator()->getTracks().empty())
-					{
-						self->editorView->OpenTrackView();
-					}
-				}
-			});
+			restoreNavigatorAfterOpen();
 		}
 	}
 	else if (menuItemID >= 1000) {
@@ -1441,6 +1426,23 @@ StringArray MainComponent::getMenuBarNames() {
 
 	return StringArray(names);
 
+}
+
+void MainComponent::restoreNavigatorAfterOpen() {
+	// Deferred via callAfterDelay damit pendendes Layout / Region-Thumbnail
+	// aus openTracks() noch durchlaufen kann — sonst kommt der Navigator
+	// gelegentlich leer oder mis-sized hoch.
+	juce::Component::SafePointer<MainComponent> safeThis(this);
+	juce::Timer::callAfterDelay(150, [safeThis]() {
+		if (auto* self = safeThis.getComponent()) {
+			if (self->editorView != nullptr
+				&& self->editorView->getNavigator() != nullptr
+				&& !self->editorView->getNavigator()->getTracks().empty())
+			{
+				self->editorView->OpenTrackView();
+			}
+		}
+	});
 }
 
 void MainComponent::openQuickstart() {
@@ -1488,6 +1490,7 @@ void MainComponent::openQuickstart() {
 			editor->setRunning(false);
 			editor->openFile();
 			editor->setRunning(true);
+			restoreNavigatorAfterOpen();
 		});
 
 		quickstart->setRecentFilesProvider([]() {
@@ -1503,6 +1506,7 @@ void MainComponent::openQuickstart() {
 			editor->setRunning(false);
 			editor->openFile(f);
 			editor->setRunning(true);
+			restoreNavigatorAfterOpen();
 		});
 
 		quickstart->setAudioConfiguredProvider([this]() {
@@ -1731,25 +1735,7 @@ void MainComponent::buttonClicked(Button* b)
 			editor->setRunning(false);
 			editor->openFile();
 			editor->setRunning(true);
-
-			// SynthEditor::cleanUp() (called at the start of openFile) strips every
-			// tab except the Editor tab. If the freshly loaded project actually has
-			// tracks, recreate the Navigator tab and bring it to the front so the
-			// user lands on the arrange view. Deferred via callAfterDelay so any
-			// pending layout/region thumbnail work from openTracks() can settle
-			// first; without the delay the navigator can come up empty or
-			// mis-sized on heavier projects.
-			juce::Component::SafePointer<MainComponent> safeThis(this);
-			juce::Timer::callAfterDelay(150, [safeThis]() {
-				if (auto* self = safeThis.getComponent()) {
-					if (self->editorView != nullptr
-						&& self->editorView->getNavigator() != nullptr
-						&& !self->editorView->getNavigator()->getTracks().empty())
-					{
-						self->editorView->OpenTrackView();
-					}
-				}
-			});
+			restoreNavigatorAfterOpen();
 		}
 		else if (tb->getItemId() == toolbarFactory->app_settings) {
 			openSettings();
