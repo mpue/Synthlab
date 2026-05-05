@@ -299,9 +299,37 @@ private:
         melodic.addSubMenu("Bass",         bassMenu);
         melodic.addSubMenu("Lead / Arp",   leadMenu);
 
+        // --- Chord Progressions -------------------------------------------
+        // 4-bar Sequenzen, je 1 Akkord pro Bar. Root = tiefste selektierte
+        // Note (sonst C3) — dieselbe Konvention wie bei Bass / Lead.
+        juce::PopupMenu popProg;
+        popProg.addItem(301, "Axis (I-V-vi-IV)" + rootHint);
+        popProg.addItem(302, "50s (I-vi-IV-V)"  + rootHint);
+        popProg.addItem(303, "Pop Simple (I-IV-V-I)" + rootHint);
+        popProg.addItem(304, "Sad Pop (vi-iii-IV-V)" + rootHint);
+
+        juce::PopupMenu tranceProg;
+        tranceProg.addItem(305, "Trance Epic (vi-IV-I-V)" + rootHint);
+        tranceProg.addItem(306, "Minor Trance (i-VI-III-VII)" + rootHint);
+
+        juce::PopupMenu houseProg;
+        houseProg.addItem(307, "Deep House Vamp (i-iv-bVII-bIII)" + rootHint);
+        houseProg.addItem(308, "Jazzy 7ths (iim7-V7-Imaj7)" + rootHint);
+
+        juce::PopupMenu jazzProg;
+        jazzProg.addItem(309, "Jazz Cadence (ii-V-I)" + rootHint);
+        jazzProg.addItem(310, "Andalusian (i-bVII-bVI-V)" + rootHint);
+
+        juce::PopupMenu chordProgressions;
+        chordProgressions.addSubMenu("Pop / Foundation", popProg);
+        chordProgressions.addSubMenu("Trance / EDM",     tranceProg);
+        chordProgressions.addSubMenu("House",            houseProg);
+        chordProgressions.addSubMenu("Jazz / Modal",     jazzProg);
+
         juce::PopupMenu m;
-        m.addSubMenu("Drums",   drums);
-        m.addSubMenu("Melodic", melodic);
+        m.addSubMenu("Drums",             drums);
+        m.addSubMenu("Melodic",           melodic);
+        m.addSubMenu("Chord Progressions", chordProgressions);
 
         m.showMenuAsync(juce::PopupMenu::Options()
                             .withTargetComponent(&patternsMenuButton),
@@ -343,6 +371,17 @@ private:
                     case 211: roll.insertPattern(P::DescendingArp);  break;
                     case 212: roll.insertPattern(P::TranceGate);     break;
                     case 213: roll.insertPattern(P::PluckStab);      break;
+                    // Chord Progressions
+                    case 301: roll.insertPattern(P::AxisProgression);        break;
+                    case 302: roll.insertPattern(P::FiftiesProgression);     break;
+                    case 303: roll.insertPattern(P::PopSimple);              break;
+                    case 304: roll.insertPattern(P::SadPop);                 break;
+                    case 305: roll.insertPattern(P::TranceEpicProgression);  break;
+                    case 306: roll.insertPattern(P::MinorTranceProgression); break;
+                    case 307: roll.insertPattern(P::DeepHouseVamp);          break;
+                    case 308: roll.insertPattern(P::JazzyHouse7ths);         break;
+                    case 309: roll.insertPattern(P::JazzCadence);            break;
+                    case 310: roll.insertPattern(P::AndalusianDescent);      break;
                     default: break;
                 }
             });

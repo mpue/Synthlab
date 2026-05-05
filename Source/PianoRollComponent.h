@@ -172,7 +172,19 @@ public:
         AscendingArp,
         DescendingArp,
         TranceGate,
-        PluckStab
+        PluckStab,
+        // Chord Progressions — jeweils 4 Bars, 1 Akkord pro Bar.
+        // Jeder Akkord = Stack auf root + Intervallen.
+        AxisProgression,         // I  - V  - vi - IV   (Pop / EDM ankerhaft)
+        FiftiesProgression,      // I  - vi - IV - V    (Doo-Wop / 50s)
+        PopSimple,               // I  - IV - V  - I
+        SadPop,                  // vi - iii- IV - V
+        TranceEpicProgression,   // vi - IV - I  - V    (Klassiker im Trance)
+        MinorTranceProgression,  // i  - VI - III- VII  (Aeolian Vamp)
+        DeepHouseVamp,           // i  - iv - bVII - bIII
+        JazzyHouse7ths,          // iim7 - V7 - Imaj7 - Imaj7
+        JazzCadence,             // ii  - V  - I  - I
+        AndalusianDescent        // i  - bVII - bVI - V (Phrygian Cadence)
     };
     void insertPattern(Pattern p);
 
