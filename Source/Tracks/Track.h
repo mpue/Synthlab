@@ -62,6 +62,7 @@ public:
     void notifyListeners(Event* e);
     void sendAllNotesOff();
 	void setZoom(float zoom);
+	float getZoom() const { return zoom; }
 	String getName();
     void setName(String name);	
     void setGain(float gain);

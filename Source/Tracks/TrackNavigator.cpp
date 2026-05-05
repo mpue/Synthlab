@@ -493,9 +493,21 @@ ValueTree TrackNavigator::getConfiguration()
 
 			if (tracks.at(i)->getType() == Track::AUDIO) {
 				if (auto* ar = dynamic_cast<AudioRegion*>(tracks.at(i)->getRegions().at(j))) {
+					// Sichtbare Trim-Laenge direkt aus Pixel-Breite und Zoom
+					// herleiten, statt ar->getNumSamples() zu vertrauen — letzteres
+					// vergleicht thumbnailBounds.width gegen getWidth() und kann
+					// fuer konsolidierte Regionen den vollen Buffer zurueckgeben,
+					// obwohl visuell eine getrimmte Region vorliegt. Pixel/zoom
+					// ist die Quelle, die der Nutzer beim Reload erwartet.
+					const double sr = Project::getInstance()->getSampleRate();
+					const float zoom = ar->getZoom();
+					const long visibleSamples = (zoom > 0.0f && sr > 0.0)
+						? (long) std::round((double) ar->getWidth() / zoom * sr)
+						: (long) ar->getNumSamples();
+
 					region.setProperty("clipRefId", ar->getClipRefid(), nullptr);
 					region.setProperty("sampleOffset", (int)ar->getSampleOffset(), nullptr);
-					region.setProperty("numSamples", ar->getNumSamples(), nullptr);
+					region.setProperty("numSamples", (juce::int64) visibleSamples, nullptr);
 					region.setProperty("sourceStartSample", (juce::int64) ar->getSourceStartSample(), nullptr);
 					region.setProperty("width", ar->getWidth(), nullptr);
 				}
@@ -1498,16 +1510,23 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 	int y = event.getEventRelativeTo(this).y;
 
 	// Marquee nur, wenn auf leerem Hintergrund oder einem Track-Hintergrund
-	// gedrueckt wurde — auf einer Region soll der bestehende Region-Drag
-	// (verschieben/auswaehlen) weiter wie gewohnt arbeiten. Loop-Range (Alt),
-	// Pan (Mitte) und Playhead-Set (Rechts) blocken das ebenfalls.
-	const bool onRegion = (dynamic_cast<Region*>(event.eventComponent) != nullptr);
+	// gedrueckt wurde — auf einer Region (oder einem Kind davon, z.B. den
+	// Resize-Handles am linken/rechten Rand) soll der bestehende Region-Drag
+	// bzw. Resize weiter wie gewohnt arbeiten. Ohne Kinder-Check feuert das
+	// Marquee beim Klick auf den 5-px-Linksresizer mit, deselektiert die
+	// Region und macht das Trim-Drag visuell wie einen Move-Drag.
+	// Loop-Range (Alt), Pan (Mitte) und Playhead-Set (Rechts) blocken
+	// das Marquee ebenfalls.
+	const bool onRegionOrChild =
+		(event.eventComponent != nullptr)
+		&& (dynamic_cast<Region*>(event.eventComponent) != nullptr
+			|| event.eventComponent->findParentComponentOfClass<Region>() != nullptr);
 	marqueeArmed =
 		event.mods.isLeftButtonDown()
 		&& !event.mods.isAltDown()
 		&& !event.mods.isRightButtonDown()
 		&& !event.mods.isMiddleButtonDown()
-		&& !onRegion;
+		&& !onRegionOrChild;
 	marqueeActive = false;
 	marqueeAdditive = event.mods.isShiftDown() || event.mods.isCommandDown();
 	marqueeDownPos = { x, y };

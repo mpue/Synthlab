@@ -151,6 +151,11 @@ private:
     std::atomic<bool> running{ false };
     void openSettings();
     void openQuickstart();
+    // SynthEditor::cleanUp() (am Anfang von openFile aufgerufen) entfernt alle
+    // Tabs ausser Editor. Nach dem Laden bringt diese Helper den Navigator-Tab
+    // wieder zurueck und in den Vordergrund — ueber alle File-Open-Pfade
+    // (Toolbar, Recent-Menu, Quickstart) hinweg dieselbe Logik.
+    void restoreNavigatorAfterOpen();
     
 	SynthEditor* editor = nullptr;
     std::unique_ptr<MainTabbedComponent> tab = nullptr;

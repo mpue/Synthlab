@@ -11,6 +11,7 @@
 	#include "../JuceLibraryCode/JuceHeader.h"
 	#include "TrackIn.h"
 	#include "Connection.h"
+	#include "Mixer.h"
 
 	#define M_PI 3.14159265358979323846
 
@@ -169,11 +170,20 @@
 
 				float gainLeft = cos((M_PI * (pan + 1) / 4));
 				float gainRight = sin((M_PI * (pan + 1) / 4));
+
+				// Mute / Solo: ohne diesen Faktor wirkten beide Toggles bisher
+				// nirgends im Audio-Pfad — Track::isMute/isSolo wurden nur in
+				// den Properties gespeichert. anyTrackSoloed() ist O(n_tracks),
+				// aber nicht im inneren Sample-Loop.
+				const bool anySolo = Mixer::getInstance()->anyTrackSoloed();
+				const float muteSoloGain =
+					(track->isMute() || (anySolo && !track->isSolo())) ? 0.0f : 1.0f;
+
 				for (int j = track->getSamplePosition(); j < buffersize + track->getSamplePosition(); j++) {
 					int bufferIndex = j - track->getSamplePosition(); // 0, 1, 2, ...
 
-					float sampleL = track->getSample(0, j) * track->getVolume() * gainLeft;
-					float sampleR = track->getSample(1, j) * track->getVolume() * gainRight;
+					float sampleL = track->getSample(0, j) * track->getVolume() * gainLeft  * muteSoloGain;
+					float sampleR = track->getSample(1, j) * track->getVolume() * gainRight * muteSoloGain;
 
 					pins.at(2)->getAudioBuffer()->setSample(0, bufferIndex, sampleL);
 					pins.at(3)->getAudioBuffer()->setSample(0, bufferIndex, sampleR);
@@ -278,11 +288,18 @@
 
 			float gainLeft = cos((M_PI * (pan + 1) / 4));
 			float gainRight = sin((M_PI * (pan + 1) / 4));
+
+			// Mute/Solo auch beim Bounce respektieren — sonst werden
+			// stummgeschaltete Spuren ueberraschend mit ins Render geschrieben.
+			const bool anySolo = Mixer::getInstance()->anyTrackSoloed();
+			const float muteSoloGain =
+				(track->isMute() || (anySolo && !track->isSolo())) ? 0.0f : 1.0f;
+
 			for (int j = track->getSamplePosition(); j < buffersize + track->getSamplePosition(); j++) {
 				int bufferIndex = j - track->getSamplePosition(); // 0, 1, 2, ...
 
-				float sampleL = track->getSample(0, j) * track->getVolume() * gainLeft;
-				float sampleR = track->getSample(1, j) * track->getVolume() * gainRight;
+				float sampleL = track->getSample(0, j) * track->getVolume() * gainLeft  * muteSoloGain;
+				float sampleR = track->getSample(1, j) * track->getVolume() * gainRight * muteSoloGain;
 
 				pins.at(2)->getAudioBuffer()->setSample(0, bufferIndex, sampleL);
 				pins.at(3)->getAudioBuffer()->setSample(0, bufferIndex, sampleR);

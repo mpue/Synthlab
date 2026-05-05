@@ -1926,11 +1926,36 @@ void SynthEditor::openTracks(File file)
 					ValueTree region = regions.getChild(j);
 					Logger::getCurrentLogger()->writeToLog(region.getProperty("clipRefId"));
 					Region* r = t->addRegion(region.getProperty("clipRefId"), File(Project::getInstance()->getAudioPath(region.getProperty("clipRefId"))), Project::getInstance()->getSampleRate(), region.getProperty("sampleOffset").toString().getIntValue());
-					Rectangle<int> bounds = r->getBounds();
-					bounds.setWidth(region.getProperty("width"));
-					r->setBounds(bounds);
+
+					// Trim aus dem gespeicherten numSamples ableiten, nicht aus
+					// dem Pixel-`width`. width ist nur am gespeicherten Zoom
+					// gueltig und macht aus konsolidierten/duplizierten Regions
+					// nach Reload wieder Voll-Laenge-Regionen, weil addRegion()
+					// frisch mit dem ungetrimmten Original-File belegt — der
+					// Trim muss explizit zurueckgespielt werden.
+					const long savedNumSamples = (long)(juce::int64) region.getProperty("numSamples", (juce::int64) 0);
+					const double sr = Project::getInstance()->getSampleRate();
+					const float zoom = t->getZoom();
+					int targetWidth = 0;
+					if (savedNumSamples > 0 && zoom > 0.0f && sr > 0.0)
+						targetWidth = (int) std::round((double) savedNumSamples / sr * zoom);
+					else
+						targetWidth = (int) region.getProperty("width", 0);
+
 					if (auto* ar = dynamic_cast<AudioRegion*>(r))
 						ar->setSourceStartSample((long)(juce::int64) region.getProperty("sourceStartSample", (juce::int64) 0));
+
+					// Trim mit unterdruecktem componentMovedOrResized-Handler
+					// setzen — der Snap/Clamp-Pfad in der wasResized-Branch
+					// laesst sonst eine soeben geladene Nachbar-Region sich an
+					// einer abutting Region "vorbeisnappen" und macht den Trim
+					// rueckgaengig. Wir trust dem gespeicherten Stand: setSize
+					// direkt, dann freigeben.
+					if (targetWidth > 0 && targetWidth != r->getWidth()) {
+						r->setBoundsUpdateInProgress(true);
+						r->setSize(targetWidth, r->getHeight());
+						r->setBoundsUpdateInProgress(false);
+					}
 				}
 				loadedTrack = t;
 			}

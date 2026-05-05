@@ -368,10 +368,14 @@ void AudioRegion::setZoom(float zoom) {
     this->setTopLeftPosition(newOffset, 0);
     zoomInProgress = false;
 
-    resizerR->setSize(5, getHeight());
-    resizerR->setTopLeftPosition(getWidth() - 5, 0);
+    // Resize-Handle-Breite: 5 px war zu schmal — Nutzer haben beim Versuch,
+    // links zu trimmen, oft daneben getroffen und dann den Region-Body
+    // gegriffen, sodass aus dem Trim ein Move-Drag wurde. 8 px gibt
+    // brauchbare Hit-Area, ohne den Body zu verdecken.
+    resizerR->setSize(8, getHeight());
+    resizerR->setTopLeftPosition(getWidth() - 8, 0);
     if (resizerL != nullptr) {
-        resizerL->setSize(5, getHeight());
+        resizerL->setSize(8, getHeight());
         resizerL->setTopLeftPosition(0, 0);
     }
 
@@ -419,9 +423,18 @@ void AudioRegion::paint (Graphics& g)
     g.fillRoundedRectangle(b.getX(), b.getY(), effectiveWidth, b.getHeight(), 10);
 
     // Wellenform in halbtransparentem Weiß — auf jedem Hue gut lesbar.
+    // Beim Links-Trim verschiebt sich der sichtbare Slice im Buffer von
+    // sourceStartSample bis sourceStartSample + numSamples; das Thumbnail
+    // muss diesen Slice in den effektiven (getrimmten) Pixel-Bereich
+    // zeichnen, sonst sieht es so aus, als wuerde die Region nur verschoben,
+    // obwohl der Audio-Pfad korrekt von einer spaeteren Position liest.
     g.setColour(juce::Colours::white.withAlpha(0.85f));
-    double audioLength = this->thumbnail->getTotalLength();
-    this->thumbnail->drawChannels(g, b, 0.0, audioLength, 1.0f);
+    const double srForPaint = sampleRate > 0.0 ? sampleRate : 44100.0;
+    const double visibleSeconds = (double) getNumSamples() / srForPaint;
+    const double startSeconds   = (double) sourceStartSample / srForPaint;
+    const double endSeconds     = startSeconds + visibleSeconds;
+    const juce::Rectangle<int> waveArea(b.getX(), b.getY(), effectiveWidth, b.getHeight());
+    this->thumbnail->drawChannels(g, waveArea, startSeconds, endSeconds, 1.0f);
 
     g.setColour(stroke);
     g.drawRoundedRectangle(b.getX(), b.getY(), effectiveWidth, b.getHeight(), 10, 1.0f);
@@ -438,8 +451,8 @@ void AudioRegion::paint (Graphics& g)
             g.fillRoundedRectangle(b.getX() + i * effectiveWidth / (loopCount + 1), b.getY(), effectiveWidth, b.getHeight(), 10);
             g.setColour(juce::Colours::white.withAlpha(0.6f));
 
-            audioLength = this->thumbnail->getTotalLength();
-            this->thumbnail->drawChannels(g, loopBounds, 0.0, audioLength, 1.0f);
+            // Auch in den Loop-Wiederholungen den getrimmten Slice zeichnen.
+            this->thumbnail->drawChannels(g, loopBounds, startSeconds, endSeconds, 1.0f);
         }
     }
     dirty = false;
@@ -456,7 +469,7 @@ void AudioRegion::resized()
     constrainer->setRaster(zoom / 4);
     int maxWidth = (audioBuffer->getNumSamples() / sampleRate) * this->zoom;
     constrainer->setMaxWidth(maxWidth);
-    resizerR->setTopLeftPosition(getWidth() - 5, 0);
+    resizerR->setTopLeftPosition(getWidth() - 8, 0);
     if (resizerL != nullptr) resizerL->setTopLeftPosition(0, 0);
     dirty = true;
 }

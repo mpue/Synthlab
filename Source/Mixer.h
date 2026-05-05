@@ -66,6 +66,17 @@ public:
 		return this->tracks;
 	}
 
+	// Liefert true, wenn mind. ein Track Solo geschaltet ist. Wird vom
+	// TrackIn::process gelesen, um nicht-solo-getrackte Spuren stumm zu
+	// schalten — lineare Suche, aber n=#tracks ist klein und der Ruf liegt
+	// nicht im inneren Loop.
+	inline bool anyTrackSoloed() {
+		for (auto* t : tracks)
+			if (t != nullptr && t->isSolo())
+				return true;
+		return false;
+	}
+
 	inline virtual void changeListenerCallback(ChangeBroadcaster* source) override {
 
 		if (Track* t = dynamic_cast<Track*>(source)) {
