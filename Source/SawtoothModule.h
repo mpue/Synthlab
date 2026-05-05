@@ -70,7 +70,10 @@ private:
     float fine = 0;
     juce::Image* image;
     Sawtooth* monoOscillator;
+    // Voice-Pool: vorab alloziert, der Audio-Thread macht nur Volume-/
+    // Frequency-Updates — kein new/delete (#7).
     Sawtooth* oscillator[128];
+    bool      voiceActive[128];
     int currentSample = 0;
     bool mono;
 

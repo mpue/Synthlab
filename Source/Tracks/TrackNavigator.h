@@ -131,6 +131,9 @@ public:
 	~TrackNavigator();
 
 	void paint(Graphics&) override;
+	// Marquee-Selection-Rechteck ueber alle Tracks/Regions zeichnen — als
+	// paintOverChildren, damit es ueber den Tracks/Regionen liegt.
+	void paintOverChildren(Graphics&) override;
 	void resized() override;
 	// Wird vom Viewport aufgerufen, wenn der Navigator verschoben wird (z.B.
 	// beim horizontalen Scrollen). Wir nutzen das, um die Track-Control-Strips
@@ -229,10 +232,14 @@ public:
 	void setConfiguration(ValueTree* config);
 	void scrollBarMoved(ScrollBar* scrollBarThatHasMoved, double newRangeStart) override;
 	void mouseWheelMove(const MouseEvent& event, const MouseWheelDetails& wheel) override;
-		
-	Region* getRecordingRegion() {
-		return recordingRegion;
-	}
+	void verticalZoomAtMouse(const MouseEvent& event, const MouseWheelDetails& wheel);
+
+	// Mittlere Maustaste: horizontales Pannen des Viewports per Drag.
+	// Werden vom internen MouseListener-Forwarder fuer Events in Kindern
+	// (Track/Region/...) ebenfalls aufgerufen.
+	void handlePanMouseDown(const MouseEvent& event);
+	void handlePanMouseDrag(const MouseEvent& event);
+	void handlePanMouseUp(const MouseEvent& event);
 
 private:
 	// Legt für einen Drop einen Audio-Track an. Geht möglichst über
@@ -299,11 +306,38 @@ private:
 
 	bool loopEnabled = false;
 
-	Region* recordingRegion = nullptr;
-
 	std::unique_ptr<ZoomDisplay> zoomDisplay;
 
+	// Border-/Marquee-Select: linke Maustaste auf leerem Hintergrund (oder
+	// Track-Hintergrund) startet ein Auswahlrechteck. Auf MouseUp werden alle
+	// Regionen aller Tracks ausgewaehlt, deren Bounds das Rechteck schneiden.
+	// Mit Shift/Cmd wird zur bestehenden Selektion hinzugefuegt.
+	bool marqueeArmed = false;       // Mausetaste runter, evtl. wird ein Marquee draus
+	bool marqueeActive = false;      // Schon weit genug gezogen — Rechteck wird gezeichnet
+	bool marqueeAdditive = false;    // Shift/Cmd beim mouseDown
+	juce::Point<int> marqueeDownPos; // Navigator-Koordinaten
+	juce::Rectangle<int> marqueeRect;
+	void finalizeMarqueeSelection();
+
 	SynthEditor* editor = nullptr;
+
+	// Forwarder fuer Mausereignisse in Kindkomponenten — leitet Middle-Mouse-
+	// Drag an den Navigator weiter, damit Pannen auch ueber Tracks/Regionen
+	// hinweg funktioniert. Eigener Listener (kein this), um Doppel-Aufrufe der
+	// Override-Handler bei direkten Klicks auf den Navigator zu vermeiden.
+	struct PanMouseForwarder : public MouseListener
+	{
+		explicit PanMouseForwarder(TrackNavigator& nav) : navigator(nav) {}
+		void mouseDown(const MouseEvent& e) override { navigator.handlePanMouseDown(e); }
+		void mouseDrag(const MouseEvent& e) override { navigator.handlePanMouseDrag(e); }
+		void mouseUp(const MouseEvent& e) override   { navigator.handlePanMouseUp(e); }
+		TrackNavigator& navigator;
+	};
+	std::unique_ptr<PanMouseForwarder> panForwarder;
+
+	bool isPanning = false;
+	juce::Point<int> panStartScreenPos;
+	juce::Point<int> panStartViewPos;
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TrackNavigator)
 };

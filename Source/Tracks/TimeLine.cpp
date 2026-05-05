@@ -82,7 +82,19 @@ void TimeLine::paint(Graphics& g)
                 // L�ngere Linie am Taktanfang
                 const bool isBarStart = (beat == 0);
                 float lineHeight = isBarStart ? getHeight() / 2.0f : getHeight() / 3.0f;
-                g.drawLine(x, 0.0f, x, lineHeight);
+
+                // Linie bei "Takt 1" (= Beschriftung "1" mit 0-basiertem Label,
+                // d.h. bar==2 in der 1-basierten Schleife) deutlich dicker —
+                // markiert visuell den Beginn des ersten gespielten Taktes.
+                const bool isTaktOne = (isBarStart && bar == 2);
+                if (isTaktOne)
+                {
+                    g.drawLine(x, 0.0f, x, getHeight() * 0.85f, 3.0f);
+                }
+                else
+                {
+                    g.drawLine(x, 0.0f, x, lineHeight);
+                }
 
                 // 1/4-Takt Unterteilungen zeichnen (schw�chere Linien)
                 if (!sparseMode)
@@ -100,10 +112,11 @@ void TimeLine::paint(Graphics& g)
                     g.setColour(Colours::white);
                 }
 
-                // Nur Bar-Zahlen mittig zeichnen
+                // Nur Bar-Zahlen mittig zeichnen. Beschriftung beginnt bei 0
+                // (am Timeline-Anfang) — bar laeuft 1..totalBars, also -1.
                 if (isBarStart)
                 {
-                    String label = String(bar);
+                    String label = String(bar - 1);
                     const int textWidth = 30;
                     const int textHeight = 12;
                     g.drawText(label,
@@ -192,6 +205,10 @@ void TimeLine::mouseMove(const MouseEvent& event)
 
 void TimeLine::mouseDown(const MouseEvent& event)
 {
+    // Mittlere Maustaste ist fuers Pannen reserviert.
+    if (event.mods.isMiddleButtonDown())
+        return;
+
     if (!loopEnabled)
         return;
 

@@ -62,6 +62,13 @@ public:
     long getNumMessages() {
         return midiMessageList.size();
     }
+
+    // Append im Load-Pfad: Timestamp ist BUFFER-relativ (so wie er gespeichert
+    // wurde). KEINE Korrektur durch sourceStartSample — der saved Timestamp
+    // enthaelt sourceStartSample bereits. addMessage() vs addMessageRaw():
+    // addMessage rechnet die User-Klick-Position in Buffer-Zeit um (addiert
+    // sourceStartSample), addMessageRaw nimmt die Buffer-Zeit direkt.
+    void addMessageRaw(juce::MidiMessage* m, juce::int64 bufferTimestamp);
     MidiMessage* getMessageAt(int index) {
         return midiMessageList.at(index);
     }
@@ -132,6 +139,21 @@ private:
     int calculateActualLength() const;
     MidiThumbnail* midiThumbnail = nullptr;
     int numSamples = 0;
+    // True waehrend consolidate() — verhindert, dass das interne setBounds
+    // im resize-Handler die rechte Kante hochsnappt und numSamples wachsen
+    // laesst (das wuerde nach Save/Reload den Nachbarn ueberlappen).
+    bool consolidateInProgress = false;
+
+    // Sample-Offset INNERHALB des Message-Buffers, an dem die linke Kante der
+    // Region beginnt. Wird beim Links-Trim erhoeht, damit die Notenpositionen
+    // im Timeline-System unveraendert bleiben (Noten links der neuen linken
+    // Kante werden geclippt; Noten rechts bleiben am gleichen Platz).
+    long sourceStartSample = 0;
+
+public:
+    long getSourceStartSample() const override { return sourceStartSample; }
+    void setSourceStartSample(long s) { sourceStartSample = juce::jmax(0L, s); }
+private:
     std::shared_ptr<bool> tempoSubscriptionAlive;
     MidiBuffer::Iterator* iterator = NULL;
     MidiMessage message;

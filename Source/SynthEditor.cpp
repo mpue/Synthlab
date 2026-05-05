@@ -6,6 +6,7 @@
 #include "AudioOut.h"
 #include "AudioIn.h"
 #include "TrackIn.h"
+#include "Tracks/AudioRegion.h"
 #include "AuxOut.h"
 #include "SawtoothModule.h"
 #include "NoiseModule.h"
@@ -1164,6 +1165,14 @@ bool SynthEditor::isRunning() {
 
 void SynthEditor::setRunning(bool running) {
 
+	// Idempotent: enter/exit nur bei tatsaechlichem Zustandswechsel, sonst
+	// koennen aufeinanderfolgende setRunning(false)-Calls den AudioCallback-
+	// Lock rekursiv mehrfach betreten und ein spaeteres setRunning(true)
+	// haelt den Lock weiter — Audio bleibt dann stumm bzw. spaetere
+	// File-Open-Sequenzen verbleiben in einem inkonsistenten Lock-Zaehlerstand.
+	if (this->running == running)
+		return;
+
 	auto& bus = FastBus::getInstance();
 
 	bus.publish("running", running);
@@ -1584,13 +1593,37 @@ void SynthEditor::saveFile() {
 
 		if (navigator != nullptr) {
 			ValueTree tracks = navigator->getConfiguration();
+
+			// FX-Slot-Map pro Track anreichern: Channel-Strip zu jedem Track
+			// suchen und dessen User-Slot-Zuordnung ans Track-XML haengen.
+			// Ohne das verlieren wir nach reload die Position der FX im Strip.
+			if (mixer != nullptr) {
+				const auto& navTracks = navigator->getTracks();
+				const int numTracks = juce::jmin((int) navTracks.size(), tracks.getNumChildren());
+				for (int ti = 0; ti < numTracks; ++ti) {
+					Track* t = navTracks.at((size_t) ti);
+					if (t == nullptr) continue;
+					for (auto* panel : mixer->getChannels()) {
+						if (panel == nullptr) continue;
+						if (panel->getTrack() == t) {
+							auto trackChild = tracks.getChild(ti);
+							if (trackChild.isValid())
+								trackChild.appendChild(panel->getFXSlotMap(), nullptr);
+							break;
+						}
+					}
+				}
+			}
+
 			xml = tracks.createXml();
-			xml->writeToFile(file.getParentDirectory().getFullPathName() + "\\" + file.getFileNameWithoutExtension() + "_tracks.xml", "");
+			// juce::File::getChildFile baut plattformkorrekt — vorher war hier
+			// "\\" hardcoded und auf macOS landete die Datei nie wo sie sollte.
+			xml->writeToFile(file.getParentDirectory().getChildFile(file.getFileNameWithoutExtension() + "_tracks.xml"), "");
 			xml = nullptr;
 		}
 
 		setDirty(false);
-		Project::getInstance()->save(file.getParentDirectory().getFullPathName() + "\\" + file.getFileNameWithoutExtension() + "_audio.xml");
+		Project::getInstance()->save(file.getParentDirectory().getChildFile(file.getFileNameWithoutExtension() + "_audio.xml"));
 		Project::getInstance()->setNewFile(false);
 		updateProject(file);
 	}
@@ -1752,6 +1785,12 @@ void SynthEditor::openFile(juce::File file) {
 	if (!file.existsAsFile())
 		return;
 
+	// Audio-Thread VOR cleanUp anhalten — sonst iteriert er bei jedem Wechsel
+	// ueber bereits-geloeschte Module/Tracks und es kracht entweder im Audio-
+	// Pfad oder per ChangeBroadcaster, sobald Mixer broadcastet (z.B. bei
+	// Mixer::addTrack waehrend des Loads von File B).
+	setRunning(false);
+
 	cleanUp();
 	newFile();
 
@@ -1762,7 +1801,6 @@ void SynthEditor::openFile(juce::File file) {
 	Project::getInstance()->addRecentFile(file.getFullPathName());
 
 	ValueTree v = ValueTree::fromXml(*xml.get());
-	setRunning(false);
 	ModuleUtils::loadStructure(root->getModules(), root->getConnections(), &v, this);
 
 	{
@@ -1825,15 +1863,12 @@ void SynthEditor::openFile(juce::File /*file*/) {
 void SynthEditor::openTracks(File file)
 {
 
-	String path = file.getParentDirectory().getFullPathName();
+	// Plattformkorrekt: getChildFile statt String-Konkatenation mit "\\".
+	File parent = file.getParentDirectory();
+	File audioDataFile = parent.getChildFile(file.getFileNameWithoutExtension() + "_audio.xml");
+	File trackDataFile = parent.getChildFile(file.getFileNameWithoutExtension() + "_tracks.xml");
 
-	String audioDataFileName = file.getFileNameWithoutExtension() + "_audio.xml";
-	String trackDataFileName = file.getFileNameWithoutExtension() + "_tracks.xml";
-
-	audioDataFileName = path + "\\" + audioDataFileName;
-	trackDataFileName = path + "\\" + trackDataFileName;
-
-	std::unique_ptr<XmlElement> audioXml = XmlDocument(File(audioDataFileName)).getDocumentElement();
+	std::unique_ptr<XmlElement> audioXml = XmlDocument(audioDataFile).getDocumentElement();
 
 	if (audioXml == nullptr)
 		return;
@@ -1851,13 +1886,13 @@ void SynthEditor::openTracks(File file)
 	audio = audio.getChild(0);
 
 	for (int i = 0; i < audio.getNumChildren(); i++) {
-		path = audio.getChild(i).getProperty("path");
-		String id = audio.getChild(i).getProperty("refId");
+		String path = audio.getChild(i).getProperty("path");
+		String id   = audio.getChild(i).getProperty("refId");
 
 		Project::getInstance()->addAudioFile(id, path);
 	}
 
-	std::unique_ptr<XmlElement> xml = XmlDocument(File(trackDataFileName)).getDocumentElement();
+	std::unique_ptr<XmlElement> xml = XmlDocument(trackDataFile).getDocumentElement();
 
 	ValueTree v = ValueTree::fromXml(*xml.get());
 	setRunning(false);
@@ -1879,6 +1914,7 @@ void SynthEditor::openTracks(File file)
 			ValueTree track = v.getChild(i);
 			TrackIn* ti = tracks.at(i);
 
+			Track* loadedTrack = nullptr;
 			if (track.getProperty("type") == "audio") {
 				Track* t = navigator->addTrack(Track::Type::AUDIO, Project::getInstance()->getSampleRate());
 				ti->setTrack(t);
@@ -1893,7 +1929,10 @@ void SynthEditor::openTracks(File file)
 					Rectangle<int> bounds = r->getBounds();
 					bounds.setWidth(region.getProperty("width"));
 					r->setBounds(bounds);
+					if (auto* ar = dynamic_cast<AudioRegion*>(r))
+						ar->setSourceStartSample((long)(juce::int64) region.getProperty("sourceStartSample", (juce::int64) 0));
 				}
+				loadedTrack = t;
 			}
 			else if (track.getProperty("type") == "midi") {
 				juce::Point<int> pos = juce::Point<int>(10, 10);
@@ -1902,6 +1941,7 @@ void SynthEditor::openTracks(File file)
 				t->setMidiChannel(track.getProperty("midiChannel").toString().getIntValue(), false);
 				t->setMidiOutputDevice(track.getProperty("interface").toString());
 				loadMidiRegions(track, t);
+				loadedTrack = t;
 			}
 			else if (track.getProperty("type") == "instrument") {
 				juce::Point<int> pos = juce::Point<int>(10, 10);
@@ -1928,6 +1968,15 @@ void SynthEditor::openTracks(File file)
 				}
 
 				loadMidiRegions(track, t);
+				loadedTrack = t;
+			}
+
+			// Automation pro Track laden — gleiche Stelle, an der getConfiguration()
+			// das ValueTree als "Automation"-Child geschrieben hat.
+			if (loadedTrack != nullptr) {
+				ValueTree autoTree = track.getChildWithName("Automation");
+				if (autoTree.isValid())
+					loadedTrack->getAutomationModel().fromValueTree(autoTree);
 			}
 		}
 
@@ -1936,6 +1985,55 @@ void SynthEditor::openTracks(File file)
 		// here because the Viewport (`trackView`) that wraps the navigator is
 		// owned by EditorComponent, and SynthEditor::cleanUp() — invoked at the
 		// start of openFile() — already removed the Navigator tab from topTab.
+	}
+
+	// Track <-> MasterChannelPanel re-linken. Beim NEU-Anlegen eines Tracks
+	// macht das TrackUtil::AddInstrumentTrack() inline; im Lade-Pfad fehlt es
+	// bisher und damit weiss kein Channel-Strip, zu welchem Track er gehoert.
+	// Folge: Track::fxPlugins[] wird nie befuellt und FX-Plugin-Automation
+	// spielt nicht ab. Match: panel->chainSourceMod == TrackIn dieses Tracks,
+	// fallback ueber fxChainContains(track->pluginModule).
+	//
+	// Anschliessend pro Track die gespeicherte FX-Slot-Map auf das Panel
+	// anwenden — sonst rutschen alle Plugins nach reconstructFXChainFromGraph
+	// linksbuendig zusammen und das Instrument landet als fxChain[0].
+	if (mixer != nullptr) {
+		// Map TrackIn -> ValueTree (das geladene Track-Element) aufbauen,
+		// damit wir spaeter die FXSlots-Property finden koennen.
+		std::map<TrackIn*, juce::ValueTree> tiToConfig;
+		// v ist hier der oben geladene tracks-Tree.
+		for (int i = 0; i < v.getNumChildren(); ++i) {
+			juce::ValueTree trackCfg = v.getChild(i);
+			// Reihenfolge in tracks.xml entspricht der TrackIn-Reihenfolge im Modul-Graph.
+			int j = 0;
+			for (auto* mod : *getModule()->getModules()) {
+				auto* ti = dynamic_cast<TrackIn*>(mod);
+				if (ti == nullptr) continue;
+				if (j == i) { tiToConfig[ti] = trackCfg; break; }
+				++j;
+			}
+		}
+
+		for (auto* mod : *getModule()->getModules()) {
+			auto* ti = dynamic_cast<TrackIn*>(mod);
+			if (ti == nullptr) continue;
+			Track* t = ti->getTrack();
+			if (t == nullptr) continue;
+			for (auto* panel : mixer->getChannels()) {
+				if (panel == nullptr) continue;
+				if (panel->isFedBy(ti) || panel->fxChainContains(t->getPluginModule())) {
+					panel->setTrack(t); // ruft syncTrackFXPlugins() -> Cache rebuild
+					// FX-Slot-Map aus dem geladenen Track-XML anwenden, falls vorhanden.
+					auto cfgIt = tiToConfig.find(ti);
+					if (cfgIt != tiToConfig.end()) {
+						auto slotMap = cfgIt->second.getChildWithName("FXSlots");
+						if (slotMap.isValid())
+							panel->applyFXSlotMap(slotMap);
+					}
+					break;
+				}
+			}
+		}
 	}
 
 	setRunning(true);
@@ -1955,6 +2053,10 @@ void SynthEditor::loadMidiRegions(juce::ValueTree& track, Track* t) {
 		Rectangle<int> bounds = mr->getBounds();
 		bounds.setWidth(int(region.getProperty("width")));
 		mr->setBounds(bounds);
+
+		// Buffer-Offset wiederherstellen, sonst springen Noten beim Reload
+		// einer links-getrimmten Region zurueck zur ungetrimmten Position.
+		mr->setSourceStartSample((long)(juce::int64) region.getProperty("sourceStartSample", (juce::int64) 0));
 
 		ValueTree events = region.getChild(0);
 		int numEvents = events.getNumChildren();
@@ -2006,13 +2108,14 @@ void SynthEditor::loadMidiRegions(juce::ValueTree& track, Track* t) {
 			}
 
 			if (validMessage) {
-				int timestamp = int(event.getProperty("timestamp"));
-				// Saved timestamp is relative to the region start. addMessage()
-				// expects an *absolute* sampleNum and re-relativises it via
-				// `sampleNum - getSampleOffset()`. Without adding the offset back
-				// here, every reload re-subtracts sampleOffset and the round-trip
-				// drives timestamps negative on the next save.
-				mr->addMessage(new MidiMessage(msg), timestamp, timestamp + (int)mr->getSampleOffset());
+				const juce::int64 timestamp = (juce::int64) event.getProperty("timestamp");
+				// Saved timestamp is BUFFER-relativ — d.h. enthaelt bereits
+				// sourceStartSample (wenn die Region links getrimmt war). Den
+				// raw-Pfad nehmen, der den Wert 1:1 setzt; addMessage() wuerde
+				// sourceStartSample ein zweites Mal addieren und die Notes nach
+				// dem Reload sichtbar verschieben (und im konsolidierten Save
+				// hinter den rechten Rand schieben, sodass sie verschwinden).
+				mr->addMessageRaw(new juce::MidiMessage(msg), timestamp);
 				loadedCount++;
 			}
 		}

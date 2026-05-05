@@ -79,6 +79,34 @@ ExtendedFileBrowser::ExtendedFileBrowser(const File& initialFileOrDirectory,cons
     sampler = Project::getInstance()->getDefaultSampler();
     table->addMouseListener(this, true);
 
+    // Wenn der Background-Scan fertig ist: erneut filtern (jetzt aus dem
+    // gefuellten Cache) und Tabelle refreshen.
+    model->onScanFinished = [this]() { applyFilter(); };
+
+    // Filter-Eingabezeile unten links — substring-match (case-insensitive).
+    // Greift sowohl im Flat- als auch im Tree-Mode. Verzeichnisse bleiben
+    // immer sichtbar, damit der Nutzer noch navigieren kann.
+    filterLabel = new juce::Label({}, "Filter");
+    filterLabel->setColour(juce::Label::textColourId, juce::Colours::white);
+    filterLabel->setFont(juce::Font(11.0f));
+    addAndMakeVisible(filterLabel);
+
+    filterEditor = new juce::TextEditor();
+    filterEditor->setColour(juce::TextEditor::backgroundColourId, juce::Colour(0xff2a2a2a));
+    filterEditor->setColour(juce::TextEditor::textColourId, juce::Colours::white);
+    filterEditor->setColour(juce::TextEditor::outlineColourId, juce::Colour(0xff4d9eff).withAlpha(0.5f));
+    filterEditor->setTextToShowWhenEmpty("type to filter samples...", juce::Colours::grey);
+    filterEditor->onTextChange = [this]() {
+        filterText = filterEditor->getText().trim();
+        applyFilter();
+    };
+    filterEditor->onEscapeKey = [this]() {
+        filterEditor->setText({}, juce::dontSendNotification);
+        filterText.clear();
+        applyFilter();
+    };
+    addAndMakeVisible(filterEditor);
+
     loadState();
 
     model->update();
@@ -102,6 +130,8 @@ ExtendedFileBrowser::~ExtendedFileBrowser() {
         delete driveButtons.at(i);
     }
     delete modeButton;
+    delete filterEditor;
+    delete filterLabel;
 }
 
 void ExtendedFileBrowser::mouseDrag(const juce::MouseEvent &event) {
@@ -124,12 +154,58 @@ void ExtendedFileBrowser::resized() {
         setSize(getParentWidth(), getParentHeight());
     }
 
-    const int top = 25;
-    view->setBounds(0, top, getWidth(), juce::jmax(0, getHeight() - top));
-    table->setSize(getWidth(), juce::jmax(0, getHeight() - top - 5));
+    // Layout:  Buttons-Reihe (y=0..20) | Filter-Reihe (y=25..47) | Tabelle/Tree
+    // Der Filter liegt direkt unterhalb der Drive/Mode-Buttons. Die
+    // Tabelle/der Tree starten dahinter.
+    const int filterY = 25;
+    const int filterH = 22;
+
+    if (filterLabel != nullptr)
+        filterLabel->setBounds(4, filterY, 36, filterH);
+    if (filterEditor != nullptr)
+        filterEditor->setBounds(40, filterY, juce::jmax(40, getWidth() - 44), filterH);
+
+    const int contentTop = filterY + filterH + 4;
+    const int contentH   = juce::jmax(0, getHeight() - contentTop);
+
+    view->setBounds(0, contentTop, getWidth(), contentH);
+    table->setSize(getWidth(), juce::jmax(0, contentH - 5));
 
     if (tree != nullptr)
-        tree->setBounds(0, top, getWidth(), juce::jmax(0, getHeight() - top));
+        tree->setBounds(0, contentTop, getWidth(), contentH);
+}
+
+void ExtendedFileBrowser::applyFilter() {
+    if (model != nullptr) {
+        model->setFilter(filterText);
+        model->rebuildSorted();
+    }
+    if (table != nullptr) {
+        table->updateContent();
+        table->repaint();
+    }
+
+    const bool filterActive = filterText.isNotEmpty();
+
+    // Wenn ein Filter aktiv ist, blenden wir den Tree aus und zeigen die
+    // flache Trefferliste in der Tabelle — egal welchen Mode der Nutzer
+    // sonst eingestellt hat. Sobald der Filter wieder leer ist, kehrt der
+    // urspruengliche Mode zurueck.
+    if (filterActive) {
+        if (tree != nullptr) tree->setVisible(false);
+        if (view != nullptr) view->setVisible(true);
+    } else {
+        if (mode == Mode::Tree) {
+            if (view != nullptr) view->setVisible(false);
+            if (tree != nullptr) {
+                tree->setVisible(true);
+                rebuildTree(); // Tree neu aus aktuellem Verzeichnis aufbauen
+            }
+        } else {
+            if (tree != nullptr) tree->setVisible(false);
+            if (view != nullptr) view->setVisible(true);
+        }
+    }
 }
 
 void ExtendedFileBrowser::changeListenerCallback (ChangeBroadcaster* source) {
@@ -145,7 +221,10 @@ void ExtendedFileBrowser::mouseDown(const juce::MouseEvent &event) {
 
 	grabKeyboardFocus();
 
-    if (mode != Mode::Flat)
+    // Prelisten greift, sobald die Tabelle sichtbar ist — also entweder im
+    // Flat-Mode oder im Tree-Mode mit aktivem Filter (dann zeigen wir die
+    // flache Trefferliste in der Tabelle).
+    if (table == nullptr || ! table->isVisible())
         return;
 
     if (table->getSelectedRow() > 0) {
@@ -171,7 +250,7 @@ void ExtendedFileBrowser::mouseDown(const juce::MouseEvent &event) {
 
 void ExtendedFileBrowser::mouseDoubleClick(const juce::MouseEvent &event) {
 
-    if (mode != Mode::Flat)
+    if (table == nullptr || ! table->isVisible())
         return;
 
     if (table->getSelectedRow() > 0) {
@@ -283,13 +362,21 @@ void ExtendedFileBrowser::treeItemDoubleClicked(const juce::File& file) {
 // Model
 //===========================================================================
 
-FileBrowserModel::FileBrowserModel(DirectoryContentsList* directoryList, File& initalDir) {
+FileBrowserModel::FileBrowserModel(DirectoryContentsList* directoryList, File& initalDir)
+    : juce::Thread("BrowserScan") {
     this->directoryList = directoryList;
     this->currentDirectory = initalDir.getFullPathName();
     directoryList->setDirectory(initalDir, true,true);
 }
 
+FileBrowserModel::~FileBrowserModel() {
+    // Thread sauber abbrechen bevor Members verschwinden.
+    stopThread(2000);
+}
+
 int FileBrowserModel::getNumRows() {
+    if (scanInProgress.load())
+        return 1; // "Scanning..."-Zeile waehrend Background-Scan
     return (int)sortedFiles.size() + 1;
 }
 
@@ -305,7 +392,10 @@ void FileBrowserModel::paintCell (Graphics& g,
 
     if (columnId == 1) {
 
-        if (rowNumber > 0) {
+        if (scanInProgress.load() && rowNumber == 0) {
+            text = "Scanning audio files...";
+        }
+        else if (rowNumber > 0) {
             File f = getFileForRow(rowNumber);
             text = f.getFileName();
             if (f.isDirectory())
@@ -354,6 +444,72 @@ void FileBrowserModel::paintRowBackground (Graphics& g,
 void FileBrowserModel::setCurrentDir(juce::File* dir){
     this->currentDirectory = dir->getFullPathName();
     directoryList->setDirectory(*dir, true, true);
+    invalidateRecursiveCache();
+}
+
+void FileBrowserModel::invalidateRecursiveCache() {
+    // Laufenden Scan abbrechen und Cache verwerfen.
+    if (isThreadRunning())
+        stopThread(2000);
+    const juce::ScopedLock sl(cacheLock);
+    recursiveAudioCache.clear();
+    recursiveCacheDir.clear();
+    recursiveCacheValid = false;
+}
+
+bool FileBrowserModel::isAudioFile(const juce::File& f) {
+    if (f.isDirectory()) return false;
+    auto ext = f.getFileExtension().toLowerCase();
+    if (ext.isEmpty()) return false;
+    // Hand-gepflegte Whitelist — was hier nicht dabei ist, kann der
+    // Default-Sampler ohnehin nicht laden.
+    return ext == ".wav" || ext == ".aif" || ext == ".aiff"
+        || ext == ".mp3" || ext == ".ogg" || ext == ".flac";
+}
+
+void FileBrowserModel::requestRecursiveScan() {
+    {
+        const juce::ScopedLock sl(cacheLock);
+        if (recursiveCacheValid && recursiveCacheDir == currentDirectory)
+            return; // Cache passt schon
+    }
+    if (scanInProgress.load() && scanTargetDir == currentDirectory)
+        return; // selber Scan laeuft schon
+    if (isThreadRunning())
+        stopThread(2000);
+    scanTargetDir = currentDirectory;
+    scanInProgress.store(true);
+    startThread();
+}
+
+void FileBrowserModel::run() {
+    const juce::String dir = scanTargetDir;
+    std::vector<juce::File> result;
+
+    juce::File root(dir);
+    if (root.isDirectory()) {
+        for (juce::DirectoryEntry entry : juce::RangedDirectoryIterator(
+                 root, /*recursive*/ true, "*", juce::File::findFiles)) {
+            if (threadShouldExit()) return; // sauber abbrechen
+            const juce::File f = entry.getFile();
+            if (isAudioFile(f))
+                result.push_back(f);
+        }
+    }
+
+    {
+        const juce::ScopedLock sl(cacheLock);
+        recursiveAudioCache = std::move(result);
+        recursiveCacheDir   = dir;
+        recursiveCacheValid = true;
+    }
+    scanInProgress.store(false);
+
+    // Auf den MessageThread fallen lassen, damit der Browser
+    // table->updateContent() / repaint() machen kann ohne Race.
+    juce::MessageManager::callAsync([this]() {
+        if (onScanFinished) onScanFinished();
+    });
 }
 
 void FileBrowserModel::update() {
@@ -363,6 +519,36 @@ void FileBrowserModel::update() {
 void FileBrowserModel::rebuildSorted() {
     sortedFiles.clear();
 
+    auto cmp = [](const juce::File& a, const juce::File& b) {
+        return a.getFileName().compareIgnoreCase(b.getFileName()) < 0;
+    };
+
+    if (filterText.isNotEmpty()) {
+        // Mit aktivem Filter: aus dem rekursiven Audio-Cache filtern. Wenn
+        // der Cache fuer das aktuelle Verzeichnis noch nicht gebaut ist,
+        // im Background-Thread anstossen (nicht-blockierend) und
+        // momentan eine leere Liste zeichnen — die UI bleibt antwortbar
+        // und der "Scanning..."-Indicator kommt aus getNumRows/paintCell.
+        bool cacheReady = false;
+        std::vector<juce::File> snapshot;
+        {
+            const juce::ScopedLock sl(cacheLock);
+            cacheReady = (recursiveCacheValid && recursiveCacheDir == currentDirectory);
+            if (cacheReady) snapshot = recursiveAudioCache;
+        }
+        if (!cacheReady) {
+            requestRecursiveScan();
+            return; // sortedFiles bleibt leer; getNumRows zeigt waehrenddessen "Scanning..."
+        }
+        sortedFiles.reserve(snapshot.size());
+        for (const auto& f : snapshot)
+            if (f.getFileName().containsIgnoreCase(filterText))
+                sortedFiles.push_back(f);
+        std::sort(sortedFiles.begin(), sortedFiles.end(), cmp);
+        return;
+    }
+
+    // Kein Filter: normales Verhalten — Verzeichnisse oben, Files unten.
     const int n = directoryList->getNumFiles();
     std::vector<juce::File> dirs;
     std::vector<juce::File> files;
@@ -377,9 +563,6 @@ void FileBrowserModel::rebuildSorted() {
             files.push_back(f);
     }
 
-    auto cmp = [](const juce::File& a, const juce::File& b) {
-        return a.getFileName().compareIgnoreCase(b.getFileName()) < 0;
-    };
     std::sort(dirs.begin(), dirs.end(), cmp);
     std::sort(files.begin(), files.end(), cmp);
 
@@ -504,13 +687,19 @@ void FileTreeItem::loadChildren() {
     juce::Array<juce::File> dirs;
     juce::Array<juce::File> files;
 
+    const juce::String filter = (owner != nullptr) ? owner->getFilterText() : juce::String();
+    const bool hasFilter = filter.isNotEmpty();
+
     for (juce::DirectoryEntry entry : juce::RangedDirectoryIterator(file, false, "*",
             juce::File::findFilesAndDirectories)) {
         juce::File child = entry.getFile();
-        if (child.isDirectory())
+        if (child.isDirectory()) {
             dirs.add(child);
-        else
+        } else {
+            if (hasFilter && !child.getFileName().containsIgnoreCase(filter))
+                continue;
             files.add(child);
+        }
     }
 
     auto cmp = [](const juce::File& a, const juce::File& b) {

@@ -21,7 +21,7 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
     this->constrainer = new ResizeConstrainer(this->zoom / 4);
     
     resizerR = new ResizableEdgeComponent(this,constrainer,ResizableEdgeComponent::rightEdge);
-    // resizerL = new ResizableEdgeComponent(this,constrainer,ResizableEdgeComponent::leftEdge);
+    resizerL = new ResizableEdgeComponent(this,constrainer,ResizableEdgeComponent::leftEdge);
     
     this->thumbnailCache = new AudioThumbnailCache(1);
     this->thumbnail = new AudioThumbnail(512, manager, *this->thumbnailCache);
@@ -37,7 +37,7 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
         audioBuffer->copyFrom(0, 0, *other->getBuffer(), 0, startSample, numSamples);
         audioBuffer->copyFrom(1, 0, *other->getBuffer(), 1, startSample, numSamples);
     }
-        
+
     this->thumbnail->reset(2, sampleRate);
     this->thumbnail->addBlock(0, *audioBuffer, 0, numSamples);
     
@@ -49,7 +49,7 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
 
     this->offset = 0;
     
-    //addAndMakeVisible(resizerL);
+    addAndMakeVisible(resizerL);
     addAndMakeVisible(resizerR);
     
     addComponentListener(this);
@@ -66,7 +66,7 @@ AudioRegion::AudioRegion(AudioSampleBuffer* source, AudioFormatManager& manager,
     this->constrainer = new ResizeConstrainer(this->zoom / 4);
     
     resizerR = new ResizableEdgeComponent(this,constrainer,ResizableEdgeComponent::rightEdge);
-    // resizerL = new ResizableEdgeComponent(this,constrainer,ResizableEdgeComponent::leftEdge);
+    resizerL = new ResizableEdgeComponent(this,constrainer,ResizableEdgeComponent::leftEdge);
     
     this->sampleRate = sampleRate;
     
@@ -104,7 +104,7 @@ AudioRegion::AudioRegion(AudioSampleBuffer* source, AudioFormatManager& manager,
         
     setSize((audioBuffer->getNumSamples() / sampleRate) * this->zoom, Project::DEFAULT_TRACK_HEIGHT);
     
-    // addAndMakeVisible(resizerL);
+    addAndMakeVisible(resizerL);
     addAndMakeVisible(resizerR);    
     addComponentListener(this);
     
@@ -120,7 +120,7 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
     this->constrainer = new ResizeConstrainer(this->zoom / 4);
     
     resizerR = new ResizableEdgeComponent(this,constrainer,ResizableEdgeComponent::rightEdge);
-    //resizerL = new ResizableEdgeComponent(this,constrainer,ResizableEdgeComponent::leftEdge);
+    resizerL = new ResizableEdgeComponent(this,constrainer,ResizableEdgeComponent::leftEdge);
     
     this->sampleRate = sampleRate;
     
@@ -154,7 +154,7 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
 
     this->offset = 0;
     
-    //addAndMakeVisible(resizerL);
+    addAndMakeVisible(resizerL);
     addAndMakeVisible(resizerR);
    
     addComponentListener(this);
@@ -172,6 +172,7 @@ AudioRegion::AudioRegion(File file, String refId, AudioFormatManager& manager, d
     this->zoom = 40;
     this->constrainer = new ResizeConstrainer(this->zoom / 4);
     resizerR = new ResizableEdgeComponent(this, constrainer, ResizableEdgeComponent::rightEdge);
+    resizerL = new ResizableEdgeComponent(this, constrainer, ResizableEdgeComponent::leftEdge);
     this->sampleRate = sampleRate;
 
     SmartSample* smartSample = new SmartSample();
@@ -200,6 +201,7 @@ AudioRegion::AudioRegion(File file, String refId, AudioFormatManager& manager, d
 
     addComponentListener(this);
     addAndMakeVisible(resizerR);
+    addAndMakeVisible(resizerL);
 
     dirty = false;
     setPitch(1);
@@ -288,25 +290,36 @@ void AudioRegion::consolidate()
     }
     else
     {
-        // Non-looping case: trim the audio buffer to the current visual (dragged) length.
-        // Use the component width directly — independent of thumbnailBounds state.
-        int trimmedSamples = (int)((getWidth() / zoom) * sampleRate);
-        if (trimmedSamples > 0 && trimmedSamples < audioBuffer->getNumSamples())
-        {
-            auto* newBuffer = new AudioSampleBuffer(numChannels, trimmedSamples);
-            for (int ch = 0; ch < numChannels; ch++)
-                newBuffer->copyFrom(ch, 0, *audioBuffer, ch, 0, trimmedSamples);
-            delete audioBuffer;
-            audioBuffer = newBuffer;
+        // Konsolidierter Bereich = [sourceStartSample, sourceStartSample + numSamples).
+        // Alles davor / danach wird endgueltig aus dem audioBuffer entfernt,
+        // sourceStartSample faellt auf 0. Reine Right-Trim-Faelle haben
+        // sourceStartSample == 0, dann ist es ein normaler Trim am Ende.
+        const long visibleLen = (long) std::round((double) getWidth() / zoom * sampleRate);
+        const long sss        = sourceStartSample;
+        if (visibleLen <= 0) return;
 
-            // Rebuild thumbnail for the new (shorter) buffer.
-            this->thumbnail->reset(numChannels, sampleRate);
-            this->thumbnail->addBlock(0, *audioBuffer, 0, trimmedSamples);
-            // Align thumbnailBounds so getNumSamples() returns the buffer size going forward.
+        // Out-of-bounds-Schutz: visibleLen darf nicht ueber den Buffer
+        // hinauslaufen (kann passieren wenn die Region durch Resize-zurueck
+        // groesser wurde als die Quelle).
+        const long maxAvailable = (long) audioBuffer->getNumSamples() - sss;
+        const long copyLen = juce::jlimit(0L, maxAvailable, visibleLen);
+        if (copyLen <= 0) return;
+
+        auto* newBuffer = new AudioSampleBuffer(numChannels, (int) visibleLen);
+        newBuffer->clear();
+        for (int ch = 0; ch < numChannels; ch++)
+            newBuffer->copyFrom(ch, 0, *audioBuffer, ch, (int) sss, (int) copyLen);
+        delete audioBuffer;
+        audioBuffer = newBuffer;
+        sourceStartSample = 0;
+
+        // Thumbnail neu aus dem getrimmten Buffer aufbauen.
+        this->thumbnail->reset(numChannels, sampleRate);
+        this->thumbnail->addBlock(0, *audioBuffer, 0, (int) visibleLen);
+        if (this->thumbnailBounds != nullptr)
             this->thumbnailBounds->setWidth(getWidth());
-            dirty = true;
-            repaint();
-        }
+        dirty = true;
+        repaint();
     }
 }
 
@@ -332,14 +345,20 @@ AudioSampleBuffer* AudioRegion::getBuffer() {
 }
 
 void AudioRegion::setZoom(float zoom) {
+    // Sichtbare Sample-Laenge JETZT festhalten — solange this->zoom noch den
+    // alten Wert hat, liefert getNumSamples() den korrekten getrimmten Stand.
+    // Erst danach den neuen Zoom uebernehmen, sonst rechnet getNumSamples()
+    // die Pixel-Breite mit dem neuen Zoom zurueck und der Trim wird verfaelscht.
+    const long visibleSamples = (long) getNumSamples();
+
     this->zoom = zoom;
 
     zoomInProgress = true;
     if (loop) {
-        setSize((getNumSamples() / sampleRate * (loopCount + 1)) * this->zoom, getHeight());
+        setSize((int) std::round((double) visibleSamples / sampleRate * (loopCount + 1) * this->zoom), getHeight());
     }
     else {
-        setSize((getNumSamples() / sampleRate) * this->zoom, getHeight());
+        setSize((int) std::round((double) visibleSamples / sampleRate * this->zoom), getHeight());
     }
 
     // Snap auf Viertelnoten anwenden
@@ -351,8 +370,18 @@ void AudioRegion::setZoom(float zoom) {
 
     resizerR->setSize(5, getHeight());
     resizerR->setTopLeftPosition(getWidth() - 5, 0);
+    if (resizerL != nullptr) {
+        resizerL->setSize(5, getHeight());
+        resizerL->setTopLeftPosition(0, 0);
+    }
 
-    this->thumbnailBounds->setSize(getWidth(), getHeight());
+    // thumbnailBounds.width muss dem VOLLEN Buffer-Extent entsprechen, sonst
+    // verliert getNumSamples() seine Trim-Detektion: die vergleicht
+    // getWidth() (sichtbar) mit thumbnailBounds.width (voll). Setzt man die
+    // hier auf getWidth(), sind beide gleich und die Region gilt naechstes
+    // Mal als "nicht getrimmt" — sie springt auf die Original-Laenge zurueck.
+    const int fullWidth = (int) std::round((double) audioBuffer->getNumSamples() / sampleRate * this->zoom);
+    this->thumbnailBounds->setSize(fullWidth, getHeight());
 
     // Aktualisiere Snap-Einstellungen f�r Viertelnoten
     updateSnapSettings();
@@ -428,6 +457,7 @@ void AudioRegion::resized()
     int maxWidth = (audioBuffer->getNumSamples() / sampleRate) * this->zoom;
     constrainer->setMaxWidth(maxWidth);
     resizerR->setTopLeftPosition(getWidth() - 5, 0);
+    if (resizerL != nullptr) resizerL->setTopLeftPosition(0, 0);
     dirty = true;
 }
 
@@ -473,6 +503,64 @@ void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, b
 
     Track* parentTrack = dynamic_cast<Track*>(getParentComponent());
 
+    // Linkskanten-Resize triggert beides: wasMoved (X aendert sich) UND
+    // wasResized (Breite aendert sich). Die untenstehenden separaten Branches
+    // wuerden dann naheinander setTopLeftPosition() (haelt Breite fest, rechte
+    // Kante wandert) und setSize() (haelt X fest) rufen — Ergebnis: die rechte
+    // Kante haut nach rechts ab. Hier zusammen behandeln, rechte Kante aus den
+    // (vom Constrainer bereits korrigierten) bounds halten, linke snappen,
+    // Breite = right - left.
+    if (wasMoved && wasResized) {
+        const double sr = Project::getInstance()->getSampleRate();
+        const long currentLeftSample  = (long) std::round((double) getBounds().getX() / zoom * sr);
+        const long currentRightSample = (long) std::round((double)(getBounds().getX() + getBounds().getWidth()) / zoom * sr);
+
+        long snappedLeft = currentLeftSample;
+        if (Project::getInstance()->isSnapToGridEnabled()) {
+            const bool fine = juce::ModifierKeys::getCurrentModifiersRealtime().isShiftDown();
+            snappedLeft = Project::getInstance()->snapSampleToGrid(snappedLeft, zoom, fine);
+        }
+        if (snappedLeft < 0) snappedLeft = 0;
+        if (snappedLeft >= currentRightSample) snappedLeft = currentLeftSample; // sanity
+
+        // Overlap-Clamp: nur die linke Kante darf nicht in die Vorgaengerregion
+        // hineinragen. Wir lassen clampOffsetForRegion entscheiden — die Laenge
+        // wird hinterher entsprechend angepasst.
+        if (parentTrack != nullptr) {
+            const long maxLeft = currentRightSample - 1;
+            long candidate = snappedLeft;
+            candidate = parentTrack->clampOffsetForRegion(this, candidate, currentRightSample - candidate);
+            if (candidate <= maxLeft) snappedLeft = candidate;
+        }
+
+        const long newNumSamples = currentRightSample - snappedLeft;
+
+        const int newX     = (int) std::round((double) snappedLeft / sr * zoom);
+        const int newWidth = (int) std::round((double) newNumSamples / sr * zoom);
+
+        // Buffer-Read-Offset analog zur MidiRegion: linke Kante wandert in
+        // Timeline um deltaLeft -> sourceStartSample wandert im Audio-Buffer
+        // um den gleichen Betrag. Negative Werte (Region wird nach links
+        // verlaengert) clampen auf 0.
+        const long oldSampleOffset = getSampleOffset();
+        const long deltaLeft = snappedLeft - oldSampleOffset;
+        sourceStartSample = juce::jmax(0L, sourceStartSample + deltaLeft);
+
+        // Modell zuerst, dann setBounds — setBounds ruft componentMovedOr-
+        // Resized reentrant auf; wir brauchen idempotentes Verhalten.
+        oldOffset = snappedLeft;
+        if (snappedLeft != getSampleOffset())
+            setSampleOffset(snappedLeft, true, true);
+
+        if (newX != getBounds().getX() || newWidth != getWidth()) {
+            setBounds(newX, getY(), newWidth, getHeight());
+        }
+
+        sendChangeMessage();
+        dirty = true;
+        return;
+    }
+
     if (wasMoved) {
         long tracklen = Project::getInstance()->getTrackLength();
         double sampleRate = Project::getInstance()->getSampleRate();
@@ -480,22 +568,34 @@ void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, b
         // Berechne Sample-Position basierend auf X-Position
         long sampleNum = (getBounds().getX() / zoom) * sampleRate;
 
-        // Snap auf Taktraster wenn global aktiviert (sonst freie Position).
-        // Granularität: bei zoom >= 100 auf 1/4 Takt, sonst ganze Takte.
-        // Mit gehaltener Shift-Taste: 1/4 des aktuellen Rasters für feinere
-        // Platzierung.
-        if (Project::getInstance()->isSnapToGridEnabled()) {
-            const bool fine = juce::ModifierKeys::getCurrentModifiersRealtime().isShiftDown();
-            sampleNum = Project::getInstance()->snapSampleToGrid(sampleNum, zoom, fine);
+        // Multi-Drag-Folger: Per-Region-Snap und -Clamp ueberspringen, sonst
+        // raster jeder Follower auf sein eigenes Grid-Ziel und die Gruppe
+        // driftet auseinander. Der Leader hat sein Snap/Clamp bereits
+        // erledigt, der Dragger uebersetzt alle anderen mit dem effektiven
+        // Pixel-Delta.
+        const bool isMultiFollower =
+            dragger != nullptr
+            && dragger->isMultiDragInProgress()
+            && dragger->getComponentBeingDragged() != this;
+
+        if (!isMultiFollower) {
+            // Snap auf Taktraster wenn global aktiviert (sonst freie Position).
+            // Granularität: bei zoom >= 100 auf 1/4 Takt, sonst ganze Takte.
+            // Mit gehaltener Shift-Taste: 1/4 des aktuellen Rasters für feinere
+            // Platzierung.
+            if (Project::getInstance()->isSnapToGridEnabled()) {
+                const bool fine = juce::ModifierKeys::getCurrentModifiersRealtime().isShiftDown();
+                sampleNum = Project::getInstance()->snapSampleToGrid(sampleNum, zoom, fine);
+            }
+
+            // Gerade Sample-Zahl sicherstellen
+            if (sampleNum % 2 != 0)
+                sampleNum -= 1;
+
+            // Overlap-Clamp gegen die Nachbarregionen.
+            if (parentTrack != nullptr)
+                sampleNum = parentTrack->clampOffsetForRegion(this, sampleNum, getNumSamples());
         }
-
-        // Gerade Sample-Zahl sicherstellen
-        if (sampleNum % 2 != 0)
-            sampleNum -= 1;
-
-        // Overlap-Clamp gegen die Nachbarregionen.
-        if (parentTrack != nullptr)
-            sampleNum = parentTrack->clampOffsetForRegion(this, sampleNum, getNumSamples());
 
         oldOffset = sampleNum;
 

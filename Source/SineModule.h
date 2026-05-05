@@ -44,7 +44,10 @@ private:
     float amplitude;
     float fine = 0;
     juce::Image* image;
+    // Voice-Pool: alle 128 Oszillatoren werden im Konstruktor angelegt, der
+    // Audio-Thread macht nur noch Aktivierung/Volume — kein new/delete (#7).
     Sine* oscillator[128];
+    bool  voiceActive[128];
     int currentSample = 0;
     
     

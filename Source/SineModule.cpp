@@ -21,23 +21,27 @@ SineModule::SineModule(double sampleRate, int buffersize)
 {
     this->sampleRate = sampleRate;
     this->buffersize = buffersize;
-    
-    for (int i = 0; i < 128;i++){
-        oscillator[i] = nullptr;
+
+    // Voice-Pool: alle 128 Oszillatoren vorab allozieren. Die Default-
+    // Frequenz wird beim Aktivieren gesetzt (siehe process()).
+    for (int i = 0; i < 128; i++) {
+        oscillator[i]  = new Sine(sampleRate, buffersize);
+        oscillator[i]->setVolume(0.0f);
+        voiceActive[i] = false;
     }
-    
-    setSize(120,140);    
+
+    setSize(120,140);
     setName("Sine");
-    
+
     editable = false;
     prefab = true;
 }
 
 SineModule::~SineModule()
 {
-    for (int i = 0; i < 128;i++){
-        if (oscillator[i] != nullptr)
-            delete oscillator[i];
+    for (int i = 0; i < 128; i++) {
+        delete oscillator[i];
+        oscillator[i] = nullptr;
     }
 }
 
@@ -87,10 +91,8 @@ void SineModule::setPitch(int pitch) {
 void SineModule::setFine(float fine) {
     if (this->fine != fine) {
         this->fine = fine;
-        for (int i = 0; i < 128;i++){
-            if (oscillator[i] != nullptr)
-                this->oscillator[i]->setFine(fine);
-        }
+        for (int i = 0; i < 128; i++)
+            this->oscillator[i]->setFine(fine);
     }
 }
 
@@ -115,24 +117,23 @@ void SineModule::process() {
         for (int i = 0; i < buffersize; i++) {
             float value = 0;
             for (int j = 0; j < 128;j++){
-                
+
                 if(pins.at(2)->getConnections().at(0)->dataEnabled[j]) {
-                    if (oscillator[j] ==  nullptr) {
-                        oscillator[j] = new Sine(sampleRate, buffersize);
-                        
+                    if (!voiceActive[j]) {
+                        // Frequenz wird nur bei Aktivierung berechnet — solange
+                        // die Voice laeuft, bleibt sie konstant.
                         oscillator[j]->setFrequency((440 * pow(2.0,((j+1)-69.0)/12.0)) + pitch);
+                        voiceActive[j] = true;
                     }
                     float volume = pins.at(2)->getConnections().at(0)->data[j];
-                    
                     this->oscillator[j]->setVolume(volume);
                 }
-                else {
-                    if (oscillator[j] != nullptr) {
-                        delete this->oscillator[j];
-                        this->oscillator[j] = nullptr;
-                    }
+                else if (voiceActive[j]) {
+                    voiceActive[j] = false;
+                    oscillator[j]->setVolume(0.0f);
                 }
-                if (oscillator[j] != nullptr)
+
+                if (voiceActive[j])
                     value += oscillator[j]->process();
             }
             if (pins.at(3)->getAudioBuffer() != nullptr && pins.at(3)->getAudioBuffer()->getNumChannels() > 0)

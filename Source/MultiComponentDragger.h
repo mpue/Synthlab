@@ -103,6 +103,25 @@ public:
                          selectedComponents.end(),
                          component) != selectedComponents.end();
     }
+
+    /**
+     Currently dragged "leader" component (the one the user grabbed). Other
+     selected components are translated alongside it. Returns nullptr when no
+     drag is active.
+     */
+    juce::Component* getComponentBeingDragged() const { return componentBeingDragged; }
+
+    /**
+     True while more than one selected component is being dragged at once.
+     Subclasses with per-component snap/clamp logic in componentMovedOrResized
+     should consult this and skip per-component adjustments for non-leader
+     components — otherwise each follower snaps to its own grid position and
+     the group spreads out instead of moving rigidly.
+     */
+    bool isMultiDragInProgress() const
+    {
+        return didStartDragging && selectedComponents.size() > 1 && componentBeingDragged != nullptr;
+    }
     
     /** 
      Call this from your components mouseDown event.
@@ -198,20 +217,42 @@ public:
         if (lockHorizontal)
             delta.y = -totalDragDelta.y;
 
-        for (auto comp: selectedComponents)
+        // Bei mehreren selektierten Komponenten zuerst den Leader bewegen,
+        // dann seinen tatsaechlich realisierten Delta (kann durch Per-
+        // Component-Snap/Clamp im componentMovedOrResized abweichen) auf alle
+        // Follower anwenden. Sonst raster jeder Follower individuell auf sein
+        // eigenes Grid-Ziel und die Gruppe driftet auseinander.
+        if (selectedComponents.size() > 1 && componentBeingDragged != nullptr)
         {
-            if (comp != nullptr)
+            const juce::Point<int> leaderBefore = componentBeingDragged->getBounds().getPosition();
+            componentBeingDragged->setBounds(componentBeingDragged->getBounds() + delta);
+            const juce::Point<int> leaderAfter = componentBeingDragged->getBounds().getPosition();
+            const juce::Point<int> effective = leaderAfter - leaderBefore;
+
+            for (auto comp : selectedComponents)
             {
-                juce::Rectangle<int> bounds (comp->getBounds());
-
-                bounds += delta;
-
-                comp->setBounds (bounds);
+                if (comp != nullptr && comp != componentBeingDragged)
+                    comp->setBounds(comp->getBounds() + effective);
             }
-        }
 
-        
-        totalDragDelta += delta;
+            totalDragDelta += effective;
+        }
+        else
+        {
+            for (auto comp: selectedComponents)
+            {
+                if (comp != nullptr)
+                {
+                    juce::Rectangle<int> bounds (comp->getBounds());
+
+                    bounds += delta;
+
+                    comp->setBounds (bounds);
+                }
+            }
+
+            totalDragDelta += delta;
+        }
     }
     
     void setLockHorizontal(bool lock) { lockHorizontal = lock; }

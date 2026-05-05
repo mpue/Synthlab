@@ -1483,6 +1483,28 @@ void MainComponent::openQuickstart() {
 			editor->repaint();
 		});
 
+		quickstart->setOnOpenExistingTrack([this]() {
+			// Gleicher Pfad wie der "Open"-Toolbar-Button.
+			editor->setRunning(false);
+			editor->openFile();
+			editor->setRunning(true);
+		});
+
+		quickstart->setRecentFilesProvider([]() {
+			// Project laedt die Liste lazy — sicherstellen, dass sie frisch
+			// vom Disk gelesen ist, bevor wir sie in den UI rendern.
+			Project::getInstance()->loadRecentFileList();
+			return Project::getInstance()->getRecentFiles();
+		});
+
+		quickstart->setOnOpenRecentFile([this](const juce::String& path) {
+			juce::File f (path);
+			if (! f.existsAsFile()) return;
+			editor->setRunning(false);
+			editor->openFile(f);
+			editor->setRunning(true);
+		});
+
 		quickstart->setAudioConfiguredProvider([this]() {
 			return deviceManager.getCurrentAudioDevice() != nullptr
 				&& deviceManager.getCurrentAudioDevice()->isOpen();
@@ -1504,6 +1526,13 @@ void MainComponent::openQuickstart() {
 					return true;
 			}
 			return false;
+		});
+
+		quickstart->setExistingTrackOpenedProvider([]() {
+			// Done sobald ein Projekt mit bekanntem Pfad aktiv ist (also nicht
+			// ein frisches "New File"). Project::isNewFile() ist true bis zum
+			// ersten Save / Load.
+			return ! Project::getInstance()->isNewFile();
 		});
 	}
 

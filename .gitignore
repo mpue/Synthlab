@@ -1,1 +1,2 @@
 Builds/**
+.github/workflows/static-checks.yml

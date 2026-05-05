@@ -171,6 +171,8 @@
         <FILE id="DQbPpi" name="ProjectConfig.cpp" compile="1" resource="0"
               file="Source/Project/ProjectConfig.cpp"/>
         <FILE id="o2Im5s" name="ProjectConfig.h" compile="0" resource="0" file="Source/Project/ProjectConfig.h"/>
+        <FILE id="PrSn01" name="ProjectSnapshot.h" compile="0" resource="0"
+              file="Source/Project/ProjectSnapshot.h"/>
         <FILE id="xvfOe6" name="RegionConfig.cpp" compile="1" resource="0"
               file="Source/Project/RegionConfig.cpp"/>
         <FILE id="Mr5aTY" name="RegionConfig.h" compile="0" resource="0" file="Source/Project/RegionConfig.h"/>
@@ -216,8 +218,7 @@
               file="Source/Tracks/TrackPropertyPanel.cpp"/>
         <FILE id="NToMfh" name="TrackPropertyPanel.h" compile="0" resource="0"
               file="Source/Tracks/TrackPropertyPanel.h"/>
-        <FILE id="TrCtl1" name="TrackControl.h" compile="0" resource="0"
-              file="Source/Tracks/TrackControl.h"/>
+        <FILE id="TrCtl1" name="TrackControl.h" compile="0" resource="0" file="Source/Tracks/TrackControl.h"/>
         <FILE id="ZD244F" name="TrackPropertyView.cpp" compile="1" resource="0"
               file="Source/Tracks/TrackPropertyView.cpp"/>
         <FILE id="yI1fyn" name="TrackPropertyView.h" compile="0" resource="0"
@@ -226,6 +227,18 @@
         <FILE id="uv3hYe" name="WaveSelector.cpp" compile="1" resource="0"
               file="Source/Tracks/WaveSelector.cpp"/>
         <FILE id="ZVVF10" name="WaveSelector.h" compile="0" resource="0" file="Source/Tracks/WaveSelector.h"/>
+      </GROUP>
+      <GROUP id="{8B0AD2A1-2F44-4E1B-9D3A-001A20260501}" name="Automation">
+        <FILE id="AuTy01" name="AutomationTypes.h" compile="0" resource="0"
+              file="Source/Automation/AutomationTypes.h"/>
+        <FILE id="AuLn02" name="AutomationLane.h" compile="0" resource="0"
+              file="Source/Automation/AutomationLane.h"/>
+        <FILE id="AuMd01" name="AutomationModel.h" compile="0" resource="0"
+              file="Source/Automation/AutomationModel.h"/>
+      </GROUP>
+      <GROUP id="{8B0AD2A1-2F44-4E1B-9D3A-001A20260502}" name="Tests">
+        <FILE id="AuMt01" name="AutomationModelTests.cpp" compile="1" resource="0"
+              file="Source/Tests/AutomationModelTests.cpp"/>
       </GROUP>
       <GROUP id="{42923399-C36E-5718-8223-3A3628A02212}" name="Mixer"/>
       <GROUP id="{5AE00788-8DD0-B80C-C433-5E1588E70C5C}" name="Server">
@@ -326,6 +339,10 @@
               file="Source/Actions/SplitRegionAction.cpp"/>
         <FILE id="mN8kPw" name="SplitRegionAction.h" compile="0" resource="0"
               file="Source/Actions/SplitRegionAction.h"/>
+        <FILE id="H5p8Wv" name="TrackDeleteAction.cpp" compile="1" resource="0"
+              file="Source/Actions/TrackDeleteAction.cpp"/>
+        <FILE id="ktBcES" name="TrackDeleteAction.h" compile="0" resource="0"
+              file="Source/Actions/TrackDeleteAction.h"/>
       </GROUP>
       <GROUP id="{A79C9093-D329-37A0-AEE1-CF7BDC5C60DE}" name="AudioEngine">
         <FILE id="HVUNoB" name="MidiProcessor.cpp" compile="1" resource="0"

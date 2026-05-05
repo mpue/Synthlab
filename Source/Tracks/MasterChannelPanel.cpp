@@ -175,6 +175,11 @@ MasterChannelPanel::MasterChannelPanel ()
 MasterChannelPanel::~MasterChannelPanel()
 {
     //[Destructor_pre]. You can add your own custom destruction code here..
+    // setTrack() registriert this als Listener von Mixer — beim Destroy wieder
+    // austragen, sonst behaelt Mixer einen dangling Pointer und der naechste
+    // sendChangeMessage()-Call kracht in ChangeBroadcaster::callListeners.
+    if (auto* m = Mixer::getInstance())
+        m->removeChangeListener(this);
     //[/Destructor_pre]
 
     vuSliderL = nullptr;
@@ -722,6 +727,79 @@ void MasterChannelPanel::setTrack(Track *t) {
     this->track = t;
     setName(track->getName());
     Mixer::getInstance()->addChangeListener(this);
+    // Falls die FX-Chain bereits aufgebaut ist (z.B. nach load), den Track
+    // jetzt mit den Pointers versorgen.
+    syncTrackFXPlugins();
+}
+
+void MasterChannelPanel::syncTrackFXPlugins() {
+    if (track == nullptr) return;
+    for (int i = 0; i < NUM_FX; ++i)
+        track->setFxPlugin(i, fxChain[i]);
+}
+
+juce::ValueTree MasterChannelPanel::getFXSlotMap() const {
+    juce::ValueTree map("FXSlots");
+    for (int i = 0; i < NUM_FX; ++i) {
+        if (fxChain[i] == nullptr) continue;
+        // Das Instrument-Plugin gehoert nicht in die FX-Slot-Map — es ist
+        // ueber Track::pluginModule erreichbar. Wenn der Panel das Instrument
+        // doch in fxChain[0] hat (Folge von reconstructFXChainFromGraph in
+        // einer NICHT-permutierten Session), den Eintrag ueberspringen.
+        if (track != nullptr && fxChain[i] == track->getPluginModule()) continue;
+        juce::ValueTree slot("Slot");
+        slot.setProperty("index",       i,                              nullptr);
+        slot.setProperty("moduleIndex", (juce::int64) fxChain[i]->getIndex(), nullptr);
+        map.appendChild(slot, nullptr);
+    }
+    return map;
+}
+
+void MasterChannelPanel::applyFXSlotMap(const juce::ValueTree& slotMap) {
+    if (!slotMap.isValid() || track == nullptr) return;
+    if (synthEditor == nullptr) return;
+
+    // Modul-Lookup nach getIndex() im Root-Modul-Graph.
+    auto* root = synthEditor->getModule();
+    if (root == nullptr || root->getModules() == nullptr) return;
+
+    auto findPluginByModuleIndex = [&] (juce::int64 idx) -> PluginModule* {
+        for (auto* m : *root->getModules())
+            if (m != nullptr && (juce::int64) m->getIndex() == idx)
+                return dynamic_cast<PluginModule*>(m);
+        return nullptr;
+    };
+
+    // Slot-Belegung neu aufbauen: erstmal alles auf null, dann aus der Map
+    // wieder einsortieren. Das Instrument-Plugin landet hier nie hinein.
+    for (int i = 0; i < NUM_FX; ++i) fxChain[i] = nullptr;
+
+    for (int i = 0; i < slotMap.getNumChildren(); ++i) {
+        const auto child = slotMap.getChild(i);
+        if (!child.hasType("Slot")) continue;
+        const int slot = (int) child.getProperty("index", -1);
+        const juce::int64 moduleIndex = (juce::int64) child.getProperty("moduleIndex", (juce::int64) -1);
+        if (slot < 0 || slot >= NUM_FX || moduleIndex < 0) continue;
+        if (auto* pm = findPluginByModuleIndex(moduleIndex))
+            fxChain[slot] = pm;
+    }
+
+    // chainSourceMod auf das Instrument-Plugin setzen, sodass rewireChain
+    // bei spaeterem insertFX/removeFX vom Instrument zur AudioOut verkabelt
+    // (und nicht vom TrackIn ueber das Instrument bypassend, wie es nach
+    // reconstructFXChainFromGraph waere).
+    if (auto* pm = track->getPluginModule()) {
+        if (pm->pins.size() > 3) {
+            chainSourceModL = pm;
+            chainSourcePinL = pm->pins[2]; // L OUT
+            chainSourceModR = pm;
+            chainSourcePinR = pm->pins[3]; // R OUT
+        }
+    }
+
+    syncTrackFXPlugins();
+    updateFXButtons();
+    repaint();
 }
 
 void MasterChannelPanel::labelTextChanged(Label* labelThatHasChanged) {
@@ -835,6 +913,7 @@ void MasterChannelPanel::insertFX(int slotIndex, juce::String pluginName) {
         fx->selectPlugin(pluginName);
 
         fxChain[slotIndex] = fx;
+        syncTrackFXPlugins();
         updateFXButtons();
         repaint();
         return;
@@ -929,6 +1008,7 @@ void MasterChannelPanel::insertFX(int slotIndex, juce::String pluginName) {
     fx->setTopLeftPosition(fxX, fxY);
 
     fxChain[slotIndex] = fx;
+    syncTrackFXPlugins();
 
     rewireChain();
     updateFXButtons();
@@ -943,6 +1023,7 @@ void MasterChannelPanel::removeFX(int slotIndex) {
     if (channel && channel->channelType == Mixer::Channel::Type::MASTER) {
         delete fxChain[slotIndex];
         fxChain[slotIndex] = nullptr;
+        syncTrackFXPlugins();
         updateFXButtons();
         repaint();
         return;
@@ -950,6 +1031,7 @@ void MasterChannelPanel::removeFX(int slotIndex) {
 
     PluginModule* fx = fxChain[slotIndex];
     fxChain[slotIndex] = nullptr;
+    syncTrackFXPlugins();
 
     Module* root = synthEditor->getModule();
     auto* connections = root->getConnections();
@@ -1047,6 +1129,7 @@ void MasterChannelPanel::applyFXChainState(const juce::ValueTree& state) {
             fxChain[idx]->setPluginState(pluginState);
     }
 
+    syncTrackFXPlugins();
     updateFXButtons();
     repaint();
 }
@@ -1085,12 +1168,19 @@ void MasterChannelPanel::rewireChain() {
     for (auto* pin : watchedINpins)
         pin->getConnections().clear();
 
-    // Remove Connection objects whose IN pin (c->a) is in watchedINpins.
+    // Remove Connection objects that touch any watched IN pin via EITHER
+    // endpoint. Im Codebase werden Connections mit zwei verschiedenen
+    // a/b-Konventionen erzeugt: ModuleUtils::addConnection setzt c->a auf das
+    // IN-Pin, TrackUtil::ConnectAudioOut setzt c->a auf das OUT-Pin. Pruefen
+    // wir nur c->a, bleiben TrackUtil-Connections (z.B. die ursprungliche
+    // instrument->audioOut-Verbindung) als Karteileichen in der globalen
+    // Connection-Liste — bei save+load werden sie zusaetzlich zu den neuen
+    // Insert-Connections wieder geladen, das Signal wird doppelt geroutet.
     connections->erase(
         std::remove_if(connections->begin(), connections->end(),
             [&watchedINpins](Connection* c) {
                 for (auto* p : watchedINpins)
-                    if (c->a == p) { delete c; return true; }
+                    if (c->a == p || c->b == p) { delete c; return true; }
                 return false;
             }),
         connections->end());
@@ -1222,6 +1312,7 @@ void MasterChannelPanel::reconstructFXChainFromGraph() {
     for (int i = 0; i < (int)reverseChain.size() && i < NUM_FX; ++i)
         fxChain[i] = reverseChain[i];
 
+    syncTrackFXPlugins();
     updateFXButtons();
     repaint();
 }

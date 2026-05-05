@@ -103,6 +103,35 @@ public:
     // and state for each occupied slot.
     juce::ValueTree getFXChainState() const;
     void applyFXChainState(const juce::ValueTree& state);
+
+    // Slot-Map fuer non-master Tracks: fxChain[i] -> Module::getIndex().
+    // Wird im Track-XML pro Track persistiert (ueber TrackNavigator), damit
+    // beim Reload reconstructFXChainFromGraph nicht alles linksbuendig
+    // zusammenrutscht und das Instrument-Plugin nicht als fxChain[0] landet.
+    juce::ValueTree getFXSlotMap() const;
+    // Permutiert fxChain[] aus dem aktuellen Reconstruct-Zustand zurueck in
+    // die User-Slot-Zuordnung. Setzt chainSourceMod/Pin auf das Instrument-
+    // Plugin (track->getPluginModule()), sodass rewireChain bei spaeterem
+    // insertFX/removeFX sauber ab dort verkabelt.
+    void applyFXSlotMap(const juce::ValueTree& slotMap);
+    // Spiegelt den aktuellen Stand von fxChain[] in den verbundenen Track,
+    // damit Track::getAutomationTargets() FX-Plugins findet.
+    void syncTrackFXPlugins();
+    // True, wenn `m` als Quelle in die FX-Chain dieses Channels einspeist —
+    // also die Wurzel des Audio-Pfads, der hier endet. Fuer das Re-Linking
+    // Track <-> Panel beim Project-Load.
+    bool isFedBy(Module* m) const noexcept
+    {
+        return m != nullptr && (m == chainSourceModL || m == chainSourceModR);
+    }
+    // True, wenn pm in der reconstruierten FX-Chain dieses Channels steckt.
+    bool fxChainContains(PluginModule* pm) const noexcept
+    {
+        if (pm == nullptr) return false;
+        for (int i = 0; i < NUM_FX; ++i) if (fxChain[i] == pm) return true;
+        return false;
+    }
+    Track* getTrack() const noexcept { return track; }
     // Entfernt alle FX-Plugins aus dem Insert-Chain dieses Channels. Beim
     // Master-Kanal löschen wir die Plugin-Module direkt (sie hängen nicht im
     // Modul-Graph), bei normalen Kanälen lassen wir removeFX die Verdrahtung

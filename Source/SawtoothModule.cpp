@@ -25,8 +25,10 @@ SawtoothModule::SawtoothModule(double sampleRate, int buffersize)
     this->sampleRate = sampleRate;
     this->buffersize = buffersize;
 
-    for (int i = 0; i < 128;i++){
-        oscillator[i] = nullptr;
+    for (int i = 0; i < 128; i++) {
+        oscillator[i]  = new Sawtooth(sampleRate, buffersize);
+        oscillator[i]->setVolume(0.0f);
+        voiceActive[i] = false;
     }
 
     monoOscillator = new Sawtooth(sampleRate, buffersize);
@@ -45,11 +47,11 @@ SawtoothModule::SawtoothModule(double sampleRate, int buffersize)
 SawtoothModule::~SawtoothModule()
 {
 
-    for (int i = 0; i < 128;i++){
-        if (oscillator[i] != nullptr)
-            delete oscillator[i];
+    for (int i = 0; i < 128; i++) {
+        delete oscillator[i];
+        oscillator[i] = nullptr;
     }
-    
+
     delete monoOscillator;
     
     delete isMonoListener;
@@ -172,26 +174,19 @@ void SawtoothModule::process() {
                 pins.at(4)->setValue(abs(value + 1));
             }
             else {
-                for (int j = 0; j < 128;j++){
-                    
-                    if(gatePin->dataEnabled[j]) {
-                        if (oscillator[j] ==  nullptr) {
-                            oscillator[j] = new Sawtooth(sampleRate, buffersize);
-                            
+                for (int j = 0; j < 128; j++) {
+                    if (gatePin->dataEnabled[j]) {
+                        if (!voiceActive[j]) {
                             oscillator[j]->setFrequency((440 * pow(2.0,((j+1+pitch)-69.0)/12.0)));
+                            voiceActive[j] = true;
                         }
-                        float volume = gatePin->data[j];
-                        
-                        this->oscillator[j]->setVolume(volume);
+                        oscillator[j]->setVolume(gatePin->data[j]);
                     }
-                    else {
-                        if (oscillator[j] != nullptr) {
-
-                            delete this->oscillator[j];
-                            this->oscillator[j] = nullptr;
-                        }
+                    else if (voiceActive[j]) {
+                        voiceActive[j] = false;
+                        oscillator[j]->setVolume(0.0f);
                     }
-                    if (oscillator[j] != nullptr)
+                    if (voiceActive[j])
                         value += oscillator[j]->process();
                 }
             }

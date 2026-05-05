@@ -1,0 +1,12 @@
+# Eine Regex pro Zeile. Match auf der Zeile mit der Funktionssignatur
+# (nicht der Deklaration im Header, sondern dort wo der Funktionsrumpf beginnt).
+# Pflegen, wenn neue Audio-Callbacks dazukommen.
+#
+# Top-Level Audio-Callbacks
+^void[[:space:]]+MainComponent::getNextAudioBlock
+^void[[:space:]]+SynthlabAudioProcessor::getNextAudioBlock
+^void[[:space:]]+MidiProcessor::processBlock
+#
+# Module::process()-Implementierungen (Audio-Pfad ueber processModule -> Modulgraph).
+# Kein Praefix-Anker, weil viele in unterschiedlichen Klassen liegen.
+::process[[:space:]]*\([^;]*\)[[:space:]]*\{?$

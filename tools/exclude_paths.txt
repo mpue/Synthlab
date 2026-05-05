@@ -1,0 +1,4 @@
+# Pfade, die alle drei Checks ueberspringen. Eine Substring-Pattern pro Zeile.
+# Vendored code, in das wir nicht eingreifen.
+Source/duktape/
+Source/MultiComponentDragger

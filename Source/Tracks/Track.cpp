@@ -114,6 +114,10 @@ void Track::removeSelectedRegions(bool clear) {
 
 	for (std::vector<Region*>::iterator it = regions.begin(); it != regions.end();) {
 		if (dragger->isSelected((*it))) {
+			// Falls genau diese Region die laufende Aufnahme aufnimmt, den
+			// per-Track-Pointer wegnehmen — sonst greift der naechste
+			// TrackIn::eventReceived auf einen freed-pointer zu.
+			clearRecordingRegionIfMatches(*it);
 			(*it)->removeAllChangeListeners();
 			if (clear)
 				audioBuffer->clear((*it)->getSampleOffset(), (*it)->getNumSamples());
@@ -160,9 +164,16 @@ void Track::duplicateRegion(Region* region) {
 		// Berechne die tatsächliche Anzahl der Samples (berücksichtigt Resizing)
 		int numSamplesToCopy = _region->getNumSamples();
 
-		// Erstelle Duplikat mit NUR den tatsächlich verwendeten Samples
-		// Verwende den Konstruktor, der startSample und numSamples akzeptiert
-		AudioRegion* duplicate = new AudioRegion(_region, *manager, sampleRate, 0, numSamplesToCopy);
+		// Bei links-getrimmtem Original liegt der sichtbare Inhalt im Buffer
+		// erst ab sourceStartSample. Wenn wir hier weiter mit startSample=0
+		// kopieren, bekommt das Duplikat die abgeschnittene Front statt der
+		// sichtbaren Region — und Track::getSample (das jetzt mit
+		// inSource=sample-offset+sourceStartSample liest) findet im
+		// Duplikat-Buffer auch nichts Sinnvolles. Daher den Source-Offset
+		// uebernehmen; das Duplikat selbst bleibt konsolidiert (sss=0).
+		const long srcStart = (long) _region->getSourceStartSample();
+
+		AudioRegion* duplicate = new AudioRegion(_region, *manager, sampleRate, srcStart, numSamplesToCopy);
 		duplicate->setDragger(dragger);
 
 		// Berechne die neue X-Position: direkt nach der ursprünglichen Region
@@ -176,9 +187,15 @@ void Track::duplicateRegion(Region* region) {
 		newX = (int)((double)newSampleOffset / sampleRate * zoom);
 
 		// WICHTIG: Setze Bounds NACHDEM der Konstruktor die initiale Größe gesetzt hat
-		// und überschreibe die Breite mit der tatsächlichen Breite der Originalregion
+		// und überschreibe die Breite mit der tatsächlichen Breite der Originalregion.
+		// Flag setzen, damit der componentMovedOrResized-Handler dieses setBounds
+		// nicht als User-Resize interpretiert (er wuerde sonst sourceStartSample
+		// auf newSampleOffset hochsetzen, der Lookup im Track::getSample landete
+		// dann hinter dem Buffer-Inhalt und die Region waere stumm).
 		Rectangle<int>* bounds = new Rectangle<int>(0, 0, region->getWidth(), getHeight());
+		duplicate->setBoundsUpdateInProgress(true);
 		duplicate->setBounds(newX, 0, region->getWidth(), region->getHeight());
+		duplicate->setBoundsUpdateInProgress(false);
 		duplicate->setThumbnailBounds(bounds);
 		duplicate->setLoopCount(0);
 
@@ -203,13 +220,22 @@ void Track::duplicateRegion(Region* region) {
 			duplicate->setZoom(zoom);
 
 		// Kopiere nur die tatsächlich verwendeten Samples in den Track-Buffer
-		if (duplicate->getBuffer()->getNumChannels() == 1) {
-			audioBuffer->copyFrom(0, newSampleOffset, *duplicate->getBuffer(), 0, 0, numSamplesToCopy);
-			audioBuffer->copyFrom(1, newSampleOffset, *duplicate->getBuffer(), 0, 0, numSamplesToCopy);
-		}
-		else {
-			audioBuffer->copyFrom(0, newSampleOffset, *duplicate->getBuffer(), 0, 0, numSamplesToCopy);
-			audioBuffer->copyFrom(1, newSampleOffset, *duplicate->getBuffer(), 1, 0, numSamplesToCopy);
+		// (Magnitude-Anzeige). audioBuffer kann kuerzer sein, wenn die Region
+		// ueber das Track-Ende hinausragt — clampen.
+		if (audioBuffer != nullptr && duplicate->getBuffer() != nullptr) {
+			const long copyLen = juce::jmin((long) numSamplesToCopy,
+			                                (long) audioBuffer->getNumSamples() - newSampleOffset,
+			                                (long) duplicate->getBuffer()->getNumSamples());
+			if (copyLen > 0) {
+				if (duplicate->getBuffer()->getNumChannels() == 1) {
+					audioBuffer->copyFrom(0, newSampleOffset, *duplicate->getBuffer(), 0, 0, (int) copyLen);
+					audioBuffer->copyFrom(1, newSampleOffset, *duplicate->getBuffer(), 0, 0, (int) copyLen);
+				}
+				else {
+					audioBuffer->copyFrom(0, newSampleOffset, *duplicate->getBuffer(), 0, 0, (int) copyLen);
+					audioBuffer->copyFrom(1, newSampleOffset, *duplicate->getBuffer(), 1, 0, (int) copyLen);
+				}
+			}
 		}
 
 		repaint();
@@ -221,7 +247,13 @@ void Track::duplicateRegion(Region* region) {
 		const int newX = (int)((double)newOffset / sampleRate * zoom);
 		MidiRegion* clone = mregion->clone(newOffset);
 		clone->setDragger(dragger);
+		// Resize-Handler beim initialen Bounds-Set ausschalten — gleiche
+		// Logik wie im AudioRegion-Pfad: das setBounds aendert X und Width
+		// gleichzeitig, der combined-resize-Branch in MidiRegion wuerde das
+		// sonst als User-Trim verstehen und sourceStartSample falsch setzen.
+		clone->setBoundsUpdateInProgress(true);
 		clone->setBounds(newX, 0, region->getWidth(), getHeight());
+		clone->setBoundsUpdateInProgress(false);
 		clone->addChangeListener(this);
 
 		this->regions.push_back(clone);
@@ -242,15 +274,20 @@ Region* Track::pasteRegion(Region* source, long targetSampleOffset) {
 			return nullptr;
 
 		const int numSamplesToCopy = a->getNumSamples();
+		// Bei links-getrimmtem Source den sichtbaren Inhalt kopieren, nicht
+		// das Pre-Trim-Material. Siehe duplicateRegion fuer Details.
+		const long srcStart = (long) a->getSourceStartSample();
 
-		AudioRegion* duplicate = new AudioRegion(a, *manager, sampleRate, 0, numSamplesToCopy);
+		AudioRegion* duplicate = new AudioRegion(a, *manager, sampleRate, srcStart, numSamplesToCopy);
 		duplicate->setDragger(dragger);
 
 		long newSampleOffset = findNextFreeOffset(nullptr, targetSampleOffset, numSamplesToCopy);
 		int newX = (int)((double)newSampleOffset / sampleRate * zoom);
 
 		Rectangle<int>* bounds = new Rectangle<int>(0, 0, source->getWidth(), getHeight());
+		duplicate->setBoundsUpdateInProgress(true);
 		duplicate->setBounds(newX, 0, source->getWidth(), source->getHeight());
+		duplicate->setBoundsUpdateInProgress(false);
 		duplicate->setThumbnailBounds(bounds);
 		duplicate->setLoopCount(0);
 
@@ -271,14 +308,21 @@ Region* Track::pasteRegion(Region* source, long targetSampleOffset) {
 			duplicate->setZoom(zoom);
 
 		// Mirror the duplicate's audio into the track's shared audioBuffer
-		// at the new offset, matching what duplicateRegion does.
-		if (duplicate->getBuffer()->getNumChannels() == 1) {
-			audioBuffer->copyFrom(0, newSampleOffset, *duplicate->getBuffer(), 0, 0, numSamplesToCopy);
-			audioBuffer->copyFrom(1, newSampleOffset, *duplicate->getBuffer(), 0, 0, numSamplesToCopy);
-		}
-		else {
-			audioBuffer->copyFrom(0, newSampleOffset, *duplicate->getBuffer(), 0, 0, numSamplesToCopy);
-			audioBuffer->copyFrom(1, newSampleOffset, *duplicate->getBuffer(), 1, 0, numSamplesToCopy);
+		// at the new offset (Magnitude). Mit Out-of-bounds-Schutz.
+		if (audioBuffer != nullptr && duplicate->getBuffer() != nullptr) {
+			const long copyLen = juce::jmin((long) numSamplesToCopy,
+			                                (long) audioBuffer->getNumSamples() - newSampleOffset,
+			                                (long) duplicate->getBuffer()->getNumSamples());
+			if (copyLen > 0) {
+				if (duplicate->getBuffer()->getNumChannels() == 1) {
+					audioBuffer->copyFrom(0, newSampleOffset, *duplicate->getBuffer(), 0, 0, (int) copyLen);
+					audioBuffer->copyFrom(1, newSampleOffset, *duplicate->getBuffer(), 0, 0, (int) copyLen);
+				}
+				else {
+					audioBuffer->copyFrom(0, newSampleOffset, *duplicate->getBuffer(), 0, 0, (int) copyLen);
+					audioBuffer->copyFrom(1, newSampleOffset, *duplicate->getBuffer(), 1, 0, (int) copyLen);
+				}
+			}
 		}
 
 		repaint();
@@ -294,7 +338,9 @@ Region* Track::pasteRegion(Region* source, long targetSampleOffset) {
 
 		MidiRegion* clone = m->clone(newOffset);
 		clone->setDragger(dragger);
+		clone->setBoundsUpdateInProgress(true);
 		clone->setBounds(newX, 0, source->getWidth(), getHeight());
+		clone->setBoundsUpdateInProgress(false);
 		clone->addChangeListener(this);
 
 		// Cross-Track-Paste: Quell-Region kann auf einem anderen MIDI-Kanal
@@ -565,6 +611,74 @@ AudioRegion* Track::addRegion(AudioSampleBuffer* source, double sampleRate, long
 	return region;
 }
 
+juce::AudioSampleBuffer* Track::bounceRegionToBuffer(Region* sourceRegion)
+{
+	if (sourceRegion == nullptr) return nullptr;
+	auto* mr = dynamic_cast<MidiRegion*>(sourceRegion);
+	if (mr == nullptr) return nullptr; // erste Version: nur MIDI -> Audio
+	if (pluginModule == nullptr || pluginModule->getPlugin() == nullptr) return nullptr;
+
+	auto* plugin = pluginModule->getPlugin();
+	const int sr        = (int) Project::getInstance()->getSampleRate();
+	const int blockSize = juce::jmax(64, Project::getInstance()->getBufferSize());
+	const long lenSamples = mr->getNumSamples();
+	if (lenSamples <= 0 || sr <= 0) return nullptr;
+
+	auto* outBuffer = new juce::AudioSampleBuffer(2, (int) lenSamples);
+	outBuffer->clear();
+
+	// MIDI-Events einsammeln und auf bounce-relative Sampletimes mappen
+	// (0 == linke Kante der sichtbaren Region). sourceStartSample abziehen,
+	// damit links-getrimmte Regionen nicht den Pre-Trim-Bereich rendern.
+	juce::MidiBuffer regionMidi;
+	const long sss = mr->getSourceStartSample();
+	for (int k = 0; k < mr->getNumMessages(); ++k)
+	{
+		auto* msg = mr->getMessageAt(k);
+		if (msg == nullptr) continue;
+		const int t = (int) msg->getTimeStamp() - (int) sss;
+		if (t < 0 || t >= (int) lenSamples) continue;
+		regionMidi.addEvent(*msg, t);
+	}
+
+	// Plugin offline vorbereiten + RAII-Reset.
+	struct PluginGuard {
+		PluginModule* pm; juce::AudioPluginInstance* p;
+		~PluginGuard() {
+			if (p) p->setNonRealtime(false);
+			if (pm) pm->setBounceMode(false);
+		}
+	} guard { pluginModule, plugin };
+
+	plugin->setNonRealtime(true);
+	pluginModule->setBounceMode(true);
+	plugin->prepareToPlay((double) sr, blockSize);
+
+	juce::AudioSampleBuffer blockBuf(juce::jmax(2, plugin->getTotalNumOutputChannels()), blockSize);
+	for (int pos = 0; pos < (int) lenSamples; pos += blockSize)
+	{
+		const int n = juce::jmin(blockSize, (int) lenSamples - pos);
+
+		juce::MidiBuffer slice;
+		for (const auto md : regionMidi)
+		{
+			const int sp = md.samplePosition;
+			if (sp >= pos && sp < pos + n)
+				slice.addEvent(md.getMessage(), sp - pos);
+		}
+
+		blockBuf.clear();
+		plugin->processBlock(blockBuf, slice);
+
+		const int chs = juce::jmin(2, blockBuf.getNumChannels());
+		for (int ch = 0; ch < chs; ++ch)
+			outBuffer->copyFrom(ch, pos, blockBuf, ch, 0, n);
+		if (chs == 1)
+			outBuffer->copyFrom(1, pos, blockBuf, 0, 0, n);
+	}
+	return outBuffer;
+}
+
 void Track::attachRegion(Region* r)
 {
     r->addChangeListener(this);
@@ -673,11 +787,35 @@ void Track::dispatchMidiMessages(const std::vector<juce::MidiMessage*>& messages
 
 void Track::setSamplePosition(int position, bool dispatchEvents)
 {
-	// Lane-Automation: bei jedem Block den interpolierten Wert ans Plugin
-	// schicken — solange das Overlay aktiv ist und ein Parameter gewählt
-	// wurde. Auch bei Audio-Tracks erlaubt, falls dort ein Insert-Plugin hängt.
-	if (dispatchEvents && automationLane != nullptr && automationVisible)
-		automationLane->applyAt(position);
+	// Lane-Automation: bei jedem Block den interpolierten Wert puffern, damit
+	// der Message-Thread (Track::applyPendingAutomation, getriggert vom
+	// TrackNavigator-Timer) ihn ans Plugin durchreicht.
+	//
+	// Wir rufen hier explizit *nicht* setValue/setValueNotifyingHost am
+	// Plugin-Parameter — VST3 setParamNormalized ist per Spec message-thread,
+	// und viele Plugins triggern aus dem setValue-Pfad synchron ihre UI
+	// (z.B. MainUI::parameterChanged), was vom Audio-Thread aus crasht,
+	// sobald das Plugin-Fenster offen ist.
+	if (dispatchEvents && !cachedAutomationParams.empty())
+	{
+		for (int li = 0; li < automationModel.numLanes(); ++li)
+		{
+			auto* lane = automationModel.laneAt(li);
+			if (lane == nullptr || lane->isEmpty()) continue;
+			const juce::String& laneId = lane->getParameterId();
+			for (auto& entry : cachedAutomationParams)
+			{
+				if (entry == nullptr) continue;
+				if (entry->scopedId == laneId)
+				{
+					const float v = juce::jlimit(0.0f, 1.0f, lane->valueAt(position));
+					entry->pendingValue.store(v, std::memory_order_relaxed);
+					entry->hasPending.store(true, std::memory_order_release);
+					break;
+				}
+			}
+		}
+	}
 
 	if ((type == MIDI || type == INSTRUMENT) && position != samplePosition) {
 
@@ -971,14 +1109,19 @@ const float Track::getSample(int channel, long sample) {
 	currentRegion = getRegionAt(sample);
 
 	if (currentRegion != nullptr) {
-		if (sample - currentRegion->getSampleOffset() < getBuffer()->getNumSamples() && sample - currentRegion->getSampleOffset() > 0) {
-
-			if (getBuffer()->getNumChannels() == 1) {
-				return getBuffer()->getSample(0, sample - currentRegion->getSampleOffset());
+		// Region-relative position innerhalb der Quell-Daten ableiten.
+		// sourceStartSample > 0 nach Resize-vorne: der Lookup verschiebt sich
+		// um diesen Betrag in den Buffer hinein. Konsolidierte Region: sss=0.
+		const long inSource = (sample - currentRegion->getSampleOffset())
+		                    + currentRegion->getSourceStartSample();
+		auto* buf = getBuffer();
+		if (buf != nullptr && inSource >= 0 && inSource < buf->getNumSamples()) {
+			if (buf->getNumChannels() == 1) {
+				return buf->getSample(0, inSource);
 			}
 			else {
-				return getBuffer()->getSample(channel, sample - currentRegion->getSampleOffset());
-			}			
+				return buf->getSample(channel, inSource);
+			}
 		}
 	}
 	return 0;
@@ -1168,6 +1311,11 @@ void Track::drawGrid(Graphics& g) {
 	long samplesPerGrid = getGridSizeInSamples();
 	if (samplesPerGrid <= 0) return;
 
+	// Bar-1-Strich (= Beschriftung "1" auf der Timeline, sample == 1 Takt
+	// Laenge) deutlich hervorheben — analog zur Timeline.
+	const double samplesPerBeat = sampleRate / (bpm / 60.0);
+	const long   samplesPerBar  = (long) std::round(samplesPerBeat * 4.0);
+
 	// WICHTIG: Verwende exakte Multiplikation statt akkumulierte Addition
 	int gridCount = (int)(getWidth() * sampleRate / (zoom * samplesPerGrid)) + 2;
 
@@ -1178,7 +1326,15 @@ void Track::drawGrid(Graphics& g) {
 		int pixelPos = (int)std::round(exactPixel);
 
 		if (pixelPos >= 0 && pixelPos < getWidth()) {
-			g.drawVerticalLine(pixelPos, 0, getHeight());
+			if (exactSample == samplesPerBar) {
+				// Dicker, deutlich sichtbarer Strich am Ende von Takt 0 /
+				// Beginn von Takt 1.
+				g.setColour(Colours::white.withAlpha(0.65f));
+				g.fillRect((float) pixelPos - 1.5f, 0.0f, 3.0f, (float) getHeight());
+				g.setColour(Colours::lightgrey.withAlpha(0.3f));
+			} else {
+				g.drawVerticalLine(pixelPos, 0, getHeight());
+			}
 		}
 	}
 }
@@ -1340,11 +1496,139 @@ void Track::setAutomationVisible(bool visible)
 	repaint();
 }
 
+// Slot-Konstanten.
+const char* Track::kInstrumentSlotName = "instr";
+
+// Lokale Helfer: Plugin-eigene paramId (ohne Slot-Prefix).
+static juce::String localParamId(juce::AudioProcessorParameter* p, int indexInPlugin)
+{
+	if (p == nullptr) return {};
+	if (auto* withId = dynamic_cast<juce::AudioProcessorParameterWithID*>(p))
+		return withId->paramID;
+	return juce::String(indexInPlugin) + ":" + p->getName(64);
+}
+
+static juce::String scopedParamId(const juce::String& slot, const juce::String& localId)
+{
+	return slot + ":" + localId;
+}
+
 void Track::setAutomationParameterIndex(int idx)
 {
+	// Backward-compatible: bezieht sich auf das Instrument-Plugin. Delegiert
+	// an setAutomationTarget().
 	this->automationParamIndex = idx;
 	if (automationLane != nullptr)
 		automationLane->setParameterIndex(idx);
+
+	if (idx < 0 || pluginModule == nullptr || pluginModule->getPlugin() == nullptr)
+	{
+		automationCurrentSlot.clear();
+		automationCurrentParamId.clear();
+		if (automationLane != nullptr) automationLane->setBoundLane(nullptr);
+		return;
+	}
+	const auto& params = pluginModule->getPlugin()->getParameters();
+	if (idx >= params.size()) return;
+	const juce::String local = localParamId(params[idx], idx);
+	if (local.isEmpty()) return;
+	setAutomationTarget(juce::String(kInstrumentSlotName), local);
+}
+
+void Track::setAutomationTarget(const juce::String& slot, const juce::String& paramIdInPlugin)
+{
+	if (slot.isEmpty() || paramIdInPlugin.isEmpty())
+	{
+		automationCurrentSlot.clear();
+		automationCurrentParamId.clear();
+		if (automationLane != nullptr) automationLane->setBoundLane(nullptr);
+		return;
+	}
+	const juce::String full = scopedParamId(slot, paramIdInPlugin);
+	automationCurrentSlot     = slot;
+	automationCurrentParamId  = full;
+	auto& lane = automationModel.findOrCreate(full);
+	if (automationLane != nullptr) automationLane->setBoundLane(&lane);
+}
+
+std::vector<std::pair<juce::String, PluginModule*>> Track::getAutomationTargets() const
+{
+	std::vector<std::pair<juce::String, PluginModule*>> out;
+	if (pluginModule != nullptr && pluginModule->getPlugin() != nullptr)
+		out.emplace_back(kInstrumentSlotName, pluginModule);
+	for (int i = 0; i < NUM_FX_SLOTS; ++i)
+		if (fxPlugins[i] != nullptr && fxPlugins[i]->getPlugin() != nullptr)
+			out.emplace_back(fxSlotName(i), fxPlugins[i]);
+	return out;
+}
+
+void Track::setFxPlugin(int slot, PluginModule* pm)
+{
+	if (slot < 0 || slot >= NUM_FX_SLOTS) return;
+	// reconstructFXChainFromGraph haengt das Instrument-Plugin als ersten
+	// Eintrag in den panel->fxChain — fuer den Track ist das aber bereits
+	// ueber pluginModule erreichbar. Doppelt im Cache → doppelte
+	// Parameter-Eintraege. Hier herausfiltern.
+	if (pm == pluginModule) pm = nullptr;
+	if (fxPlugins[slot] == pm) return;
+	fxPlugins[slot] = pm;
+	rebuildAutomationParamIdCache();
+}
+
+void Track::rebuildAutomationParamIdCache()
+{
+	cachedAutomationParams.clear();
+	for (const auto& kv : getAutomationTargets())
+	{
+		const juce::String& slot = kv.first;
+		PluginModule* pm = kv.second;
+		if (pm == nullptr || pm->getPlugin() == nullptr) continue;
+		const auto& params = pm->getPlugin()->getParameters();
+		for (int i = 0; i < params.size(); ++i)
+		{
+			auto* p = params[i];
+			if (p == nullptr) continue;
+			auto entry = std::make_unique<CachedAutomationParam>();
+			entry->scopedId  = scopedParamId(slot, localParamId(p, i));
+			entry->parameter = p;
+			cachedAutomationParams.push_back(std::move(entry));
+		}
+	}
+}
+
+void Track::applyPendingAutomation()
+{
+	// Message-Thread: jetzt darf gefahrlos ans Plugin-Parameter geschrieben
+	// werden. Plugin-UIs reagieren in ihrem normalen Listener-Pfad, statt
+	// synchron aus dem Audio-Callback heraus.
+	for (auto& entry : cachedAutomationParams)
+	{
+		if (entry == nullptr || entry->parameter == nullptr) continue;
+		// exchange holt den Pending-Flag und setzt ihn in einem Schritt zurueck
+		// — kein Verlust, wenn der Audio-Thread parallel neue Werte schreibt.
+		if (!entry->hasPending.exchange(false, std::memory_order_acquire))
+			continue;
+		const float v = entry->pendingValue.load(std::memory_order_relaxed);
+		// Doppel-Pushes auf identische Werte sparen wir uns — manche Plugins
+		// notifyien bei jedem Aufruf ihre UI, das macht im Idle nur unnoetig
+		// Last.
+		if (v == entry->lastApplied) continue;
+		entry->lastApplied = v;
+		entry->parameter->setValueNotifyingHost(v);
+	}
+}
+
+juce::String Track::automationParameterIdFor(int idx) const
+{
+	// Liefert die GESCOPETE paramId fuer den Instrument-Slot — Aufrufer wie
+	// TrackControl::populateParamBox brauchen weiterhin diese Bequemlichkeit.
+	if (idx < 0 || pluginModule == nullptr || pluginModule->getPlugin() == nullptr)
+		return {};
+	const auto& params = pluginModule->getPlugin()->getParameters();
+	if (idx >= params.size()) return {};
+	const auto local = localParamId(params[idx], idx);
+	if (local.isEmpty()) return {};
+	return scopedParamId(kInstrumentSlotName, local);
 }
 
 // ----- AutomationLane Glue (hier definiert, weil Zugriff auf PluginModule) ---
@@ -1362,41 +1646,10 @@ juce::AudioProcessorParameter* AutomationLane::getTargetParameter() const
 	return params[paramIndex];
 }
 
+// applyAt() ist obsolet — Track::setSamplePosition iteriert jetzt selbst alle
+// Lanes des Modells. Die Methode bleibt als no-op fuer eventuelle alte
+// Aufrufer und fuer zukuenftige UI-Spezialfaelle.
 void AutomationLane::applyAt(long sample)
 {
-	if (!overlayActive || points.empty())
-		return;
-	auto* p = getTargetParameter();
-	if (p == nullptr)
-		return;
-
-	// Linear interpolieren zwischen umgebenden Stützstellen.
-	float v = points.front().value;
-	if (sample <= points.front().sample) {
-		v = points.front().value;
-	}
-	else if (sample >= points.back().sample) {
-		v = points.back().value;
-	}
-	else {
-		// Binäre Suche nach dem ersten Punkt mit sample > query.
-		auto it = std::upper_bound(points.begin(), points.end(), sample,
-			[](long s, const Point& pt){ return s < pt.sample; });
-		if (it == points.begin()) {
-			v = it->value;
-		}
-		else {
-			auto prev = std::prev(it);
-			const long s0 = prev->sample;
-			const long s1 = it->sample;
-			const float v0 = prev->value;
-			const float v1 = it->value;
-			const float t = (s1 == s0) ? 0.0f
-			                           : (float)(sample - s0) / (float)(s1 - s0);
-			v = v0 + (v1 - v0) * t;
-		}
-	}
-
-	// setValueNotifyingHost erwartet 0..1 — unsere Werte sind bereits normiert.
-	p->setValueNotifyingHost(juce::jlimit(0.0f, 1.0f, v));
+	juce::ignoreUnused(sample);
 }

@@ -54,6 +54,9 @@ MidiRegion::MidiRegion(long startSample, long sampleLength, double sampleRate, M
     resizerR = new ResizableEdgeComponent(this, constrainer, ResizableEdgeComponent::rightEdge);
     resizerR->setSize(5, getHeight());
     addAndMakeVisible(resizerR);
+    resizerL = new ResizableEdgeComponent(this, constrainer, ResizableEdgeComponent::leftEdge);
+    resizerL->setSize(5, getHeight());
+    addAndMakeVisible(resizerL);
 
     addComponentListener(this);
 
@@ -97,6 +100,9 @@ MidiRegion::MidiRegion(MidiBuffer* buffer, double sampleRate) {
     resizerR = new ResizableEdgeComponent(this, constrainer, ResizableEdgeComponent::rightEdge);
     resizerR->setSize(5, getHeight());
     addAndMakeVisible(resizerR);
+    resizerL = new ResizableEdgeComponent(this, constrainer, ResizableEdgeComponent::leftEdge);
+    resizerL->setSize(5, getHeight());
+    addAndMakeVisible(resizerL);
 
     addComponentListener(this);
 
@@ -236,8 +242,17 @@ void MidiRegion::paint(Graphics& g) {
     }
 
     g.setColour(juce::Colours::white.withAlpha(0.85f));
-    double visibleTime = (getNumSamples() / sampleRate);
-    midiThumbnail->drawChannels(g, 0.0, visibleTime, 1.0f);
+    if (midiThumbnail != nullptr && sampleRate > 0.0)
+    {
+        // Die sichtbaren Zeitgrenzen sind die Buffer-Position, an der die
+        // linke Kante der Region steht (sourceStartSample), bis dahin plus
+        // sichtbare Laenge. drawChannels filtert Events ausserhalb des
+        // Bereichs aus und rendert die uebrigen relativ zu startTime — so
+        // bleiben Noten beim Resize an ihrer Timeline-Position.
+        const double startTime = (double) sourceStartSample / sampleRate;
+        const double endTime   = (double) (sourceStartSample + getNumSamples()) / sampleRate;
+        midiThumbnail->drawChannels(g, startTime, endTime, 1.0f);
+    }
 }
 
 void MidiRegion::resized() {
@@ -250,20 +265,31 @@ void MidiRegion::resized() {
     if (resizerR != nullptr) {
         resizerR->setBounds(getWidth() - 5, 0, 5, getHeight());
     }
+    if (resizerL != nullptr) {
+        resizerL->setBounds(0, 0, 5, getHeight());
+    }
 }
 
 void MidiRegion::updateThumb() {
-    std::function<void(void)> changeLambda = [=]() {
-        int x = (int)((sampleOffset / sampleRate) * zoom);
-        int w = (int)((getNumSamples() / sampleRate) * zoom);
-        midiThumbnail->setBounds(x, getY(), w, getHeight());
-        midiThumbnail->setZoom(zoom);
-        midiThumbnail->repaint();
+    // Wenn waehrend einer laufenden Aufnahme die Region geloescht wird, ist
+    // die Region beim Lambda-Aufruf moeglicherweise schon zerstoert. SafePointer
+    // erkennt das und macht aus dem Crash einen No-Op.
+    juce::Component::SafePointer<MidiRegion> safe(this);
+    juce::MessageManager::callAsync([safe]()
+    {
+        auto* self = safe.getComponent();
+        if (self == nullptr) return;
 
-        resized();
-        repaint();
-        };
-    juce::MessageManager::callAsync(changeLambda);
+        const int x = (int)((self->sampleOffset / self->sampleRate) * self->zoom);
+        const int w = (int)((self->getNumSamples() / self->sampleRate) * self->zoom);
+        if (self->midiThumbnail != nullptr) {
+            self->midiThumbnail->setBounds(x, self->getY(), w, self->getHeight());
+            self->midiThumbnail->setZoom(self->zoom);
+            self->midiThumbnail->repaint();
+        }
+        self->resized();
+        self->repaint();
+    });
 }
 
 void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bool wasResized) {
@@ -274,26 +300,99 @@ void MidiRegion::componentMovedOrResized(Component& component, bool wasMoved, bo
     if (zoomInProgress)
         return;
 
+    // Consolidate hat eben Modell+Bounds finalisiert — der reentrant resize-
+    // Handler darf hier nicht wieder snappen und das Right-Edge nach oben
+    // verschieben (Folge waere ein wachsendes numSamples und Overlap mit
+    // Nachbar nach Save/Reload).
+    if (consolidateInProgress)
+        return;
+
     Track* parentTrack = dynamic_cast<Track*>(getParentComponent());
+
+    // Linkskanten-Resize triggert beides: wasMoved + wasResized. Die separaten
+    // Branches unten wuerden setTopLeftPosition (Breite konstant, rechte Kante
+    // wandert) und setSize (X konstant) hintereinander rufen — Region haut
+    // nach rechts ab. Hier zusammen behandeln, rechte Kante aus den (vom
+    // Constrainer schon korrigierten) bounds halten.
+    if (wasMoved && wasResized) {
+        const long currentLeftSample  = (long) std::round((double) getBounds().getX() / zoom * sampleRate);
+        const long currentRightSample = (long) std::round((double)(getBounds().getX() + getBounds().getWidth()) / zoom * sampleRate);
+
+        long snappedLeft = currentLeftSample;
+        if (Project::getInstance()->isSnapToGridEnabled()) {
+            const bool fine = juce::ModifierKeys::getCurrentModifiersRealtime().isShiftDown();
+            snappedLeft = Project::getInstance()->snapSampleToGrid(snappedLeft, zoom, fine);
+        }
+        if (snappedLeft < 0) snappedLeft = 0;
+        if (snappedLeft >= currentRightSample) snappedLeft = currentLeftSample;
+
+        if (parentTrack != nullptr) {
+            const long maxLeft = currentRightSample - 1;
+            long candidate = parentTrack->clampOffsetForRegion(this, snappedLeft, currentRightSample - snappedLeft);
+            if (candidate <= maxLeft) snappedLeft = candidate;
+        }
+
+        // Konstruktor + addMessage richten sampleOffset / Note-Timestamps an
+        // bufferSize aus. Der Trim muss DENSELBEN aligned-Wert verwenden,
+        // sonst rutschen sourceStartSample (uncorrected snap-delta) und
+        // sampleOffset (aligned) auseinander — Folge: eine Note, die genau am
+        // neuen Front-Edge liegen soll (Buffer-Position == sourceStartSample),
+        // wird im Playback-Fenster knapp daneben gesucht und nicht gefunden.
+        const int bs = Project::getInstance()->getBufferSize();
+        const long snappedAligned = bs > 0 ? (snappedLeft / bs) * bs : snappedLeft;
+        const long deltaLeft = snappedAligned - sampleOffset;
+
+        const long newNumSamples_ = currentRightSample - snappedAligned;
+        const int newX     = (int) std::round((double) snappedAligned / sampleRate * zoom);
+        const int newWidth = (int) std::round((double) newNumSamples_ / sampleRate * zoom);
+
+        // WICHTIG: erst Modell aktualisieren, dann setBounds. setBounds ruft
+        // componentMovedOrResized reentrant auf — wenn dort sampleOffset noch
+        // alt waere, wuerde deltaLeft erneut berechnet und sourceStartSample
+        // ein zweites Mal erhoeht. Mit Modell-First wird beim Reentry
+        // deltaLeft = 0 -> idempotent.
+        sampleOffset       = snappedAligned;
+        numSamples         = newNumSamples_;
+        sourceStartSample += deltaLeft;
+        if (sourceStartSample < 0) sourceStartSample = 0;
+
+        if (newX != getBounds().getX() || newWidth != getWidth()) {
+            setBounds(newX, getY(), newWidth, getHeight());
+        }
+
+        rebuildThumbnail();
+        updateThumb();
+        return;
+    }
 
     if (wasMoved) {
         const long rawSampleOffset = std::round((getBounds().getX() / zoom) * sampleRate);
         long newSampleOffset = rawSampleOffset;
 
-        // Snap der Region auf das Taktraster, wenn global aktiv. Vorrang vor
-        // dem feineren MIDI-Note-Quantisierungsraster (snapSampleToGrid),
-        // weil das hier den Region-Anfang und nicht eine einzelne Note betrifft.
-        // Granularität: bei zoom >= 100 auf 1/4 Takt, sonst ganze Takte.
-        // Mit gehaltener Shift-Taste: 1/4 des aktuellen Rasters für feinere
-        // Platzierung.
-        if (Project::getInstance()->isSnapToGridEnabled()) {
-            const bool fine = juce::ModifierKeys::getCurrentModifiersRealtime().isShiftDown();
-            newSampleOffset = Project::getInstance()->snapSampleToGrid(newSampleOffset, zoom, fine);
-        }
+        // Multi-Drag-Folger: Snap/Clamp pro Region wuerde die Gruppe
+        // auseinanderziehen — der Leader hat schon gerastert, alle anderen
+        // bekommen vom Dragger den gleichen effektiven Pixel-Delta.
+        const bool isMultiFollower =
+            dragger != nullptr
+            && dragger->isMultiDragInProgress()
+            && dragger->getComponentBeingDragged() != this;
 
-        // Overlap-Clamp gegen die Nachbarregionen.
-        if (parentTrack != nullptr)
-            newSampleOffset = parentTrack->clampOffsetForRegion(this, newSampleOffset, numSamples);
+        if (!isMultiFollower) {
+            // Snap der Region auf das Taktraster, wenn global aktiv. Vorrang vor
+            // dem feineren MIDI-Note-Quantisierungsraster (snapSampleToGrid),
+            // weil das hier den Region-Anfang und nicht eine einzelne Note betrifft.
+            // Granularität: bei zoom >= 100 auf 1/4 Takt, sonst ganze Takte.
+            // Mit gehaltener Shift-Taste: 1/4 des aktuellen Rasters für feinere
+            // Platzierung.
+            if (Project::getInstance()->isSnapToGridEnabled()) {
+                const bool fine = juce::ModifierKeys::getCurrentModifiersRealtime().isShiftDown();
+                newSampleOffset = Project::getInstance()->snapSampleToGrid(newSampleOffset, zoom, fine);
+            }
+
+            // Overlap-Clamp gegen die Nachbarregionen.
+            if (parentTrack != nullptr)
+                newSampleOffset = parentTrack->clampOffsetForRegion(this, newSampleOffset, numSamples);
+        }
 
         // Bounds nur dann visuell korrigieren, wenn snap/clamp die Position
         // tatsächlich verändert hat — sonst entsteht wegen Pixel-Rundung
@@ -394,6 +493,16 @@ void MidiRegion::clear() {
     sequence->clear();
 }
 
+void MidiRegion::addMessageRaw(juce::MidiMessage* m, juce::int64 bufferTimestamp)
+{
+    if (m == nullptr) return;
+    ScopedLock c(lock);
+    m->setTimeStamp((double) bufferTimestamp);
+    midiMessageList.push_back(m);
+    if (midiThumbnail != nullptr)
+        midiThumbnail->addMessage((int) bufferTimestamp, m);
+}
+
 void MidiRegion::addMessage(MidiMessage* m, double time, int sampleNum) {
 
     // sampleNum -= sampleNum % Project::getInstance()->getBufferSize();
@@ -407,16 +516,25 @@ void MidiRegion::addMessage(MidiMessage* m, double time, int sampleNum) {
         sampleNum = snappedSample + getSampleOffset();
     }
 
-    m->setTimeStamp(sampleNum - getSampleOffset());
+    // Timestamp ist buffer-relativ. Buffer-Position 0 entspricht der
+    // ORIGINAL-linken-Kante der Region (vor jedem Links-Trim) — nach einem
+    // Links-Trim ist die sichtbare linke Kante (sampleOffset) bei Buffer-
+    // Position sourceStartSample. Eine neue Note an Timeline=sampleNum hat
+    // also Buffer-Timestamp = (sampleNum - sampleOffset) + sourceStartSample.
+    // Ohne sourceStartSample-Korrektur landete die Note bei Buffer-Position
+    // 0..N, waehrend Playback/Draw ab sourceStartSample lesen — sie wuerde
+    // ignoriert und beim Consolidate ausgefiltert.
+    const int relSample   = sampleNum - getSampleOffset();
+    const int bufTimeStamp = relSample + (int) sourceStartSample;
+    m->setTimeStamp(bufTimeStamp);
 
     midiMessageList.push_back(m);
 
-    int relativeSample = sampleNum - getSampleOffset();
-    if (relativeSample > numSamples) {
-        setNumSamples(relativeSample);
+    if (relSample > numSamples) {
+        setNumSamples(relSample);
     }
 
-    midiThumbnail->addMessage(sampleNum - getSampleOffset(), m);
+    midiThumbnail->addMessage(bufTimeStamp, m);
     updateThumb();
 }
 
@@ -470,14 +588,19 @@ vector<MidiMessage*> MidiRegion::getActiveMessages(int localSamplePos) {
 
 vector<MidiMessage*> MidiRegion::getMessages(int sampleNum, int numSamples)
 {
+    // Der Aufrufer uebergibt sampleNum relativ zur Region (0 = linke Kante).
+    // Im Buffer beginnt die linke Kante bei sourceStartSample — also den
+    // Offset hier dazurechnen, sonst wuerden Noten nach Links-Trim falsche
+    // Buffer-Positionen referenzieren.
     vector<MidiMessage*> foundMessages;
-    const int endSample = sampleNum + numSamples;
+    const int startInBuffer = sampleNum  + (int) sourceStartSample;
+    const int endInBuffer   = startInBuffer + numSamples;
 
     for (auto* m : midiMessageList)
     {
         if (m != nullptr &&
-            m->getTimeStamp() >= sampleNum &&
-            m->getTimeStamp() < endSample &&
+            m->getTimeStamp() >= startInBuffer &&
+            m->getTimeStamp() < endInBuffer &&
             (m->isNoteOnOrOff() || m->isMidiClock() || m->isController()))
         {
             foundMessages.push_back(m);
@@ -724,6 +847,57 @@ void MidiRegion::consolidate()
 {
     const ScopedLock sl(lock);
 
+    // Erst den Front-Trim einarbeiten, falls die Region links gekuerzt wurde:
+    // Events vor sourceStartSample wegwerfen, alle uebrigen um -sourceStartSample
+    // verschieben, dann sourceStartSample auf 0 zuruecksetzen. Ohne diesen
+    // Schritt wuerden Noten am links-getrimmten Rand (mit Buffer-Timestamp ==
+    // sourceStartSample) den darunter liegenden Trim-Filter im non-looping-
+    // Branch nicht ueberleben — sie liegen ja per Konstruktion VOR dem
+    // sichtbaren Bereich, gemessen vom alten Buffer-Anfang aus.
+    if (sourceStartSample > 0)
+    {
+        const long sss = sourceStartSample;
+
+        // Vor dem Cull noteOn/noteOff paaren: laeuft eine Note ueber die neue
+        // linke Kante (on < sss, off >= sss), das noteOn auf sss ziehen — sonst
+        // verschwindet es im naechsten remove_if und der noteOff bleibt als
+        // haengende Note zurueck.
+        {
+            std::map<int, MidiMessage*> openOn;
+            for (auto* m : midiMessageList) {
+                if (m == nullptr) continue;
+                if (m->isNoteOn()) {
+                    openOn[(m->getChannel() - 1) * 128 + m->getNoteNumber()] = m;
+                } else if (m->isNoteOff()) {
+                    const int key = (m->getChannel() - 1) * 128 + m->getNoteNumber();
+                    auto it = openOn.find(key);
+                    if (it != openOn.end()) {
+                        MidiMessage* on = it->second;
+                        if ((long) on->getTimeStamp() < sss && (long) m->getTimeStamp() >= sss)
+                            on->setTimeStamp((double) sss);
+                        openOn.erase(it);
+                    }
+                }
+            }
+        }
+
+        midiMessageList.erase(
+            std::remove_if(midiMessageList.begin(), midiMessageList.end(),
+                [sss](MidiMessage* m) {
+                    if (m == nullptr) return true;
+                    if ((long) m->getTimeStamp() < sss) {
+                        delete m;
+                        return true;
+                    }
+                    return false;
+                }),
+            midiMessageList.end());
+        for (auto* m : midiMessageList)
+            if (m != nullptr)
+                m->setTimeStamp(m->getTimeStamp() - (double) sss);
+        sourceStartSample = 0;
+    }
+
     if (loop && loopCount > 0)
     {
         // Looping case: bake all repetitions into the MIDI data
@@ -745,26 +919,59 @@ void MidiRegion::consolidate()
     }
     else
     {
-        // Non-looping case: trim MIDI events to the current visual (dragged) length.
-        // numSamples holds the original data length; use the component width directly.
-        int trimSamples = (int)((getWidth() / zoom) * sampleRate);
-        if (trimSamples > 0 && trimSamples < numSamples)
+        // Non-looping case: alles ausserhalb des sichtbaren Bereichs IMMER
+        // wegwerfen. Das ist der Sinn von Consolidate — Daten, die durch
+        // Resize-vorne/-hinten "versteckt" wurden, werden jetzt endgueltig
+        // entfernt. Front-Trim haben wir schon oben (und sourceStartSample
+        // wurde auf 0 gesetzt), hier bleibt nur die rechte Kante.
+        const long visibleEnd = (long) numSamples;
+
+        // Noten, die innerhalb starten aber ueber die rechte Kante laufen,
+        // muessen ihren noteOff in den sichtbaren Bereich gezogen bekommen
+        // (visibleEnd - 1) — sonst killt der Cull den noteOff und die Note
+        // haengt bis zum naechsten All-Notes-Off / Region-Ende.
+        if (visibleEnd > 0)
         {
-            midiMessageList.erase(
-                std::remove_if(midiMessageList.begin(), midiMessageList.end(),
-                    [trimSamples](MidiMessage* m) {
-                        if (m->getTimeStamp() >= trimSamples) {
-                            delete m;
-                            return true;
-                        }
-                        return false;
-                    }),
-                midiMessageList.end());
-            numSamples = trimSamples;
+            const long clipped = visibleEnd - 1;
+            std::map<int, MidiMessage*> openOn;
+            for (auto* m : midiMessageList) {
+                if (m == nullptr) continue;
+                if (m->isNoteOn()) {
+                    openOn[(m->getChannel() - 1) * 128 + m->getNoteNumber()] = m;
+                } else if (m->isNoteOff()) {
+                    const int key = (m->getChannel() - 1) * 128 + m->getNoteNumber();
+                    auto it = openOn.find(key);
+                    if (it != openOn.end()) {
+                        MidiMessage* on = it->second;
+                        if ((long) on->getTimeStamp() < visibleEnd && (long) m->getTimeStamp() >= visibleEnd)
+                            m->setTimeStamp((double) clipped);
+                        openOn.erase(it);
+                    }
+                }
+            }
         }
+
+        midiMessageList.erase(
+            std::remove_if(midiMessageList.begin(), midiMessageList.end(),
+                [visibleEnd](MidiMessage* m) {
+                    if (m == nullptr) return true;
+                    if ((long) m->getTimeStamp() >= visibleEnd) {
+                        delete m;
+                        return true;
+                    }
+                    return false;
+                }),
+            midiMessageList.end());
     }
 
-    setBounds(getX(), getY(), (int)(numSamples / sampleRate * zoom), getHeight());
+    // Resize-Handler suppressen: ohne Flag wuerde wasResized im
+    // componentMovedOrResized den right-edge snap erneut anwenden und
+    // numSamples potenziell hoch-snappen — die Region wuerde wachsen und
+    // nach Save/Reload den Nachbarn ueberlappen. Wir wissen hier exakt was
+    // wir wollen (numSamples bereits final), also nur visuell gleichschalten.
+    consolidateInProgress = true;
+    setBounds(getX(), getY(), (int) std::round((double) numSamples / sampleRate * zoom), getHeight());
+    consolidateInProgress = false;
     rebuildThumbnail();
     updateThumb();
     repaint();

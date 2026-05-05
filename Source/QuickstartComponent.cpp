@@ -11,12 +11,18 @@
 namespace
 {
     constexpr int kMaxContentWidth   = 760;
+    constexpr int kStepsColumnWidth  = 520; // smaler Linke-Spalte, damit rechts die Recent-Liste passt
+    constexpr int kRecentsWidth      = 280;
+    constexpr int kColumnGap         = 24;
     constexpr int kHeaderHeight      = 160;
     constexpr int kCardHeight        = 128;
     constexpr int kCardSpacing       = 18;
     constexpr int kCardCornerRadius  = 14;
     constexpr int kFooterHeight      = 56;
     constexpr int kHorizontalPadding = 32;
+    constexpr int kRecentEntryHeight = 52;
+    constexpr int kRecentEntrySpacing = 6;
+    constexpr int kRecentHeaderHeight = 32;
 
     const juce::Colour kBgColour          { 0xff1b1b25 };
     const juce::Colour kCardColour        { 0xff2a2a3a };
@@ -72,6 +78,11 @@ QuickstartComponent::QuickstartComponent()
     steps[2].description = "Add a virtual instrument and start playing. Pick from your scanned plugins or one of the built-in synths.";
     steps[2].actionLabel = "Add Instrument Track";
 
+    steps[3].number      = 4;
+    steps[3].title       = "Open an existing track";
+    steps[3].description = "Pick a previously saved Synthlab project and continue where you left off.";
+    steps[3].actionLabel = "Open Existing Track";
+
     for (auto& step : steps)
     {
         step.button = std::make_unique<juce::TextButton>(step.actionLabel);
@@ -116,17 +127,31 @@ void QuickstartComponent::layoutSteps()
 {
     auto bounds = getLocalBounds();
 
-    const int contentWidth = juce::jmin(bounds.getWidth() - 2 * kHorizontalPadding, kMaxContentWidth);
-    const int contentX = bounds.getX() + (bounds.getWidth() - contentWidth) / 2;
+    // Zwei Spalten: links die Steps, rechts (wenn genug Platz) die Recent-
+    // Files-Liste. Bei sehr schmalem Fenster fuenfter Card-Stil unter den
+    // Steps, sonst neben ihnen.
+    const int columnsTotal = kStepsColumnWidth + kColumnGap + kRecentsWidth;
+    const bool sideBySide = bounds.getWidth() >= columnsTotal + 2 * kHorizontalPadding;
 
-    headerBounds = juce::Rectangle<int>(contentX, bounds.getY() + 28, contentWidth, kHeaderHeight);
+    int stepsWidth, contentX;
+    if (sideBySide) {
+        stepsWidth = kStepsColumnWidth;
+        contentX = bounds.getX() + (bounds.getWidth() - columnsTotal) / 2;
+    } else {
+        stepsWidth = juce::jmin(bounds.getWidth() - 2 * kHorizontalPadding, kMaxContentWidth);
+        contentX = bounds.getX() + (bounds.getWidth() - stepsWidth) / 2;
+    }
+
+    // Header zieht sich ueber beide Spalten — sieht im "schick" besser aus.
+    const int headerWidth = sideBySide ? columnsTotal : stepsWidth;
+    headerBounds = juce::Rectangle<int>(contentX, bounds.getY() + 28, headerWidth, kHeaderHeight);
 
     int y = headerBounds.getBottom() + 24;
-    contentBounds = juce::Rectangle<int>(contentX, y, contentWidth, (int)steps.size() * (kCardHeight + kCardSpacing));
+    contentBounds = juce::Rectangle<int>(contentX, y, stepsWidth, (int)steps.size() * (kCardHeight + kCardSpacing));
 
     for (auto& step : steps)
     {
-        step.bounds = juce::Rectangle<int>(contentX, y, contentWidth, kCardHeight);
+        step.bounds = juce::Rectangle<int>(contentX, y, stepsWidth, kCardHeight);
 
         if (step.button != nullptr)
         {
@@ -140,10 +165,26 @@ void QuickstartComponent::layoutSteps()
         y += kCardHeight + kCardSpacing;
     }
 
-    footerBounds = juce::Rectangle<int>(contentX, y + 8, contentWidth, kFooterHeight);
-
+    footerBounds = juce::Rectangle<int>(contentX, y + 8, stepsWidth, kFooterHeight);
     if (showOnStartupToggle != nullptr)
         showOnStartupToggle->setBounds(footerBounds.reduced(4));
+
+    // Rechte Spalte: Recent-Files-Box. Hoehe = volle Steps-Spalten-Hoehe damit
+    // die Karten optisch zueinander stehen. Wenn nicht side-by-side, unter
+    // dem Footer eine kompakte Variante.
+    if (sideBySide) {
+        recentBounds = juce::Rectangle<int>(contentBounds.getRight() + kColumnGap,
+                                            contentBounds.getY(),
+                                            kRecentsWidth,
+                                            contentBounds.getHeight());
+    } else {
+        recentBounds = juce::Rectangle<int>(contentX,
+                                            footerBounds.getBottom() + 16,
+                                            stepsWidth,
+                                            6 * (kRecentEntryHeight + kRecentEntrySpacing) + kRecentHeaderHeight + 24);
+    }
+
+    refreshRecentEntries();
 }
 
 void QuickstartComponent::paint(juce::Graphics& g)
@@ -166,6 +207,170 @@ void QuickstartComponent::paint(juce::Graphics& g)
 
     for (const auto& step : steps)
         paintStep(g, step);
+
+    paintRecents(g);
+}
+
+void QuickstartComponent::refreshRecentEntries()
+{
+    recentEntries.clear();
+
+    juce::StringArray paths;
+    if (recentFilesProvider) paths = recentFilesProvider();
+
+    // Im Project-Modell ist der frischeste Eintrag hinten — wir wollen ihn
+    // oben anzeigen, also rueckwaerts iterieren.
+    int x = recentBounds.getX() + 14;
+    int y = recentBounds.getY() + kRecentHeaderHeight + 8;
+    const int w = recentBounds.getWidth() - 28;
+
+    const int maxEntries = juce::jmax(0, (recentBounds.getHeight() - kRecentHeaderHeight - 24)
+                                          / (kRecentEntryHeight + kRecentEntrySpacing));
+    int placed = 0;
+    for (int i = paths.size() - 1; i >= 0 && placed < maxEntries; --i)
+    {
+        const auto& full = paths[i];
+        if (full.isEmpty()) continue;
+        juce::File f (full);
+        RecentEntry e;
+        e.fullPath    = full;
+        e.displayName = f.getFileNameWithoutExtension();
+        e.parentDir   = f.getParentDirectory().getFileName();
+        e.bounds      = juce::Rectangle<int>(x, y, w, kRecentEntryHeight);
+        recentEntries.push_back(std::move(e));
+
+        y += kRecentEntryHeight + kRecentEntrySpacing;
+        ++placed;
+    }
+}
+
+void QuickstartComponent::paintRecents(juce::Graphics& g)
+{
+    if (recentBounds.isEmpty()) return;
+
+    // Karten-Hintergrund.
+    juce::Path bg;
+    bg.addRoundedRectangle(recentBounds.toFloat(), (float) kCardCornerRadius);
+    g.setColour(kCardColour);
+    g.fillPath(bg);
+    g.setColour(kCardBorderColour);
+    g.strokePath(bg, juce::PathStrokeType(1.0f));
+
+    // Akzent-Streifen oben.
+    {
+        juce::Path stripe;
+        stripe.addRoundedRectangle((float) recentBounds.getX(),
+                                   (float) recentBounds.getY(),
+                                   (float) recentBounds.getWidth(),
+                                   4.0f,
+                                   2.0f);
+        juce::ColourGradient grad(kAccentColour, (float) recentBounds.getX(), 0.0f,
+                                  kAccentSecondary, (float) recentBounds.getRight(), 0.0f, false);
+        g.setGradientFill(grad);
+        g.fillPath(stripe);
+    }
+
+    // Header.
+    g.setColour(kTextPrimary);
+    g.setFont(juce::Font(15.0f, juce::Font::bold));
+    g.drawText("Recent files",
+               recentBounds.getX() + 14,
+               recentBounds.getY() + 8,
+               recentBounds.getWidth() - 28,
+               kRecentHeaderHeight - 4,
+               juce::Justification::centredLeft, false);
+
+    if (recentEntries.empty())
+    {
+        g.setColour(kTextMuted);
+        g.setFont(juce::Font(13.0f));
+        g.drawText("No recent files yet.",
+                   recentBounds.reduced(14, kRecentHeaderHeight + 12),
+                   juce::Justification::topLeft, false);
+        return;
+    }
+
+    g.setFont(juce::Font(13.5f, juce::Font::bold));
+    for (size_t i = 0; i < recentEntries.size(); ++i)
+    {
+        const auto& e = recentEntries[i];
+        const bool hover = ((int) i == recentHoverIndex);
+
+        // Item-Hintergrund.
+        juce::Path itemBg;
+        itemBg.addRoundedRectangle(e.bounds.toFloat(), 8.0f);
+        g.setColour(hover ? kCardHoverColour : kBgColour.brighter(0.04f));
+        g.fillPath(itemBg);
+        g.setColour(hover ? kAccentColour.withAlpha(0.55f) : kCardBorderColour);
+        g.strokePath(itemBg, juce::PathStrokeType(1.0f));
+
+        // Filename.
+        g.setColour(kTextPrimary);
+        g.setFont(juce::Font(13.5f, juce::Font::bold));
+        g.drawText(e.displayName,
+                   e.bounds.getX() + 12,
+                   e.bounds.getY() + 6,
+                   e.bounds.getWidth() - 24,
+                   18,
+                   juce::Justification::centredLeft, true);
+
+        // Parent dir als Sub-Label.
+        g.setColour(kTextSecondary);
+        g.setFont(juce::Font(11.5f));
+        g.drawText(e.parentDir,
+                   e.bounds.getX() + 12,
+                   e.bounds.getY() + 26,
+                   e.bounds.getWidth() - 24,
+                   16,
+                   juce::Justification::centredLeft, true);
+
+        if (hover)
+        {
+            g.setColour(kAccentColour);
+            g.setFont(juce::Font(11.0f, juce::Font::bold));
+            g.drawText("OPEN",
+                       e.bounds.getRight() - 50,
+                       e.bounds.getY() + 6,
+                       40, 18,
+                       juce::Justification::centredRight, false);
+        }
+    }
+}
+
+int QuickstartComponent::hitTestRecentEntry(juce::Point<int> pos) const
+{
+    for (size_t i = 0; i < recentEntries.size(); ++i)
+        if (recentEntries[i].bounds.contains(pos))
+            return (int) i;
+    return -1;
+}
+
+void QuickstartComponent::mouseMove(const juce::MouseEvent& e)
+{
+    const int idx = hitTestRecentEntry(e.getPosition());
+    setMouseCursor(idx >= 0 ? juce::MouseCursor::PointingHandCursor : juce::MouseCursor::NormalCursor);
+    if (idx != recentHoverIndex)
+    {
+        recentHoverIndex = idx;
+        repaint(recentBounds);
+    }
+}
+
+void QuickstartComponent::mouseExit(const juce::MouseEvent&)
+{
+    if (recentHoverIndex != -1)
+    {
+        recentHoverIndex = -1;
+        repaint(recentBounds);
+    }
+}
+
+void QuickstartComponent::mouseDown(const juce::MouseEvent& e)
+{
+    const int idx = hitTestRecentEntry(e.getPosition());
+    if (idx < 0 || idx >= (int) recentEntries.size()) return;
+    if (onOpenRecentFile)
+        onOpenRecentFile(recentEntries[(size_t) idx].fullPath);
 }
 
 void QuickstartComponent::paintHeader(juce::Graphics& g, juce::Rectangle<int> area)
@@ -302,18 +507,9 @@ void QuickstartComponent::paintStep(juce::Graphics& g, const StepCard& step)
     g.setFont(juce::Font(13.5f));
     g.drawFittedText(step.description, textArea, juce::Justification::topLeft, 3);
 
-    // "Done" label next to the button when complete.
-    if (step.done && step.button != nullptr)
-    {
-        g.setColour(kAccentSuccess);
-        g.setFont(juce::Font(12.0f, juce::Font::bold));
-        const int labelW = 80;
-        g.drawText("DONE",
-                   step.button->getX() - labelW - 8,
-                   step.button->getY(),
-                   labelW, step.button->getHeight(),
-                   juce::Justification::centredRight, false);
-    }
+    // Der visuelle Status wird ausschliesslich ueber den gruenen Akzent-
+    // Streifen am linken Kartenrand und das Check-Mark im Badge ausgedrueckt
+    // — keine zusaetzliche "DONE"-Beschriftung neben dem Button.
 }
 
 void QuickstartComponent::buttonClicked(juce::Button* b)
@@ -333,6 +529,7 @@ void QuickstartComponent::buttonClicked(juce::Button* b)
                 case 0: if (onConfigureAudio)        onConfigureAudio();        break;
                 case 1: if (onScanPlugins)           onScanPlugins();           break;
                 case 2: if (onCreateInstrumentTrack) onCreateInstrumentTrack(); break;
+                case 3: if (onOpenExistingTrack)     onOpenExistingTrack();     break;
                 default: break;
             }
             return;
@@ -357,6 +554,16 @@ void QuickstartComponent::timerCallback()
     refresh(steps[0], isAudioConfigured);
     refresh(steps[1], isPluginsScanned);
     refresh(steps[2], hasInstrumentTrack);
+    refresh(steps[3], hasOpenedExistingTrack);
+
+    // Recent-Liste auch refreshen — pruefen ob sich Inhalt veraendert hat.
+    const size_t before = recentEntries.size();
+    juce::String firstBefore = before > 0 ? recentEntries[0].fullPath : juce::String();
+    refreshRecentEntries();
+    const size_t after = recentEntries.size();
+    juce::String firstAfter = after > 0 ? recentEntries[0].fullPath : juce::String();
+    if (before != after || firstBefore != firstAfter)
+        changed = true;
 
     if (changed)
         repaint();

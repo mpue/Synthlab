@@ -35,28 +35,38 @@ double MidiThumbnail::getTotalLength()
 
 void MidiThumbnail::drawChannels(Graphics& g, double startTimeSeconds, double endTimeSeconds, float verticalZoomFactor)
 {
-    if (totalSamples == 0 || sampleRate <= 0.0)
+    if (midiBuffer == nullptr || totalSamples == 0 || sampleRate <= 0.0)
         return;
 
-    MidiMessage message;
-    int sampleNum = 0;
-    MidiBuffer::Iterator iterator(*midiBuffer);
+    double timeRange = endTimeSeconds - startTimeSeconds;
+    if (timeRange <= 0) return;
+
+    const int width = getWidth();
+    const int height = getHeight();
+    if (width <= 0 || height <= 0) return;
+
+    // Erst eine konsistente Kopie unter Lock ziehen, dann ohne Lock zeichnen.
+    // Vorher iterierte drawChannels direkt ueber midiBuffer, waehrend
+    // addMessage() auf demselben Buffer schrieb (mit _lock geschuetzt) — JUCE
+    // MidiBuffer::Iterator stolperte dann gelegentlich in einen mutierten
+    // Storage und crashte mitten in MidiRegion::paint().
+    MidiBuffer snapshot;
+    {
+        juce::ScopedLock sl(_lock);
+        snapshot = *midiBuffer; // deep copy
+    }
 
     g.setColour(Colours::black);
 
-    double timeRange = endTimeSeconds - startTimeSeconds;
-    if (timeRange <= 0)
-        return;
-
-    int width = getWidth();
-    int height = getHeight();
-    float pixelsPerSecond = (width / timeRange);
+    const float pixelsPerSecond = (float)(width / timeRange);
 
     std::map<int, int> activeNotes;
 
-    while (iterator.getNextEvent(message, sampleNum)) {
-        double eventTime = sampleNum / sampleRate;
+    MidiMessage message;
+    int sampleNum = 0;
+    MidiBuffer::Iterator iterator(snapshot);
 
+    while (iterator.getNextEvent(message, sampleNum)) {
         if (message.isNoteOn()) {
             activeNotes[message.getNoteNumber()] = sampleNum;
         }

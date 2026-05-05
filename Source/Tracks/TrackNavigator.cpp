@@ -73,6 +73,11 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 	setMouseClickGrabsKeyboardFocus(true);
 	setInterceptsMouseClicks(true, true);
 
+	// Middle-Mouse-Pan: Forwarder bekommt Mausevents von uns selbst und allen
+	// Kindkomponenten, damit Pannen auch ueber Tracks/Regions/Timeline geht.
+	panForwarder = std::make_unique<PanMouseForwarder>(*this);
+	addMouseListener(panForwarder.get(), true);
+
 	timeLine->onLoopChanged = [this](double start, double end, bool enabled) {
 		this->loopStart = start;
 		this->loopEnd = end;
@@ -90,6 +95,28 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 
 TrackNavigator::~TrackNavigator()
 {
+	if (panForwarder != nullptr)
+		removeMouseListener(panForwarder.get());
+
+	// Listener-Registrierungen aus dem Konstruktor sauber zurueckziehen — sonst
+	// schickt Project::setTempo() o.ae. ChangeMessages an einen toten this-
+	// Pointer (Crash in ChangeBroadcaster::callListeners beim naechsten Open).
+	if (auto* p = Project::getInstance())
+		p->removeChangeListener(this);
+	if (auto* m = Mixer::getInstance())
+		removeChangeListener(m);
+
+	if (view != nullptr) {
+		view->getHorizontalScrollBar().removeListener(this);
+	}
+
+	if (selector != nullptr)
+		selector->removeChangeListener(this);
+
+	for (auto* t : tracks) {
+		if (t != nullptr) t->removeChangeListener(this);
+	}
+
 	timeLine = nullptr;
 	selector = nullptr;
 
@@ -99,7 +126,6 @@ TrackNavigator::~TrackNavigator()
 
 	delete dragger;
 	delete marker;
-
 }
 
 void TrackNavigator::paint(Graphics& g)
@@ -112,6 +138,13 @@ void TrackNavigator::clearTracks() {
 	// sie einen Dangling-Pointer.
 	trackControls.clear();
 	for (std::vector<Track*>::iterator it = tracks.begin(); it != tracks.end(); ++it) {
+		// Mixer haelt eine parallele tracks-Liste (Mixer::addTrack) UND einen
+		// Listener-Eintrag pro Track. Beides austragen, sonst bleibt nach
+		// einem File-Wechsel ein dangling Track* im Mixer-Vector und/oder ein
+		// dangling Listener-Pointer — der naechste Mixer::sendChangeMessage()
+		// kracht dann in ChangeBroadcaster::callListeners.
+		if (auto* m = Mixer::getInstance())
+			m->removeTrack(*it);
 		delete* it;
 	}
 	tracks.clear();
@@ -416,6 +449,14 @@ void TrackNavigator::timerCallback()
 	transportDisplay->setTransportState(samplePosition, Project::getInstance()->getSampleRate(), Project::getInstance()->getTempo(), 4, 4);
 	if (pianoRoll != nullptr)
 		pianoRoll->setPlaybackPosition(this->samplePosition);
+
+	// Pending Automation-Werte aus dem Audio-Thread auf die Plugin-Parameter
+	// anwenden — auf dem Message-Thread, damit Plugin-Editoren (z.B.
+	// MainUI::parameterChanged) nicht synchron aus dem Audio-Callback heraus
+	// getriggert werden und crashen.
+	for (auto* t : tracks)
+		if (t != nullptr) t->applyPendingAutomation();
+
 	repaint();
 }
 
@@ -455,6 +496,7 @@ ValueTree TrackNavigator::getConfiguration()
 					region.setProperty("clipRefId", ar->getClipRefid(), nullptr);
 					region.setProperty("sampleOffset", (int)ar->getSampleOffset(), nullptr);
 					region.setProperty("numSamples", ar->getNumSamples(), nullptr);
+					region.setProperty("sourceStartSample", (juce::int64) ar->getSourceStartSample(), nullptr);
 					region.setProperty("width", ar->getWidth(), nullptr);
 				}
 			}
@@ -462,6 +504,7 @@ ValueTree TrackNavigator::getConfiguration()
 				if (auto* mr = dynamic_cast<MidiRegion*>(tracks.at(i)->getRegions().at(j))) {
 					region.setProperty("sampleOffset", (int)mr->getSampleOffset(), nullptr);
 					region.setProperty("numSamples", mr->getNumSamples(), nullptr);
+					region.setProperty("sourceStartSample", (juce::int64) mr->getSourceStartSample(), nullptr);
 					region.setProperty("width", mr->getWidth(), nullptr);
 
 					ValueTree events("Events");
@@ -506,6 +549,15 @@ ValueTree TrackNavigator::getConfiguration()
 		}
 
 		track.addChild(regions, -1, nullptr);
+
+		// Automation-Daten persistieren — alle Lanes des Tracks (eine pro
+		// Plugin-Parameter, mit stabiler Uuid).
+		track.addChild(tracks.at(i)->getAutomationModel().toValueTree(), -1, nullptr);
+
+		// FX-Slot-Map (welches Plugin in welchem User-Slot) wird in
+		// SynthEditor::saveFile() pro Track angereichert — TrackNavigator
+		// hat keinen Zugriff auf MixerPanel/Channel-Strips.
+
 		v.addChild(track, -1, nullptr);
 	}
 
@@ -526,6 +578,13 @@ void TrackNavigator::mouseWheelMove(const MouseEvent& event, const MouseWheelDet
 	// Auf macOS wird Ctrl+Scroll vom OS für Accessibility-Zoom abgefangen,
 	// daher zusätzlich Cmd akzeptieren.
 	const bool isZoomModifier = event.mods.isCtrlDown() || event.mods.isCommandDown();
+	const bool isVerticalZoom = isZoomModifier && event.mods.isShiftDown();
+
+	if (isVerticalZoom)
+	{
+		verticalZoomAtMouse(event, wheel);
+		return;
+	}
 
 	if (!isZoomModifier || getMaxLength() == 0)
 	{
@@ -561,6 +620,74 @@ void TrackNavigator::mouseWheelMove(const MouseEvent& event, const MouseWheelDet
 		const int dx = newMouseX - mouseX;
 		const auto pos = view->getViewPosition();
 		view->setViewPosition(pos.x + dx, pos.y);
+	}
+
+	repaint();
+	sendChangeMessage();
+}
+
+void TrackNavigator::verticalZoomAtMouse(const MouseEvent& event, const MouseWheelDetails& wheel)
+{
+	if (tracks.empty()) return;
+
+	// Skalierung pro Wheel-Tick. exp() liefert symmetrisches Zoom-In/Out.
+	float delta = wheel.deltaY;
+	if (wheel.isReversed) delta = -delta;
+	const float factor = std::exp(delta * 0.5f);
+	if (std::abs(factor - 1.0f) < 1e-4f) return;
+
+	const int mouseY = event.getEventRelativeTo(this).y;
+
+	// Erst den Track unter dem Maus-Cursor finden und seine relative Y-Position
+	// in seiner eigenen Bounding-Box festhalten — danach koennen wir die
+	// Heights aendern und das Layout reparieren.
+	int hostIndex   = -1;
+	int hostOffsetY = 0;
+	for (int i = 0; i < (int) tracks.size(); ++i)
+	{
+		auto* t = tracks.at(i);
+		const int top = t->getY();
+		const int bot = top + t->getHeight();
+		if (mouseY >= top && mouseY < bot)
+		{
+			hostIndex   = i;
+			hostOffsetY = mouseY - top;
+			break;
+		}
+	}
+
+	const int kMinTrackHeight = 24;
+	const int kMaxTrackHeight = 400;
+
+	for (auto* t : tracks)
+	{
+		const int newH = juce::jlimit(kMinTrackHeight, kMaxTrackHeight,
+		                              (int) std::round(t->getHeight() * factor));
+		t->setHeight(newH);
+	}
+
+	// Re-Layout (analog zu insertTrackAt).
+	int yPos = timelineOffset;
+	for (auto* t : tracks)
+	{
+		t->setTopLeftPosition(kControlsWidth, yPos);
+		yPos += t->getHeight();
+	}
+
+	syncTrackControls();
+	adjustHeight();
+
+	// Viewport so verschieben, dass der Track unter dem Cursor an derselben
+	// Bildschirm-Y bleibt.
+	if (view != nullptr && hostIndex >= 0 && hostIndex < (int) tracks.size())
+	{
+		auto* t = tracks.at(hostIndex);
+		// Mouse-Position im neuen Layout (im Navigator-Koordinatensystem)
+		const float scaledOffset = (float) hostOffsetY * factor;
+		const int newMouseY = t->getY() + (int) scaledOffset;
+		const int dy = newMouseY - mouseY;
+		const auto pos = view->getViewPosition();
+		view->setViewPosition(pos.x, pos.y + dy);
 	}
 
 	repaint();
@@ -741,21 +868,24 @@ void TrackNavigator::setRecording(bool recording) {
 			recordStart = 0;
 		}
 		for (int i = 0; i < tracks.size(); i++) {
-			if (tracks.at(i)->isRecording()) {
+			Track* t = tracks.at(i);
+			if (t->isRecording()) {
 
-				if (tracks.at(i)->getType() == Track::Type::MIDI || tracks.at(i)->getType() == Track::Type::INSTRUMENT) {
+				if (t->getType() == Track::Type::MIDI || t->getType() == Track::Type::INSTRUMENT) {
 
-					MidiRegion* r = dynamic_cast<MidiRegion*>(recordingRegion);
+					MidiRegion* r = dynamic_cast<MidiRegion*>(t->getRegionAt(recordStart));
 					if (r == nullptr) {
-						recordingRegion = tracks.at(i)->addMidiRegion(Project::getInstance()->getSampleRate(), recordStart, Project::getInstance()->getSampleRate() * 10);
+						r = t->addMidiRegion(Project::getInstance()->getSampleRate(), recordStart, Project::getInstance()->getSampleRate() * 10);
 					}
-					recordingRegion->startRecording();
+					t->setRecordingRegion(r);
+					r->startRecording();
 				}
-				else if (tracks.at(i)->getType() == Track::Type::AUDIO) {
-					AudioRegion* r = dynamic_cast<AudioRegion*>(tracks.at(i)->getRegionAt(recordStart));
+				else if (t->getType() == Track::Type::AUDIO) {
+					AudioRegion* r = dynamic_cast<AudioRegion*>(t->getRegionAt(recordStart));
 					if (r == nullptr) {
-						r = tracks.at(i)->addRegion(nullptr, Project::getInstance()->getSampleRate(), recordStart, Project::getInstance()->getSampleRate() * 10);
+						r = t->addRegion(nullptr, Project::getInstance()->getSampleRate(), recordStart, Project::getInstance()->getSampleRate() * 10);
 					}
+					t->setRecordingRegion(r);
 					r->startRecording();
 				}
 
@@ -764,33 +894,25 @@ void TrackNavigator::setRecording(bool recording) {
 	}
 	else {
 		stopTimer();
-		recordingRegion = nullptr;
 		Session::getInstance()->setRecordingStopTime();
 		recordStop = marker->getSamplePosition() * Project::getInstance()->getSampleRate();
 
 		for (int i = 0; i < tracks.size(); i++) {
-			if (tracks.at(i)->isRecording()) {
-				if (tracks.at(i)->getType() == Track::Type::MIDI || tracks.at(i)->getType() == Track::Type::INSTRUMENT) {
-					for (int j = 0; j < tracks.at(i)->getRegions().size(); j++) {
-
-						MidiRegion* mr = dynamic_cast<MidiRegion*>(recordingRegion);
-
-						if (mr != nullptr) {
-							mr->stopRecording();
-							mr->sanitize();
-						}
+			Track* t = tracks.at(i);
+			if (t->isRecording()) {
+				Region* rec = t->getRecordingRegion();
+				if (t->getType() == Track::Type::MIDI || t->getType() == Track::Type::INSTRUMENT) {
+					if (auto* mr = dynamic_cast<MidiRegion*>(rec)) {
+						mr->stopRecording();
+						mr->sanitize();
 					}
 				}
-				else if (tracks.at(i)->getType() == Track::Type::AUDIO) {
-					for (int j = 0; j < tracks.at(i)->getRegions().size(); j++) {
-
-						AudioRegion* ar = dynamic_cast<AudioRegion*>(tracks.at(i)->getRegions().at(j));
-
-						if (ar != nullptr) {
-							ar->stopRecording();
-						}
+				else if (t->getType() == Track::Type::AUDIO) {
+					if (auto* ar = dynamic_cast<AudioRegion*>(rec)) {
+						ar->stopRecording();
 					}
 				}
+				t->setRecordingRegion(nullptr);
 			}
 		}
 	}
@@ -1181,7 +1303,11 @@ bool TrackNavigator::keyPressed(const KeyPress& key, Component* originatingCompo
 				}
 			}
 		}
-		else if (key.getKeyCode() == 88) { // X
+		else if (key.getKeyCode() == 88) { // X — standard cut: copy to clipboard, then remove.
+			Session::getInstance()->clearRegionsClipboard();
+			for (int i = 0; i < tracks.size(); i++) {
+				tracks.at(i)->copySelectedRegions();
+			}
 			for (int i = 0; i < tracks.size(); i++) {
 				tracks.at(i)->removeSelectedRegions(true);
 			}
@@ -1189,6 +1315,64 @@ bool TrackNavigator::keyPressed(const KeyPress& key, Component* originatingCompo
 		else if (key.getKeyCode() == 84) { // T
 			for (int i = 0; i < tracks.size(); i++) {
 				tracks.at(i)->splitRegion();
+			}
+		}
+		else if (key.getKeyCode() == 66) { // B — Bounce-In-Place der selektierten Regionen
+			// Pro selektierter MIDI-Region: bouncen, neuen Audio-Track DIREKT
+			// unter dem Source-Track anlegen, AudioRegion an gleicher Timeline-
+			// Position einsetzen. Source-Region bleibt unangetastet.
+			if (editor == nullptr) return false;
+
+			// Snapshot von (sourceTrack, region)-Paaren, weil wir gleich tracks
+			// modifizieren — Iterieren waehrend insertTrackAt() ist unsicher.
+			std::vector<std::pair<Track*, Region*>> jobs;
+			for (auto* t : tracks) {
+				if (t == nullptr) continue;
+				for (auto* r : t->getRegions())
+					if (r != nullptr && r->isSelected()) jobs.emplace_back(t, r);
+			}
+
+			const double sr = Project::getInstance()->getSampleRate();
+			for (auto& job : jobs) {
+				Track* sourceTrack = job.first;
+				Region* sourceRegion = job.second;
+				if (sourceTrack == nullptr || sourceRegion == nullptr) continue;
+
+				const long offset = sourceRegion->getSampleOffset();
+				const long len    = (long) sourceRegion->getNumSamples();
+
+				std::unique_ptr<juce::AudioSampleBuffer> rendered (sourceTrack->bounceRegionToBuffer(sourceRegion));
+				if (rendered == nullptr) continue;
+
+				// Neuen Audio-Track anlegen — TrackUtil haengt ihn ans Ende
+				// der tracks-Liste.
+				Track* newAudio = TrackUtil::createAudioTrack(editor, this, editor->getModule());
+				if (newAudio == nullptr) continue;
+				newAudio->setName(sourceTrack->getName() + " (bounce)");
+
+				// In die Position direkt unterhalb des Source-Tracks
+				// verschieben.
+				const auto srcIt = std::find(tracks.begin(), tracks.end(), sourceTrack);
+				const auto newIt = std::find(tracks.begin(), tracks.end(), newAudio);
+				if (srcIt != tracks.end() && newIt != tracks.end() && srcIt + 1 != newIt) {
+					tracks.erase(newIt);
+					const auto refresh = std::find(tracks.begin(), tracks.end(), sourceTrack);
+					tracks.insert(refresh + 1, newAudio);
+
+					// Re-Layout (analog zu insertTrackAt).
+					int yPos = timelineOffset;
+					for (auto* tt : tracks) {
+						tt->setTopLeftPosition(kControlsWidth, yPos);
+						yPos += tt->getHeight();
+					}
+					syncTrackControls();
+					adjustHeight();
+					repaint();
+					sendChangeMessage();
+				}
+
+				// AudioRegion mit gerendertem Buffer auf den neuen Track.
+				newAudio->addRegion(rendered.get(), sr, offset, len);
 			}
 		}
 	}
@@ -1202,16 +1386,104 @@ int TrackNavigator::alignToBufferSize(int samplePosition) {
 }
 
 void TrackNavigator::mouseUp(const MouseEvent& event) {
+	if (marqueeActive) {
+		finalizeMarqueeSelection();
+		marqueeActive = false;
+		marqueeArmed = false;
+		marqueeRect = {};
+		repaint();
+		return;
+	}
+	marqueeArmed = false;
 }
 
 void TrackNavigator::mouseDrag(const MouseEvent& event) {
+	if (isPanning)
+		return;
+
 	if (event.mods.isLeftButtonDown() && event.mods.isAltDown()) {
 
 		int start = UITools::snap(event.getMouseDownPosition().getX(), zoom / 4, 2);
 		int end = UITools::snap(event.getOffsetFromDragStart().getX(), zoom / 4, 2);
 
 		getSelector()->setSelectedRange(start, end);
+		return;
 	}
+
+	// Marquee: erst nachdem die Maus weit genug bewegt wurde aktivieren —
+	// einzelne Klicks (mit minimalem Wackeln) sollen weiterhin als Klick
+	// gelten und nicht versehentlich die Selektion umbauen.
+	if (marqueeArmed && event.mods.isLeftButtonDown()) {
+		if (!marqueeActive) {
+			if (event.getDistanceFromDragStart() < 4)
+				return;
+			marqueeActive = true;
+			if (!marqueeAdditive && dragger != nullptr)
+				dragger->deselectAll();
+		}
+		const auto p = event.getEventRelativeTo(this).getPosition();
+		marqueeRect = juce::Rectangle<int>(marqueeDownPos, p);
+		repaint();
+	}
+}
+
+void TrackNavigator::paintOverChildren(juce::Graphics& g) {
+	if (!marqueeActive) return;
+	g.setColour(juce::Colours::aqua.withAlpha(0.18f));
+	g.fillRect(marqueeRect);
+	g.setColour(juce::Colours::aqua);
+	g.drawRect(marqueeRect, 1);
+}
+
+void TrackNavigator::finalizeMarqueeSelection() {
+	if (dragger == nullptr) return;
+	const juce::Rectangle<int> sel = marqueeRect;
+	if (sel.isEmpty()) return;
+
+	for (auto* t : tracks) {
+		if (t == nullptr) continue;
+		for (auto* r : t->getRegions()) {
+			if (r == nullptr) continue;
+			// Region-Bounds in Navigator-Koordinaten — Region liegt in Track,
+			// Track im Navigator. getLocalArea konvertiert ueber die Hierarchie.
+			const auto rb = getLocalArea(r, r->getLocalBounds());
+			if (sel.intersects(rb))
+				dragger->setSelected(r, true);
+		}
+	}
+
+	for (auto* t : tracks)
+		if (t != nullptr) t->repaint();
+}
+
+void TrackNavigator::handlePanMouseDown(const MouseEvent& event)
+{
+	if (!event.mods.isMiddleButtonDown())
+		return;
+
+	isPanning = true;
+	panStartScreenPos = event.getScreenPosition();
+	panStartViewPos = (view != nullptr) ? view->getViewPosition() : juce::Point<int>(0, 0);
+	setMouseCursor(juce::MouseCursor::DraggingHandCursor);
+}
+
+void TrackNavigator::handlePanMouseDrag(const MouseEvent& event)
+{
+	if (!isPanning || view == nullptr)
+		return;
+
+	const int dx = event.getScreenPosition().x - panStartScreenPos.x;
+	const int newX = juce::jmax(0, panStartViewPos.x - dx);
+	view->setViewPosition(newX, panStartViewPos.y);
+}
+
+void TrackNavigator::handlePanMouseUp(const MouseEvent& event)
+{
+	if (!isPanning)
+		return;
+
+	isPanning = false;
+	setMouseCursor(juce::MouseCursor::NormalCursor);
 }
 
 void TrackNavigator::mouseMove(const juce::MouseEvent& event) {
@@ -1224,6 +1496,22 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 	// Wir brauchen die Position relativ zum Navigator
 	int x = event.getEventRelativeTo(this).x;
 	int y = event.getEventRelativeTo(this).y;
+
+	// Marquee nur, wenn auf leerem Hintergrund oder einem Track-Hintergrund
+	// gedrueckt wurde — auf einer Region soll der bestehende Region-Drag
+	// (verschieben/auswaehlen) weiter wie gewohnt arbeiten. Loop-Range (Alt),
+	// Pan (Mitte) und Playhead-Set (Rechts) blocken das ebenfalls.
+	const bool onRegion = (dynamic_cast<Region*>(event.eventComponent) != nullptr);
+	marqueeArmed =
+		event.mods.isLeftButtonDown()
+		&& !event.mods.isAltDown()
+		&& !event.mods.isRightButtonDown()
+		&& !event.mods.isMiddleButtonDown()
+		&& !onRegion;
+	marqueeActive = false;
+	marqueeAdditive = event.mods.isShiftDown() || event.mods.isCommandDown();
+	marqueeDownPos = { x, y };
+	marqueeRect = {};
 
 	if (isPlaying()) {
 		allNotesOff();
@@ -1259,10 +1547,13 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
         }
 	}
 	//else
-	if (Track* r = dynamic_cast<Track*>(event.eventComponent)) {		
+	if (Track* r = dynamic_cast<Track*>(event.eventComponent)) {
 		for (int i = 0; i < tracks.size(); i++) {
 			tracks.at(i)->setSelected(false);
-			tracks.at(i)->clearSelection();
+			// Bei Shift/Cmd Region-Selektion behalten — sonst wuerde Marquee
+			// im additiven Modus durch diesen Klick-Pfad sofort entleert.
+			if (!marqueeAdditive)
+				tracks.at(i)->clearSelection();
 		}
 
 		r->setSelected(true);
@@ -1296,7 +1587,9 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 								tracks.at(i)->getRegions().at(j)->setSelected(true);
 								propertyView->selectionChanged(tracks.at(i)->getRegions().at(j));
 							}
-							else {
+							else if (!marqueeAdditive) {
+								// Bei Shift/Cmd: bestehende Region-Selektion
+								// nicht entwerten — Marquee will additiv sein.
 								tracks.at(i)->getRegions().at(j)->setSelected(false);
 							}
 						}
