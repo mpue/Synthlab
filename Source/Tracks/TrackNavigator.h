@@ -181,6 +181,11 @@ public:
 	void openPianoRoll(MidiRegion* r);
 	void openEventEditor(MidiRegion* r);
 
+	// Rendert jede selektierte Region in einen neuen Audio-Track direkt unter
+	// dem jeweiligen Source-Track. Wird sowohl vom Cmd+B-Shortcut als auch
+	// vom Region-Menu aufgerufen.
+	void bounceSelectedRegionsInPlace();
+
 	bool isPlaying();
 	void setPlaying(bool playing);
 
