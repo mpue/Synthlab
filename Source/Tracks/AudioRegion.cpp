@@ -368,10 +368,14 @@ void AudioRegion::setZoom(float zoom) {
     this->setTopLeftPosition(newOffset, 0);
     zoomInProgress = false;
 
-    resizerR->setSize(5, getHeight());
-    resizerR->setTopLeftPosition(getWidth() - 5, 0);
+    // Resize-Handle-Breite: 5 px war zu schmal — Nutzer haben beim Versuch,
+    // links zu trimmen, oft daneben getroffen und dann den Region-Body
+    // gegriffen, sodass aus dem Trim ein Move-Drag wurde. 8 px gibt
+    // brauchbare Hit-Area, ohne den Body zu verdecken.
+    resizerR->setSize(8, getHeight());
+    resizerR->setTopLeftPosition(getWidth() - 8, 0);
     if (resizerL != nullptr) {
-        resizerL->setSize(5, getHeight());
+        resizerL->setSize(8, getHeight());
         resizerL->setTopLeftPosition(0, 0);
     }
 
@@ -456,7 +460,7 @@ void AudioRegion::resized()
     constrainer->setRaster(zoom / 4);
     int maxWidth = (audioBuffer->getNumSamples() / sampleRate) * this->zoom;
     constrainer->setMaxWidth(maxWidth);
-    resizerR->setTopLeftPosition(getWidth() - 5, 0);
+    resizerR->setTopLeftPosition(getWidth() - 8, 0);
     if (resizerL != nullptr) resizerL->setTopLeftPosition(0, 0);
     dirty = true;
 }

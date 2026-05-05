@@ -52,10 +52,10 @@ MidiRegion::MidiRegion(long startSample, long sampleLength, double sampleRate, M
     constrainer->setMaximumWidth(1000000);
 
     resizerR = new ResizableEdgeComponent(this, constrainer, ResizableEdgeComponent::rightEdge);
-    resizerR->setSize(5, getHeight());
+    resizerR->setSize(8, getHeight());
     addAndMakeVisible(resizerR);
     resizerL = new ResizableEdgeComponent(this, constrainer, ResizableEdgeComponent::leftEdge);
-    resizerL->setSize(5, getHeight());
+    resizerL->setSize(8, getHeight());
     addAndMakeVisible(resizerL);
 
     addComponentListener(this);
@@ -98,10 +98,10 @@ MidiRegion::MidiRegion(MidiBuffer* buffer, double sampleRate) {
     constrainer->setMaximumWidth(getBounds().getWidth());
 
     resizerR = new ResizableEdgeComponent(this, constrainer, ResizableEdgeComponent::rightEdge);
-    resizerR->setSize(5, getHeight());
+    resizerR->setSize(8, getHeight());
     addAndMakeVisible(resizerR);
     resizerL = new ResizableEdgeComponent(this, constrainer, ResizableEdgeComponent::leftEdge);
-    resizerL->setSize(5, getHeight());
+    resizerL->setSize(8, getHeight());
     addAndMakeVisible(resizerL);
 
     addComponentListener(this);
@@ -263,10 +263,10 @@ void MidiRegion::resized() {
         midiThumbnail->setZoom(zoom);
     }
     if (resizerR != nullptr) {
-        resizerR->setBounds(getWidth() - 5, 0, 5, getHeight());
+        resizerR->setBounds(getWidth() - 8, 0, 8, getHeight());
     }
     if (resizerL != nullptr) {
-        resizerL->setBounds(0, 0, 5, getHeight());
+        resizerL->setBounds(0, 0, 8, getHeight());
     }
 }
 
