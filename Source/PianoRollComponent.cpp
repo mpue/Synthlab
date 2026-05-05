@@ -2220,12 +2220,21 @@ void PianoRollComponent::insertPattern(Pattern p)
     // wuerde sonst geschluckt, sobald der Track auf einem anderen Kanal
     // liegt (Default ist 1). Der Nutzer wechselt seinen Drum-Track ggf.
     // selbst auf 10, GM-Pitches passen dann auch klanglich.
-    constexpr int kKick      = 36;
-    constexpr int kSnare     = 38;
-    constexpr int kClosedHat = 42;
-    constexpr int kOpenHat   = 46;
-    constexpr int kRide      = 51;
-    constexpr int kCrash     = 49;
+    constexpr int kKick       = 36;
+    constexpr int kSnare      = 38;
+    constexpr int kClap       = 39;
+    constexpr int kClosedHat  = 42;
+    constexpr int kOpenHat    = 46;
+    constexpr int kPedalHat   = 44;
+    constexpr int kRide       = 51;
+    constexpr int kCrash      = 49;
+    constexpr int kRimShot    = 37;
+    constexpr int kTomLow     = 41;
+    constexpr int kTomMid     = 47;
+    constexpr int kTomHigh    = 50;
+    constexpr int kTambourine = 54;
+    constexpr int kCowbell    = 56;
+    juce::ignoreUnused(kPedalHat, kCowbell); // reserved for future patterns
     int trackChannel = 1;
     if (auto* parentTrack = dynamic_cast<Track*>(midiRegion->getParentComponent()))
         trackChannel = parentTrack->getMidiChannel();
@@ -2363,6 +2372,266 @@ void PianoRollComponent::insertPattern(Pattern p)
                     pitch = root + i;
                 }
                 add(juce::jlimit(0, 127, pitch), i * sixteenth, sixteenth, 95, trackChannel);
+            }
+            break;
+        }
+
+        // ============================================================
+        // Drums — Hip-Hop / Trap
+        // ============================================================
+        case Pattern::TrapBeat: {
+            // Kick-Synkopation, Snare/Clap auf 3 (half-time-Feel), 16tel-Hat
+            // mit 32stel-Roll auf der letzten Viertel — typischer Trap-Lift.
+            add(kKick, 0 * quarter, eighth, 122, kDrumChan);
+            add(kKick, 2 * quarter + sixteenth, eighth, 110, kDrumChan);
+            add(kKick, 3 * quarter + sixteenth, eighth, 105, kDrumChan);
+            add(kSnare, 2 * quarter, eighth, 115, kDrumChan);
+            add(kClap,  2 * quarter, eighth, 100, kDrumChan);
+            for (int i = 0; i < 12; ++i)
+                add(kClosedHat, i * sixteenth, thirtysecond,
+                    (i % 4 == 0) ? 95 : 70, kDrumChan);
+            // 32stel-Roll im letzten Viertel — Geschwindigkeit bleibt
+            // wahrnehmbar, Velocity zieht aufwaerts.
+            for (int i = 0; i < 8; ++i)
+                add(kClosedHat, 12 * sixteenth + i * thirtysecond,
+                    thirtysecond, 75 + i * 4, kDrumChan);
+            break;
+        }
+
+        // ============================================================
+        // Drums — House / Techno
+        // ============================================================
+        case Pattern::TechnoBeat: {
+            // Stoisches 4-on-floor + Snare 2/4 + 16tel Closed Hats mit
+            // Akzent jeder Viertel + Open Hat auf den Off-Beat-Achteln.
+            for (int i = 0; i < 4; ++i)
+                add(kKick, i * quarter, eighth, 116, kDrumChan);
+            add(kSnare, 1 * quarter, eighth, 105, kDrumChan);
+            add(kSnare, 3 * quarter, eighth, 105, kDrumChan);
+            for (int i = 0; i < 16; ++i) {
+                int vel = (i % 4 == 0) ? 95 : (i % 2 == 0 ? 70 : 55);
+                add(kClosedHat, i * sixteenth, thirtysecond, vel, kDrumChan);
+            }
+            for (int i = 0; i < 4; ++i)
+                add(kOpenHat, i * quarter + eighth, sixteenth, 80, kDrumChan);
+            break;
+        }
+        case Pattern::TechHouse: {
+            // 4-floor Kick, Clap statt Snare auf 2 & 4, dichte 16tel-Hats,
+            // ein paar verstreute Open-Hat-Ghosts.
+            for (int i = 0; i < 4; ++i)
+                add(kKick, i * quarter, eighth, 115, kDrumChan);
+            add(kClap, 1 * quarter, eighth, 110, kDrumChan);
+            add(kClap, 3 * quarter, eighth, 110, kDrumChan);
+            for (int i = 0; i < 16; ++i)
+                add(kClosedHat, i * sixteenth, thirtysecond,
+                    (i % 2 == 0) ? 75 : 55, kDrumChan);
+            add(kOpenHat, eighth, sixteenth, 65, kDrumChan);
+            add(kOpenHat, 2 * quarter + eighth, sixteenth, 65, kDrumChan);
+            break;
+        }
+        case Pattern::DiscoGroove: {
+            // 4-floor Kick, Snare 2/4, Open Hats auf den Off-Beat-Achteln,
+            // Tambourine als 16tel Shaker.
+            for (int i = 0; i < 4; ++i)
+                add(kKick, i * quarter, eighth, 110, kDrumChan);
+            add(kSnare, 1 * quarter, eighth, 105, kDrumChan);
+            add(kSnare, 3 * quarter, eighth, 105, kDrumChan);
+            for (int i = 0; i < 4; ++i)
+                add(kOpenHat, i * quarter + eighth, sixteenth, 90, kDrumChan);
+            for (int i = 0; i < 16; ++i)
+                add(kTambourine, i * sixteenth, thirtysecond, 60, kDrumChan);
+            break;
+        }
+
+        // ============================================================
+        // Drums — Trance / EDM
+        // ============================================================
+        case Pattern::TranceBeat: {
+            // 4-on-floor mit klarer 8tel-Open-Hat-Linie, Clap auf 2 & 4,
+            // dezenter 16tel-Closed-Hat-Layer drunter.
+            for (int i = 0; i < 4; ++i)
+                add(kKick, i * quarter, eighth, 118, kDrumChan);
+            add(kClap, 1 * quarter, eighth, 110, kDrumChan);
+            add(kClap, 3 * quarter, eighth, 110, kDrumChan);
+            for (int i = 0; i < 8; ++i)
+                add(kOpenHat, i * eighth + (i % 2 == 1 ? 0.0 : eighth * 0.5),
+                    sixteenth, (i % 2 == 1) ? 95 : 70, kDrumChan);
+            for (int i = 0; i < 16; ++i)
+                add(kClosedHat, i * sixteenth, thirtysecond,
+                    (i % 4 == 0) ? 75 : 50, kDrumChan);
+            break;
+        }
+
+        // ============================================================
+        // Drums — Drum & Bass
+        // ============================================================
+        case Pattern::LiquidDnB: {
+            // Soulful Variante des DnB-Breaks: Kick 1 + 2.5, Snare 2/4,
+            // 16tel-Hats mit Ghost-Velocity, Ride zum Schluss als Sweetener.
+            add(kKick, 0 * quarter, eighth, 115, kDrumChan);
+            add(kKick, 1 * quarter + eighth, eighth, 105, kDrumChan);
+            add(kSnare, 1 * quarter, eighth, 110, kDrumChan);
+            add(kSnare, 3 * quarter, eighth, 110, kDrumChan);
+            for (int i = 0; i < 16; ++i)
+                add(kClosedHat, i * sixteenth, thirtysecond,
+                    (i % 4 == 0) ? 90 : 60, kDrumChan);
+            add(kRide, 0, eighth, 75, kDrumChan);
+            add(kRide, 2 * quarter, eighth, 75, kDrumChan);
+            break;
+        }
+
+        // ============================================================
+        // Drums — Dubstep
+        // ============================================================
+        case Pattern::DubstepHalfTime: {
+            // Half-Time-Gefuehl: Kick auf 1, Snare auf 3, Hats sparsam,
+            // 16tel-Roll im letzten Quarter als Drop-Vorlage.
+            add(kKick, 0 * quarter, eighth, 122, kDrumChan);
+            add(kSnare, 2 * quarter, quarter, 118, kDrumChan);
+            add(kClosedHat, 0 * eighth, sixteenth, 80, kDrumChan);
+            add(kClosedHat, 1 * eighth, sixteenth, 60, kDrumChan);
+            add(kClosedHat, 4 * eighth, sixteenth, 80, kDrumChan);
+            add(kClosedHat, 5 * eighth, sixteenth, 60, kDrumChan);
+            for (int i = 12; i < 16; ++i)
+                add(kClosedHat, i * sixteenth, thirtysecond,
+                    70 + (i - 12) * 8, kDrumChan);
+            break;
+        }
+
+        // ============================================================
+        // Drums — Hardstyle
+        // ============================================================
+        case Pattern::HardstyleKick: {
+            // Lange, ueberlappende Quarter-Kicks (Hardstyle/Hardcore-typische
+            // Dauer-Kicks), ansteigende Velocity ueber den Takt.
+            for (int i = 0; i < 4; ++i)
+                add(kKick, i * quarter, quarter * 0.95, 110 + i * 3, kDrumChan);
+            // Off-Beat Clap zur Anker-Strukturierung.
+            add(kClap, 1 * quarter, eighth, 100, kDrumChan);
+            add(kClap, 3 * quarter, eighth, 100, kDrumChan);
+            break;
+        }
+
+        // ============================================================
+        // Drums — World / Latin
+        // ============================================================
+        case Pattern::Reggaeton: {
+            // Klassischer "Dem Bow"-Groove: Kick auf 1 + 3, Rim/Snare auf
+            // den Off-Eighth-Counts. 8tel-Closed-Hat als Beibahnung.
+            add(kKick, 0 * quarter, eighth, 115, kDrumChan);
+            add(kKick, 2 * quarter, eighth, 110, kDrumChan);
+            add(kRimShot, 0 * quarter + eighth, sixteenth, 100, kDrumChan);
+            add(kSnare,   1 * quarter + eighth, sixteenth, 95,  kDrumChan);
+            add(kRimShot, 2 * quarter + eighth, sixteenth, 100, kDrumChan);
+            add(kSnare,   3 * quarter + eighth, sixteenth, 95,  kDrumChan);
+            for (int i = 0; i < 8; ++i)
+                add(kClosedHat, i * eighth, sixteenth, 65, kDrumChan);
+            break;
+        }
+
+        // ============================================================
+        // Drums — Foundational FX
+        // ============================================================
+        case Pattern::DrumFill: {
+            // Ein-Takt-Fill: Kick auf 1, Tom-Run von tief nach hoch,
+            // 16tel-Snare-Lauf auf dem letzten Viertel, Crash im naechsten Takt.
+            add(kKick, 0 * quarter, eighth, 110, kDrumChan);
+            add(kSnare,    1 * quarter,             sixteenth, 100, kDrumChan);
+            add(kTomLow,   1 * quarter + sixteenth, sixteenth, 95,  kDrumChan);
+            add(kTomLow,   1 * quarter + 2*sixteenth, sixteenth, 95, kDrumChan);
+            add(kTomMid,   1 * quarter + 3*sixteenth, sixteenth, 100, kDrumChan);
+            add(kTomMid,   2 * quarter,             sixteenth, 105, kDrumChan);
+            add(kTomMid,   2 * quarter + sixteenth, sixteenth, 105, kDrumChan);
+            add(kTomHigh,  2 * quarter + 2*sixteenth, sixteenth, 110, kDrumChan);
+            add(kTomHigh,  2 * quarter + 3*sixteenth, sixteenth, 110, kDrumChan);
+            for (int i = 0; i < 4; ++i)
+                add(kSnare, 3 * quarter + i * sixteenth, sixteenth,
+                    95 + i * 8, kDrumChan);
+            add(kCrash, bar, quarter, 120, kDrumChan);
+            break;
+        }
+
+        // ============================================================
+        // Melodic — Bass
+        // ============================================================
+        case Pattern::SubBassDrone: {
+            // Eine lange Note auf dem Root ueber den ganzen Takt. Druck-
+            // Aufbau / Filler.
+            const int root = juce::jlimit(0, 127, melodicRoot());
+            add(root, 0, bar - sixteenth, 100, trackChannel);
+            break;
+        }
+        case Pattern::AcidBassline: {
+            // 303-style 16tel-Pattern: Root mit gelegentlichen Octave-Hops
+            // und Velocity-Akzenten. Slides muss ein Synth dahinter loesen.
+            const int root = juce::jlimit(0, 115, melodicRoot());
+            static const int octShift[16] = { 0, 0,12, 0,  0,12, 0, 0,
+                                              0,12, 0, 0, 12, 0, 0,12 };
+            static const int velAcc[16]   = {120,60, 90,60, 100,60,80,60,
+                                             110,60, 80,60,  90,60,100,60};
+            for (int i = 0; i < 16; ++i) {
+                const int pitch = juce::jlimit(0, 127, root + octShift[i]);
+                add(pitch, i * sixteenth, sixteenth, velAcc[i], trackChannel);
+            }
+            break;
+        }
+        case Pattern::ReeseBass: {
+            // DnB-Reese: Root, Quint und Octave als gestapelte ganze Note.
+            // Erst der Detuning-Synth dahinter macht daraus den klassischen
+            // Reese-Klang — die Notes sind nur der Trigger.
+            const int root = juce::jlimit(0, 115, melodicRoot());
+            add(root,      0, bar - sixteenth, 105, trackChannel);
+            add(root + 7,  0, bar - sixteenth, 90,  trackChannel);
+            add(root + 12, 0, bar - sixteenth, 95,  trackChannel);
+            break;
+        }
+
+        // ============================================================
+        // Melodic — Lead / Arp
+        // ============================================================
+        case Pattern::DescendingArp: {
+            // Spiegel von AscendingArp; startet eine Oktave ueber dem Root
+            // und faellt 16 Skalen-Schritte ab.
+            const int root = juce::jlimit(0, 127, melodicRoot()) + 12;
+            const std::vector<int>& sc = customScale;
+            const bool useScale = !sc.empty();
+            for (int i = 0; i < 16; ++i) {
+                int pitch;
+                if (useScale) {
+                    const int N = (int) sc.size();
+                    const int rootClass = ((root % 12) + 12) % 12;
+                    int rootDeg = 0;
+                    for (int k = 0; k < N; ++k) if (sc[k] == rootClass) { rootDeg = k; break; }
+                    int idx = rootDeg - i;
+                    int oct = 0;
+                    while (idx < 0) { idx += N; --oct; }
+                    pitch = (root - rootClass) + sc[idx] + 12 * oct;
+                } else {
+                    pitch = root - i;
+                }
+                add(juce::jlimit(0, 127, pitch), i * sixteenth, sixteenth, 95, trackChannel);
+            }
+            break;
+        }
+        case Pattern::TranceGate: {
+            // Trance-Gate: 16tel-Repetition auf dem Root mit Velocity-
+            // Pumpmuster wie bei einem Sidechain-Compressor / Volume-LFO.
+            const int root = juce::jlimit(0, 127, melodicRoot());
+            static const int gate[16] = { 127, 80,100,70, 110,60,90,50,
+                                          127, 80,100,70, 110,60,90,50 };
+            for (int i = 0; i < 16; ++i)
+                add(root, i * sixteenth, sixteenth, gate[i], trackChannel);
+            break;
+        }
+        case Pattern::PluckStab: {
+            // Kurze Triadtoene auf jeder 8tel — Root, Quint, Octave im
+            // Wechsel. Typische EDM-/Future-Bass-Pluck-Linie.
+            const int root = juce::jlimit(0, 115, melodicRoot());
+            for (int i = 0; i < 8; ++i) {
+                const int interval = (i % 3 == 0) ? 0 : ((i % 3 == 1) ? 7 : 12);
+                add(juce::jlimit(0, 127, root + interval),
+                    i * eighth, sixteenth, 95, trackChannel);
             }
             break;
         }

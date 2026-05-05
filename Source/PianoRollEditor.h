@@ -234,25 +234,70 @@ private:
     void showPatternsMenu()
     {
         using P = PianoRollComponent::Pattern;
+        const bool haveSel = roll.getSelectedNoteCount() > 0;
+        const juce::String rootHint = haveSel ? "" : juce::String(" (root: C3)");
+
+        // --- Drums: nach Genre gruppieren ---------------------------------
+        juce::PopupMenu foundational;
+        foundational.addItem(101, "4 to the Floor");
+        foundational.addItem(102, "8th Hi-Hat");
+        foundational.addItem(103, "16th Hi-Hat");
+        foundational.addItem(104, "Backbeat (Snare 2 & 4)");
+        foundational.addItem(105, "Snare Roll (build-up)");
+        foundational.addItem(106, "Drum Fill (one-bar)");
+
+        juce::PopupMenu hiphop;
+        hiphop.addItem(110, "Boom-Bap");
+        hiphop.addItem(111, "Trap (16th hat + roll)");
+
+        juce::PopupMenu houseTechno;
+        houseTechno.addItem(120, "House Groove");
+        houseTechno.addItem(121, "Techno Beat");
+        houseTechno.addItem(122, "Tech-House");
+        houseTechno.addItem(123, "Disco Groove");
+
+        juce::PopupMenu trance;
+        trance.addItem(130, "Trance Beat");
+
+        juce::PopupMenu dnb;
+        dnb.addItem(140, "DnB Break (Amen-style)");
+        dnb.addItem(141, "Liquid DnB");
+
+        juce::PopupMenu dubstep;
+        dubstep.addItem(150, "Half-Time Dubstep");
+
+        juce::PopupMenu hardstyle;
+        hardstyle.addItem(160, "Hardstyle Kick");
+
+        juce::PopupMenu world;
+        world.addItem(170, "Reggaeton (Dem Bow)");
 
         juce::PopupMenu drums;
-        drums.addItem(101, "4 to the Floor");
-        drums.addItem(102, "8th Hi-Hat");
-        drums.addItem(103, "16th Hi-Hat");
-        drums.addItem(104, "Backbeat (Snare 2 & 4)");
-        drums.addItem(105, "Boom-Bap");
-        drums.addItem(106, "House Groove");
-        drums.addItem(107, "DnB Break");
-        drums.addItem(108, "Snare Roll (build-up)");
+        drums.addSubMenu("Foundational",   foundational);
+        drums.addSubMenu("Hip-Hop / Trap", hiphop);
+        drums.addSubMenu("House / Techno", houseTechno);
+        drums.addSubMenu("Trance / EDM",   trance);
+        drums.addSubMenu("Drum & Bass",    dnb);
+        drums.addSubMenu("Dubstep / Bass", dubstep);
+        drums.addSubMenu("Hardstyle",      hardstyle);
+        drums.addSubMenu("World / Latin",  world);
 
-        // Melodie-Patterns nehmen die tiefste selektierte Note als Root —
-        // ohne Selection greift ein Default (C3), das ist zwar nicht falsch
-        // aber meist nicht gemeint, also explizit darauf hinweisen.
-        const bool haveSel = roll.getSelectedNoteCount() > 0;
+        // --- Melodic ------------------------------------------------------
+        juce::PopupMenu bassMenu;
+        bassMenu.addItem(201, "Octave Bass" + rootHint);
+        bassMenu.addItem(202, "Sub Bass Drone" + rootHint);
+        bassMenu.addItem(203, "Acid Bassline (303)" + rootHint);
+        bassMenu.addItem(204, "Reese Bass (DnB)" + rootHint);
+
+        juce::PopupMenu leadMenu;
+        leadMenu.addItem(210, "Ascending Arpeggio" + rootHint);
+        leadMenu.addItem(211, "Descending Arpeggio" + rootHint);
+        leadMenu.addItem(212, "Trance Gate" + rootHint);
+        leadMenu.addItem(213, "Pluck Stab" + rootHint);
+
         juce::PopupMenu melodic;
-        const juce::String suffix = haveSel ? "" : juce::String(" (root: C3)");
-        melodic.addItem(201, "Octave Bass" + suffix);
-        melodic.addItem(202, "Ascending Arpeggio" + suffix);
+        melodic.addSubMenu("Bass",         bassMenu);
+        melodic.addSubMenu("Lead / Arp",   leadMenu);
 
         juce::PopupMenu m;
         m.addSubMenu("Drums",   drums);
@@ -262,16 +307,42 @@ private:
                             .withTargetComponent(&patternsMenuButton),
             [this](int result) {
                 switch (result) {
+                    // Foundational
                     case 101: roll.insertPattern(P::FourOnTheFloor); break;
                     case 102: roll.insertPattern(P::EighthHat);      break;
                     case 103: roll.insertPattern(P::SixteenthHat);   break;
                     case 104: roll.insertPattern(P::Backbeat);       break;
-                    case 105: roll.insertPattern(P::BoomBap);        break;
-                    case 106: roll.insertPattern(P::HouseGroove);    break;
-                    case 107: roll.insertPattern(P::DnBBreak);       break;
-                    case 108: roll.insertPattern(P::SnareRoll);      break;
+                    case 105: roll.insertPattern(P::SnareRoll);      break;
+                    case 106: roll.insertPattern(P::DrumFill);       break;
+                    // Hip-Hop / Trap
+                    case 110: roll.insertPattern(P::BoomBap);        break;
+                    case 111: roll.insertPattern(P::TrapBeat);       break;
+                    // House / Techno
+                    case 120: roll.insertPattern(P::HouseGroove);    break;
+                    case 121: roll.insertPattern(P::TechnoBeat);     break;
+                    case 122: roll.insertPattern(P::TechHouse);      break;
+                    case 123: roll.insertPattern(P::DiscoGroove);    break;
+                    // Trance
+                    case 130: roll.insertPattern(P::TranceBeat);     break;
+                    // DnB
+                    case 140: roll.insertPattern(P::DnBBreak);       break;
+                    case 141: roll.insertPattern(P::LiquidDnB);      break;
+                    // Dubstep
+                    case 150: roll.insertPattern(P::DubstepHalfTime);break;
+                    // Hardstyle
+                    case 160: roll.insertPattern(P::HardstyleKick);  break;
+                    // World
+                    case 170: roll.insertPattern(P::Reggaeton);      break;
+                    // Bass
                     case 201: roll.insertPattern(P::OctaveBass);     break;
-                    case 202: roll.insertPattern(P::AscendingArp);   break;
+                    case 202: roll.insertPattern(P::SubBassDrone);   break;
+                    case 203: roll.insertPattern(P::AcidBassline);   break;
+                    case 204: roll.insertPattern(P::ReeseBass);      break;
+                    // Lead / Arp
+                    case 210: roll.insertPattern(P::AscendingArp);   break;
+                    case 211: roll.insertPattern(P::DescendingArp);  break;
+                    case 212: roll.insertPattern(P::TranceGate);     break;
+                    case 213: roll.insertPattern(P::PluckStab);      break;
                     default: break;
                 }
             });

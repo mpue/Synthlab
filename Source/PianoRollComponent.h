@@ -137,16 +137,42 @@ public:
     // auf Channel 10. Melodie-Patterns nehmen die tiefste selektierte Note
     // als Root oder fallen auf C3 zurueck.
     enum class Pattern {
+        // Drums — Foundational
         FourOnTheFloor,
         EighthHat,
         SixteenthHat,
         Backbeat,
-        BoomBap,
-        HouseGroove,
-        DnBBreak,
         SnareRoll,
+        DrumFill,
+        // Drums — Hip-Hop / Trap
+        BoomBap,
+        TrapBeat,
+        // Drums — House / Techno
+        HouseGroove,
+        TechnoBeat,
+        TechHouse,
+        DiscoGroove,
+        // Drums — Trance / EDM
+        TranceBeat,
+        // Drums — Drum & Bass
+        DnBBreak,
+        LiquidDnB,
+        // Drums — Dubstep
+        DubstepHalfTime,
+        // Drums — Hardstyle
+        HardstyleKick,
+        // Drums — World
+        Reggaeton,
+        // Melodic — Bass
         OctaveBass,
-        AscendingArp
+        SubBassDrone,
+        AcidBassline,
+        ReeseBass,
+        // Melodic — Lead / Arp
+        AscendingArp,
+        DescendingArp,
+        TranceGate,
+        PluckStab
     };
     void insertPattern(Pattern p);
 
