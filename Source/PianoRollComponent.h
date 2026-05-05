@@ -131,6 +131,25 @@ public:
     // Skala leer ist (chromatic), passiert nichts.
     void buildChordsFromScaleForSelection();
 
+    // === PATTERNS ===
+    // Fuegt typische Drum-/Melodie-Patterns an der aktuellen Playback-Position
+    // (oder 0, wenn kein Marker gesetzt ist) ein. Drums verwenden den GM-Kit
+    // auf Channel 10. Melodie-Patterns nehmen die tiefste selektierte Note
+    // als Root oder fallen auf C3 zurueck.
+    enum class Pattern {
+        FourOnTheFloor,
+        EighthHat,
+        SixteenthHat,
+        Backbeat,
+        BoomBap,
+        HouseGroove,
+        DnBBreak,
+        SnareRoll,
+        OctaveBass,
+        AscendingArp
+    };
+    void insertPattern(Pattern p);
+
     // === AUTOMATION ===
     struct ControllerLane {
         int ccNumber;

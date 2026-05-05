@@ -108,6 +108,16 @@ public:
         notesMenuButton.onClick = [this]() { showNotesMenu(); };
         addAndMakeVisible(notesMenuButton);
 
+        // Patterns-Menue ------------------------------------------------------
+        // Erzeugt fertige Phrasen am Playback-Marker (oder bei 0). Drums laufen
+        // auf GM-Kanal 10, Melodie-Patterns nutzen die tiefste selektierte
+        // Note als Root.
+        patternsMenuButton.setButtonText("Patterns  v");
+        patternsMenuButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff2c2c2c));
+        patternsMenuButton.setColour(juce::TextButton::textColourOffId, juce::Colours::lightgrey);
+        patternsMenuButton.onClick = [this]() { showPatternsMenu(); };
+        addAndMakeVisible(patternsMenuButton);
+
         // Initialer Toggle-Zustand der Tool-Buttons setzen + Sync via Callback,
         // damit Tasten 1..5 die Toolbar mit aktualisieren.
         syncToolButtons(roll.getCurrentTool());
@@ -149,6 +159,9 @@ public:
         bar.removeFromLeft(12);
         layoutButton(notesMenuButton, 95);
 
+        bar.removeFromLeft(6);
+        layoutButton(patternsMenuButton, 105);
+
         roll.setBounds(bounds);
     }
 
@@ -171,6 +184,7 @@ private:
     juce::ComboBox    gridCombo, scaleCombo;
     juce::ToggleButton snapToggle;
     juce::TextButton  notesMenuButton;
+    juce::TextButton  patternsMenuButton;
 
     void syncToolButtons(PianoRollComponent::Tool t)
     {
@@ -212,6 +226,52 @@ private:
                     case 3: roll.stretchSelectedTempo(2.0f);                  break;
                     case 4: roll.stretchSelectedTempo(0.5f);                  break;
                     case 5: roll.buildChordsFromScaleForSelection();          break;
+                    default: break;
+                }
+            });
+    }
+
+    void showPatternsMenu()
+    {
+        using P = PianoRollComponent::Pattern;
+
+        juce::PopupMenu drums;
+        drums.addItem(101, "4 to the Floor");
+        drums.addItem(102, "8th Hi-Hat");
+        drums.addItem(103, "16th Hi-Hat");
+        drums.addItem(104, "Backbeat (Snare 2 & 4)");
+        drums.addItem(105, "Boom-Bap");
+        drums.addItem(106, "House Groove");
+        drums.addItem(107, "DnB Break");
+        drums.addItem(108, "Snare Roll (build-up)");
+
+        // Melodie-Patterns nehmen die tiefste selektierte Note als Root —
+        // ohne Selection greift ein Default (C3), das ist zwar nicht falsch
+        // aber meist nicht gemeint, also explizit darauf hinweisen.
+        const bool haveSel = roll.getSelectedNoteCount() > 0;
+        juce::PopupMenu melodic;
+        const juce::String suffix = haveSel ? "" : juce::String(" (root: C3)");
+        melodic.addItem(201, "Octave Bass" + suffix);
+        melodic.addItem(202, "Ascending Arpeggio" + suffix);
+
+        juce::PopupMenu m;
+        m.addSubMenu("Drums",   drums);
+        m.addSubMenu("Melodic", melodic);
+
+        m.showMenuAsync(juce::PopupMenu::Options()
+                            .withTargetComponent(&patternsMenuButton),
+            [this](int result) {
+                switch (result) {
+                    case 101: roll.insertPattern(P::FourOnTheFloor); break;
+                    case 102: roll.insertPattern(P::EighthHat);      break;
+                    case 103: roll.insertPattern(P::SixteenthHat);   break;
+                    case 104: roll.insertPattern(P::Backbeat);       break;
+                    case 105: roll.insertPattern(P::BoomBap);        break;
+                    case 106: roll.insertPattern(P::HouseGroove);    break;
+                    case 107: roll.insertPattern(P::DnBBreak);       break;
+                    case 108: roll.insertPattern(P::SnareRoll);      break;
+                    case 201: roll.insertPattern(P::OctaveBass);     break;
+                    case 202: roll.insertPattern(P::AscendingArp);   break;
                     default: break;
                 }
             });
