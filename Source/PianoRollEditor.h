@@ -98,6 +98,16 @@ public:
         snapToggle.onClick = [this]() { roll.setSnapToGrid(snapToggle.getToggleState()); };
         addAndMakeVisible(snapToggle);
 
+        // Notes-Helper-Menue --------------------------------------------------
+        // Sammelpunkt fuer Aktionen, die nur fuer die aktuelle Auswahl Sinn
+        // haben (Quantize / Humanize / Tempo). Items werden disabled gerendert
+        // wenn keine Notes selektiert sind.
+        notesMenuButton.setButtonText("Notes  v");
+        notesMenuButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff2c2c2c));
+        notesMenuButton.setColour(juce::TextButton::textColourOffId, juce::Colours::lightgrey);
+        notesMenuButton.onClick = [this]() { showNotesMenu(); };
+        addAndMakeVisible(notesMenuButton);
+
         // Initialer Toggle-Zustand der Tool-Buttons setzen + Sync via Callback,
         // damit Tasten 1..5 die Toolbar mit aktualisieren.
         syncToolButtons(roll.getCurrentTool());
@@ -136,6 +146,9 @@ public:
         bar.removeFromLeft(12);
         layoutButton(snapToggle,   60);
 
+        bar.removeFromLeft(12);
+        layoutButton(notesMenuButton, 95);
+
         roll.setBounds(bounds);
     }
 
@@ -157,6 +170,7 @@ private:
     juce::Label       gridLabel, scaleLabel;
     juce::ComboBox    gridCombo, scaleCombo;
     juce::ToggleButton snapToggle;
+    juce::TextButton  notesMenuButton;
 
     void syncToolButtons(PianoRollComponent::Tool t)
     {
@@ -168,6 +182,32 @@ private:
         toolEraser  .setToggleState(t == PianoRollComponent::Tool::ERASER,   juce::dontSendNotification);
         toolVelocity.setToggleState(t == PianoRollComponent::Tool::VELOCITY, juce::dontSendNotification);
         toolSplit   .setToggleState(t == PianoRollComponent::Tool::SPLIT,    juce::dontSendNotification);
+    }
+
+    void showNotesMenu()
+    {
+        // Items wirken jeweils auf die selektierten Notes — wenn nichts
+        // selektiert ist, gibt's nichts zu tun, also disabled rendern.
+        const bool haveSel = roll.getSelectedNoteCount() > 0;
+
+        juce::PopupMenu m;
+        m.addItem(1, "Quantize to grid",       haveSel);
+        m.addItem(2, "Humanize",               haveSel);
+        m.addSeparator();
+        m.addItem(3, "Half Tempo (2x length)",   haveSel);
+        m.addItem(4, "Double Tempo (1/2 length)", haveSel);
+
+        m.showMenuAsync(juce::PopupMenu::Options()
+                            .withTargetComponent(&notesMenuButton),
+            [this](int result) {
+                switch (result) {
+                    case 1: roll.quantizeSelected(roll.getGridDenominator()); break;
+                    case 2: roll.humanizeSelected();                          break;
+                    case 3: roll.stretchSelectedTempo(2.0f);                  break;
+                    case 4: roll.stretchSelectedTempo(0.5f);                  break;
+                    default: break;
+                }
+            });
     }
 
     void applySelectedScale()
