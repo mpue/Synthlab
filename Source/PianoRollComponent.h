@@ -125,6 +125,12 @@ public:
     void addChord(int rootNote, double startTime, double duration, const std::vector<int>& intervals);
     void arpeggiate(double noteSpacing = 0.1);
 
+    // Baut zu jeder selektierten Note einen diatonischen Triad in der aktuell
+    // eingestellten Skala (Root + dritte + fuenfte Skalenstufe). Notes, deren
+    // Tonklasse nicht in der Skala liegt, werden uebersprungen. Wenn die
+    // Skala leer ist (chromatic), passiert nichts.
+    void buildChordsFromScaleForSelection();
+
     // === AUTOMATION ===
     struct ControllerLane {
         int ccNumber;

@@ -188,7 +188,8 @@ private:
     {
         // Items wirken jeweils auf die selektierten Notes — wenn nichts
         // selektiert ist, gibt's nichts zu tun, also disabled rendern.
-        const bool haveSel = roll.getSelectedNoteCount() > 0;
+        const bool haveSel       = roll.getSelectedNoteCount() > 0;
+        const bool haveSelAndScale = haveSel && !roll.getCustomScale().empty();
 
         juce::PopupMenu m;
         m.addItem(1, "Quantize to grid",       haveSel);
@@ -196,6 +197,11 @@ private:
         m.addSeparator();
         m.addItem(3, "Half Tempo (2x length)",   haveSel);
         m.addItem(4, "Double Tempo (1/2 length)", haveSel);
+        m.addSeparator();
+        // Bei "Chromatic" (leere Skala) gibt's keine sinnvolle Akkord-
+        // Konstruktion — disabled rendern und im Tooltip-Text auf das
+        // Skala-Combo verweisen.
+        m.addItem(5, "Chords from current scale", haveSelAndScale);
 
         m.showMenuAsync(juce::PopupMenu::Options()
                             .withTargetComponent(&notesMenuButton),
@@ -205,6 +211,7 @@ private:
                     case 2: roll.humanizeSelected();                          break;
                     case 3: roll.stretchSelectedTempo(2.0f);                  break;
                     case 4: roll.stretchSelectedTempo(0.5f);                  break;
+                    case 5: roll.buildChordsFromScaleForSelection();          break;
                     default: break;
                 }
             });
