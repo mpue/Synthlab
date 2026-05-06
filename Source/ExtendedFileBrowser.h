@@ -57,6 +57,12 @@ public:
 
     juce::var getDragSourceDescription (const juce::SparseSet<int>& currentlySelectedRows) override{
 
+        // Alt/Option gedrueckt → kein interner JUCE-Drag, stattdessen
+        // uebernimmt ExtendedFileBrowser::mouseDrag den OS-level File-Drag
+        // (damit der Drop in Plugin-Fenstern ankommt).
+        if (juce::ModifierKeys::getCurrentModifiers().isAltDown())
+            return juce::var();
+
         if (!currentlySelectedRows.getTotalRange().isEmpty()) {
             int row = currentlySelectedRows.getTotalRange().getStart();
             juce::File f = getFileForRow(row);
@@ -185,6 +191,7 @@ private:
     Mode mode = Mode::Flat;
     Sampler* sampler;
     bool playing = false;
+    bool externalDragInProgress = false;
     std::vector<Button*> driveButtons;
 };
 

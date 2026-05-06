@@ -78,6 +78,7 @@ ExtendedFileBrowser::ExtendedFileBrowser(const File& initialFileOrDirectory,cons
 
     sampler = Project::getInstance()->getDefaultSampler();
     table->addMouseListener(this, true);
+    tree->addMouseListener(this, true);
 
     // Wenn der Background-Scan fertig ist: erneut filtern (jetzt aus dem
     // gefuellten Cache) und Tabelle refreshen.
@@ -135,13 +136,36 @@ ExtendedFileBrowser::~ExtendedFileBrowser() {
 }
 
 void ExtendedFileBrowser::mouseDrag(const juce::MouseEvent &event) {
-    /*
-    var description;
+    // Alt/Option-Drag → echter OS-level File-Drag, damit der Drop auch in
+    // VST/AU-Pluginfenstern (z.B. Sampler-Plugins) ankommt. Ohne Alt laeuft
+    // der bisherige interne JUCE-Drag (getDragSourceDescription) weiter.
+    if (! event.mods.isAltDown())
+        return;
+    if (externalDragInProgress)
+        return;
 
-    // setDragImageForIndex(0, ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize));
-    startDragging(description,table);
-     */
+    juce::File file;
 
+    if (table != nullptr && table->isVisible()) {
+        const int row = table->getSelectedRow();
+        if (row > 0)
+            file = model->getFileForRow(row);
+    }
+    else if (tree != nullptr && tree->isVisible()) {
+        if (auto* item = dynamic_cast<FileTreeItem*>(tree->getSelectedItem(0)))
+            file = item->getFile();
+    }
+
+    if (! file.existsAsFile())
+        return;
+
+    externalDragInProgress = true;
+    juce::StringArray paths;
+    paths.add(file.getFullPathName());
+
+    juce::DragAndDropContainer::performExternalDragDropOfFiles(
+        paths, /*canMoveFiles*/ false, this,
+        [this]() { externalDragInProgress = false; });
 }
 
 void ExtendedFileBrowser::paint(juce::Graphics &g) {
@@ -742,5 +766,10 @@ void FileTreeItem::itemDoubleClicked(const juce::MouseEvent& e) {
 }
 
 juce::var FileTreeItem::getDragSourceDescription() {
+    // Alt/Option gedrueckt → internen Drag unterdruecken, damit
+    // ExtendedFileBrowser::mouseDrag den externen File-Drag uebernehmen
+    // kann (Drop in Pluginfenster).
+    if (juce::ModifierKeys::getCurrentModifiers().isAltDown())
+        return juce::var();
     return file.getFullPathName();
 }
