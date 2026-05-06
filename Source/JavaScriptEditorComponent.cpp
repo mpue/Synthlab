@@ -30,7 +30,7 @@ namespace
         for (int i = 0; i < n; ++i)
         {
             duk_dup (ctx, i);
-            parts.add (CharPointer_UTF8 (duk_safe_to_string (ctx, -1)));
+            parts.add (String::fromUTF8 (duk_safe_to_string (ctx, -1)));
             duk_pop (ctx);
         }
 
@@ -298,7 +298,7 @@ void JavaScriptEditorComponent::runScript()
     {
         // peval leaves the error on the top of the stack.
         const char* err = duk_safe_to_string (ctx, -1);
-        appendOutput (String ("Error: ") + CharPointer_UTF8 (err) + "\n", Colours::tomato);
+        appendOutput ("Error: " + String::fromUTF8 (err) + "\n", Colours::tomato);
     }
     else
     {
@@ -307,7 +307,7 @@ void JavaScriptEditorComponent::runScript()
         if (! duk_is_undefined (ctx, -1))
         {
             const char* result = duk_safe_to_string (ctx, -1);
-            appendOutput (String ("=> ") + CharPointer_UTF8 (result) + "\n",
+            appendOutput ("=> " + String::fromUTF8 (result) + "\n",
                           Colours::lightgreen);
         }
     }
