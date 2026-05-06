@@ -25,6 +25,7 @@
 #include "SpektrumAnalyzer.h"
 #include "GeometryViewComponent.h"
 #include "QuickstartComponent.h"
+#include "JavaScriptEditorComponent.h"
 
 #define _USE_MATH_DEFINES
 #ifndef M_PI
@@ -151,6 +152,7 @@ private:
     std::atomic<bool> running{ false };
     void openSettings();
     void openQuickstart();
+    void openJavaScriptEditor();
     // SynthEditor::cleanUp() (am Anfang von openFile aufgerufen) entfernt alle
     // Tabs ausser Editor. Nach dem Laden bringt diese Helper den Navigator-Tab
     // wieder zurueck und in den Vordergrund — ueber alle File-Open-Pfade
@@ -233,6 +235,7 @@ private:
 	std::unique_ptr<AudioLevelMeter> levelMeter = nullptr;
     std::unique_ptr<SpectrumAnalyzer> spectrumAnalyzer = nullptr;
     std::unique_ptr<QuickstartComponent> quickstart = nullptr;
+    std::unique_ptr<JavaScriptEditorComponent> jsEditor = nullptr;
 
     // Statuszeile am unteren Fensterrand (Studio-Modus). CPU/RAM/Audio/Tempo.
     std::unique_ptr<StatusBarComponent> statusBar = nullptr;

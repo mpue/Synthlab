@@ -1081,6 +1081,7 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addItem(204, "Input Spectrum", true, false, nullptr);
 		menu.addSeparator();
 		menu.addItem(205, "Quickstart", true, false, nullptr);
+		menu.addItem(206, "JavaScript Editor", true, false, nullptr);
 	}
 	else if (index == 2) {
 
@@ -1214,6 +1215,9 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	}
 	else if (menuItemID == 205) {
 		openQuickstart();
+	}
+	else if (menuItemID == 206) {
+		openJavaScriptEditor();
 	}
 
 	else if (menuItemID == 8) {
@@ -1598,6 +1602,29 @@ void MainComponent::openQuickstart() {
 	}
 
 	tabs->addTab("Quickstart", Colour(0xff1b1b25), quickstart.get(), false);
+	tabs->setCurrentTabIndex(tabs->getNumTabs() - 1);
+}
+
+void MainComponent::openJavaScriptEditor() {
+	if (editorView == nullptr)
+		return;
+
+	auto* tabs = editorView->getEditorTab();
+	if (tabs == nullptr)
+		return;
+
+	// Already open? Just bring it to front.
+	for (int i = 0; i < tabs->getNumTabs(); ++i) {
+		if (tabs->getTabNames()[i] == "JavaScript") {
+			tabs->setCurrentTabIndex(i);
+			return;
+		}
+	}
+
+	if (jsEditor == nullptr)
+		jsEditor = std::make_unique<JavaScriptEditorComponent>();
+
+	tabs->addTab("JavaScript", Colour(0xff1b1b25), jsEditor.get(), false);
 	tabs->setCurrentTabIndex(tabs->getNumTabs() - 1);
 }
 
