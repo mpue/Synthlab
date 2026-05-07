@@ -47,14 +47,17 @@ public:
     void setConfiguration(juce::uint8* data);
     
     void setRunning(bool running);
-    
+
     void triggerNextStep();
-    
+
     void reset();
-    
+
     void setTempo(float tempo) {
         this->tempo = tempo;
     }
+
+    void setGateTime(int percent);
+    int getGateTime() const { return juce::roundToInt(gateTime * 100.0f); }
     
     
     bool isRunning() {
@@ -139,7 +142,8 @@ private:
     juce::ScopedPointer<juce::TextButton> recordButton;
     juce::ScopedPointer<juce::TextButton> clearButton;
     juce::ScopedPointer<juce::Slider> lengthSlider;
-    
+    juce::ScopedPointer<juce::Slider> gateSlider;
+
     juce::Viewport* view = nullptr;
     SequencePanel* content = nullptr;
 
@@ -147,7 +151,11 @@ private:
     int clockEventNum = 0;
     
     bool running = false;
-    
+
+    float gateTime = 1.0f;
+    int activeNotes[6];
+    int noteOffTick[6];
+
     TimeSliceThread* thread;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SequenceEditor)

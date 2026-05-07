@@ -58,6 +58,15 @@ SequenceEditor::SequenceEditor (Pin* output)
     lengthSlider->setTextBoxStyle (Slider::TextBoxLeft, false, 80, 20);
     lengthSlider->addListener (this);
     lengthSlider->setBounds (500, 10, 150, 24);
+
+    addAndMakeVisible (gateSlider = new Slider ("gateSlider"));
+    gateSlider->setRange (5, 100, 1);
+    gateSlider->setSliderStyle (Slider::LinearHorizontal);
+    gateSlider->setTextBoxStyle (Slider::TextBoxLeft, false, 80, 20);
+    gateSlider->setTextValueSuffix(" %");
+    gateSlider->setValue (100, juce::dontSendNotification);
+    gateSlider->addListener (this);
+    gateSlider->setBounds (660, 10, 150, 24);
     
     setSize (800, 768);
 
@@ -79,6 +88,11 @@ SequenceEditor::SequenceEditor (Pin* output)
         }
     }
 
+    for (int y = 0; y < 6; y++) {
+        activeNotes[y] = -1;
+        noteOffTick[y] = -1;
+    }
+
     selectedCol = 0;
     selectedRow = 0;
     addAndMakeVisible(view);
@@ -95,6 +109,7 @@ SequenceEditor::~SequenceEditor()
     recordButton = nullptr;
     clearButton = nullptr;
     lengthSlider = nullptr;
+    gateSlider = nullptr;
     delete view;
     
     if (thread != nullptr) {
@@ -168,6 +183,16 @@ void SequenceEditor::sliderValueChanged(juce::Slider *slider) {
                 content->repaint();
             }
         }
+    }
+    else if (slider == gateSlider) {
+        gateTime = juce::jlimit (0.05f, 1.0f, (float)slider->getValue() / 100.0f);
+    }
+}
+
+void SequenceEditor::setGateTime(int percent) {
+    gateTime = juce::jlimit (0.05f, 1.0f, percent / 100.0f);
+    if (gateSlider != nullptr) {
+        gateSlider->setValue (juce::jlimit (5, 100, percent), juce::dontSendNotification);
     }
 }
 
@@ -477,6 +502,26 @@ void SequenceEditor::setRunning(bool running) {
         this->currentStep = -1; // Will be incremented to 0 on first step
         this->clockEventNum = 0;
     }
+    else {
+        // Flush any notes that are still gated
+        for (int y = 0; y < gridHeight; y++) {
+            if (activeNotes[y] >= 0) {
+                Event* off = new Event("gate off", Event::Type::GATE);
+                off->setMessage(MidiMessage::noteOff(1, activeNotes[y]));
+                off->setValue(0);
+                off->setNote(activeNotes[y]);
+
+                if (output != nullptr) {
+                    for (int i = 0; i < output->getConnections().size(); i++) {
+                        output->getConnections().at(i)->sendEvent(new Event(off));
+                    }
+                }
+                delete off;
+                activeNotes[y] = -1;
+                noteOffTick[y] = -1;
+            }
+        }
+    }
     std::function<void(void)> changeLambda =
     [=]() {  content->repaint(); };
     juce::MessageManager::callAsync(changeLambda);
@@ -488,69 +533,85 @@ void SequenceEditor::reset() {
 }
 
 void SequenceEditor::triggerNextStep() {
-    
+
     if (!running){
         return;
     }
 
     std::function<void(void)> async =
     [=]() {
+        // First: turn off any note whose gate has elapsed
+        for (int y = 0; y < gridHeight; y++) {
+            if (activeNotes[y] >= 0 && noteOffTick[y] >= 0 && clockEventNum >= noteOffTick[y]) {
+                Event* off = new Event("gate off", Event::Type::GATE);
+                off->setMessage(MidiMessage::noteOff(1, activeNotes[y]));
+                off->setValue(0);
+                off->setNote(activeNotes[y]);
+
+                if (output != nullptr) {
+                    for (int i = 0; i < output->getConnections().size(); i++) {
+                        output->getConnections().at(i)->sendEvent(new Event(off));
+                    }
+                }
+                delete off;
+                activeNotes[y] = -1;
+                noteOffTick[y] = -1;
+            }
+        }
+
+        // On step boundary, advance and trigger the new step
         if (clockEventNum % 6 == 0) {
             currentStep = (currentStep + 1) % gridWidth;
-            
+            int gateTicks = juce::jmax (1, juce::roundToInt (gateTime * 6.0f));
+
             for (int y = 0; y < gridHeight; y++) {
-                
-                Event* e = nullptr;
-                
-                if (grid[currentStep][y].isEnabled()) {
-                    
-                    e = new Event("gate on", Event::Type::GATE);
-                    
-                    e->setValue(grid[currentStep][y].getVelocity());
-                    e->setNote(grid[currentStep][y].getNote());
-                    e->setMessage(MidiMessage::noteOn(1, grid[currentStep][y].getNote(), (float)grid[currentStep][y].getVelocity() / 127.0f));
+
+                // Safety: if a note is still active on this row (e.g. gate=100% legato), retrigger cleanly
+                if (activeNotes[y] >= 0) {
+                    Event* off = new Event("gate off", Event::Type::GATE);
+                    off->setMessage(MidiMessage::noteOff(1, activeNotes[y]));
+                    off->setValue(0);
+                    off->setNote(activeNotes[y]);
 
                     if (output != nullptr) {
-                        
+                        for (int i = 0; i < output->getConnections().size(); i++) {
+                            output->getConnections().at(i)->sendEvent(new Event(off));
+                        }
+                    }
+                    delete off;
+                    activeNotes[y] = -1;
+                    noteOffTick[y] = -1;
+                }
+
+                if (grid[currentStep][y].isEnabled()) {
+                    int note = grid[currentStep][y].getNote();
+                    int velocity = grid[currentStep][y].getVelocity();
+
+                    Event* e = new Event("gate on", Event::Type::GATE);
+                    e->setValue(velocity);
+                    e->setNote(note);
+                    e->setMessage(MidiMessage::noteOn(1, note, (float)velocity / 127.0f));
+
+                    if (output != nullptr) {
                         for (int i = 0; i < output->getConnections().size(); i++) {
                             output->getConnections().at(i)->sendEvent(new Event(e));
                         }
                     }
-                }
-                
-                // Send note off for previous step
-                e = new Event("gate off", Event::Type::GATE);
+                    delete e;
 
-                MidiMessage m = MidiMessage::noteOff(1, grid[currentStep][y].getNote());
-                m.setTimeStamp(m.getTimeStamp() + 100.0f);
-
-                e->setMessage(m);
-                e->setValue(0);
-                
-                if (currentStep > 0) {
-                    e->setNote(grid[currentStep - 1][y].getNote());
+                    activeNotes[y] = note;
+                    noteOffTick[y] = clockEventNum + gateTicks;
                 }
-                else {
-                    e->setNote(grid[gridWidth - 1][y].getNote());
-                }
-                
-                if (output != nullptr) {
-                    
-                    for (int i = 0; i < output->getConnections().size(); i++) {
-                        output->getConnections().at(i)->sendEvent(new Event(e));
-                    }
-                }
-                
             }
         }
         clockEventNum++;
     };
     juce::MessageManager::callAsync(async);
-    
+
     std::function<void(void)> changeLambda =
     [=]() {  content->repaint(); };
     juce::MessageManager::callAsync(changeLambda);
-    
+
 }
 
 uint8* SequenceEditor::getConfiguration() {

@@ -18,6 +18,7 @@
 #include "MainTabbedComponent.h"
 #include "MidiGate.h"
 #include "MidiNote.h"
+#include "TerminalModule.h"
 #include "PrefabFactory.h"
 #include "Project/Project.h"
 #include "Knob.h"
@@ -767,8 +768,18 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 
 	if (!isRunning()) return;
 
-	if (editor->getModule())
-		processModule(editor->getModule());
+	if (auto* rootModule = editor->getModule()) {
+		// Re-seed the root every block so it always reflects the live device
+		// settings. Without this, loading a patch (which replaces `root` via
+		// SynthEditor::setModule) leaves the new root at the header default
+		// (44100/512) until the user manually toggles the audio device — the
+		// classic "sounds wrong until I change the sample rate" symptom.
+		// processModule then propagates the correct values down to every
+		// child including freshly-created TerminalModules.
+		rootModule->setSampleRate((float)sampleRate);
+		rootModule->setBuffersize(numSamples);
+		processModule(rootModule);
+	}
 
 	auto& mixer = *editor->getMixer();
 
@@ -1899,14 +1910,54 @@ void MainComponent::buttonClicked(Button* b)
 
 void MainComponent::processModule(Module* m) {
 
-	if (m != nullptr && isRunning()) {
+	if (m == nullptr || !isRunning()) return;
 
-		m->process();
+	m->process();
 
-		for (int i = 0; i < m->getModules()->size(); i++) {
-			if (m->getModules()->at(i) != nullptr) {
-				processModule(m->getModules()->at(i));
-			}
+	// Process children in three passes so polyphonic VALUE data (and audio)
+	// flows through TerminalModules without a one-buffer delay:
+	//   1. IN terminals  — pull external data into the group
+	//   2. Content       — read internal pins, run audio
+	//   3. OUT terminals — push internal results to the external pin
+	// "Create Module from Selection" appends terminals after content in the
+	// children vector, so without this ordering the consumer (e.g. the
+	// Sawtooth) reads the IN terminal *before* it has been refreshed.
+	//
+	// We also push the parent's audio settings down to every child here.
+	// Without this, modules created at runtime (terminals from
+	// createModuleFromSelection, duplicates) never receive a buffersize and
+	// their per-block sample loops collapse to a no-op — silent groups.
+	auto& children = *m->getModules();
+
+	const double parentSr = m->getSampleRate();
+	const int    parentBs = m->getBufferSize();
+
+	auto inheritAudio = [&](Module* c) {
+		if (c == nullptr) return;
+		if (c->getSampleRate() != parentSr) c->setSampleRate((float)parentSr);
+		if (c->getBufferSize() != parentBs) c->setBuffersize(parentBs);
+	};
+
+	for (auto* c : children) {
+		auto* term = dynamic_cast<TerminalModule*>(c);
+		if (term != nullptr && term->getDirection() == TerminalModule::Direction::IN) {
+			inheritAudio(c);
+			processModule(c);
+		}
+	}
+
+	for (auto* c : children) {
+		if (c == nullptr) continue;
+		if (dynamic_cast<TerminalModule*>(c) != nullptr) continue;
+		inheritAudio(c);
+		processModule(c);
+	}
+
+	for (auto* c : children) {
+		auto* term = dynamic_cast<TerminalModule*>(c);
+		if (term != nullptr && term->getDirection() == TerminalModule::Direction::OUT) {
+			inheritAudio(c);
+			processModule(c);
 		}
 	}
 }

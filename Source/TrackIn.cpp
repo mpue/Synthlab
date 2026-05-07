@@ -105,6 +105,7 @@
 
 		if (track != nullptr && track->isRecording()) {
 			if (e->getMessage().getChannel() != track->getMidiChannel()) {
+				delete e;
 				return;
 			}
 			MidiRegion* r = dynamic_cast<MidiRegion*>(track->getRecordingRegion());
@@ -117,16 +118,22 @@
 			else {
 				// Logger::writeToLog("No region found at " + String(track->getSamplePosition()));
 			}
-		
+
 		}
 
 		if (track != nullptr && e->getMessage().getChannel() != track->getMidiChannel()) {
+			delete e;
 			return;
 		}
 
-		// check if pin is connected
+		// Forward through the OUT pin so it lights up in the visual debugger
+		// and so multiple downstream connections all receive the event (the
+		// previous code only forwarded to the first connection).
 		if (getPins().at(5)->getConnections().size() > 0) {
-			getPins().at(5)->getConnections().at(0)->sendEvent(e);
+			getPins().at(5)->sendEvent(e);
+		}
+		else {
+			delete e;
 		}
 		
 	}

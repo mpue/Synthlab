@@ -21,6 +21,7 @@
 #include "Module.h"
 #include "AudioModule.h"
 #include "Connection.h"
+#include "TerminalModule.h"
 
 //[/Headers]
 
@@ -194,40 +195,47 @@ void Module::paint(Graphics& g)
     //        false);
     //}
 
-    // 5. Pins zeichnen
+    // 5. Pins zeichnen — mit visuellem Aktivitäts-Glow
+    const juce::int64 nowMs = juce::Time::getMillisecondCounter();
     for (int i = 0; i < pins.size(); i++) {
-        if (pins.at(i)->isSelected()) {
-            g.setColour(juce::Colours::white);
+        Pin* p = pins.at(i);
+
+        juce::Colour base;
+        if (p->getType() == Pin::Type::AUDIO)        base = juce::Colours::orange;
+        else if (p->getType() == Pin::Type::VALUE)   base = juce::Colours::yellow;
+        else if (p->getType() == Pin::Type::MATRIX)  base = juce::Colours::green;
+        else if (p->getType() == Pin::Type::VECTOR)  base = juce::Colours::violet;
+        else /* EVENT */                             base = juce::Colours::lightblue;
+
+        // Activity 0..1 — events fade out over ~200 ms, audio follows the
+        // running peak with a per-frame decay applied by the editor timer.
+        float glow = 0.0f;
+        if (p->getType() == Pin::Type::EVENT)        glow = p->getEventGlow(nowMs);
+        else if (p->getType() == Pin::Type::AUDIO)   glow = juce::jmin(1.0f, p->getAudioLevel() * 4.0f);
+
+        // Halo when active so a triggering pin reads at a glance even if the
+        // brighter fill is subtle on this background.
+        if (glow > 0.05f) {
+            g.setColour(base.withAlpha(glow * 0.55f));
+            g.fillEllipse((float)p->x - 4, (float)p->y - 4, 18.0f, 18.0f);
         }
-        else {
-            if (pins.at(i)->getType() == Pin::Type::AUDIO) {
-                g.setColour(juce::Colours::orange);
-            }
-            else if (pins.at(i)->getType() == Pin::Type::VALUE) {
-                g.setColour(juce::Colours::yellow);
-            }
-            else if (pins.at(i)->getType() == Pin::Type::MATRIX) {
-                g.setColour(juce::Colours::green);
-            }
-            else if (pins.at(i)->getType() == Pin::Type::VECTOR) {
-                g.setColour(juce::Colours::violet);
-            }
-            else {
-                g.setColour(juce::Colours::lightblue);
-            }
-        }
+
+        juce::Colour fill = p->isSelected()
+            ? juce::Colours::white
+            : base.brighter(glow * 0.8f);
+        g.setColour(fill);
 
         g.setFont(10);
 
-        if (pins.at(i)->direction == Pin::Direction::IN) {
-            g.drawEllipse(pins.at(i)->x, pins.at(i)->y, 10, 10, 1);
-            g.fillEllipse(pins.at(i)->x + 2, pins.at(i)->y + 2, 6, 6);
-            g.drawText(pins.at(i)->getName(), pins.at(i)->x + 12, pins.at(i)->y, 20, 10, juce::Justification::left);
+        if (p->direction == Pin::Direction::IN) {
+            g.drawEllipse(p->x, p->y, 10, 10, 1);
+            g.fillEllipse(p->x + 2, p->y + 2, 6, 6);
+            g.drawText(p->getName(), p->x + 12, p->y, 20, 10, juce::Justification::left);
         }
         else {
-            g.drawEllipse(pins.at(i)->x, pins.at(i)->y, 10, 10, 1);
-            g.fillEllipse(pins.at(i)->x + 2, pins.at(i)->y + 2, 6, 6);
-            g.drawText(pins.at(i)->getName(), pins.at(i)->x - 25, pins.at(i)->y, 20, 10, juce::Justification::right);
+            g.drawEllipse(p->x, p->y, 10, 10, 1);
+            g.fillEllipse(p->x + 2, p->y + 2, 6, 6);
+            g.drawText(p->getName(), p->x - 25, p->y, 20, 10, juce::Justification::right);
         }
     }
 
@@ -239,6 +247,29 @@ void Module::resized()
     const int labelHeight = 24;
     const int bottomMargin = 8;
     nameLabel->setBounds(0, getHeight() - labelHeight - bottomMargin, getWidth(), labelHeight);
+
+    // External output pins live on the right edge — keep them tied to the
+    // current width so they stay visible (and correctly placed) after a
+    // resize. Without this, resizing a group module created via "Create
+    // Module from Selection" leaves the OUT pins at their original x.
+    for (auto* p : pins) {
+        if (p != nullptr && p->direction == Pin::Direction::OUT) {
+            p->x = getWidth() - 10;
+        }
+    }
+
+    // For container modules (e.g. group from selection) the OUT-side internal
+    // TerminalModules also need to track the right edge; otherwise opening
+    // the group after a resize shows the OUT terminals out of place.
+    if (modules != nullptr) {
+        for (auto* child : *modules) {
+            if (auto* term = dynamic_cast<TerminalModule*>(child)) {
+                if (term->getDirection() == TerminalModule::Direction::OUT) {
+                    term->setTopLeftPosition(getWidth() - term->getWidth() - 4, term->getY());
+                }
+            }
+        }
+    }
 
     if (resizer != nullptr)
         resizer->setTopLeftPosition(getWidth() - 10, getHeight() - 10);
@@ -448,6 +479,9 @@ std::vector<Module*>* Module::getModules() {
 void Module::setName(juce::String name) {
     Component::setName(name);
     nameLabel->setText(getName(), NotificationType::dontSendNotification);
+    if (nameValue != nullptr) {
+        nameValue->setValue(name);
+    }
 }
 
 void Module::eventReceived(Event *e) {
@@ -466,11 +500,14 @@ void Module::eventReceived(Event *e) {
 void Module::changeListenerCallback (ChangeBroadcaster* source) {
 
     AudioModule* am;
-    
+
     if ((am = dynamic_cast<AudioModule*>(source)) != NULL) {
-        Logger::writeToLog("Module "+getName()+" using sample rate "+String(sampleRate)+" kHz and buffer size of "+String(buffersize)+" bytes.");
-        am->getSampleRate();
+        // Pull both rates: the previous version called am->getSampleRate()
+        // but never assigned the result, so sampleRate stayed at its default
+        // and modules created after a device change had a stale rate.
+        sampleRate = am->getSampleRate();
         buffersize = am->getBufferSize();
+        Logger::writeToLog("Module "+getName()+" using sample rate "+String(sampleRate)+" Hz and buffer size of "+String(buffersize)+" samples.");
     }
 }
 

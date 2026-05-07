@@ -78,7 +78,7 @@ private:
     T*   oscillator[128];
     bool voiceActive[128];
     int currentSample = 0;
-    bool mono;
+    bool mono = false;
     float pitchBend = 1;
     Pin* gatePin = nullptr;
     

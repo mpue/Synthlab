@@ -316,11 +316,18 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
         prefabs[id].addInstance();
         m->configurePins();
         numPrefabInstances++;
-    
+
+        // Ensure every prefab — including TerminalModule, which ignores
+        // sampleRate/bufferSize in its constructor — knows the current audio
+        // settings. Without this, terminal AUDIO copy loops could see
+        // buffersize == 0 and the group's output would be silent.
+        m->setSampleRate(sampleRate);
+        m->setBuffersize(bufferSize);
+
         // remember the last index in order to get a new one when creating an empty module
         lastModuleIndex++;
     }
-    
+
     return m;
 }
 

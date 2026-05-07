@@ -64,7 +64,6 @@ Knob::Knob()
 }
 
 void Knob::createProperties() {
-    nameValue = new Value();
     valueValue = new Value();
     minValue = new Value();
     maxValue = new Value();
@@ -77,7 +76,6 @@ void Knob::createProperties() {
     stepsizeValueListener = new StepsizeValueListener(*stepsizeValue, this);
     isControllerValueListener = new IsControllerValueListener(*isControllerValue, this);
     controllerValueListener = new ControllerValueListener(*controllerValue, this);
-    nameListener = new NameListener(*nameValue, this);
 }
 
 
@@ -91,7 +89,6 @@ Knob::~Knob()
     delete controllerValue;
     delete minValue;
     delete maxValue;
-    delete nameValue;
 
     delete valueListener;
     delete minValueListener;
@@ -99,7 +96,6 @@ Knob::~Knob()
     delete stepsizeValueListener;
     delete isControllerValueListener;
     delete controllerValueListener;
-    delete nameListener;
 
     delete valueLabel;
 }
@@ -254,7 +250,6 @@ float Knob::getMinimum() {
 
 void Knob::setName(juce::String name) {
     Module::setName(name);
-    nameValue->setValue(name);
 }
 
 void Knob::setMaximum(float max) {
@@ -304,7 +299,8 @@ void Knob::setSelected(bool selected) {
 
 juce::Array<PropertyComponent*>& Knob::getProperties() {
 
-    properties = juce::Array<PropertyComponent*>();
+    // Start with the base Module properties (Name, Display at root)
+    Module::getProperties();
 
     valueProp = new SliderPropertyComponent(*valueValue, "Value", -65535, 65535, 0.01, 1.0, true);
     minValueProp = new SliderPropertyComponent(*minValue, "Minimum", -10000, 15000, 0.01, 1.0, true);
@@ -312,9 +308,7 @@ juce::Array<PropertyComponent*>& Knob::getProperties() {
     stepsizeValueProp = new SliderPropertyComponent(*stepsizeValue, "Stepsize", 0.001, 10000, 0.01, 1.0, true);
     isControllerValueProp = new BooleanPropertyComponent(*isControllerValue, "isController", "Is controller");
     controllerValueProp = new SliderPropertyComponent(*controllerValue, "Controller number", 0, 127, 1, 1.0, true);
-    nameValueProp = new TextPropertyComponent(*nameValue, "Name", 16, false, true);
 
-    properties.add(nameValueProp);
     properties.add(valueProp);
     properties.add(minValueProp);
     properties.add(maxValueProp);

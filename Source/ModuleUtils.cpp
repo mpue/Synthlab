@@ -106,41 +106,50 @@ void ModuleUtils::loadConnections(juce::ValueTree& cons, std::vector<Module*>* m
 		Pin* a = nullptr;
 		Pin* b = nullptr;
 
+		// First locate source and target modules. Pin lookup must then be
+		// constrained to the *correct* endpoint — pin indices are computed
+		// from `module.index * 100 + position` and are not globally unique
+		// once a TerminalModule's index is rewritten via term->setIndex().
+		// A nested group's external pin can collide with an outer group's
+		// terminal-internal pin, and the previous "search aIndex/bIndex in
+		// every module's pin list" walk would happily cross-link them and
+		// produce a ghost connection (source pin == target pin).
 		for (int j = 0; j < modules->size(); j++) {
-
 			Module* m = modules->at(j);
+			if (m->getIndex() == sourceIndex) source = m;
+			if (m->getIndex() == targetIndex) target = m;
+		}
 
-			if (m->getIndex() == sourceIndex) {
-				source = m;
-			}
-			if (m->getIndex() == targetIndex) {
-				target = m;
-			}
-
-			if (source != nullptr) {
-
-				for (int k = 0; k < m->getPins().size(); k++) {
-					if (m->getPins().at(k)->index == aIndex) {
-						a = m->getPins().at(k);
-					}
+		if (source != nullptr) {
+			for (auto* p : source->getPins()) {
+				if (p != nullptr && p->index == aIndex) {
+					a = p;
+					break;
 				}
-			}
-
-			if (target != nullptr) {
-
-				for (int k = 0; k < m->getPins().size(); k++) {
-					if (m->getPins().at(k)->index == bIndex) {
-						b = m->getPins().at(k);
-					}
-				}
-			}
-
-			if (source != nullptr && target != nullptr && a != nullptr && b != nullptr) {
-				addConnection(source, a, target, b, connections);
-				break;
 			}
 		}
 
+		if (target != nullptr) {
+			for (auto* p : target->getPins()) {
+				if (p != nullptr && p->index == bIndex) {
+					b = p;
+					break;
+				}
+			}
+		}
+
+		if (source != nullptr && target != nullptr && a != nullptr && b != nullptr) {
+			addConnection(source, a, target, b, connections);
+		}
+        /*
+		else {
+			Logger::writeToLog("loadConnections: dropped connection s="
+				+ String(sourceIndex) + " t=" + String(targetIndex)
+				+ " a=" + String(aIndex) + " b=" + String(bIndex)
+				+ "  (source=" + String(source != nullptr) + " target=" + String(target != nullptr)
+				+ " a=" + String(a != nullptr) + " b=" + String(b != nullptr) + ")");
+		}
+         */
 	}
 
 }
@@ -316,6 +325,14 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
 	m->setUiPosition(mod.getProperty("ui_x").toString().getIntValue(), mod.getProperty("ui_y").toString().getIntValue());
 	m->saveUiPosition();
 	m->setDisplayAtRootLevel(mod.getProperty("displayAtRootLevel").toString().getIntValue() > 0);
+	if (mod.hasProperty("surface_x") && mod.hasProperty("surface_y")) {
+		m->setSurfacePos({ mod.getProperty("surface_x").toString().getIntValue(),
+		                   mod.getProperty("surface_y").toString().getIntValue() });
+	}
+	if (mod.hasProperty("surface_w") && mod.hasProperty("surface_h")) {
+		m->setSurfaceSize({ mod.getProperty("surface_w").toString().getIntValue(),
+		                    mod.getProperty("surface_h").toString().getIntValue() });
+	}
 	return m;
 }
 
@@ -471,6 +488,10 @@ void ModuleUtils::configureModule(Module* m, ValueTree& mod, ChangeBroadcaster* 
 		Base64::convertFromBase64(*mos, dataString);
 		ssm->getEditor()->setConfiguration((uint8*)mos->getData());
 		delete mos;
+
+		if (mod.hasProperty("gateTime")) {
+			ssm->getEditor()->setGateTime(mod.getProperty("gateTime").toString().getIntValue());
+		}
 	}
 
 	ImageModule* im = nullptr;
@@ -525,6 +546,14 @@ void ModuleUtils::saveStructure(std::vector<Module*>* modules, std::vector<Conne
 		file.setProperty("isPrefab", (*it)->isPrefab(), nullptr);
 		file.setProperty("prefabId", (*it)->getId(), nullptr);
 		file.setProperty("displayAtRootLevel", (*it)->getDisplayAtRootLevel(), nullptr);
+		if ((*it)->hasSurfacePos()) {
+			file.setProperty("surface_x", (*it)->getSurfacePos().getX(), nullptr);
+			file.setProperty("surface_y", (*it)->getSurfacePos().getY(), nullptr);
+		}
+		if ((*it)->hasSurfaceSize()) {
+			file.setProperty("surface_w", (*it)->getSurfaceSize().getX(), nullptr);
+			file.setProperty("surface_h", (*it)->getSurfaceSize().getY(), nullptr);
+		}
 
 		Knob* k;
 
@@ -627,6 +656,7 @@ void ModuleUtils::saveStructure(std::vector<Module*>* modules, std::vector<Conne
 			Base64::convertToBase64(*mos, config, ssm->getEditor()->getConfigLength());
 			mos->flush();
 			file.setProperty("config", mos->toString(), nullptr);
+			file.setProperty("gateTime", ssm->getEditor()->getGateTime(), nullptr);
 			delete mos;
 			delete config;
 		}
@@ -739,13 +769,35 @@ Module* ModuleUtils::createCopy(Module* original, ChangeBroadcaster* broadcaster
 
 	Module* m = nullptr;
 
+	const long offset = PrefabFactory::getInstance()->getNextModuleIndex();
+
 	ValueTree cloneTree = ValueTree("Module");
 	m = new Module(original->getName());
 	saveStructure(original->getModules(), original->getConnections(), &cloneTree);
 	savePins(original, cloneTree);
-	updateIndices(cloneTree, PrefabFactory::getInstance()->getNextModuleIndex());
+	updateIndices(cloneTree, offset);
 	loadPins(m, cloneTree);
 	loadStructure(m->getModules(), m->getConnections(), &cloneTree, broadcaster);
+
+	// The duplicate's own index was never set — it inherited whatever the
+	// uninitialized `long index` field happened to contain (often 0), which
+	// collides with the original group module (index 0 is its slot in the
+	// editor) and AddConnectionAction's `if (m->getIndex() == source->getIndex())
+	// continue;` then quietly skips the duplicate when looking for a target,
+	// so terminal pins can't be wired up.
+	m->setIndex(original->getIndex() + offset);
+
+	// Carry the original's size and resizability across — without this, a
+	// duplicate of a "Create Module from Selection" group reverts to the
+	// default size and loses its corner resizer.
+	m->setSize(original->getWidth(), original->getHeight());
+	if (original->isResizable())
+		m->setResizable(true);
+
+	// Inherit audio settings from the original so the duplicate's terminal
+	// forwarding loops actually iterate.
+	m->setSampleRate(original->getSampleRate());
+	m->setBuffersize(original->getBufferSize());
 
 	m->resized();
 
@@ -807,7 +859,7 @@ void ModuleUtils::loadPins(Module* m, ValueTree& mod) {
 		Pin::Type t = static_cast<Pin::Type>(type);
 		p->setType(t);
 		p->index = index;
-		p->setName("name");
+		p->setName(name);
 		p->x = x;
 		p->y = y;
 		m->addPin(p);

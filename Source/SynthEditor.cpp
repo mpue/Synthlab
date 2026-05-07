@@ -62,8 +62,11 @@ SynthEditor::SynthEditor() {
 	setRepaintsOnMouseActivity(true);
 	setMouseClickGrabsKeyboardFocus(true);
 	setWantsKeyboardFocus(true);
-	setInterceptsMouseClicks(true, true);	
+	setInterceptsMouseClicks(true, true);
 	addChildComponent(root.get());
+
+	// ~30 Hz: drives the pin-activity glow (event fade + audio peak decay).
+	startTimer(33);
 }
 
 SynthEditor::SynthEditor(double sampleRate, int buffersize)
@@ -82,6 +85,9 @@ SynthEditor::SynthEditor(double sampleRate, int buffersize)
 
 	setRepaintsOnMouseActivity(true);
 	addChildComponent(root.get());
+
+	// ~30 Hz: drives the pin-activity glow (event fade + audio peak decay).
+	startTimer(33);
 
 	linePath = Path();
 
@@ -115,6 +121,7 @@ void SynthEditor::setLocked(bool lock) {
 	this->locked = lock;
 	setModuleLocked(this->getModule(), lock);
 	selectionModel.clearSelection();
+	updateRootLevelGroupEditMode();
 	repaint();
 }
 
@@ -124,15 +131,16 @@ bool SynthEditor::isLocked() {
 
 void SynthEditor::setModuleLocked(Module* m, bool locked) {
 
-	if (m != nullptr) {
+	if (m == nullptr) return;
 
-		m->setLocked(locked);
+	m->setLocked(locked);
 
-		for (int i = 0; i < m->getModules()->size(); i++) {
-			if (m->getModules()->at(i) != nullptr) {
-				m->getModules()->at(i)->setLocked(locked);
-			}
-		}
+	// Recurse so surfaced controls (which sit several levels below the editor
+	// root) actually receive the lock signal — without this, sliders inside
+	// nested modules stay frozen when the user toggles play mode.
+	for (auto* child : *m->getModules()) {
+		if (child != nullptr)
+			setModuleLocked(child, locked);
 	}
 }
 
@@ -1006,6 +1014,11 @@ void SynthEditor::createModuleFromSelection() {
     group->setIndex(PrefabFactory::getInstance()->getNextModuleIndex());
     group->setSize(groupW, groupH);
     group->setTopLeftPosition(groupX, groupY);
+    // The base Module(name) ctor doesn't take audio settings; without this
+    // the group's own per-block loops (Module::process terminal forwarding)
+    // could fall back to default 0 if the header default ever drifts.
+    group->setSampleRate(getSampleRate());
+    group->setBuffersize(getBufferSize());
 
     // Build a set of selected modules for fast lookup
     std::set<Module*> selSet(sel.begin(), sel.end());
@@ -1191,6 +1204,24 @@ void SynthEditor::setRunning(bool running) {
 }
 
 void SynthEditor::timerCallback() {
+	if (root != nullptr) {
+		std::function<void(Module*)> walk = [&](Module* m) {
+			for (auto* p : m->getPins()) {
+				if (p == nullptr) continue;
+				// Audio activity is a sampled-peak with per-tick decay; events
+				// already write their timestamp, no per-tick work needed.
+				if (p->getType() == Pin::Type::AUDIO) {
+					p->updateAudioPeak();
+				}
+			}
+			if (m->getModules() != nullptr) {
+				for (auto* child : *m->getModules()) {
+					if (child != nullptr) walk(child);
+				}
+			}
+		};
+		walk(root.get());
+	}
 	repaint();
 }
 
@@ -1229,33 +1260,218 @@ void SynthEditor::setCurrentLayer(int layer) {
 	resized();
 }
 
+namespace {
+	// Wrapper for the controls of one source module surfaced at the editor root.
+	// In play mode (editor locked) we don't catch the click — slider clicks go
+	// straight to the child controls. In edit mode (unlocked) the click is used
+	// for layout: clicking on a child drags that child within the group, clicking
+	// on the title or empty border drags the whole group across the editor.
+	class RootLevelGroup : public juce::GroupComponent {
+	public:
+		RootLevelGroup(const juce::String& title, Module* sourceModule, SynthEditor* editor)
+			: juce::GroupComponent(title, title), sourceModule(sourceModule), editor(editor) {
+			setColour(juce::GroupComponent::outlineColourId, juce::Colours::grey);
+			setColour(juce::GroupComponent::textColourId, juce::Colours::white);
+
+			constrainer.setMinimumSize(80, 60);
+			resizer.reset(new juce::ResizableCornerComponent(this, &constrainer));
+			addAndMakeVisible(*resizer);
+			applyEditMode();
+		}
+
+		// juce::GroupComponent's default hitTest excludes the body so clicks fall
+		// through to children. We need the body to receive clicks for layout drag,
+		// otherwise unlocked controls (which don't intercept) leak through to the
+		// editor and we lose the drag entirely.
+		bool hitTest(int, int) override { return true; }
+
+		void resized() override {
+			juce::GroupComponent::resized();
+			if (resizer != nullptr) {
+				resizer->setBounds(getWidth() - 12, getHeight() - 12, 12, 12);
+				resizer->toFront(false);
+			}
+			// User dragging the corner triggers JUCE setBounds → resized; persist
+			// the new dimensions onto the source module so the next layer toggle
+			// (or save/load) restores the same group size.
+			if (sourceModule != nullptr) {
+				sourceModule->setSurfaceSize({ getWidth(), getHeight() });
+			}
+		}
+
+		// Re-evaluate whether the resizer should be active, based on the editor's
+		// current lock state. Called on construction and from SynthEditor::setLocked.
+		void applyEditMode() {
+			if (resizer == nullptr || editor == nullptr) return;
+			const bool unlocked = !editor->isLocked();
+			resizer->setVisible(unlocked);
+			resizer->setInterceptsMouseClicks(unlocked, unlocked);
+		}
+
+		void mouseDown(const juce::MouseEvent& e) override {
+			dragTarget = nullptr;
+			if (editor != nullptr && editor->isLocked()) return;
+
+			Module* hitChild = nullptr;
+			const auto pos = e.getPosition();
+			for (int i = 0; i < getNumChildComponents(); ++i) {
+				if (auto* m = dynamic_cast<Module*>(getChildComponent(i))) {
+					if (m->getBounds().contains(pos)) { hitChild = m; break; }
+				}
+			}
+			dragTarget = (hitChild != nullptr) ? static_cast<juce::Component*>(hitChild)
+			                                   : static_cast<juce::Component*>(this);
+			dragger.startDraggingComponent(dragTarget, e);
+		}
+
+		void mouseDrag(const juce::MouseEvent& e) override {
+			if (dragTarget == nullptr) return;
+			dragger.dragComponent(dragTarget, e, nullptr);
+		}
+
+		void mouseUp(const juce::MouseEvent&) override {
+			if (dragTarget == nullptr) return;
+
+			if (dragTarget == this && sourceModule != nullptr) {
+				sourceModule->setSurfacePos(getPosition());
+			}
+			else if (auto* m = dynamic_cast<Module*>(dragTarget)) {
+				m->setSurfacePos(m->getPosition());
+			}
+			dragTarget = nullptr;
+		}
+
+	private:
+		Module* sourceModule = nullptr;
+		SynthEditor* editor = nullptr;
+		juce::Component* dragTarget = nullptr;
+		juce::ComponentDragger dragger;
+		std::unique_ptr<juce::ResizableCornerComponent> resizer;
+		juce::ComponentBoundsConstrainer constrainer;
+	};
+}
+
+void SynthEditor::updateRootLevelGroupEditMode() {
+	// Show/hide the corner resizer on every surfaced RootLevelGroup so the
+	// user can only drag the group's size while in edit mode (lock == false).
+	for (int i = 0; i < rootLevelGroups.size(); ++i) {
+		if (auto* group = dynamic_cast<RootLevelGroup*>(rootLevelGroups[i])) {
+			group->applyEditMode();
+		}
+	}
+}
+
 void SynthEditor::collectRootLevelControls(Module* container) {
-	for (auto* m : *container->getModules()) {
-		if (m->getLayer() == Module::Layer::GUI && m->getDisplayAtRootLevel() && m->getParentComponent() != this) {
+	// 1. Walk the whole subtree and bucket flagged controls by their immediate
+	//    parent module. We skip controls that are already direct children of the
+	//    editor root — those don't need surfacing.
+	std::map<Module*, std::vector<Module*>> bucket;
+
+	std::function<void(Module*)> walk = [&](Module* c) {
+		for (auto* m : *c->getModules()) {
+			if (m->getLayer() == Module::Layer::GUI
+				&& m->getDisplayAtRootLevel()
+				&& c != root.get()) {
+				bucket[c].push_back(m);
+			}
+			if (!m->getModules()->empty())
+				walk(m);
+		}
+	};
+	walk(container);
+
+	// 2. For each source module with surfaceable controls, build a group, lay
+	//    the controls out in a row inside it, and stack the groups vertically.
+	//    User-saved positions (surfacePos) override the default layout for both
+	//    groups and individual controls.
+	const int defaultGroupX = 10;
+	int defaultGroupY = 10;
+	const int controlGap = 5;
+	const int titleHeight = 25;
+	const int padding = 10;
+
+	for (auto& entry : bucket) {
+		Module* source = entry.first;
+		auto& controls = entry.second;
+
+		auto* group = new RootLevelGroup(source->getName(), source, this);
+
+		int autoX = padding;
+		int contentRight = padding;
+		int contentBottom = titleHeight;
+
+		for (auto* m : controls) {
 			RootLevelProxy proxy;
 			proxy.module = m;
 			proxy.originalParent = m->getParentComponent();
 			proxy.originalPosition = m->getPosition();
+			proxy.originalLayer = m->getCurrentLayer();
 
-			auto posInRoot = getLocalPoint(m->getParentComponent(), m->getPosition());
-			m->setTopLeftPosition(posInRoot.x, posInRoot.y);
-			addAndMakeVisible(m);
+			// Render at GUI size and let the user actually operate the control.
+			m->setCurrentLayer(Module::Layer::GUI);
+			m->setLocked(this->isLocked());
+
+			juce::Point<int> childPos;
+			if (m->hasSurfacePos()) {
+				childPos = m->getSurfacePos();
+			}
+			else {
+				childPos = juce::Point<int>(autoX, titleHeight);
+				autoX += m->getWidth() + controlGap;
+			}
+			m->setTopLeftPosition(childPos.x, childPos.y);
+			group->addAndMakeVisible(m);
+
+			contentRight = std::max(contentRight, childPos.x + m->getWidth());
+			contentBottom = std::max(contentBottom, childPos.y + m->getHeight());
 
 			rootLevelProxies.push_back(proxy);
 		}
-		if (!m->getModules()->empty())
-			collectRootLevelControls(m);
+
+		const int autoW = std::max(contentRight + padding, 150);
+		const int autoH = contentBottom + padding;
+
+		juce::Point<int> groupPos = source->hasSurfacePos()
+			? source->getSurfacePos()
+			: juce::Point<int>(defaultGroupX, defaultGroupY);
+
+		// User-resized? Honour the saved size, but never shrink below the
+		// content's auto-fit so dragged-out controls don't get clipped on
+		// the next layer toggle.
+		const int groupW = source->hasSurfaceSize()
+			? std::max(source->getSurfaceSize().getX(), autoW)
+			: autoW;
+		const int groupH = source->hasSurfaceSize()
+			? std::max(source->getSurfaceSize().getY(), autoH)
+			: autoH;
+
+		group->setBounds(groupPos.x, groupPos.y, groupW, groupH);
+		if (!source->hasSurfacePos())
+			defaultGroupY += groupH + 10;
+
+		addAndMakeVisible(group);
+		rootLevelGroups.add(group);
 	}
 }
 
 void SynthEditor::restoreRootLevelControls() {
 	for (auto& proxy : rootLevelProxies) {
-		if (proxy.originalParent != nullptr && proxy.module != nullptr) {
-			proxy.module->setTopLeftPosition(proxy.originalPosition.x, proxy.originalPosition.y);
+		if (proxy.module == nullptr) continue;
+
+		proxy.module->setCurrentLayer(proxy.originalLayer);
+		proxy.module->setTopLeftPosition(proxy.originalPosition.x, proxy.originalPosition.y);
+
+		if (proxy.originalParent != nullptr) {
 			proxy.originalParent->addAndMakeVisible(proxy.module);
+		}
+		else if (auto* p = proxy.module->getParentComponent()) {
+			// Module wasn't attached to any parent before — detach from the
+			// group so it doesn't get destroyed alongside it.
+			p->removeChildComponent(proxy.module);
 		}
 	}
 	rootLevelProxies.clear();
+	rootLevelGroups.clear();
 }
 
 int SynthEditor::getCurrentLayer() {
@@ -2330,7 +2546,16 @@ void SynthEditor::prepareToPlay(int samplesPerBlockExpected, double sampleRate) 
 	Project::getInstance()->setSampleRate(sampleRate);
 	Project::getInstance()->setBufferSize(samplesPerBlockExpected);
 
-	Logger::writeToLog("SynthEditor using sample rate " + String(sampleRate) + " kHz and buffer size of " + String(samplesPerBlockExpected) + " bytes.");
+	// Seed the root module so per-block loops downstream (TerminalModule
+	// AUDIO copy etc.) use the real device buffer size from frame zero
+	// instead of the header default. processModule propagates these to
+	// every child each buffer.
+	if (root != nullptr) {
+		root->setSampleRate((float)sampleRate);
+		root->setBuffersize(samplesPerBlockExpected);
+	}
+
+	Logger::writeToLog("SynthEditor using sample rate " + String(sampleRate) + " Hz and buffer size of " + String(samplesPerBlockExpected) + " samples.");
 
 	sendChangeMessage();
 

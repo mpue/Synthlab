@@ -283,12 +283,15 @@ private:
         Module* module = nullptr;
         juce::Component* originalParent = nullptr;
         juce::Point<int> originalPosition;
+        Module::Layer originalLayer = Module::Layer::ALL;
     };
 
     std::vector<RootLevelProxy> rootLevelProxies;
+    juce::OwnedArray<juce::Component> rootLevelGroups;
 
     void collectRootLevelControls(Module* container);
     void restoreRootLevelControls();
+    void updateRootLevelGroupEditMode();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SynthEditor)
 };

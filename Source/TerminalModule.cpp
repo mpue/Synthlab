@@ -101,31 +101,32 @@ void TerminalModule::setType(TerminalModule::Type type) {
 
 void TerminalModule::process() {
     Module::process();
-    for (int i = 0; i < buffersize;i++) {
-        if (getType() == Terminal::Type::AUDIO){
-            if (direction == Terminal::Direction::OUT){
-                if (getPins().at(0)->getTerminal() != nullptr) {
-                    if (getPins().at(0)->getConnections().size() == 1) {
-                        const float* source = getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
-                        float* target = getPins().at(0)->getTerminal()->getAudioBuffer()->getWritePointer(0);
-                        if (source != nullptr && target != nullptr) {
-                            target[i] = source[i];
-                        }
+
+    Pin* termPin = (pins.size() > 0) ? pins.at(0) : nullptr;
+    if (termPin == nullptr) return;
+
+    Pin* extPin = termPin->getTerminal();
+
+    if (getType() == Terminal::Type::AUDIO) {
+        for (int i = 0; i < buffersize; i++) {
+            if (direction == Terminal::Direction::OUT) {
+                if (extPin != nullptr && termPin->getConnections().size() == 1) {
+                    const float* source = termPin->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
+                    float* target = extPin->getAudioBuffer()->getWritePointer(0);
+                    if (source != nullptr && target != nullptr) {
+                        target[i] = source[i];
                     }
                 }
             }
-            
             else {
-                if (getPins().at(0)->getTerminal() != nullptr) {
-                    
-                    float* target = getPins().at(0)->getAudioBuffer()->getWritePointer(0);
-                    
-                    if (target != NULL) {
-                        if (getPins().at(0)->getTerminal()->getConnections().size() == 1) {
-                            const float* source = getPins().at(0)->getTerminal()->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
+                if (extPin != nullptr) {
+                    float* target = termPin->getAudioBuffer()->getWritePointer(0);
+                    if (target != nullptr) {
+                        if (extPin->getConnections().size() == 1) {
+                            const float* source = extPin->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
                             if (source != nullptr) {
-								target[i] = source[i];
-							}                            
+                                target[i] = source[i];
+                            }
                         }
                         else {
                             target[i] = 0;
@@ -135,6 +136,10 @@ void TerminalModule::process() {
             }
         }
     }
+    // VALUE-pin polyphonic data (data[] / dataEnabled[]) and scalar value/note
+    // are forwarded by Module::process() above via the pin->terminal chain.
+    // No extra work needed here — duplicating the copy was wasteful and
+    // muddied ownership.
 }
 
 

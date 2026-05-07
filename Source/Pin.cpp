@@ -35,16 +35,46 @@ Pin::~Pin() {
 }
 
 void Pin::sendEvent(Event *e) {
-    
+
+    noteEvent();
+
     for (int i = 0; i < connections.size();i++) {
         connections.at(i)->sendEvent(new Event(e));
     }
-    
+
     for (int i = 0; i < listeners.size();i++) {
         listeners.at(i)->eventReceived(new Event(e));
     }
-    
+
     delete e;
+}
+
+void Pin::noteEvent() {
+    lastEventTimeMs = juce::Time::getMillisecondCounter();
+}
+
+float Pin::getEventGlow(juce::int64 nowMs, juce::int64 fadeMs) const {
+    if (lastEventTimeMs == 0) return 0.0f;
+    const juce::int64 delta = nowMs - lastEventTimeMs;
+    if (delta < 0 || delta >= fadeMs) return 0.0f;
+    return 1.0f - (float)delta / (float)fadeMs;
+}
+
+void Pin::updateAudioPeak() {
+    if (audioBuffer == nullptr
+        || audioBuffer->getNumChannels() == 0
+        || audioBuffer->getNumSamples() == 0) {
+        audioLevel *= 0.85f;
+        if (audioLevel < 1.0e-4f) audioLevel = 0.0f;
+        return;
+    }
+    const float peak = audioBuffer->getMagnitude(0, 0, audioBuffer->getNumSamples());
+    if (peak > audioLevel) {
+        audioLevel = peak;
+    } else {
+        audioLevel *= 0.85f;
+        if (audioLevel < 1.0e-4f) audioLevel = 0.0f;
+    }
 }
 
 String Pin::getName() {

@@ -75,7 +75,7 @@ private:
     Sawtooth* oscillator[128];
     bool      voiceActive[128];
     int currentSample = 0;
-    bool mono;
+    bool mono = false;
 
     Pin* gatePin = nullptr;
     

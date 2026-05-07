@@ -104,6 +104,7 @@ public:
     bool isPrefab() { return prefab;};
 
     void setResizable(bool r);
+    bool isResizable() const { return resizer != nullptr; }
 
     void eventReceived(Event* e) override;
     void changeListenerCallback (juce::ChangeBroadcaster* source) override;
@@ -134,6 +135,8 @@ public:
     
     virtual void setSampleRate(float rate);
     virtual void setBuffersize(int buffersize);
+    double getSampleRate() const { return sampleRate; }
+    int getBufferSize() const { return buffersize; }
     
     virtual void setLocked(bool locked) {
         this->locked = locked;
@@ -146,6 +149,8 @@ public:
     virtual void setCurrentLayer(Layer layer){
         currentLayer = layer;
     }
+
+    Layer getCurrentLayer() const { return currentLayer; }
 
     struct NameListener : juce::Value::Listener
     {
@@ -172,7 +177,25 @@ public:
     };
 
     bool getDisplayAtRootLevel() const { return displayAtRootLevel; }
-    void setDisplayAtRootLevel(bool val) { displayAtRootLevel = val; }
+    void setDisplayAtRootLevel(bool val) {
+        displayAtRootLevel = val;
+        if (displayRootValue != nullptr)
+            displayRootValue->setValue(val);
+    }
+
+    // Position used by the root-level "Controls only" surfacing. For a module
+    // whose children are surfaced, this is the group's top-left in editor
+    // coordinates. For a surfaced control, this is its position inside the
+    // group. (-1, -1) means "no user-set position yet — use default layout".
+    juce::Point<int> getSurfacePos() const { return surfacePos; }
+    void setSurfacePos(juce::Point<int> p) { surfacePos = p; }
+    bool hasSurfacePos() const { return surfacePos.x >= 0 && surfacePos.y >= 0; }
+
+    // Size of the per-source RootLevelGroup at the editor root. Set when the
+    // user drags the group's corner resizer; (0, 0) means "auto-fit".
+    juce::Point<int> getSurfaceSize() const { return surfaceSize; }
+    void setSurfaceSize(juce::Point<int> s) { surfaceSize = s; }
+    bool hasSurfaceSize() const { return surfaceSize.x > 0 && surfaceSize.y > 0; }
 
     virtual juce::Array<juce::PropertyComponent*>& getProperties();
     virtual void createProperties();
@@ -210,6 +233,8 @@ protected:
     DisplayRootListener* displayRootListener = nullptr;
     juce::Value* displayRootValue = nullptr;
     bool displayAtRootLevel = false;
+    juce::Point<int> surfacePos { -1, -1 };
+    juce::Point<int> surfaceSize { 0, 0 };
 
     juce::PropertyComponent* nameProp;
     juce::Array <juce::PropertyComponent*> properties;
@@ -228,8 +253,13 @@ protected:
     juce::Point<int> savedUIPosition;
     juce::Point<int> uiPosition;
     
-    double sampleRate;
-    int buffersize;
+    // Safe defaults so per-block sample loops in modules that never get an
+    // explicit setBuffersize/setSampleRate (e.g. TerminalModule via
+    // PrefabFactory, or freshly-created group modules) still iterate. With
+    // buffersize uninitialized (often 0) the AUDIO copy in TerminalModule
+    // ran zero times and groups appeared silent.
+    double sampleRate = 44100.0;
+    int buffersize = 512;
     
     juce::DropShadow* shadow = nullptr;
     juce::DropShadower* shadower = nullptr;

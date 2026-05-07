@@ -1,6 +1,6 @@
 /*
   ==============================================================================
-   MidiGate.cpp – polyphon-sicher (2025-07-09)
+   MidiGate.cpp ï¿½ polyphon-sicher (2025-07-09)
   ==============================================================================
 */
 #include "MidiGate.h"
@@ -77,26 +77,22 @@ void MidiGate::gateOn(int velocity, int note)
     pins.at(0)->setValue(velocity);
     pins.at(0)->setNote(note);
 
-    Event e("gate on", Event::Type::GATE);
-    e.setValue(velocity);
-    e.setNote(note);
-    e.setMessage(MidiMessage::noteOn(channel, note, (uint8)velocity));
-
-    for (auto* conn : pins.at(1)->getConnections())
-        conn->sendEvent(new Event(e));
+    auto* e = new Event("gate on", Event::Type::GATE);
+    e->setValue(velocity);
+    e->setNote(note);
+    e->setMessage(MidiMessage::noteOn(channel, note, (uint8)velocity));
+    pins.at(1)->sendEvent(e); // marks the OUT pin and forwards to all connections
 }
 
 void MidiGate::gateOff(int note)
 {
     activeNotes.erase(note);
 
-    Event e("gate off", Event::Type::GATE);
-    e.setValue(0);
-    e.setNote(note);
-    e.setMessage(MidiMessage::noteOff(channel, note));
-
-    for (auto* conn : pins.at(1)->getConnections())
-        conn->sendEvent(new Event(e));
+    auto* e = new Event("gate off", Event::Type::GATE);
+    e->setValue(0);
+    e->setNote(note);
+    e->setMessage(MidiMessage::noteOff(channel, note));
+    pins.at(1)->sendEvent(e);
 
     if (activeNotes.empty() && gateActive)
     {
@@ -119,8 +115,7 @@ void MidiGate::eventReceived(Event* e)
         msgChannel = msg.getChannel();
 
     if (msgChannel == channel)
-        for (auto* conn : pins.at(1)->getConnections())
-            conn->sendEvent(new Event(*e));
+        pins.at(1)->sendEvent(new Event(*e));
 
     delete e;
 }

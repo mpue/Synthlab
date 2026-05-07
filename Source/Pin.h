@@ -89,10 +89,26 @@ public:
     }
                 
     void addEventListener(EventListener* listener);
-                
-    float value;
+
+    // ---- Visual-debug helpers ----
+    // Mark this pin as having just seen an event. Used by sendEvent and
+    // anywhere a producer wants to flash its OUT pin without going through
+    // the full sendEvent path. Cheap; safe to call from the audio thread.
+    void noteEvent();
+
+    // Sample the audio buffer for a peak and apply per-tick decay so the
+    // glow falls off when the source goes silent. Called from the editor's
+    // timer at ~30 Hz.
+    void updateAudioPeak();
+
+    // 0..1 fade based on time since the last event, over `fadeMs`.
+    float getEventGlow(juce::int64 nowMs, juce::int64 fadeMs = 200) const;
+
+    float getAudioLevel() const { return audioLevel; }
+
+    float value = 0.0f;
     float data[128] = {0};
-    bool dataEnabled[128];
+    bool dataEnabled[128] = {false};
     bool hasConnection(Pin* target);
     
                 
@@ -105,6 +121,12 @@ private:
     Pin* terminal = nullptr;
     std::vector<Pin*> connections;
     juce::AudioSampleBuffer* audioBuffer = nullptr;
+
+    // Visual-debug state — accessed from audio thread (noteEvent /
+    // updateAudioPeak) and from the message thread (paint). Plain types,
+    // no locking; staleness by a frame is fine for visualisation.
+    juce::int64 lastEventTimeMs = 0;
+    float audioLevel = 0.0f;
     String description = "";
     juce::Vector3D<float> vector3D = { 0.0f, 0.0f, 0.0f };
 	Geometry* geometry = nullptr;
