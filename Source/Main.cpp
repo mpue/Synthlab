@@ -83,6 +83,16 @@ public:
 			mainWindow->setLookAndFeel(nullptr);
 		LookAndFeel::setDefaultLookAndFeel(nullptr);
 		delete mainWindow; // (deletes our window)
+
+		// Singleton-Tear-Down ERST hier — nicht im MainComponent dtor body.
+		// Sonst sieht SynthEditor::cleanUp (gerufen aus ~SynthEditor, das
+		// per shared_ptr-Refcount erst nach dem MainComponent-dtor-Body
+		// laeuft) ein nullptr instance und Project::getInstance() legt ein
+		// frisches, halb-initialisiertes Project an -> Crash auf erstem
+		// Method-Aufruf.
+		PrefabFactory::destroy();
+		Project::destroy();
+
 #if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
 		PluginManager::getInstance()->destroy();
 #endif

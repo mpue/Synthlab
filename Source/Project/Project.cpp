@@ -19,6 +19,7 @@ using juce::XmlDocument;
 using juce::OutputStream;
 
 Project *Project::instance = nullptr;
+bool     Project::destroyed = false;
 
 long  Project::DEFAULT_TRACK_LENGTH = 600;
 int   Project::DEFAULT_TRACK_HEIGHT = 85;
@@ -105,6 +106,7 @@ void Project::loadRecentFileList() {
 void Project::destroy() {
     delete instance;
     instance = nullptr;
+    destroyed = true;
 }
 
 juce::UndoManager* Project::getUndoManager() {

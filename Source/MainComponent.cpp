@@ -212,14 +212,24 @@ MainComponent::~MainComponent()
 	}
 
 	if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
-		tab = nullptr;
-
+		// Reihenfolge: editorView ZUERST, dann propertyView. editorView=nullptr
+		// triggert ~EditorComponent -> ~SynthEditor -> cleanUp(), das u.a.
+		// Project::getInstance()->getPropertyView()->selectionChanged() ruft.
+		// Wenn propertyView vorher schon nullptr (also tot) ist, hält Project
+		// nur noch einen Dangling-Raw-Pointer (gesetzt in createStudioLayout)
+		// und der Aufruf crasht mit UAF.
+		editorView = nullptr;
+		// Project's Pointer auf propertyView nullen, BEVOR der unique_ptr
+		// freigegeben wird — sonst hält Project einen Dangling-Pointer.
+		if (auto* proj = Project::getInstance())
+			proj->setPropertyView(nullptr);
 		propertyView = nullptr;
+
+		tab = nullptr;
 		delete lockButton;
 		menu = nullptr;
 		toolbar = nullptr;
 		toolbarFactory = nullptr;
-		editorView = nullptr;
 #if defined(JUCE_PLUGINHOST_AU)
 		delete pluginMenu;
 #endif
@@ -229,10 +239,12 @@ MainComponent::~MainComponent()
 	}
 	else if (Project::getInstance()->getAppMode() == Project::AppMode::PLAYER) {
 		delete editor;
-		tab = nullptr;
-		propertyView = nullptr;
-		toolbarFactory = nullptr;
 		editorView = nullptr;
+		if (auto* proj = Project::getInstance())
+			proj->setPropertyView(nullptr);
+		propertyView = nullptr;
+		tab = nullptr;
+		toolbarFactory = nullptr;
 		mixerPanel = nullptr;
 		delete lockButton;
 	}
@@ -246,9 +258,16 @@ MainComponent::~MainComponent()
 	delete midiProcessor;
 	chat = nullptr;
 
-	PrefabFactory::destroy();
-	Project::getInstance()->removeAllChangeListeners();
-	Project::destroy();
+	// PrefabFactory::destroy()/Project::destroy() bewusst NICHT hier — die
+	// Member-Destruktion (insb. shared_ptr<SynthEditor>, der oft noch ueber
+	// Tabs/PluginManager am Leben bleibt) laeuft NACH dem dtor-Body und ruft
+	// SynthEditor::cleanUp(), das Project::getInstance() braucht. Lief das
+	// destroy hier, sah getInstance() nullptr und legte eine frische, halb-
+	// initialisierte Project-Instanz an — naechster Method-Aufruf darauf =
+	// EXC_BAD_ACCESS. Singleton-Tear-Down passiert jetzt in
+	// SynthlabApplication::shutdown nach `delete mainWindow`.
+	if (auto* p = Project::getInstance())
+		p->removeAllChangeListeners();
 
 	// This shuts down the audio device and clears the audio source.
 	rotatingCube = nullptr;

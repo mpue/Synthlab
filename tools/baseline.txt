@@ -15,12 +15,14 @@ RT:Source/ValueToEvent.cpp:110                 new Event() im event dispatch, Ph
 # --- check_todos ---
 TODO:Source/HTTPServer.cpp:102                 Phase 7 cleanup
 TODO:Source/MainComponent.cpp:1148             Phase 7 cleanup
+TODO:Source/MainComponent.cpp:1167             Phase 7 cleanup (PLAYER mode menu stubs)
 TODO:Source/MainComponent.cpp:1706             Phase 7 cleanup
 TODO:Source/Project/Project.h:122              Phase 3 (snapshot/persistence)
+TODO:Source/Project/Project.h:128              Phase 3 (snapshot/persistence — config wiring)
 TODO:Source/RandomModule.cpp:125               Phase 7 cleanup
 TODO:Source/RandomModule.cpp:126               Phase 7 cleanup
 TODO:Source/SynthEditor.cpp:2934               Phase 7 cleanup
-TODO:Source/SynthEditor.cpp:2993               Phase 7 cleanup (export audio dialog)
+TODO:Source/SynthEditor.cpp:3013               Phase 7 cleanup (export audio dialog)
 TODO:Source/Tracks/Track.cpp:461               Phase 4 (region edits)
 TODO:Source/Tracks/Track.cpp:1195              Phase 7 cleanup
 TODO:Source/Tracks/Track.cpp:1223              Phase 7 cleanup (dynamic resizeAudio in setSample)

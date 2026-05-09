@@ -35,7 +35,13 @@ class Project : public ChangeBroadcaster {
 public:
     
     static Project* getInstance() {
-        if (instance == NULL) {
+        // Re-Erzeugen nach Project::destroy() ist ein Bug (typisch beim
+        // Tear-Down): ein frisch konstruiertes Project ist nur halb-init und
+        // crasht beim ersten Method-Aufruf. Wenn destroyed schon true ist,
+        // geben wir nullptr zurueck und der Aufrufer muss damit umgehen
+        // koennen — alle cleanUp-Pfade tun das (auto* p = ...; if (p) ...).
+        if (instance == nullptr) {
+            if (destroyed) return nullptr;
             instance = new Project();
         }
         return instance;
@@ -283,6 +289,7 @@ protected:
     AudioDeviceManager* deviceManager;
     PropertyView* propertyView = nullptr;
     static Project* instance;
+    static bool destroyed;
     juce::UndoManager* undoManager;
     juce::StringArray recentFiles;
     ElegantDarkLookAndFeel* lookAndFeel;

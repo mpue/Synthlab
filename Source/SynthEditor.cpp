@@ -1524,6 +1524,19 @@ void SynthEditor::modifierKeysChanged(const ModifierKeys& modifiers)
 }
 
 void SynthEditor::cleanUp() {
+	// Undo-History GANZ AM ANFANG leeren — bevor wir Module aus dem root-Tree
+	// loeschen. RemoveSelectedAction & Co. besitzen die "removed" Module
+	// (damit Undo sie zurueckholen kann) und deleten sie in ihrem Destruktor.
+	// Wenn wir die Module zuerst aus root loeschen und dann clearUndoHistory
+	// aufrufen, sehen die Actions in ~RemoveSelectedAction freed Pointer und
+	// crashen mit double-free / UAF (z.B. ~DonutModule auf weg-deletetem
+	// Modul). Reihenfolge umkehren beseitigt beide Pfade — Actions raeumen
+	// ihre eigenen Module sauber ab, der nachfolgende Modul-Loop sieht nur
+	// noch live Module.
+	if (auto* p = Project::getInstance())
+		if (auto* um = p->getUndoManager())
+			um->clearUndoHistory();
+
 	if (navigator != nullptr)
 		navigator->clearTracks();
 
@@ -1564,11 +1577,15 @@ void SynthEditor::cleanUp() {
 	// Supplemental-Tabs (Sample editor, Audio recorder, Step sequencer,
 	// Event editor — oft Modul-eigene Components mit deleteOnRemove=false).
 	// Pianoroll-Tab wurde schon in navigator->clearTracks() abgeraeumt.
-	if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
-		if (auto* sup = Project::getInstance()->getSupplemental()) {
-			while (sup->getNumTabs() > 1)
-				sup->removeTab(sup->getNumTabs() - 1);
-			sup->setCurrentTabIndex(0);
+	// Project kann beim App-Quit schon zerstoert sein — getInstance liefert
+	// dann nullptr und wir ueberspringen den Block.
+	if (auto* proj = Project::getInstance()) {
+		if (proj->getAppMode() == Project::AppMode::STUDIO) {
+			if (auto* sup = proj->getSupplemental()) {
+				while (sup->getNumTabs() > 1)
+					sup->removeTab(sup->getNumTabs() - 1);
+				sup->setCurrentTabIndex(0);
+			}
 		}
 	}
 
@@ -1613,12 +1630,15 @@ void SynthEditor::cleanUp() {
 	// den Panel und nullen selectedTrack — sonst kann ein Klick auf den
 	// "Show Plugin"-Button nach dem Reload in einen freigegebenen Track
 	// dispatchen.
-	if (auto* p = Project::getInstance()->getPropertyView())
-		p->selectionChanged(nullptr);
+	if (auto* proj = Project::getInstance())
+		if (auto* p = proj->getPropertyView())
+			p->selectionChanged(nullptr);
 
 	root = nullptr;
 	mixer->clearChannels();
-	Project::getInstance()->getUndoManager()->clearUndoHistory();
+	// clearUndoHistory wird ganz am Anfang von cleanUp aufgerufen; ein
+	// zweiter Aufruf hier waere harmlos (Stack ist schon leer), aber wir
+	// sparen ihn uns aus Klarheit.
 	removeAllChangeListeners();
 
 	// Sanity-Checks: wer hier knallt, hat einen neuen rohen Pointer auf
