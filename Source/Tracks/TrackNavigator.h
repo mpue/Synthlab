@@ -124,7 +124,8 @@ class TrackNavigator : public Component,
 	public DragAndDropTarget,
 	public FileDragAndDropTarget,
 	public ScrollBar::Listener,
-	public EventListener
+	public EventListener,
+	public juce::ComponentListener
 
 {
 public:
@@ -146,6 +147,12 @@ public:
 	void parentSizeChanged() override;
 	void parentHierarchyChanged() override;
 
+	// Resize-Listener auf den Viewport: parentSizeChanged feuert nur fuer den
+	// Viewport::ContentHolder, dessen Hoehe selbst vom Navigator abhaengt
+	// (Selbstbezug). Erst der echte Viewport oben drueber kennt die sichtbare
+	// Tab-Hoehe — wir abonnieren deshalb ihn explizit.
+	void componentMovedOrResized(juce::Component& which, bool wasMoved, bool wasResized) override;
+
 	WaveSelector* getSelector();
 
 	void clearTracks();
@@ -155,6 +162,12 @@ public:
 	Track* addTrack(TrackConfig* tc);
 	void addTrack(Track* t);
 	Track* addTrack(Track::Type type, double sampleRate);
+
+	// Stellt sicher, dass mindestens n Audio-Tracks existieren — fuellt fehlende
+	// auf, taeuscht aber nichts vor wenn schon andere Track-Typen drin sind.
+	// Wird beim Anlegen eines neuen leeren Projekts aufgerufen, damit der User
+	// sofort etwas zum Reindroppen hat (DAW-typisches Verhalten).
+	void ensureDefaultAudioTracks(int n);
 
 	// Liefert den Track, dessen vertikaler Bereich Y enthält, oder nullptr,
 	// wenn an dieser Y-Position kein Track liegt (z.B. unter dem letzten
@@ -289,6 +302,10 @@ private:
 	long recordStop = 0;
 
 	int timelineOffset = 25;
+
+	// Viewport, an dem wir als ComponentListener haengen; nullptr solange
+	// nicht eingebettet. Wird in parentHierarchyChanged synchron gehalten.
+	juce::Viewport* listenedViewport = nullptr;
 
 	double scrollbarOffset = 0;
 	

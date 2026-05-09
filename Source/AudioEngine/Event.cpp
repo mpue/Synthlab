@@ -23,6 +23,7 @@ Event::Event(Event* e){
     this->note = e->getNote();
     this->number = e->getNumber();
     this->message = e->getMessage();
+    this->source = e->getSource();
 }
 
 Event::Event(String name, Type type) {
@@ -79,4 +80,12 @@ MidiMessage Event::getMessage()
 
 int Event::getNumber() {
     return number;
+}
+
+void Event::setSource(Pin* p) {
+    this->source = p;
+}
+
+Pin* Event::getSource() const {
+    return source;
 }

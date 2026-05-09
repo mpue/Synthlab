@@ -48,10 +48,14 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
     setSize((numSamples / sampleRate) * this->zoom, Project::DEFAULT_TRACK_HEIGHT - 25);
 
     this->offset = 0;
-    
+
     addAndMakeVisible(resizerL);
     addAndMakeVisible(resizerR);
-    
+
+    // mouseUp am Resizer triggert AudioRegion::mouseUp -> Resize-Basis reset.
+    if (resizerL != nullptr) resizerL->addMouseListener(this, false);
+    if (resizerR != nullptr) resizerR->addMouseListener(this, false);
+
     addComponentListener(this);
     dirty = false;
     setPitch(1);
@@ -103,11 +107,13 @@ AudioRegion::AudioRegion(AudioSampleBuffer* source, AudioFormatManager& manager,
     this->offset = 0;
         
     setSize((audioBuffer->getNumSamples() / sampleRate) * this->zoom, Project::DEFAULT_TRACK_HEIGHT);
-    
+
     addAndMakeVisible(resizerL);
-    addAndMakeVisible(resizerR);    
+    addAndMakeVisible(resizerR);
+    if (resizerL != nullptr) resizerL->addMouseListener(this, false);
+    if (resizerR != nullptr) resizerR->addMouseListener(this, false);
     addComponentListener(this);
-    
+
     dirty = false;
     // setPitch(1);
     createProperties();
@@ -153,12 +159,14 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
     setSize((other->getBuffer()->getNumSamples() / sampleRate) * this->zoom, Project::DEFAULT_TRACK_HEIGHT);
 
     this->offset = 0;
-    
+
     addAndMakeVisible(resizerL);
     addAndMakeVisible(resizerR);
-   
+    if (resizerL != nullptr) resizerL->addMouseListener(this, false);
+    if (resizerR != nullptr) resizerR->addMouseListener(this, false);
+
     addComponentListener(this);
-    
+
     dirty = false;
 
     setPitch(1);
@@ -506,6 +514,14 @@ int AudioRegion::getNumSamples() {
     return audioBuffer->getNumSamples();
 }
 
+void AudioRegion::mouseUp(const juce::MouseEvent& /*e*/) {
+    // Resize-Gesture-Basis verwerfen, damit der naechste Linkstrim eine
+    // frische Basis aus dem dann aktuellen sampleOffset/sourceStartSample
+    // nimmt. Wird via addMouseListener auch ausgeloest wenn die Maus auf
+    // einem der Resizer (Child) losgelassen wird.
+    resizeBaseSampleOffset = -1;
+}
+
 void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, bool wasResized) {
 
     // Skip when the move/resize was triggered by setZoom — recomputing
@@ -555,15 +571,27 @@ void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, b
         // Timeline um deltaLeft -> sourceStartSample wandert im Audio-Buffer
         // um den gleichen Betrag. Negative Werte (Region wird nach links
         // verlaengert) clampen auf 0.
-        const long oldSampleOffset = getSampleOffset();
-        const long deltaLeft = snappedLeft - oldSampleOffset;
-        sourceStartSample = juce::jmax(0L, sourceStartSample + deltaLeft);
+        // Resize-Basis beim ersten Tick eines Gesture festfrieren — sonst
+        // akkumulieren Rundungsfehler aus snappedLeft - getSampleOffset()
+        // ueber viele Maus-Ticks. Reset auf -1 erfolgt in mouseUp am Resizer
+        // (siehe AudioRegion::mouseUp).
+        if (resizeBaseSampleOffset < 0) {
+            resizeBaseSampleOffset = getSampleOffset();
+            resizeBaseSourceStartSample = sourceStartSample;
+        }
+        sourceStartSample = juce::jmax(0L,
+            resizeBaseSourceStartSample + (snappedLeft - resizeBaseSampleOffset));
 
         // Modell zuerst, dann setBounds — setBounds ruft componentMovedOr-
         // Resized reentrant auf; wir brauchen idempotentes Verhalten.
+        // quantize=false: in Region::setSampleOffset wird sonst auf
+        // bufferSize-Vielfaches quantisiert. In der Resize-Schleife wuerde
+        // (snappedLeft - getSampleOffset()) deltaLeft pro Tick um den
+        // Quantize-Verlust zu hoch werden, sourceStartSample drifted, der
+        // Inhalt scrollt langsam nach links waehrend des Maus-Resizes.
         oldOffset = snappedLeft;
         if (snappedLeft != getSampleOffset())
-            setSampleOffset(snappedLeft, true, true);
+            setSampleOffset(snappedLeft, true, true, false);
 
         if (newX != getBounds().getX() || newWidth != getWidth()) {
             setBounds(newX, getY(), newWidth, getHeight());
@@ -578,8 +606,12 @@ void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, b
         long tracklen = Project::getInstance()->getTrackLength();
         double sampleRate = Project::getInstance()->getSampleRate();
 
-        // Berechne Sample-Position basierend auf X-Position
-        long sampleNum = (getBounds().getX() / zoom) * sampleRate;
+        // Berechne Sample-Position basierend auf X-Position. std::round statt
+        // truncation, sonst weicht's vom wasMoved&wasResized-Pfad um 1 Sample
+        // ab — bei reentranten setBounds (durch den outer Branch) drifted
+        // sampleOffset pro Maus-Move um genau diesen Sample, was beim Linkstrim
+        // ueber sourceStartSample sichtbares Inhalts-Scrollen verursacht.
+        long sampleNum = (long) std::round((double) getBounds().getX() / zoom * sampleRate);
 
         // Multi-Drag-Folger: Per-Region-Snap und -Clamp ueberspringen, sonst
         // raster jeder Follower auf sein eigenes Grid-Ziel und die Gruppe
@@ -612,8 +644,11 @@ void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, b
 
         oldOffset = sampleNum;
 
+        // quantize=false analog zum Resize-Pfad — beim Drag wuerden
+        // bufferSize-Quantize-Verluste sonst sample-akkurate Move-Operationen
+        // (insb. mit Snap-to-Grid) gegen sich selbst verschieben.
         if (sampleNum != getSampleOffset()) {
-            setSampleOffset(sampleNum, true, true);
+            setSampleOffset(sampleNum, true, true, false);
         }
 
         // Boundary-Check

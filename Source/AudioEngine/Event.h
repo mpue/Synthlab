@@ -10,6 +10,8 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 
+class Pin;   // forward — Event traegt optional einen Source-Pin-Verweis
+
 class Event {
 
 public:
@@ -40,13 +42,21 @@ public:
 	void setNumber(int num);
 	void setMessage(MidiMessage message);
 	MidiMessage getMessage();
+
+	// Optionaler Verweis auf den Pin der das Event versendet hat. Wird in
+	// Pin::sendEvent gesetzt, damit ein Modul mit mehreren EVENT-IN-Pins
+	// (z.B. Clk + Rst) im eventReceived-Callback unterscheiden kann.
+	// Default nullptr fuer Events die nicht ueber Pin::sendEvent laufen.
+	void setSource(Pin* p);
+	Pin* getSource() const;
 private:
 	MidiMessage message;
 	Type type;
 	juce::String name;
 	int number = 1;
 	int value = 0;
-	int note = 0;	
+	int note = 0;
+	Pin* source = nullptr;
 };
 
 

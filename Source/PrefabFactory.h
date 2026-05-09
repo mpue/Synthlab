@@ -174,6 +174,16 @@ private:
         prefabs[100] = Prefab("Gain","Audio");
         prefabs[101] = Prefab("Audio selector","Audio");
         prefabs[102] = Prefab("Radio group","Controls");
+        prefabs[103] = Prefab("Attenuverter","Math");
+        prefabs[104] = Prefab("Slew","Math");
+        prefabs[105] = Prefab("S&H","Math");
+        prefabs[106] = Prefab("LFO","Sound sources");
+        prefabs[107] = Prefab("Clock Div","MIDI");
+        prefabs[108] = Prefab("SVF","Filter");
+        prefabs[109] = Prefab("Quantizer","Math");
+        prefabs[110] = Prefab("SuperSaw","Sound sources");
+        prefabs[111] = Prefab("Seq Switch","Audio");
+        prefabs[112] = Prefab("Stereo SVF","Filter");
         prefabImages[38] = juce::ImageCache::getFromMemory(BinaryData::infinity_png, BinaryData::infinity_pngSize);
         prefabImages[38] = juce::ImageCache::getFromMemory(BinaryData::transform_png, BinaryData::transform_pngSize);
         prefabImages[39] = juce::ImageCache::getFromMemory(BinaryData::merge_png, BinaryData::merge_pngSize);
@@ -240,6 +250,16 @@ private:
         prefabImages[100] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[101] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[102] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[103] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[104] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[105] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[106] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[107] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[108] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[109] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[110] = juce::ImageCache::getFromMemory(BinaryData::saw_png, BinaryData::saw_pngSize);
+        prefabImages[111] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[112] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
 
         categories = new juce::StringArray();
 

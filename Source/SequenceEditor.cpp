@@ -538,11 +538,43 @@ void SequenceEditor::triggerNextStep() {
         return;
     }
 
-    std::function<void(void)> async =
-    [=]() {
-        // First: turn off any note whose gate has elapsed
+    // Note-Trigger laeuft jetzt SYNCHRON auf dem Thread des Clock-Callers
+    // (TimeSliceThread bei Internal-Sync, MIDI-/Timer-Thread bei MidiClock).
+    // Vorher war alles in MessageManager::callAsync — das hat den gesamten
+    // Note-Versand auf den UI-Thread verschoben und Jitter im 1-20ms-Bereich
+    // erzeugt. Pin::sendEvent ist UI-frei und wird im MidiClock-Modul auch
+    // schon synchron aus dem Timer-Callback aufgerufen.
+    bool stepAdvanced = false;
+
+    // First: turn off any note whose gate has elapsed
+    for (int y = 0; y < gridHeight; y++) {
+        if (activeNotes[y] >= 0 && noteOffTick[y] >= 0 && clockEventNum >= noteOffTick[y]) {
+            Event* off = new Event("gate off", Event::Type::GATE);
+            off->setMessage(MidiMessage::noteOff(1, activeNotes[y]));
+            off->setValue(0);
+            off->setNote(activeNotes[y]);
+
+            if (output != nullptr) {
+                for (int i = 0; i < output->getConnections().size(); i++) {
+                    output->getConnections().at(i)->sendEvent(new Event(off));
+                }
+            }
+            delete off;
+            activeNotes[y] = -1;
+            noteOffTick[y] = -1;
+        }
+    }
+
+    // On step boundary, advance and trigger the new step
+    if (clockEventNum % 6 == 0) {
+        currentStep = (currentStep + 1) % gridWidth;
+        stepAdvanced = true;
+        int gateTicks = juce::jmax (1, juce::roundToInt (gateTime * 6.0f));
+
         for (int y = 0; y < gridHeight; y++) {
-            if (activeNotes[y] >= 0 && noteOffTick[y] >= 0 && clockEventNum >= noteOffTick[y]) {
+
+            // Safety: if a note is still active on this row (e.g. gate=100% legato), retrigger cleanly
+            if (activeNotes[y] >= 0) {
                 Event* off = new Event("gate off", Event::Type::GATE);
                 off->setMessage(MidiMessage::noteOff(1, activeNotes[y]));
                 off->setValue(0);
@@ -557,60 +589,39 @@ void SequenceEditor::triggerNextStep() {
                 activeNotes[y] = -1;
                 noteOffTick[y] = -1;
             }
-        }
 
-        // On step boundary, advance and trigger the new step
-        if (clockEventNum % 6 == 0) {
-            currentStep = (currentStep + 1) % gridWidth;
-            int gateTicks = juce::jmax (1, juce::roundToInt (gateTime * 6.0f));
+            if (grid[currentStep][y].isEnabled()) {
+                int note = grid[currentStep][y].getNote();
+                int velocity = grid[currentStep][y].getVelocity();
 
-            for (int y = 0; y < gridHeight; y++) {
+                Event* e = new Event("gate on", Event::Type::GATE);
+                e->setValue(velocity);
+                e->setNote(note);
+                e->setMessage(MidiMessage::noteOn(1, note, (float)velocity / 127.0f));
 
-                // Safety: if a note is still active on this row (e.g. gate=100% legato), retrigger cleanly
-                if (activeNotes[y] >= 0) {
-                    Event* off = new Event("gate off", Event::Type::GATE);
-                    off->setMessage(MidiMessage::noteOff(1, activeNotes[y]));
-                    off->setValue(0);
-                    off->setNote(activeNotes[y]);
-
-                    if (output != nullptr) {
-                        for (int i = 0; i < output->getConnections().size(); i++) {
-                            output->getConnections().at(i)->sendEvent(new Event(off));
-                        }
+                if (output != nullptr) {
+                    for (int i = 0; i < output->getConnections().size(); i++) {
+                        output->getConnections().at(i)->sendEvent(new Event(e));
                     }
-                    delete off;
-                    activeNotes[y] = -1;
-                    noteOffTick[y] = -1;
                 }
+                delete e;
 
-                if (grid[currentStep][y].isEnabled()) {
-                    int note = grid[currentStep][y].getNote();
-                    int velocity = grid[currentStep][y].getVelocity();
-
-                    Event* e = new Event("gate on", Event::Type::GATE);
-                    e->setValue(velocity);
-                    e->setNote(note);
-                    e->setMessage(MidiMessage::noteOn(1, note, (float)velocity / 127.0f));
-
-                    if (output != nullptr) {
-                        for (int i = 0; i < output->getConnections().size(); i++) {
-                            output->getConnections().at(i)->sendEvent(new Event(e));
-                        }
-                    }
-                    delete e;
-
-                    activeNotes[y] = note;
-                    noteOffTick[y] = clockEventNum + gateTicks;
-                }
+                activeNotes[y] = note;
+                noteOffTick[y] = clockEventNum + gateTicks;
             }
         }
-        clockEventNum++;
-    };
-    juce::MessageManager::callAsync(async);
+    }
+    clockEventNum++;
 
-    std::function<void(void)> changeLambda =
-    [=]() {  content->repaint(); };
-    juce::MessageManager::callAsync(changeLambda);
+    // Repaint nur bei tatsaechlichem Step-Wechsel — vorher feuerte das pro
+    // Clock-Tick (48 Hz @ 120 BPM), jetzt nur an der Step-Grenze (~8 Hz).
+    // Das visuelle Verhalten ist identisch (es gibt nur an der Step-Grenze
+    // was zu sehen) und der Message-Thread bleibt wesentlich entlastet,
+    // was wiederum das Restjitter weiter reduziert.
+    if (stepAdvanced && content != nullptr) {
+        SequencePanel* panelRef = content;
+        juce::MessageManager::callAsync([panelRef]() { panelRef->repaint(); });
+    }
 
 }
 

@@ -47,7 +47,12 @@ public:
     int getLoopCount();
     
     long getSampleOffset();
-    virtual void setSampleOffset(long offset,bool reminder, bool notify);
+    // quantize=true (default) rundet sampleOffset auf bufferSize-Vielfaches —
+    // sinnvoll fuer Audio-Pfade, fatal fuer Resize-Loops: deltaLeft (=
+    // snappedLeft - getSampleOffset()) treibt sonst pro Tick um den Quantize-
+    // Verlust nach oben, sourceStartSample drifted, der Inhalt scrollt
+    // langsam nach links. Resize-Caller geben quantize=false.
+    virtual void setSampleOffset(long offset, bool reminder, bool notify, bool quantize = true);
 
     // Sample-Offset in den Quell-Daten (Audio- bzw. MIDI-Buffer-Zeit), an dem
     // die linke Kante der Region beginnt. Default 0 = konsolidiert (sicht-

@@ -183,9 +183,9 @@ void Knob::setCurrentLayer(Module::Layer layer) {
         // GUI Mode
         setSize(90, 90);
         slider->setSize(70, 70);
-        slider->setTopLeftPosition(10, 10);
+        slider->setTopLeftPosition(10, 18);
         nameLabel->setFont(Font(9));
-        nameLabel->setTopLeftPosition(2, 2);
+        nameLabel->setBounds(2, 0, 86, 14);
         valueLabel->setVisible(true);
         setInterceptsMouseClicks(false, false);
     }

@@ -98,6 +98,12 @@ TrackNavigator::~TrackNavigator()
 	if (panForwarder != nullptr)
 		removeMouseListener(panForwarder.get());
 
+	// Component-Listener vom Viewport abmelden bevor wir sterben.
+	if (listenedViewport != nullptr) {
+		listenedViewport->removeComponentListener(this);
+		listenedViewport = nullptr;
+	}
+
 	// Listener-Registrierungen aus dem Konstruktor sauber zurueckziehen — sonst
 	// schickt Project::setTempo() o.ae. ChangeMessages an einen toten this-
 	// Pointer (Crash in ChangeBroadcaster::callListeners beim naechsten Open).
@@ -137,6 +143,27 @@ void TrackNavigator::clearTracks() {
 	// Erst die Controls weg — wenn der Track unter ihnen gelöscht wird, hätten
 	// sie einen Dangling-Pointer.
 	trackControls.clear();
+
+	// PianoRoll laeuft als 30-Hz-Timer und haelt einen MidiRegion*-Pointer.
+	// JUCE meldet uns das componentBeingDeleted, wenn die Region verschwindet,
+	// aber der PianoRollEditor selbst bleibt sonst nach dem File-Wechsel mit
+	// gestorbener Region und totem Track-Backref leben — sicherer ist, ihn
+	// jetzt mit den Tracks gemeinsam wegzuwerfen. Vorher die Supplemental-
+	// Tab-Referenz raus, sonst greift ein spaeterer removeTab() auf die
+	// bereits freigegebene Komponente zu.
+	if (pianoRoll != nullptr) {
+		if (auto* sup = Project::getInstance()->getSupplemental()) {
+			for (int i = sup->getNumTabs(); --i >= 0;) {
+				if (sup->getTabContentComponent(i) == pianoRoll.get()) {
+					sup->removeTab(i);
+					break;
+				}
+			}
+		}
+		pianoRoll = nullptr;
+	}
+	currentTrack = nullptr;
+
 	for (std::vector<Track*>::iterator it = tracks.begin(); it != tracks.end(); ++it) {
 		// Mixer haelt eine parallele tracks-Liste (Mixer::addTrack) UND einen
 		// Listener-Eintrag pro Track. Beides austragen, sonst bleibt nach
@@ -301,15 +328,28 @@ void TrackNavigator::adjustHeight()
 		height += tracks.at(i)->getHeight();
 	}
 
-	// Mindestens so groß wie der Viewport, damit Drops auf "leeren" Bereich
-	// (kein Track) trotzdem den Navigator erreichen.
-	if (auto* p = getParentComponent()) {
-		if (p->getHeight() > height)
-			height = p->getHeight();
+	// Mindestens so groß wie der sichtbare Bereich, damit Drops auf "leeren"
+	// Bereich (kein Track) trotzdem den Navigator erreichen. Vorher wurde
+	// getParentComponent() benutzt — das ist aber bei eingebetteten Viewports
+	// der interne Viewport::ContentHolder, dessen Hoehe wiederum vom Navigator
+	// selbst abhaengt. Wir suchen also den naechsten echten Viewport in der
+	// Hierarchie und nehmen dessen Sichtflaeche.
+	int minHeight = 200;
+	int minWidth  = 600;   // Fallback-Breite — sonst bleibt der Navigator beim
+	                       // ersten Aufruf (vor dem Layout des Viewports) auf
+	                       // getWidth()=0 und wird gar nicht erst gerendert.
+	if (auto* vp = findParentComponentOfClass<juce::Viewport>()) {
+		const int vh = vp->getViewArea().getHeight();
+		const int vw = vp->getViewArea().getWidth();
+		if (vh > 0) minHeight = vh;
+		if (vw > 0) minWidth  = vw;
 	}
+	if (minHeight > height) height = minHeight;
+	int width = juce::jmax(getWidth(), minWidth);
 
-	setSize(getWidth(), height);
+	setSize(width, height);
 	this->marker->setBounds(kControlsWidth, 0, 2, getHeight());
+	repaint();
 }
 
 void TrackNavigator::parentSizeChanged()
@@ -319,6 +359,25 @@ void TrackNavigator::parentSizeChanged()
 
 void TrackNavigator::parentHierarchyChanged()
 {
+	// Viewport-Listener neu verkabeln, falls wir gerade in einen anderen
+	// Viewport gepackt wurden (oder erstmals einen kriegen). Unbeobachteter
+	// Resize wuerde adjustHeight nie triggern und der leere Navigator bliebe
+	// auf timelineOffset hoch -> kein Platz fuer Drag&Drop ohne Tracks.
+	juce::Viewport* vp = findParentComponentOfClass<juce::Viewport>();
+	if (vp != listenedViewport) {
+		if (listenedViewport != nullptr)
+			listenedViewport->removeComponentListener(this);
+		listenedViewport = vp;
+		if (listenedViewport != nullptr)
+			listenedViewport->addComponentListener(this);
+	}
+	adjustHeight();
+}
+
+void TrackNavigator::componentMovedOrResized(juce::Component& which, bool /*wasMoved*/, bool wasResized)
+{
+	if (!wasResized) return;
+	if (&which != listenedViewport) return;
 	adjustHeight();
 }
 
@@ -1092,6 +1151,17 @@ void TrackNavigator::addTrack(Track* track) {
 	repaint();
 }
 
+void TrackNavigator::ensureDefaultAudioTracks(int n) {
+	// Fuellt fehlende Audio-Tracks auf, damit ein leeres Projekt sofort
+	// brauchbar ist (DAW-typisch). Ueber TrackUtil::createAudioTrack, damit
+	// dieselbe Verdrahtung passiert wie bei manuell angelegten Tracks.
+	if (editor == nullptr || editor->getModule() == nullptr) return;
+	while ((int) tracks.size() < n) {
+		Track* t = TrackUtil::createAudioTrack(editor, this, editor->getModule());
+		if (t == nullptr) break;   // Schutz, falls Anlage fehlschlaegt
+	}
+}
+
 Track* TrackNavigator::addTrack(Track::Type type, double sampleRate) {
 
 	Track* track = new Track(type, sampleRate, this->dragger);
@@ -1447,6 +1517,9 @@ void TrackNavigator::mouseDrag(const MouseEvent& event) {
 }
 
 void TrackNavigator::paintOverChildren(juce::Graphics& g) {
+	// Empty-State-Hint entfernt — leeres Projekt bekommt 2 Default-Audio-Tracks
+	// (siehe ensureDefaultAudioTracks). DAW-typisch und loest das Drop-Problem
+	// ohne Hint-Text.
 	if (!marqueeActive) return;
 	g.setColour(juce::Colours::aqua.withAlpha(0.18f));
 	g.fillRect(marqueeRect);
@@ -1563,12 +1636,23 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 		}
 		sendChangeMessage();
 		marker->repaint();
-        for (int i = 0; i < Project::getInstance()->getRoot()->getModules()->size(); i++)
+        // Project::root ist erst gesetzt, sobald SynthEditor seinen Root-Module-
+        // Baum gebaut hat. Vor dem ersten setRoot() (oder wenn das Projekt nur
+        // Tracks ohne Modular-Baum enthaelt) liefert getRoot() nullptr und der
+        // naechste ->getModules() crasht — das passiert nur im Right-Click-Pfad,
+        // weil Left-Click das Modul-Iterieren ueberspringt.
+        if (auto* root = Project::getInstance()->getRoot())
         {
-            if (auto* module = dynamic_cast<PluginModule*>(Project::getInstance()->getRoot()->getModules()->at(i)))
+            if (auto* mods = root->getModules())
             {
-                // module->requestReset();
-                module->requestPositionReset(samplePosition);
+                for (int i = 0; i < (int) mods->size(); i++)
+                {
+                    if (auto* module = dynamic_cast<PluginModule*>(mods->at(i)))
+                    {
+                        // module->requestReset();
+                        module->requestPositionReset(samplePosition);
+                    }
+                }
             }
         }
 	}

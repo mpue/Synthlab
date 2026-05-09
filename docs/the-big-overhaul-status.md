@@ -95,7 +95,7 @@ Source/MainComponent.cpp:1605  cleanup keyboard input
 Source/Project/Project.h:121   where should this be set
 Source/RandomModule.cpp:125    add property
 Source/RandomModule.cpp:126    add property for min/max value
-Source/SynthEditor.cpp:2581    implement export audio dialog
+Source/SynthEditor.cpp:2988    implement export audio dialog
 Source/Tracks/Track.cpp:414    handle stereo/mono mapping
 Source/Tracks/Track.cpp:1039   from card
 ```

@@ -38,6 +38,12 @@ void Pin::sendEvent(Event *e) {
 
     noteEvent();
 
+    // Source-Pin ans Event haengen, damit Empfaenger mit mehreren EVENT-IN-
+    // Pins unterscheiden koennen, wer gefeuert hat. Jeder Pin in der Kette
+    // ueberschreibt das Feld auf sich selbst — der Listener sieht immer den
+    // unmittelbar liefernden Pin (= einen seiner eigenen IN-Pins).
+    e->setSource(this);
+
     for (int i = 0; i < connections.size();i++) {
         connections.at(i)->sendEvent(new Event(e));
     }

@@ -213,6 +213,23 @@ void ADSRModule::process() {
                 }
             }
         }
+
+        // Skalar-Export fuer mono-Konsumenten (z.B. LPFilter::Mod). Pin liest
+        // seinen value via getValue(); die Audio-Module entlang der Kette
+        // lesen den, wir sind aber poly und schreiben nur ins data[]-Array.
+        // Damit bei poly-ADSR der Filter trotzdem polyphonie-bewusst
+        // moduliert (klassisches "Filter folgt der lautesten/aktivsten
+        // Stimme"), exportieren wir das Maximum ueber alle aktiven Voices
+        // einmal pro Block. Sawtooth/AmpEnvelope sind nicht betroffen, die
+        // bedienen sich weiter aus data[].
+        if (pins.at(5) != nullptr) {
+            float maxEnv = 0.0f;
+            for (int j = 0; j < 128; ++j) {
+                if (pins.at(5)->dataEnabled[j] && pins.at(5)->data[j] > maxEnv)
+                    maxEnv = pins.at(5)->data[j];
+            }
+            pins.at(5)->setValue(maxEnv);
+        }
     }
 
 }

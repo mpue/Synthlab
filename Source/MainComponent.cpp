@@ -1703,25 +1703,42 @@ void MainComponent::showClaudeApiKeyDialog()
 
 bool MainComponent::keyStateChanged(bool isKeyDown, juce::Component* originatingComponent) {
 
-	// TODO : If we provide Keyboard INput for play, we shoukd clean this up!
+	// Computer-Tastatur als MIDI-Input: jede gemappte Taste loest Note-On/Off
+	// auf dem MIDI-Kanal des aktuell selektierten Tracks aus. Geht ueber den
+	// Queue-Pfad des MidiProcessors (handleIncomingMidiMessage) — derselbe
+	// Pfad wie externe MIDI-Hardware, also automatisch korrekt geroutet (der
+	// Processor filtert via activeChannel, was an currentTrack haengt — siehe
+	// MainComponent::changeListenerCallback).
+	if (midiProcessor == nullptr || navigator == nullptr) return false;
 
-	/*
-	for (std::map<int, int>::iterator it = keyCodeMidiNote.begin(); it != keyCodeMidiNote.end(); it++) {
-		if (KeyPress::isKeyCurrentlyDown((*it).first)) {
-			if (!keyStates[(*it).second]) {
-				sendNoteMessage(editor->getModule(), 1, (*it).second + 12 * currentOctave);
-				sendGateMessage(editor->getModule(), 1, 64, (*it).second + 12 * currentOctave, true);
-				keyStates[(*it).second] = true;
+	Track* current = navigator->getCurrentTrack();
+	const int channel = (current != nullptr) ? current->getMidiChannel() : 1;
+
+	for (auto& kv : keyCodeMidiNote) {
+		// JUCE's KeyPress::isKeyCurrentlyDown erwartet fuer Buchstaben
+		// uppercase ASCII (z.B. 'A'=65). Unsere Map ist mit lowercase
+		// gefuellt, also umrechnen.
+		const int keyCode = juce::CharacterFunctions::toUpperCase((juce_wchar) kv.first);
+		const int note    = kv.second + 12 * currentOctave;
+		if (note < 0 || note > 127) continue;
+
+		if (KeyPress::isKeyCurrentlyDown(keyCode)) {
+			if (!keyStates[note]) {
+				midiProcessor->handleIncomingMidiMessage(
+					nullptr,
+					MidiMessage::noteOn(channel, note, (juce::uint8) 100));
+				keyStates[note] = true;
 			}
 		}
 		else {
-			keyStates[(*it).second] = false;
-			if (!isKeyDown) {
-				sendGateMessage(editor->getModule(), 1, 0, (*it).second + 12 * currentOctave, false);
+			if (keyStates[note]) {
+				midiProcessor->handleIncomingMidiMessage(
+					nullptr,
+					MidiMessage::noteOff(channel, note));
+				keyStates[note] = false;
 			}
 		}
 	}
-	*/
 	return true;
 }
 
@@ -1794,6 +1811,9 @@ void MainComponent::buttonClicked(Button* b)
 			navigator->clearTracks();
 			editor->cleanUp();
 			editor->newFile();
+			// Wie beim ersten App-Start: 2 Default-Audio-Tracks anlegen, damit
+			// das frische Projekt sofort dropp- und bespielbar ist.
+			navigator->ensureDefaultAudioTracks(2);
 			editor->setRunning(true);
 		}
 		else if (tb->getItemId() == toolbarFactory->doc_save) {
@@ -1987,7 +2007,14 @@ void MainComponent::selectionChanged(juce::Component* m) {
 void MainComponent::fileChanged(juce::String name) {
 	lockButton->setToggleState(editor->isLocked(), juce::NotificationType::dontSendNotification);
 	if (layerCombobox != nullptr)
-		layerCombobox->getComboBox().setSelectedId(editor->getCurrentLayer() + 1);
+		// dontSendNotification: wir spiegeln nur den geladenen Layer in die UI.
+		// Default-async loest sonst comboBoxChanged -> editor->setCurrentLayer
+		// erst irgendwann spaeter aus der Message-Queue aus. Wenn der Nutzer
+		// in der Zwischenzeit das naechste Projekt oeffnet, feuert das Event
+		// waehrend openFile B (z.B. im modalen Dirty-AlertWindow) — root ist
+		// dort nullptr und rootLevelProxies haelt dangling Module* aus A.
+		layerCombobox->getComboBox().setSelectedId(editor->getCurrentLayer() + 1,
+		                                            juce::NotificationType::dontSendNotification);
 }
 
 void MainComponent::dirtyChanged(bool dirty) {

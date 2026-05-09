@@ -35,7 +35,7 @@ public:
         // der user message.
         const juce::String systemPrompt =
             "Du bist ein Musiksystem. Wenn du eine Melodie erzeugst, gib bitte eine JSON-Struktur zurück "
-            "im folgenden Format zurück:\n\n"
+ 	           "im folgenden Format zurück:\n\n"
             "{\n"
             "  \"action\": \"create_midi_region\",\n"
             "  \"track\": \"current\",\n"

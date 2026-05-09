@@ -1497,7 +1497,7 @@ std::shared_ptr<MixerPanel> SynthEditor::getMixer() {
 
 bool SynthEditor::keyPressed(const KeyPress& key, Component* originatingComponent)
 {
-	if (key.getKeyCode() == 65 && isLeftShiftDown) {
+	if (key.getKeyCode() == 65 && isLeftShiftDown) { // Shift-A opens add menu
 		showPrefabMenu(Point<int>(mouseX, mouseY));
 	}
 	else if (key.getKeyCode() == 65 && isCtrlDown) {
@@ -1527,6 +1527,51 @@ void SynthEditor::cleanUp() {
 	if (navigator != nullptr)
 		navigator->clearTracks();
 
+	// ---- Tab-Cleanup ZUERST, vor jeder Modul-Loeschung. ----
+	// Tab-Inhalte (Sub-Editoren, Sample-/Recorder-/Sequencer-Editoren) sind
+	// teils mit deleteOnRemove=false angemeldet und gehoeren in Wirklichkeit
+	// den Modulen, die wir gleich loeschen. Wuerden wir die Module zuerst
+	// killen, dispatchen Timer/Listener der Tabs noch in den freigegebenen
+	// Speicher; und der spaetere removeTab() faende einen toten Component
+	// vor (set parent=null an Dangling-Pointer = UAF).
+
+	// Sub-Editor-Tabs (per "Edit Group") detachen und freigeben — `openViews`
+	// haelt die Eigentums-Refs auf die Viewports, die Tab-Refs sind
+	// deleteOnRemove=false.
+	if (tab != nullptr) {
+		for (auto* v : openViews) {
+			if (v == nullptr) continue;
+			for (int i = tab->getNumTabs(); --i >= 0;) {
+				if (tab->getTabContentComponent(i) == v) {
+					tab->removeTab(i);
+					break;
+				}
+			}
+		}
+	}
+	for (auto* v : openViews)
+		delete v;
+	openViews.clear();
+
+	// Verbleibende extra Tabs im Haupt-TabbedComponent: nur die erste Lasche
+	// (der Editor selbst) bleibt; alles andere kommt weg.
+	if (tab != nullptr) {
+		while (tab->getNumTabs() > 1)
+			tab->removeTab(tab->getNumTabs() - 1);
+		tab->setCurrentTabIndex(0);
+	}
+
+	// Supplemental-Tabs (Sample editor, Audio recorder, Step sequencer,
+	// Event editor — oft Modul-eigene Components mit deleteOnRemove=false).
+	// Pianoroll-Tab wurde schon in navigator->clearTracks() abgeraeumt.
+	if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
+		if (auto* sup = Project::getInstance()->getSupplemental()) {
+			while (sup->getNumTabs() > 1)
+				sup->removeTab(sup->getNumTabs() - 1);
+			sup->setCurrentTabIndex(0);
+		}
+	}
+
 	mixer->removeAllChannels();
 	for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); it++) {
 		ModuleUtils::removeModule(root.get(), (*it), getMixer().get(), this);
@@ -1546,37 +1591,46 @@ void SynthEditor::cleanUp() {
 
 	PrefabFactory::getInstance()->reset();
 
-	root = nullptr;
+	// rootLevelProxies/rootLevelGroups halten rohe Module*/Component*-Pointer,
+	// die wir oben mit den Modulen geloescht haben. Beim naechsten openFile()
+	// laeuft am Ende setCurrentLayer(savedLayer) — restoreRootLevelControls()
+	// derefiert dann proxy.module und kracht (UAF). rootLevelGroups ist eine
+	// OwnedArray und loescht die GroupComponents korrekt mit; den Vector der
+	// Proxies kippen wir vorsorglich auch.
+	rootLevelProxies.clear();
+	rootLevelGroups.clear();
+
+	// Drag-/Selection-State auf Modul-Pointer resetten BEVOR root weggeht —
+	// startPin zeigt sonst weiter auf einen Pin in einem geloeschten Module,
+	// und selectionModel haelt root als rohen Pointer (setRoot(nullptr) hier
+	// vermeidet dangling deref im naechsten select/clearSelection-Aufruf).
+	startPin = nullptr;
 	selectionModel.getSelectedModules().clear();
+	selectionModel.setRoot(nullptr);
+
+	// PropertyView haelt selectedTrack/selectedModule als rohe Pointer auf
+	// Tracks/Module aus Projekt A. Mit selectionChanged(nullptr) leeren wir
+	// den Panel und nullen selectedTrack — sonst kann ein Klick auf den
+	// "Show Plugin"-Button nach dem Reload in einen freigegebenen Track
+	// dispatchen.
+	if (auto* p = Project::getInstance()->getPropertyView())
+		p->selectionChanged(nullptr);
+
+	root = nullptr;
 	mixer->clearChannels();
 	Project::getInstance()->getUndoManager()->clearUndoHistory();
 	removeAllChangeListeners();
 
-	if (tab != nullptr) {
-
-		int i = tab->getNumTabs();
-
-		while (tab->getNumTabs() > 1) {
-			tab->removeTab(--i);
-		}
-	}
-
-	if (tab != nullptr)
-		tab->setCurrentTabIndex(0);
-
-	if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
-		MainTabbedComponent* supplemental = Project::getInstance()->getSupplemental();
-
-		if (supplemental != nullptr) {
-
-			int i = supplemental->getNumTabs();
-
-			while (supplemental->getNumTabs() > 1) {
-				supplemental->removeTab(--i);
-			}
-		}
-		supplemental->setCurrentTabIndex(0);
-	}
+	// Sanity-Checks: wer hier knallt, hat einen neuen rohen Pointer auf
+	// Project-A-State eingebaut, ohne ihn beim Tear-Down freizugeben. Im
+	// Release-Build sind das No-Ops; im Debug fliegen sie fruehzeitig auf,
+	// statt erst beim naechsten Klick als BAD_ACCESS zu kommen.
+	jassert(root == nullptr);
+	jassert(startPin == nullptr);
+	jassert(selectionModel.getSelectedModules().empty());
+	jassert(rootLevelProxies.empty());
+	jassert(rootLevelGroups.isEmpty());
+	jassert(openViews.empty());
 }
 
 void SynthEditor::newFile() {
@@ -2615,26 +2669,31 @@ bool SynthEditor::isDirty() {
 
 void SynthEditor::setDirty(bool dirty) {
 	this->dirty = dirty;
-	for (int i = 0; i < tab->getNumTabs(); i++) {
+	// tab kann zur Init-Zeit noch nullptr sein (MainComponent::setTab kommt
+	// erst nach dem EditorComponent-Konstruktor — und z.B. das Anlegen von
+	// Default-Tracks in OpenTrackView triggert setDirty schon davor).
+	if (tab != nullptr) {
+		for (int i = 0; i < tab->getNumTabs(); i++) {
 
-		Viewport* view = dynamic_cast<Viewport*>(tab->getTabContentComponent(i));
+			Viewport* view = dynamic_cast<Viewport*>(tab->getTabContentComponent(i));
 
-		if (view != nullptr) {
+			if (view != nullptr) {
 
-			SynthEditor* editor = dynamic_cast<SynthEditor*>(view->getViewedComponent());
+				SynthEditor* editor = dynamic_cast<SynthEditor*>(view->getViewedComponent());
 
-			if (editor != nullptr && editor == this) {
+				if (editor != nullptr && editor == this) {
 
-				if (dirty) {
-					if (Project::getInstance()->isNewFile()) {
-						tab->setTabName(i, "untitled*");
+					if (dirty) {
+						if (Project::getInstance()->isNewFile()) {
+							tab->setTabName(i, "untitled*");
+						}
+						else {
+							tab->setTabName(i, Project::getInstance()->getCurrentFileName() + "*");
+						}
 					}
 					else {
-						tab->setTabName(i, Project::getInstance()->getCurrentFileName() + "*");
+						tab->setTabName(i, Project::getInstance()->getCurrentFileName());
 					}
-				}
-				else {
-					tab->setTabName(i, Project::getInstance()->getCurrentFileName());
 				}
 			}
 		}

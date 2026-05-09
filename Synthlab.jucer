@@ -703,6 +703,44 @@
                 file="Source/AddValueModule.h"/>
           <FILE id="k0jYkO" name="ADSRModule.cpp" compile="1" resource="0" file="Source/ADSRModule.cpp"/>
           <FILE id="Tg2QZR" name="ADSRModule.h" compile="0" resource="0" file="Source/ADSRModule.h"/>
+          <FILE id="aTtN01" name="AttenuverterModule.cpp" compile="1" resource="0"
+                file="Source/AttenuverterModule.cpp"/>
+          <FILE id="aTtN02" name="AttenuverterModule.h" compile="0" resource="0"
+                file="Source/AttenuverterModule.h"/>
+          <FILE id="sLeW01" name="SlewLimiterModule.cpp" compile="1" resource="0"
+                file="Source/SlewLimiterModule.cpp"/>
+          <FILE id="sLeW02" name="SlewLimiterModule.h" compile="0" resource="0"
+                file="Source/SlewLimiterModule.h"/>
+          <FILE id="sNh001" name="SampleAndHoldModule.cpp" compile="1" resource="0"
+                file="Source/SampleAndHoldModule.cpp"/>
+          <FILE id="sNh002" name="SampleAndHoldModule.h" compile="0" resource="0"
+                file="Source/SampleAndHoldModule.h"/>
+          <FILE id="lFo001" name="LFOModule.cpp" compile="1" resource="0" file="Source/LFOModule.cpp"/>
+          <FILE id="lFo002" name="LFOModule.h" compile="0" resource="0" file="Source/LFOModule.h"/>
+          <FILE id="cLk001" name="ClockDividerModule.cpp" compile="1" resource="0"
+                file="Source/ClockDividerModule.cpp"/>
+          <FILE id="cLk002" name="ClockDividerModule.h" compile="0" resource="0"
+                file="Source/ClockDividerModule.h"/>
+          <FILE id="sVf001" name="SVFilterModule.cpp" compile="1" resource="0"
+                file="Source/SVFilterModule.cpp"/>
+          <FILE id="sVf002" name="SVFilterModule.h" compile="0" resource="0"
+                file="Source/SVFilterModule.h"/>
+          <FILE id="qNt001" name="QuantizerModule.cpp" compile="1" resource="0"
+                file="Source/QuantizerModule.cpp"/>
+          <FILE id="qNt002" name="QuantizerModule.h" compile="0" resource="0"
+                file="Source/QuantizerModule.h"/>
+          <FILE id="sSw001" name="SuperSawModule.cpp" compile="1" resource="0"
+                file="Source/SuperSawModule.cpp"/>
+          <FILE id="sSw002" name="SuperSawModule.h" compile="0" resource="0"
+                file="Source/SuperSawModule.h"/>
+          <FILE id="sSx001" name="SequentialSwitchModule.cpp" compile="1" resource="0"
+                file="Source/SequentialSwitchModule.cpp"/>
+          <FILE id="sSx002" name="SequentialSwitchModule.h" compile="0" resource="0"
+                file="Source/SequentialSwitchModule.h"/>
+          <FILE id="sSy001" name="StereoSVFilterModule.cpp" compile="1" resource="0"
+                file="Source/StereoSVFilterModule.cpp"/>
+          <FILE id="sSy002" name="StereoSVFilterModule.h" compile="0" resource="0"
+                file="Source/StereoSVFilterModule.h"/>
           <FILE id="I2KB5k" name="AudioIn.cpp" compile="1" resource="0" file="Source/AudioIn.cpp"/>
           <FILE id="r5vcRg" name="AudioIn.h" compile="0" resource="0" file="Source/AudioIn.h"/>
           <FILE id="gH4iJk" name="AudioInSelector.cpp" compile="1" resource="0"

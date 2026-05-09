@@ -59,6 +59,12 @@ public:
 	inline void removeTrack(Track* track) {
 		track->removeChangeListener(this);
 		tracks.erase(std::remove(tracks.begin(), tracks.end(), track), tracks.end());
+		// lastModified zeigt sonst auf den gerade weggeraeumten Track — der
+		// Mixer wird via changeListenerCallback bei jeder Track-Aenderung neu
+		// gesetzt, aber bis dahin ist der Pointer dangling und getLastModifiedTrack()
+		// dispatcht in Freigegebenes.
+		if (lastModified == track)
+			lastModified = nullptr;
 		sendChangeMessage();
 	}
 

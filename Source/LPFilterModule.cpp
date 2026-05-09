@@ -118,12 +118,35 @@ void LPFilterModule::process() {
         }
     }
     if (pins.at(4)->getConnections().size() ==  1) {
-        
-        if (this->mod != pins.at(4)->getConnections().at(0)->getValue()) {
-            this->mod =  pins.at(4)->getConnections().at(0)->getValue();
-            if (this->mod < 0.1)
-                this->mod = 0.1;
-            filter->coefficients(sampleRate, 20000.0f * mod - (20000.0f - frequency), resonance);
+
+        const float newMod = pins.at(4)->getConnections().at(0)->getValue();
+
+        // Multiplikativ: Envelope=0 -> still, Envelope=peak -> Cutoff=frequency.
+        // Klassisches "Filter-Envelope oeffnet von zu nach base". Die alte
+        // Formel (20000*mod - (20000-frequency)) klemmte den Cutoff fast
+        // immer auf 0.1 Hz und liess die IIR-Coefficients pro Block zwischen
+        // "fast offen" und "stumm" springen — was bei aktivem Mono-ADSR mit
+        // dem nicht-zuruecksetzbaren Filterzustand als Klingeln/"Spinnen"
+        // hoerbar war.
+        //
+        // Nur neu rechnen, wenn sich der Mod-Wert spuerbar geaendert hat,
+        // sonst dudelt jeder Block einen identischen setCoefficients-Call
+        // durch (Mono-ADSR liefert pro Block einen leicht anderen
+        // Float-Wert, auch in Sustain).
+        if (std::abs(newMod - this->mod) > 1.0e-4f) {
+            this->mod = newMod;
+            // Untergrenze gegen IIR-Instabilitaet: bei Cutoff << 20 Hz ist
+            // JUCE's IIRCoefficients::makeLowPass numerisch nur grenzstabil
+            // (Pole praktisch auf dem Einheitskreis), der Filterzustand
+            // sammelt akkumulierte Rundungsfehler und schaukelt sich
+            // sporadisch in 10^10..10^15-Bereiche auf. Auf dem Meter sieht
+            // man dann Vollausschlag, hoerbar ist nichts (Sample-Werte zu
+            // gross fuers DAC). Erst nach ein paar ms klingt der State
+            // natuerlich wieder ab. 20 Hz ist unhoerbar genug, dass die
+            // multiplikative Filter-Envelope-Semantik ("zu" am Anfang/Ende)
+            // praktisch erhalten bleibt, aber der Filter laeuft stabil.
+            const float cutoff = juce::jmax(20.0f, frequency * mod);
+            filter->coefficients(sampleRate, cutoff, resonance);
         }
     }
     

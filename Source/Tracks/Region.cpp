@@ -76,25 +76,26 @@ void Region::timerCallback() {
     this->updateThumb();
 }
 
-void Region::setSampleOffset(long offset, bool reminder, bool notify)
+void Region::setSampleOffset(long offset, bool reminder, bool notify, bool quantize)
 {
 
     if (reminder)
         this->oldOffset = this->sampleOffset;
-    
+
     this->sampleOffset = offset;
-    
+
     if (sampleOffset < 0) {
         sampleOffset = 0;
     }
 
-	int bufferSize = Project::getInstance()->getBufferSize();
-
-    this->sampleOffset = (sampleOffset / bufferSize) * bufferSize;
+    if (quantize) {
+        int bufferSize = Project::getInstance()->getBufferSize();
+        this->sampleOffset = (sampleOffset / bufferSize) * bufferSize;
+    }
 
     if (!reminder)
         this->oldOffset = this->sampleOffset;
-    
+
     if (notify)
         sendChangeMessage();
 }

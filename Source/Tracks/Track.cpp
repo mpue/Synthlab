@@ -706,30 +706,63 @@ void Track::splitRegion()
     long sampleNum = getSamplePosition();
 
     Region* baseRegion = getRegionAt(sampleNum);
-    if (!baseRegion || !baseRegion->isSelected())
+    if (!baseRegion)
         return;
 
-    if (AudioRegion* region = dynamic_cast<AudioRegion*>(baseRegion)) {
-        long numLeftSamples  = sampleNum - region->getSampleOffset();
-        long numRightSamples = region->getNumSamples() - numLeftSamples;
+    // Selection-Pflicht entfernt — DAW-typisch (Logic, Reaper) splittet ein
+    // "Scissor-at-Playhead" alle Regionen die unter dem Marker liegen, ohne
+    // dass man sie vorher anklicken muss. Vorher hat split ohne sichtbares
+    // Feedback abgebrochen wenn die Region nicht selektiert war.
 
-        AudioRegion* leftRegion  = new AudioRegion(region, *manager, sampleRate, 0, numLeftSamples);
-        AudioRegion* rightRegion = new AudioRegion(region, *manager, sampleRate, numLeftSamples, numRightSamples);
+    // Edge-Case: Marker liegt genau am Rand der Region — kein sinnvoller Split.
+    const long offset = baseRegion->getSampleOffset();
+    const long len    = baseRegion->getNumSamples();
+    const long numLeft  = sampleNum - offset;
+    const long numRight = len - numLeft;
+    if (numLeft <= 0 || numRight <= 0)
+        return;
+
+    // Pixel-Geometrie: rechte Region beginnt direkt nach der linken (also
+    // baseRegion.X + Pixel-Breite-der-linken-Haelfte). Vorher wurde rightX
+    // aus sampleNum/sampleRate*zoom berechnet — das ignoriert aber dass die
+    // baseRegion selbst nicht am Track-Anfang (X=0) liegen muss. Resultat:
+    // gap zwischen den Haelften und u.U. landet die rechte Region soweit
+    // links dass sie von clampOffsetForRegion weggeschoben oder visuell
+    // unsichtbar wird.
+    const int leftX  = baseRegion->getX();
+    const int leftW  = (int) std::round((double) numLeft  / sampleRate * zoom);
+    const int rightX = leftX + leftW;
+    const int rightW = (int) std::round((double) numRight / sampleRate * zoom);
+
+    if (AudioRegion* region = dynamic_cast<AudioRegion*>(baseRegion)) {
+        AudioRegion* leftRegion  = new AudioRegion(region, *manager, sampleRate, 0, numLeft);
+        AudioRegion* rightRegion = new AudioRegion(region, *manager, sampleRate, numLeft, numRight);
 
         Rectangle<int>* leftBounds  = new Rectangle<int>(0, 0, leftRegion->getThumbnail()->getTotalLength() * 20, getHeight());
         Rectangle<int>* rightBounds = new Rectangle<int>(0, 0, rightRegion->getThumbnail()->getTotalLength() * 20, getHeight());
 
-        leftRegion->setBounds(region->getX(), 0, leftRegion->getWidth(), getHeight());
-        leftRegion->setThumbnailBounds(leftBounds);
+        // Component-Listener temporaer abklemmen, sonst rechnet
+        // AudioRegion::componentMovedOrResized nach unserem setBounds einen
+        // Pixel->Sample->Pixel-Roundtrip (plus optional Snap-to-Grid). Der
+        // verschiebt die Region um 1 Pixel und produziert sichtbare Gaps
+        // zwischen den Split-Haelften. Auch sourceStartSample wuerde dort
+        // umgerechnet werden — das Vorab-setzen von sampleOffset reicht
+        // nicht aus, weil der Handler trotzdem newX/newWidth neu setzt.
+        leftRegion->removeComponentListener(leftRegion);
+        rightRegion->removeComponentListener(rightRegion);
 
-        rightRegion->setBounds(markerPosition, 0, rightRegion->getWidth(), getHeight());
-        rightRegion->setThumbnailBounds(rightBounds);
-
-        leftRegion->setSampleOffset(region->getSampleOffset(), false, false);
+        leftRegion->setSampleOffset(offset, false, false);
         leftRegion->setOffset(region->getOffset());
+        leftRegion->setBounds(leftX, 0, leftW, getHeight());
+        leftRegion->setThumbnailBounds(leftBounds);
 
         rightRegion->setSampleOffset(sampleNum, false, false);
         rightRegion->setOffset((double)sampleNum / sampleRate);
+        rightRegion->setBounds(rightX, 0, rightW, getHeight());
+        rightRegion->setThumbnailBounds(rightBounds);
+
+        leftRegion->addComponentListener(leftRegion);
+        rightRegion->addComponentListener(rightRegion);
 
         Project::getInstance()->getUndoManager()->beginNewTransaction();
         Project::getInstance()->getUndoManager()->perform(
@@ -741,11 +774,6 @@ void Track::splitRegion()
         auto [leftRegion, rightRegion] = region->splitAt(sampleNum, dragger);
         if (!leftRegion || !rightRegion)
             return;
-
-        const int leftX = region->getX();
-        const int rightX = (int)((sampleNum / sampleRate) * zoom);
-        const int leftW  = (int)((leftRegion->getNumSamples()  / sampleRate) * zoom);
-        const int rightW = (int)((rightRegion->getNumSamples() / sampleRate) * zoom);
 
         leftRegion->setBounds(leftX,  0, leftW,  getHeight());
         rightRegion->setBounds(rightX, 0, rightW, getHeight());

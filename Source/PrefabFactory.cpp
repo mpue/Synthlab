@@ -74,6 +74,16 @@
 #include "GainModule.h"
 #include "AudioInSelector.h"
 #include "RadioGroupModule.h"
+#include "AttenuverterModule.h"
+#include "SlewLimiterModule.h"
+#include "SampleAndHoldModule.h"
+#include "LFOModule.h"
+#include "ClockDividerModule.h"
+#include "SVFilterModule.h"
+#include "QuantizerModule.h"
+#include "SuperSawModule.h"
+#include "SequentialSwitchModule.h"
+#include "StereoSVFilterModule.h"
 
 using juce::Image;
 
@@ -307,6 +317,36 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
 	}
     else if (prefabs[id].getName() == "Event Display") {
         m = new EventDisplayModule(sampleRate, bufferSize);
+    }
+    else if (prefabs[id].getName() == "Attenuverter") {
+        m = new AttenuverterModule();
+    }
+    else if (prefabs[id].getName() == "Slew") {
+        m = new SlewLimiterModule(sampleRate, bufferSize);
+    }
+    else if (prefabs[id].getName() == "S&H") {
+        m = new SampleAndHoldModule();
+    }
+    else if (prefabs[id].getName() == "LFO") {
+        m = new LFOModule(sampleRate, bufferSize);
+    }
+    else if (prefabs[id].getName() == "Clock Div") {
+        m = new ClockDividerModule();
+    }
+    else if (prefabs[id].getName() == "SVF") {
+        m = new SVFilterModule(sampleRate, bufferSize);
+    }
+    else if (prefabs[id].getName() == "Quantizer") {
+        m = new QuantizerModule();
+    }
+    else if (prefabs[id].getName() == "SuperSaw") {
+        m = new SuperSawModule(sampleRate, bufferSize);
+    }
+    else if (prefabs[id].getName() == "Seq Switch") {
+        m = new SequentialSwitchModule(sampleRate, bufferSize);
+    }
+    else if (prefabs[id].getName() == "Stereo SVF") {
+        m = new StereoSVFilterModule(sampleRate, bufferSize);
     }
 
 

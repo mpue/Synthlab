@@ -55,6 +55,12 @@ public:
     
     virtual void updateThumb() override;
     virtual void componentMovedOrResized (Component& component,bool wasMoved, bool wasResized) override;
+
+    // Reset des Resize-Gesture-States (resizeBaseSampleOffset). Wird beim
+    // mouseUp aufgerufen, damit das naechste Linkstrim-Gesture wieder mit
+    // einer frischen Basis startet — ohne Reset wuerde der zweite Linkstrim
+    // gegen die Basis des ersten rechnen und springen.
+    void mouseUp(const juce::MouseEvent& e) override;
     
     void setClipRefId(String id);
     String getClipRefid();
@@ -98,6 +104,14 @@ private:
     AudioSampleBuffer* audioBuffer;
     AudioSampleBuffer* audioBufferProcessed = nullptr;
     long sourceStartSample = 0;
+
+    // Resize-Gesture-Basis: speichern beim ersten Tick (sentinel = -1) und
+    // sourceStartSample im laufenden Resize absolut daraus berechnen, statt
+    // pro Tick inkrementell aufzuaddieren. Vermeidet Rundungs-Akkumulation,
+    // die sonst beim Linkstrim einer rechts-platzierten Region den Inhalt
+    // langsam nach links scrollen laesst. Reset auf -1 in mouseUp am Resizer.
+    long resizeBaseSampleOffset = -1;
+    long resizeBaseSourceStartSample = 0;
     AudioThumbnail* thumbnail;
     AudioThumbnailCache* thumbnailCache;
     ScopedPointer<AudioFormatReaderSource> readerSource;
