@@ -13,6 +13,7 @@
 #include "MidiGate.h"
 #include "TrackIn.h"
 #include "AudioIn.h"
+#include "AuxOut.h"
 #include "MidiOut.h"
 #include "SynthEditor.h"
 #include "Tracks/TrackNavigator.h"
@@ -114,18 +115,22 @@ public:
 		return t;
 	}
 
-	static void ConnectAudioOut(AudioOut*& audioOut, Module* m, const juce::Point<int>& pos, int leftSourcePin, int rightSourcePin, Module* module, SynthEditor* editor)
+	// Liefert das tatsaechliche Ziel-Modul zurueck (AudioOut, falls direkt
+	// verkabelt — sonst der frisch angelegte AuxOut). Wird vom Caller
+	// gebraucht, um den zugehoerigen MasterChannelPanel-Strip zu finden.
+	static Module* ConnectAudioOut(AudioOut*& audioOut, Module* m, const juce::Point<int>& pos, int leftSourcePin, int rightSourcePin, Module* module, SynthEditor* editor)
 	{
 		if (audioOut != nullptr) {
 			// audio out is not connected, thus make some connections
-			if (audioOut->pins.at(0)->getConnections().size() == 0 && audioOut->pins.at(1)->getConnections().size() == 0) {				
+			if (audioOut->pins.at(0)->getConnections().size() == 0 && audioOut->pins.at(1)->getConnections().size() == 0) {
 				audioOut->connectPins(0, m->pins.at(leftSourcePin));
-				audioOut->connectPins(1, m->pins.at(rightSourcePin));			
+				audioOut->connectPins(1, m->pins.at(rightSourcePin));
 				Connection* c1 = new Connection(m, m->pins.at(2), audioOut, audioOut->pins.at(0));
 				Connection* c2 = new Connection(m, m->pins.at(3), audioOut, audioOut->pins.at(1));
 				module->addConnection(c1);
-				module->addConnection(c2);				
+				module->addConnection(c2);
 				audioOut->setVolume(1.0f);
+				return audioOut;
 			}
 			// already connected, create an aux out
 			else {
@@ -140,11 +145,37 @@ public:
 					Connection* c2 = new Connection(m, m->pins.at(rightSourcePin), ao, ao->pins.at(1));
 					module->getConnections()->push_back(c1);
 					module->getConnections()->push_back(c2);
+					return ao;
 				}
 
 			}
 		}
+		return nullptr;
+	}
 
+	// Sucht den MasterChannelPanel zu einem AudioOut/AuxOut und linked ihn
+	// an den Track, damit Channel-Strip-FX automatisierbar werden
+	// (Track::fxPlugins[] wird nur ueber MasterChannelPanel::setTrack ->
+	// syncTrackFXPlugins befuellt).
+	static void LinkTrackToMixerPanel(Track* t, Module* destination, SynthEditor* editor)
+	{
+		if (t == nullptr || destination == nullptr || editor == nullptr) return;
+		auto mixer = editor->getMixer();
+		if (mixer == nullptr) return;
+
+		int chIdx = -1;
+		if (auto* ao = dynamic_cast<AudioOut*>(destination)) chIdx = ao->getChannelIndex();
+		else if (auto* ax = dynamic_cast<AuxOut*>(destination)) chIdx = ax->getChannelIndex();
+		if (chIdx < 0) return;
+
+		for (auto* panel : mixer->getChannels())
+		{
+			if (panel != nullptr && panel->getIndex() == chIdx)
+			{
+				panel->setTrack(t);
+				break;
+			}
+		}
 	}
 
 	static Track* createAudioTrack(SynthEditor* editor, TrackNavigator* navigator, Module* module)
@@ -223,7 +254,12 @@ public:
 			audioOut = dynamic_cast<AudioOut*>(am3->getModule());
 		}
 
-		ConnectAudioOut(audioOut, ti, pos, 2, 3, module, editor);
+		Module* dest = ConnectAudioOut(audioOut, ti, pos, 2, 3, module, editor);
+
+		// Channel-Strip an den Track binden, sonst bleibt MasterChannelPanel::track
+		// nullptr und syncTrackFXPlugins() liefert keine FX-Plugins zurueck —
+		// Folge: Plugin-Combo im TrackControl ist leer, Automation unmoeglich.
+		LinkTrackToMixerPanel(t, dest, editor);
 		return t;
 	}
 
