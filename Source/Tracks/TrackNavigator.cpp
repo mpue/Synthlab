@@ -564,6 +564,20 @@ ValueTree TrackNavigator::getConfiguration()
 						? (long) std::round((double) ar->getWidth() / zoom * sr)
 						: (long) ar->getNumSamples();
 
+					// Regions without a clipRefId or with no audio content cannot
+					// be reconstructed on load — SmartSample::loadFromFile would
+					// throw on the empty path and abort the project open. Skip
+					// them at save time so the .slb stays loadable.
+					// Splits and duplicates inherit clipRefId via the AudioRegion
+					// copy constructors, so this only fires for orphaned regions
+					// (e.g. fresh recordings, which currently have no on-disk
+					// clip file and therefore can't be reconstructed on load).
+					if (ar->getClipRefid().isEmpty() || visibleSamples <= 0) {
+						Logger::writeToLog("TrackNavigator: dropping unsaveable region (refId='"
+							+ ar->getClipRefid() + "', samples=" + String((juce::int64) visibleSamples) + ")");
+						continue;
+					}
+
 					region.setProperty("clipRefId", ar->getClipRefid(), nullptr);
 					region.setProperty("sampleOffset", (int)ar->getSampleOffset(), nullptr);
 					region.setProperty("numSamples", (juce::int64) visibleSamples, nullptr);

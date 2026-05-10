@@ -82,7 +82,7 @@ ExtendedFileBrowser::ExtendedFileBrowser(const File& initialFileOrDirectory,cons
 
     // Wenn der Background-Scan fertig ist: erneut filtern (jetzt aus dem
     // gefuellten Cache) und Tabelle refreshen.
-    model->onScanFinished = [this]() { applyFilter(); };
+    model->onScanFinished = [this]() { hideScanUi(); applyFilter(); };
 
     // Filter-Eingabezeile unten links — substring-match (case-insensitive).
     // Greift sowohl im Flat- als auch im Tree-Mode. Verzeichnisse bleiben
@@ -108,6 +108,26 @@ ExtendedFileBrowser::ExtendedFileBrowser(const File& initialFileOrDirectory,cons
     };
     addAndMakeVisible(filterEditor);
 
+    // Scan-Progress-Reihe — nur sichtbar waehrend ein rekursiver Scan
+    // laeuft. Die ProgressBar laeuft im indeterminate-Modus (Wert < 0),
+    // weil wir die Gesamtzahl der Dateien vorab nicht kennen; das
+    // Status-Label zeigt zusaetzlich die Anzahl gescannter Eintraege.
+    scanProgressBar = new juce::ProgressBar(scanProgressValue);
+    scanProgressBar->setPercentageDisplay(false);
+    addChildComponent(scanProgressBar);
+
+    scanStatusLabel = new juce::Label({}, juce::String());
+    scanStatusLabel->setColour(juce::Label::textColourId, juce::Colours::white);
+    scanStatusLabel->setFont(juce::Font(11.0f));
+    scanStatusLabel->setJustificationType(juce::Justification::centredRight);
+    addChildComponent(scanStatusLabel);
+
+    cancelScanButton = new juce::TextButton("Cancel");
+    cancelScanButton->addListener(this);
+    addChildComponent(cancelScanButton);
+
+    model->onScanStarted = [this]() { showScanUi(); };
+
     loadState();
 
     model->update();
@@ -120,6 +140,15 @@ ExtendedFileBrowser::ExtendedFileBrowser(const File& initialFileOrDirectory,cons
 
 ExtendedFileBrowser::~ExtendedFileBrowser() {
     saveState();
+    stopTimer();
+    // Callbacks am Model nullen, BEVOR wir uns selbst zerstoeren —
+    // das Model lebt laenger (PropertyView besitzt es) und ein
+    // gerade laufender Scan koennte sonst auf einem ungueltigen
+    // 'this' landen.
+    if (model != nullptr) {
+        model->onScanStarted  = nullptr;
+        model->onScanFinished = nullptr;
+    }
     if (tree != nullptr) {
         tree->setRootItem(nullptr);
     }
@@ -133,6 +162,9 @@ ExtendedFileBrowser::~ExtendedFileBrowser() {
     delete modeButton;
     delete filterEditor;
     delete filterLabel;
+    delete scanProgressBar;
+    delete scanStatusLabel;
+    delete cancelScanButton;
 }
 
 void ExtendedFileBrowser::mouseDrag(const juce::MouseEvent &event) {
@@ -189,7 +221,26 @@ void ExtendedFileBrowser::resized() {
     if (filterEditor != nullptr)
         filterEditor->setBounds(40, filterY, juce::jmax(40, getWidth() - 44), filterH);
 
-    const int contentTop = filterY + filterH + 4;
+    // Scan-Progress-Reihe direkt unterhalb des Filters — nur belegt,
+    // wenn ein Scan laeuft, sonst kein vertikaler Platzverbrauch.
+    const int scanRowY = filterY + filterH + 4;
+    const int scanRowH = 22;
+
+    if (scanUiVisible) {
+        const int cancelW = 70;
+        const int labelW  = 160;
+        const int gap     = 6;
+        if (cancelScanButton != nullptr)
+            cancelScanButton->setBounds(4, scanRowY, cancelW, scanRowH);
+        const int barX = 4 + cancelW + gap;
+        const int barW = juce::jmax(40, getWidth() - barX - labelW - gap - 4);
+        if (scanProgressBar != nullptr)
+            scanProgressBar->setBounds(barX, scanRowY, barW, scanRowH);
+        if (scanStatusLabel != nullptr)
+            scanStatusLabel->setBounds(barX + barW + gap, scanRowY, labelW, scanRowH);
+    }
+
+    const int contentTop = scanUiVisible ? (scanRowY + scanRowH + 4) : scanRowY;
     const int contentH   = juce::jmax(0, getHeight() - contentTop);
 
     view->setBounds(0, contentTop, getWidth(), contentH);
@@ -197,6 +248,32 @@ void ExtendedFileBrowser::resized() {
 
     if (tree != nullptr)
         tree->setBounds(0, contentTop, getWidth(), contentH);
+}
+
+void ExtendedFileBrowser::showScanUi() {
+    if (scanUiVisible)
+        return;
+    scanUiVisible = true;
+    scanProgressValue = -1.0; // indeterminate
+    if (scanProgressBar != nullptr) scanProgressBar->setVisible(true);
+    if (scanStatusLabel != nullptr) {
+        scanStatusLabel->setText("Scanning...", juce::dontSendNotification);
+        scanStatusLabel->setVisible(true);
+    }
+    if (cancelScanButton != nullptr) cancelScanButton->setVisible(true);
+    startTimer(150); // Counter-Update-Frequenz
+    resized();
+}
+
+void ExtendedFileBrowser::hideScanUi() {
+    if (!scanUiVisible)
+        return;
+    scanUiVisible = false;
+    stopTimer();
+    if (scanProgressBar != nullptr) scanProgressBar->setVisible(false);
+    if (scanStatusLabel != nullptr) scanStatusLabel->setVisible(false);
+    if (cancelScanButton != nullptr) cancelScanButton->setVisible(false);
+    resized();
 }
 
 void ExtendedFileBrowser::applyFilter() {
@@ -305,6 +382,23 @@ void ExtendedFileBrowser::buttonClicked(Button* button)
         return;
     }
 
+    if (button == cancelScanButton) {
+        // Sofort UI verstecken — der Scan-Thread laeuft noch bis zur
+        // naechsten threadShouldExit()-Pruefung weiter, fired dann
+        // onScanFinished, was nur idempotent hideScanUi() macht.
+        if (model != nullptr)
+            model->cancelScan();
+        hideScanUi();
+        // Filter leeren, damit die Tabelle wieder ein konsistentes
+        // Verzeichnis-Listing zeigt anstatt eines (potentiell leeren)
+        // Teilergebnisses unter aktivem Filter.
+        if (filterEditor != nullptr)
+            filterEditor->setText({}, juce::dontSendNotification);
+        filterText.clear();
+        applyFilter();
+        return;
+    }
+
     if (button->getButtonText() == "STOP") {
         Project::getInstance()->getDefaultSampler()->stop();
     }
@@ -317,7 +411,11 @@ void ExtendedFileBrowser::buttonClicked(Button* button)
 }
 
 void ExtendedFileBrowser::timerCallback() {
-
+    if (!scanUiVisible || model == nullptr || scanStatusLabel == nullptr)
+        return;
+    const int n = model->getScanFileCount();
+    scanStatusLabel->setText("Scanning... " + juce::String(n) + " files",
+                             juce::dontSendNotification);
 }
 
 void ExtendedFileBrowser::setMode(Mode newMode) {
@@ -502,26 +600,39 @@ void FileBrowserModel::requestRecursiveScan() {
     if (isThreadRunning())
         stopThread(2000);
     scanTargetDir = currentDirectory;
+    filesScanned.store(0);
     scanInProgress.store(true);
+    if (onScanStarted) onScanStarted();
     startThread();
+}
+
+void FileBrowserModel::cancelScan() {
+    if (isThreadRunning())
+        signalThreadShouldExit();
+    // Wir warten hier nicht — run() laeuft bis zur naechsten
+    // threadShouldExit()-Pruefung weiter und feuert dann onScanFinished.
+    // Bis dahin ignoriert der Browser die UI bereits (hideScanUi laeuft
+    // synchron im Cancel-Handler).
 }
 
 void FileBrowserModel::run() {
     const juce::String dir = scanTargetDir;
     std::vector<juce::File> result;
+    bool aborted = false;
 
     juce::File root(dir);
     if (root.isDirectory()) {
         for (juce::DirectoryEntry entry : juce::RangedDirectoryIterator(
                  root, /*recursive*/ true, "*", juce::File::findFiles)) {
-            if (threadShouldExit()) return; // sauber abbrechen
+            if (threadShouldExit()) { aborted = true; break; }
+            filesScanned.fetch_add(1, std::memory_order_relaxed);
             const juce::File f = entry.getFile();
             if (isAudioFile(f))
                 result.push_back(f);
         }
     }
 
-    {
+    if (! aborted) {
         const juce::ScopedLock sl(cacheLock);
         recursiveAudioCache = std::move(result);
         recursiveCacheDir   = dir;
@@ -531,6 +642,8 @@ void FileBrowserModel::run() {
 
     // Auf den MessageThread fallen lassen, damit der Browser
     // table->updateContent() / repaint() machen kann ohne Race.
+    // Auch nach Abbruch feuern, damit das UI die Scan-Anzeige sauber
+    // versteckt (idempotent — bei manuellem Cancel ist sie schon weg).
     juce::MessageManager::callAsync([this]() {
         if (onScanFinished) onScanFinished();
     });

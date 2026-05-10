@@ -40,9 +40,14 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
 
     this->thumbnail->reset(2, sampleRate);
     this->thumbnail->addBlock(0, *audioBuffer, 0, numSamples);
-    
+
     this->name = other->getName();
-    
+    // Inherit the source-file reference and offset within it. Without these,
+    // split halves and duplicates serialize with empty clipRefId and the
+    // project becomes unloadable (SmartSample throws on the empty path).
+    this->clipRefId = other->clipRefId;
+    this->sourceStartSample = other->sourceStartSample + startSample;
+
     // KORREKTUR: Verwende numSamples statt other->getBuffer()->getNumSamples()
     // da wir nur einen Teil des Buffers kopiert haben
     setSize((numSamples / sampleRate) * this->zoom, Project::DEFAULT_TRACK_HEIGHT - 25);
@@ -148,8 +153,12 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
         
     this->thumbnail->reset(2, sampleRate);
     this->thumbnail->addBlock(0, *audioBuffer, 0,other->getBuffer()->getNumSamples());
-    
+
     this->name = other->getName();
+    // Same reasoning as in the slice-copy constructor: a full duplicate must
+    // keep the source reference so it can be reloaded from disk.
+    this->clipRefId = other->clipRefId;
+    this->sourceStartSample = other->sourceStartSample;
     
     /*
     double length = this->thumbnail->getTotalLength();

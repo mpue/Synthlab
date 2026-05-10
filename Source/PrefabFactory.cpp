@@ -82,6 +82,7 @@
 #include "SVFilterModule.h"
 #include "QuantizerModule.h"
 #include "SuperSawModule.h"
+#include "StereoMixerModule.h"
 #include "SequentialSwitchModule.h"
 #include "StereoSVFilterModule.h"
 
@@ -347,6 +348,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Stereo SVF") {
         m = new StereoSVFilterModule(sampleRate, bufferSize);
+    }
+    else if (prefabs[id].getName() == "Stereo Mixer") {
+        m = new StereoMixerModule(sampleRate, bufferSize);
     }
 
 

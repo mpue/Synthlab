@@ -275,11 +275,11 @@ void SuperSawModule::process() {
         // Zustands-Update aus dem gatePin-Buffer (dataEnabled[] / data[]).
         for (int j = 0; j < 128; ++j) {
             if (gatePin->dataEnabled[j]) {
-                if (!voiceActive[j]) {
-                    const double baseFreq = 440.0 * std::pow(2.0, ((double)(j + 1 + pitch) - 69.0) / 12.0);
-                    updateVoiceFrequencies(j, baseFreq);
-                    voiceActive[j] = true;
-                }
+                voiceActive[j] = true;
+                // Re-apply every block so pitch/fine/detune changes reach the
+                // sounding voices — including during the envelope release.
+                const double baseFreq = 440.0 * std::pow(2.0, ((double)(j + 1 + pitch) - 69.0) / 12.0);
+                updateVoiceFrequencies(j, baseFreq);
                 for (int v = 0; v < kNumVoices; ++v)
                     polyVoice[j][v]->setVolume(gatePin->data[j]);
             }

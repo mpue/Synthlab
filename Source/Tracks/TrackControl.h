@@ -155,10 +155,10 @@ public:
             addChildComponent(c); // unsichtbar, bis Automation aktiv ist
         };
 
-        pluginBox.setTextWhenNothingSelected("Plugin…");
+        pluginBox.setTextWhenNothingSelected("Plugin ");
         styleCombo(pluginBox);
 
-        paramBox.setTextWhenNothingSelected("Parameter…");
+        paramBox.setTextWhenNothingSelected("Parameter ");
         styleCombo(paramBox);
     }
 

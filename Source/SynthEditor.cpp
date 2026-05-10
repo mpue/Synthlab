@@ -1043,28 +1043,43 @@ void SynthEditor::createModuleFromSelection() {
     int outTermY = padding;
 
     for (auto* conn : allRootConns) {
-        bool srcIn = isInSel(conn->source);
-        bool tgtIn = isInSel(conn->target);
+        if (conn->a == nullptr || conn->b == nullptr) continue;
 
-        if (srcIn && tgtIn) {
+        // Connection::source/target reflect the order in which the user clicked
+        // the pins when drawing the wire, not the data-flow direction. Classify
+        // by pin direction so that OUT is always the producer and IN the consumer.
+        Module* prodMod; Pin* prodPin;
+        Module* consMod; Pin* consPin;
+        if (conn->a->direction == Pin::Direction::OUT && conn->b->direction == Pin::Direction::IN) {
+            prodMod = conn->source; prodPin = conn->a;
+            consMod = conn->target; consPin = conn->b;
+        } else if (conn->a->direction == Pin::Direction::IN && conn->b->direction == Pin::Direction::OUT) {
+            prodMod = conn->target; prodPin = conn->b;
+            consMod = conn->source; consPin = conn->a;
+        } else {
+            continue;
+        }
+
+        bool prodIn = isInSel(prodMod);
+        bool consIn = isInSel(consMod);
+
+        if (prodIn && consIn) {
             // Pure internal: move connection to the group
             auto& rc = *root->getConnections();
             rc.erase(std::remove(rc.begin(), rc.end(), conn), rc.end());
             group->addConnection(conn);
 
-        } else if (!srcIn && tgtIn) {
-            // Crossing IN: external source feeds internal target
-            Pin* tgtPin = conn->b;
-
+        } else if (!prodIn && consIn) {
+            // Crossing IN: external producer feeds internal consumer
             auto* term = dynamic_cast<TerminalModule*>(
                 PrefabFactory::getInstance()->getPrefab(83, getSampleRate(), getBufferSize()));
             if (!term) continue;
 
-            term->setType(tgtPin->getType());
+            term->setType(consPin->getType());
 
-            Pin* extPin = new Pin(tgtPin->getType());
+            Pin* extPin = new Pin(consPin->getType());
             term->getPins().at(0)->setTerminal(extPin);
-            term->getPins().at(0)->setType(tgtPin->getType());
+            term->getPins().at(0)->setType(consPin->getType());
             extPin->listeners.push_back(term);
             extPin->setName(term->getName());
             term->addChangeListener(extPin);
@@ -1077,38 +1092,36 @@ void SynthEditor::createModuleFromSelection() {
             term->setTopLeftPosition(4, inTermY);
             inTermY += 44;
 
-            // Internal connection: term.out → target.tgtPin
-            auto* internalConn = new Connection(term, term->getPins().at(0), conn->target, tgtPin);
-            tgtPin->getConnections().push_back(term->getPins().at(0));
-            // Remove old source pin from tgtPin's connections list
-            auto& tc = tgtPin->getConnections();
-            tc.erase(std::remove(tc.begin(), tc.end(), conn->a), tc.end());
+            // Internal connection: term.out → consumer.consPin
+            auto* internalConn = new Connection(term, term->getPins().at(0), consMod, consPin);
+            consPin->getConnections().push_back(term->getPins().at(0));
+            // Remove old external producer pin from consPin's connections list
+            auto& cc = consPin->getConnections();
+            cc.erase(std::remove(cc.begin(), cc.end(), prodPin), cc.end());
 
             group->getModules()->push_back(term);
             group->addConnection(internalConn);
 
-            // Redirect external connection to the group
-            extPin->getConnections().push_back(conn->a);
-            conn->target = group;
-            conn->b = extPin;
+            // Redirect external connection: external producer → group's IN pin
+            extPin->getConnections().push_back(prodPin);
+            conn->source = prodMod; conn->a = prodPin;
+            conn->target = group;   conn->b = extPin;
 
-        } else if (srcIn && !tgtIn) {
-            // Crossing OUT: internal source feeds external target
-            Pin* srcPin = conn->a;
-
+        } else if (prodIn && !consIn) {
+            // Crossing OUT: internal producer feeds external consumer
             Pin* extPin = nullptr;
 
-            if (outTerminalForPin.count(srcPin) == 0) {
-                // First time we see this source pin crossing out: create an OUT terminal
+            if (outTerminalForPin.count(prodPin) == 0) {
+                // First time we see this producer pin crossing out: create an OUT terminal
                 auto* term = dynamic_cast<TerminalModule*>(
                     PrefabFactory::getInstance()->getPrefab(84, getSampleRate(), getBufferSize()));
                 if (!term) continue;
 
-                term->setType(srcPin->getType());
+                term->setType(prodPin->getType());
 
-                extPin = new Pin(srcPin->getType());
+                extPin = new Pin(prodPin->getType());
                 term->getPins().at(0)->setTerminal(extPin);
-                term->getPins().at(0)->setType(srcPin->getType());
+                term->getPins().at(0)->setType(prodPin->getType());
                 extPin->listeners.push_back(term);
                 extPin->setName(term->getName());
                 term->addChangeListener(extPin);
@@ -1121,25 +1134,25 @@ void SynthEditor::createModuleFromSelection() {
                 term->setTopLeftPosition(groupW - 84, outTermY);
                 outTermY += 44;
 
-                // Internal connection: source.srcPin → term.in
-                auto* internalConn = new Connection(conn->source, srcPin, term, term->getPins().at(0));
-                term->getPins().at(0)->getConnections().push_back(srcPin);
+                // Internal connection: producer.prodPin → term.in
+                auto* internalConn = new Connection(prodMod, prodPin, term, term->getPins().at(0));
+                term->getPins().at(0)->getConnections().push_back(prodPin);
 
                 group->getModules()->push_back(term);
                 group->addConnection(internalConn);
 
-                outTerminalForPin[srcPin] = extPin;
+                outTerminalForPin[prodPin] = extPin;
             } else {
-                extPin = outTerminalForPin[srcPin];
+                extPin = outTerminalForPin[prodPin];
             }
 
-            // Redirect external connection to come from the group
-            auto& tc = conn->b->getConnections();
-            tc.erase(std::remove(tc.begin(), tc.end(), conn->a), tc.end());
-            tc.push_back(extPin);
+            // Redirect external connection: external consumer's IN pin now reads from group's OUT pin
+            auto& cc = consPin->getConnections();
+            cc.erase(std::remove(cc.begin(), cc.end(), prodPin), cc.end());
+            cc.push_back(extPin);
 
-            conn->source = group;
-            conn->a = extPin;
+            conn->source = group;   conn->a = extPin;
+            conn->target = consMod; conn->b = consPin;
         }
         // else: neither endpoint in selection → leave unchanged
     }
@@ -2214,8 +2227,15 @@ void SynthEditor::openTracks(File file)
 
 				for (int j = 0; j < regions.getNumChildren(); j++) {
 					ValueTree region = regions.getChild(j);
-					Logger::getCurrentLogger()->writeToLog(region.getProperty("clipRefId"));
-					Region* r = t->addRegion(region.getProperty("clipRefId"), File(Project::getInstance()->getAudioPath(region.getProperty("clipRefId"))), Project::getInstance()->getSampleRate(), region.getProperty("sampleOffset").toString().getIntValue());
+					const String clipRefId = region.getProperty("clipRefId").toString();
+					// Skip orphaned regions: empty clipRefId means there is no
+					// audio file to load — SmartSample::loadFromFile would throw
+					// std::runtime_error on the empty path and propagate up
+					// through Cocoa's event dispatch, killing the app.
+					if (clipRefId.isEmpty())
+						continue;
+					Logger::getCurrentLogger()->writeToLog(clipRefId);
+					Region* r = t->addRegion(clipRefId, File(Project::getInstance()->getAudioPath(clipRefId)), Project::getInstance()->getSampleRate(), region.getProperty("sampleOffset").toString().getIntValue());
 
 					// Trim aus dem gespeicherten numSamples ableiten, nicht aus
 					// dem Pixel-`width`. width ist nur am gespeicherten Zoom
@@ -2289,6 +2309,9 @@ void SynthEditor::openTracks(File file)
 			// Automation pro Track laden — gleiche Stelle, an der getConfiguration()
 			// das ValueTree als "Automation"-Child geschrieben hat.
 			if (loadedTrack != nullptr) {
+                
+                Logger::getCurrentLogger()->writeToLog("Loading track "+loadedTrack->getName());
+                
 				ValueTree autoTree = track.getChildWithName("Automation");
 				if (autoTree.isValid())
 					loadedTrack->getAutomationModel().fromValueTree(autoTree);

@@ -741,6 +741,10 @@
                 file="Source/StereoSVFilterModule.cpp"/>
           <FILE id="sSy002" name="StereoSVFilterModule.h" compile="0" resource="0"
                 file="Source/StereoSVFilterModule.h"/>
+          <FILE id="sMx001" name="StereoMixerModule.cpp" compile="1" resource="0"
+                file="Source/StereoMixerModule.cpp"/>
+          <FILE id="sMx002" name="StereoMixerModule.h" compile="0" resource="0"
+                file="Source/StereoMixerModule.h"/>
           <FILE id="I2KB5k" name="AudioIn.cpp" compile="1" resource="0" file="Source/AudioIn.cpp"/>
           <FILE id="r5vcRg" name="AudioIn.h" compile="0" resource="0" file="Source/AudioIn.h"/>
           <FILE id="gH4iJk" name="AudioInSelector.cpp" compile="1" resource="0"

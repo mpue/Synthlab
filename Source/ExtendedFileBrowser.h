@@ -26,8 +26,17 @@ public:
     // gerufen — typischerweise haengt der Browser hier ein
     // table->updateContent() / repaint() ein.
     std::function<void()> onScanFinished;
+    // Wird synchron beim Start eines Background-Scans gerufen (MessageThread).
+    // Der Browser blendet daraufhin Progress/Cancel-UI ein.
+    std::function<void()> onScanStarted;
 
     bool isScanning() const noexcept { return scanInProgress.load(); }
+    int  getScanFileCount() const noexcept { return filesScanned.load(); }
+
+    // Vom UI-Thread aufrufbar — signalisiert dem Scan-Thread, sauber
+    // abzubrechen. Wartet nicht; onScanFinished wird gefeuert sobald
+    // run() die Schleife verlassen hat.
+    void cancelScan();
 
     virtual void paintRowBackground (juce::Graphics& g,
                                      int rowNumber,
@@ -98,6 +107,7 @@ private:
     juce::String            recursiveCacheDir;
     bool                    recursiveCacheValid = false;
     std::atomic<bool>       scanInProgress { false };
+    std::atomic<int>        filesScanned { 0 };   // wachsender Counter waehrend run()
     juce::String            scanTargetDir;        // was der laufende Scan gerade scannt
 };
 
@@ -175,6 +185,8 @@ public:
 private:
     void rebuildTree();
     void applyFilter();
+    void showScanUi();
+    void hideScanUi();
 
     FileBrowserModel* model = nullptr;
     const juce::File& initialDir;
@@ -187,6 +199,11 @@ private:
     juce::TextButton* modeButton = nullptr;
     juce::TextEditor* filterEditor = nullptr;
     juce::Label*      filterLabel  = nullptr;
+    juce::ProgressBar* scanProgressBar = nullptr;
+    juce::Label*       scanStatusLabel = nullptr;
+    juce::TextButton*  cancelScanButton = nullptr;
+    double             scanProgressValue = -1.0; // <0 => indeterminate
+    bool               scanUiVisible = false;
     juce::String      filterText;
     Mode mode = Mode::Flat;
     Sampler* sampler;
