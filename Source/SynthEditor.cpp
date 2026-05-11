@@ -196,12 +196,18 @@ void SynthEditor::resized()
 	}
 
 	// Logical canvas size: 1.5× of the parent gives some scrollable headroom.
-	// Multiplying by editorZoom keeps the bounds in sync with the visual
-	// size produced by the AffineTransform — without this, the parent
-	// Viewport's scrollbars don't cover the zoomed-in content.
+	// NICHT zusaetzlich mit editorZoom multiplizieren — setTransform unten
+	// skaliert das Rendering bereits, und getBounds() bleibt laut JUCE-Doc
+	// untransformiert. Frueher stand hier `* editorZoom`, das hat die Editor-
+	// Flaeche quadratisch mit dem Zoom skaliert (zoom² statt zoom) und die
+	// Module relativ zur Hintergrund-Flaeche zu gross/klein wirken lassen.
+	// Folge davon: Beim Zoom-In sind Bereiche jenseits der logischen Canvas-
+	// Groesse via Viewport nicht scrollbar — falls das stoert, muss ein
+	// Wrapper-Container mit transform-bewusster Groesse her, nicht eine
+	// quadratische Skalierung hier.
 	const int logicalW = (int)(getParentWidth() * 1.5);
 	const int logicalH = (int)(getParentHeight() * 1.5);
-	setSize((int)(logicalW * editorZoom), (int)(logicalH * editorZoom));
+	setSize(logicalW, logicalH);
 
 	if (root != nullptr && root->getConnections() != nullptr) {
 		for (int i = 0; i < root->getConnections()->size(); i++) {

@@ -11,11 +11,17 @@ class GeometryViewComponent : public juce::OpenGLAppComponent, public juce::Time
 public:
 
 	GeometryViewComponent() {
+		// macOS liefert ohne explizite Anforderung nur einen Legacy-2.1-Kontext,
+		// in dem GLSL 330 nicht kompiliert — Shader silent fail, Bild bleibt
+		// auf der Clear-Color stehen. Vor dem impliziten attachTo() von
+		// OpenGLAppComponent setzen.
+		openGLContext.setOpenGLVersionRequired(juce::OpenGLContext::openGL3_2);
 		setSize(800, 600);
 	}
 
 	GeometryViewComponent(GeometryModule* m)
 	{
+		openGLContext.setOpenGLVersionRequired(juce::OpenGLContext::openGL3_2);
 		this->module = m;
 		setSize(800, 600);
 	}
@@ -42,7 +48,12 @@ public:
 
 		if (m != nullptr) {
 			setModule(m);
-			bindBufferData();
+			// GL-Buffer-Aufbau MUSS auf dem GL-Thread laufen — der
+			// ChangeListener feuert auf dem Message-Thread, wo der Kontext
+			// nicht aktiv ist (glGen* / glBufferData wuerden ins Leere
+			// gehen). Nur ein Flag setzen, render() pickt es auf.
+			needsRebind.store(true);
+			openGLContext.triggerRepaint();
 		}
 	}
 
@@ -85,7 +96,10 @@ public:
             }
         )";
 
-		// Shader kompilieren
+		// Shader kompilieren. Bei Fehler den Linker-Output in den Debug-Log
+		// schreiben — sonst sieht man auf Mac nur "Bild bleibt schwarz" und
+		// die GLSL-Ursache (z.B. Core-Profile fehlt, Versions-Mismatch) ist
+		// nirgends sichtbar.
 		std::unique_ptr<juce::OpenGLShaderProgram> newShader(new juce::OpenGLShaderProgram(openGLContext));
 
 		if (newShader->addVertexShader(vertexShader) &&
@@ -94,6 +108,11 @@ public:
 		{
 			shader.reset(newShader.release());
 			shader->use();
+		}
+		else
+		{
+			DBG("GeometryViewComponent: shader compile/link failed: "
+				+ newShader->getLastError());
 		}
 	}
 
@@ -106,11 +125,11 @@ public:
 		float* vertices = module->getGeometry()->getVertices();
 		unsigned int* indices = module->getGeometry()->getIndices();
 
-		// Speichere die Anzahl der Indizes f�r das Rendering
+		// Speichere die Anzahl der Indizes f�r das Rendering
 		numIndicesToDraw = module->getGeometry()->getNumIndices();
 		int numVertexFloats = module->getGeometry()->getNumVertices() * 6; // 6 floats pro Vertex (pos + color)
 
-		// Alte Buffer l�schen falls vorhanden
+		// Alte Buffer l�schen falls vorhanden
 		if (VAO != 0) {
 			openGLContext.extensions.glDeleteVertexArrays(1, &VAO);
 			VAO = 0;
@@ -172,6 +191,11 @@ public:
 	void render() override
 	{
 		jassert(juce::OpenGLHelpers::isContextActive());
+
+		// Pending Buffer-Rebind vom Message-Thread jetzt nachholen — hier
+		// ist der GL-Kontext aktiv, also duerfen glGen*/glBufferData laufen.
+		if (needsRebind.exchange(false))
+			bindBufferData();
 
 		const float desktopScale = (float)openGLContext.getRenderingScale();
 
@@ -269,6 +293,9 @@ private:
 
 	GeometryModule* module = nullptr;
 	int numIndicesToDraw = 0;  // Speichert die Anzahl der zu zeichnenden Indizes
+
+	// Message-Thread setzt das Flag, der GL-Thread (render()) baut Buffer neu.
+	std::atomic<bool> needsRebind { false };
 
 	JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(GeometryViewComponent)
 };
