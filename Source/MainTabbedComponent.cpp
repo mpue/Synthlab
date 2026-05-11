@@ -33,11 +33,11 @@ MainTabbedComponent::MainTabbedComponent(TabbedButtonBar::Orientation orientatio
 
 
 void MainTabbedComponent::paint(juce::Graphics &g) {
-    // g.fillAll (Colour (0xff2e373c));
-    g.setColour(Colours::grey);
-    // g.drawRect(getBounds());
-    g.drawLine(getWidth(), 0, getWidth(), getHeight());
-    g.drawLine(0, getHeight(), getWidth(), getHeight());
+    // Trennlinien dezent — Colours::grey ist gegen den 0xff1a1a1a-Hintergrund
+    // der PropertyView zu hart. Passt zum separator-Ton aus TrackControl.
+    g.setColour(Colour(0xff2a2d33));
+    g.drawLine((float)getWidth(), 0.0f, (float)getWidth(), (float)getHeight());
+    g.drawLine(0.0f, (float)getHeight(), (float)getWidth(), (float)getHeight());
 }
 
 void MainTabbedComponent::popupMenuClickOnTab(int tabIndex, const juce::String &tabName) {

@@ -82,6 +82,11 @@ void ModuleUtils::loadStructure(std::vector<Module*>* modules, std::vector<Conne
 
 		if ((_v = dynamic_cast<VolumeAdjustable*>(m)) != nullptr) {
 			_v->setVolume(mod.getProperty("volume").toString().getFloatValue());
+			// Channel-Strip-Name zwischenspeichern; angewendet wird er nach
+			// configureAudioModule() in SynthEditor::openFile, weil
+			// Mixer::Channel/MasterChannelPanel erst dort existieren.
+			if (mod.hasProperty("channelName"))
+				_v->setSavedChannelName(mod.getProperty("channelName").toString());
 		}
 	}
 
@@ -630,6 +635,12 @@ void ModuleUtils::saveStructure(std::vector<Module*>* modules, std::vector<Conne
 
 		if ((_v = dynamic_cast<VolumeAdjustable*>((*it))) != nullptr) {
 			file.setProperty("volume", _v->getVolume(), nullptr);
+			// User-vergebener Channel-Name (nur fuer Hardware-Strips, die nicht
+			// an einen Track gekoppelt sind). Track-Channels uebernehmen den
+			// Namen ueber Track::getName und werden in tracks.xml persistiert.
+			const juce::String chName = _v->getSavedChannelName();
+			if (chName.isNotEmpty())
+				file.setProperty("channelName", chName, nullptr);
 		}
 
 		PadModule* p;

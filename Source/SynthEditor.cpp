@@ -2273,6 +2273,7 @@ void SynthEditor::openTracks(File file)
 				juce::Point<int> pos = juce::Point<int>(10, 10);
 				Track* t = navigator->addTrack(Track::Type::MIDI, Project::getInstance()->getSampleRate());
 				ti->setTrack(t);
+				t->setName(track.getProperty("name"));
 				t->setMidiChannel(track.getProperty("midiChannel").toString().getIntValue(), false);
 				t->setMidiOutputDevice(track.getProperty("interface").toString());
 				loadMidiRegions(track, t);
@@ -2282,6 +2283,7 @@ void SynthEditor::openTracks(File file)
 				juce::Point<int> pos = juce::Point<int>(10, 10);
 				Track* t = navigator->addTrack(Track::Type::INSTRUMENT, Project::getInstance()->getSampleRate());
 				ti->setTrack(t);
+				t->setName(track.getProperty("name"));
 				t->setMidiChannel(track.getProperty("midiChannel").toString().getIntValue(), false);
 
 				// Re-link the PluginModule to the track.
@@ -2473,6 +2475,26 @@ void SynthEditor::configureAudioModule(Module* m, ChangeBroadcaster* broadcaster
 
 	auto* device = am->getDeviceManager()->getCurrentAudioDevice();
 
+	// Den vom User vergebenen Channel-Namen (von ModuleUtils::loadStructure
+	// auf das Modul gestasht) auf den frisch angelegten Strip + Channel
+	// zurueckschreiben. Wird nach addChannel aufgerufen, weil dort erst der
+	// Default-Name (z.B. vom Audio-Device) gesetzt wurde.
+	auto applySavedChannelName = [this](VolumeAdjustable* va, int channelIndex) {
+		if (va == nullptr) return;
+		const juce::String saved = va->getSavedChannelName();
+		if (saved.isEmpty()) return;
+		for (auto* panel : mixer->getChannels())
+			if (panel != nullptr && panel->getIndex() == channelIndex) {
+				panel->setName(saved);
+				break;
+			}
+		for (auto* ch : Mixer::getInstance()->getChannels())
+			if (ch != nullptr && ch->index == channelIndex) {
+				ch->name = saved;
+				break;
+			}
+	};
+
 	AudioOut* out;
 
 	if ((out = dynamic_cast<AudioOut*>(m)) != NULL) {
@@ -2492,6 +2514,7 @@ void SynthEditor::configureAudioModule(Module* m, ChangeBroadcaster* broadcaster
 		out->setChannelIndex(channelIndex);
 		mixer->setVolume(channelIndex, out->getVolume());
 		mixer->setModule(channelIndex, out);
+		applySavedChannelName(out, channelIndex);
 	}
 
 	AudioIn* in;
@@ -2506,6 +2529,7 @@ void SynthEditor::configureAudioModule(Module* m, ChangeBroadcaster* broadcaster
 			in->setChannelIndex(channelIndex);
 			mixer->setVolume(channelIndex, in->getVolume());
 			mixer->setModule(channelIndex, in);
+			applySavedChannelName(in, channelIndex);
 		}
 	}
 
@@ -2518,6 +2542,7 @@ void SynthEditor::configureAudioModule(Module* m, ChangeBroadcaster* broadcaster
 		aux->setChannelIndex(channelIndex);
 		mixer->setVolume(channelIndex, aux->getVolume());
 		mixer->setModule(channelIndex, aux);
+		applySavedChannelName(aux, channelIndex);
 	}
 
 	broadcaster->addChangeListener(m);
@@ -2647,9 +2672,40 @@ void SynthEditor::prepareToPlay(int samplesPerBlockExpected, double sampleRate) 
 	// AUDIO copy etc.) use the real device buffer size from frame zero
 	// instead of the header default. processModule propagates these to
 	// every child each buffer.
+	//
+	// Zusaetzlich rekursiv durch den kompletten Modul-Baum. Module::setBuffersize
+	// recurst nicht von selbst (siehe Module.cpp:564) — gehosteten Plugins muss
+	// die neue Block-Groesse aber explizit per prepareToPlay mitgeteilt werden,
+	// sonst arbeitet jedes PluginModule weiter mit dem Wert vom Load-Zeitpunkt.
 	if (root != nullptr) {
 		root->setSampleRate((float)sampleRate);
 		root->setBuffersize(samplesPerBlockExpected);
+
+		std::function<void(Module*)> propagate = [&](Module* m) {
+			if (m == nullptr) return;
+			auto* children = m->getModules();
+			if (children == nullptr) return;
+			for (auto* c : *children) {
+				if (c == nullptr) continue;
+				c->setSampleRate((float)sampleRate);
+				c->setBuffersize(samplesPerBlockExpected);
+				propagate(c);
+			}
+		};
+		propagate(root.get());
+	}
+
+	// Master-FX-Kette lebt ausserhalb des Modul-Graphs (siehe
+	// MasterChannelPanel::insertFX) — separat durchreichen.
+	if (mixer != nullptr) {
+		if (auto* master = mixer->getMasterPanel()) {
+			for (int i = 0; i < master->getNumFxSlots(); ++i) {
+				if (auto* pm = master->getFxPlugin(i)) {
+					pm->setSampleRate((float)sampleRate);
+					pm->setBuffersize(samplesPerBlockExpected);
+				}
+			}
+		}
 	}
 
 	Logger::writeToLog("SynthEditor using sample rate " + String(sampleRate) + " Hz and buffer size of " + String(samplesPerBlockExpected) + " samples.");

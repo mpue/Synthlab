@@ -88,8 +88,15 @@ Track::~Track()
 }
 
 void Track::setName(juce::String name) {
+	// Idempotent — bricht zugleich die Rueckkopplung Track <-> NameListener:
+	// setName -> nameValue.setValue -> NameListener::valueChanged -> setName.
+	if (this->name == name) return;
 	Component::setName(name);
 	this->name = name;
+	// Den PropertyView-NameValue mitziehen, sonst zeigt das Property-Feld
+	// nach einer Umbenennung aus dem Mixer (oder einem anderen Pfad) noch
+	// den alten Wert, bis der User die Selection wechselt.
+	if (nameValue != nullptr) nameValue->setValue(name);
 	sendChangeMessage();
 }
 

@@ -41,6 +41,41 @@ PluginModule::~PluginModule()
     delete playHead;
 }
 
+void PluginModule::setBuffersize(int buffersize)
+{
+    Module::setBuffersize(buffersize);
+    if (this->buffersize == buffersize) return;
+    this->buffersize = buffersize;
+
+    // audioBuffer wird ohnehin pro Block in processInternal gegen
+    // numSamples geprueft und ggf. via setSize neu dimensioniert — kein
+    // separater Realloc hier noetig. bufferLeft/Right sind aktuell unused.
+
+    // Plugin neu vorbereiten. releaseResources vor prepareToPlay ist JUCE-
+    // Konvention und verhindert, dass strikte AU/VST3-Plugins die geaenderte
+    // Block-Groesse ablehnen.
+    const juce::ScopedLock sl(lock);
+    if (plugin)
+    {
+        plugin->releaseResources();
+        plugin->prepareToPlay(sampleRate, buffersize);
+    }
+}
+
+void PluginModule::setSampleRate(float rate)
+{
+    Module::setSampleRate(rate);
+    if ((float)sampleRate == rate) return;
+    sampleRate = rate;
+
+    const juce::ScopedLock sl(lock);
+    if (plugin)
+    {
+        plugin->releaseResources();
+        plugin->prepareToPlay(sampleRate, buffersize);
+    }
+}
+
 void PluginModule::processBuffer(juce::AudioBuffer<float>& buf,
                                  juce::int64 samplePosition,
                                  bool isPlaying,

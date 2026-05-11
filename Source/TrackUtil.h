@@ -53,8 +53,10 @@ public:
 		t->setType(Track::Type::INSTRUMENT);
 		t->setInstrumentName(name);
 
-		// Set the name of the track based on the number of existing tracks
-		t->setName("MIDI " + String(navigator->getTracks().size() + 1));
+		// Track-Name = Plugin-Name. Der Channel-Strip uebernimmt das ueber
+		// MasterChannelPanel::setTrack -> setName, und der PropertyView ueber
+		// den NameValue-Seed in Track::createProperties.
+		t->setName(name);
 		ti->setTrack(t);
 		t->setVolume(1.0f);
 		t->setMidiChannel(channel, false);
@@ -112,6 +114,12 @@ public:
 			}
 		}
 
+		// SynthEditor::resized() rechnet pro Connection die Endpunkte aus und
+		// laesst Connection::resized den Bezier-Pfad bauen. Ohne diesen Trigger
+		// stehen p1/p2/linePath beim ersten Paint auf den Defaults und die
+		// frisch verlegten Verbindungen sind unsichtbar, bis der User ein Modul
+		// bewegt (was JUCE-intern ein resized() auf dem Parent ausloest).
+		if (editor != nullptr) editor->resized();
 		return t;
 	}
 
@@ -260,6 +268,10 @@ public:
 		// nullptr und syncTrackFXPlugins() liefert keine FX-Plugins zurueck —
 		// Folge: Plugin-Combo im TrackControl ist leer, Automation unmoeglich.
 		LinkTrackToMixerPanel(t, dest, editor);
+
+		// Erzwingt das Aufrechnen der Connection-Endpunkte; ohne resized() sind
+		// die neuen Verbindungen bis zum ersten Modul-Drag unsichtbar.
+		if (editor != nullptr) editor->resized();
 		return t;
 	}
 
@@ -311,6 +323,9 @@ public:
 			values.add(PluginManager::getInstance()->getPlugins().getReference(i));
 		}
 
+		// Connection-Endpunkte aufrechnen, sonst sind die frischen Verbindungen
+		// im Editor erst nach dem ersten Modul-Drag sichtbar.
+		if (editor != nullptr) editor->resized();
 		return t;
 	}
 

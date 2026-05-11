@@ -18,6 +18,12 @@ public:
     void process(MidiBuffer* externalBuffer, int numSamples) override;
     void processInternal(juce::MidiBuffer* externalBuffer, int numSampkes) override;
     void configurePins() override;
+
+    // Audio-Device-Aenderung (z.B. Buffer-Size aus AudioSettings) durchreichen,
+    // sonst arbeitet das geladene Plugin weiter mit der zur Load-Zeit
+    // initialisierten Block-Groesse und produziert Glitches / Latenz-Versatz.
+    void setBuffersize(int buffersize) override;
+    void setSampleRate(float rate) override;
     juce::String getCategory() override { return "FX"; }
 
     void setCurrentProgram(int program);

@@ -132,6 +132,16 @@ public:
         return false;
     }
     Track* getTrack() const noexcept { return track; }
+
+    // FX-Chain-Zugriff fuer Code, der ausserhalb des Modul-Graphs lebenden
+    // Master-FX-Plugins durchwandern muss (z.B. AudioDevice-Buffer-Aenderungen
+    // an die gehosteten Plugins durchreichen). Indexgrenzen werden gecheckt,
+    // damit Caller nicht NUM_FX kennen muessen.
+    int           getNumFxSlots()    const noexcept { return NUM_FX; }
+    PluginModule* getFxPlugin(int i) const noexcept {
+        return (i >= 0 && i < NUM_FX) ? fxChain[i] : nullptr;
+    }
+
     // Entfernt alle FX-Plugins aus dem Insert-Chain dieses Channels. Beim
     // Master-Kanal löschen wir die Plugin-Module direkt (sie hängen nicht im
     // Modul-Graph), bei normalen Kanälen lassen wir removeFX die Verdrahtung

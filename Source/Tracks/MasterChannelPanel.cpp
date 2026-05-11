@@ -803,8 +803,24 @@ void MasterChannelPanel::applyFXSlotMap(const juce::ValueTree& slotMap) {
 }
 
 void MasterChannelPanel::labelTextChanged(Label* labelThatHasChanged) {
-    if (labelThatHasChanged == nameLabel && track != nullptr)
-        track->setName(nameLabel->getText());
+    if (labelThatHasChanged != nameLabel) return;
+
+    const juce::String text = nameLabel->getText();
+
+    if (track != nullptr) {
+        // Track-gebundener Strip: Track ist die Quelle-der-Wahrheit, der
+        // Mixer-Change-Listener spielt es zurueck auf das Label.
+        track->setName(text);
+        return;
+    }
+
+    // Hardware-Strip (IN/OUT/AUX/Master): den Namen direkt am Channel + Modul
+    // hinterlegen, damit er beim naechsten Save persistiert wird.
+    if (channel != nullptr)
+        channel->name = text;
+    if (module != nullptr)
+        module->setSavedChannelName(text);
+    setName(text);
 }
 
 void MasterChannelPanel::setIndex(int index) {
