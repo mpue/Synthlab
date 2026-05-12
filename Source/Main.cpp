@@ -21,6 +21,8 @@
 #include "Plugins/PluginManager.h"
 // #include <gtest.h>
 #include "HTTPServer.h"
+#include "SynthlabLogger.h"
+#include "CrashHandler.h"
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #if JUCE_WINDOWS
@@ -50,9 +52,10 @@ public:
 	{
 		// This method is where you should put your application's initialisation code..
 
+		SynthlabLogger::get().install();
+		CrashHandler::install();
 
-
-		Logger::writeToLog(commandLine);
+		Logger::writeToLog("Command line: " + commandLine);
 
 		server = new HTTPServer(8080);
 		server->startThread();
@@ -106,6 +109,8 @@ public:
 		server->stop();
 		server->stopThread(2000);
 		delete server;
+
+		SynthlabLogger::get().uninstall();
 	}
 
 	//==============================================================================

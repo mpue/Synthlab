@@ -90,6 +90,11 @@ public:
     void paint (Graphics&) override;
     void resized() override;
 
+    // Alt/Option waehrend Bottom-Edge-Resize gedrueckt → Hoehe auf alle anderen
+    // Tracks im Navigator spiegeln. Wir registrieren uns als MouseListener auf
+    // dem resizer (Track-Ctor), daher kommen diese Events vom Resizer-Child.
+    void mouseDrag(const juce::MouseEvent& e) override;
+
 	void setOffset(int offset);
 	int getOffset();
     void setHeight(int height);

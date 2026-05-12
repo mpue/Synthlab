@@ -62,6 +62,84 @@ public:
         return instance;
     }
 
+    // LookAndFeel fuer die kleinen M/S/A/R-Buttons. Wenn der Toggle aktiv ist,
+    // zeichnen wir einen "eingedrueckten" Hintergrund: dunkler Innen-Schatten
+    // an Oben/Links + dezenter Highlight an Unten/Rechts. Wenn aus, ein leicht
+    // erhabener Verlauf vom dunklen Off-Hintergrund.
+    struct RecessedToggleLookAndFeel : public juce::LookAndFeel_V4
+    {
+        void drawButtonBackground(juce::Graphics& g, juce::Button& b,
+                                  const juce::Colour& bgColour,
+                                  bool /*highlighted*/, bool down) override
+        {
+            const auto bounds = b.getLocalBounds().toFloat().reduced(0.5f);
+            const float corner = 3.0f;
+            const bool on = b.getToggleState();
+
+            if (on)
+            {
+                // Eingedrueckt: leicht abgedunkelter Verlauf, dunkle Innenkante
+                // an Oben/Links → optischer "hineingedrueckt"-Eindruck.
+                juce::ColourGradient grad(bgColour.darker(0.25f), bounds.getCentreX(), bounds.getY(),
+                                          bgColour.withMultipliedBrightness(1.05f), bounds.getCentreX(), bounds.getBottom(), false);
+                g.setGradientFill(grad);
+                g.fillRoundedRectangle(bounds, corner);
+
+                // Innen-Schatten oben + links
+                g.setColour(juce::Colours::black.withAlpha(0.55f));
+                g.drawLine(bounds.getX() + corner, bounds.getY() + 1.0f,
+                           bounds.getRight() - corner, bounds.getY() + 1.0f, 1.0f);
+                g.drawLine(bounds.getX() + 1.0f, bounds.getY() + corner,
+                           bounds.getX() + 1.0f, bounds.getBottom() - corner, 1.0f);
+
+                // Schmaler Highlight unten — verstaerkt den Inset-Effekt.
+                g.setColour(juce::Colours::white.withAlpha(0.12f));
+                g.drawLine(bounds.getX() + corner, bounds.getBottom() - 1.0f,
+                           bounds.getRight() - corner, bounds.getBottom() - 1.0f, 1.0f);
+            }
+            else
+            {
+                // Aus: dezent erhaben — heller Verlauf oben, etwas dunkler unten.
+                juce::ColourGradient grad(bgColour.brighter(0.18f), bounds.getCentreX(), bounds.getY(),
+                                          bgColour.darker(0.10f), bounds.getCentreX(), bounds.getBottom(), false);
+                g.setGradientFill(grad);
+                g.fillRoundedRectangle(bounds, corner);
+
+                if (down)
+                {
+                    g.setColour(juce::Colours::black.withAlpha(0.20f));
+                    g.fillRoundedRectangle(bounds, corner);
+                }
+            }
+
+            // Rahmen — bei aktivem Toggle kraeftiger.
+            g.setColour(juce::Colours::black.withAlpha(on ? 0.55f : 0.35f));
+            g.drawRoundedRectangle(bounds, corner, 1.0f);
+        }
+
+        // Text bei aktivem Toggle minimal nach unten ruecken — verstaerkt den
+        // "pressed"-Eindruck zusaetzlich zum Inset-Hintergrund.
+        void drawButtonText(juce::Graphics& g, juce::TextButton& b,
+                            bool /*highlighted*/, bool /*down*/) override
+        {
+            const auto on = b.getToggleState();
+            g.setFont(juce::Font((float) juce::jmin(b.getHeight(), b.getWidth()) * 0.55f, juce::Font::bold));
+            g.setColour(b.findColour(on ? juce::TextButton::textColourOnId
+                                        : juce::TextButton::textColourOffId));
+
+            auto area = b.getLocalBounds();
+            if (on) area.translate(0, 1);
+            g.drawFittedText(b.getButtonText(), area,
+                             juce::Justification::centred, 1);
+        }
+    };
+
+    static RecessedToggleLookAndFeel& sharedToggleLook()
+    {
+        static RecessedToggleLookAndFeel instance;
+        return instance;
+    }
+
     TrackControl(Track* track) : track(track)
     {
         // Gemeinsame Palette — Track-Farbe als Akzent, dunkler Slate als Off-
@@ -89,17 +167,20 @@ public:
             b.setColour(juce::TextButton::buttonOnColourId,  onColour);
             b.setColour(juce::TextButton::textColourOffId,   textLo);
             b.setColour(juce::TextButton::textColourOnId,    juce::Colours::white);
+            b.setLookAndFeel(&sharedToggleLook());
             b.addListener(this);
             addAndMakeVisible(b);
         };
 
+        // Aktiv-Farben pro Toggle: Mute = Hellblau, Solo = Orange,
+        // Automation = Gruen, Record = Rot.
         muteButton.setButtonText("M");
         muteButton.setToggleState(track->isMute(), juce::dontSendNotification);
-        styleToggle(muteButton, juce::Colour(0xffd34d4d));
+        styleToggle(muteButton, juce::Colour(0xff4fc3ff));
 
         soloButton.setButtonText("S");
         soloButton.setToggleState(track->isSolo(), juce::dontSendNotification);
-        styleToggle(soloButton, juce::Colour(0xffe0a64a));
+        styleToggle(soloButton, juce::Colour(0xffff9a3c));
 
         // Automation-Toggle (kleiner Button "A"). Schaltet das Lane-Overlay am
         // Track ein/aus. Erst wenn das Overlay an ist, blenden wir die ComboBox
@@ -107,7 +188,16 @@ public:
         autoButton.setButtonText("A");
         autoButton.setToggleState(track != nullptr && track->isAutomationVisible(),
                                   juce::dontSendNotification);
-        styleToggle(autoButton, juce::Colour(0xfff0c060));
+        styleToggle(autoButton, juce::Colour(0xff4caf50));
+
+        // Record-Arm-Toggle ("R"). Setzt nur das Track-internal recording-Flag —
+        // der eigentliche Recording-Roll-Start passiert ueber den
+        // TrackNavigator/Transport. So koennen mehrere Tracks gleichzeitig
+        // armiert sein und nur beim Druecken von Record im Transport tatsaechlich
+        // aufnehmen, ohne dass wir hier den Transport-State kennen muessen.
+        recButton.setButtonText("R");
+        recButton.setToggleState(track->isRecording(), juce::dontSendNotification);
+        styleToggle(recButton, juce::Colour(0xffe73f3f));
 
         auto styleSlider = [&](juce::Slider& s, juce::Colour fill)
         {
@@ -167,6 +257,11 @@ public:
         muteButton.removeListener(this);
         soloButton.removeListener(this);
         autoButton.removeListener(this);
+        recButton.removeListener(this);
+        muteButton.setLookAndFeel(nullptr);
+        soloButton.setLookAndFeel(nullptr);
+        autoButton.setLookAndFeel(nullptr);
+        recButton.setLookAndFeel(nullptr);
         panSlider.removeListener(this);
         volSlider.removeListener(this);
         pluginBox.removeListener(this);
@@ -202,15 +297,20 @@ public:
         nameLabel.setBounds(r.removeFromTop(16));
         r.removeFromTop(2);
 
-        // M / S / A Buttons + Pan-Slider in einer Reihe
+        // M / S / A / R Buttons + Pan-Slider in einer Reihe.
+        // Buttons + Gaps zusammen 4*18 + 3*1 = 75 px, danach 4 px Luft, dann
+        // Pan-Label (18) und der Rest fuer den Pan-Slider — passt in
+        // kControlsWidth=140 inkl. der reduced(6,4)-Innenabstaende.
         auto row1 = r.removeFromTop(18);
-        muteButton.setBounds(row1.removeFromLeft(20));
-        row1.removeFromLeft(2);
-        soloButton.setBounds(row1.removeFromLeft(20));
-        row1.removeFromLeft(2);
-        autoButton.setBounds(row1.removeFromLeft(20));
-        row1.removeFromLeft(6);
-        panLabel.setBounds(row1.removeFromLeft(22));
+        muteButton.setBounds(row1.removeFromLeft(18));
+        row1.removeFromLeft(1);
+        soloButton.setBounds(row1.removeFromLeft(18));
+        row1.removeFromLeft(1);
+        autoButton.setBounds(row1.removeFromLeft(18));
+        row1.removeFromLeft(1);
+        recButton.setBounds(row1.removeFromLeft(18));
+        row1.removeFromLeft(4);
+        panLabel.setBounds(row1.removeFromLeft(18));
         panSlider.setBounds(row1);
 
         r.removeFromTop(3);
@@ -241,6 +341,7 @@ public:
         muteButton.setToggleState(track->isMute(), juce::dontSendNotification);
         soloButton.setToggleState(track->isSolo(), juce::dontSendNotification);
         autoButton.setToggleState(track->isAutomationVisible(), juce::dontSendNotification);
+        recButton.setToggleState(track->isRecording(), juce::dontSendNotification);
         panSlider.setValue(track->getPan(), juce::dontSendNotification);
         volSlider.setValue(track->getVolume(), juce::dontSendNotification);
 
@@ -358,6 +459,7 @@ private:
             track->setAutomationVisible(autoButton.getToggleState());
             refreshParamBoxVisibility();
         }
+        else if (b == &recButton) track->setRecording(recButton.getToggleState());
     }
 
     void sliderValueChanged(juce::Slider* s) override
@@ -409,6 +511,7 @@ private:
     juce::TextButton  muteButton;
     juce::TextButton  soloButton;
     juce::TextButton  autoButton;
+    juce::TextButton  recButton;
     juce::Slider      panSlider, volSlider;
     juce::Label       panLabel, volLabel;
     juce::ComboBox    pluginBox;  // Instrument + FX-Slots

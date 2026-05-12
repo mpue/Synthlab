@@ -76,6 +76,9 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView*
     
     bottomTab->addTab("Mixer", Colours::darkgrey, mixerView.get(), false);
 
+    logView = std::make_unique<LogView>();
+    bottomTab->addTab("Log", Colours::darkgrey, logView.get(), false);
+
     addAndMakeVisible(topTab.get());
     addAndMakeVisible(resizerBar);
     addAndMakeVisible(bottomTab.get());
@@ -271,11 +274,12 @@ EditorComponent::~EditorComponent()
     Project::getInstance()->setSupplemental(nullptr); 
     editorView = nullptr;
     mixerPanel = nullptr;
-    mixerView =  nullptr;    
+    mixerView =  nullptr;
     navigator = nullptr;
     trackView = nullptr;
     console = nullptr;
-	sequence = nullptr;
+    logView = nullptr;
+    sequence = nullptr;
 }
 
 void EditorComponent::paint (Graphics& g)

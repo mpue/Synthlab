@@ -515,14 +515,17 @@ void MasterChannelPanel::sliderValueChanged (Slider* sliderThatWasMoved)
     {
         //[UserSliderCode_channelVolume] -- add your slider handling code here..
         volume = channelVolume->getValue();
-        channel->volume = volume;
+        // channel kann null sein, wenn der Listener waehrend des MasterChannelPanel
+        // ctors feuert (channelVolume->setValue(1.0) vor setChannel()).
+        if (channel != nullptr)
+            channel->volume = volume;
 
         if (this->module != nullptr) {
             this->module->setVolume(volume);
         }
         if (track != NULL) {
             track->setVolume(volume);
-            
+
         }
         else {
             sendChangeMessage();
@@ -533,7 +536,8 @@ void MasterChannelPanel::sliderValueChanged (Slider* sliderThatWasMoved)
     {
         //[UserSliderCode_panSlider] -- add your slider handling code here..
         pan = panSlider->getValue();
-        channel->pan = pan;
+        if (channel != nullptr)
+            channel->pan = pan;
         
         if (track != NULL) {
             track->setPan(pan);

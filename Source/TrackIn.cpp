@@ -273,48 +273,80 @@
 
 	void TrackIn::bounce()
 	{
-		if (trackType == Track::Type::AUDIO) {
+		if (trackType != Track::Type::AUDIO)
+			return;
 
-			float* outL = nullptr;
-			float* outR = nullptr;
-
-			const float* inL = nullptr;
-			const float* inR = nullptr;
-
-			if (getPins().at(0)->getConnections().size() >= 1) {
-				inL = getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
-			}
-			if (getPins().at(1)->getConnections().size() >= 1) {
-				inR = getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
-			}
-
-			outL = getPins().at(2)->getAudioBuffer()->getWritePointer(0);
-			outR = getPins().at(3)->getAudioBuffer()->getWritePointer(0);
-
-			double pan = track->getPan();
-
-			float gainLeft = cos((M_PI * (pan + 1) / 4));
-			float gainRight = sin((M_PI * (pan + 1) / 4));
-
-			// Mute/Solo auch beim Bounce respektieren — sonst werden
-			// stummgeschaltete Spuren ueberraschend mit ins Render geschrieben.
-			const bool anySolo = Mixer::getInstance()->anyTrackSoloed();
-			const float muteSoloGain =
-				(track->isMute() || (anySolo && !track->isSolo())) ? 0.0f : 1.0f;
-
-			for (int j = track->getSamplePosition(); j < buffersize + track->getSamplePosition(); j++) {
-				int bufferIndex = j - track->getSamplePosition(); // 0, 1, 2, ...
-
-				float sampleL = track->getSample(0, j) * track->getVolume() * gainLeft  * muteSoloGain;
-				float sampleR = track->getSample(1, j) * track->getVolume() * gainRight * muteSoloGain;
-
-				pins.at(2)->getAudioBuffer()->setSample(0, bufferIndex, sampleL);
-				pins.at(3)->getAudioBuffer()->setSample(0, bufferIndex, sampleR);
-			}
-
-			track->updateMagnitude(track->getSamplePosition(), buffersize, gainLeft, gainRight);
+		// Defensive: BounceThread iteriert alle Top-Level-Module und ruft bounce()
+		// auf jedem TrackIn. Wenn der User ueber die Toolbox einen losen "Track In"
+		// platziert hat (PrefabFactory.cpp:309 default Track::Type::AUDIO, aber kein
+		// setTrack-Aufruf) oder ein Project-Load die Track-Wiederverdrahtung
+		// uebersprungen hat, ist track==null trotz trackType==AUDIO und der erste
+		// track->getPan() unten knallt sauber durch das Bounce-Thread.
+		if (track == nullptr) {
+			juce::Logger::writeToLog(
+				"TrackIn::bounce: skipping AUDIO TrackIn '" + getName()
+				+ "' with no track assigned (orphan or load not rewired)");
+			return;
 		}
 
+		// pins werden in configurePins() angelegt (6 Stueck). Wenn der TrackIn
+		// noch nicht konfiguriert ist (z.B. waehrend einer Module-Replace-Aktion),
+		// brechen wir ab statt mit std::out_of_range zu sterben.
+		if (pins.size() < 4)
+			return;
+
+		float* outL = nullptr;
+		float* outR = nullptr;
+
+		const float* inL = nullptr;
+		const float* inR = nullptr;
+
+		if (getPins().at(0)->getConnections().size() >= 1) {
+			inL = getPins().at(0)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
+		}
+		if (getPins().at(1)->getConnections().size() >= 1) {
+			inR = getPins().at(1)->getConnections().at(0)->getAudioBuffer()->getReadPointer(0);
+		}
+
+		outL = getPins().at(2)->getAudioBuffer()->getWritePointer(0);
+		outR = getPins().at(3)->getAudioBuffer()->getWritePointer(0);
+
+		double pan = track->getPan();
+
+		float gainLeft = cos((M_PI * (pan + 1) / 4));
+		float gainRight = sin((M_PI * (pan + 1) / 4));
+
+		// Mute/Solo auch beim Bounce respektieren — sonst werden
+		// stummgeschaltete Spuren ueberraschend mit ins Render geschrieben.
+		const bool anySolo = Mixer::getInstance()->anyTrackSoloed();
+		const float muteSoloGain =
+			(track->isMute() || (anySolo && !track->isSolo())) ? 0.0f : 1.0f;
+
+		for (int j = track->getSamplePosition(); j < buffersize + track->getSamplePosition(); j++) {
+			int bufferIndex = j - track->getSamplePosition(); // 0, 1, 2, ...
+
+			float sampleL = track->getSample(0, j) * track->getVolume() * gainLeft  * muteSoloGain;
+			float sampleR = track->getSample(1, j) * track->getVolume() * gainRight * muteSoloGain;
+
+			pins.at(2)->getAudioBuffer()->setSample(0, bufferIndex, sampleL);
+			pins.at(3)->getAudioBuffer()->setSample(0, bufferIndex, sampleR);
+		}
+
+		track->updateMagnitude(track->getSamplePosition(), buffersize, gainLeft, gainRight);
+
+		// Diagnose: nach dem Schreiben einmal pro Bounce-Block die Pin-Magnitude
+		// loggen. Wenn diese > 0 ist und im BounceThread trotzdem nichts
+		// ankommt, liegt das Problem hinter dem Pin (Connection/AudioOut-
+		// Routing). Wenn schon hier 0 rauskommt, fehlen entweder Track-Daten
+		// oder track->getVolume()/mute/solo nullifiziert das Signal.
+		{
+			float mag = pins.at(2)->getAudioBuffer()->getMagnitude(0, 0, buffersize);
+			if (mag > 0.0001f || track->getSamplePosition() < buffersize * 4)
+				DBG("TrackIn::bounce '" << getName() << "' track='" << track->getName()
+					<< "' pos=" << track->getSamplePosition()
+					<< " vol=" << track->getVolume()
+					<< " pinMag=" << mag);
+		}
 	}
 
 	void TrackIn::setChannelIndex(int index) {

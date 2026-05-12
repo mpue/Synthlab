@@ -128,7 +128,37 @@ Module::~Module()
         delete *it;
         it = connections->erase(it);
     }
-    
+
+    // Defensive: alle direkten Child-Pins, deren terminal-Pointer auf einen
+    // unserer Pins zeigt, vorab auf nullptr setzen. Hintergrund:
+    //   Pin::setTerminal wird von ModuleUtils::connectTerminals und Co.
+    //   verwendet, um den Inner-Pin eines TerminalModule auf den passenden
+    //   Outer-Pin (also einen unserer Pins) zeigen zu lassen. Unten loeschen
+    //   wir gleich unsere eigenen Pins und _danach_ erst die Child-Module.
+    //   Im Fenster dazwischen halten die Childs Pin*-Pointer auf bereits
+    //   freigegebenen Speicher. Solange der Child-Destruktor direkt folgt,
+    //   faellt das nicht auf — sobald aber irgendwer (Undo-Action,
+    //   Listener-Liste, ValueTree, Audio-Thread durch eine Race) den Child
+    //   ueberleben laesst, kracht der naechste Module::process() in
+    //   Pin::getDirection() mit z.B. terminal=0x405e000000000000 (= IEEE-754
+    //   eines doubles, das den freigegebenen Heap recycled hat).
+    //
+    // O(M * Pc * Pp) mit ueblicherweise einstelligen Faktoren — kein Hot Path.
+    for (Module* child : *modules) {
+        if (child == nullptr) continue;
+        for (Pin* cp : child->getPins()) {
+            if (cp == nullptr) continue;
+            Pin* term = cp->getTerminal();
+            if (term == nullptr) continue;
+            for (Pin* myPin : pins) {
+                if (term == myPin) {
+                    cp->setTerminal(nullptr);
+                    break;
+                }
+            }
+        }
+    }
+
     for (std::vector<Pin*>::iterator it = pins.begin(); it != pins.end();) {
         
         for (std::vector<Pin*>::iterator it2 = (*it)->getConnections().begin(); it2 != (*it)->getConnections().end(); ) {

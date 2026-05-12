@@ -195,8 +195,13 @@ private:
     CustomLookAndFeel* clf;
 
     int index = 0;
-    Mixer::Channel* channel;
-    VolumeAdjustable* module;
+    // Default nullptr, weil der ctor channelVolume->setValue(1.0) ruft und damit
+    // sliderValueChanged() feuert — bevor MixerPanel::addChannel danach
+    // setChannel() aufrufen kann. Ohne diesen Default war 'channel' indeterminate
+    // (POD pointer), und der Listener schrieb channel->volume durch einen
+    // Dangling-Pointer.
+    Mixer::Channel*   channel = nullptr;
+    VolumeAdjustable* module  = nullptr;
 
     // --- FX chain ---
     static constexpr int NUM_FX = 4;

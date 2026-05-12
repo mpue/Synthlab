@@ -31,6 +31,12 @@ Track::Track(Type type, double sampleRate, MultiComponentDragger* dragger)
 	resizer->setSize(getWidth(), 5);
 	constrainer->setMaxWidth(1000);
 	resizer->setTopLeftPosition(0, 70);
+	// Alt-Drag-Sync: Track lauscht auf Resizer-Mouse-Events, damit wir in
+	// mouseDrag() erkennen koennen, wann der Bottom-Edge mit gehaltenem Alt
+	// gezogen wird und die Hoehe auf die Geschwistertracks gespiegelt werden
+	// soll. wantsEventsForAllNestedChildComponents=false reicht, der Resizer
+	// ist ein direktes Child von Track.
+	resizer->addMouseListener(this, false);
 	manager = Session::getInstance()->getAudioFormatManager();
 	this->type = type;
 	this->sampleRate = sampleRate;
@@ -1421,6 +1427,31 @@ void Track::setHeight(int height)
 {
 	Component::setSize(getWidth(), height);
 	this->height = height;
+}
+
+void Track::mouseDrag(const juce::MouseEvent& e)
+{
+	// Nur reagieren, wenn das Event tatsaechlich vom Bottom-Resizer kommt und
+	// Alt/Option gehalten wird. resizer treibt waehrend des Drags this->setBounds
+	// → Track::resized() wurde also bereits ausgefuehrt und getHeight() hat den
+	// neuen Wert. Wir spiegeln diesen einfach auf alle Geschwistertracks.
+	if (e.eventComponent != resizer || !e.mods.isAltDown() || navigator == nullptr)
+		return;
+
+	// Re-Entry-Schutz: wenn other->setSize() wider Erwarten Mouse-Events
+	// nachzieht, brechen wir hier ab statt eine Endlosschleife zu starten.
+	static thread_local bool propagating = false;
+	if (propagating) return;
+	propagating = true;
+
+	const int newH = getHeight();
+	for (auto* other : navigator->getTracks()) {
+		if (other == nullptr || other == this) continue;
+		if (other->getHeight() != newH)
+			other->setSize(other->getWidth(), newH);
+	}
+
+	propagating = false;
 }
 
 AudioSampleBuffer* Track::getBuffer()

@@ -195,18 +195,18 @@ void SynthEditor::resized()
 		return;
 	}
 
-	// Logical canvas size: 1.5× of the parent gives some scrollable headroom.
+	// Logical canvas size: 1.5× Breite, 3× Hoehe.
+	// Mehr vertikales Headroom, damit beim Bouncen/Debuggen mehr Module
+	// gleichzeitig sichtbar sind. Hoehe darf groesser sein als die Breite —
+	// der Viewport scrollt vertikal, kein Layout-Code haengt am Seitenverhaeltnis.
+	//
 	// NICHT zusaetzlich mit editorZoom multiplizieren — setTransform unten
 	// skaliert das Rendering bereits, und getBounds() bleibt laut JUCE-Doc
 	// untransformiert. Frueher stand hier `* editorZoom`, das hat die Editor-
 	// Flaeche quadratisch mit dem Zoom skaliert (zoom² statt zoom) und die
 	// Module relativ zur Hintergrund-Flaeche zu gross/klein wirken lassen.
-	// Folge davon: Beim Zoom-In sind Bereiche jenseits der logischen Canvas-
-	// Groesse via Viewport nicht scrollbar — falls das stoert, muss ein
-	// Wrapper-Container mit transform-bewusster Groesse her, nicht eine
-	// quadratische Skalierung hier.
 	const int logicalW = (int)(getParentWidth() * 1.5);
-	const int logicalH = (int)(getParentHeight() * 1.5);
+	const int logicalH = (int)(getParentHeight() * 3.0);
 	setSize(logicalW, logicalH);
 
 	if (root != nullptr && root->getConnections() != nullptr) {
@@ -2169,6 +2169,64 @@ void SynthEditor::openFile(juce::File /*file*/) {
 }
 #endif
 
+namespace {
+	// BFS durch das Event-Pin-Graph: Folge ab `startOutPin` allen Event-
+	// Verbindungen vorwaerts, bis ein PluginModule gefunden wird. Module
+	// zwischen TrackIn und Plugin (MIDI-Thru, Channel-Filter, MidiProcessor,
+	// usw.) werden als Pass-Through behandelt: deren OUT-EVENT-Pins werden
+	// weiterverfolgt.
+	//
+	// Hintergrund: der frueher hier eingebaute direkte Match (TrackIn.pin5
+	// → erste Connection → muss direkt auf PluginModule.pin liegen) hat in
+	// Projekten mit Zwischenmodulen versagt. Folge: Track::pluginModule
+	// blieb nach Load nullptr, Bounce-in-Place und Track-Bounce schweigen.
+	PluginModule* findPluginModuleDownstream(Pin* startOutPin, Module* root)
+	{
+		if (startOutPin == nullptr || root == nullptr || root->getModules() == nullptr)
+			return nullptr;
+
+		// Pin → Module Map einmal aufbauen, damit der Owner-Lookup im Loop
+		// nicht jedes Mal alle Module abklappert.
+		std::map<Pin*, Module*> pinToModule;
+		for (Module* m : *root->getModules()) {
+			if (m == nullptr) continue;
+			for (Pin* p : m->getPins())
+				if (p != nullptr) pinToModule[p] = m;
+		}
+
+		std::vector<Pin*> queue;
+		std::set<Pin*> visitedPins;
+		std::set<Module*> visitedModules;
+
+		for (Pin* c : startOutPin->getConnections())
+			if (c != nullptr) queue.push_back(c);
+
+		while (!queue.empty()) {
+			Pin* p = queue.back();
+			queue.pop_back();
+			if (!visitedPins.insert(p).second) continue;
+
+			auto it = pinToModule.find(p);
+			if (it == pinToModule.end()) continue;
+			Module* m = it->second;
+			if (!visitedModules.insert(m).second) continue;
+
+			if (auto* pm = dynamic_cast<PluginModule*>(m)) return pm;
+
+			// Pass-Through: alle OUT-EVENT-Pins dieses Moduls weiterverfolgen.
+			for (Pin* outP : m->getPins()) {
+				if (outP == nullptr) continue;
+				if (outP->direction != Terminal::Direction::OUT) continue;
+				if (outP->getType()  != Terminal::Type::EVENT) continue;
+				for (Pin* c : outP->getConnections())
+					if (c != nullptr) queue.push_back(c);
+			}
+		}
+
+		return nullptr;
+	}
+}
+
 void SynthEditor::openTracks(File file)
 {
 
@@ -2293,21 +2351,13 @@ void SynthEditor::openTracks(File file)
 				t->setMidiChannel(track.getProperty("midiChannel").toString().getIntValue(), false);
 
 				// Re-link the PluginModule to the track.
-				// The TrackIn's event-out pin (index 5) is connected to the PluginModule's
-				// event-in pin. We find the PluginModule by matching against that connected pin.
+				// TrackIn.pin5 (event-out) → BFS durch das Event-Pin-Graph →
+				// erster PluginModule downstream. Toleriert beliebig viele
+				// Pass-Through-Module zwischen TrackIn und dem Synth-Plugin.
 				auto& tiPins = ti->getPins();
-				if (tiPins.size() > 5 && !tiPins.at(5)->getConnections().empty()) {
-					Pin* connectedPin = tiPins.at(5)->getConnections().at(0);
-					for (auto* mod : *getModule()->getModules()) {
-						if (auto* pm = dynamic_cast<PluginModule*>(mod)) {
-							for (auto* pin : pm->getPins()) {
-								if (pin == connectedPin) {
-									t->setPluginModule(pm);
-									break;
-								}
-							}
-						}
-					}
+				if (tiPins.size() > 5) {
+					if (auto* pm = findPluginModuleDownstream(tiPins.at(5), getModule()))
+						t->setPluginModule(pm);
 				}
 
 				loadMidiRegions(track, t);

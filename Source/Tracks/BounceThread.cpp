@@ -57,6 +57,15 @@ void BounceThread::run()
 		// the track input modules need to know when we are bouncing
 		if (auto* ti = dynamic_cast<TrackIn*>(mod)) {
 			ti->setBouncing(true);
+			// Bestandsaufnahme: welcher TrackIn haengt an welchem Track? Audio-
+			// TrackIns ohne Track werden in bounce() geskippt — dieses Log macht
+			// sichtbar, ob der Orphan der Audio-Track selbst ist (Rewire-Bug)
+			// oder nur ein loses Toolbox-Modul (egal).
+			auto* attached = ti->getTrack();
+			DBG("TrackIn '" << ti->getName() << "' index=" << (int) ti->getIndex()
+				<< " track="
+				<< (attached ? (attached->getName() + " (type=" + juce::String((int) attached->getType()) + ")")
+				             : juce::String("<null>")));
 		}
 	}
 
@@ -177,12 +186,31 @@ void BounceThread::run()
 		for (int a = 0; a < (int)auxChannels.size(); ++a)
 		{
 			Mixer::Channel* auxMeta = Mixer::getInstance()->getChannel(Mixer::Channel::Type::AUX, a);
-			if (!auxMeta || !mixer.auxChannelIsValid(a, 0)) continue;
+			const bool valid = mixer.auxChannelIsValid(a, 0);
+			if (!auxMeta || !valid) {
+				// Sichtbar machen warum ein Aux uebersprungen wird — frueher war's
+				// schweigsam und der Bounce einfach "stiller Aux".
+				if (pos == 0) {
+					DBG("Aux[" << a << "] SKIPPED — auxMeta=" << (auxMeta ? "ok" : "null")
+						<< " auxChannelIsValid(" << a << ",0)=" << (valid ? 1 : 0)
+						<< " conns_pin0="
+						<< (a < (int)auxChannels.size() && auxChannels[a]->getPins().size() > 0
+							? (int) auxChannels[a]->getPins().at(0)->getConnections().size() : -1));
+				}
+				continue;
+			}
 
 			const float auxVol = (auxMeta && !auxMeta->mute) ? auxMeta->volume : 0.0f;
 			const double auxPan = auxMeta ? auxMeta->pan : 0.0;
 			const float auxGainL = fastCos((M_PI * (auxPan + 1) / 4));
 			const float auxGainR = fastSin((M_PI * (auxPan + 1) / 4));
+
+			// Status nur einmal pro Bounce loggen, sonst zerschiesst's das Log.
+			if (pos == 0) {
+				DBG("Aux[" << a << "] vol=" << auxVol << " pan=" << auxPan
+					<< " mute=" << (auxMeta->mute ? 1 : 0)
+					<< " name='" << auxMeta->name << "'");
+			}
 
 			auto& auxPins = auxChannels[a]->getPins();
 			for (size_t p = 0; p < auxPins.size() && p < 2; ++p)
@@ -197,6 +225,13 @@ void BounceThread::run()
 				int samplesToRead = std::min(numSamples, auxBuf->getNumSamples());
 				float auxGain = (p == 0) ? auxGainL * auxVol : auxGainR * auxVol;
 				int targetChannel = (p == 0) ? 0 : 1;
+
+				// Source-Magnitude pro Block messen — > 0.001 heisst die Quelle
+				// schreibt Daten, < 0.001 heisst der Producer (TrackIn::bounce
+				// oder pluginModule->process) hat das Pin nicht gefuellt.
+				float srcMag = auxBuf->getMagnitude(0, std::min(samplesToRead, auxBuf->getNumSamples()));
+				if (srcMag > 0.001f)
+					DBG("Aux[" << a << "] Pin[" << p << "] srcMag=" << srcMag << " gain=" << auxGain);
 
 				if (targetChannel < numChannels)
 				{

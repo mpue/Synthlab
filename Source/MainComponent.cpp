@@ -1949,7 +1949,14 @@ void MainComponent::buttonClicked(Button* b)
 
 void MainComponent::processModule(Module* m) {
 
-	if (m == nullptr || !isRunning()) return;
+	// Beim Offline-Bounce wird setRunning(false) gesetzt, um den Realtime-
+	// Audio-Callback ruhigzustellen — der Callback selbst checkt allerdings
+	// schon isBouncing() und kehrt sowieso frueh zurueck. Ohne die zusaetzliche
+	// isBouncing()-Bedingung hier wuerde BounceThread::run() processModule()
+	// aufrufen und sofort an dieser Stelle aussteigen, womit die komplette
+	// Signal-Kette zwischen TrackIn und AudioOut/AuxOut im Bounce stumm bleibt
+	// (Aux-Sends, Insert-FX, alle Zwischenmodule).
+	if (m == nullptr || (!isRunning() && !isBouncing())) return;
 
 	m->process();
 

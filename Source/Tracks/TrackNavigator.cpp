@@ -1433,11 +1433,29 @@ void TrackNavigator::bounceSelectedRegionsInPlace()
 
 	// Snapshot von (sourceTrack, region)-Paaren, weil wir gleich tracks
 	// modifizieren — Iterieren waehrend insertTrackAt() ist unsicher.
+	//
+	// Achtung: es gibt zwei parallele Region-Selection-Zustaende:
+	//   - Region::selected (Flag) — gesetzt von Region::setSelected(),
+	//     ausgewertet von isSelected(). Wird beim Klick auf den Navigator-
+	//     Hintergrund (TrackNavigator::mouseDown) sauber gepflegt.
+	//   - MultiComponentDragger::selectedComponents — visueller Drag-State,
+	//     gesetzt wenn der User direkt auf eine Region klickt
+	//     (Region::mouseDown -> dragger->handleMouseDown). Dieser Pfad
+	//     synchronisiert das Region-Flag NICHT.
+	//
+	// Frueher hat dieser Loop nur isSelected() gelesen — und damit Direct-
+	// Klicks ignoriert, was als "Bounce in Place tut nichts" auffiel. Wir
+	// akzeptieren beide Selection-Quellen.
 	std::vector<std::pair<Track*, Region*>> jobs;
 	for (auto* t : tracks) {
 		if (t == nullptr) continue;
-		for (auto* r : t->getRegions())
-			if (r != nullptr && r->isSelected()) jobs.emplace_back(t, r);
+		for (auto* r : t->getRegions()) {
+			if (r == nullptr) continue;
+			const bool flagSel    = r->isSelected();
+			const bool draggerSel = (dragger != nullptr && dragger->isSelected(r));
+			if (flagSel || draggerSel)
+				jobs.emplace_back(t, r);
+		}
 	}
 
 	const double sr = Project::getInstance()->getSampleRate();

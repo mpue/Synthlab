@@ -18,6 +18,7 @@
 #include "Tracks/TrackNavigator.h"
 #include "PropertyView.h"
 #include "ShellConsoleComponent.h"
+#include "LogView.h"
 #include "CommandParser.h"
 #include "PianoRollComponent.h"
 #include "TransportDisplayComponent.h"
@@ -71,7 +72,8 @@ private:
     PropertyView* propertyView = nullptr;
     
     std::unique_ptr<ShellConsoleComponent> console = nullptr;
-    	
+    std::unique_ptr<LogView> logView = nullptr;
+
     std::unique_ptr<juce::MidiMessageSequence> sequence = nullptr;
 
 	TransportDisplayComponent* transportDisplay = nullptr;

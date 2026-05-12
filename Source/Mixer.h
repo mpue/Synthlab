@@ -38,8 +38,15 @@ public:
 			MASTER
 		};
 
-		double volume;
-		double pan;
+		// Defaults: unity gain, center pan. Ohne diese Inits blieben volume/pan
+		// auf dem Heap-Default haengen (bei new Mixer::Channel() = 0/0) bis
+		// jemand den Slider beruehrt — Folge: frisch angelegte OUT/AUX/IN-Strips
+		// waren still, auch wenn der Audio-Pfad oben drueber funktioniert
+		// (TrackIn schreibt mit Track-Volume, der Mix-Loop multipliziert
+		// hinterher nochmal mit channel->volume == 0). Im Bounce besonders
+		// auffaellig, weil dort nichts die Slider zwischenzeitlich anfasst.
+		double volume = 1.0;
+		double pan    = 0.0;
 		float magnitudeLeft = 0;
 		float magnitudeRight = 0;
 		bool mute = false;
