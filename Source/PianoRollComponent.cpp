@@ -2868,7 +2868,17 @@ void PianoRollComponent::setControllerLaneVisibility(int ccNumber, bool visible)
 
 void PianoRollComponent::setPlaybackPosition(double samplePosition)
 {
-    playbackPosition = samplePosition;
+    // Caller (TrackNavigator-Timer) uebergibt eine TIMELINE-relative
+    // Sample-Position. getXForTime() interpretiert seinen Eingang aber als
+    // BUFFER-relativ (so wie midiMessageList-Timestamps), darum hier
+    // einmalig konvertieren:
+    //   buffer = (timeline - sampleOffset) + sourceStartSample
+    // Ohne diese Korrektur driftet der Playhead in der Piano Roll um
+    // sampleOffset Pixel ab, sobald die Region nicht bei Timeline 0 sitzt
+    // (und um zusaetzlich sourceStartSample, falls links getrimmt).
+    const double offsetSample = (midiRegion != nullptr) ? (double) midiRegion->getSampleOffset() : 0.0;
+    const double base         = (midiRegion != nullptr) ? (double) midiRegion->getSourceStartSample() : 0.0;
+    playbackPosition = samplePosition - offsetSample + base;
 
     // Auto-follow playback
     if (followPlayback && playbackPosition >= 0.0) {

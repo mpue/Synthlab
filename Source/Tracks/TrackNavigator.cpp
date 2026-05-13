@@ -1034,14 +1034,32 @@ void TrackNavigator::openPianoRoll(MidiRegion* r)
 	// Roll, damit der Transport-Sync und der Playback-Marker funktionieren.
 	pianoRoll = std::make_unique<PianoRollEditor>(r, Project::getInstance()->getSampleRate());
 
+	// Projekt-Tempo an die Piano Roll uebergeben. Ohne das laeuft der
+	// interne Default (120 BPM) gegen das Projekt — bei z.B. 60 BPM
+	// fallen Bar-Linien doppelt so dicht, eine Note an Sample 1*Bar
+	// landet auf der zweiten Bar-Linie und der User liest sie als
+	// "Takt 3" statt "Takt 2". (Tempo-Aenderungen waehrend die Roll
+	// offen ist: zurzeit nicht live propagiert — Roll neu oeffnen.)
+	pianoRoll->getRoll().setBPM(Project::getInstance()->getTempo());
+
 	pianoRoll->getRoll().setGridResolution(16);
 
 	pianoRoll->getRoll().onPlayToggle = [this]() {
 		setPlaying(!isPlaying());
 	};
 
-	pianoRoll->getRoll().onMarkerPositionChanged = [this](double samplePos) {
-		double posInSeconds = samplePos / Project::getInstance()->getSampleRate();
+	// samplePos kommt aus PianoRollComponent::getTimeAtX() und ist BUFFER-
+	// relativ (gleicher Bezug wie midiMessageList-Timestamps). setPosition()
+	// erwartet aber eine TIMELINE-Position — also zurueckkonvertieren:
+	//   timeline = (buffer - sourceStartSample) + sampleOffset
+	// Ohne das springt der globale Marker beim Klick in die Piano-Roll auf
+	// 0 (statt auf sampleOffset), und die Marker-Position passt nicht mehr
+	// zu den Noten, neben die der User geklickt hat.
+	pianoRoll->getRoll().onMarkerPositionChanged = [this, r](double samplePos) {
+		const double offsetSample = (r != nullptr) ? (double) r->getSampleOffset() : 0.0;
+		const double base         = (r != nullptr) ? (double) r->getSourceStartSample() : 0.0;
+		const double timelineSamples = samplePos - base + offsetSample;
+		double posInSeconds = timelineSamples / Project::getInstance()->getSampleRate();
 		setPosition(posInSeconds);
 		for (int i = 0; i < tracks.size(); i++) {
 			tracks.at(i)->setSamplePosition(this->samplePosition);
@@ -1470,6 +1488,64 @@ void TrackNavigator::bounceSelectedRegionsInPlace()
 		std::unique_ptr<juce::AudioSampleBuffer> rendered (sourceTrack->bounceRegionToBuffer(sourceRegion));
 		if (rendered == nullptr) continue;
 
+		// Gerenderten Buffer als .wav auf Platte schreiben und unter einem
+		// stabilen refId in Project::projectAudio registrieren. Ohne diesen
+		// Schritt droppt getConfiguration() die Region beim Save (siehe
+		// "dropping unsaveable region"-Pfad), weil clipRefId leer waere.
+		// Der refId landet automatisch in _audio.xml (Project::save() ->
+		// ProjectSnapshot::audioFiles), die Track-XML referenziert ihn ueber
+		// region.clipRefId.
+		auto sanitize = [](juce::String s) {
+			return s.replaceCharacters(" /\\:*?\"<>|\t\n\r", "_____________");
+		};
+
+		juce::File outputDir;
+		const juce::String curProjPath = Project::getInstance()->getCurrentFilePath();
+		if (curProjPath.isNotEmpty() && ! Project::getInstance()->isNewFile()) {
+			juce::File parent = juce::File(curProjPath).getParentDirectory();
+			if (parent.exists())
+				outputDir = parent.getChildFile("bounces");
+		}
+		if (outputDir == juce::File())
+			outputDir = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
+				.getChildFile("Synthlab").getChildFile("bounces");
+		if (! outputDir.exists())
+			outputDir.createDirectory();
+
+		// "Zeit" im Filename = Timeline-Position der Source-Region (MM-SS-mmm),
+		// nicht Wall-Clock, damit der Name musikalisch ablesbar bleibt.
+		// Kollisionen (mehrfaches Bouncen derselben Position) loest
+		// getNonexistentSibling().
+		const double seconds = sr > 0.0 ? ((double) offset / sr) : 0.0;
+		const int totalMs = (int) std::llround(seconds * 1000.0);
+		const int mm  = totalMs / 60000;
+		const int ss  = (totalMs / 1000) % 60;
+		const int mss =  totalMs % 1000;
+		const juce::String timeStr = juce::String::formatted("%02dm%02ds%03d", mm, ss, mss);
+		const juce::String baseName = sanitize(sourceTrack->getName()) + "_bounce_" + timeStr;
+		const juce::File outFile = outputDir.getChildFile(baseName + ".wav").getNonexistentSibling();
+		const juce::String refId = outFile.getFileNameWithoutExtension();
+
+		bool wrote = false;
+		{
+			juce::WavAudioFormat wavFormat;
+			std::unique_ptr<juce::FileOutputStream> stream (outFile.createOutputStream());
+			if (stream != nullptr) {
+				std::unique_ptr<juce::AudioFormatWriter> writer (
+					wavFormat.createWriterFor(stream.get(), sr,
+						(unsigned int) juce::jmax(1, rendered->getNumChannels()), 16, {}, 0));
+				if (writer != nullptr) {
+					stream.release(); // ownership -> writer
+					wrote = writer->writeFromAudioSampleBuffer(*rendered, 0, rendered->getNumSamples());
+				}
+			}
+			if (! wrote)
+				Logger::writeToLog("Bounce-in-Place: konnte WAV nicht schreiben: " + outFile.getFullPathName());
+		}
+
+		if (wrote)
+			Project::getInstance()->addAudioFile(refId, outFile.getFullPathName());
+
 		// Neuen Audio-Track anlegen — TrackUtil haengt ihn ans Ende
 		// der tracks-Liste.
 		Track* newAudio = TrackUtil::createAudioTrack(editor, this, editor->getModule());
@@ -1496,8 +1572,15 @@ void TrackNavigator::bounceSelectedRegionsInPlace()
 			sendChangeMessage();
 		}
 
-		// AudioRegion mit gerendertem Buffer auf den neuen Track.
-		newAudio->addRegion(rendered.get(), sr, offset, len);
+		// AudioRegion mit gerendertem Buffer auf den neuen Track. clipRefId
+		// nur setzen, wenn der WAV-Write tatsaechlich erfolgreich war —
+		// sonst wuerde getConfiguration() einen refId persistieren, dessen
+		// Datei nicht existiert, und der Reload wuerde fehlschlagen.
+		AudioRegion* newRegion = newAudio->addRegion(rendered.get(), sr, offset, len);
+		if (newRegion != nullptr && wrote) {
+			newRegion->setClipRefId(refId);
+			newRegion->setName(refId);
+		}
 	}
 }
 
