@@ -232,6 +232,13 @@ public:
 	void updateTrackLayout(ChangeBroadcaster* source);
 	void adjustHeight();
 
+	// Setzt alle Track-Y-Positionen anhand der aktuellen getHeight()-Werte
+	// neu (stapelt sie ab timelineOffset) und ruft danach syncTrackControls
+	// und adjustHeight. Wird vom Alt-Drag-Resize aus Track::mouseDrag waehrend
+	// des laufenden Drags aufgerufen, damit die Tracks live mitlaufen statt
+	// erst nach Mouse-Up zu reflowen.
+	void relayoutTracks();
+
 	bool isInterestedInDragSource(const SourceDetails& dragSourceDetails) override;
 	void itemDropped(const SourceDetails& dragSourceDetails) override;
 

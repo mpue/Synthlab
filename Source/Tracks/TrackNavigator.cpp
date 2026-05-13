@@ -320,6 +320,26 @@ void TrackNavigator::updateTrackLayout(ChangeBroadcaster* source)
 	sendChangeMessage();
 }
 
+void TrackNavigator::relayoutTracks()
+{
+	// Y-Positionen alle Tracks aus aktuellen Hoehen neu stapeln. Selbe
+	// Logik wie nach insertTrack / Zoom-Resize, nur als Helper extrahiert,
+	// damit Track::mouseDrag waehrend des Alt-Drag-Resizes live aufrufen kann
+	// — ohne diesen Aufruf bleibt der gerade geziehte Track an seiner
+	// urspruenglichen Y haengen, waehrend die gespiegelten Geschwister
+	// schon mit der neuen Hoehe gezeichnet werden, was visuell wie ein
+	// Ueberlappen aussieht.
+	int yPos = timelineOffset;
+	for (auto* t : tracks) {
+		if (t == nullptr) continue;
+		t->setTopLeftPosition(kControlsWidth, yPos);
+		yPos += t->getHeight();
+	}
+	syncTrackControls();
+	adjustHeight();
+	repaint();
+}
+
 void TrackNavigator::adjustHeight()
 {
 	int height = timelineOffset;

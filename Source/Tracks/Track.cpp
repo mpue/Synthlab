@@ -1451,6 +1451,13 @@ void Track::mouseDrag(const juce::MouseEvent& e)
 			other->setSize(other->getWidth(), newH);
 	}
 
+	// Y-Positionen aller Tracks live neu stapeln. Ohne diesen Schritt
+	// behaelt der gezogene Track seine alte Y-Koordinate — die anderen
+	// haben aber schon die neue Hoehe und ueberlappen ihn visuell (bzw.
+	// es klafft eine Luecke darueber). Erst Mouse-Up wuerde sonst die
+	// volle Reflow-Logik via parentSizeChanged / adjustHeight triggern.
+	navigator->relayoutTracks();
+
 	propagating = false;
 }
 
