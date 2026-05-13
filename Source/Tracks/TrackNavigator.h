@@ -16,7 +16,6 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 
-#include "WaveSelector.h"
 #include "PositionMarker.h"
 #include "Track.h"
 #include "DragConstrainer.h"
@@ -153,8 +152,6 @@ public:
 	// Tab-Hoehe — wir abonnieren deshalb ihn explizit.
 	void componentMovedOrResized(juce::Component& which, bool wasMoved, bool wasResized) override;
 
-	WaveSelector* getSelector();
-
 	void clearTracks();
 
 	void eventReceived(Event* e) override;
@@ -285,7 +282,6 @@ private:
 	// 1:1 zu `tracks` — Index N gehört zum Track N. TrackControls liegen
 	// links bei x=0..kControlsWidth, gleiche Y wie ihr Track.
 	std::vector<std::unique_ptr<TrackControl>> trackControls;
-	std::unique_ptr<WaveSelector> selector;
 
 public:
 	// Breite des linken Steuer-Strips, ab dem die eigentlichen Tracks/Marker/

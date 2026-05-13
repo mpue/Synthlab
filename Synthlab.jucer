@@ -224,9 +224,6 @@
         <FILE id="yI1fyn" name="TrackPropertyView.h" compile="0" resource="0"
               file="Source/Tracks/TrackPropertyView.h"/>
         <FILE id="rwNJCC" name="TrackResizer.h" compile="0" resource="0" file="Source/Tracks/TrackResizer.h"/>
-        <FILE id="uv3hYe" name="WaveSelector.cpp" compile="1" resource="0"
-              file="Source/Tracks/WaveSelector.cpp"/>
-        <FILE id="ZVVF10" name="WaveSelector.h" compile="0" resource="0" file="Source/Tracks/WaveSelector.h"/>
       </GROUP>
       <GROUP id="{8B0AD2A1-2F44-4E1B-9D3A-001A20260501}" name="Automation">
         <FILE id="AuTy01" name="AutomationTypes.h" compile="0" resource="0"

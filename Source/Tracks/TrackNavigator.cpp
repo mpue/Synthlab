@@ -40,11 +40,6 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 	this->timeLine->setTempoAndTimeSignature(Project::getInstance()->getTempo(),4,4);
 	addAndMakeVisible(timeLine.get());
 	this->deviceManager = deviceManager;
-	this->selector = std::make_unique<WaveSelector>();
-	this->selector->addChangeListener(this);
-	this->selector->setSize(getWidth(), getHeight());
-	this->selector->setBounds(0, 0, getWidth(), getHeight());
-	addAndMakeVisible(selector.get());
 	this->zoom = 40.0f;
 	int64 lengthInSamples = Project::getInstance()->getTrackLength() * Project::getInstance()->getSampleRate();
 	this->marker = new PositionMarker(lengthInSamples);
@@ -116,15 +111,11 @@ TrackNavigator::~TrackNavigator()
 		view->getHorizontalScrollBar().removeListener(this);
 	}
 
-	if (selector != nullptr)
-		selector->removeChangeListener(this);
-
 	for (auto* t : tracks) {
 		if (t != nullptr) t->removeChangeListener(this);
 	}
 
 	timeLine = nullptr;
-	selector = nullptr;
 
 	for (std::vector<Track*>::iterator it = tracks.begin(); it != tracks.end(); ++it) {
 		delete* it;
@@ -1155,7 +1146,6 @@ Track* TrackNavigator::addTrack(TrackConfig* tc) {
 
 	this->marker->setSize(2, height);
 	this->marker->setSampleLength(getMaxLength() * 300);
-	this->selector->setSize(getWidth(), getHeight());
 	this->timeLine->setBounds(kControlsWidth, 0, getWidth() - kControlsWidth, timelineOffset);
 	this->timeLine->setSize(getWidth() - kControlsWidth, timelineOffset);
 
@@ -1211,7 +1201,6 @@ void TrackNavigator::addTrack(Track* track) {
 
 	track->setSelected(true);
 	propertyView->selectionChanged(track);
-	this->selector->toFront(false);
 	marker->setZoom(zoom);
 
 	repaint();
@@ -1243,7 +1232,6 @@ Track* TrackNavigator::addTrack(Track::Type type, double sampleRate) {
 
 	this->marker->setSize(2, getHeight());
 	this->marker->setSampleLength(getMaxLength() * 300);
-	this->selector->setSize(getWidth(), getHeight());
 	this->timeLine->setBounds(kControlsWidth, 0, getWidth() - kControlsWidth, timelineOffset);
 	this->timeLine->setSize(getWidth() - kControlsWidth, timelineOffset);
 
@@ -1355,10 +1343,6 @@ void TrackNavigator::resized()
 	this->timeLine->setBounds(kControlsWidth, 0, getWidth() - kControlsWidth, timelineOffset);
 
 	syncTrackControls();
-}
-
-WaveSelector* TrackNavigator::getSelector() {
-	return this->selector.get();
 }
 
 void TrackNavigator::changeListenerCallback(ChangeBroadcaster* source)
@@ -1639,14 +1623,9 @@ void TrackNavigator::mouseDrag(const MouseEvent& event) {
 	if (isPanning)
 		return;
 
-	if (event.mods.isLeftButtonDown() && event.mods.isAltDown()) {
-
-		int start = UITools::snap(event.getMouseDownPosition().getX(), zoom / 4, 2);
-		int end = UITools::snap(event.getOffsetFromDragStart().getX(), zoom / 4, 2);
-
-		getSelector()->setSelectedRange(start, end);
-		return;
-	}
+	// (frueheres Alt+LeftDrag → WaveSelector-Range: Feature komplett entfernt,
+	// hatte keinen Consumer und hinterliess nur das cyan-Overlay-Artefakt.
+	// Wave-Editing kommt spaeter in einem eigenen UI.)
 
 	// Marquee: erst nachdem die Maus weit genug bewegt wurde aktivieren —
 	// einzelne Klicks (mit minimalem Wackeln) sollen weiterhin als Klick
@@ -1833,10 +1812,6 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 
 					if (bounds.contains(x, y)) {
 						currentTrack = tracks.at(i);
-						Rectangle<int> selectorBounds = this->selector->getBounds();
-						selectorBounds.setY(i * Project::DEFAULT_TRACK_HEIGHT);
-						this->selector->setBounds(selectorBounds);
-						this->selector->setSelectedRange(0, 0);
 						tracks.at(i)->setSelected(true);
 						propertyView->selectionChanged(tracks.at(i));
 

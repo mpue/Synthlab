@@ -914,8 +914,18 @@ void Track::setSamplePosition(int position, bool dispatchEvents)
 					if (!activeNoteNumbers.empty())
 						sendAllNotesOff();
 					lastActiveRegion = nextR;
-					const long leadLen = blockEnd - rEnd;
-					dispatchMidiMessages(nextR->getMessages(0, (int)leadLen));
+					// Volle bufferSize aus nextR dispatchen, NICHT nur
+					// (blockEnd - rEnd). MidiRegion::sampleOffset wird vom
+					// ctor / componentMovedOrResized auf bufferSize-Vielfache
+					// abgerundet — wenn A.numSamples kein Vielfaches von bs ist
+					// (typisch: 1 Takt @ 120 BPM/44.1 kHz = 88200 != n*512),
+					// liegt B.sampleOffset um K = A.end - B.sampleOffset Samples
+					// VOR A.end. Lead-Len waere dann nur bs - K, und der naechste
+					// Block fragt B ab sampleNum = bufferSize → die K Samples
+					// in B's Buffer-Range [bs-K, bs) werden nie ausgeliefert.
+					// Mit voller bs hier deckt das Lead [0, bs) ab, der Folge-
+					// block [bs, 2bs) → keine Luecke an der Boundary.
+					dispatchMidiMessages(nextR->getMessages(0, bufferSize));
 				}
 			}
 		}
