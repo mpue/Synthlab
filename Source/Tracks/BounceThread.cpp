@@ -25,6 +25,7 @@
 #include "../PluginModule.h"
 #include "../AudioOut.h"
 #include "../AuxOut.h"
+#include "../BusOut.h"
 #include "../AudioIn.h"
 #include "../Mixer.h"
 #include "../MixerPanel.h"
@@ -75,6 +76,17 @@ void BounceThread::run()
 	// Prepare master FX plugins for non-realtime
 	if (auto* masterPan = main->getEditor()->getMixer()->getMasterPanel())
 		masterPan->setFXNonRealtime(true);
+
+	// Bus-FX-Plugins ebenfalls auf non-realtime schalten — sie haengen wie
+	// Master-FX nicht im Modul-Graph, das obere Schleife in der File trifft
+	// sie nicht.
+	{
+		auto& mp = *main->getEditor()->getMixer();
+		for (auto* panel : mp.getChannelStrips()) {
+			if (panel != nullptr && panel->getChannelType() == Mixer::Channel::Type::BUS)
+				panel->setFXNonRealtime(true);
+		}
+	}
 
 	main->setRunning(false);
 
@@ -322,6 +334,101 @@ void BounceThread::run()
 			}
 		}
 
+		// Bus channels — Spiegel zur Realtime-Logik in MainComponent.
+		// BusOut hat keine Patch-Inputs; Tracks haben eine Send-Liste, die
+		// hier in den Bus-Mix-Buffer rein addiert wird; der Bus-Buffer wird
+		// dann mit eigenem Volume/Pan/Mute auf den Master gemischt.
+		std::vector<BusOut*> busChannels = mixer.getBusChannels();
+		if (! busChannels.empty()) {
+			for (auto* b : busChannels) {
+				if (b != nullptr) b->clearMixBuffer(numSamples);
+			}
+
+			auto findBusByModuleIndex = [&](long idx) -> BusOut* {
+				for (auto* b : busChannels) {
+					if (b != nullptr && (long) b->getIndex() == idx) return b;
+				}
+				return nullptr;
+			};
+
+			for (auto* panel : mixer.getChannelStrips()) {
+				if (panel == nullptr) continue;
+				Track* t = panel->getTrack();
+				if (t == nullptr) continue;
+				const auto& sends = t->getSends();
+				if (sends.empty()) continue;
+
+				AudioOut* ao = dynamic_cast<AudioOut*>(panel->getModule());
+				if (ao == nullptr) continue;
+				auto& aoPins = ao->getPins();
+				if (aoPins.size() < 2) continue;
+
+				const float* srcL = nullptr;
+				const float* srcR = nullptr;
+				if (! aoPins[0]->getConnections().empty()
+					&& aoPins[0]->getConnections()[0] != nullptr
+					&& aoPins[0]->getConnections()[0]->getAudioBuffer() != nullptr)
+					srcL = aoPins[0]->getConnections()[0]->getAudioBuffer()->getReadPointer(0);
+				if (! aoPins[1]->getConnections().empty()
+					&& aoPins[1]->getConnections()[0] != nullptr
+					&& aoPins[1]->getConnections()[0]->getAudioBuffer() != nullptr)
+					srcR = aoPins[1]->getConnections()[0]->getAudioBuffer()->getReadPointer(0);
+
+				if (srcL == nullptr && srcR == nullptr) continue;
+
+				for (const auto& s : sends) {
+					BusOut* bus = findBusByModuleIndex(s.busModuleIndex);
+					if (bus == nullptr) continue;
+					auto* mb = bus->getMixBuffer();
+					if (mb == nullptr || mb->getNumChannels() < 2 || mb->getNumSamples() < numSamples) continue;
+					const float amt = s.amount;
+					if (amt <= 0.0f) continue;
+					if (srcL != nullptr)
+						juce::FloatVectorOperations::addWithMultiply(mb->getWritePointer(0), srcL, amt, numSamples);
+					if (srcR != nullptr)
+						juce::FloatVectorOperations::addWithMultiply(mb->getWritePointer(1), srcR, amt, numSamples);
+				}
+			}
+
+			for (int b = 0; b < (int) busChannels.size(); ++b) {
+				BusOut* bus = busChannels[b];
+				if (bus == nullptr) continue;
+				Mixer::Channel* busMeta = Mixer::getInstance()->getChannel(Mixer::Channel::Type::BUS, b);
+				if (busMeta == nullptr) continue;
+
+				auto* mb = bus->getMixBuffer();
+				if (mb == nullptr) continue;
+
+				// FX-Chain des Busses anwenden — gleicher Pfad wie der Master-
+				// FX-Block weiter unten, nur eben auf dem Bus-internen Buffer.
+				for (auto* panel : mixer.getChannelStrips()) {
+					if (panel != nullptr && panel->getIndex() == bus->getChannelIndex()) {
+						panel->processMasterFX(*mb, (juce::int64) pos, true, false);
+						break;
+					}
+				}
+
+				const float busVol = (! busMeta->mute) ? (float) busMeta->volume : 0.0f;
+				if (busVol <= 0.0f) continue;
+				const double busPan = busMeta->pan;
+				const float busGainL = fastCos((M_PI * (busPan + 1) / 4));
+				const float busGainR = fastSin((M_PI * (busPan + 1) / 4));
+
+				const int samplesToRead = std::min(numSamples, mb->getNumSamples());
+
+				if (numChannels > 0) {
+					const float* mL = mb->getReadPointer(0);
+					for (int i = 0; i < samplesToRead; ++i)
+						mixBuffer.getWritePointer(0)[i] += mL[i] * busGainL * busVol;
+				}
+				if (numChannels > 1) {
+					const float* mR = mb->getReadPointer(1);
+					for (int i = 0; i < samplesToRead; ++i)
+						mixBuffer.getWritePointer(1)[i] += mR[i] * busGainR * busVol;
+				}
+			}
+		}
+
 		// Apply master FX chain — beim Offline-Bounce ist der "Transport"
 		// die aktuelle Position in der Render-Schleife; isPlaying = true,
 		// damit positions-/tempoabhängige Plugins (z.B. Coproducer) sich
@@ -385,6 +492,14 @@ void BounceThread::run()
 	// reset plugins to realtime mode
 	if (auto* masterPan = main->getEditor()->getMixer()->getMasterPanel())
 		masterPan->setFXNonRealtime(false);
+
+	{
+		auto& mp = *main->getEditor()->getMixer();
+		for (auto* panel : mp.getChannelStrips()) {
+			if (panel != nullptr && panel->getChannelType() == Mixer::Channel::Type::BUS)
+				panel->setFXNonRealtime(false);
+		}
+	}
 
 	for (auto* mod : *main->getEditor()->getModule()->getModules())
 	{

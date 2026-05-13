@@ -34,6 +34,7 @@
 #include "SamplerModule.h"
 #include "AudioIn.h"
 #include "AuxOut.h"
+#include "BusOut.h"
 #include "DistortionModule.h"
 #include "PluginModule.h"
 #include "StepSequencerModule.h"
@@ -187,6 +188,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Aux out") {
         m = new AuxOut();
+    }
+    else if (prefabs[id].getName() == "Bus out") {
+        m = new BusOut();
     }
     else if (prefabs[id].getName() == "Audio in") {
         m = new AudioIn();

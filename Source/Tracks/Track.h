@@ -335,6 +335,42 @@ public:
     juce::String getAutomationCurrentSlot()   const { return automationCurrentSlot; }
     juce::String getAutomationCurrentParamId() const { return automationCurrentParamId; }
 
+    // ----- Bus-Sends ---------------------------------------------------------
+    // Pro Track 0..N Sends auf BusOut-Module. Die Routing-Logik lebt nicht im
+    // Patch-Graph — der Audio-Callback liest diese Liste und mischt das post-
+    // fader Tracksignal pro Send mit `amount` in den jeweiligen BusOut::mixBuffer.
+    //
+    // busModuleIndex referenziert BusOut::getIndex() (= Module::getIndex(),
+    // stabil ueber Save/Load), nicht den volatilen Mixer-Channel-Index.
+    struct Send {
+        long  busModuleIndex = -1;
+        float amount         = 1.0f; // 0..1 linear (post-fader)
+    };
+
+    const std::vector<Send>& getSends() const { return sends; }
+    void addSend(long busModuleIndex, float amount = 1.0f) {
+        sends.push_back({ busModuleIndex, amount });
+        sendChangeMessage();
+    }
+    void removeSend(int idx) {
+        if (idx >= 0 && idx < (int) sends.size()) {
+            sends.erase(sends.begin() + idx);
+            sendChangeMessage();
+        }
+    }
+    void setSendAmount(int idx, float amount) {
+        if (idx >= 0 && idx < (int) sends.size()) {
+            sends[idx].amount = amount;
+            sendChangeMessage();
+        }
+    }
+    void setSendBus(int idx, long busModuleIndex) {
+        if (idx >= 0 && idx < (int) sends.size()) {
+            sends[idx].busModuleIndex = busModuleIndex;
+            sendChangeMessage();
+        }
+    }
+
 private:
 
     void dispatchMidiMessages(const std::vector<juce::MidiMessage*>& messages);
@@ -489,6 +525,14 @@ private:
     // Mirror der FX-Plugin-Pointer aus dem MasterChannelPanel. Wird vom Panel
     // gepflegt (insertFX/removeFX/applyFXChainState/reconstructFXChainFromGraph).
     PluginModule* fxPlugins[NUM_FX_SLOTS] = {};
+
+    // Bus-Sends dieses Tracks. Lesen vom Audio-Thread, Mutation nur vom UI-
+    // Thread (Track-Strip "+"-Button, Dropdown / Knob / Remove). Der Audio-
+    // Thread liest size() + amount/index ohne Lock — wenn der User waehrend
+    // eines Blocks einen Send loescht, kann ein Block lang ein "phantom" Send
+    // gemischt werden; das hoert kein Mensch und ist die Standardloesung in
+    // diesem Code (siehe FX-Chain-Reads).
+    std::vector<Send> sends;
 
     // Datenmodell fuer alle Lanes dieses Tracks. Die Lane des aktuell im UI
     // gewaehlten Parameters bindet `automationLane` an sich; alle anderen

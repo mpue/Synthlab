@@ -10,6 +10,7 @@
 #include "../AudioOut.h"
 #include "../AudioIn.h"
 #include "../AuxOut.h"
+#include "../BusOut.h"
 #include "../PrefabFactory.h"
 #include "../AudioManager.h"
 #include "../TerminalModule.h"
@@ -105,7 +106,7 @@ bool AddModuleAction::perform() {
     // add an aux channel, which is routable
     
     AuxOut* aux;
-    
+
     if ((aux = dynamic_cast<AuxOut*>(m)) != NULL) {
         editor->getMixer()->getAuxChannels().push_back(aux);
         String channelName = "Aux "+ String(editor->getMixer()->getAuxChannels().size());
@@ -114,6 +115,21 @@ bool AddModuleAction::perform() {
         m->setName(channelName);
         editor->getMixer()->setVolume(channelIndex, aux->getVolume());
         editor->getMixer()->setModule(channelIndex, aux);
+        if (!editor->isRunning()) {
+            editor->setRunning(true);
+        }
+    }
+
+    BusOut* bus;
+
+    if ((bus = dynamic_cast<BusOut*>(m)) != NULL) {
+        editor->getMixer()->getBusChannels().push_back(bus);
+        String channelName = "Bus " + String(editor->getMixer()->getBusChannels().size());
+        int channelIndex = editor->addChannel(channelName, Mixer::Channel::Type::BUS);
+        bus->setChannelIndex(channelIndex);
+        m->setName(channelName);
+        editor->getMixer()->setVolume(channelIndex, bus->getVolume());
+        editor->getMixer()->setModule(channelIndex, bus);
         if (!editor->isRunning()) {
             editor->setRunning(true);
         }

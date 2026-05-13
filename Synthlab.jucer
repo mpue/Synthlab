@@ -368,6 +368,8 @@
               file="Source/AudioEngine/FractionalDelayBuffer.h"/>
         <FILE id="CzCxcs" name="AuxOut.cpp" compile="1" resource="0" file="Source/AuxOut.cpp"/>
         <FILE id="bvlaqP" name="AuxOut.h" compile="0" resource="0" file="Source/AuxOut.h"/>
+        <FILE id="busOu1" name="BusOut.cpp" compile="1" resource="0" file="Source/BusOut.cpp"/>
+        <FILE id="busOu2" name="BusOut.h" compile="0" resource="0" file="Source/BusOut.h"/>
         <FILE id="JS0IMS" name="Mixer.cpp" compile="1" resource="0" file="Source/Mixer.cpp"/>
         <FILE id="VzKB75" name="Mixer.h" compile="0" resource="0" file="Source/Mixer.h"/>
         <FILE id="UclOR0" name="AudioModule.h" compile="0" resource="0" file="Source/AudioModule.h"/>

@@ -133,6 +133,13 @@ public:
     }
     Track* getTrack() const noexcept { return track; }
 
+    // VolumeAdjustable, mit dem dieser Strip verbunden ist — fuer Track-Strips
+    // ist das die zugehoerige AudioOut, fuer Aux/Bus/In/Master die jeweilige
+    // Modul-Instanz (AudioIn / AuxOut / BusOut / nullptr fuer Master).
+    // Wird vom Send-Mix-Loop benoetigt, um pro Track an die post-FX Buffer
+    // zu kommen (AudioOut input pins).
+    VolumeAdjustable* getModule() const noexcept { return module; }
+
     // FX-Chain-Zugriff fuer Code, der ausserhalb des Modul-Graphs lebenden
     // Master-FX-Plugins durchwandern muss (z.B. AudioDevice-Buffer-Aenderungen
     // an die gehosteten Plugins durchreichen). Indexgrenzen werden gecheckt,
@@ -208,6 +215,29 @@ private:
     SynthEditor*  synthEditor = nullptr;
     PluginModule* fxChain[NUM_FX]      = {};
     juce::TextButton* fxOpenButtons[NUM_FX] = {};
+
+    // --- Bus-Sends UI ---
+    // Maximal anzeigbare Send-Slots pro Strip. Mehr als 4 ist auf dem
+    // 110px-Strip eng — fuer v1 voellig ausreichend. Nur Track-Strips
+    // zeigen die Section ueberhaupt an.
+    static constexpr int NUM_SENDS = 4;
+    juce::TextButton*   addSendButton                = nullptr;
+    juce::ComboBox*     sendBusCombo[NUM_SENDS]      = {};
+    juce::Slider*       sendAmountKnob[NUM_SENDS]    = {};
+    juce::TextButton*   sendRemoveButton[NUM_SENDS]  = {};
+
+    // Vom Panel selbst gerufen, sobald Tracks/Sends/Bus-Liste sich aendern.
+    // Befuellt die ComboBoxes mit den aktuell existierenden BusOut-Modulen,
+    // setzt die Send-Werte aus track->getSends() und versteckt nicht
+    // benoetigte Rows.
+    void refreshSendsUI();
+    // Liste aller existierenden BusOuts (im Modul-Graph). Caller iteriert ueber
+    // Module::getIndex() um Sends stabil aufzuloesen.
+    std::vector<class BusOut*> collectBusOuts() const;
+    // Erzeugt einen neuen BusOut via AddModuleAction (gleicher Pfad wie
+    // "Add Module" aus dem Menue) und fuegt einen Send darauf hinzu.
+    void createNewBusAndAddSend();
+    void showAddSendMenu();
 
     // Source modules/pins feeding into the AudioOut before any FX
     Module* chainSourceModL = nullptr;

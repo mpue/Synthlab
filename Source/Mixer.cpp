@@ -38,7 +38,7 @@ void Mixer::rebuildByType() {
     for (auto* c : channels) {
         if (c == nullptr) continue;
         const int t = (int)c->channelType;
-        if (t >= 0 && t < 4) byType[t].push_back(c);
+        if (t >= 0 && t < kNumChannelTypes) byType[t].push_back(c);
     }
 }
 
@@ -74,15 +74,28 @@ int Mixer::getNumOutputs() {
 
 
 int Mixer::getNumAuxBusses() {
-    
+
     int busses = 0;
-    
+
     for (int i = 0; i < channels.size();i++) {
         if (channels.at(i)->channelType == Channel::Type::AUX) {
             busses++;
         }
     }
-    
+
+    return busses;
+}
+
+int Mixer::getNumBusChannels() {
+
+    int busses = 0;
+
+    for (int i = 0; i < channels.size();i++) {
+        if (channels.at(i)->channelType == Channel::Type::BUS) {
+            busses++;
+        }
+    }
+
     return busses;
 }
 

@@ -639,6 +639,20 @@ ValueTree TrackNavigator::getConfiguration()
 		// Plugin-Parameter, mit stabiler Uuid).
 		track.addChild(tracks.at(i)->getAutomationModel().toValueTree(), -1, nullptr);
 
+		// Bus-Sends pro Track. busModuleIndex referenziert Module::getIndex()
+		// des BusOut — der ist stabil ueber Save/Load, weil SynthEditor beim
+		// Speichern modulIndex mit ins Patch-XML schreibt.
+		{
+			ValueTree sendsTree("Sends");
+			for (const auto& s : tracks.at(i)->getSends()) {
+				ValueTree sendNode("Send");
+				sendNode.setProperty("busModuleIndex", (juce::int64) s.busModuleIndex, nullptr);
+				sendNode.setProperty("amount",         (double)       s.amount,         nullptr);
+				sendsTree.addChild(sendNode, -1, nullptr);
+			}
+			track.addChild(sendsTree, -1, nullptr);
+		}
+
 		// FX-Slot-Map (welches Plugin in welchem User-Slot) wird in
 		// SynthEditor::saveFile() pro Track angereichert — TrackNavigator
 		// hat keinen Zugriff auf MixerPanel/Channel-Strips.

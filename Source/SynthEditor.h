@@ -7,6 +7,7 @@
 #include "AudioIn.h"
 #include "AudioOut.h"
 #include "AuxOut.h"
+#include "BusOut.h"
 #include "AudioModule.h"
 #include "SampleEditor.h"
 #include "SelectionModel.h"

@@ -1733,6 +1733,13 @@ void SynthEditor::loadFromString(juce::String in) {
 			mixer->getMasterPanel()->applyFXChainState(masterFX);
 	}
 
+	// Bus-FX-Chains analog wieder einspielen.
+	if (mixer != nullptr) {
+		ValueTree busFX = v.getChildWithName("BusFXChains");
+		if (busFX.isValid())
+			mixer->applyBusFXChains(busFX);
+	}
+
 	setCurrentLayer(v.getProperty("layer").toString().getIntValue());
 	setLocked(v.getProperty("lock").toString().getIntValue() > 0);
 
@@ -1837,6 +1844,15 @@ void SynthEditor::saveFile() {
 			v->appendChild(masterFX, nullptr);
 	}
 
+	// Bus-FX-Chains pro BusOut. Selber Grund wie Master-FX: leben ausserhalb
+	// des Modul-Graphen. Aufloesung beim Load ueber busModuleIndex —
+	// Module::getIndex() ist Save/Load-stabil.
+	if (mixer != nullptr) {
+		ValueTree busFX = mixer->collectBusFXChains();
+		if (busFX.isValid() && busFX.getNumChildren() > 0)
+			v->appendChild(busFX, nullptr);
+	}
+
 	if (Project::getInstance()->isNewFile()) {
 
 		FileChooser chooser("Select target file...", outputDir, "*");
@@ -1876,6 +1892,15 @@ void SynthEditor::saveFile() {
 		ValueTree masterFX = mixer->getMasterPanel()->getFXChainState();
 		if (masterFX.isValid() && masterFX.getNumChildren() > 0)
 			v->appendChild(masterFX, nullptr);
+	}
+
+	// Bus-FX-Chains pro BusOut. Selber Grund wie Master-FX: leben ausserhalb
+	// des Modul-Graphen. Aufloesung beim Load ueber busModuleIndex —
+	// Module::getIndex() ist Save/Load-stabil.
+	if (mixer != nullptr) {
+		ValueTree busFX = mixer->collectBusFXChains();
+		if (busFX.isValid() && busFX.getNumChildren() > 0)
+			v->appendChild(busFX, nullptr);
 	}
 
 	if (Project::getInstance()->isNewFile()) {
@@ -2071,6 +2096,14 @@ void SynthEditor::openFile() {
 				mixer->getMasterPanel()->applyFXChainState(masterFX);
 		}
 
+		// Bus-FX-Chains nach reconstructAllFXChains anwenden — zu dem Zeitpunkt
+		// sind die BusOut-Module und ihre Panels bereits registriert.
+		if (mixer != nullptr) {
+			ValueTree busFX = v.getChildWithName("BusFXChains");
+			if (busFX.isValid())
+				mixer->applyBusFXChains(busFX);
+		}
+
 		Project::getInstance()->setRoot(root.get());
 		resized();
 		setCurrentLayer(v.getProperty("layer").toString().getIntValue());
@@ -2140,6 +2173,13 @@ void SynthEditor::openFile(juce::File file) {
 		ValueTree masterFX = v.getChildWithName("MasterFXChain");
 		if (masterFX.isValid())
 			mixer->getMasterPanel()->applyFXChainState(masterFX);
+	}
+
+	// Bus-FX-Chains analog.
+	if (mixer != nullptr) {
+		ValueTree busFX = v.getChildWithName("BusFXChains");
+		if (busFX.isValid())
+			mixer->applyBusFXChains(busFX);
 	}
 
 	Project::getInstance()->setRoot(root.get());
@@ -2367,12 +2407,29 @@ void SynthEditor::openTracks(File file)
 			// Automation pro Track laden — gleiche Stelle, an der getConfiguration()
 			// das ValueTree als "Automation"-Child geschrieben hat.
 			if (loadedTrack != nullptr) {
-                
+
                 Logger::getCurrentLogger()->writeToLog("Loading track "+loadedTrack->getName());
-                
+
 				ValueTree autoTree = track.getChildWithName("Automation");
 				if (autoTree.isValid())
 					loadedTrack->getAutomationModel().fromValueTree(autoTree);
+
+				// Bus-Sends pro Track laden. Bus-Existenz wird nicht geprueft:
+				// der BusOut wird beim Load des Patch-XML separat ueber
+				// configureAudioModule registriert; wenn der referenzierte
+				// busModuleIndex spaeter im Audio-Loop nicht auffindbar ist,
+				// wird der Send einfach uebersprungen (kein Lookup-Fehler).
+				ValueTree sendsTree = track.getChildWithName("Sends");
+				if (sendsTree.isValid()) {
+					for (int s = 0; s < sendsTree.getNumChildren(); ++s) {
+						const auto sendNode = sendsTree.getChild(s);
+						if (! sendNode.hasType("Send")) continue;
+						const long busIdx = (long) (juce::int64) sendNode.getProperty("busModuleIndex", (juce::int64) -1);
+						const float amt   = (float)              sendNode.getProperty("amount",         1.0);
+						if (busIdx >= 0)
+							loadedTrack->addSend(busIdx, amt);
+					}
+				}
 			}
 		}
 
@@ -2599,6 +2656,18 @@ void SynthEditor::configureAudioModule(Module* m, ChangeBroadcaster* broadcaster
 		mixer->setVolume(channelIndex, aux->getVolume());
 		mixer->setModule(channelIndex, aux);
 		applySavedChannelName(aux, channelIndex);
+	}
+
+	BusOut* bus;
+
+	if ((bus = dynamic_cast<BusOut*>(m)) != NULL) {
+		mixer->getBusChannels().push_back(bus);
+		String channelName = "Bus " + String(mixer->getBusChannels().size());
+		int channelIndex = addChannel(channelName, Mixer::Channel::Type::BUS);
+		bus->setChannelIndex(channelIndex);
+		mixer->setVolume(channelIndex, bus->getVolume());
+		mixer->setModule(channelIndex, bus);
+		applySavedChannelName(bus, channelIndex);
 	}
 
 	broadcaster->addChangeListener(m);

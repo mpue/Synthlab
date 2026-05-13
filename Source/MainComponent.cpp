@@ -23,6 +23,9 @@
 #include "Project/Project.h"
 #include "Knob.h"
 #include "Mixer.h"
+#include "BusOut.h"
+#include "AudioOut.h"
+#include "Tracks/MasterChannelPanel.h"
 #include "Actions/RemoveSelectedAction.h"
 #include "Actions/AddModuleAction.h"
 #include "ModuleBrowser.h"
@@ -878,6 +881,120 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 				auxMeta->magnitudeLeft = auxVol * auxGainL * auxPins[0]->getConnections()[0]->getAudioBuffer()->getMagnitude(0, 0, numSamples);
 			if (auxPins[1]->getConnections().size() > 0)
 				auxMeta->magnitudeRight = auxVol * auxGainR * auxPins[1]->getConnections()[0]->getAudioBuffer()->getMagnitude(0, 0, numSamples);
+		}
+	}
+
+	// --- Bus Channel Processing ---
+	// Anders als AuxOut routet BusOut nicht ueber Patch-Kabel. Statt dessen
+	// halten Tracks eine Send-Liste; pro Block sammeln wir hier alle Track-
+	// Sends in die BusOut-internen Mix-Buffer und mischen den Bus dann mit
+	// eigenem Volume/Pan/Mute auf den Master. Layout:
+	//   1) jeden Bus-Buffer leeren (Steady-State: kein Realloc)
+	//   2) pro Track-Strip: AudioOut->pin[0/1] Buffer = post-FX, post-fader
+	//      Signal; pro Send das in den Ziel-Bus mischen
+	//   3) Bus-Buffer auf Master summieren wie ein AuxOut
+	const std::vector<BusOut*>& busChannels = mixer.getBusChannels();
+	if (! busChannels.empty()) {
+		// Schritt 1: alle Bus-Mix-Buffers leeren.
+		for (auto* b : busChannels) {
+			if (b != nullptr) b->clearMixBuffer(numSamples);
+		}
+
+		// Schritt 2: Tracks pro Send in Bus-Buffer mischen.
+		// Bus-Lookup: busModuleIndex -> BusOut*. Lineare Suche reicht
+		// (typisch <8 Busse), und der Audio-Thread iteriert nur durchs
+		// flache busChannels-Array.
+		auto findBusByModuleIndex = [&](long idx) -> BusOut* {
+			for (auto* b : busChannels) {
+				if (b != nullptr && (long) b->getIndex() == idx) return b;
+			}
+			return nullptr;
+		};
+
+		for (auto* panel : mixer.getChannelStrips()) {
+			if (panel == nullptr) continue;
+			Track* t = panel->getTrack();
+			if (t == nullptr) continue;
+			const auto& sends = t->getSends();
+			if (sends.empty()) continue;
+
+			// AudioOut dieses Track-Strips besorgen, dessen Input-Pin enthaelt
+			// das post-FX, post-fader Signal (TrackIn -> [FX]* -> AudioOut).
+			AudioOut* ao = dynamic_cast<AudioOut*>(panel->getModule());
+			if (ao == nullptr) continue;
+			auto& aoPins = ao->getPins();
+			if (aoPins.size() < 2) continue;
+
+			const float* srcL = nullptr;
+			const float* srcR = nullptr;
+			if (! aoPins[0]->getConnections().empty()
+				&& aoPins[0]->getConnections()[0] != nullptr
+				&& aoPins[0]->getConnections()[0]->getAudioBuffer() != nullptr)
+				srcL = aoPins[0]->getConnections()[0]->getAudioBuffer()->getReadPointer(0);
+			if (! aoPins[1]->getConnections().empty()
+				&& aoPins[1]->getConnections()[0] != nullptr
+				&& aoPins[1]->getConnections()[0]->getAudioBuffer() != nullptr)
+				srcR = aoPins[1]->getConnections()[0]->getAudioBuffer()->getReadPointer(0);
+
+			if (srcL == nullptr && srcR == nullptr) continue;
+
+			for (const auto& s : sends) {
+				BusOut* bus = findBusByModuleIndex(s.busModuleIndex);
+				if (bus == nullptr) continue;
+				auto* mb = bus->getMixBuffer();
+				if (mb == nullptr || mb->getNumChannels() < 2 || mb->getNumSamples() < numSamples) continue;
+				const float amt = s.amount;
+				if (amt <= 0.0f) continue;
+
+				if (srcL != nullptr)
+					juce::FloatVectorOperations::addWithMultiply(mb->getWritePointer(0), srcL, amt, numSamples);
+				if (srcR != nullptr)
+					juce::FloatVectorOperations::addWithMultiply(mb->getWritePointer(1), srcR, amt, numSamples);
+			}
+		}
+
+		// Schritt 3: Bus-FX-Chain auf mixBuffer anwenden (vor Volume/Pan),
+		// danach Bus-Buffer mit eigenem Volume/Pan/Mute auf Master.
+		const juce::int64 transportPos  = navigator != nullptr ? navigator->getSamplePosition() : 0;
+		const bool        isPlayingNow  = navigator != nullptr && navigator->isPlaying();
+		const bool        isRecordingNow= navigator != nullptr && navigator->isRecording();
+
+		for (int b = 0; b < (int) busChannels.size(); ++b) {
+			BusOut* bus = busChannels[b];
+			if (bus == nullptr) continue;
+			Mixer::Channel* busMeta = Mixer::getInstance()->getChannel(Mixer::Channel::Type::BUS, b);
+			if (busMeta == nullptr) continue;
+
+			auto* mb = bus->getMixBuffer();
+			if (mb == nullptr || mb->getNumSamples() < numSamples) continue;
+
+			// FX-Chain dieses Busses laufen lassen (Plugins liegen ausserhalb
+			// des Modul-Graphen, gleiches Pattern wie Master-FX). Lookup ueber
+			// den Channel-Strip — getChannelIndex matcht panel->getIndex().
+			for (auto* panel : mixer.getChannelStrips()) {
+				if (panel != nullptr && panel->getIndex() == bus->getChannelIndex()) {
+					panel->processMasterFX(*mb, transportPos, isPlayingNow, isRecordingNow);
+					break;
+				}
+			}
+
+			const float busVol = (! busMeta->mute) ? (float) busMeta->volume : 0.0f;
+			if (busVol <= 0.0f) continue;
+			const double busPan = busMeta->pan;
+			const float busGainL = fastCos((M_PI * (busPan + 1) / 4));
+			const float busGainR = fastSin((M_PI * (busPan + 1) / 4));
+
+			const float* mL = mb->getReadPointer(0);
+			const float* mR = mb->getReadPointer(1);
+
+			if (outNumChans > 0 && outputData[0] && mL)
+				juce::FloatVectorOperations::addWithMultiply(outputData[0], mL, busGainL * busVol, numSamples);
+			if (outNumChans > 1 && outputData[1] && mR)
+				juce::FloatVectorOperations::addWithMultiply(outputData[1], mR, busGainR * busVol, numSamples);
+
+			// VU-Magnitude fuer den Bus-Strip aktualisieren.
+			busMeta->magnitudeLeft  = mb->getMagnitude(0, 0, numSamples) * busVol * busGainL;
+			busMeta->magnitudeRight = mb->getMagnitude(1, 0, numSamples) * busVol * busGainR;
 		}
 	}
 

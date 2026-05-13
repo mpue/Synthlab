@@ -35,7 +35,8 @@ public:
 			IN,
 			OUT,
 			AUX,
-			MASTER
+			MASTER,
+			BUS
 		};
 
 		// Defaults: unity gain, center pan. Ohne diese Inits blieben volume/pan
@@ -126,6 +127,7 @@ public:
 	int getNumOutputs();
 	int getNumInputs();
 	int getNumAuxBusses();
+	int getNumBusChannels();
 
 	void setAvailableInputChannelNames(StringArray channels) {
 		this->availableInputChannels = channels;
@@ -181,7 +183,9 @@ private:
 
 	std::vector<Channel*> channels;
 	// Index-by-type for O(1) audio-thread lookups (F1). Rebuilt by rebuildByType().
-	std::vector<Channel*> byType[4]; // IN, OUT, AUX, MASTER
+	// Slot count must match the Type enum (IN, OUT, AUX, MASTER, BUS).
+	static constexpr int kNumChannelTypes = 5;
+	std::vector<Channel*> byType[kNumChannelTypes];
 	void rebuildByType();
 
 	StringArray availableInputChannels;

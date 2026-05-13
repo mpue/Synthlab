@@ -8,7 +8,11 @@ using juce::String;
 // Height of the group-label header drawn by MixerPanel itself.
 static constexpr int HEADER_H = 15;
 // Channel strip height (below the header).
-static constexpr int STRIP_H  = 340;
+// 240 vu + fader, ~22 mute/solo, ~80 FX-slots, ~100 Sends-Section
+// (Header + 4 Send-Slots). Sends sind nur auf Track-Strips sichtbar,
+// die anderen Strips lassen den Bereich leer — die einheitliche Hoehe
+// haelt die Mixer-Reihe flach.
+static constexpr int STRIP_H  = 446;
 // Total mixer panel height.
 static constexpr int PANEL_H  = HEADER_H + STRIP_H;
 // Width of each channel strip.
@@ -21,6 +25,7 @@ MixerPanel::MixerPanel ()
 	outputChannels.reserve(2);
 	inputChannels.reserve(2);
 	auxChannels.reserve(2);
+	busChannels.reserve(4);
     setSize(600, PANEL_H);
 
     masterPanel = new MasterChannelPanel();
@@ -63,6 +68,7 @@ void MixerPanel::paint (Graphics& g)
             case Mixer::Channel::Type::IN:  col = juce::Colour(0xff2255cc); lbl = "INPUTS";   break;
             case Mixer::Channel::Type::OUT: col = juce::Colour(0xff22aa55); lbl = "OUTPUTS";  break;
             case Mixer::Channel::Type::AUX: col = juce::Colour(0xffcc7700); lbl = "AUX";      break;
+            case Mixer::Channel::Type::BUS: col = juce::Colour(0xff995cd9); lbl = "BUS";      break;
             default:                        col = juce::Colour(0xff555555); lbl = "";          break;
         }
         int chX = ch->getX();
@@ -270,10 +276,59 @@ std::vector<AuxOut*>& MixerPanel::getAuxChannels() {
     return auxChannels;
 }
 
+std::vector<BusOut*>& MixerPanel::getBusChannels() {
+    return busChannels;
+}
+
+juce::ValueTree MixerPanel::collectBusFXChains() const {
+    juce::ValueTree root("BusFXChains");
+    for (auto* panel : channels) {
+        if (panel == nullptr) continue;
+        if (panel->getChannelType() != Mixer::Channel::Type::BUS) continue;
+        auto* bo = dynamic_cast<BusOut*>(panel->getModule());
+        if (bo == nullptr) continue;
+        auto chain = panel->getFXChainState();
+        if (! chain.isValid() || chain.getNumChildren() == 0) continue;
+
+        // getFXChainState() liefert ein "MasterFXChain"-Tree mit "Slot"-Kindern.
+        // Wir packen das unter einem eindeutigen "BusFXChain"-Knoten samt
+        // busModuleIndex neu — damit unterscheiden sich Master- und Bus-FX im
+        // Save eindeutig und die Slot-Children bleiben strukturell gleich.
+        juce::ValueTree out("BusFXChain");
+        out.setProperty("busModuleIndex", (juce::int64) bo->getIndex(), nullptr);
+        for (int i = 0; i < chain.getNumChildren(); ++i)
+            out.appendChild(chain.getChild(i).createCopy(), nullptr);
+        root.appendChild(out, nullptr);
+    }
+    return root;
+}
+
+void MixerPanel::applyBusFXChains(const juce::ValueTree& tree) {
+    if (! tree.isValid()) return;
+    for (int i = 0; i < tree.getNumChildren(); ++i) {
+        auto chain = tree.getChild(i);
+        if (! chain.hasType("BusFXChain")) continue;
+        const long busIdx = (long)(juce::int64) chain.getProperty("busModuleIndex", (juce::int64) -1);
+        if (busIdx < 0) continue;
+        for (auto* panel : channels) {
+            if (panel == nullptr) continue;
+            auto* bo = dynamic_cast<BusOut*>(panel->getModule());
+            if (bo == nullptr) continue;
+            if ((long) bo->getIndex() != busIdx) continue;
+            // applyFXChainState() iteriert Slot-Children — Tag-Name des Root
+            // ist hier "BusFXChain" statt "MasterFXChain", was die Methode
+            // nicht prueft. Sie liest nur die Slots.
+            panel->applyFXChainState(chain);
+            break;
+        }
+    }
+}
+
 void MixerPanel::clearChannels() {
 	outputChannels.clear();
 	inputChannels.clear();
 	auxChannels.clear();
+	busChannels.clear();
     currentX = 0;
 }
 

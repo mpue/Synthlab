@@ -32,6 +32,8 @@
 #include "../PrefabFactory.h"
 #include "../Plugins/PluginManager.h"
 #include "../Plugins/PluginBrowserComponent.h"
+#include "../BusOut.h"
+#include "../Actions/AddModuleAction.h"
 //[/Headers]
 
 #include "MasterChannelPanel.h"
@@ -167,6 +169,45 @@ MasterChannelPanel::MasterChannelPanel ()
         fxOpenButtons[i]->addListener(this);
     }
 
+    // --- Bus-Sends UI ---
+    // Alle Send-Controls per default hidden — wir blenden sie in
+    // refreshSendsUI() nur fuer Track-Strips mit existierenden Sends ein,
+    // damit AUX/BUS/IN/OUT-Strips frei von Send-Slots bleiben.
+    addSendButton = new juce::TextButton("+");
+    addSendButton->setTooltip("Add send to bus");
+    addChildComponent(addSendButton);
+    addSendButton->addListener(this);
+
+    for (int i = 0; i < NUM_SENDS; ++i) {
+        sendBusCombo[i] = new juce::ComboBox("sendBus" + juce::String(i));
+        addChildComponent(sendBusCombo[i]);
+        sendBusCombo[i]->onChange = [this, i]() {
+            if (track == nullptr) return;
+            const int chosenId = sendBusCombo[i]->getSelectedId();
+            // ItemId == busModuleIndex + 1 (ids > 0 only)
+            if (chosenId > 0 && i < (int) track->getSends().size())
+                track->setSendBus(i, (long) chosenId - 1);
+        };
+
+        sendAmountKnob[i] = new juce::Slider("sendAmt" + juce::String(i));
+        sendAmountKnob[i]->setRange(0.0, 1.0, 0.01);
+        sendAmountKnob[i]->setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
+        sendAmountKnob[i]->setTextBoxStyle(juce::Slider::NoTextBox, false, 0, 0);
+        sendAmountKnob[i]->setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xff995cd9));
+        sendAmountKnob[i]->setColour(juce::Slider::rotarySliderOutlineColourId, juce::Colour(0x7cffffff));
+        addChildComponent(sendAmountKnob[i]);
+        sendAmountKnob[i]->onValueChange = [this, i]() {
+            if (track == nullptr) return;
+            if (i < (int) track->getSends().size())
+                track->setSendAmount(i, (float) sendAmountKnob[i]->getValue());
+        };
+
+        sendRemoveButton[i] = new juce::TextButton("x");
+        sendRemoveButton[i]->setTooltip("Remove send");
+        addChildComponent(sendRemoveButton[i]);
+        sendRemoveButton[i]->addListener(this);
+    }
+
     startTimerHz(60);   // 60 Hz animation timer for smooth VU decay
 
     //[/Constructor]
@@ -198,6 +239,14 @@ MasterChannelPanel::~MasterChannelPanel()
         delete fxOpenButtons[i];
         fxOpenButtons[i] = nullptr;
     }
+
+    delete addSendButton;
+    addSendButton = nullptr;
+    for (int i = 0; i < NUM_SENDS; ++i) {
+        delete sendBusCombo[i];      sendBusCombo[i]     = nullptr;
+        delete sendAmountKnob[i];    sendAmountKnob[i]   = nullptr;
+        delete sendRemoveButton[i];  sendRemoveButton[i] = nullptr;
+    }
     //[/Destructor]
 }
 
@@ -218,6 +267,7 @@ void MasterChannelPanel::paint (Graphics& g)
             case Mixer::Channel::Type::OUT:    stripe = juce::Colour(0xff22aa55); break;
             case Mixer::Channel::Type::AUX:    stripe = juce::Colour(0xffcc7700); break;
             case Mixer::Channel::Type::MASTER: stripe = juce::Colour(0xffaa22aa); break;
+            case Mixer::Channel::Type::BUS:    stripe = juce::Colour(0xff995cd9); break;
             default: break;
         }
     }
@@ -469,6 +519,17 @@ void MasterChannelPanel::paint (Graphics& g)
         }
     }
 
+    // --- Sends section header (nur fuer Track-Strips sichtbar via refreshSendsUI) ---
+    if (track != nullptr) {
+        const int sendsY = 348;
+        g.setFont(juce::Font(8.0f, juce::Font::bold));
+        g.setColour(juce::Colours::white.withAlpha(0.45f));
+        g.drawText("SENDS", fxX, sendsY, 40, 9, juce::Justification::centredLeft, false);
+        g.setColour(juce::Colours::white.withAlpha(0.15f));
+        g.drawLine((float)(fxX + 36), (float)(sendsY + 4),
+                   (float)(fxX + fxW - 18), (float)(sendsY + 4), 1.0f);
+    }
+
     //[/UserPaint]
 }
 
@@ -496,6 +557,34 @@ void MasterChannelPanel::resized()
                 int slotY = fxY + 11 + i * (fxSlotH + fxGap);
                 fxOpenButtons[i]->setBounds(getWidth() - btnW - 4, slotY, btnW, fxSlotH);
             }
+        }
+    }
+
+    // --- Sends section ---
+    // Header in paint() bei y=348. "+" Button rechts neben dem Header,
+    // darunter Send-Rows. Layout: [Combo 60 | gap 2 | Knob 22 | gap 2 | x 16]
+    // Combo: y-offset auf das Knob-Zentrum +6, da das Knob hoeher ist.
+    {
+        const int sendsHeaderY = 348;
+        const int rowH         = 22;
+        const int firstRowY    = sendsHeaderY + 12;
+        const int comboW       = 60;
+        const int knobW        = 22;
+        const int xBtnW        = 16;
+        const int leftX        = 4;
+        const int padRight     = 4;
+
+        if (addSendButton != nullptr) {
+            addSendButton->setBounds(getWidth() - xBtnW - padRight, sendsHeaderY, xBtnW, 12);
+        }
+        for (int i = 0; i < NUM_SENDS; ++i) {
+            const int rowY = firstRowY + i * rowH;
+            if (sendBusCombo[i] != nullptr)
+                sendBusCombo[i]->setBounds(leftX, rowY + 4, comboW, 14);
+            if (sendAmountKnob[i] != nullptr)
+                sendAmountKnob[i]->setBounds(leftX + comboW + 2, rowY, knobW, knobW);
+            if (sendRemoveButton[i] != nullptr)
+                sendRemoveButton[i]->setBounds(leftX + comboW + 2 + knobW + 2, rowY + 4, xBtnW, 14);
         }
     }
     //[/UserResized]
@@ -568,6 +657,23 @@ void MasterChannelPanel::buttonClicked (Button* buttonThatWasClicked)
         if (buttonThatWasClicked == fxOpenButtons[i]) {
             if (fxChain[i] != nullptr)
                 fxChain[i]->openPluginWindow();
+            return;
+        }
+    }
+
+    // Sends "+" button: open popup with existing buses + "New Bus".
+    if (buttonThatWasClicked == addSendButton) {
+        showAddSendMenu();
+        return;
+    }
+
+    // Send remove ("x") buttons.
+    for (int i = 0; i < NUM_SENDS; ++i) {
+        if (buttonThatWasClicked == sendRemoveButton[i]) {
+            if (track != nullptr) {
+                track->removeSend(i);
+                refreshSendsUI();
+            }
             return;
         }
     }
@@ -734,6 +840,9 @@ void MasterChannelPanel::setTrack(Track *t) {
     // Falls die FX-Chain bereits aufgebaut ist (z.B. nach load), den Track
     // jetzt mit den Pointers versorgen.
     syncTrackFXPlugins();
+    // Send-Slots auf den aktuellen Track-Stand bringen — wichtig fuer Reload-
+    // Pfade, in denen Track-Sends schon vorher aus dem XML deserialisiert wurden.
+    refreshSendsUI();
 }
 
 void MasterChannelPanel::syncTrackFXPlugins() {
@@ -859,6 +968,113 @@ void MasterChannelPanel::setModule(VolumeAdjustable *v) {
 
 void MasterChannelPanel::setSynthEditor(SynthEditor* editor) {
     synthEditor = editor;
+    // setTrack ist eventuell vor setSynthEditor passiert (typischer Open-Path).
+    // Erst jetzt koennen wir die Bus-Liste aus dem Modul-Graphen ableiten.
+    refreshSendsUI();
+}
+
+std::vector<BusOut*> MasterChannelPanel::collectBusOuts() const {
+    std::vector<BusOut*> result;
+    if (synthEditor == nullptr) return result;
+    Module* root = synthEditor->getModule();
+    if (root == nullptr || root->getModules() == nullptr) return result;
+    for (auto* mod : *root->getModules()) {
+        if (auto* b = dynamic_cast<BusOut*>(mod))
+            result.push_back(b);
+    }
+    return result;
+}
+
+void MasterChannelPanel::refreshSendsUI() {
+    // Send-Controls sind nur fuer Track-Strips relevant — Aux/Bus/In/Master
+    // verbergen den ganzen Block.
+    const bool isTrackStrip = (track != nullptr);
+    if (addSendButton != nullptr) addSendButton->setVisible(isTrackStrip);
+
+    const auto buses = collectBusOuts();
+    const int numSends = isTrackStrip ? (int) track->getSends().size() : 0;
+
+    for (int i = 0; i < NUM_SENDS; ++i) {
+        const bool rowVisible = isTrackStrip && (i < numSends);
+
+        if (sendBusCombo[i] != nullptr) {
+            sendBusCombo[i]->setVisible(rowVisible);
+            if (rowVisible) {
+                // Rebuild items so newly-created buses appear without re-creating the strip.
+                sendBusCombo[i]->clear(juce::dontSendNotification);
+                for (auto* b : buses) {
+                    // ComboBox ItemIds muessen > 0 sein, daher +1.
+                    sendBusCombo[i]->addItem(b->getName(), (int) b->getIndex() + 1);
+                }
+                const long busIdx = track->getSends()[i].busModuleIndex;
+                sendBusCombo[i]->setSelectedId((int) busIdx + 1, juce::dontSendNotification);
+            }
+        }
+        if (sendAmountKnob[i] != nullptr) {
+            sendAmountKnob[i]->setVisible(rowVisible);
+            if (rowVisible)
+                sendAmountKnob[i]->setValue(track->getSends()[i].amount, juce::dontSendNotification);
+        }
+        if (sendRemoveButton[i] != nullptr) {
+            sendRemoveButton[i]->setVisible(rowVisible);
+        }
+    }
+
+    // "+"-Button nur enabled, wenn noch ein Slot frei ist.
+    if (addSendButton != nullptr)
+        addSendButton->setEnabled(isTrackStrip && numSends < NUM_SENDS);
+
+    repaint();
+}
+
+void MasterChannelPanel::showAddSendMenu() {
+    if (track == nullptr || synthEditor == nullptr) return;
+
+    juce::PopupMenu menu;
+    menu.addItem(1, "New Bus");
+    menu.addSeparator();
+
+    const auto buses = collectBusOuts();
+    // ID-Schema: 1 = New Bus, sonst 100 + listIndex.
+    for (int i = 0; i < (int) buses.size(); ++i) {
+        menu.addItem(100 + i, buses[(size_t) i]->getName());
+    }
+
+    menu.showMenuAsync(juce::PopupMenu::Options().withTargetComponent(addSendButton),
+        [this, buses](int result) {
+            if (track == nullptr) return;
+            if (result == 1) {
+                createNewBusAndAddSend();
+            } else if (result >= 100) {
+                const int idx = result - 100;
+                if (idx >= 0 && idx < (int) buses.size()) {
+                    track->addSend((long) buses[(size_t) idx]->getIndex(), 1.0f);
+                    refreshSendsUI();
+                }
+            }
+        });
+}
+
+void MasterChannelPanel::createNewBusAndAddSend() {
+    if (synthEditor == nullptr || track == nullptr) return;
+    // Bus out hat Prefab-ID 114 (siehe PrefabFactory.h). AddModuleAction
+    // ist der Standard-Pfad fuer neue Module — er sorgt fuer Position,
+    // Mixer-Registrierung (siehe BusOut-Branch in AddModuleAction.cpp),
+    // Undo, etc. Position ist sekundaer (User sieht den Bus eh primaer
+    // im Mixer-Strip, nicht im Patch-Editor).
+    juce::Point<int> pos(40, 40);
+    auto* am = new AddModuleAction(synthEditor, pos, 114);
+    Project::getInstance()->getUndoManager()->beginNewTransaction();
+    if (Project::getInstance()->getUndoManager()->perform(am)) {
+        // Den frisch angelegten BusOut zuverlaessig identifizieren —
+        // collectBusOuts() liefert ihn als hinzugekommenes letztes Element,
+        // weil AddModuleAction::perform am Ende auf push_back stoesst.
+        const auto buses = collectBusOuts();
+        if (! buses.empty()) {
+            track->addSend((long) buses.back()->getIndex(), 1.0f);
+            refreshSendsUI();
+        }
+    }
 }
 
 // Returns the FX slot index (0-3) at a given component-local position, or -1.
@@ -915,8 +1131,13 @@ void MasterChannelPanel::setFXNonRealtime(bool nonRealtime) {
 void MasterChannelPanel::insertFX(int slotIndex, juce::String pluginName) {
     if (!synthEditor) return;
 
-    // Master channel: create plugin without wiring it into the module graph.
-    if (channel && channel->channelType == Mixer::Channel::Type::MASTER) {
+    // Master- und Bus-Channel: Plugins werden ausserhalb des Modul-Graphen
+    // angelegt. Master-FX bekommen den Master-Buffer vom MainComponent;
+    // Bus-FX bekommen den BusOut::mixBuffer vor der Bus->Master-Summation.
+    // BusOut hat per Definition keine Patch-Pins, deshalb gibt es hier nichts
+    // zu verkabeln.
+    if (channel && (channel->channelType == Mixer::Channel::Type::MASTER
+                 || channel->channelType == Mixer::Channel::Type::BUS)) {
         auto* dev = AudioManager::getInstance()->getDeviceManager()->getCurrentAudioDevice();
         const double sr = dev ? dev->getCurrentSampleRate()        : 44100.0;
         const int    bs = dev ? dev->getCurrentBufferSizeSamples() : 512;
@@ -1039,8 +1260,10 @@ void MasterChannelPanel::insertFX(int slotIndex, juce::String pluginName) {
 void MasterChannelPanel::removeFX(int slotIndex) {
     if (!synthEditor || fxChain[slotIndex] == nullptr) return;
 
-    // Master channel: just delete the plugin, no graph cleanup needed.
-    if (channel && channel->channelType == Mixer::Channel::Type::MASTER) {
+    // Master- und Bus-Channel: Plugin direkt loeschen, kein Graph-Cleanup
+    // noetig — beide leben ausserhalb des Modul-Graphen.
+    if (channel && (channel->channelType == Mixer::Channel::Type::MASTER
+                 || channel->channelType == Mixer::Channel::Type::BUS)) {
         delete fxChain[slotIndex];
         fxChain[slotIndex] = nullptr;
         syncTrackFXPlugins();

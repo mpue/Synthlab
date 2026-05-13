@@ -24,6 +24,7 @@
 #include "Tracks/MasterChannelPanel.h"
 #include "Mixer.h"
 #include "AuxOut.h"
+#include "BusOut.h"
 #include "AudioIn.h"
 #include "AudioOut.h"
 #include "VolumeAdjustable.h"
@@ -56,6 +57,11 @@ public:
     //[UserMethods]     -- You can add your own custom methods in this section.
     void timerCallback() override;
     std::vector<MasterChannelPanel*> getChannels();
+    // Realtime-safe Variante: liefert eine Referenz auf den internen
+    // Channel-Strip-Vector (Master nicht enthalten — der lebt separat).
+    // Wird vom Audio-Callback fuer den Bus-Send-Mix benutzt; kein Copy,
+    // keine Allokation.
+    const std::vector<MasterChannelPanel*>& getChannelStrips() const { return channels; }
 
     void removeAllChannels();
     void changeListenerCallback (juce::ChangeBroadcaster* source)  override;
@@ -67,6 +73,7 @@ public:
     std::vector<AudioIn*>& getInputChannels();
     std::vector<AudioOut*>& getOutputChannels();
     std::vector<AuxOut*>& getAuxChannels();
+    std::vector<BusOut*>& getBusChannels();
     bool channelIsValid(int channel);
     bool auxChannelIsValid(int channel, int subchannel);
     void clearChannels();
@@ -74,6 +81,12 @@ public:
     void setSynthEditor(SynthEditor* se);
     void reconstructAllFXChains();
     MasterChannelPanel* getMasterPanel() { return masterPanel; }
+    // Bus-FX-Chains pro BusOut sammeln / wiederherstellen. Wie bei Master-FX
+    // leben die Plugins ausserhalb des Modul-Graphen, deshalb gehen sie an
+    // saveStructure() vorbei und werden hier mit dem busModuleIndex als
+    // Schluessel im Patch-XML mitgespeichert.
+    juce::ValueTree collectBusFXChains() const;
+    void applyBusFXChains(const juce::ValueTree& tree);
     //[/UserMethods]
     
     void paint (juce::Graphics& g) override;
@@ -89,6 +102,7 @@ private:
     std::vector<AudioOut*> outputChannels;
     std::vector<AudioIn*> inputChannels;
     std::vector<AuxOut*> auxChannels;
+    std::vector<BusOut*> busChannels;
 
     MasterChannelPanel* masterPanel = nullptr;
 

@@ -185,6 +185,7 @@ private:
         prefabs[111] = Prefab("Seq Switch","Audio");
         prefabs[112] = Prefab("Stereo SVF","Filter");
         prefabs[113] = Prefab("Stereo Mixer","Audio");
+        prefabs[114] = Prefab("Bus out","Input / Output");
         prefabImages[38] = juce::ImageCache::getFromMemory(BinaryData::infinity_png, BinaryData::infinity_pngSize);
         prefabImages[38] = juce::ImageCache::getFromMemory(BinaryData::transform_png, BinaryData::transform_pngSize);
         prefabImages[39] = juce::ImageCache::getFromMemory(BinaryData::merge_png, BinaryData::merge_pngSize);

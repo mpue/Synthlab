@@ -25,6 +25,7 @@
 #include "AudioIn.h"
 #include "AudioOut.h"
 #include "AuxOut.h"
+#include "BusOut.h"
 #include "MixerPanel.h"
 #include "VolumeAdjustable.h"
 #include "PadModule.h"
@@ -915,6 +916,20 @@ void ModuleUtils::removeModule(Module* root, Module* module, MixerPanel* mixer, 
 		for (std::vector<AuxOut*>::iterator it = mixer->getAuxChannels().begin(); it != mixer->getAuxChannels().end();) {
 			if ((*it)->getChannelIndex() == aux->getChannelIndex()) {
 				it = mixer->getAuxChannels().erase(it);
+			}
+			else {
+				++it;
+			}
+		}
+	}
+
+	BusOut* bus = nullptr;
+
+	if ((bus = dynamic_cast<BusOut*>(module)) != nullptr) {
+		mixer->removeChannel(bus->getChannelIndex());
+		for (std::vector<BusOut*>::iterator it = mixer->getBusChannels().begin(); it != mixer->getBusChannels().end();) {
+			if ((*it)->getChannelIndex() == bus->getChannelIndex()) {
+				it = mixer->getBusChannels().erase(it);
 			}
 			else {
 				++it;
