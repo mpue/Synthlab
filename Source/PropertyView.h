@@ -25,6 +25,7 @@
 #include "ExtendedFileBrowser.h"
 #include "EditorListener.h"
 #include "InstrumentBrowser.h"
+#include "PulsingTextButton.h"
 
 class Track;
 class SynthEditor;
@@ -60,6 +61,11 @@ public:
     // double-click without going through the plugin chooser dialog.
     void setEditor(SynthEditor* e) { editor = e; }
     InstrumentBrowser* getInstrumentBrowser() { return instrumentBrowser.get(); }
+
+    // Highlight the "Show Plugin" button for a freshly created instrument
+    // track. If a track is passed it also becomes the selected track so a
+    // user clicking the pulsing button immediately opens the right editor.
+    void pulseShowPluginButton (Track* trackToSelect = nullptr);
     //[/UserMethods]
 
     void paint (juce::Graphics& g) override;
@@ -85,7 +91,7 @@ private:
     std::unique_ptr<MainTabbedComponent> propertyTab = nullptr;
     std::unique_ptr<MainTabbedComponent> tabbedComponent = nullptr;
 
-    std::unique_ptr<juce::TextButton> showButton;
+    std::unique_ptr<PulsingTextButton> showButton;
     
 	Track* selectedTrack = nullptr;
     //==============================================================================

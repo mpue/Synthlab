@@ -54,6 +54,7 @@ public:
 
 		SynthlabLogger::get().install();
 		CrashHandler::install();
+		CrashHandler::checkForPreviousCrashes();
 
 		Logger::writeToLog("Command line: " + commandLine);
 

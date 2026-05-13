@@ -18,6 +18,8 @@
 #include "SynthEditor.h"
 #include "Tracks/TrackNavigator.h"
 #include "PluginModule.h"
+#include "Project/Project.h"
+#include "PropertyView.h"
 
 #pragma once
 class TrackUtil
@@ -120,6 +122,14 @@ public:
 		// frisch verlegten Verbindungen sind unsichtbar, bis der User ein Modul
 		// bewegt (was JUCE-intern ein resized() auf dem Parent ausloest).
 		if (editor != nullptr) editor->resized();
+
+		// Draw the user's eye to the "Show Plugin" affordance for the freshly
+		// created instrument track. Only fires from this user-driven path —
+		// project-load (SynthEditor::setConfiguration) builds instrument
+		// tracks via navigator->addTrack directly and stays quiet.
+		if (auto* pv = Project::getInstance()->getPropertyView())
+			pv->pulseShowPluginButton (t);
+
 		return t;
 	}
 

@@ -125,7 +125,7 @@ PropertyView::PropertyView () : TimeSliceThread("PropertyWatcher")
 
     tabbedComponent->addTab("Description", stripBg, descriptionEditor.get(), false);
 
-    showButton = std::make_unique<juce::TextButton>("Show Plugin");
+    showButton = std::make_unique<PulsingTextButton>("Show Plugin");
     addAndMakeVisible(*showButton);
     showButton->setColour(juce::TextButton::buttonColourId,   btnOff);
     showButton->setColour(juce::TextButton::buttonOnColourId, accent);
@@ -226,6 +226,19 @@ void PropertyView::selectionChanged(Component* c)
     resized(); // f�r korrekte Positionierung
 }
 
+
+void PropertyView::pulseShowPluginButton (Track* trackToSelect)
+{
+    if (showButton == nullptr)
+        return;
+
+    if (trackToSelect != nullptr)
+        selectedTrack = trackToSelect;
+
+    showButton->setVisible (true);
+    resized();
+    showButton->startPulse (3);
+}
 
 void PropertyView::fileChanged(juce::String name) {
     // propertyPanel->clear();

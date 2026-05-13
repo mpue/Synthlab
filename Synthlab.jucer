@@ -249,6 +249,7 @@
         <FILE id="lg0001" name="SynthlabLogger.h" compile="0" resource="0" file="Source/SynthlabLogger.h"/>
         <FILE id="lg0002" name="LogView.h" compile="0" resource="0" file="Source/LogView.h"/>
         <FILE id="lg0003" name="CrashHandler.h" compile="0" resource="0" file="Source/CrashHandler.h"/>
+        <FILE id="lg0004" name="PulsingTextButton.h" compile="0" resource="0" file="Source/PulsingTextButton.h"/>
       </GROUP>
       <GROUP id="{1C1CC707-767F-0A14-4BBC-FC07D9A8C470}" name="MessageBus">
         <FILE id="t62AIE" name="FastBus.h" compile="0" resource="0" file="Source/MessageBus/FastBus.h"/>

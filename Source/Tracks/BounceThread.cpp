@@ -27,10 +27,13 @@
 #include "../AuxOut.h"
 #include "../AudioIn.h"
 #include "../Mixer.h"
+#include "../MixerPanel.h"
+#include "MasterChannelPanel.h"
 #include "../TrackIn.h"
 
 #include <JuceHeader.h>
 #include <map>
+#include <set>
 
 void BounceThread::run()
 {
@@ -135,6 +138,84 @@ void BounceThread::run()
 				pluginModule->setCurrentSample(pos);
 				pluginModule->process(&trackMidiSlice);
 
+			}
+		}
+
+		// Channel-Insert-FX explizit prozessieren. PluginModule::process()
+		// (no-arg) ist im bounceMode ein No-Op, damit Instrumente nicht doppelt
+		// laufen — Folge: die in der Module-Graph-Iteration ueber processModule
+		// gezogenen Insert-FX werden im Bounce nie ausgefuehrt. Wir rufen sie
+		// hier in Reihenfolge nachdem die Quellen ihre Output-Pins gefuellt haben.
+		// Zwei-stufiger Ansatz:
+		//  (a) Erst Channel-Strip-FX in Chain-Reihenfolge (fxChain[] ist via
+		//      rewireChain() so sortiert: source -> fxChain[0] -> ... -> AudioOut)
+		//  (b) Dann alle restlichen, nicht-Instrument PluginModules (z.B.
+		//      manuell verkabelte FX). Mehrere Durchgaenge, damit auch
+		//      hintereinander geschaltete FX ohne Slot-Zuweisung propagieren.
+		{
+			juce::MidiBuffer emptyFxMidi;
+			std::set<PluginModule*> processedFx;
+
+			// Set der Instrument-PluginModules (werden separat ueber den Track-
+			// Loop mit MIDI gefuettert — hier nicht erneut anfassen).
+			std::set<PluginModule*> instrumentPlugins;
+			for (auto* track : main->navigator->getTracks())
+				if (track && track->getPluginModule())
+					instrumentPlugins.insert(track->getPluginModule());
+
+			// (a) Channel-Strip-FX in Slot-Reihenfolge
+			auto& mixerRef = *main->getEditor()->getMixer();
+			auto panels = mixerRef.getChannels();
+			for (auto* panel : panels)
+			{
+				if (panel == nullptr) continue;
+				// Master-FX laufen separat ueber processMasterFX auf dem Mix-Buffer
+				if (panel->getChannelType() == Mixer::Channel::Type::MASTER) continue;
+				for (int i = 0; i < panel->getNumFxSlots(); ++i)
+				{
+					PluginModule* fx = panel->getFxPlugin(i);
+					if (fx == nullptr) continue;
+					if (instrumentPlugins.count(fx) > 0) continue;
+					fx->setCurrentSample(pos);
+					fx->process(&emptyFxMidi);
+					processedFx.insert(fx);
+
+					if (pos == 0) {
+						float outMag = (fx->pins.size() >= 4 && fx->pins[2]->getAudioBuffer())
+							? fx->pins[2]->getAudioBuffer()->getMagnitude(0, 0,
+								std::min(numSamples, fx->pins[2]->getAudioBuffer()->getNumSamples()))
+							: -1.0f;
+						DBG("Bounce FX strip type=" << (int) panel->getChannelType()
+							<< " slot=" << i << " plugin='" << fx->getPluginName()
+							<< "' loaded=" << (fx->getPlugin() != nullptr ? 1 : 0)
+							<< " outMag=" << outMag);
+					}
+				}
+			}
+
+			// (b) Catch-all: alle uebrigen, nicht-Instrument PluginModules mit
+			// Audio-Inputs (z.B. manuell verkabelte FX, die nicht in einem
+			// fxChain-Slot stecken). Einmaliger Durchlauf in Insertion-Order —
+			// das spiegelt die Realtime-Ordnung und vermeidet ein doppeltes
+			// Prozessieren stateful Plugins (Delay/Reverb).
+			for (auto* mod : *main->getEditor()->getModule()->getModules())
+			{
+				auto* pm = dynamic_cast<PluginModule*>(mod);
+				if (pm == nullptr) continue;
+				if (instrumentPlugins.count(pm) > 0) continue;
+				if (processedFx.count(pm) > 0) continue;
+				const bool hasAudioInput =
+					pm->pins.size() >= 4 &&
+					pm->pins[0]->getConnections().size() > 0 &&
+					pm->pins[1]->getConnections().size() > 0;
+				if (!hasAudioInput) continue;
+				pm->setCurrentSample(pos);
+				pm->process(&emptyFxMidi);
+				processedFx.insert(pm);
+				if (pos == 0) {
+					DBG("Bounce FX graph '" << pm->getPluginName()
+						<< "' loaded=" << (pm->getPlugin() != nullptr ? 1 : 0));
+				}
 			}
 		}
 
