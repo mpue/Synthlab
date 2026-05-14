@@ -2327,9 +2327,15 @@ void SynthEditor::openTracks(File file)
 	}
 
 	if (tracks.size() > 0) {
-		for (int i = 0; i < v.getNumChildren(); i++) {
+		// Bound nicht mehr v.getNumChildren() — seit Timeline-Marker als
+		// "Markers"-Sibling neben den Tracks im Tracks-XML stehen kann der
+		// Loop sonst Marker als Track interpretieren und tracks.at(i)
+		// out-of-range gehen.
+		const int numTracks = juce::jmin((int) tracks.size(), v.getNumChildren());
+		for (int i = 0; i < numTracks; i++) {
 
 			ValueTree track = v.getChild(i);
+			if (track.getType().toString() != "Track") break;
 			TrackIn* ti = tracks.at(i);
 
 			Track* loadedTrack = nullptr;
@@ -2378,6 +2384,24 @@ void SynthEditor::openTracks(File file)
 						if (! refTempoVar.isVoid())
 							ar->setReferenceTempo((double) refTempoVar);
 						ar->setFollowTempo((bool) region.getProperty("followTempo", false));
+
+						// Pitch-State (Halbtoene). Der geladene Buffer ist
+						// bereits in diesem Zustand — wir setzen NUR das Member
+						// direkt, kein setPitch (das wuerde nochmal shiften).
+						const juce::var pitchVar = region.getProperty("pitch");
+						if (! pitchVar.isVoid()) {
+							// Hack: pitch ist private mit nur setPitch als Setter,
+							// und setPitch shiftet. Wir gehen ueber einen Delta-
+							// Trick: Member-Wert ist aktuell 0, neuer Save-Wert
+							// soll ohne Shift uebernommen werden. Dafuer haben
+							// wir aber keinen direkten Setter — addieren wir
+							// einen klein-invasiven adoptPitchState() bei
+							// Bedarf. Vorlaeufig: setPitch macht bei kleiner
+							// Delta (< 0.5 semitones, siehe Impl) eh nur das
+							// Property-Sync. Wir setzen erst Member via
+							// adoptLoadedPitch.
+							ar->adoptLoadedPitch((float) (double) pitchVar);
+						}
 					}
 
 					// Trim mit unterdruecktem componentMovedOrResized-Handler
@@ -2519,6 +2543,30 @@ void SynthEditor::openTracks(File file)
 							panel->applyFXSlotMap(slotMap);
 					}
 					break;
+				}
+			}
+		}
+	}
+
+	// Timeline-Marker laden — sitzen als "Markers"-Sibling neben den Track-
+	// Children. Wird zuletzt gemacht, damit das TimeLine-Component dann
+	// bereits korrekt initialisiert ist (TrackNavigator existiert bereits).
+	if (navigator != nullptr) {
+		auto markersTree = v.getChildWithName("Markers");
+		if (markersTree.isValid()) {
+			auto* tl = navigator->getTimeLine();
+			if (tl != nullptr) {
+				tl->clearMarkers();
+				for (int i = 0; i < markersTree.getNumChildren(); ++i) {
+					auto mk = markersTree.getChild(i);
+					TimelineMarker tm;
+					tm.position    = (double) mk.getProperty("position", 0.0);
+					tm.name        = mk.getProperty("name", "Marker").toString();
+					tm.type        = (mk.getProperty("type", "normal").toString() == "loop")
+						               ? TimelineMarker::Type::Loop
+						               : TimelineMarker::Type::Normal;
+					tm.loopRepeats = juce::jmax(1, (int) mk.getProperty("loopRepeats", 1));
+					tl->addMarker(tm);
 				}
 			}
 		}

@@ -599,6 +599,10 @@ ValueTree TrackNavigator::getConfiguration()
 					// nach Bedarf gegen das aktuelle Projekt-Tempo.
 					region.setProperty("referenceTempo", ar->getReferenceTempo(), nullptr);
 					region.setProperty("followTempo", ar->getFollowTempo(), nullptr);
+					// Pitch-Shift-State (Halbtoene). Der gespeicherte Buffer
+					// ist BEREITS auf diesen Wert geshiftet, deshalb wird beim
+					// Load nur das Member gesetzt und nicht erneut geshiftet.
+					region.setProperty("pitch", (double) ar->getPitch(), nullptr);
 				}
 			}
 			else if (tracks.at(i)->getType() == Track::MIDI || tracks.at(i)->getType() == Track::INSTRUMENT) {
@@ -674,6 +678,21 @@ ValueTree TrackNavigator::getConfiguration()
 		// hat keinen Zugriff auf MixerPanel/Channel-Strips.
 
 		v.addChild(track, -1, nullptr);
+	}
+
+	// Wavelab-style Timeline-Marker auf Projekt-Ebene serialisieren. Liegen
+	// nicht in einem Track, deshalb als eigener Child von "Tracks" angehaengt.
+	if (timeLine != nullptr) {
+		ValueTree markersTree("Markers");
+		for (const auto& m : timeLine->getMarkers()) {
+			ValueTree mk("Marker");
+			mk.setProperty("position",    m.position, nullptr);
+			mk.setProperty("name",        m.name,     nullptr);
+			mk.setProperty("type",        (m.type == TimelineMarker::Type::Loop) ? "loop" : "normal", nullptr);
+			mk.setProperty("loopRepeats", m.loopRepeats, nullptr);
+			markersTree.addChild(mk, -1, nullptr);
+		}
+		v.addChild(markersTree, -1, nullptr);
 	}
 
 	return v;
@@ -858,6 +877,7 @@ void TrackNavigator::ResetMarkerPosition()
 
 void TrackNavigator::setSamplePosition(int position) {
 
+	const int oldPos = this->samplePosition.load();
 	this->samplePosition = alignToBufferSize(position);
 
 	if (loopEnabled) {
@@ -865,6 +885,33 @@ void TrackNavigator::setSamplePosition(int position) {
 			for (int i = 0; i < tracks.size(); i++)
 				tracks.at(i)->sendAllNotesOff();
 			this->samplePosition = loopStart * Project::getInstance()->getSampleRate();
+		}
+	}
+
+	// Loop-Marker (Wavelab-style): wenn der Playhead waehrend dieses Tick einen
+	// Loop-Marker ueberschreitet und der noch Repeats uebrig hat, springen wir
+	// zurueck zum vorigen Marker (jeglichen Typs) und dekrementieren. Ohne
+	// "previous marker" wird auf 0 gesprungen — entspricht der Wavelab-Logik
+	// "wiederhol das Segment vom Anfang bis hier".
+	if (playing && timeLine != nullptr) {
+		auto& markers = timeLine->getMarkersMutable();
+		const double sr = Project::getInstance()->getSampleRate();
+		for (auto& m : markers) {
+			if (m.type != TimelineMarker::Type::Loop) continue;
+			if (m.repeatsLeft <= 0) continue;
+			const int ms = (int)(m.position * sr);
+			if (oldPos < ms && this->samplePosition.load() >= ms) {
+				int prev = 0;
+				for (const auto& pm : markers) {
+					const int ps = (int)(pm.position * sr);
+					if (ps < ms && ps > prev) prev = ps;
+				}
+				--m.repeatsLeft;
+				this->samplePosition = alignToBufferSize(prev);
+				for (int i = 0; i < tracks.size(); i++)
+					tracks.at(i)->sendAllNotesOff();
+				break; // nur einen Marker pro Tick verarbeiten
+			}
 		}
 	}
 
@@ -907,6 +954,11 @@ void TrackNavigator::setPlaying(bool playing) {
 	this->playing = playing;
     if (playing) {
         startTimer(50);
+        // Loop-Marker-Counters fuer den frischen Lauf zuruecksetzen — sonst
+        // wuerden bereits "verbrauchte" Marker beim naechsten Play nicht mehr
+        // wiederholen.
+        if (timeLine != nullptr)
+            timeLine->resetLoopCounters();
     }
 	else {
 		stopTimer();
@@ -1373,17 +1425,24 @@ void TrackNavigator::changeListenerCallback(ChangeBroadcaster* source)
 		// Callback (lastKnownTempo == 0) ist kein "Wechsel" — wir
 		// initialisieren nur den Cache.
 		const float currentTempo = Project::getInstance()->getTempo();
+		juce::Logger::writeToLog("TrackNavigator: Project change callback. tempo="
+			+ juce::String(currentTempo) + " lastKnown=" + juce::String(lastKnownTempo));
 		if (lastKnownTempo > 0.0f
 			&& std::abs(currentTempo - lastKnownTempo) > 0.001f)
 		{
 			const double sr = Project::getInstance()->getSampleRate();
+			juce::Logger::writeToLog("TrackNavigator: tempo change detected, walking regions");
+			int audioRegionCount = 0;
 			for (auto* t : tracks) {
 				if (t == nullptr || t->getType() != Track::AUDIO) continue;
 				for (auto* r : t->getRegions()) {
-					if (auto* ar = dynamic_cast<AudioRegion*>(r))
+					if (auto* ar = dynamic_cast<AudioRegion*>(r)) {
+						++audioRegionCount;
 						ar->applyTempoStretch((double) currentTempo, sr);
+					}
 				}
 			}
+			juce::Logger::writeToLog("TrackNavigator: visited " + juce::String(audioRegionCount) + " AudioRegions");
 			repaint();
 		}
 		lastKnownTempo = currentTempo;

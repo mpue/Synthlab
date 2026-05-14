@@ -100,6 +100,12 @@ public:
     float getPitch();
     void setPitch(float pitch);
 
+    // Load-only Setter: setzt das Pitch-State-Member OHNE Rubberband-Shift.
+    // Wird beim Projekt-Open verwendet, weil der geladene WAV bereits in
+    // diesem Pitch-State steckt — ein erneutes setPitch wuerde den Shift
+    // ein zweites Mal anwenden.
+    void adoptLoadedPitch(float pitchSemitones);
+
     virtual juce::Array<juce::PropertyComponent*>& getProperties() override;
     virtual void createProperties() override;
 
@@ -186,7 +192,12 @@ private:
     
     // reference to original file
     String clipRefId;
-    float pitch = 1.0f;
+    // Aktueller effektiver Pitch-Shift in Halbtoenen, relativ zum nativen
+    // Source-Pitch. 0 = unveraendert. Die Buffer-Daten sind bereits auf
+    // diesen Wert geshiftet — setPitch berechnet die Differenz und macht
+    // nur den Delta-Stretch. Beim Load matched member-Pitch automatisch
+    // zum geladenen WAV (kein Re-Apply).
+    float pitch = 0.0f;
 
     PitchListener* pitchListener;
     juce::Value* pitchValue;

@@ -52,6 +52,9 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
     // verhalten wie das Original (z.B. nach einem Split einer warped Region).
     this->referenceTempo = other->referenceTempo;
     this->followTempo    = other->followTempo;
+    // Pitch-State mitnehmen — der kopierte Buffer ist bereits in diesem
+    // Zustand, also passt der Member-Wert direkt zur Buffer-Realitaet.
+    this->pitch = other->pitch;
 
     // KORREKTUR: Verwende numSamples statt other->getBuffer()->getNumSamples()
     // da wir nur einen Teil des Buffers kopiert haben
@@ -68,7 +71,9 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
 
     addComponentListener(this);
     dirty = false;
-    setPitch(1);
+    // pitch wurde oben aus other kopiert; setPitch hier nicht aufrufen,
+    // sonst macht das neue (semitones-basierte) setPitch einen ungewollten
+    // Delta-Shift auf den geerbten Buffer.
     createProperties();
     updateSnapSettings();
 }
@@ -170,6 +175,7 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
     this->sourceStartSample = other->sourceStartSample;
     this->referenceTempo = other->referenceTempo;
     this->followTempo    = other->followTempo;
+    this->pitch          = other->pitch;
 
     /*
     double length = this->thumbnail->getTotalLength();
@@ -188,8 +194,7 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
     addComponentListener(this);
 
     dirty = false;
-
-    setPitch(1);
+    // pitch oben aus other kopiert; kein setPitch-Aufruf hier.
     createProperties();
     updateSnapSettings();
 }
@@ -236,7 +241,8 @@ AudioRegion::AudioRegion(File file, String refId, AudioFormatManager& manager, d
     addAndMakeVisible(resizerL);
 
     dirty = false;
-    setPitch(1);
+    // pitch default 0 (Header) = nativer Source-Pitch. Kein setPitch-Aufruf
+    // hier — das frische File ist per Definition bei 0 semitones.
     createProperties();
     updateSnapSettings();
 
@@ -743,19 +749,45 @@ void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, b
 }
 
 void AudioRegion::applyTempoStretch(double targetTempo, double sampleRateIn) {
-    if (! followTempo) return;
-    if (referenceTempo <= 0.0 || targetTempo <= 0.0) return;
-    if (audioBuffer == nullptr || audioBuffer->getNumSamples() <= 0) return;
+    juce::Logger::writeToLog("AudioRegion::applyTempoStretch enter name=" + getName()
+        + " followTempo=" + juce::String(followTempo ? 1 : 0)
+        + " ref=" + juce::String(referenceTempo, 2)
+        + " target=" + juce::String(targetTempo, 2));
+
+    if (! followTempo) {
+        juce::Logger::writeToLog("  -> skip: followTempo=false");
+        return;
+    }
+    if (referenceTempo <= 0.0 || targetTempo <= 0.0) {
+        juce::Logger::writeToLog("  -> skip: tempo <= 0");
+        return;
+    }
+    if (audioBuffer == nullptr || audioBuffer->getNumSamples() <= 0) {
+        juce::Logger::writeToLog("  -> skip: buffer empty");
+        return;
+    }
 
     const double sr = (sampleRateIn > 0.0) ? sampleRateIn : sampleRate;
-    if (sr <= 0.0) return;
+    if (sr <= 0.0) {
+        juce::Logger::writeToLog("  -> skip: sample rate <= 0");
+        return;
+    }
 
     const double ratio = referenceTempo / targetTempo;
-    if (std::abs(ratio - 1.0) < 1e-4) return;
+    if (std::abs(ratio - 1.0) < 1e-4) {
+        juce::Logger::writeToLog("  -> skip: ratio ~ 1.0 (" + juce::String(ratio, 4) + ")");
+        return;
+    }
+    juce::Logger::writeToLog("  -> stretching ratio=" + juce::String(ratio, 4)
+        + " inSamples=" + juce::String(audioBuffer->getNumSamples()));
 
     std::unique_ptr<juce::AudioSampleBuffer> stretched(
         AudioUtils::stretchBufferRubberband(*audioBuffer, ratio, sr));
-    if (stretched == nullptr) return;
+    if (stretched == nullptr) {
+        juce::Logger::writeToLog("  -> stretchBufferRubberband returned nullptr");
+        return;
+    }
+    juce::Logger::writeToLog("  -> stretched outSamples=" + juce::String(stretched->getNumSamples()));
 
     // Buffer austauschen
     delete audioBuffer;
@@ -802,38 +834,75 @@ float AudioRegion::getPitch() {
     return pitch;
 }
 
+void AudioRegion::adoptLoadedPitch(float pitchSemitones)
+{
+    if (pitchSemitones < -12.0f) pitchSemitones = -12.0f;
+    if (pitchSemitones > 12.0f)  pitchSemitones =  12.0f;
+    pitch = pitchSemitones;
+    if (pitchValue != nullptr)
+        pitchValue->setValue(pitch);
+}
 
-void AudioRegion::setPitch(float pitch) {
 
-    if (pitch < 0.1) {
-        pitch = 0.1;
+void AudioRegion::setPitch(float newPitch) {
+
+    // Clamp auf +/- 12 Halbtoene (eine Oktave hoch/runter).
+    if (newPitch < -12.0f) newPitch = -12.0f;
+    if (newPitch > 12.0f)  newPitch =  12.0f;
+
+    // Delta in Halbtoenen vom aktuellen Buffer-Zustand. Das Member 'pitch'
+    // ist der CURRENT effective shift — nicht der absolute Target. Wir
+    // berechnen also die Delta-Shift-Operation, die uns vom aktuellen
+    // Buffer-State zum gewuenschten Zielzustand bringt.
+    const float delta = newPitch - pitch;
+
+    // Kein hoerbarer Unterschied — nur Member + Property-Slider syncen.
+    if (std::abs(delta) < 0.5f) {
+        pitch = newPitch;
+        if (pitchValue != nullptr)
+            pitchValue->setValue(pitch);
+        return;
     }
-    if (pitch > 2) {
-        pitch = 2;
+
+    if (audioBuffer == nullptr || audioBuffer->getNumSamples() <= 0) {
+        pitch = newPitch;
+        if (pitchValue != nullptr)
+            pitchValue->setValue(pitch);
+        return;
     }
 
-    this->pitch = pitch;
-    
-    this->thumbnail->reset(2, sampleRate);
-    this->thumbnail->addBlock(0, *audioBuffer, 0, audioBuffer->getNumSamples());
-    // updateThumb();
+    juce::Logger::writeToLog("AudioRegion::setPitch name=" + getName()
+        + " old=" + juce::String(pitch, 2)
+        + " new=" + juce::String(newPitch, 2)
+        + " delta=" + juce::String(delta, 2));
 
-    /*
-    if (audioBuffer != nullptr) 
-    {
-        if (this->tempBufferLeft == nullptr)
-            this->tempBufferLeft = new float[audioBuffer->getNumSamples() * 2];
-        if (this->tempBufferRight == nullptr)
-            this->tempBufferRight = new float[audioBuffer->getNumSamples() * 2];
-        interpolatorLeft->reset();
-        interpolatorRight->reset();
-        interpolatorLeft->process(this->pitch, audioBuffer->getReadPointer(0), tempBufferLeft, audioBuffer->getNumSamples()/this->pitch);
-        interpolatorRight->process(this->pitch, audioBuffer->getReadPointer(1), tempBufferRight, audioBuffer->getNumSamples() / this->pitch);
-        audioBufferProcessed = new AudioSampleBuffer(2,audioBuffer->getNumSamples()*2);
-        audioBufferProcessed->copyFrom(0, 0, tempBufferLeft, audioBuffer->getNumSamples() * 2);
-        audioBufferProcessed->copyFrom(1, 0, tempBufferRight, audioBuffer->getNumSamples() * 2);
+    // Pitch-shift via Rubberband: Zeit bleibt gleich, nur Tonhoehe.
+    // Delta-semitones -> pitchScale = 2^(delta/12).
+    std::unique_ptr<juce::AudioSampleBuffer> shifted(
+        AudioUtils::pitchShiftBufferRubberband(*audioBuffer, (double) delta, sampleRate));
+
+    if (shifted == nullptr) {
+        juce::Logger::writeToLog("  -> pitchShiftBufferRubberband returned nullptr");
+        return;
     }
-    */
+
+    delete audioBuffer;
+    audioBuffer = shifted.release();
+
+    // Zeit preserviert -> sourceStartSample, Width, thumbnailBounds bleiben
+    // gleich. Nur Thumbnail aus dem neuen Buffer aufbauen.
+    if (thumbnail != nullptr) {
+        thumbnail->reset(audioBuffer->getNumChannels(), sampleRate);
+        thumbnail->addBlock(0, *audioBuffer, 0, audioBuffer->getNumSamples());
+    }
+
+    pitch = newPitch;
+    if (pitchValue != nullptr)
+        pitchValue->setValue(pitch);
+
+    markBufferMutated();
+    dirty = true;
+    repaint();
 }
 
 
@@ -845,7 +914,7 @@ juce::Array<juce::PropertyComponent*>& AudioRegion::getProperties()
     // (die vorher zurueckgereferenced wurde -> Dangling-Reference Bug).
     Region::getProperties();
 
-    pitchProp = new SliderPropertyComponent(*pitchValue, "Pitch", 0.1, 2.0f, 0.1, 1, true);
+    pitchProp = new SliderPropertyComponent(*pitchValue, "Pitch (semitones)", -12.0, 12.0, 1.0, 1.0, true);
     properties.add(pitchProp);
 
     // Tempo-Follow Properties: Reference-BPM editierbar, Toggle aktiviert
@@ -880,6 +949,9 @@ void AudioRegion::createProperties()
 void AudioRegion::FollowTempoListener::valueChanged(juce::Value& v)
 {
     const bool nowOn = v.toString().getIntValue() > 0;
+    juce::Logger::writeToLog("AudioRegion FollowTempoListener fired -> nowOn="
+        + juce::String(nowOn ? 1 : 0)
+        + " name=" + region->getName());
     // Beim Aktivieren snappen wir die Referenz auf das aktuelle Projekt-Tempo —
     // Intuition: "Das hier passt JETZT". Erst beim naechsten Tempo-Wechsel wird
     // gestretcht.

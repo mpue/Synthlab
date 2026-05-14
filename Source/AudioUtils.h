@@ -16,34 +16,34 @@
 namespace AudioUtils
 {
     /**
-     * Time-stretch an audio buffer using the Rubberband library, preserving pitch.
+     * Generic Rubberband offline processing: time-stretch and/or pitch-shift.
+     * Returns a freshly allocated buffer the caller owns. Use the thin wrappers
+     * stretchBufferRubberband (time only) and pitchShiftBufferRubberband
+     * (pitch only) instead of calling this directly.
      *
-     * Offline mode (Stretcher::study() + Stretcher::process()), high-quality
-     * formant-preserving stretcher with R2 engine. Returns a fresh AudioSampleBuffer
-     * sized for the stretched output (caller takes ownership).
-     *
-     * @param input     Source buffer (any channel count >= 1).
-     * @param timeRatio Stretch factor; 2.0 = twice as long, 0.5 = half as long.
-     *                  1.0 returns a copy.
-     * @param sampleRate Project sample rate (Hz) — used to size internal buffers.
-     * @return New stereo (or matching-channels) buffer of length round(input.numSamples * timeRatio).
-     *         Returns nullptr on bad input.
+     * @param input        Source buffer (>= 1 channel).
+     * @param timeRatio    1.0 = same length; >1 longer; <1 shorter.
+     * @param pitchScale   1.0 = same pitch; 2^(semitones/12) for semitone shifts.
+     * @param sampleRate   Project sample rate.
+     * @return new buffer (length = round(inSamples * timeRatio)), or nullptr.
      */
-    static juce::AudioSampleBuffer* stretchBufferRubberband(const juce::AudioSampleBuffer& input,
-                                                            double timeRatio,
-                                                            double sampleRate)
+    static juce::AudioSampleBuffer* rubberbandProcess(const juce::AudioSampleBuffer& input,
+                                                      double timeRatio,
+                                                      double pitchScale,
+                                                      double sampleRate)
     {
         const int numChannels = input.getNumChannels();
         const int inSamples   = input.getNumSamples();
-        if (numChannels <= 0 || inSamples <= 0 || sampleRate <= 0.0 || timeRatio <= 0.0)
+        if (numChannels <= 0 || inSamples <= 0 || sampleRate <= 0.0
+            || timeRatio <= 0.0 || pitchScale <= 0.0)
             return nullptr;
 
         const int outSamples = (int) std::llround((double) inSamples * timeRatio);
         if (outSamples <= 0)
             return nullptr;
 
-        // Identity-Fall: kein Stretch noetig — Kopie zurueck.
-        if (std::abs(timeRatio - 1.0) < 1e-6)
+        // Identity-Fall: weder Stretch noch Shift — direkte Kopie.
+        if (std::abs(timeRatio - 1.0) < 1e-6 && std::abs(pitchScale - 1.0) < 1e-6)
         {
             auto* out = new juce::AudioSampleBuffer(numChannels, inSamples);
             for (int ch = 0; ch < numChannels; ++ch)
@@ -52,16 +52,13 @@ namespace AudioUtils
         }
 
         using Stretcher = RubberBand::RubberBandStretcher;
-        // OptionProcessOffline ist Pflicht fuer den Two-Pass-Pfad (study/process).
-        // PitchPreservation + FormantPreserved liefert das fuer DAW-Tempo-Sync
-        // erwartete Resultat: Audio wird laenger/kuerzer, Tonhoehe bleibt gleich.
         const Stretcher::Options opts =
               Stretcher::OptionProcessOffline
             | Stretcher::OptionEngineFaster
             | Stretcher::OptionStretchPrecise
             | Stretcher::OptionFormantPreserved;
 
-        Stretcher rb((size_t) sampleRate, (size_t) numChannels, opts, timeRatio, 1.0);
+        Stretcher rb((size_t) sampleRate, (size_t) numChannels, opts, timeRatio, pitchScale);
         rb.setMaxProcessSize(8192);
         rb.setExpectedInputDuration((size_t) inSamples);
 
@@ -105,7 +102,7 @@ namespace AudioUtils
                         outPtrs[(size_t) ch] = out->getWritePointer(ch) + outPos;
                     const size_t got = rb.retrieve(outPtrs.data(), (size_t) n);
                     outPos += (int) got;
-                    if ((int) got < n) break; // retrieve gab weniger als gewuenscht
+                    if ((int) got < n) break;
                 }
             };
 
@@ -118,12 +115,33 @@ namespace AudioUtils
                 inPos += n;
                 drainAvailable();
             }
-            // Nach dem letzten process(final=true) liefert Rubberband u.U. noch
-            // Reste — explizit drainen.
             drainAvailable();
         }
 
         return out.release();
+    }
+
+    /**
+     * Time-stretch an audio buffer using Rubberband, pitch preserved.
+     * @param timeRatio 2.0 = twice as long, 0.5 = half as long, 1.0 = copy.
+     */
+    static juce::AudioSampleBuffer* stretchBufferRubberband(const juce::AudioSampleBuffer& input,
+                                                            double timeRatio,
+                                                            double sampleRate)
+    {
+        return rubberbandProcess(input, timeRatio, 1.0, sampleRate);
+    }
+
+    /**
+     * Pitch-shift an audio buffer using Rubberband, time preserved.
+     * @param semitones positive = up, negative = down. 12 = one octave.
+     */
+    static juce::AudioSampleBuffer* pitchShiftBufferRubberband(const juce::AudioSampleBuffer& input,
+                                                                double semitones,
+                                                                double sampleRate)
+    {
+        const double pitchScale = std::pow(2.0, semitones / 12.0);
+        return rubberbandProcess(input, 1.0, pitchScale, sampleRate);
     }
 
     /**
