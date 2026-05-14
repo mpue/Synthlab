@@ -42,6 +42,10 @@ public:
     MainTabbedComponent* getBottomTab();
     void OpenTrackView();
 	void openConsole();
+	// Re-adds the LogView tab to the bottomTab if missing, otherwise just
+	// focuses it. Used by the View > Log menu to recover the log after a
+	// project open dropped it.
+	void openLog();
     virtual void changeListenerCallback (juce::ChangeBroadcaster* source) override;
     
     // Keyboard-Focus-Setup nach der vollst�ndigen Initialisierung

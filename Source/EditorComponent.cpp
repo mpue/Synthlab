@@ -329,6 +329,29 @@ void EditorComponent::openConsole() {
     bottomTab->addTab("Console", Colours::darkgrey, console.get(), false);
 }
 
+void EditorComponent::openLog() {
+    if (bottomTab == nullptr)
+        return;
+
+    // LogView neu anlegen falls noetig — beim Projekt-Open kann der Owning-
+    // unique_ptr ausgenullt worden sein, sonst zeigen wir auf die existierende
+    // Instanz.
+    if (logView == nullptr)
+        logView = std::make_unique<LogView>();
+
+    // Falls die Log-Tab schon im bottomTab steckt, einfach fokussieren statt
+    // ein Duplikat anzuhaengen.
+    for (int i = 0; i < bottomTab->getNumTabs(); ++i) {
+        if (bottomTab->getTabContentComponent(i) == logView.get()) {
+            bottomTab->setCurrentTabIndex(i);
+            return;
+        }
+    }
+
+    bottomTab->addTab("Log", juce::Colours::darkgrey, logView.get(), false);
+    bottomTab->setCurrentTabIndex(bottomTab->getNumTabs() - 1);
+}
+
 void EditorComponent::OpenTrackView()
 {
     if (navigator == nullptr) {        

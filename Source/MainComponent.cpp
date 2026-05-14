@@ -1225,6 +1225,7 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addSeparator();
 		menu.addItem(201, "Tracks", true, false, nullptr);
 		menu.addItem(202, "Console", true, false, nullptr);
+		menu.addItem(206, "Log", true, false, nullptr);
 		menu.addItem(203, "Level Meters", true, false, nullptr);
 		menu.addItem(204, "Input Spectrum", true, false, nullptr);
 		menu.addSeparator();
@@ -1392,6 +1393,9 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	}
 	else if (menuItemID == 205) {
 		openQuickstart();
+	}
+	else if (menuItemID == 206) {
+		editorView->openLog();
 	}
 
 	else if (menuItemID == 8) {
