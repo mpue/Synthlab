@@ -75,6 +75,27 @@ public:
     void markBufferMutated() { bufferMutated = true; }
     void markBufferClean()   { bufferMutated = false; }
     bool isBufferMutated() const { return bufferMutated; }
+
+    // Tempo-Follow: Reference-Tempo ist das BPM bei dem dieser audioBuffer
+    // ursprünglich aufgenommen / importiert wurde. Wenn followTempo=true
+    // und Project::setTempo das BPM aendert, stretcht TrackNavigator den
+    // Buffer mit Rubberband um den Faktor referenceTempo / currentTempo und
+    // markiert die Region als bufferMutated. Referenz bleibt nach Stretch
+    // unveraendert — so wird auch 120 → 100 → 130 immer relativ zum
+    // urspruenglichen Reference berechnet, keine Stretch-Fehlerakkumulation.
+    double getReferenceTempo() const  { return referenceTempo; }
+    void   setReferenceTempo(double t);
+    bool   getFollowTempo() const     { return followTempo; }
+    void   setFollowTempo(bool b);
+
+    // Wendet einen Tempo-Stretch mit Rubberband direkt auf den audioBuffer
+    // an. Ratio = referenceTempo / targetTempo (>1 = laenger/langsamer,
+    // <1 = kuerzer/schneller). Markiert die Region anschliessend als
+    // bufferMutated. No-op wenn followTempo=false, referenceTempo<=0 oder
+    // ratio ~ 1.0. Sample-Offsets/Width werden mit-angepasst, damit die
+    // Region in der Timeline an derselben Stelle bleibt aber die neue Laenge
+    // ausfuellt.
+    void applyTempoStretch(double targetTempo, double sampleRate);
        
     float getPitch();
     void setPitch(float pitch);
@@ -111,11 +132,38 @@ private:
         juce::Value value;
     };
 
+    struct ReferenceTempoListener : juce::Value::Listener
+    {
+        ReferenceTempoListener(juce::Value& v, AudioRegion* r) : region(r), value(v) { value.addListener(this); }
+        ~ReferenceTempoListener() {}
+
+        void valueChanged(juce::Value& value) override {
+            region->setReferenceTempo(value.toString().getDoubleValue());
+        }
+        AudioRegion* region;
+        juce::Value value;
+    };
+
+    struct FollowTempoListener : juce::Value::Listener
+    {
+        FollowTempoListener(juce::Value& v, AudioRegion* r) : region(r), value(v) { value.addListener(this); }
+        ~FollowTempoListener() {}
+
+        void valueChanged(juce::Value& value) override;
+        AudioRegion* region;
+        juce::Value value;
+    };
+
 
     AudioSampleBuffer* audioBuffer;
     AudioSampleBuffer* audioBufferProcessed = nullptr;
     long sourceStartSample = 0;
     bool bufferMutated = false;
+
+    // Default 120; in den Konstruktoren wird der Wert via Project::getTempo()
+    // auf das aktuelle Projekt-Tempo gesetzt (= "diese Aufnahme war auf X BPM").
+    double referenceTempo = 120.0;
+    bool   followTempo    = false;
 
     // Resize-Gesture-Basis: speichern beim ersten Tick (sentinel = -1) und
     // sourceStartSample im laufenden Resize absolut daraus berechnen, statt
@@ -143,6 +191,14 @@ private:
     PitchListener* pitchListener;
     juce::Value* pitchValue;
     juce::PropertyComponent* pitchProp;
+
+    ReferenceTempoListener* refTempoListener = nullptr;
+    juce::Value* refTempoValue = nullptr;
+    juce::PropertyComponent* refTempoProp = nullptr;
+
+    FollowTempoListener* followTempoListener = nullptr;
+    juce::Value* followTempoValue = nullptr;
+    juce::PropertyComponent* followTempoProp = nullptr;
 
     float* tempBufferLeft = nullptr;
     float* tempBufferRight = nullptr;

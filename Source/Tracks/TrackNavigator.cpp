@@ -594,6 +594,11 @@ ValueTree TrackNavigator::getConfiguration()
 					region.setProperty("numSamples", (juce::int64) visibleSamples, nullptr);
 					region.setProperty("sourceStartSample", (juce::int64) ar->getSourceStartSample(), nullptr);
 					region.setProperty("width", ar->getWidth(), nullptr);
+					// Tempo-Follow Status mit serialisieren — wenn followTempo
+					// gesetzt ist, stretcht openTracks beim Reload den Buffer
+					// nach Bedarf gegen das aktuelle Projekt-Tempo.
+					region.setProperty("referenceTempo", ar->getReferenceTempo(), nullptr);
+					region.setProperty("followTempo", ar->getFollowTempo(), nullptr);
 				}
 			}
 			else if (tracks.at(i)->getType() == Track::MIDI || tracks.at(i)->getType() == Track::INSTRUMENT) {
@@ -1361,6 +1366,27 @@ void TrackNavigator::changeListenerCallback(ChangeBroadcaster* source)
 		for (int i = 0; i < tracks.size(); i++) {
 			tracks.at(i)->setTrackLength(tracklength);
 		}
+
+		// Tempo-Wechsel? AudioRegions mit followTempo=true via Rubberband
+		// stretchen. AudioRegion::applyTempoStretch ist no-op fuer Regionen
+		// ohne followTempo, ist also safe pauschal aufzurufen. Erster
+		// Callback (lastKnownTempo == 0) ist kein "Wechsel" — wir
+		// initialisieren nur den Cache.
+		const float currentTempo = Project::getInstance()->getTempo();
+		if (lastKnownTempo > 0.0f
+			&& std::abs(currentTempo - lastKnownTempo) > 0.001f)
+		{
+			const double sr = Project::getInstance()->getSampleRate();
+			for (auto* t : tracks) {
+				if (t == nullptr || t->getType() != Track::AUDIO) continue;
+				for (auto* r : t->getRegions()) {
+					if (auto* ar = dynamic_cast<AudioRegion*>(r))
+						ar->applyTempoStretch((double) currentTempo, sr);
+				}
+			}
+			repaint();
+		}
+		lastKnownTempo = currentTempo;
 	}
 	if (Track* track = dynamic_cast<Track*>(source)) {
 		sendChangeMessage();

@@ -322,6 +322,13 @@ private:
 	long recordStart = 0;
 	long recordStop = 0;
 
+	// Letztes bekanntes Projekt-Tempo. Wird in changeListenerCallback gegen
+	// das aktuelle Project::getTempo() abgeglichen, um Tempo-Wechsel zu
+	// erkennen und AudioRegions mit followTempo=true entsprechend zu
+	// stretchen. Initial = 0, beim ersten Callback wird der echte Wert
+	// gesetzt ohne dass ein "Stretch" passiert.
+	float lastKnownTempo = 0.0f;
+
 	int timelineOffset = 25;
 
 	// Viewport, an dem wir als ComponentListener haengen; nullptr solange

@@ -13,6 +13,7 @@
 #include "Track.h"
 #include "../Project/Project.h"
 #include "../AudioEngine/SmartSample.h"
+#include "../AudioUtils.h"
 
 AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double sampleRate, long startSample, long numSamples) {
 
@@ -47,6 +48,10 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
     // project becomes unloadable (SmartSample throws on the empty path).
     this->clipRefId = other->clipRefId;
     this->sourceStartSample = other->sourceStartSample + startSample;
+    // Tempo-Follow Status mit kopieren — Splits/Duplikate sollen sich genauso
+    // verhalten wie das Original (z.B. nach einem Split einer warped Region).
+    this->referenceTempo = other->referenceTempo;
+    this->followTempo    = other->followTempo;
 
     // KORREKTUR: Verwende numSamples statt other->getBuffer()->getNumSamples()
     // da wir nur einen Teil des Buffers kopiert haben
@@ -107,10 +112,14 @@ AudioRegion::AudioRegion(AudioSampleBuffer* source, AudioFormatManager& manager,
     
     this->thumbnail->reset(2, sampleRate);
     this->thumbnail->addBlock(0, *audioBuffer, 0, sampleLength);
-    
+
     this->name = "new";
     this->offset = 0;
-        
+    // Reference = aktuelles Projekt-Tempo zum Zeitpunkt von Record / Bounce-
+    // In-Place / Merge — also "diese Aufnahme war auf X BPM". followTempo
+    // bleibt default false; der User schaltet's pro Region ein.
+    this->referenceTempo = Project::getInstance()->getTempo();
+
     setSize((audioBuffer->getNumSamples() / sampleRate) * this->zoom, Project::DEFAULT_TRACK_HEIGHT);
 
     addAndMakeVisible(resizerL);
@@ -159,7 +168,9 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
     // keep the source reference so it can be reloaded from disk.
     this->clipRefId = other->clipRefId;
     this->sourceStartSample = other->sourceStartSample;
-    
+    this->referenceTempo = other->referenceTempo;
+    this->followTempo    = other->followTempo;
+
     /*
     double length = this->thumbnail->getTotalLength();
     setSize(length * this->zoom, other->getHeight());
@@ -210,6 +221,10 @@ AudioRegion::AudioRegion(File file, String refId, AudioFormatManager& manager, d
 
     this->name = file.getFileNameWithoutExtension();
     this->clipRefId = refId;
+    // Beim Import nehmen wir an: das File "passt jetzt" auf das aktuelle
+    // Projekt-Tempo. Falls falsch, kann der User es in der PropertyView
+    // korrigieren (z.B. "war 100 BPM, Projekt ist 120 BPM").
+    this->referenceTempo = Project::getInstance()->getTempo();
     setSize((lengthInSamples / sampleRate) * this->zoom, Project::DEFAULT_TRACK_HEIGHT);
 
     Logger::getCurrentLogger()->writeToLog(getBounds().toString());
@@ -236,6 +251,16 @@ AudioRegion::~AudioRegion()
         pitchValue->removeListener(pitchListener);
     delete pitchListener;
     delete pitchValue;
+
+    if (refTempoValue)
+        refTempoValue->removeListener(refTempoListener);
+    delete refTempoListener;
+    delete refTempoValue;
+
+    if (followTempoValue)
+        followTempoValue->removeListener(followTempoListener);
+    delete followTempoListener;
+    delete followTempoValue;
 
     delete[] tempBufferLeft;
     delete[] tempBufferRight;
@@ -717,6 +742,54 @@ void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, b
     dirty = true;
 }
 
+void AudioRegion::applyTempoStretch(double targetTempo, double sampleRateIn) {
+    if (! followTempo) return;
+    if (referenceTempo <= 0.0 || targetTempo <= 0.0) return;
+    if (audioBuffer == nullptr || audioBuffer->getNumSamples() <= 0) return;
+
+    const double sr = (sampleRateIn > 0.0) ? sampleRateIn : sampleRate;
+    if (sr <= 0.0) return;
+
+    const double ratio = referenceTempo / targetTempo;
+    if (std::abs(ratio - 1.0) < 1e-4) return;
+
+    std::unique_ptr<juce::AudioSampleBuffer> stretched(
+        AudioUtils::stretchBufferRubberband(*audioBuffer, ratio, sr));
+    if (stretched == nullptr) return;
+
+    // Buffer austauschen
+    delete audioBuffer;
+    audioBuffer = stretched.release();
+
+    // Trim-Offset und sichtbare Breite proportional skalieren — Region behaelt
+    // ihre Timeline-Position (sampleOffset), waechst/schrumpft aber in der
+    // Laenge entsprechend dem Tempo-Verhaeltnis. Das sourceStartSample muss
+    // mit, sonst klingt nach dem Stretch der Inhalt verschoben.
+    sourceStartSample = (long) std::llround((double) sourceStartSample * ratio);
+    const int newWidth = juce::jmax(1, (int) std::round((double) getWidth() * ratio));
+
+    if (thumbnailBounds != nullptr) {
+        const int thumbW = (int) std::round((double) audioBuffer->getNumSamples() / sr * zoom);
+        thumbnailBounds->setWidth(juce::jmax(1, thumbW));
+    }
+    setSize(newWidth, getHeight());
+
+    // Thumbnail aus dem gestretchten Buffer neu aufbauen
+    if (thumbnail != nullptr) {
+        thumbnail->reset(audioBuffer->getNumChannels(), sr);
+        thumbnail->addBlock(0, *audioBuffer, 0, audioBuffer->getNumSamples());
+    }
+
+    // Reference auf das jetzt erreichte Tempo nachziehen — der naechste
+    // Tempo-Wechsel rechnet seinen Stretch dann relativ zum aktuellen
+    // Buffer-Zustand (statt von Null wieder).
+    referenceTempo = targetTempo;
+
+    markBufferMutated();
+    dirty = true;
+    repaint();
+}
+
 void AudioRegion::setClipRefId(String id) {
     this->clipRefId = id;
 }
@@ -767,12 +840,21 @@ void AudioRegion::setPitch(float pitch) {
 
 juce::Array<juce::PropertyComponent*>& AudioRegion::getProperties()
 {
-    juce::Array<juce::PropertyComponent*> properties = Region::getProperties();
-
-    properties = Array<PropertyComponent*>();
+    // Region::getProperties() befuellt this->properties mit dem Name-Prop;
+    // wir bauen darauf auf statt eine shadowing lokale Array<...> zu nehmen
+    // (die vorher zurueckgereferenced wurde -> Dangling-Reference Bug).
+    Region::getProperties();
 
     pitchProp = new SliderPropertyComponent(*pitchValue, "Pitch", 0.1, 2.0f, 0.1, 1, true);
     properties.add(pitchProp);
+
+    // Tempo-Follow Properties: Reference-BPM editierbar, Toggle aktiviert
+    // automatisches Restretchen beim Tempo-Wechsel des Projekts.
+    refTempoProp = new SliderPropertyComponent(*refTempoValue, "Reference Tempo (BPM)", 30.0, 300.0, 0.1, 1.0, true);
+    followTempoProp = new BooleanPropertyComponent(*followTempoValue, "Follow Tempo", "Follow Tempo");
+    properties.add(refTempoProp);
+    properties.add(followTempoProp);
+
     return properties;
 }
 
@@ -785,6 +867,42 @@ void AudioRegion::createProperties()
     pitchValue = new Value();
     pitchListener = new PitchListener(*pitchValue, this);
     pitchValue->setValue(pitch);
+
+    refTempoValue = new Value();
+    refTempoValue->setValue(referenceTempo);
+    refTempoListener = new ReferenceTempoListener(*refTempoValue, this);
+
+    followTempoValue = new Value();
+    followTempoValue->setValue(followTempo);
+    followTempoListener = new FollowTempoListener(*followTempoValue, this);
+}
+
+void AudioRegion::FollowTempoListener::valueChanged(juce::Value& v)
+{
+    const bool nowOn = v.toString().getIntValue() > 0;
+    // Beim Aktivieren snappen wir die Referenz auf das aktuelle Projekt-Tempo —
+    // Intuition: "Das hier passt JETZT". Erst beim naechsten Tempo-Wechsel wird
+    // gestretcht.
+    if (nowOn && ! region->getFollowTempo())
+        region->setReferenceTempo(Project::getInstance()->getTempo());
+    region->setFollowTempo(nowOn);
+}
+
+void AudioRegion::setReferenceTempo(double t)
+{
+    referenceTempo = (t > 0.0) ? t : 120.0;
+    // Property-Slider live nachziehen, falls schon erzeugt. Value::setValue
+    // ist idempotent — ein Listener-Callback feuert nur, wenn sich der Wert
+    // tatsaechlich geaendert hat, also keine Recursion.
+    if (refTempoValue != nullptr)
+        refTempoValue->setValue(referenceTempo);
+}
+
+void AudioRegion::setFollowTempo(bool b)
+{
+    followTempo = b;
+    if (followTempoValue != nullptr)
+        followTempoValue->setValue(followTempo);
 }
 
 void AudioRegion::resizeAudio(int length)

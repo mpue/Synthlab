@@ -2367,8 +2367,18 @@ void SynthEditor::openTracks(File file)
 					else
 						targetWidth = (int) region.getProperty("width", 0);
 
-					if (auto* ar = dynamic_cast<AudioRegion*>(r))
+					if (auto* ar = dynamic_cast<AudioRegion*>(r)) {
 						ar->setSourceStartSample((long)(juce::int64) region.getProperty("sourceStartSample", (juce::int64) 0));
+
+						// Tempo-Follow Status wiederherstellen. Property fehlt in
+						// alten Projekten -> Default-Werte aus dem Konstruktor
+						// bleiben aktiv (referenceTempo = current project tempo,
+						// followTempo = false).
+						const juce::var refTempoVar = region.getProperty("referenceTempo");
+						if (! refTempoVar.isVoid())
+							ar->setReferenceTempo((double) refTempoVar);
+						ar->setFollowTempo((bool) region.getProperty("followTempo", false));
+					}
 
 					// Trim mit unterdruecktem componentMovedOrResized-Handler
 					// setzen — der Snap/Clamp-Pfad in der wasResized-Branch
@@ -2380,6 +2390,20 @@ void SynthEditor::openTracks(File file)
 						r->setBoundsUpdateInProgress(true);
 						r->setSize(targetWidth, r->getHeight());
 						r->setBoundsUpdateInProgress(false);
+					}
+
+					// Load-Time-Stretch: wenn followTempo und Tempo-Mismatch,
+					// jetzt mit Rubberband auf das aktuelle Projekt-Tempo
+					// ziehen. applyTempoStretch markiert die Region als
+					// mutated, der naechste Save schreibt den gestretchten
+					// Buffer in edits/ raus.
+					if (auto* ar = dynamic_cast<AudioRegion*>(r)) {
+						if (ar->getFollowTempo()) {
+							const double curTempo = (double) Project::getInstance()->getTempo();
+							const double sr = Project::getInstance()->getSampleRate();
+							if (std::abs(ar->getReferenceTempo() - curTempo) > 1e-4)
+								ar->applyTempoStretch(curTempo, sr);
+						}
 					}
 				}
 				loadedTrack = t;
