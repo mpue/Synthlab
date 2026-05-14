@@ -88,7 +88,7 @@ public:
     int getNumActiveChannels(int i);
     void timerCallback() override;
     virtual void changeListenerCallback (ChangeBroadcaster* source) override;
-    void startBounce(const juce::File& file, double duration);
+    void startBounce(const juce::File& file, double duration, bool exportMp3 = false, bool exportOgg = false);
     void showBounceDialog();
     juce::String tryExecuteChatInstruction(const std::string& jsonString);
 

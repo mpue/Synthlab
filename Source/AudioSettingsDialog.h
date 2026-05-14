@@ -12,6 +12,8 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 
+class GeneralSettingsPanel;
+
 class AudioSettingsDialog : public juce::Component,
                             private juce::ChangeListener,
                             private juce::Button::Listener
@@ -36,6 +38,8 @@ private:
     juce::AudioDeviceManager& deviceManager;
 
     std::unique_ptr<juce::AudioDeviceSelectorComponent> selector;
+    std::unique_ptr<GeneralSettingsPanel> generalPanel;
+    std::unique_ptr<juce::TabbedComponent> tabs;
     std::unique_ptr<juce::TextButton> closeButton;
 
     juce::Rectangle<int> headerBounds;

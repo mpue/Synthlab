@@ -20,6 +20,7 @@
 #include "PluginModule.h"
 #include "Project/Project.h"
 #include "PropertyView.h"
+#include "Settings.h"
 
 #pragma once
 class TrackUtil
@@ -80,41 +81,50 @@ public:
 		editor->getModule()->addConnection(c2);		
 		ti->connectPins(5, pm->pins.at(4));
 
-		// connect the audio out
-		
+		// connect the audio out — module type controlled by Settings.
+		// AudioOut (default): wire the plugin to the master AudioOut (or AuxOut
+		// fallback via ConnectAudioOut when the master is already taken).
+		// AuxOut: always create a fresh AuxOut so each instrument lands on its
+		// own mixer strip without sharing the master out.
+
 		pos.x += 160;
 
-		AudioOut* audioOut = nullptr;
-
-		AddModuleAction* am3 = new AddModuleAction(editor, pos, 66);
-		Project::getInstance()->getUndoManager()->beginNewTransaction();
-		Project::getInstance()->getUndoManager()->perform(am3);
-		audioOut = dynamic_cast<AudioOut*>(am3->getModule());
-			
 		t->setPluginModule(pm);
 
-		AuxOut* auxOut = nullptr;
+		const bool preferAuxOutInstr =
+			Settings::getInstance()->getNewTrackOutputType()
+				== Settings::NewTrackOutputType::AuxOut;
 
+		Module* destInstr = nullptr;
 
-		ConnectAudioOut(audioOut, pm, pos, 2, 3, editor->getModule(), editor);
+		if (preferAuxOutInstr) {
+			AddModuleAction* am3 = new AddModuleAction(editor, pos, 77);
+			Project::getInstance()->getUndoManager()->beginNewTransaction();
+			Project::getInstance()->getUndoManager()->perform(am3);
+			AuxOut* auxOut = dynamic_cast<AuxOut*>(am3->getModule());
 
-		// Wire the Track to its mixer channel panel so the strip shows the instrument name
-		if (audioOut != nullptr)
-		{
-			auto mixer = editor->getMixer();
-			if (mixer != nullptr)
-			{
-				int chIdx = audioOut->getChannelIndex();
-				for (auto* panel : mixer->getChannels())
-				{
-					if (panel->getIndex() == chIdx)
-					{
-						panel->setTrack(t);
-						break;
-					}
-				}
+			if (auxOut != nullptr) {
+				auxOut->pins.at(0)->getConnections().push_back(pm->pins.at(2));
+				auxOut->pins.at(1)->getConnections().push_back(pm->pins.at(3));
+				Connection* c1 = new Connection(pm, pm->pins.at(2), auxOut, auxOut->pins.at(0));
+				Connection* c2 = new Connection(pm, pm->pins.at(3), auxOut, auxOut->pins.at(1));
+				editor->getModule()->getConnections()->push_back(c1);
+				editor->getModule()->getConnections()->push_back(c2);
+				destInstr = auxOut;
 			}
 		}
+		else {
+			AddModuleAction* am3 = new AddModuleAction(editor, pos, 66);
+			Project::getInstance()->getUndoManager()->beginNewTransaction();
+			Project::getInstance()->getUndoManager()->perform(am3);
+			AudioOut* audioOut = dynamic_cast<AudioOut*>(am3->getModule());
+
+			destInstr = ConnectAudioOut(audioOut, pm, pos, 2, 3, editor->getModule(), editor);
+		}
+
+		// Wire the Track to its mixer channel panel so the strip shows the
+		// instrument name — works for either AudioOut or AuxOut destinations.
+		LinkTrackToMixerPanel(t, destInstr, editor);
 
 		// SynthEditor::resized() rechnet pro Connection die Endpunkte aus und
 		// laesst Connection::resized den Bezier-Pfad bauen. Ohne diesen Trigger
@@ -252,27 +262,55 @@ public:
 			module->addConnection(cR);
 		}
 
-		// Find or create AudioOut and connect TrackIn output pins (2=L, 3=R) to it
+		// Output module — type controlled by Settings (AudioOut vs. AuxOut).
+		// AudioOut path: re-use the first existing AudioOut if it has no
+		// connections, otherwise spawn an AuxOut (ConnectAudioOut handles that).
+		// AuxOut path: always spawn a fresh AuxOut, so the track lands on its
+		// own mixer strip without taking over the master out.
 		pos = Point<int>(origin.x + 330, origin.y + 70);
-		AudioOut* audioOut = nullptr;
+		Module* dest = nullptr;
 
-		for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
-			if (editor->getModule()->getModules()->at(i) != nullptr) {
-				audioOut = dynamic_cast<AudioOut*>(editor->getModule()->getModules()->at(i));
-				if (audioOut != nullptr) {
-					break;
-				}
-			}
-		}
+		const bool preferAuxOut =
+			Settings::getInstance()->getNewTrackOutputType()
+				== Settings::NewTrackOutputType::AuxOut;
 
-		if (audioOut == nullptr) {
-			AddModuleAction* am3 = new AddModuleAction(editor, pos, 66);
+		if (preferAuxOut) {
+			AddModuleAction* am3 = new AddModuleAction(editor, pos, 77);
 			Project::getInstance()->getUndoManager()->beginNewTransaction();
 			Project::getInstance()->getUndoManager()->perform(am3);
-			audioOut = dynamic_cast<AudioOut*>(am3->getModule());
-		}
+			AuxOut* auxOut = dynamic_cast<AuxOut*>(am3->getModule());
 
-		Module* dest = ConnectAudioOut(audioOut, ti, pos, 2, 3, module, editor);
+			if (auxOut != nullptr) {
+				auxOut->pins.at(0)->getConnections().push_back(ti->pins.at(2));
+				auxOut->pins.at(1)->getConnections().push_back(ti->pins.at(3));
+				Connection* c1 = new Connection(ti, ti->pins.at(2), auxOut, auxOut->pins.at(0));
+				Connection* c2 = new Connection(ti, ti->pins.at(3), auxOut, auxOut->pins.at(1));
+				module->getConnections()->push_back(c1);
+				module->getConnections()->push_back(c2);
+				dest = auxOut;
+			}
+		}
+		else {
+			AudioOut* audioOut = nullptr;
+
+			for (int i = 0; i < editor->getModule()->getModules()->size(); i++) {
+				if (editor->getModule()->getModules()->at(i) != nullptr) {
+					audioOut = dynamic_cast<AudioOut*>(editor->getModule()->getModules()->at(i));
+					if (audioOut != nullptr) {
+						break;
+					}
+				}
+			}
+
+			if (audioOut == nullptr) {
+				AddModuleAction* am3 = new AddModuleAction(editor, pos, 66);
+				Project::getInstance()->getUndoManager()->beginNewTransaction();
+				Project::getInstance()->getUndoManager()->perform(am3);
+				audioOut = dynamic_cast<AudioOut*>(am3->getModule());
+			}
+
+			dest = ConnectAudioOut(audioOut, ti, pos, 2, 3, module, editor);
+		}
 
 		// Channel-Strip an den Track binden, sonst bleibt MasterChannelPanel::track
 		// nullptr und syncTrackFXPlugins() liefert keine FX-Plugins zurueck —

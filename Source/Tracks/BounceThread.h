@@ -1,7 +1,7 @@
 /*
     BounceThread.h
     Created: 16 Jul 2025
-    Author: Matthias Püski
+    Author: Matthias Pï¿½ski
 
     Description:
     This class handles offline bouncing (rendering) of audio tracks
@@ -30,12 +30,16 @@ public:
     BounceThread(MainComponent* mainComponent,
         const juce::File& output,
         double durationSeconds,
-        std::function<void(float)> progressCallback)
+        std::function<void(float)> progressCallback,
+        bool alsoExportMp3 = false,
+        bool alsoExportOgg = false)
         : Thread("BounceThread"),               // Name the thread for debugging purposes
         main(mainComponent),                  // Store pointer to main component
         outputFile(output),                   // Output file path
         durationInSeconds(durationSeconds),   // Total duration to bounce
-        onProgress(progressCallback)          // Progress reporting callback
+        onProgress(progressCallback),         // Progress reporting callback
+        exportMp3(alsoExportMp3),             // Toggle from BounceDialog
+        exportOgg(alsoExportOgg)              // Toggle from BounceDialog
     {
     }
 
@@ -61,4 +65,6 @@ private:
     juce::File outputFile;                          // Target file for bounce output
     double durationInSeconds = 0.0;                 // Duration of the bounce operation
     std::function<void(float)> onProgress;          // Callback for reporting bounce progress
+    bool exportMp3 = false;                         // Also produce an .mp3 next to the .wav
+    bool exportOgg = false;                         // Also produce an .ogg next to the .wav
 };

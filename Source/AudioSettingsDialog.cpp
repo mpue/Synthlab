@@ -7,6 +7,7 @@
 */
 
 #include "AudioSettingsDialog.h"
+#include "Settings.h"
 
 namespace
 {
@@ -24,7 +25,83 @@ namespace
     const juce::Colour kAccentSecondary   { 0xff8b5cf6 }; // Violet
     const juce::Colour kAccentSuccess     { 0xff10b981 }; // Emerald — "device live" pulse
     const juce::Colour kTextPrimary       { 0xfff1f5f9 };
+
+    void applySynthlabSelectorPalette(juce::Component& c)
+    {
+        c.setColour(juce::ListBox::backgroundColourId,    kSurfaceColour);
+        c.setColour(juce::ListBox::outlineColourId,       kBorderColour);
+        c.setColour(juce::ListBox::textColourId,          kTextPrimary);
+        c.setColour(juce::ComboBox::backgroundColourId,   kSurfaceLight);
+        c.setColour(juce::ComboBox::textColourId,         kTextPrimary);
+        c.setColour(juce::ComboBox::outlineColourId,      kBorderColour);
+        c.setColour(juce::ComboBox::buttonColourId,       kSurfaceLight);
+        c.setColour(juce::ComboBox::arrowColourId,        kTextPrimary);
+        c.setColour(juce::TextButton::buttonColourId,     kSurfaceLight);
+        c.setColour(juce::TextButton::textColourOffId,    kTextPrimary);
+        c.setColour(juce::Label::textColourId,            kTextPrimary);
+        c.setColour(juce::ToggleButton::textColourId,     kTextPrimary);
+        c.setColour(juce::ToggleButton::tickColourId,     kAccentColour);
+        c.setColour(juce::ToggleButton::tickDisabledColourId, kBorderColour);
+    }
 }
+
+// =============================================================================
+// General settings tab — currently exposes the output type used when creating
+// new audio tracks (AudioOut vs. AuxOut). Backed by Settings::getInstance().
+// =============================================================================
+class GeneralSettingsPanel : public juce::Component,
+                             private juce::ComboBox::Listener
+{
+public:
+    GeneralSettingsPanel()
+    {
+        outputTypeLabel.setText("Output type when creating tracks:", juce::dontSendNotification);
+        outputTypeLabel.setColour(juce::Label::textColourId, kTextPrimary);
+        outputTypeLabel.setFont(juce::Font(15.0f, juce::Font::bold));
+        addAndMakeVisible(outputTypeLabel);
+
+        outputTypeBox.addItem("AudioOut", 1);
+        outputTypeBox.addItem("AuxOut",   2);
+
+        const auto current = Settings::getInstance()->getNewTrackOutputType();
+        outputTypeBox.setSelectedId(
+            current == Settings::NewTrackOutputType::AuxOut ? 2 : 1,
+            juce::dontSendNotification);
+
+        applySynthlabSelectorPalette(outputTypeBox);
+        outputTypeBox.addListener(this);
+        addAndMakeVisible(outputTypeBox);
+    }
+
+    void resized() override
+    {
+        auto area = getLocalBounds().reduced(20);
+
+        auto row = area.removeFromTop(34);
+        outputTypeLabel.setBounds(row.removeFromLeft(260));
+        outputTypeBox.setBounds(row.removeFromLeft(180));
+    }
+
+    void paint(juce::Graphics& g) override
+    {
+        g.fillAll(kSurfaceColour);
+    }
+
+private:
+    void comboBoxChanged(juce::ComboBox* box) override
+    {
+        if (box == &outputTypeBox)
+        {
+            Settings::getInstance()->setNewTrackOutputType(
+                outputTypeBox.getSelectedId() == 2
+                    ? Settings::NewTrackOutputType::AuxOut
+                    : Settings::NewTrackOutputType::AudioOut);
+        }
+    }
+
+    juce::Label    outputTypeLabel;
+    juce::ComboBox outputTypeBox;
+};
 
 AudioSettingsDialog::AudioSettingsDialog(juce::AudioDeviceManager& dm)
     : deviceManager(dm)
@@ -38,24 +115,27 @@ AudioSettingsDialog::AudioSettingsDialog(juce::AudioDeviceManager& dm)
         true,    // show channels-as-stereo-pairs
         false);  // hide advanced
 
-    // Apply Synthlab palette to the inner JUCE controls so they don't clash
-    // with the dark surface around them.
-    selector->setColour(juce::ListBox::backgroundColourId,    kSurfaceColour);
-    selector->setColour(juce::ListBox::outlineColourId,       kBorderColour);
-    selector->setColour(juce::ListBox::textColourId,          kTextPrimary);
-    selector->setColour(juce::ComboBox::backgroundColourId,   kSurfaceLight);
-    selector->setColour(juce::ComboBox::textColourId,         kTextPrimary);
-    selector->setColour(juce::ComboBox::outlineColourId,      kBorderColour);
-    selector->setColour(juce::ComboBox::buttonColourId,       kSurfaceLight);
-    selector->setColour(juce::ComboBox::arrowColourId,        kTextPrimary);
-    selector->setColour(juce::TextButton::buttonColourId,     kSurfaceLight);
-    selector->setColour(juce::TextButton::textColourOffId,    kTextPrimary);
-    selector->setColour(juce::Label::textColourId,            kTextPrimary);
-    selector->setColour(juce::ToggleButton::textColourId,     kTextPrimary);
-    selector->setColour(juce::ToggleButton::tickColourId,     kAccentColour);
-    selector->setColour(juce::ToggleButton::tickDisabledColourId, kBorderColour);
+    applySynthlabSelectorPalette(*selector);
 
-    addAndMakeVisible(selector.get());
+    generalPanel = std::make_unique<GeneralSettingsPanel>();
+
+    tabs = std::make_unique<juce::TabbedComponent>(juce::TabbedButtonBar::TabsAtTop);
+    tabs->setOutline(0);
+    tabs->setIndent(0);
+    tabs->setTabBarDepth(34);
+    tabs->setColour(juce::TabbedComponent::backgroundColourId, kSurfaceColour);
+    tabs->setColour(juce::TabbedComponent::outlineColourId,    kBorderColour);
+    tabs->setColour(juce::TabbedButtonBar::tabOutlineColourId, kBorderColour);
+    tabs->setColour(juce::TabbedButtonBar::tabTextColourId,    kTextPrimary.withAlpha(0.7f));
+    tabs->setColour(juce::TabbedButtonBar::frontTextColourId,  kTextPrimary);
+    tabs->setColour(juce::TabbedButtonBar::frontOutlineColourId, kAccentColour);
+
+    // Tabs own the layout of these children but not their lifetime — we keep
+    // the unique_ptrs as the source of truth (deleteWhenRemoved = false).
+    tabs->addTab("Audio Device", kSurfaceColour, selector.get(),     false);
+    tabs->addTab("General",      kSurfaceColour, generalPanel.get(), false);
+
+    addAndMakeVisible(tabs.get());
 
     closeButton = std::make_unique<juce::TextButton>("Done");
     closeButton->setColour(juce::TextButton::buttonColourId,   kAccentColour);
@@ -76,6 +156,12 @@ AudioSettingsDialog::~AudioSettingsDialog()
     deviceManager.removeChangeListener(this);
     if (closeButton != nullptr)
         closeButton->removeListener(this);
+
+    // TabbedComponent does not own the child components (we passed false to
+    // addTab) — clear it before our unique_ptrs go out of scope, so it does
+    // not retain dangling raw pointers during its own destruction.
+    if (tabs != nullptr)
+        tabs->clearTabs();
 }
 
 void AudioSettingsDialog::resized()
@@ -90,8 +176,8 @@ void AudioSettingsDialog::resized()
 
     selectorBounds = area.reduced(kPaddingX, 8);
 
-    if (selector != nullptr)
-        selector->setBounds(selectorBounds.reduced(8));
+    if (tabs != nullptr)
+        tabs->setBounds(selectorBounds.reduced(8));
 
     if (closeButton != nullptr)
     {

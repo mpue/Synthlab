@@ -1199,6 +1199,7 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addItem(14, "Claude API Key...", true, false, nullptr);
 		menu.addItem(6, "Import Audio", true, false, nullptr);
 		menu.addItem(12, "Import MIDI", true, false, nullptr);
+		menu.addItem(15, "Import Stems", true, false, nullptr);
 		menu.addItem(7, "Play", true, false, nullptr);
 		PopupMenu samplesMenu = PopupMenu();
 
@@ -1323,6 +1324,36 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	}
 	else if (menuItemID == 14) {
 		showClaudeApiKeyDialog();
+	}
+	else if (menuItemID == 15) {
+		FileChooser chooser("Select a folder containing stems...");
+		if (chooser.browseForDirectory()) {
+			File folder = chooser.getResult();
+
+			if (editorView->getNavigator() == nullptr) {
+				editorView->OpenTrackView();
+				editorView->getNavigator()->addChangeListener(this);
+			}
+
+			Array<File> wavFiles;
+			folder.findChildFiles(wavFiles, File::findFiles, false, "*.wav");
+			wavFiles.sort();
+
+			const double sr = Project::getInstance()->getSampleRate();
+
+			for (const File& file : wavFiles) {
+				Track* t = TrackUtil::createAudioTrack(editor, editorView->getNavigator(), editor->getModule());
+				if (t != nullptr) {
+					t->setName(file.getFileNameWithoutExtension());
+					t->addRegion(file.getFileNameWithoutExtension(), file, sr);
+					Project::getInstance()->addAudioFile(file.getFileNameWithoutExtension(), file.getFullPathName());
+				}
+			}
+
+			editorView->getNavigator()->adjustHeight();
+			editorView->getNavigator()->repaint();
+			editor->repaint();
+		}
 	}
 	else if (menuItemID == 7) {
 		editorView->getNavigator()->setPlaying(true);
@@ -2164,13 +2195,14 @@ void MainComponent::dirtyChanged(bool dirty) {
 
 }
 
-void MainComponent::startBounce(const juce::File& outputFile, double durationInSeconds)
+void MainComponent::startBounce(const juce::File& outputFile, double durationInSeconds, bool exportMp3, bool exportOgg)
 {
 	bounceProgress = 0.0;
 
 	bounceThread = std::make_unique<BounceThread>(
 		this, outputFile, durationInSeconds,
-		[this](float p) { bounceProgress.store(p); }
+		[this](float p) { bounceProgress.store(p); },
+		exportMp3, exportOgg
 	);
 	bounceThread->startThread();
 
@@ -2377,7 +2409,7 @@ void MainComponent::showBounceDialog()
 		}
 
 		// Starte Bounce
-		startBounce(dialog->getOutputFile(), duration);
+		startBounce(dialog->getOutputFile(), duration, dialog->getExportMp3(), dialog->getExportOgg());
 
 		// Schließe Dialog
 		if (auto* dw = dialog->findParentComponentOfClass<juce::DialogWindow>()) {

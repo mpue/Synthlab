@@ -476,16 +476,101 @@ void BounceThread::run()
 
 	// write to WAV file
 	juce::WavAudioFormat wavFormat;
-	std::unique_ptr<juce::FileOutputStream> stream(outputFile.createOutputStream());
-
-	if (stream)
+	bool wavWritten = false;
 	{
-		std::unique_ptr<juce::AudioFormatWriter> writer(
-			wavFormat.createWriterFor(stream.get(), sampleRate, numChannels, 16, {}, 0));
-		if (writer)
+		std::unique_ptr<juce::FileOutputStream> stream(outputFile.createOutputStream());
+
+		if (stream)
 		{
-			stream.release(); // pass ownership to the writer
-			writer->writeFromAudioSampleBuffer(buffer, 0, totalSamples);
+			std::unique_ptr<juce::AudioFormatWriter> writer(
+				wavFormat.createWriterFor(stream.get(), sampleRate, numChannels, 16, {}, 0));
+			if (writer)
+			{
+				stream.release(); // pass ownership to the writer
+				wavWritten = writer->writeFromAudioSampleBuffer(buffer, 0, totalSamples);
+				// writer goes out of scope here -> flushes and closes the file
+				// before we hand it to lame below.
+			}
+		}
+	}
+
+	// OGG-Vorbis-Export: nativ ueber juce::OggVorbisAudioFormat aus dem
+	// schon fertigen Mix-Buffer schreiben. Kein externes Binary noetig.
+	// Quality-Index 6 ~ 192 kbps (siehe OggVorbisAudioFormat::getQualityOptions).
+	if (exportOgg)
+	{
+		const juce::File oggFile = outputFile.withFileExtension("ogg");
+		juce::OggVorbisAudioFormat oggFormat;
+		std::unique_ptr<juce::FileOutputStream> oggStream(oggFile.createOutputStream());
+		if (oggStream)
+		{
+			std::unique_ptr<juce::AudioFormatWriter> oggWriter(
+				oggFormat.createWriterFor(oggStream.get(), sampleRate, numChannels, 16, {}, 6));
+			if (oggWriter)
+			{
+				oggStream.release(); // ownership -> writer
+				const bool ok = oggWriter->writeFromAudioSampleBuffer(buffer, 0, totalSamples);
+				if (! ok)
+					juce::Logger::writeToLog("OGG-Export: writeFromAudioSampleBuffer fehlgeschlagen.");
+				else
+					juce::Logger::writeToLog("OGG-Export: " + oggFile.getFullPathName() + " geschrieben.");
+			}
+			else {
+				juce::Logger::writeToLog("OGG-Export: konnte keinen OGG-Writer erzeugen.");
+			}
+		}
+		else {
+			juce::Logger::writeToLog("OGG-Export: konnte Output-Stream nicht oeffnen: " + oggFile.getFullPathName());
+		}
+	}
+
+	// MP3-Export: WAV via lame in .mp3 nebenan konvertieren. lame muss auf
+	// PATH oder unter /opt/homebrew/bin oder /usr/local/bin liegen. Wenn nicht
+	// gefunden / fehlgeschlagen: stille Warnung im Log, WAV bleibt erhalten.
+	if (exportMp3 && wavWritten)
+	{
+		const juce::File mp3File = outputFile.withFileExtension("mp3");
+
+		juce::File lameExe;
+		const juce::StringArray candidates {
+			"/opt/homebrew/bin/lame",
+			"/usr/local/bin/lame",
+			"/usr/bin/lame"
+		};
+		for (const auto& path : candidates) {
+			juce::File f(path);
+			if (f.existsAsFile() && f.hasReadAccess()) { lameExe = f; break; }
+		}
+
+		// Konkrete Pfade priorisiert; wenn keiner existiert, fallen wir auf
+		// PATH-Lookup zurueck (ChildProcess geht via execvp und sucht $PATH).
+		const juce::String lameInvocation = lameExe != juce::File()
+			? lameExe.getFullPathName()
+			: juce::String("lame");
+
+		juce::StringArray cmd;
+		cmd.add(lameInvocation);
+		cmd.add("--silent");
+		cmd.add("-h");
+		cmd.add(outputFile.getFullPathName());
+		cmd.add(mp3File.getFullPathName());
+
+		juce::ChildProcess proc;
+		const bool started = proc.start(cmd);
+		if (! started) {
+			juce::Logger::writeToLog("MP3-Export: konnte 'lame' nicht starten — bitte 'brew install lame' oder lame in den PATH legen.");
+		}
+		else {
+			// 1h-Timeout — lame ist normalerweise ~10x Realtime, der Default
+			// (60 s) wuerde fuer laengere Bounces faelschlich abbrechen.
+			const bool finished = proc.waitForProcessToFinish(3600000);
+			const juce::uint32 exitCode = proc.getExitCode();
+			if (! finished || exitCode != 0) {
+				juce::Logger::writeToLog("MP3-Export: lame-Aufruf fehlgeschlagen (exit=" + juce::String((int) exitCode) + ").");
+			}
+			else {
+				juce::Logger::writeToLog("MP3-Export: " + mp3File.getFullPathName() + " geschrieben.");
+			}
 		}
 	}
 

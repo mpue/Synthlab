@@ -28,6 +28,8 @@ public:
     int getSampleRate() const { return sampleRateCombo.getSelectedId() == 1 ? 44100 : 48000; }
     int getBitDepth() const { return bitDepthCombo.getSelectedId() == 1 ? 16 : 24; }
     bool useMarkerRange() const { return useRangeButton.getToggleState(); }
+    bool getExportMp3() const { return mp3Button.getToggleState(); }
+    bool getExportOgg() const { return oggButton.getToggleState(); }
     
     // Callback wenn "Export" geklickt wird
     std::function<void()> onExport;
@@ -49,7 +51,9 @@ private:
     juce::ComboBox bitDepthCombo;
     
     juce::ToggleButton useRangeButton;
-    
+    juce::ToggleButton mp3Button;
+    juce::ToggleButton oggButton;
+
     juce::TextButton exportButton;
     juce::TextButton cancelButton;
     

@@ -3,7 +3,7 @@
 BounceDialog::BounceDialog()
 {
     setupComponents();
-    setSize(500, 400);
+    setSize(500, 480);
 }
 
 BounceDialog::~BounceDialog()
@@ -61,7 +61,18 @@ void BounceDialog::setupComponents()
     useRangeButton.setButtonText("Use Marker Range (if set)");
     useRangeButton.setToggleState(false, juce::dontSendNotification);
     addAndMakeVisible(useRangeButton);
-    
+
+    // MP3 — schreibt zusaetzlich zum WAV ein .mp3 via lame in dasselbe
+    // Verzeichnis. Bleibt unmarkiert: nur WAV.
+    mp3Button.setButtonText("Also export MP3 (requires lame)");
+    mp3Button.setToggleState(false, juce::dontSendNotification);
+    addAndMakeVisible(mp3Button);
+
+    // OGG Vorbis — nativ ueber JUCE, kein externes Binary noetig.
+    oggButton.setButtonText("Also export OGG Vorbis");
+    oggButton.setToggleState(false, juce::dontSendNotification);
+    addAndMakeVisible(oggButton);
+
     // Buttons
     exportButton.setButtonText("Start Bounce");
     exportButton.onClick = [this] {
@@ -130,7 +141,17 @@ void BounceDialog::resized()
     
     // Marker Range
     useRangeButton.setBounds(bounds.removeFromTop(rowHeight));
-    
+
+    bounds.removeFromTop(spacing);
+
+    // MP3
+    mp3Button.setBounds(bounds.removeFromTop(rowHeight));
+
+    bounds.removeFromTop(spacing);
+
+    // OGG
+    oggButton.setBounds(bounds.removeFromTop(rowHeight));
+
     bounds.removeFromTop(spacing * 2);
     
     // Buttons
