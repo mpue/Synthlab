@@ -8,6 +8,8 @@
 
 #include "Region.h"
 #include "../Actions/MoveRegionAction.h"
+#include "../Project/Project.h"
+#include "../PropertyView.h"
 
 Region::Region() {
     oldOffset = 0;
@@ -153,6 +155,13 @@ void Region::mouseDown(const MouseEvent & e)
     dragStartSampleOffset = getSampleOffset();
     if (dragger != nullptr)
         dragger->handleMouseDown(this, e);
+
+    // Direkte Klicks auf eine Region updaten den PropertyView nicht ueber
+    // den Dragger — bisher zeigte er nur Track-/Module-Properties an. Wir
+    // pushen die Selektion hier explizit nach, damit Name, Pitch und (bei
+    // AudioRegions) die Tempo-Follow Properties sichtbar werden.
+    if (auto* pv = Project::getInstance()->getPropertyView())
+        pv->selectionChanged(this);
 }
 
 void Region::mouseUp(const MouseEvent & e)

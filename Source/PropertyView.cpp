@@ -23,6 +23,9 @@
 
 #include "PropertyView.h"
 #include "Tracks/Track.h"
+#include "Tracks/Region.h"
+#include "Tracks/AudioRegion.h"
+#include "Tracks/MidiRegion.h"
 #include "PluginModule.h"
 
 //[MiscUserDefs] You can add your own user definitions and misc code here...
@@ -220,6 +223,17 @@ void PropertyView::selectionChanged(Component* c)
             {
                 showButton->setVisible(true);
             }
+        }
+
+        // Region-Properties anzeigen, wenn TrackNavigator eine Region als
+        // Selektion durchreicht. Vorher fiel das durch — AudioRegion zeigte
+        // damit weder Name/Pitch noch die neuen Tempo-Follow Properties.
+        if (auto* r = dynamic_cast<Region*>(c))
+        {
+            const char* sectionName = dynamic_cast<AudioRegion*>(r) != nullptr
+                ? "Audio Region"
+                : (dynamic_cast<MidiRegion*>(r) != nullptr ? "MIDI Region" : "Region");
+            propertyPanel->addSection(sectionName, r->getProperties());
         }
     }
 
