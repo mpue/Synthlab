@@ -64,6 +64,17 @@ public:
     
     void setClipRefId(String id);
     String getClipRefid();
+
+    // Buffer-Mutation-Tracking: getrennt vom thumbnail-orientierten 'dirty'-
+    // Flag. Wird auf true gesetzt sobald eine destruktive Operation den
+    // audioBuffer veraendert (Normalize, Fade, Reverse, Consolidate, Pitch ...).
+    // Beim naechsten Project::save persistiert TrackNavigator::persistDirtyAudioRegions
+    // den aktuellen Buffer als neue WAV in $project/edits/ und vergibt einen
+    // neuen clipRefId — danach wird das Flag zurueckgesetzt. Reload findet die
+    // edited-Version unter neuem refId in _audio.xml.
+    void markBufferMutated() { bufferMutated = true; }
+    void markBufferClean()   { bufferMutated = false; }
+    bool isBufferMutated() const { return bufferMutated; }
        
     float getPitch();
     void setPitch(float pitch);
@@ -104,6 +115,7 @@ private:
     AudioSampleBuffer* audioBuffer;
     AudioSampleBuffer* audioBufferProcessed = nullptr;
     long sourceStartSample = 0;
+    bool bufferMutated = false;
 
     // Resize-Gesture-Basis: speichern beim ersten Tick (sentinel = -1) und
     // sourceStartSample im laufenden Resize absolut daraus berechnen, statt

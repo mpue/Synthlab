@@ -34,14 +34,15 @@ MidiClock::MidiClock()
 
 MidiClock::~MidiClock()
 {
+    // Timer zuerst stoppen, sonst kann er nach dem Loeschen der Member-
+    // Values noch feuern und in den toten Listener-Callback laufen (UAF).
+    stopTimer();
     delete channelValue;
     delete channelListener;
     delete tempoValue;
     delete tempoListener;
     delete internalValue;
     delete internalListener;
-    // stopTimer();
-    // delete channelProp;
 }
 
 void MidiClock::configurePins() {
@@ -66,28 +67,39 @@ void MidiClock::paint(juce::Graphics &g) {
     g.drawImageAt(ImageCache::getFromMemory(BinaryData::clock_png, BinaryData::clock_pngSize),25,40);
 }
 
-void MidiClock::timerCallback() {
-        
-    Event* e = new Event("clock", Event::Type::CLOCK);
-    MidiMessage m = MidiMessage::midiClock();
-    e->setMessage(m);
-    double tempo = 60.0f / (m.getTempoSecondsPerQuarterNote() * 16);
-    e->setValue(tempo);
-    for (int i = 0; i < pins.at(1)->getConnections().size(); i++) {
-        pins.at(1)->getConnections().at(i)->sendEvent(new Event(e));
-    }    
-    delete e;
+void MidiClock::hiResTimerCallback() {
+
+    // Phase-locked: feuere so viele Ticks wie noetig, bis nextTickMs in
+    // der Zukunft liegt. So wird kumulativer Drift vermieden (jeder Tick
+    // ist absolut geplant, nicht relativ zum letzten Aufruf), und bei
+    // einem Thread-Hiccup holen wir die verlorenen Ticks zurueck statt
+    // sie wegzulassen.
+    const double nowMs = juce::Time::getMillisecondCounterHiRes();
+
+    while (running && nowMs >= nextTickMs) {
+        Event* e = new Event("clock", Event::Type::CLOCK);
+        MidiMessage m = MidiMessage::midiClock();
+        e->setMessage(m);
+        e->setValue((int) tempo);
+        for (int i = 0; i < pins.at(1)->getConnections().size(); i++) {
+            pins.at(1)->getConnections().at(i)->sendEvent(new Event(e));
+        }
+        delete e;
+
+        nextTickMs += periodMs;
+    }
 }
 
 void MidiClock::clock(juce::MidiMessage message) {
     Event* e = new Event("clock",Event::Type::CLOCK);
-    double tempo = 60.0f / (message.getTempoSecondsPerQuarterNote() * 16);
-	e->setMessage(message);
-    e->setValue(tempo);
+    e->setMessage(message);
+    // Selbes Problem wie in timerCallback: die eintreffende Clock-Message
+    // traegt kein Tempo, also nehmen wir unseren konfigurierten BPM-Wert.
+    e->setValue((int) tempo);
     for (int i = 0; i < pins.at(1)->getConnections().size();i++) {
         pins.at(1)->getConnections().at(i)->sendEvent(new Event(e));
     }
-    
+
     delete e;
 }
 
@@ -150,22 +162,30 @@ void MidiClock::setChannel(int channel) {
 
 void MidiClock::setInternal(bool isInternal) {
     if (isInternal) {
-        
-        float t = ((60.0f/tempo) * 1000) / 16.0f;
-        
-        if (!running){
-            startTimer(t);
-            running = true;
-        }
-        else {
+
+        // MIDI-Clock-Spec: 24 PPQN. periodMs ist die exakte (fraktionale)
+        // Tick-Periode; nextTickMs wird beim Start auf "jetzt" geseedet,
+        // damit der erste Tick sofort feuert.
+        periodMs   = 60000.0 / (24.0 * tempo);
+        nextTickMs = juce::Time::getMillisecondCounterHiRes();
+
+        if (running) {
             stopTimer();
-            startTimer(t);
-            running = true;
         }
+        // Poll-Periode 1 ms — feiner als das eigentliche Tick-Intervall
+        // (~20.83 ms bei 120 BPM). Die hiResTimerCallback feuert Ticks
+        // basierend auf nextTickMs, nicht auf der Poll-Periode, also
+        // begrenzt 1 ms hier nur den Jitter auf <=1 ms.
+        startTimer(1);
+        running = true;
     }
     else {
-        if(running) {
+        if (running) {
             stopTimer();
+            // Vorher wurde running nicht zurueckgesetzt -> der naechste
+            // setInternal(true) lief durch den else-Zweig (stopTimer +
+            // startTimer) statt einfach startTimer.
+            running = false;
         }
     }
     this->internalClock = isInternal;
@@ -179,7 +199,15 @@ bool MidiClock::isInternal() {
 void MidiClock::setTempo(float tempo) {
     this->tempo = tempo;
     this->tempoValue->setValue(tempo);
-    this->setInternal(tempo);
+    // Vorher: setInternal(tempo) — der float wurde implizit auf bool gecastet
+    // und damit der Internal-Mode bei jeder Tempo-Aenderung erzwungen.
+    // Jetzt nur die Tick-Periode neu berechnen, falls der interne Clock
+    // laeuft. nextTickMs nicht resetten, sonst gibt's an der Tempo-Aenderung
+    // einen Phasensprung — der naechste Tick rutscht einfach an die neue
+    // Periode.
+    if (running) {
+        periodMs = 60000.0 / (24.0 * tempo);
+    }
 }
 
 float MidiClock::getTempo() {

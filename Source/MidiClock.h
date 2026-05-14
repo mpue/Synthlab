@@ -16,21 +16,24 @@
 //==============================================================================
 /*
  */
-class MidiClock    : public Module, public Timer
+class MidiClock    : public Module, public juce::HighResolutionTimer
 {
 public:
     MidiClock();
     ~MidiClock();
-    
+
     void paint (juce::Graphics& g) override;
-    
+
     virtual void configurePins() override;
-    
+
     virtual juce::String getCategory() override {
         return "MIDI";
     }
-    
-    virtual void timerCallback() override;
+
+    // HighResolutionTimer-Callback laeuft auf eigenem High-Prio-Thread,
+    // nicht auf dem Message-Thread — entkoppelt den Clock-Tick von UI-
+    // Redraws und Modal-Dialogen.
+    virtual void hiResTimerCallback() override;
     
     void clock(MidiMessage message);
     void midiStart();
@@ -99,11 +102,18 @@ private:
     TempoListener* tempoListener;
     
     int channel = { 1 };
-    
+
     bool internalClock = false;
     float tempo = 120.0f;
-    
+
     bool running = false;
+
+    // Phase-locked Scheduling: nextTickMs ist die geplante absolute Zeit
+    // des naechsten Ticks (sub-ms genau, juce::Time::getMillisecondCounterHiRes).
+    // periodMs ist 60000/(24*tempo). Wir poll'en mit 1ms und feuern jeden
+    // Tick fuer den nextTickMs schon vergangen ist — Drift mittelt sich aus.
+    double periodMs = 0.0;
+    double nextTickMs = 0.0;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MidiClock)
 };

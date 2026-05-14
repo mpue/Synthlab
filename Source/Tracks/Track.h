@@ -140,6 +140,26 @@ public:
 
     void removeSelectedRegions(bool clear);
     void duplicateSelectedRegions();
+
+    // Mehrere selektierte AudioRegions auf diesem Track zu einer einzigen
+    // verschmelzen: deckt min(offset) .. max(offset+len) ab, summiert
+    // Overlaps additiv, fuellt Gaps mit Stille. Markiert die neue Region als
+    // bufferMutated (wird beim naechsten Project::save als WAV in $project/edits/
+    // persistiert). Gibt die neue Region zurueck, oder nullptr wenn weniger
+    // als 2 AudioRegions selektiert sind.
+    AudioRegion* mergeSelectedAudioRegions();
+
+    // Analog fuer MIDI/INSTRUMENT-Tracks: alle Events der selektierten
+    // MidiRegions werden in eine neue Region kopiert, Timestamps werden in
+    // den merged Frame umgerechnet. Originale werden geloescht. Gibt die
+    // neue Region zurueck, oder nullptr bei <2 selektierten.
+    MidiRegion* mergeSelectedMidiRegions();
+
+    // Type-aware Wrapper: dispatcht auf mergeSelectedAudio/MidiRegions je
+    // nach Track-Typ. Liefert true wenn ein Merge stattgefunden hat —
+    // Caller (z.B. Consolidate-Menue) faellt bei false auf den Single-Region
+    // Pfad zurueck.
+    bool mergeSelectedRegions();
     void copySelectedRegions();
     void duplicateRegion(Region* region);
     // Paste every compatible region from Session's clipboard onto this track,

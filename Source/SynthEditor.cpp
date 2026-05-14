@@ -1920,6 +1920,17 @@ void SynthEditor::saveFile() {
 	}
 
 	if (fileValid) {
+		// Edit-Persist: AudioRegions mit veraendertem Buffer (Normalize,
+		// Fade, Reverse, Consolidate ...) als neue WAV nach $projectDir/edits/
+		// schreiben und ihre clipRefIds aktualisieren. Muss VOR
+		// navigator->getConfiguration() laufen, damit das Tracks-XML schon
+		// die neuen refIds enthaelt und Project::save() den Pfad ins
+		// _audio.xml schreibt.
+		if (navigator != nullptr) {
+			const juce::File editsDir = file.getParentDirectory().getChildFile("edits");
+			navigator->persistDirtyAudioRegions(editsDir);
+		}
+
 		std::unique_ptr<XmlElement> xml = v->createXml();
 		xml->writeToFile(file, "");
 		xml = nullptr;

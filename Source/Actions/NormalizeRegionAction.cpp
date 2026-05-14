@@ -30,7 +30,7 @@ bool NormalizeRegionAction::perform()
 		AudioRegion* audioRegion = dynamic_cast<AudioRegion*>(region);
 
 		if (audioRegion != nullptr) {
-			// Speichere den Original-Buffer für Undo
+			// Speichere den Original-Buffer fï¿½r Undo
 			targetRegion = audioRegion;
 			auto* buffer = audioRegion->getBuffer();
 			
@@ -45,10 +45,11 @@ bool NormalizeRegionAction::perform()
 					originalBuffer->copyFrom(channel, 0, *buffer, channel, 0, buffer->getNumSamples());
 				}
 				
-				// Führe die Normalisierung durch
+				// Fï¿½hre die Normalisierung durch
 				AudioUtils::normalizeBuffer(*buffer);
+				audioRegion->markBufferMutated();
 				audioRegion->updateThumb();
-				Project::getInstance()->getCommandManager()->commandStatusChanged();	
+				Project::getInstance()->getCommandManager()->commandStatusChanged();
 
 				return true;
 			}

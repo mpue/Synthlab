@@ -231,6 +231,11 @@ void MidiProcessor::sendMidiStopMessage(Module* module, int channel) {
 void MidiProcessor::sendMidiClockMessage(Module* module, int channel)
 {
 	if (auto* midiClock = dynamic_cast<MidiClock*>(module)) {
+		// Im Internal-Mode generiert MidiClock seine Ticks selbst auf einem
+		// dedizierten HighResolutionTimer-Thread. Wenn wir hier auch noch
+		// feuern, kommen Clocks doppelt raus (2x Tempo). Skip in dem Fall.
+		if (midiClock->isInternal())
+			return;
 		midiClock->clock(MidiMessage::midiClock());
 	}
 }

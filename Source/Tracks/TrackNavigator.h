@@ -270,6 +270,24 @@ private:
 	// Menü-Pfad entsteht; fällt sonst auf addTrack(Type::AUDIO,…) zurück.
 	Track* createAudioTrackForDrop();
 
+	// Schreibt das Recording-Buffer einer frisch aufgenommenen AudioRegion
+	// als WAV auf Platte, registriert die Datei unter einem stabilen refId
+	// in Project::projectAudio und setzt der Region ihren clipRefId. Ohne
+	// diesen Schritt wuerde getConfiguration() die Region beim Save droppen
+	// (clipRefId leer == "unsaveable"). Spiegel zu bounceSelectedRegionsInPlace.
+	void persistRecordedRegion(Track* track, class AudioRegion* region, long startOffset);
+
+public:
+	// Schreibt fuer jede AudioRegion mit bufferMutated==true den aktuellen
+	// audioBuffer als neue WAV in $projectDir/edits, aktualisiert den
+	// clipRefId und cleart das Flag. Wird von SynthEditor::saveFile vor
+	// navigator->getConfiguration() aufgerufen, damit Track-XML schon den
+	// neuen refId enthaelt und _audio.xml den Pfad mitschreibt.
+	// outputDir muss existieren oder erstellbar sein; sonst wird der
+	// Fallback ~/Documents/Synthlab/edits verwendet.
+	void persistDirtyAudioRegions(const juce::File& outputDir);
+private:
+
 	MultiComponentDragger* dragger = NULL;
 	AudioDeviceManager* deviceManager;
 

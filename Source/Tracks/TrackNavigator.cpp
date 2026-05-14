@@ -1020,6 +1020,12 @@ void TrackNavigator::setRecording(bool recording) {
 				else if (t->getType() == Track::Type::AUDIO) {
 					if (auto* ar = dynamic_cast<AudioRegion*>(rec)) {
 						ar->stopRecording();
+						// Recording-Buffer als WAV nach $project/recordings
+						// persistieren und der Region einen clipRefId geben —
+						// sonst wirft Project::save() die Region weg (siehe
+						// "dropping unsaveable region"-Pfad). Spiegel zur
+						// Bounce-in-Place-Logik weiter unten.
+						persistRecordedRegion(t, ar, recordStart);
 					}
 				}
 				t->setRecordingRegion(nullptr);
@@ -1458,6 +1464,139 @@ bool TrackNavigator::keyPressed(const KeyPress& key, Component* originatingCompo
 	}
 
 	return false;
+}
+
+void TrackNavigator::persistRecordedRegion(Track* track, AudioRegion* region, long startOffset)
+{
+	if (track == nullptr || region == nullptr) return;
+	auto* buf = region->getBuffer();
+	if (buf == nullptr || buf->getNumSamples() <= 0) return;
+
+	const double sr = Project::getInstance()->getSampleRate();
+	if (sr <= 0.0) return;
+
+	auto sanitize = [](juce::String s) {
+		return s.replaceCharacters(" /\\:*?\"<>|\t\n\r", "_____________");
+	};
+
+	// Output-Verzeichnis: bevorzugt $projectDir/recordings, sonst
+	// ~/Documents/Synthlab/recordings als Fallback fuer Untitled-Sessions.
+	juce::File outputDir;
+	const juce::String curProjPath = Project::getInstance()->getCurrentFilePath();
+	if (curProjPath.isNotEmpty() && ! Project::getInstance()->isNewFile()) {
+		juce::File parent = juce::File(curProjPath).getParentDirectory();
+		if (parent.exists())
+			outputDir = parent.getChildFile("recordings");
+	}
+	if (outputDir == juce::File())
+		outputDir = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
+			.getChildFile("Synthlab").getChildFile("recordings");
+	if (! outputDir.exists())
+		outputDir.createDirectory();
+
+	// Zeit im Filename = Timeline-Position des Aufnahmebeginns (MM-SS-mmm).
+	// Mehrfaches Aufnehmen an gleicher Position kollidiert sonst — getNonexistentSibling
+	// haengt _2, _3 ... an.
+	const double seconds = (double) startOffset / sr;
+	const int totalMs = (int) std::llround(seconds * 1000.0);
+	const int mm  = totalMs / 60000;
+	const int ss  = (totalMs / 1000) % 60;
+	const int mss =  totalMs % 1000;
+	const juce::String timeStr = juce::String::formatted("%02dm%02ds%03d", mm, ss, mss);
+	const juce::String baseName = sanitize(track->getName()) + "_rec_" + timeStr;
+	const juce::File outFile = outputDir.getChildFile(baseName + ".wav").getNonexistentSibling();
+	const juce::String refId = outFile.getFileNameWithoutExtension();
+
+	bool wrote = false;
+	{
+		juce::WavAudioFormat wavFormat;
+		std::unique_ptr<juce::FileOutputStream> stream(outFile.createOutputStream());
+		if (stream != nullptr) {
+			std::unique_ptr<juce::AudioFormatWriter> writer(
+				wavFormat.createWriterFor(stream.get(), sr,
+					(unsigned int) juce::jmax(1, buf->getNumChannels()), 16, {}, 0));
+			if (writer != nullptr) {
+				stream.release(); // ownership -> writer
+				wrote = writer->writeFromAudioSampleBuffer(*buf, 0, buf->getNumSamples());
+			}
+		}
+		if (! wrote)
+			Logger::writeToLog("Recording-Persist: konnte WAV nicht schreiben: " + outFile.getFullPathName());
+	}
+
+	if (wrote) {
+		Project::getInstance()->addAudioFile(refId, outFile.getFullPathName());
+		region->setClipRefId(refId);
+		Logger::writeToLog("Recording-Persist: " + outFile.getFullPathName() + " (refId=" + refId + ")");
+	}
+}
+
+void TrackNavigator::persistDirtyAudioRegions(const juce::File& outputDirIn)
+{
+	const double sr = Project::getInstance()->getSampleRate();
+	if (sr <= 0.0) return;
+
+	juce::File outputDir = outputDirIn;
+	if (outputDir == juce::File())
+		outputDir = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
+			.getChildFile("Synthlab").getChildFile("edits");
+	if (! outputDir.exists())
+		outputDir.createDirectory();
+
+	auto sanitize = [](juce::String s) {
+		return s.replaceCharacters(" /\\:*?\"<>|\t\n\r", "_____________");
+	};
+
+	for (auto* t : tracks) {
+		if (t == nullptr) continue;
+		for (auto* r : t->getRegions()) {
+			auto* ar = dynamic_cast<AudioRegion*>(r);
+			if (ar == nullptr) continue;
+			if (! ar->isBufferMutated()) continue;
+
+			auto* buf = ar->getBuffer();
+			if (buf == nullptr || buf->getNumSamples() <= 0) continue;
+
+			// Timestamp = Timeline-Position der Region (MM-SS-mmm). Mehrfaches
+			// Editieren derselben Region erzeugt sonst Namen-Kollisionen, die
+			// wir mit getNonexistentSibling() (_2, _3, ...) aufloesen.
+			const long offset = ar->getSampleOffset();
+			const double seconds = (double) offset / sr;
+			const int totalMs = (int) std::llround(seconds * 1000.0);
+			const int mm  = totalMs / 60000;
+			const int ss  = (totalMs / 1000) % 60;
+			const int mss =  totalMs % 1000;
+			const juce::String timeStr = juce::String::formatted("%02dm%02ds%03d", mm, ss, mss);
+			const juce::String baseName = sanitize(t->getName()) + "_edit_" + timeStr;
+			const juce::File outFile = outputDir.getChildFile(baseName + ".wav").getNonexistentSibling();
+			const juce::String refId = outFile.getFileNameWithoutExtension();
+
+			bool wrote = false;
+			{
+				juce::WavAudioFormat wavFormat;
+				std::unique_ptr<juce::FileOutputStream> stream(outFile.createOutputStream());
+				if (stream != nullptr) {
+					std::unique_ptr<juce::AudioFormatWriter> writer(
+						wavFormat.createWriterFor(stream.get(), sr,
+							(unsigned int) juce::jmax(1, buf->getNumChannels()), 16, {}, 0));
+					if (writer != nullptr) {
+						stream.release();
+						wrote = writer->writeFromAudioSampleBuffer(*buf, 0, buf->getNumSamples());
+					}
+				}
+			}
+
+			if (wrote) {
+				Project::getInstance()->addAudioFile(refId, outFile.getFullPathName());
+				ar->setClipRefId(refId);
+				ar->markBufferClean();
+				Logger::writeToLog("Edit-Persist: " + outFile.getFullPathName() + " (refId=" + refId + ")");
+			}
+			else {
+				Logger::writeToLog("Edit-Persist: konnte WAV nicht schreiben: " + outFile.getFullPathName());
+			}
+		}
+	}
 }
 
 void TrackNavigator::bounceSelectedRegionsInPlace()

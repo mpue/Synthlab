@@ -1546,6 +1546,7 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 
 			if (audioRegion != nullptr) {
 				AudioUtils::reverseAudioBuffer(*audioRegion->getBuffer());
+				audioRegion->markBufferMutated();
 				audioRegion->updateThumb();
 			}
 
@@ -1564,9 +1565,20 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	}
 	else if (menuItemID == 49) {
 		if (navigator->getCurrentTrack() != nullptr) {
-			Region* region = navigator->getCurrentTrack()->getCurrentRegion();
-			if (region != nullptr)
+			Track* t = navigator->getCurrentTrack();
+			// Mehrere selektierte AudioRegions auf demselben Track? Dann erst
+			// mergen — das Ergebnis ist per Definition schon konsolidiert
+			// (sourceStartSample=0, Visible-Length == Buffer-Length). Wenn
+			// nur eine Region selektiert ist, faellt der Pfad auf das
+			// klassische region->consolidate() zurueck.
+			if (t->mergeSelectedRegions()) {
+				// Audio: Merge-Resultat ist per Definition schon konsolidiert
+				// (sourceStartSample=0, Visible-Length == Buffer-Length).
+				// MIDI: ebenso, da addMidiRegion frisch leer mit sss=0 startet.
+			}
+			else if (Region* region = t->getCurrentRegion()) {
 				region->consolidate();
+			}
 		}
 	}
 	else if (menuItemID == 60) {

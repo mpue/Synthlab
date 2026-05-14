@@ -145,6 +145,174 @@ void Track::removeSelectedRegions(bool clear) {
 
 }
 
+AudioRegion* Track::mergeSelectedAudioRegions() {
+	// Selektierte AudioRegions einsammeln (Region-Flag ODER Dragger,
+	// gleiche Logik wie bounceSelectedRegionsInPlace).
+	std::vector<AudioRegion*> selected;
+	for (auto* r : regions) {
+		auto* ar = dynamic_cast<AudioRegion*>(r);
+		if (ar == nullptr) continue;
+		const bool flagSel    = ar->isSelected();
+		const bool draggerSel = (dragger != nullptr && dragger->isSelected(ar));
+		if (flagSel || draggerSel)
+			selected.push_back(ar);
+	}
+	if (selected.size() < 2) return nullptr;
+
+	// Timeline-Range: minOffset .. maxEnd ueber alle selektierten Regionen.
+	long minOffset = LONG_MAX;
+	long maxEnd    = 0;
+	for (auto* ar : selected) {
+		const long off = ar->getSampleOffset();
+		const long len = (long) ar->getNumSamples();
+		if (off < minOffset) minOffset = off;
+		if (off + len > maxEnd) maxEnd = off + len;
+	}
+	const long totalLen = maxEnd - minOffset;
+	if (totalLen <= 0) return nullptr;
+
+	// Merged-Buffer aufbauen. Stereo, additive Mix bei Overlap, Gaps bleiben
+	// Stille (Buffer ist initial cleared).
+	juce::AudioSampleBuffer merged(2, (int) totalLen);
+	merged.clear();
+	for (auto* ar : selected) {
+		auto* src = ar->getBuffer();
+		if (src == nullptr) continue;
+		const long sss = ar->getSourceStartSample();
+		const long len = (long) ar->getNumSamples();
+		const long dstOff = ar->getSampleOffset() - minOffset;
+		const long srcAvail = (long) src->getNumSamples() - sss;
+		const long copyLen = juce::jmin(len, srcAvail);
+		if (copyLen <= 0 || dstOff < 0) continue;
+
+		const int srcChans = src->getNumChannels();
+		for (int outCh = 0; outCh < 2; ++outCh) {
+			const int srcCh = (srcChans == 1) ? 0 : juce::jmin(outCh, srcChans - 1);
+			merged.addFrom(outCh, (int) dstOff, *src, srcCh, (int) sss, (int) copyLen);
+		}
+	}
+
+	// Track-internen Mix-Buffer in den betroffenen Ranges leeren, sonst
+	// bleibt der Originalbeitrag der entfernten Regionen drin und ueberlagert
+	// spaeter die merged Region beim Playback.
+	for (auto* ar : selected) {
+		const long off = ar->getSampleOffset();
+		const long len = (long) ar->getNumSamples();
+		const long bufSamples = (long) audioBuffer->getNumSamples();
+		const long clearStart = juce::jmax(0L, off);
+		const long clearEnd   = juce::jmin(bufSamples, off + len);
+		if (clearEnd > clearStart) {
+			for (int ch = 0; ch < audioBuffer->getNumChannels(); ++ch)
+				audioBuffer->clear(ch, (int) clearStart, (int) (clearEnd - clearStart));
+		}
+	}
+
+	// Originals entfernen: aus dem regions-Vector ziehen, currentRegion ggf.
+	// freigeben, dann delete (Component-Destruktor entfernt sich aus dem
+	// Parent). Vor dem delete den eventuellen Recording-Pointer cleanen,
+	// damit kein TrackIn::eventReceived in eine tote Region greift.
+	for (auto* ar : selected) {
+		clearRecordingRegionIfMatches(ar);
+		ar->removeAllChangeListeners();
+		auto it = std::find(regions.begin(), regions.end(), ar);
+		if (it != regions.end())
+			regions.erase(it);
+		if (currentRegion == ar)
+			currentRegion = nullptr;
+		delete ar;
+	}
+
+	// Neue Region aus dem merged-Buffer anlegen. addRegion uebernimmt das
+	// Layout-Setup, kopiert in den Track-internen audioBuffer, selektiert sie
+	// und setzt currentRegion. Wir markieren sie als mutiert, damit der
+	// naechste Project::save sie als WAV in $project/edits/ persistiert.
+	AudioRegion* newRegion = addRegion(&merged, sampleRate, minOffset, totalLen);
+	if (newRegion != nullptr)
+		newRegion->markBufferMutated();
+
+	repaint();
+	return newRegion;
+}
+
+MidiRegion* Track::mergeSelectedMidiRegions() {
+	std::vector<MidiRegion*> selected;
+	for (auto* r : regions) {
+		auto* mr = dynamic_cast<MidiRegion*>(r);
+		if (mr == nullptr) continue;
+		const bool flagSel    = mr->isSelected();
+		const bool draggerSel = (dragger != nullptr && dragger->isSelected(mr));
+		if (flagSel || draggerSel)
+			selected.push_back(mr);
+	}
+	if (selected.size() < 2) return nullptr;
+
+	long minOffset = LONG_MAX;
+	long maxEnd    = 0;
+	for (auto* mr : selected) {
+		const long off = mr->getSampleOffset();
+		const long len = (long) mr->getNumSamples();
+		if (off < minOffset) minOffset = off;
+		if (off + len > maxEnd) maxEnd = off + len;
+	}
+	const long totalLen = maxEnd - minOffset;
+	if (totalLen <= 0) return nullptr;
+
+	// Neue leere MidiRegion an minOffset. addMidiRegion() pusht sie an die
+	// regions-Liste und macht sie zur aktuellen Selektion.
+	MidiRegion* mergedRegion = addMidiRegion(sampleRate, minOffset, totalLen);
+	if (mergedRegion == nullptr) return nullptr;
+
+	// Events aus den Source-Regionen einsammeln, in den merged-Buffer-Frame
+	// umrechnen. Source-Visible-Range [sss, sss + visibleLen) -> merged-Range
+	// [(srcOffset-minOffset), (srcOffset-minOffset)+visibleLen).
+	for (auto* mr : selected) {
+		if (mr == mergedRegion) continue; // safety, sollte nie passieren
+		const long srcOffset  = mr->getSampleOffset();
+		const long sss        = mr->getSourceStartSample();
+		const long visibleLen = (long) mr->getNumSamples();
+		for (auto* m : mr->getMessages()) {
+			if (m == nullptr) continue;
+			const long bufTs = (long) m->getTimeStamp();
+			// Events ausserhalb der sichtbaren Range werden durch Trim
+			// ausgeblendet und fliessen nicht in den Merge.
+			if (bufTs < sss || bufTs >= sss + visibleLen) continue;
+			const long regionRel = bufTs - sss;
+			const long mergedTs  = (srcOffset - minOffset) + regionRel;
+			mergedRegion->addMessageRaw(new juce::MidiMessage(*m), (juce::int64) mergedTs);
+		}
+	}
+
+	mergedRegion->rebuildThumbnail();
+	mergedRegion->updateThumb();
+
+	// Originale entfernen — addMessageRaw hat oben Kopien gemacht, der
+	// MidiRegion-Destruktor darf die Original-Messages also bedenkenlos
+	// loeschen.
+	for (auto* mr : selected) {
+		if (mr == mergedRegion) continue;
+		clearRecordingRegionIfMatches(mr);
+		mr->removeAllChangeListeners();
+		auto it = std::find(regions.begin(), regions.end(), mr);
+		if (it != regions.end())
+			regions.erase(it);
+		if (currentRegion == mr)
+			currentRegion = nullptr;
+		delete mr;
+	}
+
+	currentRegion = mergedRegion;
+	repaint();
+	return mergedRegion;
+}
+
+bool Track::mergeSelectedRegions() {
+	if (type == AUDIO)
+		return mergeSelectedAudioRegions() != nullptr;
+	if (type == MIDI || type == INSTRUMENT)
+		return mergeSelectedMidiRegions() != nullptr;
+	return false;
+}
+
 void Track::copySelectedRegions() {
 
 	for (std::vector<Region*>::iterator it = regions.begin(); it != regions.end(); ++it) {

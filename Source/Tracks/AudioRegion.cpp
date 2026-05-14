@@ -303,6 +303,7 @@ void AudioRegion::consolidate()
         loopCount = 0;
         loop      = false;
         dirty     = true;
+        bufferMutated = true; // physisch geaenderter Buffer -> persist on save
         updateThumb();
     }
     else
@@ -336,6 +337,7 @@ void AudioRegion::consolidate()
         if (this->thumbnailBounds != nullptr)
             this->thumbnailBounds->setWidth(getWidth());
         dirty = true;
+        bufferMutated = true; // physisch geaenderter Buffer -> persist on save
         repaint();
     }
 }

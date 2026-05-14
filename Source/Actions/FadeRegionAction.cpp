@@ -91,6 +91,10 @@ bool FadeRegionAction::perform()
 					AudioUtils::applyFadeOut(*audioRegion->getBuffer(), fadeOutSamples);
 			}
 
+			// Buffer wurde mutiert -> beim naechsten Project::save als neue WAV
+			// in $project/edits/ persistieren.
+			audioRegion->markBufferMutated();
+
 			// Update thumbnail
 			audioRegion->updateThumb();
 
