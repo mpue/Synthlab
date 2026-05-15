@@ -37,6 +37,10 @@ public:
     const juce::String& getSavedChannelName() const   { return savedChannelName; }
 
 protected:
-    float volume = 0;
+    // Unity-Default (0 dB). AddModuleAction liest beim Anlegen eines AuxOut/
+    // BusOut/AudioIn diesen Wert ueber getVolume() und schreibt ihn auf den
+    // frischen Mixer-Kanal — mit dem alten 0-Default landeten neu erzeugte
+    // Tracks im Mixer auf "stumm", bis der User den Fader anfasste.
+    float volume = 1.0f;
     juce::String savedChannelName;
 };

@@ -2375,6 +2375,11 @@ void SynthEditor::openTracks(File file)
 
 					if (auto* ar = dynamic_cast<AudioRegion*>(r)) {
 						ar->setSourceStartSample((long)(juce::int64) region.getProperty("sourceStartSample", (juce::int64) 0));
+						// Persistierte Trim-Laenge uebernehmen, damit ein
+						// nachfolgendes Save den exakten Wert zurueckschreibt
+						// (statt erneut Pixel->Samples zu runden).
+						if (savedNumSamples > 0)
+							ar->setTrimmedNumSamples(savedNumSamples);
 
 						// Tempo-Follow Status wiederherstellen. Property fehlt in
 						// alten Projekten -> Default-Werte aus dem Konstruktor

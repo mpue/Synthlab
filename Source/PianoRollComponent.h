@@ -227,6 +227,9 @@ public:
     std::function<void()> onRegionModified;
     std::function<void(double)> onMarkerPositionChanged; // samplePosition → track marker
     std::function<void()> onPlayToggle;                  // spacebar → play/stop
+    // Klick auf die Piano-Leiste links: spielt die zugehoerige MIDI-Note.
+    // (note, velocity, noteOn=true beim Druecken / false beim Loslassen)
+    std::function<void(int note, int velocity, bool noteOn)> onPianoKeyPlayed;
 
     // Quick navigation shortcuts
     void moveSelectedNotesUp(bool octave = false) {
@@ -260,7 +263,9 @@ private:
     Tool currentTool = Tool::SELECT;
 
     // === GRID & TIMING ===
-    float gridResolution = 1.0f / 16.0f;
+    // gridResolution = 4/denominator (Bruchteil einer Viertelnote).
+    // 0.25 -> 1/16-Note (4/16) — matcht das Default-Item der Grid-ComboBox.
+    float gridResolution = 4.0f / 16.0f;
     double bpm = 120.0;
     bool snapToGrid = true;
     float quantizeStrength = 1.0f;
@@ -311,6 +316,15 @@ private:
     bool velocitySensitive = true;
     std::map<MidiMessage*, int> originalVelocities;
     int baseVelocity = 100;
+    // Drag-Anker fuer relative Velocity-Aenderung im VELOCITY-Tool.
+    // Beim mouseDown gesetzt; mouseDrag berechnet newVel = orig + (startY - y).
+    int velocityDragStartY = 0;
+    int velocityDragOriginalVelocity = 0;
+
+    // Interaktive Piano-Leiste: aktuell gespielte Note (-1 = keine).
+    // Wird in mouseDown/mouseDrag/mouseUp gepflegt und in drawPiano
+    // hervorgehoben.
+    int previewKeyPitch = -1;
 
     // === CLIPBOARD ===
     struct ClipboardNote {
@@ -363,6 +377,7 @@ private:
     void drawLoopRegion(juce::Graphics& g);
     void drawSelectionRectangle(juce::Graphics& g);
     void drawSnapGuides(juce::Graphics& g);
+    void drawVelocityOverlay(juce::Graphics& g);
 
     // === HELPER METHODS ===
     bool isBlackKey(int n);

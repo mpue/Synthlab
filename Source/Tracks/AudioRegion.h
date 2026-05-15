@@ -124,6 +124,14 @@ public:
     long getSourceStartSample() const override { return sourceStartSample; }
     void setSourceStartSample(long s) { sourceStartSample = juce::jmax(0L, s); }
 
+    // Sample-akkurate Trim-Laenge — vom Resize-Handler/Consolidate/Load
+    // direkt gesetzt, damit der Save-Pfad nicht ueber Pixel-Breite zurueck-
+    // rechnen muss (das verlor pro Round-Trip bis zu eine halbe Pixelbreite
+    // an Samples, bei niedrigem Zoom mehrere ms pro Speicherung).
+    // 0 = "nie explizit gesetzt" -> Save faellt auf die alte Pixel-Math zurueck.
+    long getTrimmedNumSamples() const { return trimmedNumSamples; }
+    void setTrimmedNumSamples(long s) { trimmedNumSamples = juce::jmax(0L, s); }
+
 private:
 
     struct PitchListener : juce::Value::Listener
@@ -164,6 +172,10 @@ private:
     AudioSampleBuffer* audioBuffer;
     AudioSampleBuffer* audioBufferProcessed = nullptr;
     long sourceStartSample = 0;
+    // Sample-akkurate Trim-Laenge. Wird in den Konstruktoren auf die initiale
+    // Region-Laenge gesetzt und vom Resize-Handler/Consolidate aktualisiert.
+    // Source-of-truth fuer Save (TrackNavigator::getConfiguration).
+    long trimmedNumSamples = 0;
     bool bufferMutated = false;
 
     // Default 120; in den Konstruktoren wird der Wert via Project::getTempo()
