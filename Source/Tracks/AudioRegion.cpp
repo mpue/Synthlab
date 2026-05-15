@@ -60,6 +60,10 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
     // da wir nur einen Teil des Buffers kopiert haben
     setSize((numSamples / sampleRate) * this->zoom, Project::DEFAULT_TRACK_HEIGHT - 25);
 
+    // Slice-Konstruktor (Split / Bounce-In-Place / Duplikat-mit-Trim): Trim-
+    // Laenge ist genau der angeforderte numSamples-Bereich.
+    this->trimmedNumSamples = numSamples;
+
     this->offset = 0;
 
     addAndMakeVisible(resizerL);
@@ -127,6 +131,9 @@ AudioRegion::AudioRegion(AudioSampleBuffer* source, AudioFormatManager& manager,
 
     setSize((audioBuffer->getNumSamples() / sampleRate) * this->zoom, Project::DEFAULT_TRACK_HEIGHT);
 
+    // Recording / Buffer-Konstruktor: kein Trim, volle Laenge sichtbar.
+    this->trimmedNumSamples = audioBuffer->getNumSamples();
+
     addAndMakeVisible(resizerL);
     addAndMakeVisible(resizerR);
     if (resizerL != nullptr) resizerL->addMouseListener(this, false);
@@ -184,6 +191,14 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
     
     setSize((other->getBuffer()->getNumSamples() / sampleRate) * this->zoom, Project::DEFAULT_TRACK_HEIGHT);
 
+    // Full-Duplicate-Konstruktor: kopiert den kompletten Buffer und stellt
+    // ihn ungetrimmt dar. Trim-Laenge bleibt 0, falls Source ungetrimmt war
+    // -> uebernehme die explizite Trim-Laenge des Originals (oder volle
+    // Buffergroesse als Fallback).
+    this->trimmedNumSamples = (other->trimmedNumSamples > 0)
+        ? other->trimmedNumSamples
+        : (long) audioBuffer->getNumSamples();
+
     this->offset = 0;
 
     addAndMakeVisible(resizerL);
@@ -231,6 +246,11 @@ AudioRegion::AudioRegion(File file, String refId, AudioFormatManager& manager, d
     // korrigieren (z.B. "war 100 BPM, Projekt ist 120 BPM").
     this->referenceTempo = Project::getInstance()->getTempo();
     setSize((lengthInSamples / sampleRate) * this->zoom, Project::DEFAULT_TRACK_HEIGHT);
+
+    // File-Load-Konstruktor: volle Datei sichtbar, kein Trim. Load-Pfad
+    // ueberschreibt trimmedNumSamples gleich darauf mit dem persistierten
+    // numSamples (siehe SynthEditor::openTracks), wenn die Region trimmed war.
+    this->trimmedNumSamples = lengthInSamples;
 
     Logger::getCurrentLogger()->writeToLog(getBounds().toString());
 
@@ -293,6 +313,10 @@ void AudioRegion::updateThumb()
     double length = thumbnail->getTotalLength();
     setSize(length * this->zoom, getHeight());
     this->thumbnailBounds->setWidth(length * this->zoom);
+    // updateThumb wird nach Buffer-Aenderungen (Record/Paste/...) gerufen
+    // und stellt die Region in voller Buffer-Laenge dar -> Trim entspricht
+    // dem ganzen Buffer.
+    this->trimmedNumSamples = audioBuffer->getNumSamples();
     repaint();
     dirty = false;
 }
@@ -331,6 +355,10 @@ void AudioRegion::consolidate()
         delete audioBuffer;
         audioBuffer = newBuffer;
 
+        // Loop-Consolidate: Buffer ist jetzt (loopCount+1)x lang, Trim-Laenge
+        // matched die volle Buffergroesse.
+        this->trimmedNumSamples = totalSamples;
+
         loopCount = 0;
         loop      = false;
         dirty     = true;
@@ -361,6 +389,9 @@ void AudioRegion::consolidate()
         delete audioBuffer;
         audioBuffer = newBuffer;
         sourceStartSample = 0;
+        // Post-Consolidate: Trim-Laenge = neue Buffergroesse (visibleLen,
+        // bzw. copyLen falls am Buffer-Ende geclampt).
+        this->trimmedNumSamples = copyLen;
 
         // Thumbnail neu aus dem getrimmten Buffer aufbauen.
         this->thumbnail->reset(numChannels, sampleRate);
@@ -639,6 +670,12 @@ void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, b
             setBounds(newX, getY(), newWidth, getHeight());
         }
 
+        // Links-Trim hat eine sample-akkurate newNumSamples — direkt
+        // persistieren, damit der Save-Pfad die Pixel-Rueckrechnung nicht
+        // braucht (die wuerde durch den newWidth-Rundungsschritt
+        // sub-pixel Samples verlieren).
+        this->trimmedNumSamples = newNumSamples;
+
         sendChangeMessage();
         dirty = true;
         return;
@@ -738,9 +775,15 @@ void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, b
                 newNumSamples = maxLen;
         }
 
-        const int newWidth = (int)((double)newNumSamples / sampleRate * zoom);
+        const int newWidth = (int) std::round((double) newNumSamples / sampleRate * zoom);
         if (newWidth != getWidth())
             setSize(newWidth, getHeight());
+
+        // Rechts-Trim hat eine sample-akkurate newNumSamples (snap + clamp)
+        // — direkt persistieren. Vorher wurde die Pixel-Breite mit (int)-
+        // Truncation gesetzt, beim Save kam dann ein um sub-pixel Samples
+        // gekuerzter Wert zurueck.
+        this->trimmedNumSamples = newNumSamples;
 
         sendChangeMessage();
     }
@@ -798,6 +841,11 @@ void AudioRegion::applyTempoStretch(double targetTempo, double sampleRateIn) {
     // Laenge entsprechend dem Tempo-Verhaeltnis. Das sourceStartSample muss
     // mit, sonst klingt nach dem Stretch der Inhalt verschoben.
     sourceStartSample = (long) std::llround((double) sourceStartSample * ratio);
+    // Trim-Laenge mit-skalieren, sonst zeigt der Save nach einem Stretch
+    // immer noch die Vor-Stretch-Sample-Zahl an und beim Reload schrumpft
+    // die Region wieder auf die alte Laenge.
+    if (trimmedNumSamples > 0)
+        trimmedNumSamples = (long) std::llround((double) trimmedNumSamples * ratio);
     const int newWidth = juce::jmax(1, (int) std::round((double) getWidth() * ratio));
 
     if (thumbnailBounds != nullptr) {
