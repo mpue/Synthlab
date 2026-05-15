@@ -28,14 +28,21 @@ class SessionView : public juce::Component,
 {
 public:
     using TransportSampleProvider = std::function<long()>;
+    using SessionModeCallback     = std::function<void(bool)>;
 
     SessionView (SessionGrid*            grid,
                  LaunchQuantizer*        quantizer,
-                 TransportSampleProvider transportSampleProvider);
+                 TransportSampleProvider transportSampleProvider,
+                 SessionModeCallback     setSessionModeCallback);
     ~SessionView() override;
 
     void setQuantization (Quantization q);
     Quantization getQuantization() const noexcept { return quantization; }
+
+    // Reflects the current "session mode on / off" state in the toolbar
+    // button without invoking the callback. Useful when something else
+    // (load project, undo, etc.) flips the mode.
+    void setSessionModeIndicator (bool on);
 
     // Cell sizing — caller can tune to taste before adding to the hierarchy.
     void setCellSize (int width, int height);
@@ -72,7 +79,9 @@ private:
     SessionGrid*            grid          = nullptr;
     LaunchQuantizer*        quantizer     = nullptr;
     TransportSampleProvider sampleProvider;
+    SessionModeCallback     setSessionModeCallback;
     Quantization            quantization  = Quantization::OneBar;
+    bool                    sessionModeOn = false;
 
     int toolbarHeight     = 30;
     int trackHeaderHeight = 22;
@@ -83,7 +92,8 @@ private:
     int blinkPhase = 0;          // counts timer ticks; queued slots blink
 
     juce::ComboBox   quantBox;
-    juce::TextButton stopAllButton { "Stop All" };
+    juce::TextButton stopAllButton    { "Stop All" };
+    juce::TextButton sessionModeToggle { "Session: OFF" };
     juce::Label      sceneCountLabel;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SessionView)

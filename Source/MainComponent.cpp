@@ -790,6 +790,23 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 
 	if (!isRunning()) return;
 
+	// Session-mode launches: apply any scheduled pending->active flips whose
+	// quantisation boundary lands inside this audio block, BEFORE the tracks
+	// render. V1 commits at block start (ignoring sampleOffsetInBlock); a
+	// sample-accurate buffer split is the natural follow-up if we hear the
+	// up-to-one-block latency on short quantisations.
+	if (sessionLaunchQuantizer != nullptr && editorView != nullptr) {
+		auto* trackNav = editorView->getNavigator();
+		if (trackNav != nullptr) {
+			const long blockStart = (long) trackNav->getSamplePosition();
+			sessionLaunchQuantizer->takeBlockEvents(blockStart, numSamples,
+			                                       sessionBlockEvents);
+			for (const auto& ev : sessionBlockEvents)
+				if (ev.navigator != nullptr)
+					ev.navigator->commitPending();
+		}
+	}
+
 	if (auto* rootModule = editor->getModule()) {
 		// Re-seed the root every block so it always reflects the live device
 		// settings. Without this, loading a patch (which replaces `root` via
@@ -1421,23 +1438,37 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 		}
 
 		// Rebuild session state to pick up the current track topology.
+		// LaunchQuantizer is recreated each time so the queue starts empty
+		// and any prior bookkeeping is dropped together with the SessionView.
 		sessionLaunchQuantizer = std::make_unique<LaunchQuantizer>();
 		sessionLaunchQuantizer->setTransport(
 			Project::getInstance()->getSampleRate(),
 			(double) Project::getInstance()->getTempo());
 
-		sessionNavigators.clear();
+		// Track owns its SessionTrackNavigator (lazy-created here); we no
+		// longer keep parallel ownership in MainComponent.
 		std::vector<SessionGrid::Column> columns;
 		if (trackNav != nullptr) {
 			for (Track* t : trackNav->getTracks()) {
-				auto nav = std::make_unique<SessionTrackNavigator>(t);
-				columns.push_back({ t, nav.get() });
-				sessionNavigators.push_back(std::move(nav));
+				if (t == nullptr) continue;
+				columns.push_back({ t, t->getSessionNavigator() });
 			}
 		}
 
 		sessionGrid = std::make_unique<SessionGrid>(
 			std::move(columns), sessionLaunchQuantizer.get());
+
+		// Toggling the button must flip the global Project flag AND every
+		// track's active navigator, atomically from the UI thread's
+		// perspective. The audio thread sees the change on the next block.
+		auto setSessionMode = [this](bool on) {
+			Project::getInstance()->setSessionMode(on);
+			auto* nav = editorView->getNavigator();
+			if (nav == nullptr) return;
+			for (Track* t : nav->getTracks())
+				if (t != nullptr)
+					t->setSessionModeActive(on);
+		};
 
 		sessionView = std::make_unique<SessionView>(
 			sessionGrid.get(),
@@ -1445,7 +1476,13 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 			[this]() -> long {
 				auto* n = editorView->getNavigator();
 				return n != nullptr ? (long) n->getSamplePosition() : 0L;
-			});
+			},
+			setSessionMode);
+
+		// Surface whatever mode is currently active so re-opening the tab
+		// doesn't visually contradict the engine state.
+		sessionView->setSessionModeIndicator(
+			Project::getInstance()->isSessionMode());
 
 		if (supp != nullptr)
 			supp->addTab("Session", juce::Colours::darkgrey,

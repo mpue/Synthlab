@@ -59,8 +59,11 @@ namespace
 
 SessionView::SessionView (SessionGrid*            g,
                           LaunchQuantizer*        q,
-                          TransportSampleProvider provider)
-    : grid (g), quantizer (q), sampleProvider (std::move (provider))
+                          TransportSampleProvider provider,
+                          SessionModeCallback     setMode)
+    : grid (g), quantizer (q),
+      sampleProvider (std::move (provider)),
+      setSessionModeCallback (std::move (setMode))
 {
     quantBox.addItem ("None",   1);
     quantBox.addItem ("1/16",   2);
@@ -85,6 +88,19 @@ SessionView::SessionView (SessionGrid*            g,
     };
     addAndMakeVisible (stopAllButton);
 
+    sessionModeToggle.setClickingTogglesState (true);
+    sessionModeToggle.setColour (juce::TextButton::buttonOnColourId,
+                                 juce::Colour (0xff2f8f3d));
+    sessionModeToggle.onClick = [this]
+    {
+        sessionModeOn = sessionModeToggle.getToggleState();
+        sessionModeToggle.setButtonText (sessionModeOn ? "Session: ON"
+                                                       : "Session: OFF");
+        if (setSessionModeCallback)
+            setSessionModeCallback (sessionModeOn);
+    };
+    addAndMakeVisible (sessionModeToggle);
+
     sceneCountLabel.setJustificationType (juce::Justification::centredRight);
     sceneCountLabel.setColour (juce::Label::textColourId, juce::Colours::lightgrey);
     addAndMakeVisible (sceneCountLabel);
@@ -98,6 +114,13 @@ void SessionView::setQuantization (Quantization q)
 {
     quantization = q;
     quantBox.setSelectedId (comboIdForQuantization (q), juce::dontSendNotification);
+}
+
+void SessionView::setSessionModeIndicator (bool on)
+{
+    sessionModeOn = on;
+    sessionModeToggle.setToggleState (on, juce::dontSendNotification);
+    sessionModeToggle.setButtonText (on ? "Session: ON" : "Session: OFF");
 }
 
 void SessionView::setCellSize (int w, int h)
@@ -122,9 +145,10 @@ int SessionView::getPreferredHeight() const noexcept
 
 void SessionView::resized()
 {
-    quantBox       .setBounds (8,   3, 110, toolbarHeight - 6);
-    stopAllButton  .setBounds (126, 3,  80, toolbarHeight - 6);
-    sceneCountLabel.setBounds (getWidth() - 160, 3, 152, toolbarHeight - 6);
+    quantBox         .setBounds (8,   3, 110, toolbarHeight - 6);
+    stopAllButton    .setBounds (126, 3,  80, toolbarHeight - 6);
+    sessionModeToggle.setBounds (214, 3, 110, toolbarHeight - 6);
+    sceneCountLabel  .setBounds (getWidth() - 160, 3, 152, toolbarHeight - 6);
 }
 
 juce::Rectangle<int> SessionView::gridArea() const

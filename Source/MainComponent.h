@@ -241,14 +241,14 @@ private:
     std::unique_ptr<QuickstartComponent> quickstart = nullptr;
     std::unique_ptr<JavaScriptEditorComponent> jsEditor = nullptr;
 
-    // Session View state. Navigators must outlive the grid/view, and the
-    // grid must outlive the view, so they're declared in destruction order
-    // (members destroyed bottom-up) and re-created when the user (re-)opens
-    // the Session tab to pick up any track-topology changes.
+    // Session View state. SessionTrackNavigators live on Track itself, so
+    // MainComponent only holds the quantizer/grid/view trio plus a reusable
+    // scratch vector for the audio thread's per-block commit-event dispatch.
+    // Declaration order matters for destruction (view -> grid -> quantizer).
     std::unique_ptr<synthlab::session::LaunchQuantizer> sessionLaunchQuantizer;
-    std::vector<std::unique_ptr<synthlab::session::SessionTrackNavigator>> sessionNavigators;
-    std::unique_ptr<synthlab::session::SessionGrid> sessionGrid;
-    std::unique_ptr<synthlab::session::SessionView> sessionView;
+    std::unique_ptr<synthlab::session::SessionGrid>     sessionGrid;
+    std::unique_ptr<synthlab::session::SessionView>     sessionView;
+    std::vector<synthlab::session::LaunchCommitEvent>   sessionBlockEvents;
 
     // Statuszeile am unteren Fensterrand (Studio-Modus). CPU/RAM/Audio/Tempo.
     std::unique_ptr<StatusBarComponent> statusBar = nullptr;
