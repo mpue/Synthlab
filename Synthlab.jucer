@@ -233,6 +233,18 @@
         <FILE id="AuMd01" name="AutomationModel.h" compile="0" resource="0"
               file="Source/Automation/AutomationModel.h"/>
       </GROUP>
+      <GROUP id="{8B0AD2A1-2F44-4E1B-9D3A-001A20260503}" name="Session">
+        <FILE id="SsIp01" name="IPlaybackNavigator.h" compile="0" resource="0"
+              file="Source/Session/IPlaybackNavigator.h"/>
+        <FILE id="SsPh01" name="SessionPhase.h" compile="0" resource="0"
+              file="Source/Session/SessionPhase.h"/>
+        <FILE id="SsAr01" name="ArrangementPlaybackNavigator.h" compile="0" resource="0"
+              file="Source/Session/ArrangementPlaybackNavigator.h"/>
+        <FILE id="SsTn01" name="SessionTrackNavigator.h" compile="0" resource="0"
+              file="Source/Session/SessionTrackNavigator.h"/>
+        <FILE id="SsTn02" name="SessionTrackNavigator.cpp" compile="1" resource="0"
+              file="Source/Session/SessionTrackNavigator.cpp"/>
+      </GROUP>
       <GROUP id="{8B0AD2A1-2F44-4E1B-9D3A-001A20260502}" name="Tests">
         <FILE id="AuMt01" name="AutomationModelTests.cpp" compile="1" resource="0"
               file="Source/Tests/AutomationModelTests.cpp"/>
