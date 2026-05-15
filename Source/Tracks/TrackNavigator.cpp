@@ -881,10 +881,32 @@ void TrackNavigator::setSamplePosition(int position) {
 	this->samplePosition = alignToBufferSize(position);
 
 	if (loopEnabled) {
-		if (this->samplePosition > loopEnd * Project::getInstance()->getSampleRate()) {
+		// Tight loop: Grenzen auf Buffer-Boundaries snappen, sonst frisst das
+		// alignToBufferSize oben pro Wrap-Iteration bis zu eine Bufferlaenge an
+		// Samples auf -> hoerbarer Stutter. Mit aligned Grenzen trifft der
+		// Playhead loopEnd exakt am Block-Ende und dispatcht keine Events mehr
+		// nach loopEnd (die sonst sofort vom anschliessenden sendAllNotesOff
+		// abgewuergt wuerden). Wir vergleichen mit >=, damit der Wrap genau am
+		// Boundary feuert (nicht erst eine Block-Laenge spaeter).
+		const double sr = Project::getInstance()->getSampleRate();
+		const int    bs = Project::getInstance()->getBufferSize();
+		auto alignDown = [bs](long s) { return (int)((s / bs) * bs); };
+
+		const int loopStartSamples = alignDown((long)(loopStart * sr));
+		const int loopEndSamples   = alignDown((long)(loopEnd   * sr));
+
+		if (loopEndSamples > loopStartSamples
+		    && this->samplePosition.load() >= loopEndSamples)
+		{
 			for (int i = 0; i < tracks.size(); i++)
 				tracks.at(i)->sendAllNotesOff();
-			this->samplePosition = loopStart * Project::getInstance()->getSampleRate();
+
+			// Falls die Position weit hinter loopEnd liegt (seltener Edge Case,
+			// z.B. Seek): mit modulo in den Loop zurueckmappen, statt einfach
+			// nur auf loopStart zu klemmen.
+			const int loopLen = loopEndSamples - loopStartSamples;
+			const int offset  = (this->samplePosition.load() - loopStartSamples) % loopLen;
+			this->samplePosition = loopStartSamples + alignDown(offset);
 		}
 	}
 
@@ -1154,6 +1176,21 @@ void TrackNavigator::openPianoRoll(MidiRegion* r)
 			tracks.at(i)->setCurrentMarkerPosition(this->position);
 		}
 		sendChangeMessage();
+	};
+
+	// Interaktive Piano-Leiste: Klick spielt die Note ueber den gleichen Pfad
+	// wie externe MIDI-Hardware (MidiProcessor::handleIncomingMidiMessage),
+	// damit Routing und aktiver Kanal automatisch passen. Kanal kommt vom
+	// aktuell selektierten Track (Fallback: 1).
+	pianoRoll->getRoll().onPianoKeyPlayed = [this](int note, int velocity, bool noteOn) {
+		auto* mp = Project::getInstance()->getMidiProcessor();
+		if (mp == nullptr) return;
+		Track* current = getCurrentTrack();
+		const int channel = (current != nullptr) ? current->getMidiChannel() : 1;
+		auto msg = noteOn
+			? juce::MidiMessage::noteOn(channel, note, (juce::uint8) velocity)
+			: juce::MidiMessage::noteOff(channel, note);
+		mp->handleIncomingMidiMessage(nullptr, msg);
 	};
 
 	Project::getInstance()->getSupplemental()->addTab("Piano roll", Colours::darkgrey, pianoRoll.get(), false);
