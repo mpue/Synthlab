@@ -22,6 +22,9 @@
 #include "../MessageBus/FastBus.h"
 #include "AutomationLane.h"
 #include "../PluginModule.h"
+#include "../Session/ArrangementPlaybackNavigator.h"
+#include "../Session/IPlaybackNavigator.h"
+#include "../Session/SessionTrackNavigator.h"
 
 //==============================================================================
 Track::Track(Type type, double sampleRate, MultiComponentDragger* dragger)
@@ -73,6 +76,11 @@ Track::Track(Type type, double sampleRate, MultiComponentDragger* dragger)
 		bpm = topic.getValue();
 		repaint();
 	});
+
+	// Default to arrangement playback. The session navigator is created
+	// lazily on first entry into session mode.
+	arrangementNav = std::make_unique<synthlab::session::ArrangementPlaybackNavigator>(this);
+	activeNav.store(arrangementNav.get(), std::memory_order_release);
 }
 
 Track::~Track()
@@ -1031,7 +1039,11 @@ void Track::setSamplePosition(int position, bool dispatchEvents)
 
 		const int bufferSize = Project::getInstance()->getBufferSize();
 
-		MidiRegion* r = dynamic_cast<MidiRegion*>(getRegionAt(position));
+		auto* nav = getActivePlaybackNavigator();
+		auto res = nav != nullptr ? nav->resolveAt(position, 0)
+		                          : synthlab::session::PlaybackResolution{};
+		MidiRegion* r = res.silent ? nullptr
+		                           : dynamic_cast<MidiRegion*>(res.region);
 
 		// If the active region changed (ended, seeked, or looped back),
 		// stop all currently playing notes to prevent stuck notes.
@@ -1060,57 +1072,77 @@ void Track::setSamplePosition(int position, bool dispatchEvents)
 			return;
 		}
 
+		const bool sessionMode = Project::getInstance()->isSessionMode();
+
 		if (r != nullptr) {
 			// Use exact bufferSize window – bufferSize*2 caused each message to
 			// appear in two consecutive windows, firing Note-Ons twice but
 			// Note-Offs only once, resulting in stuck notes.
-			dispatchMidiMessages(r->getMessages(position - r->getSampleOffset(), bufferSize));
-		}
-
-		// If the upcoming block straddles the boundary into the next region,
-		// also dispatch the leading events of that next region. Otherwise events
-		// at the very start of an abutting region (e.g. a NoteOn at relative
-		// time 0) get skipped because the block window in the current region
-		// can't extend past the region's end, and the next call to
-		// setSamplePosition starts the window past the region's beginning.
-		const long blockEnd = (long)position + bufferSize;
-		if (r != nullptr) {
-			const long rEnd = r->getSampleOffset() + r->getNumSamples();
-			if (rEnd > position && rEnd < blockEnd) {
-				MidiRegion* nextR = dynamic_cast<MidiRegion*>(getRegionAt(rEnd));
-				if (nextR != nullptr && nextR != r) {
-					if (!activeNoteNumbers.empty())
-						sendAllNotesOff();
-					lastActiveRegion = nextR;
-					// Volle bufferSize aus nextR dispatchen, NICHT nur
-					// (blockEnd - rEnd). MidiRegion::sampleOffset wird vom
-					// ctor / componentMovedOrResized auf bufferSize-Vielfache
-					// abgerundet — wenn A.numSamples kein Vielfaches von bs ist
-					// (typisch: 1 Takt @ 120 BPM/44.1 kHz = 88200 != n*512),
-					// liegt B.sampleOffset um K = A.end - B.sampleOffset Samples
-					// VOR A.end. Lead-Len waere dann nur bs - K, und der naechste
-					// Block fragt B ab sampleNum = bufferSize → die K Samples
-					// in B's Buffer-Range [bs-K, bs) werden nie ausgeliefert.
-					// Mit voller bs hier deckt das Lead [0, bs) ab, der Folge-
-					// block [bs, 2bs) → keine Luecke an der Boundary.
-					dispatchMidiMessages(nextR->getMessages(0, bufferSize));
-				}
+			const long regionLen = (long) r->getNumSamples();
+			if (sessionMode && regionLen > 0
+			    && res.localSample + (long) bufferSize > regionLen)
+			{
+				// Session-mode loop wrap inside this block: dispatch the tail
+				// of the current iteration and the head of the next, so events
+				// at local sample 0 aren't missed on the wrap.
+				const long tailLen = regionLen - res.localSample;
+				dispatchMidiMessages(r->getMessages((int) res.localSample,
+				                                    (int) tailLen));
+				const int headLen = bufferSize - (int) tailLen;
+				if (headLen > 0)
+					dispatchMidiMessages(r->getMessages(0, headLen));
+			}
+			else
+			{
+				dispatchMidiMessages(r->getMessages((int) res.localSample, bufferSize));
 			}
 		}
-		else {
-			// Currently between regions. If a region begins inside this block,
-			// dispatch its head so its first event isn't missed.
-			for (Region* base : regions) {
-				MidiRegion* mr = dynamic_cast<MidiRegion*>(base);
-				if (mr == nullptr) continue;
-				const long rStart = mr->getSampleOffset();
-				if (rStart > position && rStart < blockEnd) {
-					if (!activeNoteNumbers.empty())
-						sendAllNotesOff();
-					lastActiveRegion = mr;
-					const long leadLen = blockEnd - rStart;
-					dispatchMidiMessages(mr->getMessages(0, (int)leadLen));
-					break;
+
+		// Arrangement-mode boundary crossing into the NEXT timeline region.
+		// In session mode the active region loops, so there's no neighbour
+		// to peek at -- LaunchQuantizer handles region transitions on
+		// quantisation boundaries, and the loop-wrap dispatch above already
+		// covers events at local sample 0 on the next iteration.
+		if (!sessionMode) {
+			const long blockEnd = (long)position + bufferSize;
+			if (r != nullptr) {
+				const long rEnd = r->getSampleOffset() + r->getNumSamples();
+				if (rEnd > position && rEnd < blockEnd) {
+					MidiRegion* nextR = dynamic_cast<MidiRegion*>(getRegionAt(rEnd));
+					if (nextR != nullptr && nextR != r) {
+						if (!activeNoteNumbers.empty())
+							sendAllNotesOff();
+						lastActiveRegion = nextR;
+						// Volle bufferSize aus nextR dispatchen, NICHT nur
+						// (blockEnd - rEnd). MidiRegion::sampleOffset wird vom
+						// ctor / componentMovedOrResized auf bufferSize-Vielfache
+						// abgerundet — wenn A.numSamples kein Vielfaches von bs ist
+						// (typisch: 1 Takt @ 120 BPM/44.1 kHz = 88200 != n*512),
+						// liegt B.sampleOffset um K = A.end - B.sampleOffset Samples
+						// VOR A.end. Lead-Len waere dann nur bs - K, und der naechste
+						// Block fragt B ab sampleNum = bufferSize → die K Samples
+						// in B's Buffer-Range [bs-K, bs) werden nie ausgeliefert.
+						// Mit voller bs hier deckt das Lead [0, bs) ab, der Folge-
+						// block [bs, 2bs) → keine Luecke an der Boundary.
+						dispatchMidiMessages(nextR->getMessages(0, bufferSize));
+					}
+				}
+			}
+			else {
+				// Currently between regions. If a region begins inside this block,
+				// dispatch its head so its first event isn't missed.
+				for (Region* base : regions) {
+					MidiRegion* mr = dynamic_cast<MidiRegion*>(base);
+					if (mr == nullptr) continue;
+					const long rStart = mr->getSampleOffset();
+					if (rStart > position && rStart < blockEnd) {
+						if (!activeNoteNumbers.empty())
+							sendAllNotesOff();
+						lastActiveRegion = mr;
+						const long leadLen = blockEnd - rStart;
+						dispatchMidiMessages(mr->getMessages(0, (int)leadLen));
+						break;
+					}
 				}
 			}
 		}
@@ -1240,6 +1272,32 @@ Region* Track::getRegionByIndex(int i) const noexcept
 	return regions[(size_t) i];
 }
 
+synthlab::session::IPlaybackNavigator* Track::getActivePlaybackNavigator() const noexcept
+{
+	return activeNav.load(std::memory_order_acquire);
+}
+
+synthlab::session::SessionTrackNavigator* Track::getSessionNavigator()
+{
+	if (sessionNav == nullptr)
+		sessionNav = std::make_unique<synthlab::session::SessionTrackNavigator>(this);
+	return sessionNav.get();
+}
+
+void Track::setSessionModeActive(bool active)
+{
+	if (active)
+	{
+		// Materialise the session navigator if this is the first time.
+		(void) getSessionNavigator();
+		activeNav.store(sessionNav.get(), std::memory_order_release);
+	}
+	else
+	{
+		activeNav.store(arrangementNav.get(), std::memory_order_release);
+	}
+}
+
 Region* Track::getCurrentRegion()
 {
 	Region* current = nullptr;
@@ -1350,22 +1408,32 @@ const float Track::getSample(int channel, long sample) {
 	if (mute) {
 		return 0;
 	}
-	currentRegion = getRegionAt(sample);
 
-	if (currentRegion != nullptr) {
-		// Region-relative position innerhalb der Quell-Daten ableiten.
-		// sourceStartSample > 0 nach Resize-vorne: der Lookup verschiebt sich
-		// um diesen Betrag in den Buffer hinein. Konsolidierte Region: sss=0.
-		const long inSource = (sample - currentRegion->getSampleOffset())
-		                    + currentRegion->getSourceStartSample();
-		auto* buf = getBuffer();
-		if (buf != nullptr && inSource >= 0 && inSource < buf->getNumSamples()) {
-			if (buf->getNumChannels() == 1) {
-				return buf->getSample(0, inSource);
-			}
-			else {
-				return buf->getSample(channel, inSource);
-			}
+	// Route through the active playback navigator so session mode (loop the
+	// active region, phase-aligned to sample 0) and arrangement mode (linear
+	// timeline) share one read path. For arrangement, localSample reduces to
+	// (sample - region->getSampleOffset()), so the inSource calculation
+	// below is identical to the pre-navigator behaviour.
+	auto* nav = getActivePlaybackNavigator();
+	if (nav == nullptr) return 0;
+	const auto res = nav->resolveAt(sample, 0);
+	if (res.silent || res.region == nullptr) {
+		currentRegion = nullptr;
+		return 0;
+	}
+	currentRegion = res.region;
+
+	// Region-relative position innerhalb der Quell-Daten ableiten.
+	// sourceStartSample > 0 nach Resize-vorne: der Lookup verschiebt sich
+	// um diesen Betrag in den Buffer hinein. Konsolidierte Region: sss=0.
+	const long inSource = res.localSample + currentRegion->getSourceStartSample();
+	auto* buf = getBuffer();
+	if (buf != nullptr && inSource >= 0 && inSource < buf->getNumSamples()) {
+		if (buf->getNumChannels() == 1) {
+			return buf->getSample(0, inSource);
+		}
+		else {
+			return buf->getSample(channel, inSource);
 		}
 	}
 	return 0;

@@ -23,6 +23,7 @@
 
 #include "../ElegantDarkLookAndFeel.h"
 
+#include <atomic>
 #include <vector>
 #include <map>
 
@@ -179,6 +180,21 @@ public:
         sendChangeMessage();
     }
 
+    // Session-Mode flag. When true, the audio render path consults each
+    // Track's SessionTrackNavigator (looping the active region per scene)
+    // instead of the linear-timeline arrangement lookup. Read from the
+    // audio thread, written from the UI thread -- stored as atomic so the
+    // audio thread can observe changes without a lock.
+    bool isSessionMode() const noexcept {
+        return sessionMode.load(std::memory_order_acquire);
+    }
+
+    void setSessionMode(bool enabled) {
+        const bool prev = sessionMode.exchange(enabled, std::memory_order_acq_rel);
+        if (prev != enabled)
+            sendChangeMessage();
+    }
+
     // Round a sample position to the nearest grid step using the project
     // tempo. Below the high-zoom threshold the grid is one bar (4 beats);
     // at zoom >= 100 the grid switches to a quarter-bar (= one beat in 4/4),
@@ -319,7 +335,8 @@ protected:
     int bufferSize = 128;
     float tempo = DEFAULT_TEMPO;
     bool snapToGridEnabled = true;
-    
+    std::atomic<bool> sessionMode { false };
+
     map<String, String> projectAudio;
 
     ProjectConfig* config = NULL;

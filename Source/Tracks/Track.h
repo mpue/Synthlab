@@ -34,6 +34,12 @@ class TrackNavigator;
 class PluginModule;
 class AutomationLane;
 
+namespace synthlab { namespace session {
+    class IPlaybackNavigator;
+    class ArrangementPlaybackNavigator;
+    class SessionTrackNavigator;
+}}
+
 class Track : public Component, public ChangeBroadcaster, public ChangeListener
 {
 public:
@@ -137,6 +143,14 @@ public:
     // return 0 / nullptr.
     int     getNumRegions()         const noexcept;
     Region* getRegionByIndex(int i) const noexcept;
+
+    // Session-mode plumbing. Each Track owns an ArrangementPlaybackNavigator
+    // (always) and lazily creates a SessionTrackNavigator the first time
+    // the user enters session mode. The active navigator is held in an
+    // atomic pointer so the audio thread can swap modes without locking.
+    synthlab::session::IPlaybackNavigator*    getActivePlaybackNavigator() const noexcept;
+    synthlab::session::SessionTrackNavigator* getSessionNavigator();
+    void setSessionModeActive(bool active);
 
     // Overlap prevention. `moving` is the region being placed/resized
     // (excluded from the check); pass nullptr when inserting a new region.
@@ -496,6 +510,15 @@ private:
 
     std::multiset<int> activeNoteNumbers;
     MidiRegion* lastActiveRegion = nullptr;
+
+    // Session-mode playback navigators. arrangementNav exists for the
+    // lifetime of the Track and wraps the existing linear-timeline lookup.
+    // sessionNav is lazy-created on first entry into session mode. activeNav
+    // points to whichever is current; the audio thread loads it with
+    // acquire semantics.
+    std::unique_ptr<synthlab::session::ArrangementPlaybackNavigator> arrangementNav;
+    std::unique_ptr<synthlab::session::SessionTrackNavigator>        sessionNav;
+    std::atomic<synthlab::session::IPlaybackNavigator*>              activeNav { nullptr };
     
     double magnitudeLeft = 0;
     double magnitudeRight = 0;
