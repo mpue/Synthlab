@@ -2,11 +2,40 @@
 #include "SessionTrackNavigator.h"
 #include "../Tracks/Region.h"
 #include "../Tracks/Track.h"
+#include "../Tracks/TrackNavigator.h"
 
 namespace synthlab::session {
 
-SessionGrid::SessionGrid (std::vector<Column> cols, LaunchQuantizer* q)
-    : columns (std::move (cols)), quantizer (q) {}
+SessionGrid::SessionGrid (TrackNavigator* nav, LaunchQuantizer* q)
+    : trackNav (nav), quantizer (q)
+{
+    if (trackNav != nullptr)
+        trackNav->addChangeListener (this);
+    rebuild();
+}
+
+SessionGrid::~SessionGrid()
+{
+    if (trackNav != nullptr)
+        trackNav->removeChangeListener (this);
+}
+
+void SessionGrid::rebuild()
+{
+    columns.clear();
+    if (trackNav == nullptr) return;
+
+    for (Track* t : trackNav->getTracks())
+    {
+        if (t == nullptr) continue;
+        columns.push_back ({ t, t->getSessionNavigator() });
+    }
+}
+
+void SessionGrid::changeListenerCallback (juce::ChangeBroadcaster* /*source*/)
+{
+    rebuild();
+}
 
 int SessionGrid::getNumTracks() const noexcept
 {

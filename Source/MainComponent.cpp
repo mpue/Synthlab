@@ -1445,18 +1445,12 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 			Project::getInstance()->getSampleRate(),
 			(double) Project::getInstance()->getTempo());
 
-		// Track owns its SessionTrackNavigator (lazy-created here); we no
-		// longer keep parallel ownership in MainComponent.
-		std::vector<SessionGrid::Column> columns;
-		if (trackNav != nullptr) {
-			for (Track* t : trackNav->getTracks()) {
-				if (t == nullptr) continue;
-				columns.push_back({ t, t->getSessionNavigator() });
-			}
-		}
-
+		// Track owns its SessionTrackNavigator (lazy-created on first
+		// SessionGrid::rebuild). The grid listens to trackNav, so
+		// adding / removing / renaming tracks after the tab is open is
+		// reflected automatically.
 		sessionGrid = std::make_unique<SessionGrid>(
-			std::move(columns), sessionLaunchQuantizer.get());
+			trackNav, sessionLaunchQuantizer.get());
 
 		// Toggling the button must flip the global Project flag AND every
 		// track's active navigator, atomically from the UI thread's

@@ -81,6 +81,14 @@ Track::Track(Type type, double sampleRate, MultiComponentDragger* dragger)
 	// lazily on first entry into session mode.
 	arrangementNav = std::make_unique<synthlab::session::ArrangementPlaybackNavigator>(this);
 	activeNav.store(arrangementNav.get(), std::memory_order_release);
+
+	// If the project is already in session mode when this track appears
+	// (e.g. user adds a track while the Session View is active), put it
+	// into session mode straight away -- otherwise the new track would
+	// silently keep using the arrangement navigator and look queued in the
+	// grid without ever flipping to playing.
+	if (Project::getInstance()->isSessionMode())
+		setSessionModeActive(true);
 }
 
 Track::~Track()

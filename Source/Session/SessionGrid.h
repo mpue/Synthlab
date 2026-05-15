@@ -4,18 +4,19 @@
 // translate clicks into LaunchQuantizer schedules; the audio thread does
 // not touch SessionGrid.
 //
-// SessionGrid does not own its tracks or navigators. Caller supplies them
-// as {Track*, SessionTrackNavigator*} columns; navigator lifetime is
-// expected to outlive the grid. Re-build the grid on topology changes
-// (track add/remove); this version does not observe Track lifetimes.
+// The grid listens to the TrackNavigator and rebuilds its column snapshot
+// whenever tracks are added, removed, renamed, etc., so the open Session
+// View stays in sync with the arrangement.
 
 #pragma once
 
+#include "../JuceLibraryCode/JuceHeader.h"
 #include "LaunchQuantizer.h"
 #include <vector>
 
-class Track;
 class Region;
+class Track;
+class TrackNavigator;
 
 namespace synthlab::session {
 
@@ -30,16 +31,11 @@ enum class SlotState
     Recording   // reserved: not emitted until recording-target flag exists
 };
 
-class SessionGrid
+class SessionGrid : private juce::ChangeListener
 {
 public:
-    struct Column
-    {
-        Track*                 track     = nullptr;
-        SessionTrackNavigator* navigator = nullptr;
-    };
-
-    SessionGrid (std::vector<Column> columns, LaunchQuantizer* quantizer);
+    SessionGrid (TrackNavigator* tracks, LaunchQuantizer* quantizer);
+    ~SessionGrid() override;
 
     int getNumTracks() const noexcept;
     int getNumScenes() const noexcept;  // max(numRegions) across tracks
@@ -50,22 +46,27 @@ public:
     Region*   getRegionAt  (int trackIndex, int sceneIndex) const;
     SlotState getSlotState (int trackIndex, int sceneIndex) const;
 
-    // Single click on a slot. Empty cell -> stop (newRegionIndex = -1).
     void launchSlot  (int trackIndex, int sceneIndex,
                       Quantization q, long currentTransportSample);
-
-    // Click on a scene row header. Atomic across all tracks: tracks with
-    // no region at sceneIndex receive a stop schedule on the same boundary.
     void launchScene (int sceneIndex,
                       Quantization q, long currentTransportSample);
-
     void stopTrack (int trackIndex,
                     Quantization q, long currentTransportSample);
     void stopAll   (Quantization q, long currentTransportSample);
 
 private:
-    std::vector<Column> columns;
+    struct Column
+    {
+        Track*                 track     = nullptr;
+        SessionTrackNavigator* navigator = nullptr;
+    };
+
+    void rebuild();
+    void changeListenerCallback (juce::ChangeBroadcaster* source) override;
+
+    TrackNavigator*     trackNav  = nullptr;
     LaunchQuantizer*    quantizer = nullptr;
+    std::vector<Column> columns;
 };
 
 } // namespace synthlab::session
