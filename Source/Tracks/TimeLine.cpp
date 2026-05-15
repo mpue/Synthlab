@@ -28,6 +28,12 @@ TimeLine::TimeLine(double lengthInSeconds)
         bpm = topic.getValue();
         repaint();
     });
+
+    // Reservieren, damit add/remove waehrend laufendem Transport keine
+    // Reallocation triggern — der Audio-Thread iteriert ueber `markers` ohne
+    // Lock und wuerde sonst auf freigegebenen Speicher zugreifen. 64 Marker
+    // ist mehr als jedes realistische Projekt jemals haben wird.
+    markers.reserve(64);
 }
 
 TimeLine::~TimeLine() {}
@@ -128,6 +134,47 @@ void TimeLine::paint(Graphics& g)
             }
         }
 
+        // Marker (Wavelab-style) — werden ueber der Bar/Beat-Grid gezeichnet,
+        // aber unter dem Loop-Locator-Overlay, damit die Locatoren weiter klar
+        // erkennbar bleiben wenn sich Positionen ueberlappen.
+        for (size_t i = 0; i < markers.size(); ++i)
+        {
+            const auto& m = markers[i];
+            const float x = timeToPixel(m.position);
+            if (x < -20.0f || x > getWidth() + 20.0f) continue;
+
+            const bool isLoop = (m.type == TimelineMarker::Type::Loop);
+            const juce::Colour col = isLoop ? juce::Colour(0xfff5a623)   // orange — Loop
+                                            : juce::Colour(0xfff5e23a); // gelb   — Normal
+
+            // Vertikale Linie ueber gesamte Hoehe
+            g.setColour(col.withAlpha(0.85f));
+            g.drawLine(x, 0.0f, x, (float) getHeight(), 1.5f);
+
+            // Fahnen-Dreieck nach rechts, oben
+            juce::Path flag;
+            flag.addTriangle(x,         0.0f,
+                             x + 10.0f, 4.0f,
+                             x,         8.0f);
+            g.setColour(col);
+            g.fillPath(flag);
+
+            // Label rechts neben der Fahne — Name plus "xN" bei Loop-Markern
+            juce::String label = m.name;
+            if (isLoop) {
+                if (label.isNotEmpty()) label << " ";
+                label << "x" << m.loopRepeats;
+            }
+            if (label.isNotEmpty()) {
+                g.setColour(juce::Colours::white);
+                g.setFont(11.0f);
+                g.drawText(label,
+                           (int) (x + 12), 0,
+                           120, 12,
+                           juce::Justification::centredLeft, true);
+            }
+        }
+
         // Loop-Region zeichnen
         if (loopEnabled && loopEnd > loopStart)
         {
@@ -209,6 +256,36 @@ void TimeLine::mouseDown(const MouseEvent& event)
     if (event.mods.isMiddleButtonDown())
         return;
 
+    // Right-Click: Marker-Kontextmenue. Liegt der Klick auf einem Marker, dann
+    // Marker-Menue; sonst "Add Marker here" am Klickpunkt. Wir verlassen die
+    // Funktion danach — kein Loop-Drag triggern.
+    if (event.mods.isRightButtonDown())
+    {
+        const int idx = markerIndexAt(event);
+        const juce::Point<int> screen = event.getScreenPosition();
+        if (idx >= 0)
+            showMarkerContextMenu(idx, screen);
+        else {
+            const double t = juce::jmax(0.0,
+                snapToBufferBoundary(snapToQuarterBeat(pixelToTime((float) event.getMouseDownX()))));
+            showEmptyContextMenu(t, screen);
+        }
+        return;
+    }
+
+    // Left-Click auf einen Marker -> Drag-to-move. Hat Vorrang vor Loop-Drag,
+    // weil Marker auch ausserhalb der Loop-Region existieren koennen.
+    {
+        const int idx = markerIndexAt(event);
+        if (idx >= 0)
+        {
+            currentDragMode = DragMarker;
+            draggingMarker  = idx;
+            dragStartOffset = pixelToTime((float) event.getMouseDownX()) - markers[(size_t) idx].position;
+            return;
+        }
+    }
+
     if (!loopEnabled)
         return;
 
@@ -251,6 +328,30 @@ void TimeLine::mouseDrag(const MouseEvent& event)
 
     switch (currentDragMode)
     {
+    case DragMarker:
+    {
+        if (draggingMarker < 0 || draggingMarker >= (int) markers.size())
+            break;
+        double newPos = snapToBufferBoundary(snapToQuarterBeat(currentTime - dragStartOffset));
+        newPos = juce::jmax(0.0, juce::jmin(length, newPos));
+        markers[(size_t) draggingMarker].position = newPos;
+        // Liste sortiert halten — vereinfacht die "previous marker"-Suche im
+        // Player. Wir merken uns die alte Identitaet ueber Name+Type+Repeats
+        // ist hier nicht noetig, weil der Index nach dem sort wieder neu
+        // bestimmt wird beim naechsten mouseDown.
+        std::sort(markers.begin(), markers.end(),
+                  [](const TimelineMarker& a, const TimelineMarker& b){
+                      return a.position < b.position;
+                  });
+        // Nach dem Sort kann sich der Index verschoben haben.
+        for (size_t i = 0; i < markers.size(); ++i) {
+            if (std::abs(markers[i].position - newPos) < 1.0e-9) {
+                draggingMarker = (int) i;
+                break;
+            }
+        }
+        break;
+    }
     case DragLoopStart:
     {
         double newStart = snapToBufferBoundary(snapToQuarterBeat(currentTime - dragStartOffset));
@@ -283,11 +384,15 @@ void TimeLine::mouseDrag(const MouseEvent& event)
 
 void TimeLine::mouseUp(const MouseEvent& event)
 {
-    if (currentDragMode != None && onLoopChanged)
+    if (currentDragMode == DragMarker) {
+        notifyChanged();
+    }
+    else if (currentDragMode != None && onLoopChanged)
     {
         onLoopChanged(loopStart, loopEnd, loopEnabled);
     }
     currentDragMode = None;
+    draggingMarker  = -1;
 }
 
 void TimeLine::setLength(double length)
@@ -516,7 +621,194 @@ double TimeLine::getMinLoopDuration() const
     // Ensure minimum loop duration is at least one buffer size
     double bufferDuration = getBufferDurationInSeconds();
     double quarterBeatDuration = getQuarterBeatDuration();
-    
+
     // Use the larger of buffer duration or quarter beat duration
     return juce::jmax(bufferDuration, quarterBeatDuration);
+}
+
+// ==================== Marker-Management ====================
+
+void TimeLine::addMarker(const TimelineMarker& m)
+{
+    markers.push_back(m);
+    std::sort(markers.begin(), markers.end(),
+              [](const TimelineMarker& a, const TimelineMarker& b){
+                  return a.position < b.position;
+              });
+    repaint();
+    notifyChanged();
+}
+
+void TimeLine::removeMarker(int index)
+{
+    if (index < 0 || index >= (int) markers.size()) return;
+    markers.erase(markers.begin() + index);
+    repaint();
+    notifyChanged();
+}
+
+void TimeLine::clearMarkers()
+{
+    markers.clear();
+    repaint();
+    notifyChanged();
+}
+
+void TimeLine::resetLoopCounters()
+{
+    for (auto& m : markers)
+        m.repeatsLeft = (m.type == TimelineMarker::Type::Loop) ? m.loopRepeats : 0;
+}
+
+void TimeLine::notifyChanged()
+{
+    if (onMarkersChanged) onMarkersChanged();
+}
+
+int TimeLine::markerIndexAt(const juce::MouseEvent& event, float tolerance) const
+{
+    const float mx = (float) event.getPosition().x;
+    int   best     = -1;
+    float bestDist = tolerance;
+    for (size_t i = 0; i < markers.size(); ++i) {
+        const float mxMarker = timeToPixel(markers[i].position);
+        const float d = std::abs(mx - mxMarker);
+        if (d <= bestDist) { bestDist = d; best = (int) i; }
+    }
+    return best;
+}
+
+void TimeLine::showEmptyContextMenu(double timeAtClick, juce::Point<int> /*screenPos*/)
+{
+    juce::PopupMenu m;
+    m.addItem(1, "Add Marker here");
+    m.addItem(2, "Add Loop Marker here");
+
+    // captureSafe: timeAtClick by value, this per pointer. PopupMenu wird async
+    // ausgewertet — auf den TimeLine-Pointer ist via SafePointer abzusichern,
+    // damit ein Tab-Wechsel zwischen Klick und Auswahl kein Crash gibt.
+    juce::Component::SafePointer<TimeLine> safe(this);
+    m.showMenuAsync(juce::PopupMenu::Options(),
+        [safe, timeAtClick](int result) {
+            if (safe == nullptr || result == 0) return;
+            TimelineMarker nm;
+            nm.position    = timeAtClick;
+            nm.name        = "Marker";
+            nm.type        = (result == 2) ? TimelineMarker::Type::Loop
+                                           : TimelineMarker::Type::Normal;
+            nm.loopRepeats = 1;
+            safe->addMarker(nm);
+        });
+}
+
+void TimeLine::showMarkerContextMenu(int markerIndex, juce::Point<int> /*screenPos*/)
+{
+    if (markerIndex < 0 || markerIndex >= (int) markers.size()) return;
+    const auto& m = markers[(size_t) markerIndex];
+
+    juce::PopupMenu menu;
+    menu.addSectionHeader(m.name.isEmpty() ? juce::String("Marker") : m.name);
+    menu.addItem(1, "Rename...");
+    menu.addSeparator();
+
+    juce::PopupMenu typeMenu;
+    typeMenu.addItem(10, "Normal", true, m.type == TimelineMarker::Type::Normal);
+    typeMenu.addItem(11, "Loop",   true, m.type == TimelineMarker::Type::Loop);
+    menu.addSubMenu("Type", typeMenu);
+
+    juce::PopupMenu repMenu;
+    const int repeatChoices[] = { 1, 2, 3, 4, 8, 16 };
+    for (int i = 0; i < 6; ++i) {
+        repMenu.addItem(100 + repeatChoices[i],
+                        "Repeat " + juce::String(repeatChoices[i]) + "x",
+                        m.type == TimelineMarker::Type::Loop,
+                        m.loopRepeats == repeatChoices[i]);
+    }
+    repMenu.addItem(200, "Custom...", m.type == TimelineMarker::Type::Loop);
+    menu.addSubMenu("Loop Repeats", repMenu, m.type == TimelineMarker::Type::Loop);
+
+    menu.addSeparator();
+    menu.addItem(2, "Delete");
+
+    juce::Component::SafePointer<TimeLine> safe(this);
+    menu.showMenuAsync(juce::PopupMenu::Options(),
+        [safe, markerIndex](int result) {
+            if (safe == nullptr || result == 0) return;
+            if (markerIndex < 0 || markerIndex >= (int) safe->markers.size()) return;
+            auto& mk = safe->markers[(size_t) markerIndex];
+            switch (result)
+            {
+                case 1: safe->renameMarker(markerIndex); return;
+                case 2: safe->removeMarker(markerIndex); return;
+                case 10: mk.type = TimelineMarker::Type::Normal; break;
+                case 11: mk.type = TimelineMarker::Type::Loop;
+                         if (mk.loopRepeats < 1) mk.loopRepeats = 1;
+                         break;
+                case 200: safe->setLoopRepeats(markerIndex); return;
+                default:
+                    if (result >= 100 && result < 200) {
+                        mk.loopRepeats = result - 100;
+                        mk.type        = TimelineMarker::Type::Loop;
+                    }
+                    break;
+            }
+            safe->repaint();
+            safe->notifyChanged();
+        });
+}
+
+void TimeLine::renameMarker(int index)
+{
+    if (index < 0 || index >= (int) markers.size()) return;
+
+    auto* aw = new juce::AlertWindow("Marker Name",
+                                      "Enter a new name for this marker:",
+                                      juce::AlertWindow::NoIcon);
+    aw->setLookAndFeel(&getLookAndFeel());
+    aw->addTextEditor("name", markers[(size_t) index].name);
+    aw->addButton("OK",     1, juce::KeyPress(juce::KeyPress::returnKey));
+    aw->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+    juce::Component::SafePointer<TimeLine> safe(this);
+    aw->enterModalState(true,
+        juce::ModalCallbackFunction::create([safe, index, aw](int result) {
+            if (safe != nullptr && result == 1
+                && index >= 0 && index < (int) safe->markers.size())
+            {
+                safe->markers[(size_t) index].name = aw->getTextEditorContents("name");
+                safe->repaint();
+                safe->notifyChanged();
+            }
+        }),
+        true /* deleteWhenDismissed */);
+}
+
+void TimeLine::setLoopRepeats(int index)
+{
+    if (index < 0 || index >= (int) markers.size()) return;
+
+    auto* aw = new juce::AlertWindow("Loop Repeats",
+                                      "How many times should the section from the "
+                                      "previous marker be repeated?",
+                                      juce::AlertWindow::NoIcon);
+    aw->setLookAndFeel(&getLookAndFeel());
+    aw->addTextEditor("n", juce::String(markers[(size_t) index].loopRepeats));
+    aw->addButton("OK",     1, juce::KeyPress(juce::KeyPress::returnKey));
+    aw->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+    juce::Component::SafePointer<TimeLine> safe(this);
+    aw->enterModalState(true,
+        juce::ModalCallbackFunction::create([safe, index, aw](int result) {
+            if (safe != nullptr && result == 1
+                && index >= 0 && index < (int) safe->markers.size())
+            {
+                const int n = juce::jmax(1, aw->getTextEditorContents("n").getIntValue());
+                auto& mk = safe->markers[(size_t) index];
+                mk.loopRepeats = n;
+                mk.type        = TimelineMarker::Type::Loop;
+                safe->repaint();
+                safe->notifyChanged();
+            }
+        }),
+        true /* deleteWhenDismissed */);
 }

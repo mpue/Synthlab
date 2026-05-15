@@ -48,8 +48,10 @@ PropertyView::PropertyView () : TimeSliceThread("PropertyWatcher")
 
     // Palette wie in TrackControl — damit PropertyView visuell zum Rest der
     // dunklen DAW-UI passt, statt die JUCE-Defaults durchscheinen zu lassen.
-    const juce::Colour panelBg   = juce::Colour(0xff1a1a1a);
-    const juce::Colour stripBg   = juce::Colour(0xff15171c);
+    // panelBg/stripBg matchen MainComponent (0xff222222), damit PropertyView
+    // und ihre Controls nahtlos im Parent-Hintergrund liegen.
+    const juce::Colour panelBg   = juce::Colour(0xff222222);
+    const juce::Colour stripBg   = juce::Colour(0xff222222);
     const juce::Colour btnOff    = juce::Colour(0xff1c1f25);
     const juce::Colour textHi    = juce::Colour(0xffe8e9ec);
     const juce::Colour textLo    = juce::Colour(0xffa8acb4);
@@ -94,7 +96,35 @@ PropertyView::PropertyView () : TimeSliceThread("PropertyWatcher")
     propertyPanel->setMessageWhenEmpty("Nothing to display.");
     propertyPanel->setColour(juce::PropertyComponent::labelTextColourId,   textHi);
     propertyPanel->setColour(juce::PropertyComponent::backgroundColourId,  stripBg);
-    propertyPanel->setColour(juce::PropertyComponent::backgroundColourId,      stripBg);
+
+    // JUCE faerbt die Sub-Controls (BooleanPropertyComponent-Button,
+    // TextPropertyComponent-Editor) NICHT ueber PropertyComponent::
+    // backgroundColourId — die haben eigene Color-IDs mit default-tuerkis/
+    // hellblauen JUCE-Werten. Auf parent-bg setzen, sonst bleibt das
+    // "haessliche Dunkeltuerkis" stehen. PropertyPanel selbst hat keine
+    // eigenen Color-IDs (Separatoren werden aus PropertyComponent::
+    // backgroundColourId abgeleitet).
+    propertyPanel->setColour(juce::BooleanPropertyComponent::backgroundColourId, stripBg);
+    propertyPanel->setColour(juce::BooleanPropertyComponent::outlineColourId,    separator);
+
+    propertyPanel->setColour(juce::TextPropertyComponent::backgroundColourId,    stripBg);
+    propertyPanel->setColour(juce::TextPropertyComponent::textColourId,          textHi);
+    propertyPanel->setColour(juce::TextPropertyComponent::outlineColourId,       separator);
+
+    // SliderPropertyComponent: Text-Box + Track-Background auf parent-bg ziehen.
+    propertyPanel->setColour(juce::Slider::backgroundColourId,         stripBg);
+    propertyPanel->setColour(juce::Slider::textBoxBackgroundColourId,  stripBg);
+    propertyPanel->setColour(juce::Slider::textBoxTextColourId,        textHi);
+    propertyPanel->setColour(juce::Slider::textBoxOutlineColourId,     separator);
+
+    // Eingebettete TextEditors (TextPropertyComponent nutzt intern einen) auf
+    // parent-bg ziehen — sonst zieht die LookAndFeel ihren bgInput-Ton durch.
+    propertyPanel->setColour(juce::TextEditor::backgroundColourId,     stripBg);
+    propertyPanel->setColour(juce::TextEditor::textColourId,           textHi);
+    propertyPanel->setColour(juce::TextEditor::outlineColourId,        separator);
+
+    // ToggleButton-Tick (BooleanPropertyComponent) bleibt im Akzentton.
+    propertyPanel->setColour(juce::ToggleButton::textColourId,         textHi);
 
     descriptionEditor = std::make_unique<TextEditor>("Description");
     descriptionEditor->setMultiLine(true);
@@ -176,7 +206,7 @@ void PropertyView::paint (Graphics& g)
     //[UserPrePaint] Add your own custom painting code here..
     //[/UserPrePaint]
 
-    g.fillAll (Colour (0xff1a1a1a));
+    g.fillAll (Colour (0xff222222));
 
     //[UserPaint] Add your own custom painting code here..
     //[/UserPaint]

@@ -221,6 +221,10 @@ public:
 
 	void ResetMarkerPosition();
 
+	// Zugriff fuer SynthEditor::openTracks (Marker-Load) und PropertyView-
+	// Anbindungen, die die Marker-Liste lesen wollen.
+	TimeLine* getTimeLine() const { return timeLine.get(); }
+
 	float getZoom();
 	void setZoom(float zoom);
 
