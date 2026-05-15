@@ -11,9 +11,139 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include <rubberband/RubberBandStretcher.h>
 
 namespace AudioUtils
 {
+    /**
+     * Generic Rubberband offline processing: time-stretch and/or pitch-shift.
+     * Returns a freshly allocated buffer the caller owns. Use the thin wrappers
+     * stretchBufferRubberband (time only) and pitchShiftBufferRubberband
+     * (pitch only) instead of calling this directly.
+     *
+     * @param input        Source buffer (>= 1 channel).
+     * @param timeRatio    1.0 = same length; >1 longer; <1 shorter.
+     * @param pitchScale   1.0 = same pitch; 2^(semitones/12) for semitone shifts.
+     * @param sampleRate   Project sample rate.
+     * @return new buffer (length = round(inSamples * timeRatio)), or nullptr.
+     */
+    static juce::AudioSampleBuffer* rubberbandProcess(const juce::AudioSampleBuffer& input,
+                                                      double timeRatio,
+                                                      double pitchScale,
+                                                      double sampleRate)
+    {
+        const int numChannels = input.getNumChannels();
+        const int inSamples   = input.getNumSamples();
+        if (numChannels <= 0 || inSamples <= 0 || sampleRate <= 0.0
+            || timeRatio <= 0.0 || pitchScale <= 0.0)
+            return nullptr;
+
+        const int outSamples = (int) std::llround((double) inSamples * timeRatio);
+        if (outSamples <= 0)
+            return nullptr;
+
+        // Identity-Fall: weder Stretch noch Shift — direkte Kopie.
+        if (std::abs(timeRatio - 1.0) < 1e-6 && std::abs(pitchScale - 1.0) < 1e-6)
+        {
+            auto* out = new juce::AudioSampleBuffer(numChannels, inSamples);
+            for (int ch = 0; ch < numChannels; ++ch)
+                out->copyFrom(ch, 0, input, ch, 0, inSamples);
+            return out;
+        }
+
+        using Stretcher = RubberBand::RubberBandStretcher;
+        const Stretcher::Options opts =
+              Stretcher::OptionProcessOffline
+            | Stretcher::OptionEngineFaster
+            | Stretcher::OptionStretchPrecise
+            | Stretcher::OptionFormantPreserved;
+
+        Stretcher rb((size_t) sampleRate, (size_t) numChannels, opts, timeRatio, pitchScale);
+        rb.setMaxProcessSize(8192);
+        rb.setExpectedInputDuration((size_t) inSamples);
+
+        std::unique_ptr<juce::AudioSampleBuffer> out(new juce::AudioSampleBuffer(numChannels, outSamples));
+        out->clear();
+
+        // Study-Pass: Rubberband bekommt den ganzen Input vorab gezeigt, damit
+        // der Offline-Stretcher Transients/Phasen besser planen kann.
+        {
+            const int kBlock = 8192;
+            int pos = 0;
+            std::vector<const float*> ptrs((size_t) numChannels, nullptr);
+            while (pos < inSamples)
+            {
+                const int n = juce::jmin(kBlock, inSamples - pos);
+                for (int ch = 0; ch < numChannels; ++ch)
+                    ptrs[(size_t) ch] = input.getReadPointer(ch) + pos;
+                rb.study(ptrs.data(), (size_t) n, pos + n >= inSamples);
+                pos += n;
+            }
+        }
+
+        // Process-Pass: in Bloecken Input einspeisen, jedes Mal alles
+        // verfuegbare Output abgreifen.
+        {
+            const int kBlock = 8192;
+            int inPos  = 0;
+            int outPos = 0;
+
+            std::vector<const float*> inPtrs((size_t) numChannels, nullptr);
+            std::vector<float*>       outPtrs((size_t) numChannels, nullptr);
+
+            auto drainAvailable = [&]() {
+                while (true)
+                {
+                    const int avail = rb.available();
+                    if (avail <= 0) break;
+                    const int n = juce::jmin(avail, outSamples - outPos);
+                    if (n <= 0) break;
+                    for (int ch = 0; ch < numChannels; ++ch)
+                        outPtrs[(size_t) ch] = out->getWritePointer(ch) + outPos;
+                    const size_t got = rb.retrieve(outPtrs.data(), (size_t) n);
+                    outPos += (int) got;
+                    if ((int) got < n) break;
+                }
+            };
+
+            while (inPos < inSamples)
+            {
+                const int n = juce::jmin(kBlock, inSamples - inPos);
+                for (int ch = 0; ch < numChannels; ++ch)
+                    inPtrs[(size_t) ch] = input.getReadPointer(ch) + inPos;
+                rb.process(inPtrs.data(), (size_t) n, inPos + n >= inSamples);
+                inPos += n;
+                drainAvailable();
+            }
+            drainAvailable();
+        }
+
+        return out.release();
+    }
+
+    /**
+     * Time-stretch an audio buffer using Rubberband, pitch preserved.
+     * @param timeRatio 2.0 = twice as long, 0.5 = half as long, 1.0 = copy.
+     */
+    static juce::AudioSampleBuffer* stretchBufferRubberband(const juce::AudioSampleBuffer& input,
+                                                            double timeRatio,
+                                                            double sampleRate)
+    {
+        return rubberbandProcess(input, timeRatio, 1.0, sampleRate);
+    }
+
+    /**
+     * Pitch-shift an audio buffer using Rubberband, time preserved.
+     * @param semitones positive = up, negative = down. 12 = one octave.
+     */
+    static juce::AudioSampleBuffer* pitchShiftBufferRubberband(const juce::AudioSampleBuffer& input,
+                                                                double semitones,
+                                                                double sampleRate)
+    {
+        const double pitchScale = std::pow(2.0, semitones / 12.0);
+        return rubberbandProcess(input, 1.0, pitchScale, sampleRate);
+    }
+
     /**
      * Reverse the audio buffer by swapping samples from beginning to end
      *

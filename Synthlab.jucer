@@ -243,10 +243,12 @@
         <FILE id="cq00hn" name="HTTPServer.h" compile="0" resource="0" file="Source/HTTPServer.h"/>
       </GROUP>
       <GROUP id="{A1B2C3D4-1111-2222-3333-444455556666}" name="Logging">
-        <FILE id="lg0001" name="SynthlabLogger.h" compile="0" resource="0" file="Source/SynthlabLogger.h"/>
+        <FILE id="lg0001" name="SynthlabLogger.h" compile="0" resource="0"
+              file="Source/SynthlabLogger.h"/>
         <FILE id="lg0002" name="LogView.h" compile="0" resource="0" file="Source/LogView.h"/>
         <FILE id="lg0003" name="CrashHandler.h" compile="0" resource="0" file="Source/CrashHandler.h"/>
-        <FILE id="lg0004" name="PulsingTextButton.h" compile="0" resource="0" file="Source/PulsingTextButton.h"/>
+        <FILE id="lg0004" name="PulsingTextButton.h" compile="0" resource="0"
+              file="Source/PulsingTextButton.h"/>
       </GROUP>
       <GROUP id="{1C1CC707-767F-0A14-4BBC-FC07D9A8C470}" name="MessageBus">
         <FILE id="t62AIE" name="FastBus.h" compile="0" resource="0" file="Source/MessageBus/FastBus.h"/>
@@ -855,10 +857,10 @@
   </MAINGROUP>
   <EXPORTFORMATS>
     <XCODE_MAC targetFolder="Builds/MacOSX" smallIcon="udjGbx" bigIcon="udjGbx"
-               microphonePermissionNeeded="1">
+               microphonePermissionNeeded="1" extraLinkerFlags="-L/opt/homebrew/opt/rubberband/lib -lrubberband">
       <CONFIGURATIONS>
-        <CONFIGURATION isDebug="1" name="Debug" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest&#10;"/>
-        <CONFIGURATION isDebug="0" name="Release" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest"/>
+        <CONFIGURATION isDebug="1" name="Debug" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest&#10;/opt/homebrew/opt/rubberband/include&#10;"/>
+        <CONFIGURATION isDebug="0" name="Release" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest&#10;/opt/homebrew/opt/rubberband/include"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_core" path="../JUCE/modules"/>
@@ -987,7 +989,7 @@
         <CONFIGURATION isDebug="0" name="Release" headerPath="d:\devel\ASIOSDK2.3\common\&#10;d:\devel\VST_SDK3.7\"
                        libraryPath="d:/devel/Synthlab/lib/release/" useRuntimeLibDLL="0"
                        multiProcessorCompilation="1" enableIncrementalLinking="1" winWarningLevel="2"
-                       alwaysGenerateDebugSymbols="1"/>
+                       alwaysGenerateDebugSymbols="1" winArchitecture="ARM64,x64" intrinsicFunctions="1"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_audio_basics" path="D:\devel\JUCE8\modules"/>

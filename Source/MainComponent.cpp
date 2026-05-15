@@ -1225,6 +1225,7 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addSeparator();
 		menu.addItem(201, "Tracks", true, false, nullptr);
 		menu.addItem(202, "Console", true, false, nullptr);
+		menu.addItem(206, "Log", true, false, nullptr);
 		menu.addItem(203, "Level Meters", true, false, nullptr);
 		menu.addItem(204, "Input Spectrum", true, false, nullptr);
 		menu.addSeparator();
@@ -1392,6 +1393,9 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	}
 	else if (menuItemID == 205) {
 		openQuickstart();
+	}
+	else if (menuItemID == 206) {
+		editorView->openLog();
 	}
 
 	else if (menuItemID == 8) {
@@ -1926,6 +1930,20 @@ void MainComponent::modifierKeysChanged(const juce::ModifierKeys& modifiers) {
 }
 
 bool MainComponent::keyPressed(const juce::KeyPress& key, juce::Component* originatingComponent) {
+	// Globaler Start/Stop-Shortcut. TrackNavigator::keyPressed greift nur,
+	// wenn der Navigator den Fokus hat — sobald irgendein anderes Panel
+	// (Property-Editor-Canvas, Mixer, leerer Tab usw.) den Fokus hat, kommt
+	// der Key hier oben am MainComponent an. TextEditor-Felder konsumieren
+	// Space selbst (Eingabe), also wird das Toggle nicht beim Tippen
+	// ausgeloest.
+	if (key == juce::KeyPress::spaceKey) {
+		if (editorView != nullptr) {
+			if (auto* nav = editorView->getNavigator())
+				nav->setPlaying(! nav->isPlaying());
+		}
+		return true;
+	}
+
 	if (key.getTextCharacter() == 'y') {
 		if (currentOctave > 0) {
 			currentOctave--;

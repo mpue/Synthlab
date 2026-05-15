@@ -162,7 +162,12 @@ public:
     }
 
     void setTempo(float tempo) {
+        if (this->tempo == tempo) return;
         this->tempo = tempo;
+        // Listener (insb. TrackNavigator) bekommen so Bescheid, dass das
+        // Tempo neu ist und ggf. AudioRegions mit followTempo=true gestretcht
+        // werden muessen.
+        sendChangeMessage();
     }
 
     bool isSnapToGridEnabled() const {
