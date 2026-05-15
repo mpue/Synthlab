@@ -240,6 +240,8 @@
               file="Source/Session/SessionPhase.h"/>
         <FILE id="SsAr01" name="ArrangementPlaybackNavigator.h" compile="0" resource="0"
               file="Source/Session/ArrangementPlaybackNavigator.h"/>
+        <FILE id="SsAr02" name="ArrangementPlaybackNavigator.cpp" compile="1" resource="0"
+              file="Source/Session/ArrangementPlaybackNavigator.cpp"/>
         <FILE id="SsTn01" name="SessionTrackNavigator.h" compile="0" resource="0"
               file="Source/Session/SessionTrackNavigator.h"/>
         <FILE id="SsTn02" name="SessionTrackNavigator.cpp" compile="1" resource="0"

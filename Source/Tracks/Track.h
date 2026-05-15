@@ -132,6 +132,12 @@ public:
     Region* getRegionAt(long sample);
     Region* getCurrentRegion();
 
+    // Audio-thread safe index accessors -- no allocation, in contrast to
+    // getRegions() which returns the vector by value. Out-of-range indices
+    // return 0 / nullptr.
+    int     getNumRegions()         const noexcept;
+    Region* getRegionByIndex(int i) const noexcept;
+
     // Overlap prevention. `moving` is the region being placed/resized
     // (excluded from the check); pass nullptr when inserting a new region.
     long clampOffsetForRegion(Region* moving, long desiredOffset, long length) const;

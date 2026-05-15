@@ -48,11 +48,7 @@ PlaybackResolution SessionTrackNavigator::resolveAt (long globalSample,
     if (idx < 0)
         return {};
 
-    auto regions = track->getRegions();
-    if (idx >= (int) regions.size())
-        return {};
-
-    Region* r = regions[(size_t) idx];
+    Region* r = track->getRegionByIndex (idx);
     if (r == nullptr)
         return {};
 

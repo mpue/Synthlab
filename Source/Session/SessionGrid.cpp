@@ -19,7 +19,7 @@ int SessionGrid::getNumScenes() const noexcept
     for (const auto& c : columns)
     {
         if (c.track == nullptr) continue;
-        const int n = (int) c.track->getRegions().size();
+        const int n = c.track->getNumRegions();
         if (n > maxRegions) maxRegions = n;
     }
     return maxRegions;
@@ -40,10 +40,8 @@ SessionTrackNavigator* SessionGrid::getNavigator (int i) const
 Region* SessionGrid::getRegionAt (int trackIndex, int sceneIndex) const
 {
     Track* t = getTrack (trackIndex);
-    if (t == nullptr || sceneIndex < 0) return nullptr;
-    auto regions = t->getRegions();
-    if (sceneIndex >= (int) regions.size()) return nullptr;
-    return regions[(size_t) sceneIndex];
+    if (t == nullptr) return nullptr;
+    return t->getRegionByIndex (sceneIndex);
 }
 
 SlotState SessionGrid::getSlotState (int trackIndex, int sceneIndex) const
@@ -93,13 +91,9 @@ void SessionGrid::launchScene (int  sceneIndex,
         if (c.navigator == nullptr) continue;
 
         int newIndex = -1;
-        if (c.track != nullptr && sceneIndex >= 0)
-        {
-            auto regions = c.track->getRegions();
-            if (sceneIndex < (int) regions.size()
-                && regions[(size_t) sceneIndex] != nullptr)
-                newIndex = sceneIndex;
-        }
+        if (c.track != nullptr
+            && c.track->getRegionByIndex (sceneIndex) != nullptr)
+            newIndex = sceneIndex;
         entries.push_back ({ c.navigator, newIndex });
     }
 

@@ -1228,6 +1228,18 @@ Region* Track::getRegionAt(long sample) {
 	return nullptr;
 }
 
+int Track::getNumRegions() const noexcept
+{
+	return (int) regions.size();
+}
+
+Region* Track::getRegionByIndex(int i) const noexcept
+{
+	if (i < 0 || i >= (int) regions.size())
+		return nullptr;
+	return regions[(size_t) i];
+}
+
 Region* Track::getCurrentRegion()
 {
 	Region* current = nullptr;
