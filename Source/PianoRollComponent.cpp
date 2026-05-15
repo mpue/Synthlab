@@ -155,8 +155,13 @@ void PianoRollComponent::drawPiano(juce::Graphics& g)
         int y = getYForPitch(i);
         bool isBlack = isBlackKey(i);
 
-        // Piano key background
-        g.setColour(isBlack ? juce::Colour(0xff2a2a2a) : juce::Colour(0xfff8f8f8));
+        // Piano key background — aktiv gespielte Taste wird hervorgehoben.
+        if (i == previewKeyPitch) {
+            g.setColour(juce::Colour(0xff4a8edc));
+        }
+        else {
+            g.setColour(isBlack ? juce::Colour(0xff2a2a2a) : juce::Colour(0xfff8f8f8));
+        }
         g.fillRect(0, y, pianoWidth, (int)yZoom);
 
         // Key borders
@@ -561,6 +566,27 @@ void PianoRollComponent::mouseDown(const juce::MouseEvent& e)
     lastMousePos = e.getPosition();
     grabKeyboardFocus();
 
+    // Middle-Mouse-Pan: in jedem Modus aktiv, damit Navigation nicht vom
+    // gewaehlten Tool abhaengt. Drag-Logik liegt in mouseDrag und reagiert
+    // ausschliesslich auf isPanning, daher gleich hier vor der Tool-Dispatch.
+    if (e.mods.isMiddleButtonDown()) {
+        isPanning = true;
+        panStart = e.getPosition();
+        setMouseCursor(juce::MouseCursor::DraggingHandCursor);
+        return;
+    }
+
+    // Klick auf die Piano-Leiste links: Note vorhoeren. Toolwahl bleibt
+    // ausgeblendet — die Roll-Tools sollen nur im Note-Bereich rechts der
+    // Leiste wirken.
+    if (e.x >= 0 && e.x < pianoWidth) {
+        int pitch = juce::jlimit(0, 127, getPitchAtY(e.y));
+        previewKeyPitch = pitch;
+        if (onPianoKeyPlayed) onPianoKeyPlayed(pitch, 100, true);
+        repaint();
+        return;
+    }
+
     // Handle different tools
     switch (currentTool) {
     case Tool::SELECT:   handleSelectTool(e); break;
@@ -574,12 +600,6 @@ void PianoRollComponent::mouseDown(const juce::MouseEvent& e)
 
 void PianoRollComponent::handleSelectTool(const juce::MouseEvent& e)
 {
-    if (e.mods.isMiddleButtonDown()) {
-        isPanning = true;
-        panStart = e.getPosition();
-        return;
-    }
-
     dragStart = e.getPosition();
     isDragging = false;
     isResizing = false;
@@ -737,6 +757,28 @@ void PianoRollComponent::mouseDrag(const juce::MouseEvent& e)
 {
     lastMousePos = e.getPosition();
 
+    // Interaktive Piano-Leiste: solange der Drag in der Leiste bleibt und
+    // ueber eine andere Taste wandert, alte Note abklingen lassen und neue
+    // antriggern (Glissando-artig). Verlaesst der Cursor die Leiste, Note
+    // beenden.
+    if (previewKeyPitch >= 0) {
+        if (e.x >= 0 && e.x < pianoWidth) {
+            int pitch = juce::jlimit(0, 127, getPitchAtY(e.y));
+            if (pitch != previewKeyPitch) {
+                if (onPianoKeyPlayed) onPianoKeyPlayed(previewKeyPitch, 0, false);
+                previewKeyPitch = pitch;
+                if (onPianoKeyPlayed) onPianoKeyPlayed(pitch, 100, true);
+                repaint();
+            }
+        }
+        else {
+            if (onPianoKeyPlayed) onPianoKeyPlayed(previewKeyPitch, 0, false);
+            previewKeyPitch = -1;
+            repaint();
+        }
+        return;
+    }
+
     if (isPanning) {
         auto delta = e.getPosition() - panStart;
         panOffset += delta.toFloat();
@@ -827,6 +869,14 @@ void PianoRollComponent::mouseDrag(const juce::MouseEvent& e)
 
 void PianoRollComponent::mouseUp(const juce::MouseEvent& e)
 {
+    // Interaktive Piano-Leiste: gespielte Note beim Loslassen beenden.
+    if (previewKeyPitch >= 0) {
+        if (onPianoKeyPlayed) onPianoKeyPlayed(previewKeyPitch, 0, false);
+        previewKeyPitch = -1;
+        repaint();
+        return;
+    }
+
     setMouseCursor(getCursorForTool(currentTool));
 
     bool wasResizing = isResizing;
@@ -3149,6 +3199,12 @@ void PianoRollComponent::setCurrentTool(Tool newTool)
 // 7. Improve cursor handling in mouseMove
 void PianoRollComponent::mouseMove(const juce::MouseEvent& e)
 {
+    // Piano-Leiste: Pointing-Hand signalisiert, dass man Tasten anschlagen kann.
+    if (e.x >= 0 && e.x < pianoWidth) {
+        setMouseCursor(juce::MouseCursor::PointingHandCursor);
+        return;
+    }
+
     if (currentTool == Tool::SELECT) {
         MidiMessage* hitNote = getNoteAt(e.getPosition());
 
