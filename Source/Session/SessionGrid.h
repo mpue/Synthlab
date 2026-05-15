@@ -54,6 +54,11 @@ public:
                     Quantization q, long currentTransportSample);
     void stopAll   (Quantization q, long currentTransportSample);
 
+    // Force the column snapshot to refresh outside the TrackNavigator
+    // ChangeBroadcaster flow -- e.g. after a direct mutation (drag-drop
+    // creating a region) that Track::addRegion does not announce.
+    void requestRebuild();
+
 private:
     struct Column
     {

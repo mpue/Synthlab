@@ -37,6 +37,11 @@ void SessionGrid::changeListenerCallback (juce::ChangeBroadcaster* /*source*/)
     rebuild();
 }
 
+void SessionGrid::requestRebuild()
+{
+    rebuild();
+}
+
 int SessionGrid::getNumTracks() const noexcept
 {
     return (int) columns.size();

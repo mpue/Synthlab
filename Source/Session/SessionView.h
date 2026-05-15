@@ -24,6 +24,7 @@ namespace synthlab::session {
 class SessionGrid;
 
 class SessionView : public juce::Component,
+                    public  juce::FileDragAndDropTarget,
                     private juce::Timer
 {
 public:
@@ -56,6 +57,15 @@ public:
     void paint   (juce::Graphics&) override;
     void resized() override;
     void mouseDown (const juce::MouseEvent&) override;
+
+    // FileDragAndDropTarget -- accept audio files dropped onto a track
+    // column. The drop creates a new region on that track; SessionGrid
+    // rebuilds afterwards so the clip appears in the next free scene row.
+    bool isInterestedInFileDrag (const juce::StringArray& files) override;
+    void fileDragEnter          (const juce::StringArray& files, int x, int y) override;
+    void fileDragMove           (const juce::StringArray& files, int x, int y) override;
+    void fileDragExit           (const juce::StringArray& files) override;
+    void filesDropped           (const juce::StringArray& files, int x, int y) override;
 
 private:
     void timerCallback() override;
@@ -90,6 +100,13 @@ private:
     int cellHeight        = 26;
 
     int blinkPhase = 0;          // counts timer ticks; queued slots blink
+
+    // During a file-drag: which track column the drop will land on and the
+    // scene index the new region will become (= track->getNumRegions()).
+    // -1 / -1 when no drag is in progress or the drag is over an
+    // unacceptable target (toolbar, outside grid, etc.).
+    int dropTargetTrack = -1;
+    int dropTargetScene = -1;
 
     juce::ComboBox   quantBox;
     juce::TextButton stopAllButton    { "Stop All" };

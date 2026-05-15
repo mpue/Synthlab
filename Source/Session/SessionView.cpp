@@ -1,6 +1,7 @@
 #include "SessionView.h"
 #include "SessionGrid.h"
 #include "SessionTrackNavigator.h"
+#include "../Project/Project.h"
 #include "../Tracks/Region.h"
 #include "../Tracks/Track.h"
 
@@ -22,6 +23,27 @@ namespace
             case SlotState::Recording: return juce::Colour (0xffa12a2a);
         }
         return juce::Colours::darkgrey;
+    }
+
+    bool isAcceptedAudioFile (const juce::File& file)
+    {
+        const auto ext = file.getFileExtension().toLowerCase();
+        return ext == ".wav"  || ext == ".mp3" || ext == ".flac"
+            || ext == ".ogg"  || ext == ".aiff" || ext == ".aif"
+            || ext == ".m4a"  || ext == ".wma";
+    }
+
+    long nextFreeSampleOffset (Track* t)
+    {
+        long maxEnd = 0;
+        for (int i = 0; i < t->getNumRegions(); ++i)
+        {
+            Region* r = t->getRegionByIndex(i);
+            if (r == nullptr) continue;
+            const long end = r->getSampleOffset() + (long) r->getNumSamples();
+            if (end > maxEnd) maxEnd = end;
+        }
+        return maxEnd;
     }
 
     Quantization quantizationForComboId (int id)
@@ -229,6 +251,20 @@ void SessionView::paint (juce::Graphics& g)
                     juce::Justification::centredLeft, true);
     }
 
+    // Drag-drop target highlight. Drawn underneath the slot so the slot
+    // border still shows through. Scene index can exceed nS (the row that
+    // will be created by the drop) -- in that case the highlight appears
+    // below the current bottom row, signalling a new scene will appear.
+    if (dropTargetTrack >= 0 && dropTargetScene >= 0
+        && dropTargetTrack < nT)
+    {
+        auto hl = slotBounds (dropTargetTrack, dropTargetScene);
+        g.setColour (juce::Colour (0xff5da9ff).withAlpha (0.35f));
+        g.fillRect (hl);
+        g.setColour (juce::Colour (0xff5da9ff));
+        g.drawRect (hl, 2);
+    }
+
     // Slots.
     for (int t = 0; t < nT; ++t)
     {
@@ -325,6 +361,112 @@ void SessionView::timerCallback()
 long SessionView::currentSample() const
 {
     return sampleProvider ? sampleProvider() : 0L;
+}
+
+bool SessionView::isInterestedInFileDrag (const juce::StringArray& files)
+{
+    for (const auto& path : files)
+        if (isAcceptedAudioFile (juce::File (path)))
+            return true;
+    return false;
+}
+
+void SessionView::fileDragEnter (const juce::StringArray& files, int x, int y)
+{
+    fileDragMove (files, x, y);
+}
+
+void SessionView::fileDragMove (const juce::StringArray& /*files*/, int x, int y)
+{
+    int newTrack = -1;
+    int newScene = -1;
+
+    if (grid != nullptr)
+    {
+        const auto hit = hitTest ({ x, y });
+        const bool overTrackColumn = (hit.kind == HitKind::Slot
+                                   || hit.kind == HitKind::TrackHeader)
+                                   && hit.trackIndex >= 0;
+        if (overTrackColumn)
+        {
+            Track* t = grid->getTrack (hit.trackIndex);
+            if (t != nullptr)
+            {
+                newTrack = hit.trackIndex;
+                newScene = t->getNumRegions(); // next free scene index
+            }
+        }
+    }
+
+    if (newTrack != dropTargetTrack || newScene != dropTargetScene)
+    {
+        dropTargetTrack = newTrack;
+        dropTargetScene = newScene;
+        repaint();
+    }
+}
+
+void SessionView::fileDragExit (const juce::StringArray& /*files*/)
+{
+    if (dropTargetTrack >= 0 || dropTargetScene >= 0)
+    {
+        dropTargetTrack = -1;
+        dropTargetScene = -1;
+        repaint();
+    }
+}
+
+void SessionView::filesDropped (const juce::StringArray& files, int x, int y)
+{
+    // Resolve target from the final cursor position rather than relying on
+    // the dragMove cache -- the user may have moved the cursor and we want
+    // the drop to land where they released.
+    Hit hit{};
+    if (grid != nullptr)
+        hit = hitTest ({ x, y });
+
+    Track* target = nullptr;
+    if ((hit.kind == HitKind::Slot || hit.kind == HitKind::TrackHeader)
+        && hit.trackIndex >= 0)
+        target = grid->getTrack (hit.trackIndex);
+
+    dropTargetTrack = -1;
+    dropTargetScene = -1;
+
+    if (target == nullptr)
+    {
+        repaint();
+        return;
+    }
+
+    const double sr = Project::getInstance()->getSampleRate();
+    long offset = nextFreeSampleOffset (target);
+    bool addedAny = false;
+
+    for (const auto& path : files)
+    {
+        juce::File file (path);
+        if (! file.existsAsFile())            continue;
+        if (! isAcceptedAudioFile (file))     continue;
+
+        Region* r = target->addRegion (file.getFileNameWithoutExtension(),
+                                       file, sr, offset);
+        if (r != nullptr)
+        {
+            offset += (long) r->getNumSamples();
+            Project::getInstance()->addAudioFile (file.getFileNameWithoutExtension(),
+                                                  file.getFullPathName());
+            addedAny = true;
+        }
+    }
+
+    // Track::addRegion doesn't broadcast via TrackNavigator, so trigger the
+    // grid rebuild manually -- otherwise the new region would only appear
+    // on the next unrelated topology change.
+    if (addedAny)
+        grid->requestRebuild();
+
+    repaint();
 }
 
 } // namespace synthlab::session
