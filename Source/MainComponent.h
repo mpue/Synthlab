@@ -26,6 +26,10 @@
 #include "GeometryViewComponent.h"
 #include "QuickstartComponent.h"
 #include "JavaScriptEditorComponent.h"
+#include "Session/LaunchQuantizer.h"
+#include "Session/SessionTrackNavigator.h"
+#include "Session/SessionGrid.h"
+#include "Session/SessionView.h"
 
 #define _USE_MATH_DEFINES
 #ifndef M_PI
@@ -236,6 +240,15 @@ private:
     std::unique_ptr<SpectrumAnalyzer> spectrumAnalyzer = nullptr;
     std::unique_ptr<QuickstartComponent> quickstart = nullptr;
     std::unique_ptr<JavaScriptEditorComponent> jsEditor = nullptr;
+
+    // Session View state. Navigators must outlive the grid/view, and the
+    // grid must outlive the view, so they're declared in destruction order
+    // (members destroyed bottom-up) and re-created when the user (re-)opens
+    // the Session tab to pick up any track-topology changes.
+    std::unique_ptr<synthlab::session::LaunchQuantizer> sessionLaunchQuantizer;
+    std::vector<std::unique_ptr<synthlab::session::SessionTrackNavigator>> sessionNavigators;
+    std::unique_ptr<synthlab::session::SessionGrid> sessionGrid;
+    std::unique_ptr<synthlab::session::SessionView> sessionView;
 
     // Statuszeile am unteren Fensterrand (Studio-Modus). CPU/RAM/Audio/Tempo.
     std::unique_ptr<StatusBarComponent> statusBar = nullptr;

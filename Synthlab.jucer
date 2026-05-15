@@ -252,6 +252,10 @@
               file="Source/Session/SessionGrid.h"/>
         <FILE id="SsGr02" name="SessionGrid.cpp" compile="1" resource="0"
               file="Source/Session/SessionGrid.cpp"/>
+        <FILE id="SsVw01" name="SessionView.h" compile="0" resource="0"
+              file="Source/Session/SessionView.h"/>
+        <FILE id="SsVw02" name="SessionView.cpp" compile="1" resource="0"
+              file="Source/Session/SessionView.cpp"/>
       </GROUP>
       <GROUP id="{8B0AD2A1-2F44-4E1B-9D3A-001A20260502}" name="Tests">
         <FILE id="AuMt01" name="AutomationModelTests.cpp" compile="1" resource="0"

@@ -1224,6 +1224,7 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 #endif
 		menu.addSeparator();
 		menu.addItem(201, "Tracks", true, false, nullptr);
+		menu.addItem(208, "Session View", true, false, nullptr);
 		menu.addItem(202, "Console", true, false, nullptr);
 		menu.addItem(206, "Log", true, false, nullptr);
 		menu.addItem(203, "Level Meters", true, false, nullptr);
@@ -1400,6 +1401,55 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	}
 	else if (menuItemID == 207) {
 		openJavaScriptEditor();
+	}
+	else if (menuItemID == 208) {
+		using namespace synthlab::session;
+
+		if (editorView->getNavigator() == nullptr) {
+			editorView->OpenTrackView();
+			if (editorView->getNavigator() != nullptr)
+				editorView->getNavigator()->addChangeListener(this);
+		}
+		auto* trackNav = editorView->getNavigator();
+
+		// Drop the previous Session tab (if any) before re-creating the
+		// SessionView so the TabbedComponent never holds a dangling pointer.
+		auto* supp = Project::getInstance()->getSupplemental();
+		if (supp != nullptr) {
+			const int existing = supp->getTabNames().indexOf("Session");
+			if (existing >= 0) supp->removeTab(existing);
+		}
+
+		// Rebuild session state to pick up the current track topology.
+		sessionLaunchQuantizer = std::make_unique<LaunchQuantizer>();
+		sessionLaunchQuantizer->setTransport(
+			Project::getInstance()->getSampleRate(),
+			(double) Project::getInstance()->getTempo());
+
+		sessionNavigators.clear();
+		std::vector<SessionGrid::Column> columns;
+		if (trackNav != nullptr) {
+			for (Track* t : trackNav->getTracks()) {
+				auto nav = std::make_unique<SessionTrackNavigator>(t);
+				columns.push_back({ t, nav.get() });
+				sessionNavigators.push_back(std::move(nav));
+			}
+		}
+
+		sessionGrid = std::make_unique<SessionGrid>(
+			std::move(columns), sessionLaunchQuantizer.get());
+
+		sessionView = std::make_unique<SessionView>(
+			sessionGrid.get(),
+			sessionLaunchQuantizer.get(),
+			[this]() -> long {
+				auto* n = editorView->getNavigator();
+				return n != nullptr ? (long) n->getSamplePosition() : 0L;
+			});
+
+		if (supp != nullptr)
+			supp->addTab("Session", juce::Colours::darkgrey,
+			             sessionView.get(), false);
 	}
 
 	else if (menuItemID == 8) {
