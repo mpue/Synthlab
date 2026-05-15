@@ -86,6 +86,7 @@ void PianoRollComponent::paint(juce::Graphics& g)
     if (playbackPosition >= 0.0) drawPlayhead(g);
     if (drawSelectionRect) drawSelectionRectangle(g);
     if (snapToGrid && isDragging) drawSnapGuides(g);
+    if (isVelocityEditing && resizingMessage) drawVelocityOverlay(g);
 }
 
 void PianoRollComponent::drawGrid(juce::Graphics& g)
@@ -302,6 +303,60 @@ void PianoRollComponent::drawResizePreview(juce::Graphics& g)
 
     g.setColour(juce::Colours::orange);
     g.drawRoundedRectangle(rect.toFloat(), 2.0f, 1.0f);
+}
+
+void PianoRollComponent::drawVelocityOverlay(juce::Graphics& g)
+{
+    if (!resizingMessage) return;
+
+    const int velocity = resizingMessage->getVelocity();
+    auto noteRect = getNoteRect(*resizingMessage, getNoteDuration(resizingMessage));
+
+    // Rahmen um die editierte Note, damit sie als "live" erkennbar ist.
+    g.setColour(juce::Colours::orange);
+    g.drawRoundedRectangle(noteRect.toFloat().expanded(1.5f), 3.0f, 2.0f);
+
+    // Pegel-Bar links neben der Note. Hoehe = 80 px, gefuellt nach Velocity.
+    const int barWidth = 8;
+    const int barHeight = 80;
+    int barX = noteRect.getX() - barWidth - 6;
+    int barY = noteRect.getCentreY() - barHeight / 2;
+
+    // Falls links kein Platz: rechts neben der Note zeichnen.
+    if (barX < pianoWidth + 4)
+        barX = noteRect.getRight() + 6;
+
+    juce::Rectangle<int> bar(barX, barY, barWidth, barHeight);
+    g.setColour(juce::Colours::black.withAlpha(0.6f));
+    g.fillRect(bar);
+
+    const float velFactor = velocity / 127.0f;
+    const int fillH = (int)(barHeight * velFactor);
+    juce::Rectangle<int> fill(barX, barY + barHeight - fillH, barWidth, fillH);
+    g.setColour(getColourForVelocity(velocity));
+    g.fillRect(fill);
+
+    g.setColour(juce::Colours::white.withAlpha(0.7f));
+    g.drawRect(bar, 1);
+
+    // Numerischer Wert ueber der Note.
+    juce::String label("Vel " + juce::String(velocity));
+    g.setFont(juce::Font(12.0f, juce::Font::bold));
+
+    const int textW = 60;
+    const int textH = 18;
+    int textX = juce::jlimit(pianoWidth + 4,
+                             getWidth() - textW - 4,
+                             noteRect.getCentreX() - textW / 2);
+    int textY = juce::jmax(2, noteRect.getY() - textH - 4);
+
+    juce::Rectangle<int> textRect(textX, textY, textW, textH);
+    g.setColour(juce::Colours::black.withAlpha(0.75f));
+    g.fillRoundedRectangle(textRect.toFloat(), 3.0f);
+    g.setColour(juce::Colours::orange);
+    g.drawRoundedRectangle(textRect.toFloat(), 3.0f, 1.0f);
+    g.setColour(juce::Colours::white);
+    g.drawText(label, textRect, juce::Justification::centred);
 }
 
 
@@ -554,6 +609,8 @@ void PianoRollComponent::handleSelectTool(const juce::MouseEvent& e)
             isVelocityEditing = true;
             resizingMessage = hitNote;
             originalVelocities[hitNote] = hitNote->getVelocity();
+            velocityDragStartY = e.y;
+            velocityDragOriginalVelocity = hitNote->getVelocity();
             setMouseCursor(juce::MouseCursor::UpDownResizeCursor);
         }
         else {
@@ -652,16 +709,15 @@ void PianoRollComponent::handleVelocityTool(const juce::MouseEvent& e)
 {
     MidiMessage* hitNote = getNoteAt(e.getPosition());
     if (hitNote) {
+        // Beim Klick nur den Drag-Anker setzen — Velocity bleibt unveraendert,
+        // damit der Wert nicht von der zufaelligen Klickposition innerhalb
+        // des Note-Rects abhaengt. Drag aendert dann relativ.
         isVelocityEditing = true;
         resizingMessage = hitNote;
         originalVelocities[hitNote] = hitNote->getVelocity();
-
-        // Calculate velocity from mouse Y position
-        auto rect = getNoteRect(*hitNote, getNoteDuration(hitNote));
-        float velFactor = 1.0f - (e.y - rect.getY()) / (float)rect.getHeight();
-        int newVel = juce::jlimit(1, 127, (int)(velFactor * 127));
-
-        setNoteVelocity(hitNote, newVel);
+        velocityDragStartY = e.y;
+        velocityDragOriginalVelocity = hitNote->getVelocity();
+        setMouseCursor(juce::MouseCursor::UpDownResizeCursor);
         repaint();
     }
 }
@@ -708,9 +764,13 @@ void PianoRollComponent::mouseDrag(const juce::MouseEvent& e)
     }
 
     if (isVelocityEditing && resizingMessage) {
-        auto rect = getNoteRect(*resizingMessage, getNoteDuration(resizingMessage));
-        float velFactor = 1.0f - (e.y - rect.getY()) / (float)rect.getHeight();
-        int newVel = juce::jlimit(1, 127, (int)(velFactor * 127));
+        // Maus nach oben -> hoehere Velocity, nach unten -> niedrigere.
+        // 1 Velocity-Schritt pro Pixel ist intuitiv und deckt mit Shift einen
+        // feineren Modus ab (0.25 Velocity pro Pixel).
+        const float sensitivity = e.mods.isShiftDown() ? 0.25f : 1.0f;
+        int deltaY = velocityDragStartY - e.y;
+        int newVel = juce::jlimit(1, 127,
+            velocityDragOriginalVelocity + (int)std::round(deltaY * sensitivity));
         setNoteVelocity(resizingMessage, newVel);
         repaint();
         return;
@@ -771,6 +831,8 @@ void PianoRollComponent::mouseUp(const juce::MouseEvent& e)
 
     bool wasResizing = isResizing;
     bool wasDragging = isDragging;
+    bool wasVelocityEditing = isVelocityEditing && resizingMessage;
+    int finalVelocity = wasVelocityEditing ? resizingMessage->getVelocity() : 0;
 
     isPanning = false;
     isBoxSelecting = false;
@@ -778,6 +840,12 @@ void PianoRollComponent::mouseUp(const juce::MouseEvent& e)
 
     if (wasResizing && wasDragging && resizingMessage && resizingPartner) {
         finalizeResize();
+    }
+
+    // Velocity-Edit abschliessen: Region als modifiziert markieren, falls
+    // sich der Wert tatsaechlich geaendert hat.
+    if (wasVelocityEditing && finalVelocity != velocityDragOriginalVelocity) {
+        notifyRegionModified();
     }
 
     if (wasDragging && !selectedMessages.empty() && currentTool == Tool::SELECT) {
@@ -1714,7 +1782,7 @@ void PianoRollComponent::setSelectedVelocity(int velocity)
         if (onVelocityChanged) {
             onVelocityChanged(msg, msg->getVelocity(), velocity);
         }
-        msg->setVelocity(velocity);
+        msg->setVelocity(velocity / 127.0f);
     }
 
     notifyRegionModified();
@@ -1969,7 +2037,7 @@ void PianoRollComponent::humanizeSelected(float amount)
         // Randomize velocity slightly
         int velocityOffset = (int)(random.nextFloat() * 20.0f - 10.0f);
         int newVel = juce::jlimit(1, 127, msg->getVelocity() + velocityOffset);
-        msg->setVelocity(newVel);
+        msg->setVelocity(newVel / 127.0f);
     }
 
     midiRegion->rebuildThumbnail();
@@ -1982,7 +2050,7 @@ void PianoRollComponent::scaleSelectedVelocity(float factor)
 {
     for (auto* msg : selectedMessages) {
         int newVel = juce::jlimit(1, 127, (int)(msg->getVelocity() * factor));
-        msg->setVelocity(newVel);
+        msg->setVelocity(newVel / 127.0f);
     }
 
     notifyRegionModified();
@@ -1996,7 +2064,7 @@ void PianoRollComponent::randomizeSelectedVelocity(int range)
     for (auto* msg : selectedMessages) {
         int offset = (int)(random.nextFloat() * range * 2.0f - range);
         int newVel = juce::jlimit(1, 127, msg->getVelocity() + offset);
-        msg->setVelocity(newVel);
+        msg->setVelocity(newVel / 127.0f);
     }
 
     notifyRegionModified();
@@ -2017,7 +2085,7 @@ void PianoRollComponent::crescendoSelected(int startVel, int endVel)
     for (size_t i = 0; i < sortedNotes.size(); ++i) {
         float progress = sortedNotes.size() > 1 ? i / (float)(sortedNotes.size() - 1) : 0.0f;
         int vel = (int)(startVel + progress * (endVel - startVel));
-        sortedNotes[i]->setVelocity(juce::jlimit(1, 127, vel));
+        sortedNotes[i]->setVelocity(juce::jlimit(1, 127, vel) / 127.0f);
     }
 
     notifyRegionModified();
@@ -3051,7 +3119,10 @@ void PianoRollComponent::resizeNote(MidiMessage* noteOn, double newDuration)
 void PianoRollComponent::setNoteVelocity(MidiMessage* noteOn, int velocity)
 {
     int oldVelocity = noteOn->getVelocity();
-    noteOn->setVelocity(juce::jlimit(1, 127, velocity));
+    // JUCE's MidiMessage::setVelocity erwartet einen normalisierten float
+    // [0..1] und multipliziert intern mit 127. Ein roher int (z.B. 100)
+    // wuerde nach Clamp zu 1.0 -> Velocity 127 fuehren.
+    noteOn->setVelocity(juce::jlimit(1, 127, velocity) / 127.0f);
 
     if (onVelocityChanged) {
         onVelocityChanged(noteOn, oldVelocity, velocity);

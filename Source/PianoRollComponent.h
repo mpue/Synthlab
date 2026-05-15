@@ -311,6 +311,10 @@ private:
     bool velocitySensitive = true;
     std::map<MidiMessage*, int> originalVelocities;
     int baseVelocity = 100;
+    // Drag-Anker fuer relative Velocity-Aenderung im VELOCITY-Tool.
+    // Beim mouseDown gesetzt; mouseDrag berechnet newVel = orig + (startY - y).
+    int velocityDragStartY = 0;
+    int velocityDragOriginalVelocity = 0;
 
     // === CLIPBOARD ===
     struct ClipboardNote {
@@ -363,6 +367,7 @@ private:
     void drawLoopRegion(juce::Graphics& g);
     void drawSelectionRectangle(juce::Graphics& g);
     void drawSnapGuides(juce::Graphics& g);
+    void drawVelocityOverlay(juce::Graphics& g);
 
     // === HELPER METHODS ===
     bool isBlackKey(int n);
