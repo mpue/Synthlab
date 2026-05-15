@@ -248,6 +248,10 @@
               file="Source/Session/LaunchQuantizer.h"/>
         <FILE id="SsLq02" name="LaunchQuantizer.cpp" compile="1" resource="0"
               file="Source/Session/LaunchQuantizer.cpp"/>
+        <FILE id="SsGr01" name="SessionGrid.h" compile="0" resource="0"
+              file="Source/Session/SessionGrid.h"/>
+        <FILE id="SsGr02" name="SessionGrid.cpp" compile="1" resource="0"
+              file="Source/Session/SessionGrid.cpp"/>
       </GROUP>
       <GROUP id="{8B0AD2A1-2F44-4E1B-9D3A-001A20260502}" name="Tests">
         <FILE id="AuMt01" name="AutomationModelTests.cpp" compile="1" resource="0"
