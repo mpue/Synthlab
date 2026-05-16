@@ -110,7 +110,7 @@ long Region::getOldOffset() {
     return this->oldOffset;
 }
 
-long Region::getSampleOffset() {
+long Region::getSampleOffset() const {
     return (this->sampleOffset / Project::getInstance()->getBufferSize()) * Project::getInstance()->getBufferSize();
 }
 
@@ -153,8 +153,20 @@ void Region::mouseDown(const MouseEvent & e)
         return;
 
     dragStartSampleOffset = getSampleOffset();
-    if (dragger != nullptr)
+    if (dragger != nullptr) {
         dragger->handleMouseDown(this, e);
+
+        // Multi-Region-Drag: Start-Offset auch fuer alle anderen selektierten
+        // Regions festhalten. Sonst pushen wir spaeter im mouseUp nur fuer den
+        // Leader eine MoveRegionAction, und Undo bewegt nur diese eine zurueck.
+        for (auto& wc : dragger->getSelectedComponents()) {
+            if (auto* c = wc.get()) {
+                if (c == this) continue;
+                if (auto* r = dynamic_cast<Region*>(c))
+                    r->dragStartSampleOffset = r->getSampleOffset();
+            }
+        }
+    }
 
     // Direkte Klicks auf eine Region updaten den PropertyView nicht ueber
     // den Dragger — bisher zeigte er nur Track-/Module-Properties an. Wir
@@ -169,14 +181,41 @@ void Region::mouseUp(const MouseEvent & e)
     if (e.mods.isMiddleButtonDown())
         return;
 
+    // Selektion vor handleMouseUp einsammeln — der Dragger deselektiert dort
+    // ggf. den Leader (Click ohne Drag), wir wollen aber die Liste der
+    // potenziell bewegten Regions bewahren.
+    std::vector<Region*> draggedRegions;
+    bool sawThis = false;
+    if (dragger != nullptr) {
+        for (auto& wc : dragger->getSelectedComponents()) {
+            if (auto* c = wc.get()) {
+                if (auto* r = dynamic_cast<Region*>(c)) {
+                    draggedRegions.push_back(r);
+                    if (r == this) sawThis = true;
+                }
+            }
+        }
+    }
+    if (!sawThis)
+        draggedRegions.push_back(this);
+
     if (dragger != nullptr)
         dragger->handleMouseUp(this, e);
 
-    long endOffset = getSampleOffset();
-    if (endOffset != dragStartSampleOffset) {
-        Project::getInstance()->getUndoManager()->beginNewTransaction();
-        Project::getInstance()->getUndoManager()->perform(
-            new MoveRegionAction(this, dragStartSampleOffset, endOffset));
+    // Eine Transaktion fuer den gesamten Multi-Drag: alle MoveRegionActions
+    // werden zwischen den beginNewTransaction-Aufrufen zu einem Undo-Schritt
+    // zusammengefasst.
+    auto* um = Project::getInstance()->getUndoManager();
+    bool transactionStarted = false;
+    for (Region* r : draggedRegions) {
+        const long endOffset = r->getSampleOffset();
+        if (endOffset != r->dragStartSampleOffset) {
+            if (!transactionStarted) {
+                um->beginNewTransaction();
+                transactionStarted = true;
+            }
+            um->perform(new MoveRegionAction(r, r->dragStartSampleOffset, endOffset));
+        }
     }
 }
 

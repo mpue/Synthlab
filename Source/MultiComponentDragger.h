@@ -112,6 +112,17 @@ public:
     juce::Component* getComponentBeingDragged() const { return componentBeingDragged; }
 
     /**
+     Read-only access to the current selection. Callers should treat weak
+     refs as transient (components may be deleted underneath the dragger).
+     Used e.g. by Region to push one undo action per moved region in a
+     multi-region drag.
+     */
+    const std::vector<juce::WeakReference<juce::Component>>& getSelectedComponents() const
+    {
+        return selectedComponents;
+    }
+
+    /**
      True while more than one selected component is being dragged at once.
      Subclasses with per-component snap/clamp logic in componentMovedOrResized
      should consult this and skip per-component adjustments for non-leader

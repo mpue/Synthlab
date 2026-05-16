@@ -61,6 +61,23 @@ public:
     // einer frischen Basis startet — ohne Reset wuerde der zweite Linkstrim
     // gegen die Basis des ersten rechnen und springen.
     void mouseUp(const juce::MouseEvent& e) override;
+
+    // Wird via addMouseListener auch fuer Events auf den Resizer-Kindern
+    // gerufen. Wir nutzen das, um bei Resize-Gesture-Start einen Snapshot
+    // fuer das Undo-System zu nehmen.
+    void mouseDown(const juce::MouseEvent& e) override;
+
+    // mouseDrag muss fuer Resizer-Events kurzgeschlossen werden, weil sonst
+    // Region::mouseDrag dragger->handleMouseDrag aufruft und der Dragger nie
+    // initialisiert wurde (mouseDown vom Resizer wurde uebersprungen) →
+    // Null-Deref auf componentBeingDragged.
+    void mouseDrag(const juce::MouseEvent& e) override;
+
+    // ResizeState-Hooks (siehe Region.h): captureResizeState liefert die
+    // drei Felder als Snapshot, applyResizeState schreibt sie zurueck und
+    // synct die Bounds.
+    Region::ResizeState captureResizeState() const override;
+    void applyResizeState(const Region::ResizeState& state) override;
     
     void setClipRefId(String id);
     String getClipRefid();
@@ -190,6 +207,12 @@ private:
     // langsam nach links scrollen laesst. Reset auf -1 in mouseUp am Resizer.
     long resizeBaseSampleOffset = -1;
     long resizeBaseSourceStartSample = 0;
+
+    // Resize-Undo-Snapshot. Wird in mouseDown auf einem Resizer-Child
+    // gesetzt (gestureStateValid=true) und in mouseUp ausgewertet, um
+    // genau eine ResizeRegionAction pro Gesture zu pushen.
+    Region::ResizeState resizeGestureStart;
+    bool resizeGestureStateValid = false;
     AudioThumbnail* thumbnail;
     AudioThumbnailCache* thumbnailCache;
     ScopedPointer<AudioFormatReaderSource> readerSource;

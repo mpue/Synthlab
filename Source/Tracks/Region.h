@@ -46,7 +46,7 @@ public:
     virtual void setLoopCount(int count);
     int getLoopCount();
     
-    long getSampleOffset();
+    long getSampleOffset() const;
     // quantize=true (default) rundet sampleOffset auf bufferSize-Vielfaches —
     // sinnvoll fuer Audio-Pfade, fatal fuer Resize-Loops: deltaLeft (=
     // snappedLeft - getSampleOffset()) treibt sonst pro Tick um den Quantize-
@@ -65,6 +65,22 @@ public:
     // diese als "kein User-Edit" behandeln und nichts neu berechnen. Selbe
     // Semantik wie das intern fuer setZoom benutzte Flag.
     void setBoundsUpdateInProgress(bool b) { zoomInProgress = b; }
+
+    // Snapshot of resize-relevant state for undo/redo. Right-edge resizes
+    // only change numSamples; left-edge resizes change all three. Subclasses
+    // must override capture/apply with their concrete length field
+    // (AudioRegion::trimmedNumSamples vs MidiRegion::numSamples etc.).
+    struct ResizeState {
+        long sampleOffset = 0;
+        long sourceStartSample = 0;
+        long numSamples = 0;
+    };
+
+    virtual ResizeState captureResizeState() const {
+        return { getSampleOffset(), getSourceStartSample(), 0 };
+    }
+
+    virtual void applyResizeState(const ResizeState& /*state*/) {}
     
     long getOldOffset();
     double getSampleRate();

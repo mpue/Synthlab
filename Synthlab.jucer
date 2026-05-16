@@ -336,6 +336,10 @@
               file="Source/Actions/RemoveSelectedAction.cpp"/>
         <FILE id="pwtJAH" name="RemoveSelectedAction.h" compile="0" resource="0"
               file="Source/Actions/RemoveSelectedAction.h"/>
+        <FILE id="rZrA01" name="ResizeRegionAction.cpp" compile="1" resource="0"
+              file="Source/Actions/ResizeRegionAction.cpp"/>
+        <FILE id="rZrA02" name="ResizeRegionAction.h" compile="0" resource="0"
+              file="Source/Actions/ResizeRegionAction.h"/>
         <FILE id="QDqpW1" name="SetGainForRegionAction.cpp" compile="1" resource="0"
               file="Source/Actions/SetGainForRegionAction.cpp"/>
         <FILE id="hSLVIv" name="SetGainForRegionAction.h" compile="0" resource="0"

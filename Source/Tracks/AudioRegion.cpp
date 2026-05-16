@@ -14,6 +14,7 @@
 #include "../Project/Project.h"
 #include "../AudioEngine/SmartSample.h"
 #include "../AudioUtils.h"
+#include "../Actions/ResizeRegionAction.h"
 
 AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double sampleRate, long startSample, long numSamples) {
 
@@ -259,6 +260,8 @@ AudioRegion::AudioRegion(File file, String refId, AudioFormatManager& manager, d
     addComponentListener(this);
     addAndMakeVisible(resizerR);
     addAndMakeVisible(resizerL);
+    if (resizerL != nullptr) resizerL->addMouseListener(this, false);
+    if (resizerR != nullptr) resizerR->addMouseListener(this, false);
 
     dirty = false;
     // pitch default 0 (Header) = nativer Source-Pitch. Kein setPitch-Aufruf
@@ -587,12 +590,95 @@ int AudioRegion::getNumSamples() {
     return audioBuffer->getNumSamples();
 }
 
-void AudioRegion::mouseUp(const juce::MouseEvent& /*e*/) {
+void AudioRegion::mouseDrag(const juce::MouseEvent& e) {
+    // Resizer-Drag-Events kommen via addMouseListener bei uns an — der
+    // Resizer macht sein eigenes setBounds. Wir duerfen nicht zu Region::
+    // mouseDrag durchgreifen, sonst ruft das dragger->handleMouseDrag und
+    // greift auf den nie initialisierten componentBeingDragged zu.
+    if (e.originalComponent != this)
+        return;
+
+    Region::mouseDrag(e);
+}
+
+void AudioRegion::mouseDown(const juce::MouseEvent& e) {
+    // Resize-Gesture-Start: das Event kommt via addMouseListener von einem
+    // Resizer-Kind. Wir snapshotten hier den Vorzustand fuer das Undo —
+    // mouseUp pusht dann die ResizeRegionAction, falls sich was geaendert hat.
+    if (e.originalComponent != this) {
+        resizeGestureStart = captureResizeState();
+        resizeGestureStateValid = true;
+        return;
+    }
+
+    // Event auf dem AudioRegion-Body selbst -> normaler Drag-Pfad.
+    Region::mouseDown(e);
+}
+
+void AudioRegion::mouseUp(const juce::MouseEvent& e) {
     // Resize-Gesture-Basis verwerfen, damit der naechste Linkstrim eine
     // frische Basis aus dem dann aktuellen sampleOffset/sourceStartSample
     // nimmt. Wird via addMouseListener auch ausgeloest wenn die Maus auf
     // einem der Resizer (Child) losgelassen wird.
     resizeBaseSampleOffset = -1;
+
+    // Resize-Gesture-Ende: Snapshot mit aktuellem Zustand vergleichen und
+    // bei Aenderung eine ResizeRegionAction pushen.
+    if (e.originalComponent != this) {
+        if (resizeGestureStateValid) {
+            const ResizeState after = captureResizeState();
+            const bool changed =
+                after.sampleOffset      != resizeGestureStart.sampleOffset
+             || after.sourceStartSample != resizeGestureStart.sourceStartSample
+             || after.numSamples        != resizeGestureStart.numSamples;
+            if (changed) {
+                auto* um = Project::getInstance()->getUndoManager();
+                um->beginNewTransaction();
+                um->perform(new ResizeRegionAction(this, resizeGestureStart, after));
+            }
+            resizeGestureStateValid = false;
+        }
+        return;
+    }
+
+    // Event auf dem Body selbst -> Drag-Pfad (selektion/move-undo).
+    Region::mouseUp(e);
+}
+
+Region::ResizeState AudioRegion::captureResizeState() const {
+    ResizeState s;
+    s.sampleOffset      = getSampleOffset();
+    s.sourceStartSample = sourceStartSample;
+    // trimmedNumSamples ist die Sample-akkurate Laenge (0 = "nie gesetzt",
+    // dann faellt's auf die Pixel-Math zurueck — Fallback wie im Save-Pfad).
+    s.numSamples        = trimmedNumSamples > 0
+                            ? trimmedNumSamples
+                            : (long) std::round((double) getWidth() / zoom * sampleRate);
+    return s;
+}
+
+void AudioRegion::applyResizeState(const Region::ResizeState& state) {
+    const double sr = sampleRate;
+
+    // Modell zuerst, dann Bounds — setBoundsUpdateInProgress(true) blockt den
+    // reentrant componentMovedOrResized, damit der Snap-/Clamp-Pfad das gerade
+    // gesetzte Modell nicht wieder ueberschreibt. Wichtig: KEIN updateThumb()
+    // hier — der setzt setSize(volleBufferLaenge*zoom) und trimmedNumSamples =
+    // audioBuffer->getNumSamples(), d.h. der Trim waere sofort wieder weg.
+    // Beim Resize-Undo aendert sich der Buffer nicht, also reicht repaint().
+    sourceStartSample = juce::jmax(0L, state.sourceStartSample);
+    trimmedNumSamples = juce::jmax(0L, state.numSamples);
+    setSampleOffset(state.sampleOffset, true, false, false);
+
+    const int newX     = (int) std::round((double) state.sampleOffset / sr * zoom);
+    const int newWidth = (int) std::round((double) state.numSamples   / sr * zoom);
+
+    setBoundsUpdateInProgress(true);
+    setBounds(newX, getY(), newWidth, getHeight());
+    setBoundsUpdateInProgress(false);
+
+    sendChangeMessage();
+    repaint();
 }
 
 void AudioRegion::componentMovedOrResized(Component& component, bool wasMoved, bool wasResized) {
