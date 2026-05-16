@@ -358,9 +358,21 @@ void BounceThread::run()
 				const auto& sends = t->getSends();
 				if (sends.empty()) continue;
 
-				AudioOut* ao = dynamic_cast<AudioOut*>(panel->getModule());
-				if (ao == nullptr) continue;
-				auto& aoPins = ao->getPins();
+				// Output-Modul des Strips besorgen — Tracks koennen je nach
+				// Settings::getNewTrackOutputType entweder mit AudioOut ODER
+				// AuxOut als Strip-Output angelegt sein. Beide haben dieselben
+				// L/R IN-Pins; nur AudioOut zu akzeptieren wie vorher liess
+				// AuxOut-Mode Tracks ihre Bus-Sends im Bounce verlieren
+				// (Symptom: Bus-FX wie Reverb fehlten im Render obwohl der
+				// Send im Mixer eingetragen war). Spiegelt den gleichen Fix
+				// in MainComponent::getNextAudioBlock.
+				Module* outMod = nullptr;
+				if (auto* ao  = dynamic_cast<AudioOut*>(panel->getModule()))
+					outMod = ao;
+				else if (auto* axo = dynamic_cast<AuxOut*>(panel->getModule()))
+					outMod = axo;
+				if (outMod == nullptr) continue;
+				auto& aoPins = outMod->getPins();
 				if (aoPins.size() < 2) continue;
 
 				const float* srcL = nullptr;
