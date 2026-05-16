@@ -331,7 +331,27 @@ void SessionView::mouseDown (const juce::MouseEvent& e)
 {
     if (grid == nullptr) return;
 
-    const auto hit    = hitTest (e.getPosition());
+    const auto hit = hitTest (e.getPosition());
+
+    // Right-click on an empty MIDI/INSTRUMENT slot opens the "Record here"
+    // context menu. Right-click elsewhere is currently a no-op (future
+    // home of per-slot quantisation overrides, etc.).
+    if (e.mods.isPopupMenu())
+    {
+        if (hit.kind == HitKind::Slot
+            && grid->getRegionAt (hit.trackIndex, hit.sceneIndex) == nullptr)
+        {
+            Track* t = grid->getTrack (hit.trackIndex);
+            if (t != nullptr
+                && (t->getType() == Track::Type::MIDI
+                 || t->getType() == Track::Type::INSTRUMENT))
+            {
+                showRecordContextMenu (hit.trackIndex);
+            }
+        }
+        return;
+    }
+
     const long sample = currentSample();
 
     switch (hit.kind)
@@ -349,6 +369,61 @@ void SessionView::mouseDown (const juce::MouseEvent& e)
         case HitKind::None:
             break;
     }
+    repaint();
+}
+
+void SessionView::showRecordContextMenu (int trackIndex)
+{
+    juce::PopupMenu sub;
+    sub.addItem (1, "1 bar");
+    sub.addItem (2, "2 bars");
+    sub.addItem (4, "4 bars");
+    sub.addItem (8, "8 bars");
+
+    juce::PopupMenu menu;
+    menu.addSubMenu ("Record here", sub);
+
+    juce::Component::SafePointer<SessionView> self (this);
+    menu.showMenuAsync (juce::PopupMenu::Options{},
+        [self, trackIndex] (int result)
+        {
+            if (self == nullptr)              return;
+            if (result < 1 || result > 8)     return;
+            self->recordIntoNewClip (trackIndex, result);
+        });
+}
+
+void SessionView::recordIntoNewClip (int trackIndex, int numBars)
+{
+    if (grid == nullptr || quantizer == nullptr) return;
+
+    Track* t = grid->getTrack (trackIndex);
+    if (t == nullptr) return;
+    SessionTrackNavigator* nav = grid->getNavigator (trackIndex);
+    if (nav == nullptr) return;
+
+    const double sr  = Project::getInstance()->getSampleRate();
+    const float  bpm = Project::getInstance()->getTempo();
+    if (sr <= 0.0 || bpm <= 0.0f) return;
+
+    // 4/4 assumed -- matches LaunchQuantizer's defaults. Time-sig plumbing
+    // would let us honour exotic meters here later.
+    const long samplesPerQuarter = (long) (sr * 60.0 / (double) bpm);
+    const long regionLength      = samplesPerQuarter * 4 * (long) numBars;
+    const long offset            = nextFreeSampleOffset (t);
+
+    MidiRegion* r = t->addMidiRegion (sr, offset, regionLength);
+    if (r == nullptr) return;
+
+    // Arm the track for recording. Visual state of the arrangement-view R
+    // button won't auto-update -- it reads track->isRecording() at
+    // construction, not via a listener -- but TrackIn::eventReceived sees
+    // the flag and writes incoming MIDI into the active session region.
+    t->setRecording (true);
+
+    const int newIndex = t->getNumRegions() - 1;
+    quantizer->schedule (nav, newIndex, quantization, currentSample());
+    grid->requestRebuild();
     repaint();
 }
 

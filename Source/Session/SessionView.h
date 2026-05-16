@@ -69,6 +69,8 @@ public:
 
 private:
     void timerCallback() override;
+    void showRecordContextMenu (int trackIndex);
+    void recordIntoNewClip     (int trackIndex, int numBars);
 
     enum class HitKind { None, TrackHeader, SceneHeader, Slot };
     struct Hit

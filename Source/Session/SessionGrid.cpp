@@ -88,7 +88,12 @@ SlotState SessionGrid::getSlotState (int trackIndex, int sceneIndex) const
         return SlotState::HasRegion;
 
     if (nav->getActiveRegionIndex() == sceneIndex)
-        return SlotState::Playing;
+    {
+        Track* t = getTrack (trackIndex);
+        return (t != nullptr && t->isRecording())
+                 ? SlotState::Recording
+                 : SlotState::Playing;
+    }
 
     if (nav->hasPending() && nav->getPendingRegionIndex() == sceneIndex)
         return SlotState::Queued;

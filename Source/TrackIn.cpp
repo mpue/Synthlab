@@ -12,6 +12,9 @@
 	#include "TrackIn.h"
 	#include "Connection.h"
 	#include "Mixer.h"
+	#include "Project/Project.h"
+	#include "Session/IPlaybackNavigator.h"
+	#include "Tracks/MidiRegion.h"
 
 	#define M_PI 3.14159265358979323846
 
@@ -108,17 +111,47 @@
 				delete e;
 				return;
 			}
-			MidiRegion* r = dynamic_cast<MidiRegion*>(track->getRecordingRegion());
-			if (r != nullptr) {
-				long samplePosition = track->getNavigator()->getSamplePosition();
-				MidiMessage* m = new MidiMessage(e->getMessage(), samplePosition - r->getSampleOffset());
-				// add message to region
-				r->addMessage(m, Time::getMillisecondCounterHiRes() / 1000, samplePosition);
-			}
-			else {
-				// Logger::writeToLog("No region found at " + String(track->getSamplePosition()));
+
+			const long samplePosition = track->getNavigator() != nullptr
+			                          ? (long) track->getNavigator()->getSamplePosition()
+			                          : 0L;
+
+			MidiRegion* r           = nullptr;
+			long        localSample = 0;
+
+			if (Project::getInstance()->isSessionMode()) {
+				// Session mode: target region is whatever the navigator
+				// reports as active right now, and the message's timestamp
+				// is the phase-wrapped local sample. Modulo wrap means
+				// overdubbing past one loop length lands on the same local
+				// position again -- natural Ableton-style layering.
+				auto* nav = track->getActivePlaybackNavigator();
+				if (nav != nullptr) {
+					auto res = nav->resolveAt(samplePosition, 0);
+					if (! res.silent)
+					{
+						r = dynamic_cast<MidiRegion*>(res.region);
+						localSample = res.localSample;
+					}
+				}
+			} else {
+				r = dynamic_cast<MidiRegion*>(track->getRecordingRegion());
+				if (r != nullptr)
+					localSample = samplePosition - r->getSampleOffset();
 			}
 
+			if (r != nullptr) {
+				const long bufTime = localSample + r->getSourceStartSample();
+				auto* m = new MidiMessage(e->getMessage(), (double) bufTime);
+				// Session mode uses addMessageRaw -- the timestamp is
+				// already correct, no need for the snap-to-grid /
+				// auto-grow path. Arrangement mode keeps the existing
+				// addMessage path so its snap behaviour is preserved.
+				if (Project::getInstance()->isSessionMode())
+					r->addMessageRaw(m, (juce::int64) bufTime);
+				else
+					r->addMessage(m, Time::getMillisecondCounterHiRes() / 1000, samplePosition);
+			}
 		}
 
 		if (track != nullptr && e->getMessage().getChannel() != track->getMidiChannel()) {
