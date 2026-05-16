@@ -25,6 +25,7 @@
 #include "Mixer.h"
 #include "BusOut.h"
 #include "AudioOut.h"
+#include "AuxOut.h"
 #include "Tracks/MasterChannelPanel.h"
 #include "Actions/RemoveSelectedAction.h"
 #include "Actions/AddModuleAction.h"
@@ -918,23 +919,32 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 			const auto& sends = t->getSends();
 			if (sends.empty()) continue;
 
-			// AudioOut dieses Track-Strips besorgen, dessen Input-Pin enthaelt
-			// das post-FX, post-fader Signal (TrackIn -> [FX]* -> AudioOut).
-			AudioOut* ao = dynamic_cast<AudioOut*>(panel->getModule());
-			if (ao == nullptr) continue;
-			auto& aoPins = ao->getPins();
-			if (aoPins.size() < 2) continue;
+			// Output-Modul des Strips besorgen — Tracks koennen je nach
+			// Settings::getNewTrackOutputType entweder mit AudioOut ODER
+			// AuxOut als Strip-Output angelegt sein (TrackUtil::createAudioTrack,
+			// preferAuxOut-Pfad). Beide haben identische L/R IN-Pin-Layouts;
+			// vor dem Fix akzeptierte die Schleife nur AudioOut und sprang
+			// fuer AuxOut-Tracks mit continue — Folge: Bus-VU blieb bei
+			// Tracks im AuxOut-Modus stumm, obwohl der Send eingetragen war.
+			Module* outMod = nullptr;
+			if (auto* ao  = dynamic_cast<AudioOut*>(panel->getModule()))
+				outMod = ao;
+			else if (auto* axo = dynamic_cast<AuxOut*>(panel->getModule()))
+				outMod = axo;
+			if (outMod == nullptr) continue;
+			auto& outPins = outMod->getPins();
+			if (outPins.size() < 2) continue;
 
 			const float* srcL = nullptr;
 			const float* srcR = nullptr;
-			if (! aoPins[0]->getConnections().empty()
-				&& aoPins[0]->getConnections()[0] != nullptr
-				&& aoPins[0]->getConnections()[0]->getAudioBuffer() != nullptr)
-				srcL = aoPins[0]->getConnections()[0]->getAudioBuffer()->getReadPointer(0);
-			if (! aoPins[1]->getConnections().empty()
-				&& aoPins[1]->getConnections()[0] != nullptr
-				&& aoPins[1]->getConnections()[0]->getAudioBuffer() != nullptr)
-				srcR = aoPins[1]->getConnections()[0]->getAudioBuffer()->getReadPointer(0);
+			if (! outPins[0]->getConnections().empty()
+				&& outPins[0]->getConnections()[0] != nullptr
+				&& outPins[0]->getConnections()[0]->getAudioBuffer() != nullptr)
+				srcL = outPins[0]->getConnections()[0]->getAudioBuffer()->getReadPointer(0);
+			if (! outPins[1]->getConnections().empty()
+				&& outPins[1]->getConnections()[0] != nullptr
+				&& outPins[1]->getConnections()[0]->getAudioBuffer() != nullptr)
+				srcR = outPins[1]->getConnections()[0]->getAudioBuffer()->getReadPointer(0);
 
 			if (srcL == nullptr && srcR == nullptr) continue;
 
