@@ -47,7 +47,18 @@ public:
     // load and save
     
     void cleanUp();
-    void newFile();
+    // Reset to an empty project. If askIfDirty is true (default) and there
+    // are unsaved changes, prompt the user first; on cancel, leave state
+    // untouched and return without tearing anything down. Load paths pass
+    // false to skip the prompt (the file picker is the confirmation).
+    void newFile(bool askIfDirty = true);
+
+    // Returns true if it's safe to discard the current project state --
+    // either the project is not dirty, or the user confirmed the dialog.
+    // All paths that follow a `cleanUp(); newFile(); ...` sequence must
+    // call this FIRST and bail out on false. Asking the dialog after the
+    // teardown is the bug that produced the New > Cancel crash.
+    bool confirmDiscardIfDirty();
     void saveFile();
     void saveFileAs();
     void openFile();

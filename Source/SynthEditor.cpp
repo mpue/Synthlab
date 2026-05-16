@@ -866,12 +866,16 @@ void SynthEditor::showCommonContextMenu(Point<int> position) {
 		File file = File(path);
 
 		if (file.exists()) {
+			if (!confirmDiscardIfDirty()) {
+				menu.setLookAndFeel(nullptr);
+				return;
+			}
 			FileInputStream* fis = new FileInputStream(file);
 			String data = fis->readEntireStreamAsString();
 			delete fis;
 			setRunning(false);
 			cleanUp();
-			newFile();
+			newFile(/*askIfDirty=*/ false);
 			loadFromString(data);
 			updateProject(file);
 			Project::getInstance()->setNewFile(false);
@@ -1672,15 +1676,22 @@ void SynthEditor::cleanUp() {
 	jassert(openViews.empty());
 }
 
-void SynthEditor::newFile() {
+bool SynthEditor::confirmDiscardIfDirty() {
+	if (!isDirty()) return true;
+	return juce::AlertWindow::showOkCancelBox(
+		juce::AlertWindow::AlertIconType::NoIcon, "Hey!",
+		"You have unsaved resources, wanna start from scratch anyway?");
+}
+
+void SynthEditor::newFile(bool askIfDirty) {
 
 	setRunning(false);
 	bool makeNewFile = true;
-	
-	if (isDirty()) {
+
+	if (askIfDirty && isDirty()) {
 		makeNewFile = juce::AlertWindow::showOkCancelBox(juce::AlertWindow::AlertIconType::NoIcon, "Hey!", "You have unsaved resources, wanna start from scratch anyway?");
 	}
-	
+
 	if (makeNewFile) {
 		Project::getInstance()->getUndoManager()->clearUndoHistory();
 		root = std::make_shared<Module>("Root");
@@ -1690,7 +1701,7 @@ void SynthEditor::newFile() {
 		setLocked(true);
 		updateProject(File());
 		setLocked(false);
-		repaint();	
+		repaint();
 	}
 
 	setRunning(true);
@@ -2068,8 +2079,9 @@ void SynthEditor::openFile() {
 
 	if (chooser.browseForFileToOpen()) {
 #if JUCE_IOS
+		if (!confirmDiscardIfDirty()) return;
 		cleanUp();
-		newFile();
+		newFile(/*askIfDirty=*/ false);
 
 		URL url = chooser.getURLResult();
 		InputStream* is = url.createInputStream(false);
@@ -2138,6 +2150,10 @@ void SynthEditor::openFile(juce::File file) {
 	if (!file.existsAsFile())
 		return;
 
+	// Same crash class as File > New > Cancel: cleanUp() runs before any
+	// dialog had a chance to bail out. Confirm BEFORE any teardown.
+	if (!confirmDiscardIfDirty()) return;
+
 	// Audio-Thread VOR cleanUp anhalten — sonst iteriert er bei jedem Wechsel
 	// ueber bereits-geloeschte Module/Tracks und es kracht entweder im Audio-
 	// Pfad oder per ChangeBroadcaster, sobald Mixer broadcastet (z.B. bei
@@ -2145,7 +2161,7 @@ void SynthEditor::openFile(juce::File file) {
 	setRunning(false);
 
 	cleanUp();
-	newFile();
+	newFile(/*askIfDirty=*/ false);
 
 	std::unique_ptr<XmlElement> xml = XmlDocument(file).getDocumentElement();
 	if (xml == nullptr)
@@ -3044,6 +3060,7 @@ void SynthEditor::changeListenerCallback(juce::ChangeBroadcaster* source) {
 		File* f = efb->getSelectedFile();
 
 		if (f->getFullPathName().endsWith("slb") || f->getFullPathName().endsWith("xml")) {
+			if (!confirmDiscardIfDirty()) { delete f; return; }
 			FileInputStream* fis = new FileInputStream(*f);
 			String data = fis->readEntireStreamAsString();
 			updateProject(*f);
@@ -3051,7 +3068,7 @@ void SynthEditor::changeListenerCallback(juce::ChangeBroadcaster* source) {
 			delete f;
 			setRunning(false);
 			cleanUp();
-			newFile();
+			newFile(/*askIfDirty=*/ false);
 			loadFromString(data);
 			Project::getInstance()->setNewFile(false);
 			setRunning(true);
@@ -3141,9 +3158,11 @@ void SynthEditor::getCommandInfo(CommandID commandID, ApplicationCommandInfo& re
 bool SynthEditor::perform(const InvocationInfo& info) {
 
 	if (info.commandID == SynthEditor::CommandIds::NEW) {
+		// Ask BEFORE tearing anything down -- see confirmDiscardIfDirty.
+		if (!confirmDiscardIfDirty()) return true;
 		setRunning(false);
 		cleanUp();
-		newFile();
+		newFile(/*askIfDirty=*/ false);
 		updateProject(File());
 		Project::getInstance()->setNewFile(true);
 		setRunning(true);

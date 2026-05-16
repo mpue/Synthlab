@@ -1671,10 +1671,11 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 		}
 	}
 	else if (menuItemID >= 1000) {
+		if (!editor->confirmDiscardIfDirty()) return;
 		String xmlData = sampleData.getReference(menuItemID - 1000);
 		editor->setRunning(false);
 		editor->cleanUp();
-		editor->newFile();
+		editor->newFile(/*askIfDirty=*/ false);
 		editor->loadFromString(xmlData);
 		editor->setRunning(true);
 	}
@@ -2040,11 +2041,15 @@ void MainComponent::buttonClicked(Button* b)
 			Project::getInstance()->getUndoManager()->perform(rma);
 		}
 		else if (tb->getItemId() == toolbarFactory->doc_new) {
+			// Same crash pattern as the File > New command path: cleanUp()
+			// fired before any confirmation dialog. Confirm up front.
+			if (!editor->confirmDiscardIfDirty()) return;
+
 			editor->setRunning(false);
 			Project::getInstance()->setNewFile(true);
 			navigator->clearTracks();
 			editor->cleanUp();
-			editor->newFile();
+			editor->newFile(/*askIfDirty=*/ false);
 			// Wie beim ersten App-Start: 2 Default-Audio-Tracks anlegen, damit
 			// das frische Projekt sofort dropp- und bespielbar ist.
 			navigator->ensureDefaultAudioTracks(2);
