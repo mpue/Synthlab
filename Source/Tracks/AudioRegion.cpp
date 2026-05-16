@@ -1016,6 +1016,23 @@ void AudioRegion::setReferenceTempo(double t)
     // tatsaechlich geaendert hat, also keine Recursion.
     if (refTempoValue != nullptr)
         refTempoValue->setValue(referenceTempo);
+
+    // Live Tempo-Follow: wenn Follow gerade aktiv ist und der User die
+    // Referenz auf einen Wert != aktuellem Projekt-Tempo gesetzt hat,
+    // sofort stretchen — sonst greift die Aenderung erst beim naechsten
+    // Tempo-Wechsel oder nach Save + Reload (der Load-Pfad in
+    // SynthEditor::openTracks ruft genau diese Sequenz). applyTempoStretch
+    // gated selbst auf followTempo und auf ratio ~= 1.0, ist also no-op
+    // wenn Follow aus ist oder die Werte schon passen.
+    if (followTempo)
+    {
+        const double curTempo = (double) Project::getInstance()->getTempo();
+        if (std::abs(referenceTempo - curTempo) > 1e-4)
+        {
+            const double sr = Project::getInstance()->getSampleRate();
+            applyTempoStretch(curTempo, sr);
+        }
+    }
 }
 
 void AudioRegion::setFollowTempo(bool b)
