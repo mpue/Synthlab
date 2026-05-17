@@ -29,7 +29,7 @@ struct OfflinePlayHead : public juce::AudioPlayHead
     }
 
     void setPlaying(bool p)   { playing.store(p); }
-    void setRecording(bool r) { recording.store(r); }
+    void setRecording(bool r) { recording.store(r); } 	
 
     bool isPlaying()   const { return playing.load(); }
     bool isRecording() const { return recording.load(); }

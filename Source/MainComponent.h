@@ -192,6 +192,9 @@ private:
     
     juce::StretchableLayoutManager stretchableManager;
     juce::StretchableLayoutResizerBar resizerBar;
+    // Second resizer between editorView (item 2) and jsEditor (item 4) — the
+    // JavaScript editor lives as a permanent right-hand pane in studio mode.
+    juce::StretchableLayoutResizerBar jsResizerBar;
     
     std::map<int,int> keyCodeMidiNote;
     
@@ -236,6 +239,11 @@ private:
     std::unique_ptr<SpectrumAnalyzer> spectrumAnalyzer = nullptr;
     std::unique_ptr<QuickstartComponent> quickstart = nullptr;
     std::unique_ptr<JavaScriptEditorComponent> jsEditor = nullptr;
+
+    // Filled by getMenuForIndex when the Macros menu is built — indices into
+    // this vector are the menu item IDs minus kMacroMenuIdBase. menuItemSelected
+    // uses it to look up which .js file to run for a clicked menu entry.
+    std::vector<juce::File> macroFiles;
 
     // Statuszeile am unteren Fensterrand (Studio-Modus). CPU/RAM/Audio/Tempo.
     std::unique_ptr<StatusBarComponent> statusBar = nullptr;

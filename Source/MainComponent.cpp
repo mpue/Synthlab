@@ -92,7 +92,9 @@ using juce::Button;
 using juce::ToolbarButton;
 
 //==============================================================================
-MainComponent::MainComponent() : resizerBar(&stretchableManager, 1, true)
+MainComponent::MainComponent()
+    : resizerBar(&stretchableManager, 1, true),
+      jsResizerBar(&stretchableManager, 3, true)
 {
 
 	// Make sure you set the size of the component after
@@ -217,6 +219,12 @@ MainComponent::~MainComponent()
 	}
 
 	if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
+		// jsEditor hält Raw-Pointer auf navigator + SynthEditor (gesetzt in
+		// createStudioLayout). Zerstörung VOR editorView, damit diese Pointer
+		// auch bei einer aufgeräumten Teardown-Order garantiert nie auf tote
+		// Objekte zeigen — auch wenn der aktuelle Dtor sie nicht dereferenziert.
+		jsEditor = nullptr;
+
 		// Reihenfolge: editorView ZUERST, dann propertyView. editorView=nullptr
 		// triggert ~EditorComponent -> ~SynthEditor -> cleanUp(), das u.a.
 		// Project::getInstance()->getPropertyView()->selectionChanged() ruft.
@@ -636,6 +644,15 @@ void MainComponent::createStudioLayout() {
 	commandManager->registerAllCommandsForTarget(editor);
 	commandManager->setFirstCommandTarget(editor);
 
+	// JavaScript editor as a permanent right-hand pane. Created here so it is
+	// part of the stretchable layout from the first resized() onwards; was
+	// previously instantiated lazily into a tab inside editorView.
+	jsEditor = std::make_unique<JavaScriptEditorComponent>();
+	jsEditor->setTransportNavigator(editorView->getNavigator());
+	jsEditor->setSynthEditor(editor);
+	addAndMakeVisible(jsResizerBar);
+	addAndMakeVisible(jsEditor.get());
+
 	// we have to set up our StretchableLayoutManager so it know the limits and preferred sizes of it's contents
 	stretchableManager.setItemLayout(0,            // for the properties
 		-0.1, -0.9,   // must be between 50 pixels and 90% of the available space
@@ -646,7 +663,14 @@ void MainComponent::createStudioLayout() {
 
 	stretchableManager.setItemLayout(2,            // for the main editor
 		-0.1, -0.9,   // size must be between 50 pixels and 90% of the available space
-		-0.8);
+		-0.6);        // 60% preferred — leaves room for the JS pane (was 80%)
+
+	stretchableManager.setItemLayout(3,            // resizer between editor and JS pane
+		5, 5, 5);
+
+	stretchableManager.setItemLayout(4,            // JavaScript editor (right pane)
+		-0.0, -0.6,   // can shrink to 0 (drag-to-hide), max 60%
+		-0.2);        // preferred 20%
 
 #if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
 	pluginMenu = PluginManager::getInstance()->buildPluginMenu();
@@ -1152,14 +1176,22 @@ void MainComponent::resized()
 			statusBar->toFront(false);
 		}
 
-		// make a list of two of our child components that we want to reposition
-		Component* comps[] = { propertyView.get(), &resizerBar, editorView.get() };
-
-		// this will position the 3 components, one above the other, to fit
-		// vertically into the rectangle provided.
-		stretchableManager.layOutComponents(comps, 3,
-			r.getX(), r.getY() + 25, r.getWidth(), r.getHeight(),
-			false, true);
+		// Horizontal layout: propertyView | resizer | editorView | jsResizer | jsEditor
+		// — five children, the two resizers are 5px each. jsEditor is nullptr
+		// only when createStudioLayout hasn't run yet (shouldn't happen here),
+		// but guard anyway so resized() during early construction is safe.
+		if (jsEditor != nullptr) {
+			Component* comps[] = { propertyView.get(), &resizerBar, editorView.get(),
+			                       &jsResizerBar, jsEditor.get() };
+			stretchableManager.layOutComponents(comps, 5,
+				r.getX(), r.getY() + 25, r.getWidth(), r.getHeight(),
+				false, true);
+		} else {
+			Component* comps[] = { propertyView.get(), &resizerBar, editorView.get() };
+			stretchableManager.layOutComponents(comps, 3,
+				r.getX(), r.getY() + 25, r.getWidth(), r.getHeight(),
+				false, true);
+		}
 
 		if (propertyView != nullptr && propertyView->getParentComponent() != nullptr)
 			propertyView->setSize(r.getWidth() - editorView->getWidth(), propertyView->getHeight());
@@ -1183,6 +1215,66 @@ void MainComponent::resized()
 			editorView->getEditor()->resized();
 		}
 	}
+}
+
+namespace {
+    // Base ID for dynamically-generated Macros menu entries. Existing IDs in
+    // this file: 5..15, 41..49, 60..80, 200..207, undoCommand, 999, 1000+i
+    // (samples), 2000+i (recent). 5000+ gives us plenty of headroom for nested
+    // macro folders without collisions.
+    constexpr int kMacroMenuIdBase = 5000;
+
+    juce::File getMacroDir()
+    {
+        auto dir = juce::File::getSpecialLocation (juce::File::userHomeDirectory)
+                       .getChildFile (".Synthlab/macros");
+        if (! dir.exists())
+            dir.createDirectory();  // best-effort; if it fails the menu just stays empty
+        return dir;
+    }
+
+    struct ByFileName
+    {
+        int compareElements (const juce::File& a, const juce::File& b) const
+        {
+            return a.getFileName().compareNatural (b.getFileName());
+        }
+    };
+
+    // Recursively populate `menu` from `dir`: subdirectories become submenus
+    // (skipped if they contain no .js anywhere underneath, so the user does
+    // not see empty branches), .js files become items. `files` is the flat
+    // lookup table used by menuItemSelected — its index plus kMacroMenuIdBase
+    // is the assigned menu ID.
+    void buildMacroMenu (const juce::File& dir,
+                         juce::PopupMenu& menu,
+                         std::vector<juce::File>& files)
+    {
+        juce::Array<juce::File> subdirs;
+        dir.findChildFiles (subdirs, juce::File::findDirectories, false);
+        ByFileName cmp;
+        subdirs.sort (cmp);
+
+        for (const auto& sub : subdirs)
+        {
+            juce::PopupMenu sm;
+            const size_t beforeCount = files.size();
+            buildMacroMenu (sub, sm, files);
+            if (files.size() != beforeCount)  // only show non-empty branches
+                menu.addSubMenu (sub.getFileName(), sm);
+        }
+
+        juce::Array<juce::File> jsFiles;
+        dir.findChildFiles (jsFiles, juce::File::findFiles, false, "*.js");
+        jsFiles.sort (cmp);
+
+        for (const auto& f : jsFiles)
+        {
+            const int id = kMacroMenuIdBase + (int) files.size();
+            files.push_back (f);
+            menu.addItem (id, f.getFileNameWithoutExtension());
+        }
+    }
 }
 
 PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
@@ -1318,10 +1410,32 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addSubMenu("MIDI", midiMenu);
 	}
 
+	// Macros: dispatched by name rather than index because the index differs
+	// between plugin-host and non-plugin-host builds (see getMenuBarNames).
+	if (menuName == "Macros") {
+		macroFiles.clear();
+		const auto dir = getMacroDir();
+		buildMacroMenu (dir, menu, macroFiles);
+
+		if (macroFiles.empty()) {
+			menu.addItem (0, "(drop .js files in " + dir.getFullPathName() + ")",
+			              false, false);  // disabled, just informational
+		}
+	}
+
 	return menu;
 }
 
 void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
+
+	// Macros: IDs starting at kMacroMenuIdBase index into macroFiles, which
+	// was populated by the most recent getMenuForIndex("Macros", ...) call.
+	if (menuItemID >= kMacroMenuIdBase) {
+		const size_t idx = (size_t) (menuItemID - kMacroMenuIdBase);
+		if (idx < macroFiles.size() && jsEditor != nullptr)
+			jsEditor->runFile (macroFiles[idx]);
+		return;
+	}
 
 	if (menuItemID == 5) {
 		openSettings();
@@ -1672,9 +1786,9 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 StringArray MainComponent::getMenuBarNames() {
 
 #if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
-	const char* const names[] = { "File", "View","Plugins", "Edit", "Region", nullptr };
+	const char* const names[] = { "File", "View","Plugins", "Edit", "Region", "Macros", nullptr };
 #else
-	const char* const names[] = { "File", "View", "Edit", nullptr };
+	const char* const names[] = { "File", "View", "Edit", "Macros", nullptr };
 #endif
 
 	return StringArray(names);
@@ -1798,26 +1912,11 @@ void MainComponent::openQuickstart() {
 }
 
 void MainComponent::openJavaScriptEditor() {
-	if (editorView == nullptr)
-		return;
-
-	auto* tabs = editorView->getEditorTab();
-	if (tabs == nullptr)
-		return;
-
-	// Already open? Just bring it to front.
-	for (int i = 0; i < tabs->getNumTabs(); ++i) {
-		if (tabs->getTabNames()[i] == "JavaScript") {
-			tabs->setCurrentTabIndex(i);
-			return;
-		}
-	}
-
-	if (jsEditor == nullptr)
-		jsEditor = std::make_unique<JavaScriptEditorComponent>();
-
-	tabs->addTab("JavaScript", Colour(0xff1b1b25), jsEditor.get(), false);
-	tabs->setCurrentTabIndex(tabs->getNumTabs() - 1);
+	// JS editor is now a permanent right-hand pane (created in
+	// createStudioLayout). The menu entry just focuses it so the user can
+	// start typing.
+	if (jsEditor != nullptr)
+		jsEditor->grabKeyboardFocus();
 }
 
 void MainComponent::openSettings() {
