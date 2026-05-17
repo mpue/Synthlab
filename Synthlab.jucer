@@ -340,6 +340,10 @@
               file="Source/Actions/ResizeRegionAction.cpp"/>
         <FILE id="rZrA02" name="ResizeRegionAction.h" compile="0" resource="0"
               file="Source/Actions/ResizeRegionAction.h"/>
+        <FILE id="aTrA01" name="AddTrackAction.cpp" compile="1" resource="0"
+              file="Source/Actions/AddTrackAction.cpp"/>
+        <FILE id="aTrA02" name="AddTrackAction.h" compile="0" resource="0"
+              file="Source/Actions/AddTrackAction.h"/>
         <FILE id="QDqpW1" name="SetGainForRegionAction.cpp" compile="1" resource="0"
               file="Source/Actions/SetGainForRegionAction.cpp"/>
         <FILE id="hSLVIv" name="SetGainForRegionAction.h" compile="0" resource="0"

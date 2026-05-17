@@ -310,6 +310,15 @@ public:
 	// Timeline beginnen. Region-Coords im Track-internen System sind davon
 	// nicht betroffen — nur das Layout im Navigator.
 	static constexpr int kControlsWidth = 140;
+
+	MultiComponentDragger* getDragger() { return dragger; }
+
+	// Detach an arbitrary Track by pointer. detachSelectedTrack relies on
+	// selection state — AddTrackAction::undo needs to detach a specific
+	// Track without touching the user's selection. Returns the Track*
+	// (= input) on success, nullptr if the Track isn't in the navigator.
+	// outIndex receives the former position.
+	Track* detachTrack(Track* target, int& outIndex);
 private:
 
 	std::atomic<bool> playing { false };

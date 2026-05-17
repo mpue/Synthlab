@@ -1318,6 +1318,13 @@ void TrackNavigator::ensureDefaultAudioTracks(int n) {
 		Track* t = TrackUtil::createAudioTrack(editor, this, editor->getModule());
 		if (t == nullptr) break;   // Schutz, falls Anlage fehlschlaegt
 	}
+
+	// Undo-Stack nach dem Default-Setup leeren: die N AddModuleActions aus
+	// TrackUtil sind nichts, was der User je rueckgaengig machen will, und
+	// halbe Default-States (z.B. nur 1 von 2 Tracks "weg-undo'd") fuehren zu
+	// seltsamem Verhalten in der UI.
+	if (auto* um = Project::getInstance()->getUndoManager())
+		um->clearUndoHistory();
 }
 
 Track* TrackNavigator::addTrack(Track::Type type, double sampleRate) {
@@ -1402,6 +1409,37 @@ Track* TrackNavigator::detachSelectedTrack(int& outIndex)
 			sendChangeMessage();
 			return track;
 		}
+	}
+	return nullptr;
+}
+
+Track* TrackNavigator::detachTrack(Track* target, int& outIndex)
+{
+	if (target == nullptr) return nullptr;
+	for (int i = 0; i < (int)tracks.size(); i++) {
+		if (tracks[i] != target) continue;
+
+		outIndex = i;
+		tracks.erase(tracks.begin() + i);
+		target->removeChangeListener(this);
+		removeChildComponent(target);
+
+		// Restack remaining tracks (mirror detachSelectedTrack).
+		if (!tracks.empty()) {
+			tracks[0]->setTopLeftPosition(tracks[0]->getX(), timelineOffset);
+			for (int j = 1; j < (int)tracks.size(); j++)
+				tracks[j]->setTopLeftPosition(tracks[j-1]->getX(),
+				                              tracks[j-1]->getY() + tracks[j-1]->getHeight());
+		}
+
+		if (currentTrack == target)
+			currentTrack = tracks.empty() ? nullptr : tracks[0];
+
+		syncTrackControls();
+		adjustHeight();
+		repaint();
+		sendChangeMessage();
+		return target;
 	}
 	return nullptr;
 }

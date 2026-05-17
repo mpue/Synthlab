@@ -54,6 +54,7 @@
 #include "Actions/NormalizeRegionAction.h"
 #include "Actions/FadeRegionAction.h"
 #include "Actions/TrackDeleteAction.h"
+#include "Actions/AddTrackAction.h"
 
 using juce::String;
 using juce::File;
@@ -1418,7 +1419,10 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 			editorView->OpenTrackView();
 			editorView->getNavigator()->addChangeListener(this);
 		}
-		TrackUtil::createAudioTrack(editor, editorView->getNavigator(), editor->getModule());
+		auto* action = new AddTrackAction(editor, editorView->getNavigator(),
+		                                  AddTrackAction::Type::Audio);
+		Project::getInstance()->getUndoManager()->beginNewTransaction();
+		Project::getInstance()->getUndoManager()->perform(action);
 		editor->repaint();
 	}
 	else if (menuItemID == 9) {
@@ -1426,7 +1430,10 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 			editorView->OpenTrackView();
 			editorView->getNavigator()->addChangeListener(this);
 		}
-		TrackUtil::createMIDITrack(editor, editorView->getNavigator(), editor->getModule());
+		auto* action = new AddTrackAction(editor, editorView->getNavigator(),
+		                                  AddTrackAction::Type::Midi);
+		Project::getInstance()->getUndoManager()->beginNewTransaction();
+		Project::getInstance()->getUndoManager()->perform(action);
 		editor->repaint();
 	}
 	else if (menuItemID == 10) {

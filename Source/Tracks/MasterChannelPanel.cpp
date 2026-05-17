@@ -221,6 +221,12 @@ MasterChannelPanel::~MasterChannelPanel()
     // sendChangeMessage()-Call kracht in ChangeBroadcaster::callListeners.
     if (auto* m = Mixer::getInstance())
         m->removeChangeListener(this);
+    // MixerPanel::setModule registriert this als Listener von VolumeAdjustable
+    // (AudioOut/AuxOut/AudioIn/BusOut). Beim addTrack/removeTrack-Zyklus durch
+    // AddTrackAction wird das Panel weggeraeumt aber die VolumeAdjustable
+    // bleibt am Leben — die Listener-Liste behaelt sonst einen dangling Pointer.
+    if (module != nullptr)
+        module->removeChangeListener(this);
     //[/Destructor_pre]
 
     vuSliderL = nullptr;
