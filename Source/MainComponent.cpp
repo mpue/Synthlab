@@ -2009,9 +2009,7 @@ bool MainComponent::keyPressed(const juce::KeyPress& key, juce::Component* origi
 		editor->repaint();
 	}
 	if (key.getKeyCode() == KeyPress::deleteKey || key.getKeyCode() == KeyPress::backspaceKey) {
-		RemoveSelectedAction* rsa = new RemoveSelectedAction(editor);
-		Project::getInstance()->getUndoManager()->beginNewTransaction();
-		Project::getInstance()->getUndoManager()->perform(rsa);
+		SynthEditor::deleteSelectionWithCascade(editor, editorView ? editorView->getNavigator() : nullptr);
 	}
 
 	return true;
@@ -2043,9 +2041,7 @@ void MainComponent::buttonClicked(Button* b)
 	if (tb != nullptr) {
 
 		if (tb->getItemId() == toolbarFactory->delete_element) {
-			RemoveSelectedAction* rma = new RemoveSelectedAction(editor);
-			Project::getInstance()->getUndoManager()->beginNewTransaction();
-			Project::getInstance()->getUndoManager()->perform(rma);
+			SynthEditor::deleteSelectionWithCascade(editor, editorView ? editorView->getNavigator() : nullptr);
 		}
 		else if (tb->getItemId() == toolbarFactory->doc_new) {
 			// Same crash pattern as the File > New command path: cleanUp()

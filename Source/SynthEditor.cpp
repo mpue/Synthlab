@@ -48,6 +48,8 @@
 #include "GeometryModule.h"
 #include "Actions/AlignVerticalAction.h"
 #include "Actions/AlignHorizontalAction.h"
+#include "Actions/AddTrackAction.h"
+#include "Actions/TrackDeleteAction.h"
 
 class SampleEditor;
 
@@ -2820,6 +2822,43 @@ juce::Point<int> SynthEditor::getNextTrackStartPosition() const
     return { 20, maxBottom + 30 };
 }
 
+void SynthEditor::deleteSelectionWithCascade(SynthEditor* editor, TrackNavigator* navigator)
+{
+    if (editor == nullptr) return;
+
+    auto* um = Project::getInstance()->getUndoManager();
+    um->beginNewTransaction();
+
+    // 1) Selected TrackIn -> cascade into TrackDeleteAction for its Track.
+    //    Pre-collect first so we don't iterate while the editor's module
+    //    vector shrinks under us.
+    if (navigator != nullptr) {
+        std::vector<TrackIn*> selectedTrackIns;
+        for (auto* m : *editor->getModule()->getModules()) {
+            if (m != nullptr && m->isSelected()) {
+                if (auto* ti = dynamic_cast<TrackIn*>(m))
+                    selectedTrackIns.push_back(ti);
+            }
+        }
+        for (auto* ti : selectedTrackIns) {
+            Track* t = ti->getTrack();
+            if (t == nullptr) continue;
+            // TrackDeleteAction will also collect this TrackIn as part of
+            // the assembly — drop the selection so the follow-up
+            // RemoveSelectedAction doesn't try to delete it a second time.
+            ti->setSelected(false);
+            auto* tda = new TrackDeleteAction(navigator, editor, t);
+            um->perform(tda);
+        }
+    }
+
+    // 2) Whatever's left in the selection (other modules, connections) goes
+    //    through the regular path. perform() returns false on an empty
+    //    selection and the UndoManager drops the action — no harm.
+    auto* rsa = new RemoveSelectedAction(editor);
+    um->perform(rsa);
+}
+
 void SynthEditor::addVirtualInstrumentTrack()
 {
 	PluginBrowserComponent::show([this](juce::String selectedPlugin)
@@ -2841,8 +2880,11 @@ void SynthEditor::addVirtualInstrumentTrack(juce::String pluginName)
 		// stray double-click can't tank the app.
 		return;
 	}
-	Point<int> pos = getNextTrackStartPosition();
-	TrackUtil::createVirtualInstrumentTrack(pluginName, pos, navigator, this);
+	auto* action = new AddTrackAction(this, navigator,
+	                                  AddTrackAction::Type::Instrument,
+	                                  pluginName);
+	Project::getInstance()->getUndoManager()->beginNewTransaction();
+	Project::getInstance()->getUndoManager()->perform(action);
 	repaint();
 }
 
@@ -3219,9 +3261,7 @@ bool SynthEditor::perform(const InvocationInfo& info) {
 	}
 	 */
 	else if (info.commandID == SynthEditor::CommandIds::DELETE_SELECTED) {
-		RemoveSelectedAction* rsa = new RemoveSelectedAction(this);
-		Project::getInstance()->getUndoManager()->beginNewTransaction();
-		Project::getInstance()->getUndoManager()->perform(rsa);
+		SynthEditor::deleteSelectionWithCascade(this, navigator);
 		return true;
 	}
 	else if (info.commandID == SynthEditor::CommandIds::ALIGN_Y) {

@@ -84,6 +84,15 @@ public:
     // Smart layout helpers
     juce::Point<int> findFreePosition(juce::Point<int> desired, int w, int h) const;
     juce::Point<int> getNextTrackStartPosition() const;
+
+    // Deletes the current selection, but cascades any selected TrackIn module
+    // into a full TrackDeleteAction (removes the Track plus its TrackIn,
+    // AudioIn/MidiGate inputs, AudioOut/AuxOut/MidiOut outputs, PluginModule
+    // for instrument tracks, and every connection that wired them). Whatever
+    // is left in the selection after the TrackIn cascade is handed to a normal
+    // RemoveSelectedAction. All inside a single undo transaction.
+    static void deleteSelectionWithCascade(SynthEditor* editor,
+                                           TrackNavigator* navigator);
     
     // audio processing
 
