@@ -1048,7 +1048,7 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 		if (metronomeBuffer.getNumSamples() != bufferToFill.numSamples)
 			metronomeBuffer.setSize(2, bufferToFill.numSamples, false, false, true);
 
-		metronome->generateBlock(metronomeBuffer);
+		metronome->generateBlock(metronomeBuffer, (long)navigator->getSamplePosition());
 
 		if (outNumChans > 0) {
 			auto* destL = bufferToFill.buffer->getWritePointer(0, bufferToFill.startSample);
@@ -1539,24 +1539,17 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 
 	}
 	else if (menuItemID == 43) {
-		if (navigator->getCurrentTrack() != nullptr) {
-			Region* region = navigator->getCurrentTrack()->getCurrentRegion();
-			if (region != nullptr) {
-				navigator->getCurrentTrack()->duplicateRegion(region);
-			}
-		}
+		// Duplicate ueber ALLE Tracks dispatchen — selektierte Regionen koennen
+		// auf beliebig vielen Tracks liegen, der Track-Header muss dafuer nicht
+		// "currentTrack" sein.
+		for (auto* t : navigator->getTracks())
+			if (t != nullptr) t->duplicateSelectedRegions();
 	}
 	else if (menuItemID == 44) {
-		if (navigator->getCurrentTrack() != nullptr) {
-
-			// split at current position, for every track
-			// iterate through all tracks
-
-			for (int i = 0; i < navigator->getTracks().size(); i++) {
-				navigator->getTracks().at(i)->splitRegion();
-			}
-				
-		}
+		// Split-at-Marker laeuft auf allen Tracks am aktuellen Playhead —
+		// Selektion irrelevant, kein currentTrack-Gate noetig.
+		for (auto* t : navigator->getTracks())
+			if (t != nullptr) t->splitRegion();
 	}
 	else if (menuItemID == 45) {
 		for (int i = 0; i < navigator->getTracks().size(); i++) {
@@ -1564,18 +1557,11 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 		}
 	}
 	else if (menuItemID == 46) {
-		if (navigator->getCurrentTrack() != nullptr) {
-			Region* region = navigator->getCurrentTrack()->getCurrentRegion();
-			// check if it's an audio region
-			AudioRegion* audioRegion = dynamic_cast<AudioRegion*>(region);
-
-			if (audioRegion != nullptr) {
-				AudioUtils::reverseAudioBuffer(*audioRegion->getBuffer());
-				audioRegion->markBufferMutated();
-				audioRegion->updateThumb();
-			}
-
-		}
+		// Reverse auf jede selektierte AudioRegion ueber alle Tracks. Kein
+		// currentTrack-Gate — das uebersieht man im UI zu leicht und die Aktion
+		// schluckt sich dann lautlos.
+		for (auto* t : navigator->getTracks())
+			if (t != nullptr) t->reverseSelectedAudioRegions();
 	}
 	else if (menuItemID == 47) {
 		NormalizeRegionAction* action = new NormalizeRegionAction(navigator);
@@ -1589,21 +1575,15 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 		Project::getInstance()->getUndoManager()->perform(action);
 	}
 	else if (menuItemID == 49) {
-		if (navigator->getCurrentTrack() != nullptr) {
-			Track* t = navigator->getCurrentTrack();
-			// Mehrere selektierte AudioRegions auf demselben Track? Dann erst
-			// mergen — das Ergebnis ist per Definition schon konsolidiert
-			// (sourceStartSample=0, Visible-Length == Buffer-Length). Wenn
-			// nur eine Region selektiert ist, faellt der Pfad auf das
-			// klassische region->consolidate() zurueck.
-			if (t->mergeSelectedRegions()) {
-				// Audio: Merge-Resultat ist per Definition schon konsolidiert
-				// (sourceStartSample=0, Visible-Length == Buffer-Length).
-				// MIDI: ebenso, da addMidiRegion frisch leer mit sss=0 startet.
-			}
-			else if (Region* region = t->getCurrentRegion()) {
-				region->consolidate();
-			}
+		// Pro Track: mehrere selektierte Regionen → mergen (Ergebnis ist per
+		// Definition schon konsolidiert, sss=0, visible == buffer). Sonst alle
+		// einzeln selektierten Regionen auf dem Track konsolidieren. Kein
+		// currentTrack-Gate — Aktion greift fuer jede selektierte Region,
+		// unabhaengig davon ob der Track-Header gerade fokussiert ist.
+		for (auto* t : navigator->getTracks()) {
+			if (t == nullptr) continue;
+			if (t->mergeSelectedRegions()) continue;
+			t->consolidateSelectedRegions();
 		}
 	}
 	else if (menuItemID == 60) {
@@ -1984,7 +1964,7 @@ bool MainComponent::keyPressed(const juce::KeyPress& key, juce::Component* origi
 	if (key == juce::KeyPress::spaceKey) {
 		if (editorView != nullptr) {
 			if (auto* nav = editorView->getNavigator())
-				nav->setPlaying(! nav->isPlaying());
+				nav->togglePlayStop();
 		}
 		return true;
 	}

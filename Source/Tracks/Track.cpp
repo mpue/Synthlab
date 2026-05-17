@@ -13,6 +13,7 @@
 #include "TrackNavigator.h"
 #include "../Session.h"
 #include "../Mixer.h"
+#include "../AudioUtils.h"
 #include "MasterChannelPanel.h"
 #include "../Actions/SplitRegionAction.h"
 #include "../Project/Project.h"
@@ -227,8 +228,13 @@ AudioRegion* Track::mergeSelectedAudioRegions() {
 	// und setzt currentRegion. Wir markieren sie als mutiert, damit der
 	// naechste Project::save sie als WAV in $project/edits/ persistiert.
 	AudioRegion* newRegion = addRegion(&merged, sampleRate, minOffset, totalLen);
-	if (newRegion != nullptr)
+	if (newRegion != nullptr) {
 		newRegion->markBufferMutated();
+		// Merge-Ergebnis ist per Definition konsolidiert (sss=0, visible == buffer)
+		// — Indikator-Dreieck direkt setzen, damit der User es ohne erneutes
+		// Consolidate sieht.
+		newRegion->setConsolidated(true);
+	}
 
 	repaint();
 	return newRegion;
@@ -301,6 +307,8 @@ MidiRegion* Track::mergeSelectedMidiRegions() {
 	}
 
 	currentRegion = mergedRegion;
+	// Merge-Ergebnis ist per Definition konsolidiert — Indikator setzen.
+	mergedRegion->setConsolidated(true);
 	repaint();
 	return mergedRegion;
 }
@@ -311,6 +319,32 @@ bool Track::mergeSelectedRegions() {
 	if (type == MIDI || type == INSTRUMENT)
 		return mergeSelectedMidiRegions() != nullptr;
 	return false;
+}
+
+void Track::consolidateSelectedRegions() {
+	// Selektion ueber beide Quellen pruefen (Region::selected ODER dragger) —
+	// es gibt im Code Pfade die nur die eine oder andere setzen.
+	for (auto* r : regions) {
+		if (r == nullptr) continue;
+		const bool sel = r->isSelected()
+		              || (dragger != nullptr && dragger->isSelected(r));
+		if (sel)
+			r->consolidate();
+	}
+}
+
+void Track::reverseSelectedAudioRegions() {
+	for (auto* r : regions) {
+		if (r == nullptr) continue;
+		const bool sel = r->isSelected()
+		              || (dragger != nullptr && dragger->isSelected(r));
+		if (!sel) continue;
+		if (auto* ar = dynamic_cast<AudioRegion*>(r)) {
+			AudioUtils::reverseAudioBuffer(*ar->getBuffer());
+			ar->markBufferMutated();
+			ar->updateThumb();
+		}
+	}
 }
 
 void Track::copySelectedRegions() {

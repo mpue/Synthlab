@@ -1122,6 +1122,17 @@ bool TrackNavigator::isRecording() {
 	return recording;
 }
 
+void TrackNavigator::togglePlayStop() {
+	if (isPlaying() || isRecording()) {
+		if (isRecording())
+			setRecording(false);
+		setPlaying(false);
+	}
+	else {
+		setPlaying(true);
+	}
+}
+
 std::vector<Track*> TrackNavigator::getTracks() {
 	return this->tracks;
 }
@@ -1158,7 +1169,7 @@ void TrackNavigator::openPianoRoll(MidiRegion* r)
 	pianoRoll->getRoll().setGridResolution(16);
 
 	pianoRoll->getRoll().onPlayToggle = [this]() {
-		setPlaying(!isPlaying());
+		togglePlayStop();
 	};
 
 	// samplePos kommt aus PianoRollComponent::getTimeAtX() und ist BUFFER-
@@ -1538,7 +1549,7 @@ bool TrackNavigator::keyPressed(const KeyPress& key, Component* originatingCompo
 	}
 
 	if (key == KeyPress::spaceKey) {
-		setPlaying(!isPlaying());
+		togglePlayStop();
 	}
 	if (key.getTextCharacter() == '+') {
 		if (getMaxLength() == 0) {

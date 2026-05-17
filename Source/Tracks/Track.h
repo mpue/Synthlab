@@ -162,6 +162,12 @@ public:
     bool mergeSelectedRegions();
     void copySelectedRegions();
     void duplicateRegion(Region* region);
+    // Consolidate jede selektierte Region (Region::selected || dragger).
+    // Wird vom Menu-Handler ueber alle Tracks dispatched — selektierte
+    // Regionen koennen auf beliebig vielen Tracks liegen.
+    void consolidateSelectedRegions();
+    // Reverse jede selektierte AudioRegion auf diesem Track.
+    void reverseSelectedAudioRegions();
     // Paste every compatible region from Session's clipboard onto this track,
     // starting at startSampleOffset. Audio-only into AUDIO tracks, MIDI-only
     // into MIDI/INSTRUMENT tracks; incompatible entries are skipped.

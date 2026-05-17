@@ -212,6 +212,14 @@ public:
 	void setRecording(bool recording);
 	void noteOffForAll();
 
+	// Space-Bar / Toggle-Helfer: ein einziger Pfad fuer "Stop alles" vs
+	// "Play starten". Vor diesem Helper haben die drei Space-Handler nur
+	// setPlaying() getoggelt — bei laufendem Recording blieb dadurch das
+	// recording-Flag haengen, der Audio-Gate (isPlaying || isRecording) in
+	// MainComponent::getNextAudioBlock blieb offen, Position lief weiter,
+	// nur der UI-Marker fror ein.
+	void togglePlayStop();
+
 	double getMaxLength();
 	void setPosition(double position);
 	double getPosition();

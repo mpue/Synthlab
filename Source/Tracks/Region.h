@@ -36,7 +36,13 @@ public:
 
     void setSelected(bool selected);
     bool isSelected();
-    
+
+    // Reines Laufzeit-Flag: in MidiRegion::consolidate / AudioRegion::consolidate
+    // am Ende gesetzt, paint() zeichnet bei true ein rotes Indikator-Dreieck
+    // oben links. Nicht persistiert (nach Reload zurueck auf false).
+    bool isConsolidated() const { return consolidated; }
+    void setConsolidated(bool c) { consolidated = c; repaint(); }
+
     virtual void setLoop(bool loop);
     bool isLoop();
     
@@ -146,6 +152,7 @@ protected:
     long oldOffset = 0;
     int loopCount = 1;
     bool selected = false;
+    bool consolidated = false;
     bool loop = false;
     virtual void changeListenerCallback(ChangeBroadcaster* source) override {};
 

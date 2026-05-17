@@ -253,6 +253,14 @@ void MidiRegion::paint(Graphics& g) {
         const double endTime   = (double) (sourceStartSample + getNumSamples()) / sampleRate;
         midiThumbnail->drawChannels(g, startTime, endTime, 1.0f);
     }
+
+    // Consolidated-Indikator: kleines rotes Dreieck oben links.
+    if (isConsolidated()) {
+        juce::Path tri;
+        tri.addTriangle(0.0f, 0.0f, 10.0f, 0.0f, 0.0f, 10.0f);
+        g.setColour(juce::Colours::red);
+        g.fillPath(tri);
+    }
 }
 
 void MidiRegion::resized() {
@@ -974,6 +982,7 @@ void MidiRegion::consolidate()
     consolidateInProgress = false;
     rebuildThumbnail();
     updateThumb();
+    setConsolidated(true);
     repaint();
 }
 

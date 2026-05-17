@@ -367,6 +367,7 @@ void AudioRegion::consolidate()
         dirty     = true;
         bufferMutated = true; // physisch geaenderter Buffer -> persist on save
         updateThumb();
+        setConsolidated(true);
     }
     else
     {
@@ -403,6 +404,7 @@ void AudioRegion::consolidate()
             this->thumbnailBounds->setWidth(getWidth());
         dirty = true;
         bufferMutated = true; // physisch geaenderter Buffer -> persist on save
+        setConsolidated(true);
         repaint();
     }
 }
@@ -539,6 +541,17 @@ void AudioRegion::paint (Graphics& g)
             this->thumbnail->drawChannels(g, loopBounds, startSeconds, endSeconds, 1.0f);
         }
     }
+
+    // Consolidated-Indikator: kleines rotes Dreieck oben links.
+    if (isConsolidated()) {
+        juce::Path tri;
+        tri.addTriangle((float) b.getX(), (float) b.getY(),
+                        (float) b.getX() + 10.0f, (float) b.getY(),
+                        (float) b.getX(), (float) b.getY() + 10.0f);
+        g.setColour(juce::Colours::red);
+        g.fillPath(tri);
+    }
+
     dirty = false;
 }
 

@@ -103,7 +103,11 @@
 		// recording case, send event to current region of track and to event out pin
 		// this is necessary to update the midi regions in the timeline and to pass the event to the next module
 
-		if (track != nullptr && track->isRecording()) {
+		// Nur extern via Pin gelieferte Events aufnehmen. Track::notifyListeners
+		// (Region-Playback, sendAllNotesOff) liefert Events ohne Source-Pin —
+		// die duerfen nicht in die Recording-Region zurueckgeschrieben werden,
+		// sonst dupliziert sich bei Overdub im Loop die Region bei jedem Pass.
+		if (track != nullptr && track->isRecording() && e->getSource() != nullptr) {
 			if (e->getMessage().getChannel() != track->getMidiChannel()) {
 				delete e;
 				return;

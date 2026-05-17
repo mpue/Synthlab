@@ -5,7 +5,7 @@
 
 Metronome::Metronome(double sr, int bs)
     : sampleRate(sr), blockSize(bs),
-    sampleCounter(0), clickSamplePos(-1), beatInBar(0), phase(0.0f),
+    clickSamplePos(-1), beatInBar(0), phase(0.0f),
     beatsPerBar(4), // Standard 4/4 Takt
     clickFreq(1000.0f), accentFreq(800.0f), clickLength(4410), // Standard-Werte
     phaseDelta(0.0f), accentPhaseDelta(0.0f)
@@ -52,13 +52,15 @@ void Metronome::setTimeSignature(int beatsPerBar)
 
 void Metronome::reset()
 {
-    sampleCounter = 0;
+    // Nur den laufenden Click-Envelope abklemmen. Das Beat-Raster selbst
+    // wird per Song-Position in generateBlock berechnet â€” da gibt es keinen
+    // internen Counter mehr, der reset werden muesste.
     clickSamplePos = -1;
     beatInBar = 0;
     phase = 0.0f;
 }
 
-void Metronome::generateBlock(juce::AudioBuffer<float>& outBuffer)
+void Metronome::generateBlock(juce::AudioBuffer<float>& outBuffer, long blockStartSample)
 {
     outBuffer.setSize(2, blockSize, false, false, true);
     outBuffer.clear();
@@ -66,19 +68,19 @@ void Metronome::generateBlock(juce::AudioBuffer<float>& outBuffer)
     for (int i = 0; i < blockSize; ++i)
     {
         float sample = 0.0f;
+        const long absSample = blockStartSample + (long)i;
 
-        // Prüfe, ob neuer Beat beginnt
-        if (samplesPerBeat > 0 && sampleCounter % samplesPerBeat == 0)
+        // Beat-Boundary aus der absoluten Song-Position ableiten â€” dadurch
+        // resyncht das Metronom automatisch nach jedem Seek (Track-Click,
+        // Piano-Roll-Click, Loop-Wrap, Record-Start an beliebiger Position).
+        if (samplesPerBeat > 0 && absSample >= 0 && (absSample % samplesPerBeat) == 0)
         {
             clickSamplePos = 0;
             phase = 0.0f;
-            beatInBar = (sampleCounter / samplesPerBeat) % beatsPerBar;
-
-            // Debug: Beat-Start
-            juce::Logger::writeToLog("Beat! beatInBar=" + juce::String(beatInBar));
+            beatInBar = (int)((absSample / samplesPerBeat) % beatsPerBar);
         }
 
-        // Generiere Click-Sound nur für kurze Dauer
+        // Generiere Click-Sound nur fï¿½r kurze Dauer
         if (clickSamplePos >= 0 && clickSamplePos < clickLength)
         {
             if (beatInBar == 0)
@@ -101,7 +103,6 @@ void Metronome::generateBlock(juce::AudioBuffer<float>& outBuffer)
 
         outBuffer.setSample(0, i, sample);
         outBuffer.setSample(1, i, sample);
-        sampleCounter++;
     }
 }
 void Metronome::prepareToPlay(double sampleRate, int blockSize) {

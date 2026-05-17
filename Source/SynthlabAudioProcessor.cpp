@@ -152,7 +152,7 @@ void SynthlabAudioProcessor::getNextAudioBlock (const AudioSourceChannelInfo& bu
 		if (metronomeBuffer.getNumSamples() != bufferToFill.numSamples)
 			metronomeBuffer.setSize(2, bufferToFill.numSamples, false, false, true);
 
-		metronome->generateBlock(metronomeBuffer);
+		metronome->generateBlock(metronomeBuffer, (long)navigator->getSamplePosition());
 
 		if (outNumChans > 0) {
 			auto* destL = bufferToFill.buffer->getWritePointer(0, bufferToFill.startSample);
