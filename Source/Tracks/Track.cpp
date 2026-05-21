@@ -377,9 +377,6 @@ void Track::duplicateRegion(Region* region) {
 
 	if (AudioRegion* _region = dynamic_cast<AudioRegion*>(region)) {
 
-		// Berechne die tatsächliche Anzahl der Samples (berücksichtigt Resizing)
-		int numSamplesToCopy = _region->getNumSamples();
-
 		// Bei links-getrimmtem Original liegt der sichtbare Inhalt im Buffer
 		// erst ab sourceStartSample. Wenn wir hier weiter mit startSample=0
 		// kopieren, bekommt das Duplikat die abgeschnittene Front statt der
@@ -389,28 +386,54 @@ void Track::duplicateRegion(Region* region) {
 		// uebernehmen; das Duplikat selbst bleibt konsolidiert (sss=0).
 		const long srcStart = (long) _region->getSourceStartSample();
 
+		// Sample-akkurate Laenge: NICHT getNumSamples() — das geht im
+		// "reduced"-Pfad ueber `(getWidth()/zoom)*sampleRate` (int-Trunkierung)
+		// und verliert Samples, sobald die Pixel-Breite der Region nicht exakt
+		// zum Sample-Count passt. Genau das tritt bei frisch konsolidierten
+		// Regionen mit nicht-rationaler Quarter-Note-Sample-Laenge auf
+		// (typisch jedes Tempo ausser 60/120/240... bei 44.1/48 kHz): width
+		// und thumbnailBounds.width laufen je nach Codepfad einmal ueber round,
+		// einmal ueber trunc und unterscheiden sich um 1 Pixel — daraus wird in
+		// getNumSamples ein um bis zu samples-per-pixel zu kleiner Wert.
+		// trimmedNumSamples wird von jedem Ctor (Slice/Buffer/File/Record)
+		// sample-genau gesetzt und ist die richtige Quelle.
+		const long fullBuffer = (long) _region->getBuffer()->getNumSamples();
+		long numSamplesToCopy = _region->getTrimmedNumSamples();
+		if (numSamplesToCopy <= 0)
+			numSamplesToCopy = juce::jmax(0L, fullBuffer - srcStart);
+		// Nie ueber das Buffer-Ende hinaus kopieren — der slice-Ctor wuerde
+		// sonst beim copyFrom in JUCE asserten.
+		numSamplesToCopy = juce::jmin(numSamplesToCopy, juce::jmax(0L, fullBuffer - srcStart));
+
 		AudioRegion* duplicate = new AudioRegion(_region, *manager, sampleRate, srcStart, numSamplesToCopy);
 		duplicate->setDragger(dragger);
 
-		// Berechne die neue X-Position: direkt nach der ursprünglichen Region
-		int newX = region->getX() + region->getWidth();
-
-		// Berechne Sample-Offset aus der X-Position (in Pixeln)
-		long newSampleOffset = (long)((newX / zoom) * sampleRate);
+		// Sample-akkurate Platzierung: das Duplikat steht exakt einen Region-
+		// Block nach dem Source. Frueher lief der Offset ueber Pixel:
+		//   newX            = getX() + getWidth()      // pixel-int Summe
+		//   newSampleOffset = (long)((newX/zoom)*sr)   // (long) trunkiert
+		// Beide Schritte verlieren bis zu ein paar Samples (int-Pixel-Rundung
+		// + (long)-Trunkierung), nach ein paar Duplikaten ist die Region nicht
+		// mehr auf dem Takt. Direkt im Sample-Raum bleiben — kein Roundtrip.
+		long newSampleOffset = _region->getSampleOffset() + numSamplesToCopy;
 
 		// Falls die Stelle bereits belegt ist, an die nächste freie Position rücken.
 		newSampleOffset = findNextFreeOffset(nullptr, newSampleOffset, numSamplesToCopy);
-		newX = (int)((double)newSampleOffset / sampleRate * zoom);
 
-		// WICHTIG: Setze Bounds NACHDEM der Konstruktor die initiale Größe gesetzt hat
-		// und überschreibe die Breite mit der tatsächlichen Breite der Originalregion.
+		// Bounds aus exakten Samples mit konsistentem Runden (round, nicht
+		// trunc) — so faellt die Pixel-Breite des Duplikats deterministisch
+		// gleich gross aus wie die jedes anderen Duplikats derselben Source.
+		const int newX = (int) std::round((double) newSampleOffset / sampleRate * zoom);
+		const int newW = (int) std::round((double) numSamplesToCopy / sampleRate * zoom);
+
+		// WICHTIG: Setze Bounds NACHDEM der Konstruktor die initiale Größe gesetzt hat.
 		// Flag setzen, damit der componentMovedOrResized-Handler dieses setBounds
 		// nicht als User-Resize interpretiert (er wuerde sonst sourceStartSample
 		// auf newSampleOffset hochsetzen, der Lookup im Track::getSample landete
 		// dann hinter dem Buffer-Inhalt und die Region waere stumm).
-		Rectangle<int>* bounds = new Rectangle<int>(0, 0, region->getWidth(), getHeight());
+		Rectangle<int>* bounds = new Rectangle<int>(0, 0, newW, getHeight());
 		duplicate->setBoundsUpdateInProgress(true);
-		duplicate->setBounds(newX, 0, region->getWidth(), region->getHeight());
+		duplicate->setBounds(newX, 0, newW, region->getHeight());
 		duplicate->setBoundsUpdateInProgress(false);
 		duplicate->setThumbnailBounds(bounds);
 		duplicate->setLoopCount(0);
@@ -424,8 +447,12 @@ void Track::duplicateRegion(Region* region) {
 		clearSelection();
 		dragger->setSelected(duplicate, true);
 
-		// Setze den Sample-Offset und visuellen Offset
-		duplicate->setSampleOffset(newSampleOffset, false, false);
+		// quantize=false: das default-true im Region::setSampleOffset klemmt
+		// den Offset auf bufferSize-Vielfache ab (z.B. /512 *512). Genau das
+		// macht die "auf den Takt eingerastet"-Erwartung kaputt — wir haben den
+		// Offset oben sample-akkurat berechnet, kein Grund ihn wieder zu
+		// runden.
+		duplicate->setSampleOffset(newSampleOffset, false, false, false);
 		duplicate->setOffset(newX);
 		duplicate->setClipRefId(_region->getClipRefid());
 		duplicate->addChangeListener(this);
@@ -434,6 +461,18 @@ void Track::duplicateRegion(Region* region) {
 		// Dadurch wird die Position korrekt neu berechnet
 		if (zoom > 0)
 			duplicate->setZoom(zoom);
+
+		// setZoom ruft intern snapToQuarterNote(sampleOffset) — fuer Tempi,
+		// deren Viertelnote keine ganzzahlige Sample-Laenge hat (z.B. 110 BPM
+		// bei 44.1 kHz), schiebt das den Offset minimal weg, *und* setZoom
+		// schreibt die snappte Position zurueck. Fuer ein programmatisch
+		// platziertes Duplikat ist das ungewollt — Original-Position und
+		// -Breite hier wieder explizit setzen.
+		duplicate->setBoundsUpdateInProgress(true);
+		duplicate->setBounds(newX, 0, newW, region->getHeight());
+		duplicate->setBoundsUpdateInProgress(false);
+		duplicate->setSampleOffset(newSampleOffset, false, false, false);
+		duplicate->setOffset(newX);
 
 		// Kopiere nur die tatsächlich verwendeten Samples in den Track-Buffer
 		// (Magnitude-Anzeige). audioBuffer kann kuerzer sein, wenn die Region
@@ -457,10 +496,19 @@ void Track::duplicateRegion(Region* region) {
 		repaint();
 	}
 	else if (MidiRegion* mregion = dynamic_cast<MidiRegion*>(region)) {
-		long newOffset = mregion->getSampleOffset() + mregion->getNumSamples();
+		const long numSamples = (long) mregion->getNumSamples();
+		long newOffset = mregion->getSampleOffset() + numSamples;
 		// Falls die Stelle bereits belegt ist, an die nächste freie Position rücken.
-		newOffset = findNextFreeOffset(nullptr, newOffset, mregion->getNumSamples());
-		const int newX = (int)((double)newOffset / sampleRate * zoom);
+		newOffset = findNextFreeOffset(nullptr, newOffset, numSamples);
+
+		// Bounds aus exakten Samples mit konsistentem Runden — analog zum
+		// AudioRegion-Pfad. Vorher: newX per (long)-Trunkierung, Width per
+		// source->getWidth() (= source's gerundete Pixel-Breite, kann um 1 px
+		// von round(numSamples/sr*zoom) abweichen) → das Duplikat lag fuer
+		// nicht-rationale Tempi nicht exakt am Source-Ende.
+		const int newX = (int) std::round((double) newOffset  / sampleRate * zoom);
+		const int newW = (int) std::round((double) numSamples / sampleRate * zoom);
+
 		MidiRegion* clone = mregion->clone(newOffset);
 		clone->setDragger(dragger);
 		// Resize-Handler beim initialen Bounds-Set ausschalten — gleiche
@@ -468,7 +516,16 @@ void Track::duplicateRegion(Region* region) {
 		// gleichzeitig, der combined-resize-Branch in MidiRegion wuerde das
 		// sonst als User-Trim verstehen und sourceStartSample falsch setzen.
 		clone->setBoundsUpdateInProgress(true);
-		clone->setBounds(newX, 0, region->getWidth(), getHeight());
+		clone->setBounds(newX, 0, newW, getHeight());
+		clone->setBoundsUpdateInProgress(false);
+		// MidiRegion::clone() ruft intern setZoom() + setNumSamples() — beide
+		// stempeln nach unserem setBounds nochmal an die clone-eigene
+		// sampleOffset/numSamples-Math. Den raw sampleOffset und die Pixel-
+		// Bounds danach explizit wieder auf unsere sample-genauen Werte
+		// setzen, damit der Bar-Snap ueberlebt.
+		clone->setSampleOffset(newOffset, false, false, false);
+		clone->setBoundsUpdateInProgress(true);
+		clone->setBounds(newX, 0, newW, getHeight());
 		clone->setBoundsUpdateInProgress(false);
 		clone->addChangeListener(this);
 
@@ -834,11 +891,41 @@ juce::AudioSampleBuffer* Track::bounceRegionToBuffer(Region* sourceRegion)
 	if (mr == nullptr) return nullptr; // erste Version: nur MIDI -> Audio
 	if (pluginModule == nullptr || pluginModule->getPlugin() == nullptr) return nullptr;
 
-	auto* plugin = pluginModule->getPlugin();
+	auto* instrument = pluginModule->getPlugin();
 	const int sr        = (int) Project::getInstance()->getSampleRate();
 	const int blockSize = juce::jmax(64, Project::getInstance()->getBufferSize());
 	const long lenSamples = mr->getNumSamples();
 	if (lenSamples <= 0 || sr <= 0) return nullptr;
+
+	// Chain = Instrument + alle belegten Channel-Insert-FX in Slot-Reihenfolge.
+	// Diese Reihenfolge spiegelt den Realtime-Pfad (rewireChain: source ->
+	// fxChain[0] -> ... -> AudioOut), damit der Bounce klingt wie live.
+	struct ChainSlot {
+		PluginModule*              pm;
+		juce::AudioPluginInstance* p;
+	};
+	std::vector<ChainSlot> chain;
+	chain.push_back({ pluginModule, instrument });
+	for (int i = 0; i < NUM_FX_SLOTS; ++i) {
+		PluginModule* fx = fxPlugins[i];
+		if (fx == nullptr) continue;
+		auto* fxp = fx->getPlugin();
+		if (fxp == nullptr) continue;
+		chain.push_back({ fx, fxp });
+	}
+
+	// Summierte Plugin-Latenz der gesamten Kette. Plugins melden hier die
+	// Verzoegerung, die ihr Output gegenueber dem Input hat (z.B. Lookahead-
+	// Limiter, FFT-basierte EQs, Convolution-Reverbs). Ohne Kompensation
+	// rutscht das Bounce-Audio um diesen Betrag *nach hinten* relativ zur
+	// MIDI-Spur, weil wir die ersten N Samples am Ausgang noch aus dem leeren
+	// Pre-Roll bekommen. Wir rendern stattdessen lenSamples + totalLatency und
+	// werfen die fuehrenden totalLatency Samples weg.
+	int totalLatency = 0;
+	for (auto& s : chain)
+		totalLatency += juce::jmax(0, s.p->getLatencySamples());
+
+	const int renderLen = (int) lenSamples + totalLatency;
 
 	auto* outBuffer = new juce::AudioSampleBuffer(2, (int) lenSamples);
 	outBuffer->clear();
@@ -857,40 +944,91 @@ juce::AudioSampleBuffer* Track::bounceRegionToBuffer(Region* sourceRegion)
 		regionMidi.addEvent(*msg, t);
 	}
 
-	// Plugin offline vorbereiten + RAII-Reset.
-	struct PluginGuard {
-		PluginModule* pm; juce::AudioPluginInstance* p;
-		~PluginGuard() {
-			if (p) p->setNonRealtime(false);
-			if (pm) pm->setBounceMode(false);
+	// Plugins offline vorbereiten + RAII-Reset fuer die gesamte Kette.
+	struct ChainGuard {
+		std::vector<ChainSlot>* c;
+		~ChainGuard() {
+			if (c == nullptr) return;
+			for (auto& s : *c) {
+				if (s.p)  s.p->setNonRealtime(false);
+				if (s.pm) s.pm->setBounceMode(false);
+			}
 		}
-	} guard { pluginModule, plugin };
+	} guard { &chain };
 
-	plugin->setNonRealtime(true);
-	pluginModule->setBounceMode(true);
-	plugin->prepareToPlay((double) sr, blockSize);
+	for (auto& s : chain) {
+		s.p->setNonRealtime(true);
+		s.pm->setBounceMode(true);
+		s.p->prepareToPlay((double) sr, blockSize);
+		// reset() loescht Filter-/Delay-/Reverb-State von einer evtl. vorher
+		// laufenden Realtime-Wiedergabe — ohne das wuerde der Bounce mit dem
+		// Tail des letzten Live-Spielens beginnen.
+		s.p->reset();
+	}
 
-	juce::AudioSampleBuffer blockBuf(juce::jmax(2, plugin->getTotalNumOutputChannels()), blockSize);
-	for (int pos = 0; pos < (int) lenSamples; pos += blockSize)
+	// Eine gemeinsame Block-Buffer-Groesse fuer die ganze Kette: gross genug
+	// fuer den breitesten Plugin-IO der Kette, mindestens stereo.
+	int maxChs = 2;
+	for (auto& s : chain)
+		maxChs = juce::jmax(maxChs, s.p->getTotalNumInputChannels(), s.p->getTotalNumOutputChannels());
+
+	juce::AudioSampleBuffer blockBuf(maxChs, blockSize);
+	juce::MidiBuffer emptyMidi;
+
+	for (int pos = 0; pos < renderLen; pos += blockSize)
 	{
-		const int n = juce::jmin(blockSize, (int) lenSamples - pos);
+		const int n = juce::jmin(blockSize, renderLen - pos);
 
+		// MIDI nur in den ersten lenSamples einspeisen — der totalLatency-Tail
+		// danach ist reines "Plugin austrudeln lassen", keine neuen Noten.
 		juce::MidiBuffer slice;
-		for (const auto md : regionMidi)
-		{
-			const int sp = md.samplePosition;
-			if (sp >= pos && sp < pos + n)
-				slice.addEvent(md.getMessage(), sp - pos);
+		if (pos < (int) lenSamples) {
+			for (const auto md : regionMidi)
+			{
+				const int sp = md.samplePosition;
+				if (sp >= pos && sp < pos + n)
+					slice.addEvent(md.getMessage(), sp - pos);
+			}
 		}
 
+		// processBlock liest/schreibt in-place. Vor dem Instrument wird der
+		// Buffer geleert (kein Audio-Input ins Instrument), danach laeuft der
+		// Kette-Ausgang Plugin-zu-Plugin durch denselben Buffer.
 		blockBuf.clear();
-		plugin->processBlock(blockBuf, slice);
+		for (size_t i = 0; i < chain.size(); ++i)
+		{
+			auto* p = chain[i].p;
+			juce::MidiBuffer& mb = (i == 0) ? slice : emptyMidi;
+
+			if (n != blockSize) {
+				// JUCE processBlock verwendet immer buffer.getNumSamples() —
+				// fuer den letzten Teilblock auf n shrinken und danach wieder
+				// auf blockSize zurueckdrehen, damit Allokationen vermieden
+				// werden.
+				blockBuf.setSize(blockBuf.getNumChannels(), n, true, false, true);
+				p->processBlock(blockBuf, mb);
+				blockBuf.setSize(blockBuf.getNumChannels(), blockSize, true, false, true);
+			} else {
+				p->processBlock(blockBuf, mb);
+			}
+		}
+
+		// Latenzkompensiert in outBuffer schreiben: erst ab Sample-Index
+		// totalLatency im Render-Stream beginnt das, was zeitlich zu Sample 0
+		// der MIDI-Region gehoert. Vorhergehende Samples enthalten den
+		// Plugin-Pre-Roll und werden verworfen.
+		const int srcStart   = juce::jmax(0, totalLatency - pos); // 0 sobald wir hinter dem Pre-Roll sind
+		const int dstStart   = juce::jmax(0, pos - totalLatency);
+		const int copyAvail  = n - srcStart;
+		const int copyRoom   = (int) lenSamples - dstStart;
+		const int copyLen    = juce::jmin(copyAvail, copyRoom);
+		if (copyLen <= 0) continue;
 
 		const int chs = juce::jmin(2, blockBuf.getNumChannels());
 		for (int ch = 0; ch < chs; ++ch)
-			outBuffer->copyFrom(ch, pos, blockBuf, ch, 0, n);
+			outBuffer->copyFrom(ch, dstStart, blockBuf, ch, srcStart, copyLen);
 		if (chs == 1)
-			outBuffer->copyFrom(1, pos, blockBuf, 0, 0, n);
+			outBuffer->copyFrom(1, dstStart, blockBuf, 0, srcStart, copyLen);
 	}
 	return outBuffer;
 }
@@ -1382,11 +1520,15 @@ const float Track::getSample(int channel, long sample) {
 		                    + currentRegion->getSourceStartSample();
 		auto* buf = getBuffer();
 		if (buf != nullptr && inSource >= 0 && inSource < buf->getNumSamples()) {
+			// Per-region gain via virtual base call. Region default is 1.0,
+			// AudioRegion overrides; MIDI/instrument regions still return 1.0.
+			// Multiplying unconditionally avoids a branch in the audio loop.
+			const float g = currentRegion->getGain();
 			if (buf->getNumChannels() == 1) {
-				return buf->getSample(0, inSource);
+				return buf->getSample(0, inSource) * g;
 			}
 			else {
-				return buf->getSample(channel, inSource);
+				return buf->getSample(channel, inSource) * g;
 			}
 		}
 	}

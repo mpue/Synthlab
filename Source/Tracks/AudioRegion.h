@@ -117,6 +117,14 @@ public:
     float getPitch();
     void setPitch(float pitch);
 
+    // Per-region gain multiplier (1.0 = unity, 0.0 = silence, 2.0 = +6 dB).
+    // Applied at playback time in Track::getSample; the underlying buffer
+    // stays untouched, so undo just restores the old multiplier. Persisted
+    // by TrackNavigator under the "gain" property; SetGainForRegionAction
+    // is the canonical undoable mutation path.
+    float getGain() const override { return gain; }
+    void  setGain (float g) override;
+
     // Load-only Setter: setzt das Pitch-State-Member OHNE Rubberband-Shift.
     // Wird beim Projekt-Open verwendet, weil der geladene WAV bereits in
     // diesem Pitch-State steckt — ein erneutes setPitch wuerde den Shift
@@ -148,6 +156,12 @@ public:
     // 0 = "nie explizit gesetzt" -> Save faellt auf die alte Pixel-Math zurueck.
     long getTrimmedNumSamples() const { return trimmedNumSamples; }
     void setTrimmedNumSamples(long s) { trimmedNumSamples = juce::jmax(0L, s); }
+
+    // PropertyView "Length"-Edit. Klemmt gegen Buffer-Ende und Nachbar-Region
+    // (clampLengthForRegion) und stempelt Bounds/trimmedNumSamples sample-
+    // genau. Sehr aehnlich zum Right-Edge-Resize, aber ohne Constrainer- und
+    // Drag-Pfade.
+    void setLengthSamples(long n) override;
 
 private:
 
@@ -185,6 +199,23 @@ private:
         juce::Value value;
     };
 
+    // Bridges the property-panel slider to setGain. Slider edits are NOT
+    // routed through SetGainForRegionAction — that matches the existing
+    // pitch/refTempo convention in this file, where property edits mutate
+    // the region directly. Undo of slider edits is therefore not supported;
+    // scripts / future actions are the canonical undoable path.
+    struct GainListener : juce::Value::Listener
+    {
+        GainListener(juce::Value& v, AudioRegion* r) : region(r), value(v) { value.addListener(this); }
+        ~GainListener() {}
+
+        void valueChanged(juce::Value& value) override {
+            region->setGain(value.toString().getFloatValue());
+        }
+        AudioRegion* region;
+        juce::Value value;
+    };
+
 
     AudioSampleBuffer* audioBuffer;
     AudioSampleBuffer* audioBufferProcessed = nullptr;
@@ -199,6 +230,7 @@ private:
     // auf das aktuelle Projekt-Tempo gesetzt (= "diese Aufnahme war auf X BPM").
     double referenceTempo = 120.0;
     bool   followTempo    = false;
+    float  gain           = 1.0f;
 
     // Resize-Gesture-Basis: speichern beim ersten Tick (sentinel = -1) und
     // sourceStartSample im laufenden Resize absolut daraus berechnen, statt
@@ -245,6 +277,10 @@ private:
     FollowTempoListener* followTempoListener = nullptr;
     juce::Value* followTempoValue = nullptr;
     juce::PropertyComponent* followTempoProp = nullptr;
+
+    GainListener* gainListener = nullptr;
+    juce::Value* gainValue = nullptr;
+    juce::PropertyComponent* gainProp = nullptr;
 
     float* tempBufferLeft = nullptr;
     float* tempBufferRight = nullptr;

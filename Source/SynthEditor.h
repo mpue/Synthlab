@@ -66,6 +66,19 @@ public:
     // openFile() and external callers (main menu "Open Recent") route through
     // this so every load path runs the same module+track restore sequence.
     void openFile(juce::File file);
+
+    // Save the current project to `target` without opening a chooser dialog.
+    // Used by synthlab.project.save() — flips Project's currentFilePath +
+    // newFile state to redirect saveFile()'s write to the target, then runs
+    // the normal save pipeline. Returns true if the file exists afterwards.
+    // NOTE: this DOES mutate Project::currentFilePath as a side effect; for
+    // the scripted-test use case that's acceptable, the test cleans up.
+    bool saveFileTo(const juce::File& target);
+
+    // Load a project from `source` without showing the "discard dirty?"
+    // prompt. The dirty flag is cleared first so confirmDiscardIfDirty()
+    // returns true silently. Returns false if the file doesn't exist.
+    bool openFileNoPrompt(const juce::File& source);
     void openTracks(File file);
     void loadMidiRegions(juce::ValueTree& track, Track* t);
     void openSampleEditor(SamplerModule* sm);

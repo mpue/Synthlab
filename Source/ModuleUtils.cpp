@@ -17,6 +17,7 @@
 #include "LabelModule.h"
 #include "MidiGate.h"
 #include "ADSRModule.h"
+#include "TriggerScriptModule.h"
 #include "SineModule.h"
 #include "SamplerModule.h"
 #include "Monophonic.h"
@@ -77,6 +78,15 @@ void ModuleUtils::loadStructure(std::vector<Module*>* modules, std::vector<Conne
 			int sel = (int)mod.getProperty("selection", 0);
 			rgm->setNumButtons(nb);
 			rgm->setSelection(sel);
+			// Labels/Values nach setNumButtons setzen — setLabelsCsv passt
+			// numButtons noch einmal an die tatsaechliche Listen-Laenge an
+			// (falls altes Save mit kleinerem nb gespeichert wurde).
+			// Backwards-compat: aeltere Saves ohne diese Properties bleiben
+			// mit Default "0,1,2,..." Labels/Values bestehen.
+			if (mod.hasProperty("labels"))
+				rgm->setLabelsCsv(mod.getProperty("labels").toString());
+			if (mod.hasProperty("values"))
+				rgm->setValuesCsv(mod.getProperty("values").toString());
 		}
 
 		VolumeAdjustable* _v;
@@ -421,6 +431,14 @@ void ModuleUtils::configureModule(Module* m, ValueTree& mod, ChangeBroadcaster* 
 		c->setValue(mod.getProperty("value").toString().getFloatValue());
 	}
 
+	// TriggerScriptModule: restore the bound macro path. Missing property
+	// (older project files) -> empty string -> module is harmless until the
+	// user picks something via the property panel.
+	TriggerScriptModule* trig = nullptr;
+	if ((trig = dynamic_cast<TriggerScriptModule*>(m)) != nullptr) {
+		trig->setMacroPath(mod.getProperty("macroPath").toString());
+	}
+
 	SamplerModule* sm;
 
 	if ((sm = dynamic_cast<SamplerModule*>(m)) != nullptr) {
@@ -600,6 +618,13 @@ void ModuleUtils::saveStructure(std::vector<Module*>* modules, std::vector<Conne
 			file.setProperty("channel", gate->getChannel(), nullptr);
 		}
 
+		// TriggerScriptModule: persist the chosen .js file path. Empty
+		// string is legal (= no macro bound, gate events ignored).
+		TriggerScriptModule* trig = nullptr;
+		if ((trig = dynamic_cast<TriggerScriptModule*>((*it))) != nullptr) {
+			file.setProperty("macroPath", trig->getMacroPath(), nullptr);
+		}
+
 		SamplerModule* sm;
 
 		if ((sm = dynamic_cast<SamplerModule*>((*it))) != nullptr) {
@@ -698,6 +723,8 @@ void ModuleUtils::saveStructure(std::vector<Module*>* modules, std::vector<Conne
 		if ((rgm = dynamic_cast<RadioGroupModule*>(*it)) != nullptr) {
 			file.setProperty("numButtons", rgm->getNumButtons(), nullptr);
 			file.setProperty("selection",  rgm->getSelection(),  nullptr);
+			file.setProperty("labels",     rgm->labelsCsv(),     nullptr);
+			file.setProperty("values",     rgm->valuesCsv(),     nullptr);
 		}
 
 		ValueTree pins = ValueTree("Pins");

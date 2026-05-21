@@ -71,6 +71,20 @@ public:
         applySynthlabSelectorPalette(outputTypeBox);
         outputTypeBox.addListener(this);
         addAndMakeVisible(outputTypeBox);
+
+        autoOpenPluginToggle.setButtonText("Open plugin window automatically");
+        autoOpenPluginToggle.setColour(juce::ToggleButton::textColourId, kTextPrimary);
+        autoOpenPluginToggle.setColour(juce::ToggleButton::tickColourId, kAccentColour);
+        autoOpenPluginToggle.setColour(juce::ToggleButton::tickDisabledColourId, kBorderColour);
+        autoOpenPluginToggle.setToggleState(
+            Settings::getInstance()->getOpenPluginWindowAutomatically(),
+            juce::dontSendNotification);
+        autoOpenPluginToggle.onClick = [this]
+        {
+            Settings::getInstance()->setOpenPluginWindowAutomatically(
+                autoOpenPluginToggle.getToggleState());
+        };
+        addAndMakeVisible(autoOpenPluginToggle);
     }
 
     void resized() override
@@ -80,6 +94,10 @@ public:
         auto row = area.removeFromTop(34);
         outputTypeLabel.setBounds(row.removeFromLeft(260));
         outputTypeBox.setBounds(row.removeFromLeft(180));
+
+        area.removeFromTop(10);
+        auto row2 = area.removeFromTop(28);
+        autoOpenPluginToggle.setBounds(row2.removeFromLeft(440));
     }
 
     void paint(juce::Graphics& g) override
@@ -99,8 +117,9 @@ private:
         }
     }
 
-    juce::Label    outputTypeLabel;
-    juce::ComboBox outputTypeBox;
+    juce::Label        outputTypeLabel;
+    juce::ComboBox     outputTypeBox;
+    juce::ToggleButton autoOpenPluginToggle;
 };
 
 AudioSettingsDialog::AudioSettingsDialog(juce::AudioDeviceManager& dm)

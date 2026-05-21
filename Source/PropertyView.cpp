@@ -93,6 +93,16 @@ PropertyView::PropertyView () : TimeSliceThread("PropertyWatcher")
 
     propertyTab->addTab("Properties", stripBg, propertyPanel = new PropertyPanel(), true);
 
+    // Custom L&F bypasses ElegantDarkLookAndFeel's chartreuse/red LinearBar
+    // gradient (designed for synth-module knobs) and adds the right gutter
+    // + narrower label allotment that keeps slider strips usable in slim
+    // property panes. Paint overrides live in PropertyPanelLookAndFeel.h;
+    // the colour table there mirrors the ones set right below — kept here
+    // explicitly too so a future refactor that drops the L&F still renders
+    // the strip backgrounds correctly.
+    propertyPanelLnf = std::make_unique<PropertyPanelLookAndFeel>();
+    propertyPanel->setLookAndFeel(propertyPanelLnf.get());
+
     propertyPanel->setMessageWhenEmpty("Nothing to display.");
     propertyPanel->setColour(juce::PropertyComponent::labelTextColourId,   textHi);
     propertyPanel->setColour(juce::PropertyComponent::backgroundColourId,  stripBg);
@@ -182,6 +192,12 @@ PropertyView::PropertyView () : TimeSliceThread("PropertyWatcher")
 PropertyView::~PropertyView()
 {
     //[Destructor_pre]. You can add your own custom destruction code here..
+    // Detach the custom L&F before propertyTab (which owns propertyPanel) is
+    // reset. setLookAndFeel(nullptr) walks the children and clears their
+    // pointers; doing this AFTER the panel is destroyed would dereference
+    // a freed component. Order matters.
+    if (propertyPanel != nullptr)
+        propertyPanel->setLookAndFeel(nullptr);
     //[/Destructor_pre]
 
     propertyTab = nullptr;

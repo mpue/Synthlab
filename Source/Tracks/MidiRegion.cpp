@@ -18,16 +18,13 @@ MidiRegion::MidiRegion(long startSample, long sampleLength, double sampleRate, M
     this->midiBuffer = new MidiBuffer();
     this->midiThumbnail = new MidiThumbnail(sampleRate);
     this->sampleRate = sampleRate;
-    // Align to bufferSize so the raw sampleOffset member matches what
-    // getSampleOffset() returns. Otherwise visual rendering (uses raw
-    // sampleOffset) and MIDI dispatch / timestamping (uses the aligned
-    // getSampleOffset) drift apart by up to bufferSize-1 samples — invisible
-    // at low zoom, but at high zoom that gap turns into many pixels of
-    // apparent note misalignment.
-    {
-        const int bs = Project::getInstance()->getBufferSize();
-        this->sampleOffset = bs > 0 ? (startSample / bs) * bs : startSample;
-    }
+    // Frueher: hier wurde sampleOffset auf bufferSize-Vielfache gefloored, weil
+    // Region::getSampleOffset() das beim Lesen ebenfalls tat — sonst driftete
+    // visuelles Rendering (raw sampleOffset) gegen MIDI-Dispatch (aligned).
+    // Beide Pfade lesen jetzt den rohen Wert, das Workaround-Floor ist obsolet
+    // und hat aktiv das Snap-to-Bar fuer Duplikate (clone() ruft diesen Ctor
+    // mit exaktem Bar-Offset auf) zerstoert.
+    this->sampleOffset = startSample;
     this->name = "new";
     this->zoom = 40;
     this->numSamples = sampleLength;
@@ -455,6 +452,20 @@ void MidiRegion::setNumSamples(int numSamples) {
     this->numSamples = numSamples;
     setBounds(getX(), getY(), (int)std::round(numSamples / sampleRate * zoom), getHeight());
     updateThumb();
+}
+
+void MidiRegion::setLengthSamples(long n)
+{
+    if (n <= 0) return;
+    // Wie der Right-Edge-Resize: gegen die naechste Region klemmen, damit das
+    // PropertyView-Edit keine Ueberlappungen erzeugt.
+    if (auto* parentTrack = dynamic_cast<Track*>(getParentComponent())) {
+        const long maxLen = parentTrack->clampLengthForRegion(this, sampleOffset, n);
+        if (maxLen > 0 && maxLen < n)
+            n = maxLen;
+    }
+    setNumSamples((int) n);
+    sendChangeMessage();
 }
 
 int MidiRegion::getNumSamples() {

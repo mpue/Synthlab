@@ -36,6 +36,11 @@ public:
   
     void setNumSamples(int numSamples);
     virtual int getNumSamples() override;
+
+    // PropertyView "Length"-Edit. Klemmt gegen die naechste Region auf der
+    // Spur (clampLengthForRegion), damit Eingaben wie "999.0.0" nicht das
+    // Layout der Nachbarn ueberrollen.
+    void setLengthSamples(long n) override;
     
     MidiBuffer* getBuffer();
     MidiMessageSequence* getSequence();

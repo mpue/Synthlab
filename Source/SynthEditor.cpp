@@ -86,6 +86,13 @@ SynthEditor::SynthEditor(double sampleRate, int buffersize)
 	selectionModel.setRoot(root.get());
 
 	setRepaintsOnMouseActivity(true);
+	// Focus-Setup parallel zum Default-Ctor — sonst hat ein per-openSubModule
+	// erzeugter Sub-Editor nie Keyboard-Focus, modifierKeysChanged feuert
+	// nicht (isLeftShiftDown bleibt false), und Shift-A im Sub-Modul oeffnet
+	// nie das Add-Menue.
+	setMouseClickGrabsKeyboardFocus(true);
+	setWantsKeyboardFocus(true);
+	setInterceptsMouseClicks(true, true);
 	addChildComponent(root.get());
 
 	// ~30 Hz: drives the pin-activity glow (event fade + audio peak decay).
@@ -674,7 +681,7 @@ bool SynthEditor::showModuleContextMenu(Point<int> position, Module* module) {
 	Knob* k = nullptr;
 
 	if ((k = dynamic_cast<Knob*>(module)) != nullptr) {
-		menu.addItem(5, "MIDI learn");		
+		menu.addItem(5, "MIDI learn");
 	}
 
 	if (menu.getNumItems() > 0) {
@@ -714,8 +721,83 @@ bool SynthEditor::showModuleContextMenu(Point<int> position, Module* module) {
 	menu.setLookAndFeel(nullptr);
 }
 
+namespace {
+	// ID offset for user-module menu items — kept well above the highest
+	// PrefabFactory ID so the two ranges can't collide.
+	constexpr int kUserModuleMenuIdBase = 100000;
+
+	juce::File getUserModulesDir()
+	{
+		auto dir = juce::File::getSpecialLocation(juce::File::userHomeDirectory)
+					   .getChildFile(".Synthlab/modules");
+		if (!dir.exists())
+			dir.createDirectory();
+		return dir;
+	}
+
+	struct UserModuleFileCmp
+	{
+		int compareElements(const juce::File& a, const juce::File& b) const
+		{
+			return a.getFileName().compareNatural(b.getFileName());
+		}
+	};
+
+	// Underscores in filenames are treated as word separators: each segment
+	// becomes its own word, joined by spaces, with the first character of
+	// each segment upper-cased. The remaining characters keep their original
+	// case (so "LFO_module" reads as "LFO Module", not "Lfo Module").
+	juce::String prettifyUserModuleName(const juce::String& raw)
+	{
+		juce::StringArray parts;
+		parts.addTokens(raw, "_", {});
+		parts.removeEmptyStrings();
+
+		for (auto& p : parts)
+			if (p.isNotEmpty())
+				p = p.substring(0, 1).toUpperCase() + p.substring(1);
+
+		return parts.joinIntoString(" ");
+	}
+
+	// Recursively populate `menu` from `dir`: subfolders become submenus
+	// (skipped if they contain no .slb file anywhere underneath, so the user
+	// does not see empty branches), .slb files become leaf items. `files` is
+	// the flat lookup table — its index plus kUserModuleMenuIdBase is the
+	// assigned menu ID.
+	void buildUserModulesMenu(const juce::File& dir,
+							  juce::PopupMenu& menu,
+							  std::vector<juce::File>& files)
+	{
+		juce::Array<juce::File> subdirs;
+		dir.findChildFiles(subdirs, juce::File::findDirectories, false);
+		UserModuleFileCmp cmp;
+		subdirs.sort(cmp);
+
+		for (const auto& sub : subdirs)
+		{
+			juce::PopupMenu sm;
+			const size_t beforeCount = files.size();
+			buildUserModulesMenu(sub, sm, files);
+			if (files.size() != beforeCount)
+				menu.addSubMenu(prettifyUserModuleName(sub.getFileName()), sm);
+		}
+
+		juce::Array<juce::File> slbFiles;
+		dir.findChildFiles(slbFiles, juce::File::findFiles, false, "*.slb");
+		slbFiles.sort(cmp);
+
+		for (const auto& f : slbFiles)
+		{
+			const int id = kUserModuleMenuIdBase + (int) files.size();
+			files.push_back(f);
+			menu.addItem(id, prettifyUserModuleName(f.getFileNameWithoutExtension()));
+		}
+	}
+}
+
 void SynthEditor::showPrefabMenu(Point<int> position) {
-	
+
 	PopupMenu prefabMenu = PopupMenu();
 	prefabMenu.setLookAndFeel(Project::getInstance()->getLookAndFeel());
 
@@ -746,16 +828,59 @@ void SynthEditor::showPrefabMenu(Point<int> position) {
 		prefabMenu.addSubMenu(categories->getReference(i), category, true);
 	}
 
+	// Scan ~/.Synthlab/modules/ — user-saved .slb modules become a "User
+	// Modules" submenu at the bottom of the Add menu. Subfolders nest as
+	// submenus, mirroring the on-disk layout.
+	std::vector<juce::File> userModuleFiles;
+	PopupMenu userModulesMenu;
+	buildUserModulesMenu(getUserModulesDir(), userModulesMenu, userModuleFiles);
+	if (!userModuleFiles.empty()) {
+		prefabMenu.addSeparator();
+		prefabMenu.addSubMenu("User Modules", userModulesMenu, true);
+	}
+
 	const int result = prefabMenu.show();
 	prefabMenu.setLookAndFeel(nullptr);
 
 
-	if (result > 0) {
-		AddModuleAction* am = new AddModuleAction(this, position, result);
+	if (result <= 0)
+		return;
+
+	if (result >= kUserModuleMenuIdBase) {
+		const int idx = result - kUserModuleMenuIdBase;
+		if (idx < 0 || idx >= (int) userModuleFiles.size())
+			return;
+
+		const File& file = userModuleFiles[(size_t) idx];
+
+		std::unique_ptr<XmlElement> xml = XmlDocument(file).getDocumentElement();
+		if (xml == nullptr)
+			return;
+
+		ValueTree v = ValueTree::fromXml(*xml);
+
+		setRunning(false);
+		Module* loaded = ModuleUtils::loadFromXml(v, this);
+		if (loaded == nullptr) {
+			setRunning(true);
+			return;
+		}
+		loaded->setName(v.getProperty("name"));
+
+		// Reuse the existing prefab path so this is a single undoable step.
+		// Pre-setting the module short-circuits the PrefabFactory lookup
+		// inside perform(); the moduleId only needs to clear the `< 1` guard.
+		AddModuleAction* am = new AddModuleAction(this, position, 1);
+		am->setModule(loaded);
 		Project::getInstance()->getUndoManager()->beginNewTransaction();
 		Project::getInstance()->getUndoManager()->perform(am);
+		setRunning(true);
+		return;
 	}
 
+	AddModuleAction* am = new AddModuleAction(this, position, result);
+	Project::getInstance()->getUndoManager()->beginNewTransaction();
+	Project::getInstance()->getUndoManager()->perform(am);
 }
 
 void SynthEditor::showCommonContextMenu(Point<int> position) {
@@ -1614,7 +1739,25 @@ void SynthEditor::cleanUp() {
 		}
 	}
 
+	// MasterChannelPanel haelt einen Raw-Pointer auf eine VolumeAdjustable
+	// (Master-AudioOut oder Track-AudioOut/AuxOut). Slider-Listener feuern
+	// via AsyncUpdater — bereits gequeue'te Slider-Events koennen erst NACH
+	// cleanUp aus der Message-Queue dispatchen und dann auf das schon
+	// freigegebene Modul derefen (vtable-UAF in sliderValueChanged → setVolume).
+	// Pointer auf ALLEN Channel-Strips nullen — Track-Strips UND Master —
+	// BEVOR irgendwas geloescht wird. Der Null-Check am Anfang von
+	// sliderValueChanged greift dann statt des Crashs.
+	if (mixer != nullptr) {
+		for (auto* panel : mixer->getChannels()) {
+			if (panel != nullptr) panel->setModule(nullptr);
+		}
+		if (auto* master = mixer->getMasterPanel()) {
+			master->setModule(nullptr);
+		}
+	}
+
 	mixer->removeAllChannels();
+
 	for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); it++) {
 		ModuleUtils::removeModule(root.get(), (*it), getMixer().get(), this);
 	}
@@ -1766,7 +1909,15 @@ void SynthEditor::loadFromString(juce::String in) {
 
 void SynthEditor::saveModule(Module* m) {
 
-	FileChooser chooser("Select target file...", File(), "*");
+	// Pre-select ~/.Synthlab/modules/ and suggest "<moduleName>.slb" so the
+	// saved file lands where the Add menu's "User Modules" submenu scans.
+	const File modulesDir = getUserModulesDir();
+	const String suggestedName = m != nullptr && m->getName().isNotEmpty()
+								   ? m->getName() + ".slb"
+								   : String("module.slb");
+	const File initial = modulesDir.getChildFile(suggestedName);
+
+	FileChooser chooser("Select target file...", initial, "*.slb");
 
 	if (chooser.browseForFileToSave(true)) {
 
@@ -2020,6 +2171,13 @@ void SynthEditor::openEditor(Module* m) {
 	editor->setIndex(static_cast<int>(m->getIndex()));
 	editor->setTab(tab);
 	editor->addEditorListener(Project::getInstance()->getPropertyView());
+	// SynthEditor implementiert KeyListener (zwei-Argument keyPressed). Damit
+	// modifierKeysChanged + keyPressed im Sub-Editor ueberhaupt feuern (Shift-A
+	// fuer Add-Menue, Cmd-A fuer Select-All), muss der Editor als KeyListener
+	// auf sich selbst registriert sein — beim Haupt-Editor uebernimmt das
+	// EditorComponent ueber topLevel->addKeyListener. Im Sub-Tab gibt es das
+	// Setup nicht, also hier dranschrauben.
+	editor->addKeyListener(editor);
 	tab->addTab(m->getName(), Colours::darkgrey, editorView, false);
 	openViews.push_back(editorView);
 	tab->setCurrentTabIndex(tab->getNumTabs() - 1);
@@ -2231,11 +2389,46 @@ void SynthEditor::openFile(juce::File file) {
 
 	setRunning(true);
 }
+
+bool SynthEditor::saveFileTo(const juce::File& target)
+{
+	if (target == juce::File()) return false;
+
+	// saveFile() opens a chooser only when isNewFile() is true; otherwise it
+	// writes to currentFilePath. Redirect it by flipping both into the
+	// "non-new, has-path" state.
+	//
+	// saveFile()'s non-chooser branch additionally guards on file.exists() -
+	// it only overwrites existing files, never creates fresh ones. Touch the
+	// target first so the guard engages. juce::File::create also creates any
+	// missing parent directories.
+	target.create();
+
+	auto* p = Project::getInstance();
+	p->setCurrentFilePath(target.getFullPathName());
+	p->setNewFile(false);
+	saveFile();
+	return target.existsAsFile();
+}
+
+bool SynthEditor::openFileNoPrompt(const juce::File& source)
+{
+	if (!source.existsAsFile()) return false;
+	// confirmDiscardIfDirty() (called inside openFile(File)) is a no-op when
+	// the project isn't dirty — clear the flag preemptively so no modal
+	// pops up on the message thread mid-script.
+	setDirty(false);
+	openFile(source);
+	return true;
+}
 #else
 void SynthEditor::openFile(juce::File /*file*/) {
 	// On iOS files are accessed through URLs/InputStreams; the no-arg openFile()
 	// handles that path inline.
 }
+
+bool SynthEditor::saveFileTo(const juce::File& /*target*/) { return false; }
+bool SynthEditor::openFileNoPrompt(const juce::File& /*source*/) { return false; }
 #endif
 
 namespace {
@@ -2425,6 +2618,13 @@ void SynthEditor::openTracks(File file)
 							// adoptLoadedPitch.
 							ar->adoptLoadedPitch((float) (double) pitchVar);
 						}
+
+						// Per-region gain (linear). Property absent in legacy
+						// projects -> default 1.0 from the AudioRegion member
+						// remains in effect.
+						const juce::var gainVar = region.getProperty("gain");
+						if (! gainVar.isVoid())
+							ar->setGain((float) (double) gainVar);
 					}
 
 					// Trim mit unterdruecktem componentMovedOrResized-Handler

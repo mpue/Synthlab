@@ -395,7 +395,7 @@ private:
             juce::String label = (slot == juce::String("instr"))
                 ? juce::String("Instrument")
                 : juce::String("FX ") + juce::String(slot.substring(2).getIntValue() + 1);
-            label += "  —  " + (pm != nullptr ? pm->getPluginName() : juce::String("?"));
+            label += " - " + (pm != nullptr ? pm->getPluginName() : juce::String("?"));
             pluginBox.addItem(label, (int) i + 1);
         }
 

@@ -223,6 +223,9 @@ MainComponent::~MainComponent()
 		// createStudioLayout). Zerstörung VOR editorView, damit diese Pointer
 		// auch bei einer aufgeräumten Teardown-Order garantiert nie auf tote
 		// Objekte zeigen — auch wenn der aktuelle Dtor sie nicht dereferenziert.
+		// Project hält ebenfalls einen Raw-Pointer auf jsEditor — vor dem reset
+		// nullen, sonst dangling.
+		Project::getInstance()->setJavaScriptEditor(nullptr);
 		jsEditor = nullptr;
 
 		// Reihenfolge: editorView ZUERST, dann propertyView. editorView=nullptr
@@ -650,6 +653,11 @@ void MainComponent::createStudioLayout() {
 	jsEditor = std::make_unique<JavaScriptEditorComponent>();
 	jsEditor->setTransportNavigator(editorView->getNavigator());
 	jsEditor->setSynthEditor(editor);
+	jsEditor->setEditorView(editorView.get());
+	jsEditor->setTransportDisplay(transportDisplay.get());
+	// Publish to Project so modules (e.g. TriggerScriptModule) can reach the
+	// JS editor without each one needing its own setter wiring from here.
+	Project::getInstance()->setJavaScriptEditor(jsEditor.get());
 	addAndMakeVisible(jsResizerBar);
 	addAndMakeVisible(jsEditor.get());
 
@@ -1193,8 +1201,12 @@ void MainComponent::resized()
 				false, true);
 		}
 
-		if (propertyView != nullptr && propertyView->getParentComponent() != nullptr)
-			propertyView->setSize(r.getWidth() - editorView->getWidth(), propertyView->getHeight());
+		// stretchableManager.layOutComponents above hat propertyView bereits
+		// auf die korrekte Breite (Item 0 in der 5-Item-Reihe) gesetzt. Die
+		// alte Zeile `propertyView->setSize(r.getWidth() - editorView->getWidth(), …)`
+		// stammte aus dem 3-Item-Layout und ueberschreibt diese Breite mit
+		// `propW + zwei Resizer + jsEditor` -> propertyView ragt unter editor/
+		// jsEditor und seine Slider laufen unsichtbar rechts raus. Entfernt.
 		if (getParentComponent() != nullptr) {
 			if (cpuLoadLabel != nullptr) {
 				cpuLoadLabel->setBounds(getParentComponent()->getWidth() - 50, 0, 50, 20);
@@ -1222,7 +1234,9 @@ namespace {
     // this file: 5..15, 41..49, 60..80, 200..207, undoCommand, 999, 1000+i
     // (samples), 2000+i (recent). 5000+ gives us plenty of headroom for nested
     // macro folders without collisions.
-    constexpr int kMacroMenuIdBase = 5000;
+    constexpr int kMacroMenuIdBase   = 5000;
+    constexpr int kTestMenuIdBase    = 7000;
+    constexpr int kRunAllTestsId     = 6999;  // sits just before the test range
 
     juce::File getMacroDir()
     {
@@ -1230,6 +1244,16 @@ namespace {
                        .getChildFile (".Synthlab/macros");
         if (! dir.exists())
             dir.createDirectory();  // best-effort; if it fails the menu just stays empty
+        return dir;
+    }
+
+    juce::File getTestDir()
+    {
+        // User asked for ".Synthlab/test" (singular) — respecting that spelling.
+        auto dir = juce::File::getSpecialLocation (juce::File::userHomeDirectory)
+                       .getChildFile (".Synthlab/test");
+        if (! dir.exists())
+            dir.createDirectory();
         return dir;
     }
 
@@ -1244,11 +1268,13 @@ namespace {
     // Recursively populate `menu` from `dir`: subdirectories become submenus
     // (skipped if they contain no .js anywhere underneath, so the user does
     // not see empty branches), .js files become items. `files` is the flat
-    // lookup table used by menuItemSelected — its index plus kMacroMenuIdBase
-    // is the assigned menu ID.
-    void buildMacroMenu (const juce::File& dir,
-                         juce::PopupMenu& menu,
-                         std::vector<juce::File>& files)
+    // lookup table used by menuItemSelected — its index plus `idBase` is the
+    // assigned menu ID. Shared by both the Macros menu and the Tests menu;
+    // the only difference is the ID base they pass in.
+    void buildScriptMenu (const juce::File& dir,
+                          juce::PopupMenu& menu,
+                          std::vector<juce::File>& files,
+                          int idBase)
     {
         juce::Array<juce::File> subdirs;
         dir.findChildFiles (subdirs, juce::File::findDirectories, false);
@@ -1259,7 +1285,7 @@ namespace {
         {
             juce::PopupMenu sm;
             const size_t beforeCount = files.size();
-            buildMacroMenu (sub, sm, files);
+            buildScriptMenu (sub, sm, files, idBase);
             if (files.size() != beforeCount)  // only show non-empty branches
                 menu.addSubMenu (sub.getFileName(), sm);
         }
@@ -1270,7 +1296,7 @@ namespace {
 
         for (const auto& f : jsFiles)
         {
-            const int id = kMacroMenuIdBase + (int) files.size();
+            const int id = idBase + (int) files.size();
             files.push_back (f);
             menu.addItem (id, f.getFileNameWithoutExtension());
         }
@@ -1415,7 +1441,7 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 	if (menuName == "Macros") {
 		macroFiles.clear();
 		const auto dir = getMacroDir();
-		buildMacroMenu (dir, menu, macroFiles);
+		buildScriptMenu (dir, menu, macroFiles, kMacroMenuIdBase);
 
 		if (macroFiles.empty()) {
 			menu.addItem (0, "(drop .js files in " + dir.getFullPathName() + ")",
@@ -1423,10 +1449,62 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		}
 	}
 
+	// Tests: dedicated menu rooted at ~/.Synthlab/test/. Has a fixed "Run All
+	// Tests" entry at the top, then a separator, then the discovered files.
+	if (menuName == "Tests") {
+		testFiles.clear();
+		const auto dir = getTestDir();
+		// "Run All" added first; only enabled if there's actually something to run.
+		// We tentatively add it now and let menuItemSelected handle the empty case.
+		menu.addItem (kRunAllTestsId, "Run All Tests");
+		menu.addSeparator();
+
+		buildScriptMenu (dir, menu, testFiles, kTestMenuIdBase);
+
+		if (testFiles.empty()) {
+			menu.addItem (0, "(drop .js test files in " + dir.getFullPathName() + ")",
+			              false, false);
+		}
+	}
+
 	return menu;
 }
 
 void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
+
+	// Run All Tests — fires before the test-ID range so it has its own
+	// sentinel ID (sits just below kTestMenuIdBase).
+	if (menuItemID == kRunAllTestsId) {
+		if (jsEditor == nullptr || testFiles.empty()) return;
+
+		int passed = 0, failed = 0;
+		jsEditor->appendOutput (
+			juce::String ("==== Running ") + juce::String ((int) testFiles.size())
+				+ " test file(s) ====\n",
+			juce::Colours::cornflowerblue);
+
+		for (const auto& f : testFiles) {
+			if (jsEditor->runFile (f)) ++passed;
+			else                       ++failed;
+		}
+
+		const juce::String summary =
+			juce::String ("==== Test summary: ") + juce::String (passed) + " passed, "
+				+ juce::String (failed) + " failed ====\n";
+		jsEditor->appendOutput (summary,
+			failed == 0 ? juce::Colours::lightgreen : juce::Colours::tomato);
+		return;
+	}
+
+	// Tests: individual file IDs sit in [kTestMenuIdBase, kMacroMenuIdBase).
+	// Check this BEFORE the macro range because kMacroMenuIdBase < kTestMenuIdBase
+	// would otherwise grab everything (the macros check is "id >= 5000").
+	if (menuItemID >= kTestMenuIdBase) {
+		const size_t idx = (size_t) (menuItemID - kTestMenuIdBase);
+		if (idx < testFiles.size() && jsEditor != nullptr)
+			jsEditor->runFile (testFiles[idx]);
+		return;
+	}
 
 	// Macros: IDs starting at kMacroMenuIdBase index into macroFiles, which
 	// was populated by the most recent getMenuForIndex("Macros", ...) call.
@@ -1786,9 +1864,9 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 StringArray MainComponent::getMenuBarNames() {
 
 #if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
-	const char* const names[] = { "File", "View","Plugins", "Edit", "Region", "Macros", nullptr };
+	const char* const names[] = { "File", "View","Plugins", "Edit", "Region", "Macros", "Tests", nullptr };
 #else
-	const char* const names[] = { "File", "View", "Edit", "Macros", nullptr };
+	const char* const names[] = { "File", "View", "Edit", "Macros", "Tests", nullptr };
 #endif
 
 	return StringArray(names);
@@ -2053,6 +2131,19 @@ void MainComponent::modifierKeysChanged(const juce::ModifierKeys& modifiers) {
 	isOptionPressed = modifiers.isAltDown();
 }
 
+SynthEditor* MainComponent::getActiveSubEditor() const {
+	// Studio-Layout: topTab[0] = Viewport(root editor), topTab[1..] = Viewport(sub editor).
+	// Player-Layout: kein editorView, dann gibt es nur den Root.
+	if (editorView == nullptr) return editor;
+	auto* tabs = editorView->getEditorTab();
+	if (tabs == nullptr) return editor;
+	if (auto* vp = dynamic_cast<juce::Viewport*>(tabs->getCurrentContentComponent())) {
+		if (auto* se = dynamic_cast<SynthEditor*>(vp->getViewedComponent()))
+			return se;
+	}
+	return editor;
+}
+
 bool MainComponent::keyPressed(const juce::KeyPress& key, juce::Component* originatingComponent) {
 	// Globaler Start/Stop-Shortcut. TrackNavigator::keyPressed greift nur,
 	// wenn der Navigator den Fokus hat — sobald irgendein anderes Panel
@@ -2088,7 +2179,11 @@ bool MainComponent::keyPressed(const juce::KeyPress& key, juce::Component* origi
 		editor->repaint();
 	}
 	if (key.getKeyCode() == KeyPress::deleteKey || key.getKeyCode() == KeyPress::backspaceKey) {
-		SynthEditor::deleteSelectionWithCascade(editor, editorView ? editorView->getNavigator() : nullptr);
+		SynthEditor* active = getActiveSubEditor();
+		TrackNavigator* nav = (active == editor && editorView != nullptr)
+			? editorView->getNavigator()
+			: nullptr;
+		SynthEditor::deleteSelectionWithCascade(active, nav);
 	}
 
 	return true;
@@ -2120,7 +2215,11 @@ void MainComponent::buttonClicked(Button* b)
 	if (tb != nullptr) {
 
 		if (tb->getItemId() == toolbarFactory->delete_element) {
-			SynthEditor::deleteSelectionWithCascade(editor, editorView ? editorView->getNavigator() : nullptr);
+			SynthEditor* active = getActiveSubEditor();
+			TrackNavigator* nav = (active == editor && editorView != nullptr)
+				? editorView->getNavigator()
+				: nullptr;
+			SynthEditor::deleteSelectionWithCascade(active, nav);
 		}
 		else if (tb->getItemId() == toolbarFactory->doc_new) {
 			// Same crash pattern as the File > New command path: cleanUp()

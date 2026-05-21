@@ -26,6 +26,7 @@
 #include "EditorListener.h"
 #include "InstrumentBrowser.h"
 #include "PulsingTextButton.h"
+#include "PropertyPanelLookAndFeel.h"
 
 class Track;
 class SynthEditor;
@@ -85,6 +86,11 @@ private:
     FileBrowserModel* model = nullptr;
     std::unique_ptr<InstrumentBrowser> instrumentBrowser = nullptr;
     SynthEditor* editor = nullptr;
+
+    // Owned by PropertyView, attached to propertyPanel via setLookAndFeel.
+    // Must be cleared (setLookAndFeel(nullptr)) before the propertyPanel is
+    // destroyed — handled in the destructor.
+    std::unique_ptr<PropertyPanelLookAndFeel> propertyPanelLnf;
     //[/UserVariables]
 
     //==============================================================================

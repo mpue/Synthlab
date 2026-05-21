@@ -606,6 +606,11 @@ ValueTree TrackNavigator::getConfiguration()
 					// ist BEREITS auf diesen Wert geshiftet, deshalb wird beim
 					// Load nur das Member gesetzt und nicht erneut geshiftet.
 					region.setProperty("pitch", (double) ar->getPitch(), nullptr);
+					// Per-region playback gain (linear, applied in
+					// Track::getSample). Buffer remains untouched, so a
+					// gain change is a metadata-only operation that survives
+					// reload via this property.
+					region.setProperty("gain", (double) ar->getGain(), nullptr);
 				}
 			}
 			else if (tracks.at(i)->getType() == Track::MIDI || tracks.at(i)->getType() == Track::INSTRUMENT) {

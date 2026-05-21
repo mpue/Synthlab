@@ -158,7 +158,13 @@ private:
     // wieder zurueck und in den Vordergrund — ueber alle File-Open-Pfade
     // (Toolbar, Recent-Menu, Quickstart) hinweg dieselbe Logik.
     void restoreNavigatorAfterOpen();
-    
+
+    // Delete-Shortcut und Toolbar-Button landen hier oben, weil der Sub-Editor
+    // den Key nicht selbst konsumiert (siehe SynthEditor::keyPressed). Wenn ein
+    // Sub-Modul-Tab aktiv ist, muss der Aufruf gegen genau diesen Editor laufen
+    // — der Root-`editor` hat dann eine leere Selection und es passiert nichts.
+    SynthEditor* getActiveSubEditor() const;
+
 	SynthEditor* editor = nullptr;
     std::unique_ptr<MainTabbedComponent> tab = nullptr;
     std::unique_ptr<PropertyView> propertyView = nullptr    ;
@@ -244,6 +250,10 @@ private:
     // this vector are the menu item IDs minus kMacroMenuIdBase. menuItemSelected
     // uses it to look up which .js file to run for a clicked menu entry.
     std::vector<juce::File> macroFiles;
+
+    // Same pattern for the Tests menu — but rooted at ~/.Synthlab/test/ and
+    // with its own ID base so the two ranges don't collide.
+    std::vector<juce::File> testFiles;
 
     // Statuszeile am unteren Fensterrand (Studio-Modus). CPU/RAM/Audio/Tempo.
     std::unique_ptr<StatusBarComponent> statusBar = nullptr;

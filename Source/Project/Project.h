@@ -68,6 +68,15 @@ public:
     
     void setDefaultSampler(Sampler* sampler);
     Sampler* getDefaultSampler();
+
+    // Wired by MainComponent at startup. Used by TriggerScriptModule (and any
+    // future module that wants to invoke a JS macro) — we route through the
+    // existing JavaScriptEditorComponent::runFile so the same Duktape pipeline
+    // executes, output lands in the same panel, errors bubble the same way.
+    // Raw pointer, no ownership; the JS editor outlives modules in normal
+    // teardown order (Project is destroyed last).
+    void setJavaScriptEditor(class JavaScriptEditorComponent* ed) { jsEditor = ed; }
+    class JavaScriptEditorComponent* getJavaScriptEditor() const  { return jsEditor; }
     
     void setRoot(Module* root);
     Module* getRoot();
@@ -302,6 +311,7 @@ protected:
     std::vector<juce::DialogWindow*> openWindows;
     juce::Component* main = nullptr;
     Sampler* defaultSampler = nullptr;
+    class JavaScriptEditorComponent* jsEditor = nullptr;
     Module* root = nullptr;
     AppMode mode = STUDIO;
 	MidiProcessor* midiProcessor = nullptr;

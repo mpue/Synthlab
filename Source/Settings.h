@@ -33,6 +33,15 @@ public:
         save();
     }
 
+    bool getOpenPluginWindowAutomatically() const { return openPluginWindowAutomatically; }
+
+    void setOpenPluginWindowAutomatically(bool b)
+    {
+        if (openPluginWindowAutomatically == b) return;
+        openPluginWindowAutomatically = b;
+        save();
+    }
+
 private:
     Settings() { load(); }
 
@@ -56,6 +65,9 @@ private:
         const juce::String t = xml->getStringAttribute("newTrackOutputType", "AudioOut");
         newTrackOutputType = (t == "AuxOut") ? NewTrackOutputType::AuxOut
                                              : NewTrackOutputType::AudioOut;
+
+        openPluginWindowAutomatically =
+            xml->getBoolAttribute("openPluginWindowAutomatically", false);
     }
 
     void save() const
@@ -63,8 +75,10 @@ private:
         juce::XmlElement xml("SynthlabSettings");
         xml.setAttribute("newTrackOutputType",
                          newTrackOutputType == NewTrackOutputType::AuxOut ? "AuxOut" : "AudioOut");
+        xml.setAttribute("openPluginWindowAutomatically", openPluginWindowAutomatically);
         xml.writeTo(getSettingsFile());
     }
 
     NewTrackOutputType newTrackOutputType { NewTrackOutputType::AudioOut };
+    bool               openPluginWindowAutomatically { false };
 };

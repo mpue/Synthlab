@@ -56,6 +56,9 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
     // Pitch-State mitnehmen — der kopierte Buffer ist bereits in diesem
     // Zustand, also passt der Member-Wert direkt zur Buffer-Realitaet.
     this->pitch = other->pitch;
+    // Per-region gain ebenfalls erben: Split / Duplicate sollen sich genauso
+    // laut anhoeren wie das Original.
+    this->gain = other->gain;
 
     // KORREKTUR: Verwende numSamples statt other->getBuffer()->getNumSamples()
     // da wir nur einen Teil des Buffers kopiert haben
@@ -184,6 +187,7 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
     this->referenceTempo = other->referenceTempo;
     this->followTempo    = other->followTempo;
     this->pitch          = other->pitch;
+    this->gain           = other->gain;
 
     /*
     double length = this->thumbnail->getTotalLength();
@@ -290,6 +294,11 @@ AudioRegion::~AudioRegion()
         followTempoValue->removeListener(followTempoListener);
     delete followTempoListener;
     delete followTempoValue;
+
+    if (gainValue)
+        gainValue->removeListener(gainListener);
+    delete gainListener;
+    delete gainValue;
 
     delete[] tempBufferLeft;
     delete[] tempBufferRight;
@@ -520,7 +529,10 @@ void AudioRegion::paint (Graphics& g)
     const double startSeconds   = (double) sourceStartSample / srForPaint;
     const double endSeconds     = startSeconds + visibleSeconds;
     const juce::Rectangle<int> waveArea(b.getX(), b.getY(), effectiveWidth, b.getHeight());
-    this->thumbnail->drawChannels(g, waveArea, startSeconds, endSeconds, 1.0f);
+    // verticalZoomFactor = gain: waveform stays in sync with the playback
+    // multiplier without touching the underlying buffer. setGain() repaints,
+    // so slider drags / JS-API edits / action undo all reflect instantly.
+    this->thumbnail->drawChannels(g, waveArea, startSeconds, endSeconds, gain);
 
     g.setColour(stroke);
     g.drawRoundedRectangle(b.getX(), b.getY(), effectiveWidth, b.getHeight(), 10, 1.0f);
@@ -538,7 +550,7 @@ void AudioRegion::paint (Graphics& g)
             g.setColour(juce::Colours::white.withAlpha(0.6f));
 
             // Auch in den Loop-Wiederholungen den getrimmten Slice zeichnen.
-            this->thumbnail->drawChannels(g, loopBounds, startSeconds, endSeconds, 1.0f);
+            this->thumbnail->drawChannels(g, loopBounds, startSeconds, endSeconds, gain);
         }
     }
 
@@ -981,6 +993,27 @@ float AudioRegion::getPitch() {
     return pitch;
 }
 
+void AudioRegion::setGain(float g)
+{
+    // Clamp generously: 0 = silence, up to +12 dB headroom (~4x). Going
+    // higher than that almost always clips against the mixer, and JUCE's
+    // float audio path can saturate at extreme values. SetGainForRegionAction
+    // is expected to feed sensible values; this is a last-line guard.
+    if (g < 0.0f)   g = 0.0f;
+    if (g > 4.0f)   g = 4.0f;
+    if (gain == g)  return;
+    gain = g;
+    // Slider in der Property-Panel synchron halten — sonst zeigt er nach
+    // einem JS-getriebenen setGain oder SetGainForRegionAction-Undo noch den
+    // alten Wert. setValue triggert den GainListener nicht zurueck, weil
+    // Value::setValue ein No-op ist wenn der Wert unveraendert ist; und wir
+    // setzen hier exakt den frischen Wert -> kein Echo.
+    if (gainValue != nullptr)
+        gainValue->setValue(gain);
+    sendChangeMessage();
+    repaint();
+}
+
 void AudioRegion::adoptLoadedPitch(float pitchSemitones)
 {
     if (pitchSemitones < -12.0f) pitchSemitones = -12.0f;
@@ -1071,6 +1104,11 @@ juce::Array<juce::PropertyComponent*>& AudioRegion::getProperties()
     properties.add(refTempoProp);
     properties.add(followTempoProp);
 
+    // Region-Gain als Linear-Multiplikator. 0..4 deckt Mute bis +12 dB ab —
+    // gleicher Clamp wie in AudioRegion::setGain. Skin-Default = 1.0 (Unity).
+    gainProp = new SliderPropertyComponent(*gainValue, "Gain", 0.0, 4.0, 0.01, 1.0, true);
+    properties.add(gainProp);
+
     return properties;
 }
 
@@ -1091,6 +1129,53 @@ void AudioRegion::createProperties()
     followTempoValue = new Value();
     followTempoValue->setValue(followTempo);
     followTempoListener = new FollowTempoListener(*followTempoValue, this);
+
+    gainValue = new Value();
+    gainValue->setValue(gain);
+    gainListener = new GainListener(*gainValue, this);
+}
+
+void AudioRegion::setLengthSamples(long n)
+{
+    if (n <= 0 || audioBuffer == nullptr) return;
+
+    // Trim-Laenge darf den verfuegbaren Buffer ab sourceStartSample nicht
+    // ueberschreiten — sonst rendert die Region am Ende Stille bzw. der
+    // Save-Pfad persistiert eine Laenge, die der Reload nicht reproduzieren
+    // kann.
+    const long bufferAvail = juce::jmax(0L, (long) audioBuffer->getNumSamples() - sourceStartSample);
+    if (bufferAvail > 0 && n > bufferAvail)
+        n = bufferAvail;
+
+    // Spiegelt das Verhalten beim Right-Edge-Resize: gegen Nachbar-Region
+    // klemmen, damit "999.0.0" nicht das Layout der Spur zerlegt.
+    if (auto* parentTrack = dynamic_cast<Track*>(getParentComponent())) {
+        const long maxLen = parentTrack->clampLengthForRegion(this, sampleOffset, n);
+        if (maxLen > 0 && maxLen < n)
+            n = maxLen;
+    }
+    if (n <= 0) return;
+
+    trimmedNumSamples = n;
+
+    // Modell zuerst, dann Bounds — analog zu applyResizeState. zoomInProgress
+    // verhindert, dass componentMovedOrResized das gerade gesetzte
+    // trimmedNumSamples ueber einen Pixel->Sample-Roundtrip wieder veraendert.
+    const int newWidth = (int) std::round((double) n / sampleRate * zoom);
+    setBoundsUpdateInProgress(true);
+    setBounds(getX(), getY(), newWidth, getHeight());
+    setBoundsUpdateInProgress(false);
+
+    if (thumbnailBounds != nullptr) {
+        // thumbnailBounds.width muss dem VOLLEN Buffer-Extent entsprechen,
+        // sonst trickst getNumSamples() in den "reduced"-Pfad und liefert beim
+        // naechsten Lesen einen ueber Pixel-Math zurueckgerechneten Wert.
+        const int fullWidth = (int) std::round((double) audioBuffer->getNumSamples() / sampleRate * zoom);
+        thumbnailBounds->setSize(juce::jmax(newWidth, fullWidth), getHeight());
+    }
+
+    sendChangeMessage();
+    repaint();
 }
 
 void AudioRegion::FollowTempoListener::valueChanged(juce::Value& v)

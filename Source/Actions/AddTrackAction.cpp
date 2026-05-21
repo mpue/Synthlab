@@ -337,6 +337,9 @@ void AddTrackAction::buildInstrument()
 
     if (auto* pv = Project::getInstance()->getPropertyView())
         pv->pulseShowPluginButton(track);
+
+    if (pm != nullptr && Settings::getInstance()->getOpenPluginWindowAutomatically())
+        pm->openPluginWindow();
 }
 
 // ---------------------------------------------------------------------------

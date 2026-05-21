@@ -25,6 +25,11 @@ Region::~Region() {
     delete nameListener;
     delete nameValue;
 
+    if (lengthValue)
+        lengthValue->removeListener(lengthListener);
+    delete lengthListener;
+    delete lengthValue;
+
     // resizerR/resizerL are base-class members created by subclass constructors.
     // Deleting here covers all subclasses (MidiRegion, AudioRegion, etc.)
     // so subclasses must NOT delete them themselves to avoid double-free.
@@ -111,7 +116,18 @@ long Region::getOldOffset() {
 }
 
 long Region::getSampleOffset() const {
-    return (this->sampleOffset / Project::getInstance()->getBufferSize()) * Project::getInstance()->getBufferSize();
+    // Frueher: (sampleOffset / bufferSize) * bufferSize — Block-Alignment fuer
+    // einen Audio-Pfad, der laengst per-Sample addressiert (Track::getSample).
+    // Die versteckte Floor-Quantisierung hat bei jedem Read bis zu (bufferSize-1)
+    // Samples verschluckt; sichtbar wurde das beim Duplikat einer konsolidierten
+    // Region, deren sampleOffset (sample-genau geschrieben) hier wieder
+    // abgerundet wurde — die Audio-Engine glaubte dann, das Duplikat beginne
+    // (bufferSize-1) Samples frueher, getRegionAt routete die ersten Samples an
+    // den Vorgaenger, das Duplikat sprang mit Offset in den Buffer und klang
+    // entsprechend zu kurz. Schreiber, die mit quantize=true (default) durch
+    // setSampleOffset gehen, speichern ohnehin schon bufferSize-aligned — fuer
+    // die ist das hier ein No-Op.
+    return this->sampleOffset;
 }
 
 
@@ -233,6 +249,19 @@ juce::Array<juce::PropertyComponent*>& Region::getProperties()
     nameProp = new TextPropertyComponent(*nameValue, "Name", 16, false, true);
     properties = Array<PropertyComponent*>();
     properties.add(nameProp);
+
+    // Length im Format "bars.quarters.sixteenths". Bidirektional: Anzeige
+    // wird bei jedem Panel-Refresh aus dem aktuellen sample-count gefuellt,
+    // Edit (Enter / Focus-Loss) parst zurueck und ruft setLengthSamples().
+    const double bpm = Project::getInstance()->getTempo();
+    if (lengthValue != nullptr) {
+        // setValue dedupliziert ueber operator==, ein Refresh ohne Aenderung
+        // feuert den LengthListener also nicht -> keine Resize-Recursion.
+        lengthValue->setValue(samplesToBarQuarterSixteenth((long) getNumSamples(), bpm, sampleRate));
+    }
+    lengthProp = new TextPropertyComponent(*lengthValue, "Length (bar.qrt.16th)", 16, false, true);
+    properties.add(lengthProp);
+
     return properties;
 }
 
@@ -241,6 +270,48 @@ void Region::createProperties()
     nameValue = new Value();
     nameListener = new NameListener(*nameValue, this);
     nameValue->setValue(name);
+
+    lengthValue = new Value();
+    lengthListener = new LengthListener(*lengthValue, this);
+    // Initialer Wert ist hier (im Region-Ctor) noch nicht sinnvoll berechen-
+    // bar: getNumSamples() ist pure-virtual, der Subklassen-Ctor hat den
+    // Sample-Count noch nicht gesetzt. getProperties() befuellt den Wert bei
+    // jedem Panel-Refresh aus dem aktuellen Stand.
+    lengthValue->setValue("0.0.0");
+}
+
+juce::String Region::samplesToBarQuarterSixteenth(long numSamples, double bpm, double sr)
+{
+    if (bpm <= 0.0 || sr <= 0.0 || numSamples <= 0)
+        return "0.0.0";
+    // 4/4 Annahme — passt zum Rest der Codebase (snapToQuarterNote etc.).
+    const double sixteenthSamples = (60.0 / bpm) * sr / 4.0;
+    const long totalSixteenths = (long) std::llround((double) numSamples / sixteenthSamples);
+    const long bars       = totalSixteenths / 16;
+    const long quarters   = (totalSixteenths % 16) / 4;
+    const long sixteenths = totalSixteenths % 4;
+    return juce::String(bars) + "." + juce::String(quarters) + "." + juce::String(sixteenths);
+}
+
+long Region::barQuarterSixteenthToSamples(const juce::String& text, double bpm, double sr)
+{
+    if (bpm <= 0.0 || sr <= 0.0)
+        return -1;
+    juce::StringArray parts;
+    parts.addTokens(text.trim(), ".", "");
+    if (parts.size() == 0)
+        return -1;
+    // Akzeptiert "B", "B.Q" oder "B.Q.S". Overflow ist erlaubt — "0.0.32" wird
+    // korrekt zu 2 Bars, "0.5.0" zu 1 Bar + 1 Quarter. Negative Teile ergeben
+    // ein negatives Ergebnis und werden vom Listener verworfen.
+    const long bars       = parts[0].getIntValue();
+    const long quarters   = parts.size() > 1 ? parts[1].getIntValue() : 0;
+    const long sixteenths = parts.size() > 2 ? parts[2].getIntValue() : 0;
+    const long totalSixteenths = bars * 16 + quarters * 4 + sixteenths;
+    if (totalSixteenths <= 0)
+        return -1;
+    const double sixteenthSamples = (60.0 / bpm) * sr / 4.0;
+    return (long) std::llround((double) totalSixteenths * sixteenthSamples);
 }
 
 void Region::setDirty(bool dirty) {

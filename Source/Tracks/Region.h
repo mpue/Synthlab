@@ -45,6 +45,13 @@ public:
 
     virtual void setLoop(bool loop);
     bool isLoop();
+
+    // Per-region gain multiplier. Base class is no-op (1.0) so MIDI regions
+    // silently ignore gain edits — only AudioRegion overrides this. Applied
+    // in Track::getSample at playback time, persisted by TrackNavigator's
+    // save path under the "gain" property.
+    virtual float getGain() const { return 1.0f; }
+    virtual void  setGain (float /*g*/) {}
     
     void setOffset(int offset);
     int getOffset();
@@ -117,11 +124,25 @@ public:
     virtual juce::Array<juce::PropertyComponent*>& getProperties();
     virtual void createProperties();
 
+    // Resize-Hook fuer die "Length"-Property im PropertyView. Default no-op,
+    // damit Subklassen ohne sinnvolle Resize-Semantik (z.B. zukuenftige
+    // Marker-Regions) das Property einfach ignorieren. AudioRegion und
+    // MidiRegion ueberschreiben mit ihrer konkreten Resize-Logik.
+    virtual void setLengthSamples(long /*numSamples*/) {}
+
+    // Sample-Count <-> "bars.quarters.sixteenths" Helpers (4/4, jede Bar = 4
+    // Quarters, jeder Quarter = 4 Sixteenths). Verwendet das aktuelle Project-
+    // Tempo. Roundtrip ist nicht verlustfrei wenn die Region nicht auf dem
+    // 1/16-Grid sitzt — Anzeige rundet auf das naechste Sixteenth, der Edit
+    // schreibt exakt die ausgewaehlte Grid-Position zurueck.
+    static juce::String samplesToBarQuarterSixteenth(long numSamples, double bpm, double sampleRate);
+    static long         barQuarterSixteenthToSamples(const juce::String& text, double bpm, double sampleRate);
+
     void setDirty(bool dirty);
     virtual void quantize(int quantizeGridSamples) = 0;
 
 protected:
-    
+
     struct NameListener : juce::Value::Listener
     {
         NameListener(juce::Value& v, Region* r) : region(r), value(v) { value.addListener(this); }
@@ -129,6 +150,25 @@ protected:
 
         void valueChanged(juce::Value& value) override {
             region->setName(value.toString());
+        }
+        Region* region;
+        juce::Value value;
+    };
+
+    // Bridges the PropertyView "Length" TextPropertyComponent back to the
+    // region. Parsing-Fehler oder <=0 ignorieren wir still — der Slider/Edit
+    // bleibt sichtbar, die Region aendert sich nicht.
+    struct LengthListener : juce::Value::Listener
+    {
+        LengthListener(juce::Value& v, Region* r) : region(r), value(v) { value.addListener(this); }
+        ~LengthListener() {}
+
+        void valueChanged(juce::Value& value) override {
+            const double bpm = Project::getInstance()->getTempo();
+            const double sr  = region->getSampleRate();
+            const long n = Region::barQuarterSixteenthToSamples(value.toString(), bpm, sr);
+            if (n > 0)
+                region->setLengthSamples(n);
         }
         Region* region;
         juce::Value value;
@@ -164,9 +204,13 @@ protected:
     NameListener* nameListener;
     juce::Value* nameValue;
 
+    LengthListener* lengthListener = nullptr;
+    juce::Value*    lengthValue    = nullptr;
+
     juce::PropertyComponent* nameProp;
+    juce::PropertyComponent* lengthProp = nullptr;
     juce::Array<juce::PropertyComponent*> properties;
-   
+
 };
 
 

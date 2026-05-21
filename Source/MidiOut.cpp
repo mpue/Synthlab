@@ -278,7 +278,13 @@ juce::String MidiOut::getSelectedMidiOutput()
             return devices[i].name;
         }
 	}
-        
+
+	// No match: either index==0 ("None") or the saved device isn't currently
+	// plugged in. Fell-through here meant UB and a crash on debug builds —
+	// only got hit once ModuleUtils::saveStructure started iterating MidiOut
+	// modules from a script context. Empty string round-trips fine through
+	// setSelectedMidiOutput on load.
+	return juce::String();
 }
 
 void MidiOut::setSelectedMidiOutput(const juce::String& deviceName)

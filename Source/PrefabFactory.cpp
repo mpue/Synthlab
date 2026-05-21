@@ -56,6 +56,7 @@
 #include "OrModule.h"
 #include "NotModule.h"
 #include "TriggerTimerModule.h"
+#include "TriggerScriptModule.h"
 #include "SliderModule.h"
 #include "TextInputModule.h"
 #include "CompareModule.h"
@@ -298,6 +299,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Trigger timer") {
         m = new TriggerTimerModule();
+    }
+    else if (prefabs[id].getName() == "Trigger Script") {
+        m = new TriggerScriptModule();
     }
     else if (prefabs[id].getName() == "Slider") {
         m = new SliderModule();
