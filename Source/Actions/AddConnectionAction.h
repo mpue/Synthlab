@@ -32,7 +32,7 @@ private:
     Module* target = nullptr;
     Pin* a = nullptr;
     Pin* b = nullptr;
-    Connection* c;
+    Connection* c = nullptr;
 };
 
 

@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <map>
+#include <vector>
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Module.h"
 #include "MixerPanel.h"
@@ -111,7 +113,49 @@ public:
     static bool connectModules(Module* source, Module* target, int pin);
     
     static Module* loadFromXml(ValueTree &v, ChangeBroadcaster* broadcaster);
-    
+
+    /**
+     * Walks the full module tree rooted at `modules` (depth-first) and returns
+     * the maximum Module::getIndex() value seen. Used after load to keep
+     * PrefabFactory::lastModuleIndex above every existing index — INCLUDING
+     * indices of nested submodules. The previous root-only scan ignored
+     * group children, so newly-created prefabs eventually collided with
+     * existing submodule indices (radiogroup.slb had two Audio Selectors
+     * with index="19" — saves get ambiguous, loads pick the first match
+     * and connections to the second one are lost on reload).
+     */
+    static long maxIndexInTree(const std::vector<Module*>* modules);
+
+    /**
+     * Detects modules in the tree that share the same index, returning their
+     * names by index. Empty result means the tree is healthy. Two modules
+     * with the same index breaks loadConnections — every connection that
+     * references the shared index is funneled to whichever module is found
+     * first by the linear scan, and the duplicate loses its wiring on reload.
+     * Caused historically by PrefabFactory::lastModuleIndex not accounting
+     * for nested submodules.
+     */
+    static std::map<long, std::vector<juce::String>>
+    findIndexCollisions(const std::vector<Module*>* modules);
+
+    /**
+     * Walks the tree and assigns fresh indices (from PrefabFactory) to any
+     * module that shares its index with an earlier occurrence. The first
+     * module keeping the original index, every later duplicate is renumbered.
+     * For each renumbered module:
+     *   - The module index is replaced via setIndex(newIdx)
+     *   - Pin indices are recomputed as newIdx*100+pos (the project convention)
+     *   - Any TerminalModule child whose setIndex was paired with one of the
+     *     module's outer pins is re-pointed to the corresponding new pin index
+     *     so connectTerminals() still wires it on the next reload.
+     * Returns the number of modules that were renumbered.
+     *
+     * Runtime side effects: connections keep working through Pin and Module
+     * pointers - only the integer indices change. The next save then writes
+     * consistent indices so loadConnections no longer cross-links.
+     */
+    static int autoFixIndexCollisions(const std::vector<Module*>* modules);
+
 private:
     static bool connectModuleValues(Module* source, Module* target, int pin);
     

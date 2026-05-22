@@ -47,6 +47,32 @@ bool RemoveSelectedAction::perform() {
     for (auto* m : removedModules)
         removedIndices.insert(m->getIndex());
 
+    // Helper: tear down the pin-level back-references that AddConnectionAction
+    // pushed into Pin::getConnections(). Without this, deleting a connection
+    // whose two endpoints both survive (typical sub-editor case: user clicks a
+    // wire and presses Delete) erases the Connection* from rootCons but leaves
+    // the producer pin still listed in the consumer pin's connection vector.
+    // Symptoms reported: the wire disappears visually, but audio still routes;
+    // dragging a fresh connection over the same pin gets blocked because the
+    // pin already "has" the producer; the input looks "doubly assigned".
+    auto detachPinBackRefs = [&](Connection* c) {
+        if (c == nullptr || c->a == nullptr || c->b == nullptr) return;
+
+        auto detachOne = [&](Pin* owner, Pin* other) {
+            auto& conns = owner->getConnections();
+            auto it = std::find(conns.begin(), conns.end(), other);
+            if (it != conns.end()) {
+                removedPinLinks.push_back({owner, other});
+                conns.erase(it);
+            }
+        };
+        // AddConnectionAction pushes the reference in one direction only
+        // (consumer-side), but we don't know which is which here, so try both.
+        // detachOne is a no-op if the back-ref isn't present.
+        detachOne(c->a, c->b);
+        detachOne(c->b, c->a);
+    };
+
     if (firstCall) {
         // Collect all connections to be removed: explicitly selected, or touching a removed module
         for (auto it = rootCons->begin(); it != rootCons->end(); ) {
@@ -55,6 +81,7 @@ bool RemoveSelectedAction::perform() {
                 removedIndices.count(c->source->getIndex()) ||
                 removedIndices.count(c->target->getIndex())) {
                 removedConnections.push_back(c);
+                detachPinBackRefs(c);
                 it = rootCons->erase(it);
             } else {
                 ++it;

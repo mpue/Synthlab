@@ -74,30 +74,40 @@ void SelectionModel::setCurrentLayer(int layer) {
 }
 
 SelectionModel::State SelectionModel::checkForHitAndSelect(juce::Point<int> pos, bool additionalSelect, bool shouldDeselect) {
-    
+
     bool hit = false;
-    
+    Module* hitModule = nullptr;
+
     for (int i = 0; i < root->getModules()->size(); i++) {
-        
+
         // hit something
         if (root->getModules()->at(i)->getBounds().contains(pos)) {
-
             hit = true;
-            
-            // not selected yet
-            if(!selectionContains(root->getModules()->at(i))) {
-                if (!additionalSelect && shouldDeselect) {
-                    clearSelection();
-                }
-                root->getModules()->at(i)->setSelected(true);
-                getSelectedModules().push_back(root->getModules()->at(i));
-                break;
-            }
-            
+            hitModule = root->getModules()->at(i);
+            break;
         }
-        
     }
-    
+
+    if (hit && hitModule != nullptr) {
+        // Single-click (no Shift) collapses the selection to just the clicked
+        // module — even if that module was already part of a larger multi-
+        // selection. The old `if (!selectionContains(m))` guard skipped this
+        // whole block when the hit was already selected, so a prior box- or
+        // shift-select stayed glued together and any subsequent drag moved
+        // every still-selected module.
+        if (!additionalSelect && shouldDeselect) {
+            clearSelection();
+            hitModule->setSelected(true);
+            getSelectedModules().push_back(hitModule);
+        } else if (!selectionContains(hitModule)) {
+            // Shift-click or non-deselect path: extend the selection.
+            hitModule->setSelected(true);
+            getSelectedModules().push_back(hitModule);
+        }
+        // Shift-click on an already-selected module: leave selection as is
+        // (we don't toggle off — that's a separate UX choice).
+    }
+
     if (!hit && shouldDeselect) {
         clearSelection();
     }

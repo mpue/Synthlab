@@ -478,14 +478,26 @@ void SynthEditor::mouseUp(const MouseEvent& e)
 	}
 
 	else if (state == SelectionModel::State::DRAGGING_CONNECTION) {
-		for (int i = 0; i < root->getModules()->size(); i++) {
-
-			Module* m = root->getModules()->at(i);
-
-			if (m->isSelected()) {
-
-				addConnection(e, m);
+		// Fire addConnection exactly once, with the module that actually owns
+		// the drag-start pin. The old code iterated `if (m->isSelected())` over
+		// every module and called addConnection per match — if the user had a
+		// multi-module selection before grabbing a pin, every selected module
+		// would trigger a separate AddConnectionAction. Each action then scans
+		// the editor for "any selected pin", and stale pin-selection state
+		// could wire the same input twice or produce ghost connections.
+		Module* sourceModule = nullptr;
+		if (startPin != nullptr) {
+			for (auto* m : *root->getModules()) {
+				if (m == nullptr) continue;
+				for (auto* p : m->pins) {
+					if (p == startPin) { sourceModule = m; break; }
+				}
+				if (sourceModule != nullptr) break;
 			}
+		}
+
+		if (sourceModule != nullptr) {
+			addConnection(e, sourceModule);
 		}
 	}
 
@@ -866,6 +878,35 @@ void SynthEditor::showPrefabMenu(Point<int> position) {
 			return;
 		}
 		loaded->setName(v.getProperty("name"));
+
+		// Bump PrefabFactory past every index inside the just-loaded module so
+		// the next prefab created doesn't collide with a nested submodule's
+		// index (see updateLastModuleIndex call in openFile for the rationale).
+		{
+			long localMax = loaded->getIndex();
+			const long childMax = ModuleUtils::maxIndexInTree(loaded->getModules());
+			if (childMax > localMax) localMax = childMax;
+			PrefabFactory::getInstance()->updateLastModuleIndex(localMax);
+		}
+
+		// Heal index collisions inside the loaded .slb (e.g. two non-prefab
+		// groups both saved at index=0 because Module::index was uninitialized
+		// in older builds). Without this the loaded file keeps misbehaving:
+		// the second group can't be picked as a drag target by
+		// AddConnectionAction, and loadConnections cross-links connections
+		// that mention the shared index.
+		{
+			auto collisions = ModuleUtils::findIndexCollisions(loaded->getModules());
+			for (auto& kv : collisions) {
+				juce::String names;
+				for (auto& n : kv.second) names << n << " ";
+				Logger::writeToLog("WARN: .slb user-module collision idx="
+					+ juce::String(kv.first) + " shared by: " + names
+					+ "— auto-renumbering duplicate.");
+			}
+			if (ModuleUtils::autoFixIndexCollisions(loaded->getModules()) > 0)
+				setDirty(true);
+		}
 
 		// Reuse the existing prefab path so this is a single undoable step.
 		// Pre-setting the module short-circuits the PrefabFactory lookup
@@ -1656,6 +1697,17 @@ bool SynthEditor::keyPressed(const KeyPress& key, Component* originatingComponen
 			selectionModel.getSelectedModules().push_back(root->getModules()->at(i));
 		}
 	}
+	// Sub-Editor (openEditor registriert ihn als eigenen KeyListener auf sich
+	// selbst) verschluckt sonst Delete, bevor MainComponent::keyPressed feuert.
+	// Folge: weder Module noch Connections im Sub-Modul-Tab lassen sich per
+	// Tastatur loeschen. Toolbar-Delete trifft die Selection auch nicht, weil
+	// die Mausbewegung zum Toolbar mouseMove->checkForConnectionSelect ausloest
+	// und das c->selected aller nicht-ueberfahrenen Connections zurueck-resettet
+	// — Module ueberleben, Connections nicht.
+	else if (key.getKeyCode() == KeyPress::deleteKey
+	      || key.getKeyCode() == KeyPress::backspaceKey) {
+		deleteSelectionWithCascade(this, navigator);
+	}
 
 	repaint();
 	return true;
@@ -1862,12 +1914,14 @@ void SynthEditor::loadFromString(juce::String in) {
 	setRunning(false);
 	ModuleUtils::loadStructure(root->getModules(), root->getConnections(), &v, this);
 
-	{
-		long maxIdx = 0;
-		for (auto* m : *root->getModules())
-			if (m->getIndex() > maxIdx) maxIdx = m->getIndex();
-		PrefabFactory::getInstance()->updateLastModuleIndex(maxIdx);
-	}
+	// Walk the full tree (incl. nested submodules) when seeding
+	// PrefabFactory::lastModuleIndex. Old root-only scan let nested indices
+	// stay above lastModuleIndex unnoticed, so newly-created prefabs ended
+	// up colliding with sub-group indices (see radiogroup.slb: two Audio
+	// Selectors share index="19" — second one's connections vanish on reload
+	// because loadConnections finds the first by index first).
+	PrefabFactory::getInstance()->updateLastModuleIndex(
+		ModuleUtils::maxIndexInTree(root->getModules()));
 
 	for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
 		addAndMakeVisible((*it));
@@ -1957,6 +2011,36 @@ Module* SynthEditor::loadModule() {
 
 		this->addAndMakeVisible(module);
 		this->getModule()->getModules()->push_back(module);
+
+		// Loading a .slb drops modules with potentially very high saved indices
+		// (e.g. millisecond-counter shifts from saveModule's updateIndices) into
+		// the current project. Without bumping PrefabFactory::lastModuleIndex
+		// past every loaded index — INCLUDING nested submodules — the next
+		// prefab created reuses a low index that collides with one inside the
+		// freshly-loaded group, and the group's internal connections start
+		// silently breaking on save/reload.
+		{
+			long localMax = module->getIndex();
+			const long childMax = ModuleUtils::maxIndexInTree(module->getModules());
+			if (childMax > localMax) localMax = childMax;
+			PrefabFactory::getInstance()->updateLastModuleIndex(localMax);
+		}
+
+		// Heal index collisions inside the loaded .slb (see openFile for the
+		// detailed rationale — same code path, two non-prefab groups can both
+		// arrive at index=0 from a legacy save).
+		{
+			auto collisions = ModuleUtils::findIndexCollisions(module->getModules());
+			for (auto& kv : collisions) {
+				juce::String names;
+				for (auto& n : kv.second) names << n << " ";
+				Logger::writeToLog("WARN: .slb load collision idx="
+					+ juce::String(kv.first) + " shared by: " + names
+					+ "— auto-renumbering duplicate.");
+			}
+			if (ModuleUtils::autoFixIndexCollisions(module->getModules()) > 0)
+				setDirty(true);
+		}
 
 		module->setSelected(true);
 		module->savePosition();
@@ -2254,12 +2338,8 @@ void SynthEditor::openFile() {
 		setRunning(false);
 		ModuleUtils::loadStructure(root->getModules(), root->getConnections(), &v, this);
 
-		{
-			long maxIdx = 0;
-			for (auto* m : *root->getModules())
-				if (m->getIndex() > maxIdx) maxIdx = m->getIndex();
-			PrefabFactory::getInstance()->updateLastModuleIndex(maxIdx);
-		}
+		PrefabFactory::getInstance()->updateLastModuleIndex(
+			ModuleUtils::maxIndexInTree(root->getModules()));
 
 		for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {
 			addAndMakeVisible((*it));
@@ -2332,11 +2412,37 @@ void SynthEditor::openFile(juce::File file) {
 	ValueTree v = ValueTree::fromXml(*xml.get());
 	ModuleUtils::loadStructure(root->getModules(), root->getConnections(), &v, this);
 
+	// Walk the full tree (incl. nested submodules) when seeding
+	// PrefabFactory::lastModuleIndex. Old root-only scan let nested indices
+	// stay above lastModuleIndex unnoticed, so newly-created prefabs ended
+	// up colliding with sub-group indices (see radiogroup.slb: two Audio
+	// Selectors share index="19" — second one's connections vanish on reload
+	// because loadConnections finds the first by index first).
+	PrefabFactory::getInstance()->updateLastModuleIndex(
+		ModuleUtils::maxIndexInTree(root->getModules()));
+
+	// Heal legacy files that came in with colliding module indices (one of the
+	// historic causes of "connections vanish on reload" — a duplicate module
+	// shadowed the original in loadConnections' linear find-by-index). The
+	// renumber walks the tree, keeps the first occurrence of each index, and
+	// assigns a fresh index from PrefabFactory to every later duplicate;
+	// terminal pairings inside the renumbered module are re-pointed alongside.
+	// Runtime connections survive (they hold Pin*/Module*), the next save
+	// then writes a clean, internally consistent file.
 	{
-		long maxIdx = 0;
-		for (auto* m : *root->getModules())
-			if (m->getIndex() > maxIdx) maxIdx = m->getIndex();
-		PrefabFactory::getInstance()->updateLastModuleIndex(maxIdx);
+		auto collisions = ModuleUtils::findIndexCollisions(root->getModules());
+		for (auto& kv : collisions) {
+			juce::String names;
+			for (auto& n : kv.second) names << n << " ";
+			Logger::writeToLog("WARN: module index collision idx=" + juce::String(kv.first)
+				+ " shared by: " + names + "— auto-renumbering duplicate.");
+		}
+		const int fixed = ModuleUtils::autoFixIndexCollisions(root->getModules());
+		if (fixed > 0) {
+			setDirty(true);
+			Logger::writeToLog("autoFixIndexCollisions: " + juce::String(fixed)
+				+ " module(s) renumbered — file is now flagged dirty, save to persist.");
+		}
 	}
 
 	for (std::vector<Module*>::iterator it = root->getModules()->begin(); it != root->getModules()->end(); ++it) {

@@ -7,6 +7,7 @@
 //
 
 #include "ModuleUtils.h"
+#include <set>
 #include "Module.h"
 #include "TerminalModule.h"
 #include "Constant.h"
@@ -350,6 +351,124 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
 		                    mod.getProperty("surface_h").toString().getIntValue() });
 	}
 	return m;
+}
+
+static void collectIndices(const std::vector<Module*>* modules,
+                           std::map<long, std::vector<juce::String>>& byIdx) {
+    if (modules == nullptr) return;
+    for (Module* m : *modules) {
+        if (m == nullptr) continue;
+        byIdx[m->getIndex()].push_back(m->getName());
+        collectIndices(m->getModules(), byIdx);
+    }
+}
+
+std::map<long, std::vector<juce::String>>
+ModuleUtils::findIndexCollisions(const std::vector<Module*>* modules) {
+    std::map<long, std::vector<juce::String>> byIdx;
+    collectIndices(modules, byIdx);
+
+    std::map<long, std::vector<juce::String>> collisions;
+    for (auto& kv : byIdx) {
+        if (kv.second.size() > 1)
+            collisions[kv.first] = std::move(kv.second);
+    }
+    return collisions;
+}
+
+long ModuleUtils::maxIndexInTree(const std::vector<Module*>* modules) {
+    long maxIdx = 0;
+    if (modules == nullptr) return maxIdx;
+    for (Module* m : *modules) {
+        if (m == nullptr) continue;
+        if (m->getIndex() > maxIdx) maxIdx = m->getIndex();
+        const long childMax = maxIndexInTree(m->getModules());
+        if (childMax > maxIdx) maxIdx = childMax;
+    }
+    return maxIdx;
+}
+
+static void flattenTree(const std::vector<Module*>* modules,
+                        std::vector<Module*>& out) {
+    if (modules == nullptr) return;
+    for (Module* m : *modules) {
+        if (m == nullptr) continue;
+        out.push_back(m);
+        flattenTree(m->getModules(), out);
+    }
+}
+
+static void renumberSingleModule(Module* m, long newIdx) {
+    // Capture (terminal, outer-pin-pointer) pairs BEFORE we mutate any indices.
+    // A TerminalModule child of `m` is paired with an outer pin of `m` via the
+    // convention `terminal.module.index == outer.pin.index` (see
+    // ModuleUtils::connectTerminals). After we renumber m's outer pins, those
+    // terminal modules must be re-setIndex'd to the new pin indices, otherwise
+    // the next reload's connectTerminals can't pair them anymore.
+    std::vector<std::pair<TerminalModule*, Pin*>> termOuterPairs;
+    if (auto* kids = m->getModules()) {
+        for (Module* child : *kids) {
+            auto* t = dynamic_cast<TerminalModule*>(child);
+            if (t == nullptr) continue;
+            for (Pin* p : m->getPins()) {
+                if (p != nullptr && p->index == t->getIndex()) {
+                    termOuterPairs.emplace_back(t, p);
+                    break;
+                }
+            }
+        }
+    }
+
+    m->setIndex(newIdx);
+
+    // Recompute pin indices following the project convention. Position is
+    // 1-based to match addPin's `pins.size()` value after push_back.
+    int pos = 0;
+    for (Pin* p : m->getPins()) {
+        if (p == nullptr) { ++pos; continue; }
+        ++pos;
+        p->index = newIdx * 100 + pos;
+    }
+
+    for (auto& pair : termOuterPairs) {
+        if (pair.first != nullptr && pair.second != nullptr)
+            pair.first->setIndex(pair.second->index);
+    }
+}
+
+int ModuleUtils::autoFixIndexCollisions(const std::vector<Module*>* modules) {
+    if (modules == nullptr) return 0;
+
+    std::vector<Module*> flat;
+    flattenTree(modules, flat);
+
+    std::set<long> seenIndices;
+    int renumbered = 0;
+
+    for (Module* m : flat) {
+        if (m == nullptr) continue;
+        const long idx = m->getIndex();
+        if (seenIndices.insert(idx).second) {
+            // First time we see this index — keep it.
+            continue;
+        }
+
+        // Duplicate — pull a fresh index out of PrefabFactory. Caller already
+        // updated lastModuleIndex past every saved index, so this never
+        // collides with anything still in the tree.
+        long newIdx = 0;
+        do {
+            newIdx = PrefabFactory::getInstance()->getNextModuleIndex();
+        } while (!seenIndices.insert(newIdx).second);
+
+        Logger::writeToLog("autoFixIndexCollisions: renumber " + m->getName()
+            + " from idx=" + juce::String(idx) + " to idx=" + juce::String(newIdx));
+
+        renumberSingleModule(m, newIdx);
+        ++renumbered;
+    }
+
+    return renumbered;
 }
 
 void ModuleUtils::connectTerminals(Module* m) {

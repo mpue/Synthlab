@@ -240,7 +240,11 @@ protected:
     juce::Array <juce::PropertyComponent*> properties;
 
     bool selected = false;
-	long index;
+	// Uninitialized in the past — left at whatever heap byte we got, which in
+	// practice often surfaced as 0. Two non-prefab Modules colliding on
+	// index=0 then made AddConnectionAction skip them as drag targets (its
+	// self-loop guard compares by index) and made loadConnections cross-link.
+	long index = 0;
     bool editable = true;
     bool prefab = false;
     bool locked = false;
