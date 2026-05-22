@@ -358,8 +358,7 @@
               file="Source/Actions/TrackDeleteAction.h"/>
         <FILE id="aNTaA1" name="AddNoteAction.cpp" compile="1" resource="0"
               file="Source/Actions/AddNoteAction.cpp"/>
-        <FILE id="aNTaA2" name="AddNoteAction.h" compile="0" resource="0"
-              file="Source/Actions/AddNoteAction.h"/>
+        <FILE id="aNTaA2" name="AddNoteAction.h" compile="0" resource="0" file="Source/Actions/AddNoteAction.h"/>
         <FILE id="dNTaA1" name="DeleteNoteAction.cpp" compile="1" resource="0"
               file="Source/Actions/DeleteNoteAction.cpp"/>
         <FILE id="dNTaA2" name="DeleteNoteAction.h" compile="0" resource="0"
@@ -873,12 +872,9 @@
       <FILE id="StBar1" name="StatusBarComponent.h" compile="0" resource="0"
             file="Source/StatusBarComponent.h"/>
       <GROUP id="{C0DEM0NK-EY01-4E11-A1F1-DUKTAPEC0DE}" name="duktape">
-        <FILE id="DkTpCf" name="duk_config.h" compile="0" resource="0"
-              file="Source/duktape/duk_config.h"/>
-        <FILE id="DkTpHd" name="duktape.h" compile="0" resource="0"
-              file="Source/duktape/duktape.h"/>
-        <FILE id="DkTpCp" name="duktape.c" compile="1" resource="0"
-              file="Source/duktape/duktape.c"/>
+        <FILE id="DkTpCf" name="duk_config.h" compile="0" resource="0" file="Source/duktape/duk_config.h"/>
+        <FILE id="DkTpHd" name="duktape.h" compile="0" resource="0" file="Source/duktape/duktape.h"/>
+        <FILE id="DkTpCp" name="duktape.c" compile="1" resource="0" file="Source/duktape/duktape.c"/>
       </GROUP>
       <FILE id="JsCtkH" name="JavaScriptCodeTokeniser.h" compile="0" resource="0"
             file="Source/JavaScriptCodeTokeniser.h"/>
@@ -886,8 +882,8 @@
             file="Source/JavaScriptCodeTokeniser.cpp"/>
       <FILE id="JsEdtH" name="JavaScriptEditorComponent.h" compile="0" resource="0"
             file="Source/JavaScriptEditorComponent.h"/>
-      <FILE id="JsEdtC" name="JavaScriptEditorComponent.cpp" compile="1" resource="0"
-            file="Source/JavaScriptEditorComponent.cpp"/>
+      <FILE id="JsEdtC" name="JavaScriptEditorComponent.cpp" compile="1"
+            resource="0" file="Source/JavaScriptEditorComponent.cpp"/>
       <FILE id="BZiBf9" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
     </GROUP>
   </MAINGROUP>

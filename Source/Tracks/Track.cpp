@@ -1,4 +1,4 @@
-﻿/*
+/*
   ==============================================================================
 
 	Track.cpp
@@ -68,12 +68,15 @@ Track::Track(Type type, double sampleRate, MultiComponentDragger* dragger)
 		setName("MIDI Track");
 	}
 
-	auto& bus = FastBus::getInstance();
+    auto& bus = FastBus::getInstance();
 
-	bus.subscribe<float>("tempo", [this](const FastTopic<float>& topic) {
-		bpm = topic.getValue();
-		repaint();
-	});
+    juce::Component::SafePointer<Track> safeThis(this);
+    bus.subscribe<float>("tempo", [safeThis](const FastTopic<float>& topic) {
+        if (auto* self = safeThis.getComponent()) {
+            self->bpm = topic.getValue();
+            self->repaint();
+        }
+    });
 }
 
 Track::~Track()

@@ -379,7 +379,7 @@ void EditorComponent::OpenTrackView()
         // Default-Setup: 2 Audio-Tracks fuer leeres Projekt. Wenn nachher ein
         // File geladen wird, leert der Load-Pfad clearTracks() vorher und
         // ersetzt sie mit den File-eigenen Tracks.
-        navigator->ensureDefaultAudioTracks(2);
+        // navigator->ensureDefaultAudioTracks(2);
     }
     // Only add the Navigator tab once
     bool navigatorTabExists = false;

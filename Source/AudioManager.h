@@ -35,6 +35,19 @@ public:
     juce::AudioDeviceManager* getDeviceManager() {
         return deviceManager;
     }
+
+    // Dedicated lock that protects the live module graph against
+    // simultaneous mutation (load/clear/add) and audio-thread iteration.
+    // Audio thread takes a ScopedTryLock in MainComponent::getNextAudioBlock
+    // and produces silence for the buffer if it can't acquire — main thread
+    // takes a full ScopedLock during openFile / loadModule / cleanUp etc.
+    //
+    // We don't reuse JUCE's AudioDeviceManager::getAudioCallbackLock() for
+    // this because in our setup attempts to lock it from the main thread
+    // didn't reliably block the audio callback (likely because the call
+    // chain dispatches via CallbackMaxSizeEnforcer before the lock is
+    // acquired, and our cleanup-then-realloc window straddles that gap).
+    juce::CriticalSection& getProcessGraphLock() { return processGraphLock; }
     
     void setDeviceManager(juce::AudioDeviceManager* manager){
         this->deviceManager = manager;
@@ -102,6 +115,7 @@ private:
     
     static AudioManager* instance;
     juce::AudioDeviceManager* deviceManager = nullptr;
+    juce::CriticalSection processGraphLock;
     
     int numInputChannels = 0;
     int numOutputChannels = 0;

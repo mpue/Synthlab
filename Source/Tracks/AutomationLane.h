@@ -114,7 +114,7 @@ public:
         if (points.empty())
         {
             g.setColour(juce::Colours::white.withAlpha(0.35f));
-            g.drawText("Mit der Maus zeichnen…", getLocalBounds(),
+            g.drawText("Mit der Maus zeichnen", getLocalBounds(),
                        juce::Justification::centred, false);
             return;
         }

@@ -43,6 +43,7 @@ public:
 		Project::getInstance()->getUndoManager()->beginNewTransaction();
 		Project::getInstance()->getUndoManager()->perform(am);
 		MidiGate* gate = dynamic_cast<MidiGate*>(am->getModule());
+        if (gate == nullptr) return nullptr;
 		gate->setChannel(channel);
 
 		pos.x += 160;
@@ -52,6 +53,8 @@ public:
 		Project::getInstance()->getUndoManager()->perform(am1);
 		TrackIn* ti = dynamic_cast<TrackIn*>(am1->getModule());
 
+        if (ti == nullptr) return nullptr;
+        
 		Track* t = navigator->addTrack(Track::Type::INSTRUMENT, Project::getInstance()->getSampleRate());
 		t->setType(Track::Type::INSTRUMENT);
 		t->setInstrumentName(name);
@@ -74,6 +77,9 @@ public:
 		Project::getInstance()->getUndoManager()->beginNewTransaction();
 		Project::getInstance()->getUndoManager()->perform(am2);
 		PluginModule* pm = dynamic_cast<PluginModule*>(am2->getModule());
+        
+        if (pm == nullptr) return nullptr;
+        
 		pm->selectPlugin(name);
 		pm->setChannel(channel);
 
@@ -119,6 +125,8 @@ public:
 			Project::getInstance()->getUndoManager()->perform(am3);
 			AudioOut* audioOut = dynamic_cast<AudioOut*>(am3->getModule());
 
+            if (audioOut == nullptr) return nullptr;
+            
 			destInstr = ConnectAudioOut(audioOut, pm, pos, 2, 3, editor->getModule(), editor);
 		}
 
@@ -218,32 +226,53 @@ public:
 		int leftInputChannel  = audioTrackCount * 2;
 		int rightInputChannel = audioTrackCount * 2 + 1;
 
-		// Create AudioIn L module
+		// Create AudioIn L module. UndoManager::perform takes ownership and
+		// DELETES the action when perform() returns false (e.g.
+		// AddModuleAction bails because numCurrentInputs >= numActiveInputs).
+		// Touching the pointer afterwards is a use-after-free — always check
+		// the bool return before dereferencing the action.
 		Point<int> origin = editor->getNextTrackStartPosition();
 		Point<int> pos = origin;
-		AddModuleAction* amAL = new AddModuleAction(editor, pos, 76);
-		Project::getInstance()->getUndoManager()->beginNewTransaction();
-		Project::getInstance()->getUndoManager()->perform(amAL);
-		AudioIn* audioInL = dynamic_cast<AudioIn*>(amAL->getModule());
-		if (audioInL != nullptr)
-			audioInL->setSelectedAudioInput(leftInputChannel);
+		auto* um = Project::getInstance()->getUndoManager();
+
+		AudioIn* audioInL = nullptr;
+		{
+			AddModuleAction* amAL = new AddModuleAction(editor, pos, 76);
+			um->beginNewTransaction();
+			if (um->perform(amAL)) {
+				audioInL = dynamic_cast<AudioIn*>(amAL->getModule());
+				if (audioInL != nullptr)
+					audioInL->setSelectedAudioInput(leftInputChannel);
+			}
+			// If perform returned false, amAL has been deleted — don't touch.
+		}
 
 		// Create AudioIn R module below L
 		pos.y += 155;
-		AddModuleAction* amAR = new AddModuleAction(editor, pos, 76);
-		Project::getInstance()->getUndoManager()->beginNewTransaction();
-		Project::getInstance()->getUndoManager()->perform(amAR);
-		AudioIn* audioInR = dynamic_cast<AudioIn*>(amAR->getModule());
-		if (audioInR != nullptr)
-			audioInR->setSelectedAudioInput(rightInputChannel);
+		AudioIn* audioInR = nullptr;
+		{
+			AddModuleAction* amAR = new AddModuleAction(editor, pos, 76);
+			um->beginNewTransaction();
+			if (um->perform(amAR)) {
+				audioInR = dynamic_cast<AudioIn*>(amAR->getModule());
+				if (audioInR != nullptr)
+					audioInR->setSelectedAudioInput(rightInputChannel);
+			}
+		}
 
 		// Create TrackIn module to the right of the AudioIn pair
 		pos = Point<int>(origin.x + 170, origin.y + 70);
-		AddModuleAction* am = new AddModuleAction(editor, pos, 48);
-		Project::getInstance()->getUndoManager()->beginNewTransaction();
-		Project::getInstance()->getUndoManager()->perform(am);
-		TrackIn* ti = dynamic_cast<TrackIn*>(am->getModule());
+		TrackIn* ti = nullptr;
+		{
+			AddModuleAction* am = new AddModuleAction(editor, pos, 48);
+			um->beginNewTransaction();
+			if (um->perform(am)) {
+				ti = dynamic_cast<TrackIn*>(am->getModule());
+			}
+		}
 
+        if (ti == nullptr) return nullptr;
+        
 		Track* t = navigator->addTrack(Track::Type::AUDIO, Project::getInstance()->getSampleRate());
 		t->setName("Audio " + String(navigator->getTracks().size() + 1));
 		ti->setTrack(t);
@@ -276,9 +305,11 @@ public:
 
 		if (preferAuxOut) {
 			AddModuleAction* am3 = new AddModuleAction(editor, pos, 77);
-			Project::getInstance()->getUndoManager()->beginNewTransaction();
-			Project::getInstance()->getUndoManager()->perform(am3);
-			AuxOut* auxOut = dynamic_cast<AuxOut*>(am3->getModule());
+			um->beginNewTransaction();
+			AuxOut* auxOut = nullptr;
+			if (um->perform(am3))
+				auxOut = dynamic_cast<AuxOut*>(am3->getModule());
+			// am3 deleted by UndoManager if perform() returned false.
 
 			if (auxOut != nullptr) {
 				auxOut->pins.at(0)->getConnections().push_back(ti->pins.at(2));
@@ -304,9 +335,10 @@ public:
 
 			if (audioOut == nullptr) {
 				AddModuleAction* am3 = new AddModuleAction(editor, pos, 66);
-				Project::getInstance()->getUndoManager()->beginNewTransaction();
-				Project::getInstance()->getUndoManager()->perform(am3);
-				audioOut = dynamic_cast<AudioOut*>(am3->getModule());
+				um->beginNewTransaction();
+				if (um->perform(am3))
+					audioOut = dynamic_cast<AudioOut*>(am3->getModule());
+				// am3 deleted by UndoManager if perform() returned false.
 			}
 
 			dest = ConnectAudioOut(audioOut, ti, pos, 2, 3, module, editor);

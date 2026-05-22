@@ -872,6 +872,14 @@ void SynthEditor::showPrefabMenu(Point<int> position) {
 		ValueTree v = ValueTree::fromXml(*xml);
 
 		setRunning(false);
+		// Block the audio thread — see openFile(File) for the full rationale.
+		// loadFromXml itself runs push_backs into a brand-new Module's vector
+		// (no race), but the subsequent push_back into root->getModules()
+		// inside AddModuleAction reallocates the project's tree while the
+		// audio thread iterates it.
+		const juce::ScopedLock graphBarrier(
+			AudioManager::getInstance()->getProcessGraphLock());
+
 		Module* loaded = ModuleUtils::loadFromXml(v, this);
 		if (loaded == nullptr) {
 			setRunning(true);
@@ -2004,6 +2012,9 @@ Module* SynthEditor::loadModule() {
 		ValueTree v = ValueTree::fromXml(*xml.get());
 
 		setRunning(false);
+		// Block the audio thread — see openFile(File) for the full rationale.
+		const juce::ScopedLock graphBarrier(
+			AudioManager::getInstance()->getProcessGraphLock());
 
 		Module* module = ModuleUtils::loadFromXml(v, this);
 		module->setName(v.getProperty("name"));
@@ -2336,6 +2347,9 @@ void SynthEditor::openFile() {
 
 		ValueTree v = ValueTree::fromXml(*xml.get());
 		setRunning(false);
+		// Block the audio thread — see openFile(File) for the full rationale.
+		const juce::ScopedLock graphBarrier(
+			AudioManager::getInstance()->getProcessGraphLock());
 		ModuleUtils::loadStructure(root->getModules(), root->getConnections(), &v, this);
 
 		PrefabFactory::getInstance()->updateLastModuleIndex(
@@ -2399,6 +2413,15 @@ void SynthEditor::openFile(juce::File file) {
 	// Pfad oder per ChangeBroadcaster, sobald Mixer broadcastet (z.B. bei
 	// Mixer::addTrack waehrend des Loads von File B).
 	setRunning(false);
+
+	// Block the audio thread for the entire load. SynthEditor::setRunning
+	// alone is unreliable (idempotent on this->running, returns early at
+	// app start without entering any lock — the audio callback then races
+	// with loadStructure's push_backs). The dedicated processGraphLock is
+	// independent of running-flag state — the audio thread try-locks it in
+	// MainComponent::getNextAudioBlock and emits silence if held.
+	const juce::ScopedLock graphBarrier(
+		AudioManager::getInstance()->getProcessGraphLock());
 
 	cleanUp();
 	newFile(/*askIfDirty=*/ false);

@@ -97,7 +97,9 @@ bool AddModuleAction::perform() {
             }
         }
         else {
-            delete m;
+            // Modul NICHT löschen: module zeigt darauf, der UndoManager
+            // verwirft die Action bei return false. delete würde den Pointer,
+            // den getModule() liefert, zu Freed-Memory machen.
             return false;
         }
 
@@ -156,7 +158,9 @@ bool AddModuleAction::perform() {
             }
         }
         else {
-            delete m;
+            // Modul NICHT löschen: module zeigt darauf, der UndoManager
+            // verwirft die Action bei return false. delete würde den Pointer,
+            // den getModule() liefert, zu Freed-Memory machen.
             return false;
         }
     }

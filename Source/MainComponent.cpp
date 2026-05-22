@@ -199,6 +199,14 @@ MainComponent::~MainComponent()
 
 	shutdownAudio();
 
+	// Detach the MenuBarModel base class from the command manager BEFORE any
+	// member destructor (which runs ApplicationCommandManager's dtor and frees
+	// it) can leave a dangling reference. MenuBarModel destructs after data
+	// members (it's the base class), and its own dtor calls
+	// setApplicationCommandManagerToWatch(nullptr) → removeListener on a
+	// freed commandManager.
+	setApplicationCommandManagerToWatch(nullptr);
+
 	if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
 		loadSlider->setLookAndFeel(nullptr);
 
@@ -823,6 +831,21 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 	}
 
 	if (!isRunning()) return;
+
+	// Try-lock against the main thread mutating the module graph (openFile,
+	// loadModule, cleanUp etc.). If the main thread is currently holding the
+	// lock for a load, skip processing this buffer rather than racing with
+	// vector::push_back reallocations that would free the storage we'd be
+	// iterating. The audio host fills the buffer with silence for one block
+	// which is preferable to a use-after-free.
+	const juce::ScopedTryLock graphLock(
+		AudioManager::getInstance()->getProcessGraphLock());
+
+	if (!graphLock.isLocked()) {
+		// Lock held by another thread — main thread is loading. Bail out
+		// cleanly so we don't touch the module tree mid-mutation.
+		return;
+	}
 
 	if (auto* rootModule = editor->getModule()) {
 		// Re-seed the root every block so it always reflects the live device
