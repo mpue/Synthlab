@@ -94,7 +94,8 @@ using juce::ToolbarButton;
 //==============================================================================
 MainComponent::MainComponent()
     : resizerBar(&stretchableManager, 1, true),
-      jsResizerBar(&stretchableManager, 3, true)
+      controlsResizerBar(&stretchableManager, 3, true),
+      jsResizerBar(&stretchableManager, 5, true)
 {
 
 	// Make sure you set the size of the component after
@@ -236,6 +237,12 @@ MainComponent::~MainComponent()
 		Project::getInstance()->setJavaScriptEditor(nullptr);
 		jsEditor = nullptr;
 
+		// Control-Surface haelt Raw-Pointer auf editor + Quell-Module ueber
+		// shadow-bindings (juce::Value::referTo). VOR editorView freigeben,
+		// sonst zeigen die Bindings auf zerstoerte Slider und der Panel-Dtor
+		// (referTo-Tear-down) liest tote ValueSources.
+		controlSurfacePanel = nullptr;
+
 		// Reihenfolge: editorView ZUERST, dann propertyView. editorView=nullptr
 		// triggert ~EditorComponent -> ~SynthEditor -> cleanUp(), das u.a.
 		// Project::getInstance()->getPropertyView()->selectionChanged() ruft.
@@ -252,6 +259,11 @@ MainComponent::~MainComponent()
 		tab = nullptr;
 		delete lockButton;
 		menu = nullptr;
+		// Buttons gehoeren der Toolbar — Pointer nullen, bevor wir das Owner-
+		// Objekt zerstoeren, damit timerCallback() bei spaeterer Wiederbelebung
+		// nicht auf befreite Buttons greift.
+		playToolbarButton = nullptr;
+		recordToolbarButton = nullptr;
 		toolbar = nullptr;
 		toolbarFactory = nullptr;
 #if defined(JUCE_PLUGINHOST_AU)
@@ -347,14 +359,22 @@ void MainComponent::createToolbar() {
 
 	for (int i = 0; i < toolbarFactory->numItems(); i++) {
 		toolbar->addItem(*toolbarFactory, i + 1);
-		toolbar->getItemComponent(i)->addListener(this);
+		auto* item = toolbar->getItemComponent(i);
+		item->addListener(this);
 
 		if (layerCombobox == nullptr) {
-			layerCombobox = dynamic_cast<ToolbarComboBox*>(toolbar->getItemComponent(i));
+			layerCombobox = dynamic_cast<ToolbarComboBox*>(item);
 		}
 		if (layerCombobox != nullptr) {
 
 			layerCombobox->getComboBox().addListener(this);
+		}
+
+		if (auto* tb = dynamic_cast<juce::ToolbarButton*>(item)) {
+			if (tb->getItemId() == toolbarFactory->app_play)
+				playToolbarButton = dynamic_cast<TransportToolbarButton*>(tb);
+			else if (tb->getItemId() == toolbarFactory->app_record)
+				recordToolbarButton = dynamic_cast<TransportToolbarButton*>(tb);
 		}
 	}
 
@@ -666,27 +686,45 @@ void MainComponent::createStudioLayout() {
 	// Publish to Project so modules (e.g. TriggerScriptModule) can reach the
 	// JS editor without each one needing its own setter wiring from here.
 	Project::getInstance()->setJavaScriptEditor(jsEditor.get());
+
+	// Control-Surface-Panel: rechts neben dem Editor, vor der JS-Pane.
+	// Sieht in die gleiche Modulhierarchie wie der Editor und spiegelt jedes
+	// Modul mit displayAtRootLevel als Shadow-Klon. setEditor() triggert den
+	// ersten rebuild() — danach feuern Datei-Open-Pfade einen weiteren.
+	controlSurfacePanel = std::make_unique<ControlSurfacePanel>();
+	controlSurfacePanel->setEditor(editor);
+	addAndMakeVisible(controlsResizerBar);
+	addAndMakeVisible(*controlSurfacePanel);
+
 	addAndMakeVisible(jsResizerBar);
 	addAndMakeVisible(jsEditor.get());
 
-	// we have to set up our StretchableLayoutManager so it know the limits and preferred sizes of it's contents
-	stretchableManager.setItemLayout(0,            // for the properties
-		-0.1, -0.9,   // must be between 50 pixels and 90% of the available space
-		-0.2);        // and its preferred size is 30% of the total available space
+	// 7-Item-Layout: properties | resizer | editor | controlsResizer
+	//              | controlSurface | jsResizer | jsEditor
+	stretchableManager.setItemLayout(0,            // properties
+		-0.1, -0.9,
+		-0.2);
 
-	stretchableManager.setItemLayout(1,            // for the resize bar
-		5, 5, 5);     // hard limit to 5 pixels
-
-	stretchableManager.setItemLayout(2,            // for the main editor
-		-0.1, -0.9,   // size must be between 50 pixels and 90% of the available space
-		-0.6);        // 60% preferred — leaves room for the JS pane (was 80%)
-
-	stretchableManager.setItemLayout(3,            // resizer between editor and JS pane
+	stretchableManager.setItemLayout(1,            // resize bar
 		5, 5, 5);
 
-	stretchableManager.setItemLayout(4,            // JavaScript editor (right pane)
-		-0.0, -0.6,   // can shrink to 0 (drag-to-hide), max 60%
-		-0.2);        // preferred 20%
+	stretchableManager.setItemLayout(2,            // main editor
+		-0.1, -0.9,
+		-0.45);       // a bit weniger preferred, um Platz für die Controls zu lassen
+
+	stretchableManager.setItemLayout(3,            // resizer Editor <-> Controls
+		5, 5, 5);
+
+	stretchableManager.setItemLayout(4,            // Control-Surface (right of editor)
+		-0.0, -0.5,   // kann auf 0 zugezogen werden
+		-0.15);
+
+	stretchableManager.setItemLayout(5,            // resizer Controls <-> JS
+		5, 5, 5);
+
+	stretchableManager.setItemLayout(6,            // JavaScript editor (rechte Pane)
+		-0.0, -0.6,
+		-0.2);
 
 #if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
 	pluginMenu = PluginManager::getInstance()->buildPluginMenu();
@@ -713,6 +751,26 @@ void MainComponent::timerCallback() {
 	if (mixerPanel != nullptr) {
 		for (auto* panel : mixerPanel->getChannels())
 			panel->updateMeter();
+	}
+
+	// Transport-Button-Feedback: Play -> dauergrün, Record -> rotes Blinken im
+	// aktuellen Tempo. State kommt vom Navigator, das Blinken läuft eigenständig
+	// im Button-Timer (siehe TransportToolbarButton).
+	if (navigator != nullptr) {
+		const bool playing   = navigator->isPlaying();
+		const bool recording = navigator->isRecording();
+
+		if (playToolbarButton != nullptr) {
+			playToolbarButton->setActiveMode(playing
+				? TransportToolbarButton::Mode::Solid
+				: TransportToolbarButton::Mode::Idle);
+		}
+		if (recordToolbarButton != nullptr) {
+			recordToolbarButton->setBlinkBpm(Project::getInstance()->getTempo());
+			recordToolbarButton->setActiveMode(recording
+				? TransportToolbarButton::Mode::Blinking
+				: TransportToolbarButton::Mode::Idle);
+		}
 	}
 
 	if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
@@ -1207,14 +1265,16 @@ void MainComponent::resized()
 			statusBar->toFront(false);
 		}
 
-		// Horizontal layout: propertyView | resizer | editorView | jsResizer | jsEditor
-		// — five children, the two resizers are 5px each. jsEditor is nullptr
-		// only when createStudioLayout hasn't run yet (shouldn't happen here),
-		// but guard anyway so resized() during early construction is safe.
-		if (jsEditor != nullptr) {
+		// Horizontal layout: propertyView | resizer | editorView | controlsResizer
+		// | controlSurfacePanel | jsResizer | jsEditor — seven children, three
+		// resizers à 5 px. Falls die Studio-Layout-Erstellung noch laeuft, sind
+		// jsEditor/controlSurfacePanel nullptr; dann faellt es auf die 3-Item-
+		// Variante zurueck.
+		if (jsEditor != nullptr && controlSurfacePanel != nullptr) {
 			Component* comps[] = { propertyView.get(), &resizerBar, editorView.get(),
+			                       &controlsResizerBar, controlSurfacePanel.get(),
 			                       &jsResizerBar, jsEditor.get() };
-			stretchableManager.layOutComponents(comps, 5,
+			stretchableManager.layOutComponents(comps, 7,
 				r.getX(), r.getY() + 25, r.getWidth(), r.getHeight(),
 				false, true);
 		} else {
@@ -2465,6 +2525,12 @@ void MainComponent::fileChanged(juce::String name) {
 		// dort nullptr und rootLevelProxies haelt dangling Module* aus A.
 		layerCombobox->getComboBox().setSelectedId(editor->getCurrentLayer() + 1,
 		                                            juce::NotificationType::dontSendNotification);
+
+	// Neues Projekt geladen -> Shadow-Tree neu aufbauen. Andernfalls zeigt das
+	// Panel noch Bindings auf jetzt zerstoerte Source-Module aus dem alten
+	// Projekt (referTo wuerde ins Leere laufen).
+	if (controlSurfacePanel != nullptr)
+		controlSurfacePanel->rebuild();
 }
 
 void MainComponent::dirtyChanged(bool dirty) {

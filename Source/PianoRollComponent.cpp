@@ -1128,7 +1128,9 @@ bool PianoRollComponent::keyPressed(const juce::KeyPress& key, juce::Component*)
 {
     auto keyCode = key.getKeyCode();
     bool shiftHeld = key.getModifiers().isShiftDown();
-    bool cmdHeld = key.getModifiers().isCtrlDown();
+    // isCommandDown ist plattformbewusst (Cmd auf macOS, Ctrl auf
+    // Win/Linux) — isCtrlDown wuerde auf dem Mac die Cmd-Taste verfehlen.
+    bool cmdHeld = key.getModifiers().isCommandDown();
 
     // Spacebar → play/stop
     if (key == juce::KeyPress::spaceKey) {
@@ -1192,16 +1194,26 @@ bool PianoRollComponent::keyPressed(const juce::KeyPress& key, juce::Component*)
         }
 
         if (keyCode == juce::KeyPress::leftKey) {
-            // Move to previous grid point
             double gridTime = getGridTimeStep();
-            moveSelectedNotes(-gridTime, 0);
+            // Shift+Left: alle selektierten Noten um 1 Grid-Step verkuerzen.
+            // Ohne Shift: zeitlich nach links bewegen.
+            if (shiftHeld) {
+                resizeSelected(-gridTime);
+            } else {
+                moveSelectedNotes(-gridTime, 0);
+            }
             return true;
         }
 
         if (keyCode == juce::KeyPress::rightKey) {
-            // Move to next grid point
             double gridTime = getGridTimeStep();
-            moveSelectedNotes(gridTime, 0);
+            // Shift+Right: alle selektierten Noten um 1 Grid-Step verlaengern.
+            // Ohne Shift: zeitlich nach rechts bewegen.
+            if (shiftHeld) {
+                resizeSelected(gridTime);
+            } else {
+                moveSelectedNotes(gridTime, 0);
+            }
             return true;
         }
     }
@@ -1848,6 +1860,30 @@ void PianoRollComponent::transposeSelected(int semitones)
         int newPitch = juce::jlimit(0, 127, msg->getNoteNumber() + semitones);
         msg->setNoteNumber(newPitch);
         noteOff->setNoteNumber(newPitch);
+    }
+
+    midiRegion->rebuildThumbnail();
+    midiRegion->updateThumb();
+    notifyRegionModified();
+    repaint();
+}
+
+void PianoRollComponent::resizeSelected(double deltaTime)
+{
+    if (selectedMessages.empty() || midiRegion == nullptr) return;
+
+    // Mindestlaenge analog zu handleResizeDrag: 1/64-Note in Samples.
+    const double minDuration = (60.0 / bpm) / 16.0 * sampleRate;
+
+    for (auto* msg : selectedMessages) {
+        MidiMessage* noteOff = findNoteOffForNoteOn(msg);
+        if (!noteOff) continue;
+
+        double newEnd = noteOff->getTimeStamp() + deltaTime;
+        double minEnd = msg->getTimeStamp() + minDuration;
+        if (newEnd < minEnd) newEnd = minEnd;
+
+        noteOff->setTimeStamp(newEnd);
     }
 
     midiRegion->rebuildThumbnail();

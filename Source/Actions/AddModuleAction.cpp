@@ -25,11 +25,21 @@ AddModuleAction::AddModuleAction(SynthEditor* editor, juce::Point<int> position,
 }
 
 bool AddModuleAction::undo() {
-    
+
     if (module == nullptr) {
         return false;
     }
-    
+
+    // Hold processGraphLock so the audio callback (which takes a ScopedTryLock
+    // on the same CriticalSection in MainComponent::getNextAudioBlock) can't
+    // be mid-iteration on getModules() while we erase from it. Without this,
+    // the audio thread keeps walking the modules vector while undo() removes
+    // an entry, which on a reallocating container is a heap-use-after-free
+    // (caught by ASan in the original report). CriticalSection is recursive,
+    // so nesting under SynthEditor::cleanUp()'s lock is safe.
+    const juce::ScopedLock graphLock(
+        AudioManager::getInstance()->getProcessGraphLock());
+
     for (std::vector<Module*>::iterator it = editor->getModule()->getModules()->begin();it != editor->getModule()->getModules()->end();) {
         
         if ((*it)->getIndex() == module->getIndex()) {
@@ -50,11 +60,23 @@ bool AddModuleAction::undo() {
 }
 
 bool AddModuleAction::perform() {
-    
+
     if (moduleId < 1) {
         return false;
     }
-    
+
+    // Audio thread takes a ScopedTryLock on this CriticalSection in
+    // MainComponent::getNextAudioBlock before iterating the module graph;
+    // hold the writer lock here so a push_back-induced reallocation can't
+    // free the storage while the callback is mid-iteration. This was the
+    // direct cause of the ASan heap-use-after-free in processModule when a
+    // JS action (addMidiTrack -> AddTrackAction -> AddModuleAction) ran on
+    // the message thread while audio kept rolling. JUCE's CriticalSection
+    // is recursive, so this composes with AddTrackAction's outer lock and
+    // with SynthEditor::cleanUp()'s lock.
+    const juce::ScopedLock graphLock(
+        AudioManager::getInstance()->getProcessGraphLock());
+
     Module* m = module;
     
     if (m == nullptr) {

@@ -200,17 +200,27 @@ void Knob::setValue(float value) {
     this->value = value;
     this->pins.at(0)->setValue(value);
 
-    std::function<void(void)> changeLambda =
-        [=]() {
-
-        if (getParentComponent() != NULL) {
-            this->valueLabel->setText(String(value), juce::NotificationType::dontSendNotification);
-            this->slider->setValue(value, juce::NotificationType::dontSendNotification);
+    // callAsync queues the lambda for a later AppKit dispatch tick. If the
+    // Knob (or any of its parents — e.g. via project.clear -> cleanUp ->
+    // module destruction) gets deleted between the queueing and the dispatch,
+    // a [=]/this-capturing lambda dereferences freed memory. The existing
+    // getParentComponent()!=NULL guard does NOT help: it reads the parent
+    // member out of *this*, which is itself already freed (caught by ASan
+    // in Component::getParentComponent). Component::SafePointer is the
+    // standard JUCE remedy — it piggybacks on Component's built-in
+    // WeakReference and resolves to nullptr if the component is gone by the
+    // time the message fires.
+    juce::Component::SafePointer<Knob> safeThis(this);
+    juce::MessageManager::callAsync([safeThis, value]() {
+        if (auto* self = safeThis.getComponent()) {
+            if (self->getParentComponent() != nullptr) {
+                if (self->valueLabel != nullptr)
+                    self->valueLabel->setText(String(value), juce::NotificationType::dontSendNotification);
+                if (self->slider != nullptr)
+                    self->slider->setValue(value, juce::NotificationType::dontSendNotification);
+            }
         }
-        };
-    juce::MessageManager::callAsync(changeLambda);
-
-
+    });
 }
 
 void Knob::sliderValueChanged(juce::Slider* slider) {

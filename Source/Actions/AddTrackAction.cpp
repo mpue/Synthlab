@@ -20,6 +20,7 @@
 #include "../Mixer.h"
 #include "../MixerPanel.h"
 #include "../TrackUtil.h"
+#include "../AudioManager.h"
 
 #include "../Tracks/Track.h"
 #include "../Tracks/TrackNavigator.h"
@@ -109,6 +110,15 @@ void AddTrackAction::wireConnection(Module* srcMod, int srcPinIdx,
 
 bool AddTrackAction::perform()
 {
+    // Hold the writer lock for the whole transaction. buildAudio/Midi/
+    // Instrument call addModuleNow() which delegates to AddModuleAction::
+    // perform() (which also takes this lock — recursive CriticalSection is
+    // fine), and wireConnection() push_backs into pin / root-connection
+    // vectors that the audio thread iterates under its ScopedTryLock. Same
+    // reasoning applies to doAttach() on the redo path.
+    const juce::ScopedLock graphLock(
+        AudioManager::getInstance()->getProcessGraphLock());
+
     if (!built) {
         switch (type) {
             case Type::Audio:      buildAudio(); break;
@@ -130,6 +140,13 @@ bool AddTrackAction::perform()
 bool AddTrackAction::undo()
 {
     if (!built) return false;
+
+    // Mirror perform(): doDetach() erases from module / connection / mixer
+    // vectors that the audio thread is walking — hold the writer lock so
+    // the callback drops a buffer rather than touching freed storage.
+    const juce::ScopedLock graphLock(
+        AudioManager::getInstance()->getProcessGraphLock());
+
     doDetach();
     if (editor != nullptr) editor->resized();
     return true;

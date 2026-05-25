@@ -108,7 +108,14 @@ void MidiThumbnail::addMessage(int sampleNum, MidiMessage* message)
 
     totalSamples = maxSampleNum;
 
-    juce::MessageManager::callAsync([this]() { repaint(); });
+    // SafePointer guards against the thumbnail (or its owning MidiRegion)
+    // being destroyed between the queueing and the dispatch — see MidiRegion::
+    // updateThumb for the same pattern. project.clear / track removal can
+    // wipe regions while late callAsync repaints are still pending.
+    juce::Component::SafePointer<MidiThumbnail> safe(this);
+    juce::MessageManager::callAsync([safe]() {
+        if (auto* self = safe.getComponent()) self->repaint();
+    });
 }
 
 void MidiThumbnail::removeAllMessages()
@@ -118,7 +125,10 @@ void MidiThumbnail::removeAllMessages()
     maxSampleNum = 0;
     totalSamples = 0;
 
-    juce::MessageManager::callAsync([this]() { repaint(); });
+    juce::Component::SafePointer<MidiThumbnail> safe(this);
+    juce::MessageManager::callAsync([safe]() {
+        if (auto* self = safe.getComponent()) self->repaint();
+    });
 }
 
 void MidiThumbnail::setZoom(float newZoom)

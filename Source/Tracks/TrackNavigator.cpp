@@ -24,6 +24,10 @@
 #include "../MidiRegionEventEditor.h"
 #include "../PluginModule.h"
 #include "../MidiProcessor.h"
+#include "../TrackIn.h"
+#include "../AudioManager.h"
+#include "../MixerPanel.h"
+#include "MasterChannelPanel.h"
 
 using namespace std;
 
@@ -131,6 +135,52 @@ void TrackNavigator::paint(Graphics& g)
 }
 
 void TrackNavigator::clearTracks() {
+	// Audio thread holds raw Track* pointers via TrackIn modules (set in
+	// AddTrackAction::buildAudio/Midi/Instrument). If we delete the Track
+	// objects below while the callback is mid-TrackIn::process(), it reads
+	// freed memory in Track::isRecording() — exactly the ASan UAF seen
+	// after `project.clear()` from JS. Two-step fix:
+	//   1) Hold the writer lock so the audio thread's ScopedTryLock in
+	//      MainComponent::getNextAudioBlock fails for one buffer (silence).
+	//   2) Before the deletes, null out every TrackIn's Track* so that any
+	//      callback AFTER we release the lock sees track == nullptr and
+	//      bails out cleanly (TrackIn::process already null-guards on
+	//      `track`). Without (2) the UAF re-fires on the next buffer even
+	//      with the lock — clearTracks-from-JS leaves the TrackIn modules
+	//      in the editor graph by design (root modules survive).
+	const juce::ScopedLock graphLock(
+		AudioManager::getInstance()->getProcessGraphLock());
+
+	if (editor != nullptr) {
+		if (auto* root = editor->getModule()) {
+			if (auto* mods = root->getModules()) {
+				for (auto* m : *mods) {
+					if (auto* ti = dynamic_cast<TrackIn*>(m))
+						ti->setTrack(nullptr);
+				}
+			}
+		}
+
+		// UI side: mixer channel strips hold a raw Track* via setTrack() and
+		// paint() reads track->getType() — the strips OUTLIVE clearTracks
+		// because they belong to MixerPanel, not the navigator. Without this
+		// null-out, the next AppKit repaint (triggered by any state change
+		// after project.clear, even the mixer's own change broadcast) dereffs
+		// a freed Track in MasterChannelPanel::paint. Mirror the TrackIn
+		// detach for every channel strip whose track is about to die.
+		if (auto mixer = editor->getMixer()) {
+			for (auto* panel : mixer->getChannels()) {
+				if (panel == nullptr) continue;
+				Track* t = panel->getTrack();
+				if (t == nullptr) continue;
+				// Only null strips whose track is in the about-to-be-deleted
+				// set; non-track strips (master / sub-mix) survive untouched.
+				if (std::find(tracks.begin(), tracks.end(), t) != tracks.end())
+					panel->setTrack(nullptr);
+			}
+		}
+	}
+
 	// Erst die Controls weg — wenn der Track unter ihnen gelöscht wird, hätten
 	// sie einen Dangling-Pointer.
 	trackControls.clear();
@@ -1610,11 +1660,14 @@ bool TrackNavigator::keyPressed(const KeyPress& key, Component* originatingCompo
 			}
 		}
 		else if (key.getKeyCode() == 69) { // E
-			
-			openPianoRoll(dynamic_cast<MidiRegion*>(getCurrentTrack()->getCurrentRegion()));
+			if (Track* cur = getCurrentTrack())
+				if (auto* mr = dynamic_cast<MidiRegion*>(cur->getCurrentRegion()))
+					openPianoRoll(mr);
 		}
 		else if (key.getKeyCode() == 77) { // M;
-			openEventEditor(dynamic_cast<MidiRegion*>(getCurrentTrack()->getCurrentRegion()));
+			if (Track* cur = getCurrentTrack())
+				if (auto* mr = dynamic_cast<MidiRegion*>(cur->getCurrentRegion()))
+					openEventEditor(mr);
 		}
 		else if (key.getKeyCode() == 73) { // I
 			for (int i = 0; i < tracks.size(); i++) {

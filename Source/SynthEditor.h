@@ -210,6 +210,7 @@ public:
     virtual float getBufferSize() override;
     
     void addEditorListener(EditorListener* listener);
+    void removeEditorListener(EditorListener* listener);
     void saveScreenShot();
     
     void alignSelectedY();

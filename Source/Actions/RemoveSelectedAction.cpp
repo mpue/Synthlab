@@ -12,6 +12,7 @@
 #include "../AudioOut.h"
 #include "../AudioIn.h"
 #include "../AuxOut.h"
+#include "../AudioManager.h"
 #include "../MixerPanel.h"
 #include <algorithm>
 #include <set>
@@ -28,6 +29,15 @@ RemoveSelectedAction::~RemoveSelectedAction() {
 }
 
 bool RemoveSelectedAction::perform() {
+    // setRunning(false) alone is not enough: the audio callback may already
+    // be past the isRunning() check and mid-iteration on getModules() /
+    // getConnections() when we erase. Hold the writer lock so the audio
+    // thread's ScopedTryLock in MainComponent::getNextAudioBlock fails for
+    // the duration of the mutation (one buffer of silence) instead of
+    // touching freed storage.
+    const juce::ScopedLock graphLock(
+        AudioManager::getInstance()->getProcessGraphLock());
+
     editor->setRunning(false);
 
     Module*                  rootMod  = editor->getModule();
@@ -165,6 +175,11 @@ bool RemoveSelectedAction::perform() {
 
 bool RemoveSelectedAction::undo() {
     if (removedModules.empty() && removedConnections.empty()) return false;
+
+    // Mirror perform(): hold the writer lock while we re-attach modules and
+    // connections so the audio thread can't iterate a half-rebuilt graph.
+    const juce::ScopedLock graphLock(
+        AudioManager::getInstance()->getProcessGraphLock());
 
     editor->setRunning(false);
 

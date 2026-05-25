@@ -6,6 +6,7 @@
 //
 
 #include "AddConnectionAction.h"
+#include "../AudioManager.h"
 
 AddConnectionAction::AddConnectionAction(SynthEditor* editor, Module* module) {
     this->editor = editor;
@@ -17,7 +18,15 @@ AddConnectionAction::AddConnectionAction(SynthEditor* editor, Module* module) {
 bool AddConnectionAction::perform() {
 
     Logger::writeToLog("Adding connection.");
-    
+
+    // Audio thread iterates root->getConnections() and pin->getConnections()
+    // under a ScopedTryLock on this CriticalSection. We mutate both via
+    // push_back below, which can reallocate and invalidate iterators the
+    // audio thread is mid-walk on. Hold the writer lock for the entire
+    // wiring transaction.
+    const juce::ScopedLock graphLock(
+        AudioManager::getInstance()->getProcessGraphLock());
+
     // find the selected input of the source module
     for (int j = 0; j < source->pins.size(); j++) {
         
@@ -137,6 +146,11 @@ bool AddConnectionAction::undo() {
     if (c == nullptr) {
         return true;
     }
+
+    // Mirror perform(): hold the writer lock while we erase from the same
+    // containers the audio thread iterates under its TryLock.
+    const juce::ScopedLock graphLock(
+        AudioManager::getInstance()->getProcessGraphLock());
 
     for (std::vector<Pin*>::iterator ita = a->getConnections().begin();ita != a->getConnections().end();) {
         if ((*ita) == b) {

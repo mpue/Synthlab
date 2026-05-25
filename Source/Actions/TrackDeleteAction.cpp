@@ -10,6 +10,7 @@
 #include "../MixerPanel.h"
 #include "../TrackUtil.h"
 #include "../Module.h"
+#include "../AudioManager.h"
 #include <algorithm>
 #include <set>
 
@@ -115,6 +116,15 @@ void TrackDeleteAction::discoverAssembly()
 
 bool TrackDeleteAction::perform()
 {
+    // Hold the writer lock for the whole transaction. detachModules() erases
+    // from getModules() / getConnections() / mixer-channel vectors that the
+    // audio thread iterates under a ScopedTryLock in
+    // MainComponent::getNextAudioBlock. setRunning(false) inside
+    // detachModules is not sufficient — the callback can already be past
+    // the flag check and mid-iteration.
+    const juce::ScopedLock graphLock(
+        AudioManager::getInstance()->getProcessGraphLock());
+
     // 1) Get hold of the Track (first call: detach from navigator).
     if (removedTrack == nullptr) {
         int idx = -1;
@@ -149,6 +159,12 @@ bool TrackDeleteAction::perform()
 bool TrackDeleteAction::undo()
 {
     if (removedTrack == nullptr) return false;
+
+    // Mirror perform(): hold the writer lock while attachModules() re-adds
+    // entries to the module graph so the audio thread can't iterate a
+    // half-restored state.
+    const juce::ScopedLock graphLock(
+        AudioManager::getInstance()->getProcessGraphLock());
 
     navigator->insertTrackAt(removedTrack, savedIndex);
     Mixer::getInstance()->addTrack(removedTrack);

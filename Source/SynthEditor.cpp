@@ -1734,6 +1734,14 @@ void SynthEditor::modifierKeysChanged(const ModifierKeys& modifiers)
 }
 
 void SynthEditor::cleanUp() {
+	// Listener (ControlSurfacePanel u.a.) ueber den bevorstehenden Teardown
+	// informieren — VOR jeder Modul-Loeschung, damit sie Bindings/Shadow-
+	// Klone freigeben koennen, solange die Source-Slider-ValueSources noch
+	// gueltig sind.
+	for (size_t i = 0; i < listener.size(); ++i)
+		if (listener.at(i) != nullptr)
+			listener.at(i)->beforeCleanUp();
+
 	// Undo-History GANZ AM ANFANG leeren — bevor wir Module aus dem root-Tree
 	// loeschen. RemoveSelectedAction & Co. besitzen die "removed" Module
 	// (damit Undo sie zurueckholen kann) und deleten sie in ihrem Destruktor.
@@ -3344,6 +3352,13 @@ void SynthEditor::duplicateSelected() {
 
 void SynthEditor::addEditorListener(EditorListener* listener) {
 	this->listener.push_back(listener);
+}
+
+void SynthEditor::removeEditorListener(EditorListener* l) {
+	this->listener.erase(std::remove(this->listener.begin(),
+	                                 this->listener.end(),
+	                                 l),
+	                     this->listener.end());
 }
 
 void SynthEditor::notifyListeners() {

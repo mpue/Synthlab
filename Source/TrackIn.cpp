@@ -370,9 +370,13 @@
 	void TrackIn::setTrack(Track* t)
 	{
 		this->track = t;
-		trackType = t->getType();	
-		t->AddEventListener(this);
-		
+		// nullptr-pass is the "detach" path used by TrackNavigator::clearTracks
+		// just before it deletes the Track objects — keeping the existing
+		// trackType so a later setTrack(real) still routes correctly.
+		if (t != nullptr) {
+			trackType = t->getType();
+			t->AddEventListener(this);
+		}
 	}
 
 	int TrackIn::getChannelIndex() {

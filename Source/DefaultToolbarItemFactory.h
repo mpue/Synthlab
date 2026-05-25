@@ -9,6 +9,7 @@
 #ifndef DefaultToolbarItemFactory_h
 #define DefaultToolbarItemFactory_h
 
+#include "TransportToolbarButton.h"
 
 class DefaultToolbarItemFactory : public juce::ToolbarItemFactory
 {
@@ -137,14 +138,20 @@ public:
 			b = new juce::ToolbarButton(itemId, "Stop", getImage(itemId), getImage(itemId));
 			return b;
 		case app_play:
-			b = new juce::ToolbarButton(itemId, "Play", getImage(itemId), getImage(itemId));
-			return b;
+		{
+			auto* pb = new TransportToolbarButton(itemId, "Play", getImage(itemId), getImage(itemId));
+			pb->setActiveColour(juce::Colour::fromRGB(50, 200, 80));
+			return pb;
+		}
 		case app_pause:
 			b = new juce::ToolbarButton(itemId, "Pause", getImage(itemId), getImage(itemId));
 			return b;
 		case app_record:
-			b = new juce::ToolbarButton(itemId, "Record", getImage(itemId), getImage(itemId));
-			return b;
+		{
+			auto* rb = new TransportToolbarButton(itemId, "Record", getImage(itemId), getImage(itemId));
+			rb->setActiveColour(juce::Colour::fromRGB(220, 40, 40));
+			return rb;
+		}
 		case app_fast_backwards:
 			b = new juce::ToolbarButton(itemId, "Fast back", getImage(itemId), getImage(itemId));			
 			return b;

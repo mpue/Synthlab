@@ -120,6 +120,12 @@ public:
     void reverseSelected();
     void duplicateSelected(int times = 1, double interval = 0.0);
 
+    // Verlaengert (deltaTime > 0) oder verkuerzt (deltaTime < 0) alle aktuell
+    // selektierten Noten um deltaTime Samples. Hartes Minimum ist eine
+    // 1/64-Note (analog zu handleResizeDrag), damit Noten nicht auf 0
+    // schrumpfen.
+    void resizeSelected(double deltaTime);
+
     // === CHORD & SCALE TOOLS ===
     void quantizeToScale(const std::vector<int>& scale);
     void addChord(int rootNote, double startTime, double duration, const std::vector<int>& intervals);

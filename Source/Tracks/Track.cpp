@@ -1613,17 +1613,54 @@ void Track::setMagnitude(int channel, double magnitude) {
 }
 
 double Track::getMagnitude(int channel) {
-	if (channel == 0) {
-		return this->magnitudeLeft;
-	}
-	else {
-		return this->magnitudeRight;
-	}
+	// Defensive: bei unbekannten Kanal-Indizes (negativ, > 1) liefern wir 0
+	// statt aus Versehen magnitudeRight zurueckzugeben — das hat in Meter-
+	// Anzeigen frueher zu vertauschten Pegeln gefuehrt, sobald jemand
+	// channel=2 fuer 5.1 o.ae. uebergibt.
+	if (channel == 0) return this->magnitudeLeft;
+	if (channel == 1) return this->magnitudeRight;
+	return 0.0;
 }
 
 void Track::updateMagnitude(int sample, int buffersize, float gainLeft, float gainRight) {
-	this->magnitudeLeft = audioBuffer->getMagnitude(0, sample, buffersize) * gainLeft;
-	this->magnitudeRight = audioBuffer->getMagnitude(1, sample, buffersize) * gainRight;
+	// Robustness gegen kaputte Aufrufe vom Audio-Thread: TrackIn::process
+	// laeuft im Realtime-Callback, und audioBuffer kann waehrend Open/Clear/
+	// Buffer-Resize voruebergehend null oder leer sein. JUCE's
+	// AudioBuffer::getMagnitude jasserted bei channel/range-Verletzungen —
+	// in Release wuerde es OOB lesen.
+	if (audioBuffer == nullptr) {
+		this->magnitudeLeft = 0.0;
+		this->magnitudeRight = 0.0;
+		return;
+	}
+
+	const int numCh      = audioBuffer->getNumChannels();
+	const int numSamples = audioBuffer->getNumSamples();
+
+	if (numCh <= 0 || numSamples <= 0 || buffersize <= 0) {
+		this->magnitudeLeft = 0.0;
+		this->magnitudeRight = 0.0;
+		return;
+	}
+
+	// Range in den Buffer schieben, dann Laenge clampen. Negative sample-
+	// Werte (z.B. wenn samplePos beim Reset kurzzeitig < 0 ist) sonst direkt
+	// in jassert.
+	int start = juce::jmax (0, sample);
+	int len   = juce::jmin (buffersize, numSamples - start);
+
+	if (start >= numSamples || len <= 0) {
+		this->magnitudeLeft = 0.0;
+		this->magnitudeRight = 0.0;
+		return;
+	}
+
+	this->magnitudeLeft  = (numCh > 0)
+		? audioBuffer->getMagnitude (0, start, len) * gainLeft
+		: 0.0;
+	this->magnitudeRight = (numCh > 1)
+		? audioBuffer->getMagnitude (1, start, len) * gainRight
+		: this->magnitudeLeft;   // Mono-Buffer: rechts spiegelt links
 }
 
 const float* Track::getReadBuffer(int channel) {

@@ -841,6 +841,14 @@ void MasterChannelPanel::setSolo(bool solo) {
 
 void MasterChannelPanel::setTrack(Track *t) {
     this->track = t;
+    // nullptr-pass is the "detach" path used by TrackNavigator::clearTracks
+    // just before it deletes the Track objects — without nulling here, paint()
+    // and the change-listener callback would deref freed memory the next time
+    // the strip repaints. Skip the name/FX/sends sync in that case; a later
+    // setTrack(real) on a fresh project.load reinitialises everything.
+    if (t == nullptr)
+        return;
+
     setName(track->getName());
     Mixer::getInstance()->addChangeListener(this);
     // Falls die FX-Chain bereits aufgebaut ist (z.B. nach load), den Track

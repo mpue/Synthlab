@@ -38,9 +38,13 @@ namespace
     // into the calling editor instance - no locking required.
     thread_local JavaScriptEditorComponent* currentEditor = nullptr;
 
-    String collectAllArgsAsString (duk_context* ctx)
+    // maxArgs < 0 = alle Argumente nehmen (Default). alert() nutzt die obere
+    // Grenze, um ein optionales Titel-Argument am Ende vom Message-Join
+    // auszuschliessen.
+    String collectAllArgsAsString (duk_context* ctx, int maxArgs = -1)
     {
-        const int n = duk_get_top (ctx);
+        const int top = duk_get_top (ctx);
+        const int n = (maxArgs < 0 || maxArgs > top) ? top : maxArgs;
         StringArray parts;
 
         for (int i = 0; i < n; ++i)
@@ -93,9 +97,25 @@ namespace
 
     duk_ret_t native_alert (duk_context* ctx)
     {
-        const String msg = collectAllArgsAsString (ctx);
+        // Wenn das letzte Argument ein String ist und mindestens zwei Args
+        // uebergeben wurden, behandeln wir es als optionalen Fenstertitel.
+        // So bleibt der Single-Arg-Fall `alert("foo")` unveraendert.
+        const int nargs = duk_get_top (ctx);
+        String title  = "Synthlab Script";
+        int msgArgs = nargs;
+        if (nargs >= 2 && duk_is_string (ctx, nargs - 1))
+        {
+            title = String::fromUTF8 (duk_get_string (ctx, nargs - 1));
+            msgArgs = nargs - 1;
+        }
 
-        AlertWindow w ("Synthlab Script", msg, AlertWindow::InfoIcon);
+        const String msg = collectAllArgsAsString (ctx, msgArgs);
+
+        AlertWindow w (title, msg, AlertWindow::InfoIcon);
+        // Auf das App-LookAndFeel umstellen, damit Script-Dialoge optisch nicht
+        // aus dem Rahmen fallen (vgl. MainComponent::showClaudeApiKeyDialog).
+        if (auto* laf = Project::getInstance()->getLookAndFeel())
+            w.setLookAndFeel (laf);
         w.addButton ("OK", 1, KeyPress (KeyPress::returnKey),
                               KeyPress (KeyPress::escapeKey));
         w.runModalLoop();
@@ -107,8 +127,12 @@ namespace
         const int nargs = duk_get_top (ctx);
         const String message      = nargs > 0 ? String::fromUTF8 (duk_safe_to_string (ctx, 0)) : String();
         const String defaultValue = nargs > 1 ? String::fromUTF8 (duk_safe_to_string (ctx, 1)) : String();
+        const String title        = nargs > 2 ? String::fromUTF8 (duk_safe_to_string (ctx, 2))
+                                              : String ("Synthlab Script");
 
-        AlertWindow w ("Synthlab Script", message, AlertWindow::QuestionIcon);
+        AlertWindow w (title, message, AlertWindow::QuestionIcon);
+        if (auto* laf = Project::getInstance()->getLookAndFeel())
+            w.setLookAndFeel (laf);
         w.addTextEditor ("input", defaultValue, String(), false);
         w.addButton ("OK",     1, KeyPress (KeyPress::returnKey));
         w.addButton ("Cancel", 0, KeyPress (KeyPress::escapeKey));
@@ -1169,8 +1193,8 @@ namespace
                 { "synthlab", "synthlab", "Synthlab API root",                  -1 },
                 { "console",  "console",  "Logging",                            -1 },
                 { "print",    "print()",  "(...args) -> output",                  1 },
-                { "alert",    "alert()",  "(message) -> modal info dialog",       1 },
-                { "prompt",   "prompt()", "(msg, [default]) -> string | null",    1 },
+                { "alert",    "alert()",  "(message, [title]) -> modal info dialog", 1 },
+                { "prompt",   "prompt()", "(msg, [default], [title]) -> string | null", 1 },
             }},
             { "synthlab", {
                 { "transport", "transport", "Playhead, BPM",                       -1 },

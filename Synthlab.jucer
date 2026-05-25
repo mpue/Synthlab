@@ -586,6 +586,12 @@
                 resource="0" file="Source/TransportDisplayComponent.cpp"/>
           <FILE id="Tu9uw9" name="TransportDisplayComponent.h" compile="0" resource="0"
                 file="Source/TransportDisplayComponent.h"/>
+          <FILE id="cs0001" name="TransportToolbarButton.h" compile="0" resource="0"
+                file="Source/TransportToolbarButton.h"/>
+          <FILE id="cs0002" name="ControlSurfacePanel.h" compile="0" resource="0"
+                file="Source/ControlSurfacePanel.h"/>
+          <FILE id="cs0003" name="ControlSurfacePanel.cpp" compile="1" resource="0"
+                file="Source/ControlSurfacePanel.cpp"/>
         </GROUP>
         <GROUP id="{9528F5E5-8135-2F56-8DC0-ADF251A8C7C0}" name="Prefabs">
           <FILE id="sjpUIx" name="SwitchSignalModule.cpp" compile="1" resource="0"

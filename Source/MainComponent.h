@@ -26,6 +26,7 @@
 #include "GeometryViewComponent.h"
 #include "QuickstartComponent.h"
 #include "JavaScriptEditorComponent.h"
+#include "ControlSurfacePanel.h"
 
 #define _USE_MATH_DEFINES
 #ifndef M_PI
@@ -198,8 +199,10 @@ private:
     
     juce::StretchableLayoutManager stretchableManager;
     juce::StretchableLayoutResizerBar resizerBar;
-    // Second resizer between editorView (item 2) and jsEditor (item 4) — the
-    // JavaScript editor lives as a permanent right-hand pane in studio mode.
+    // Layout now has 7 items:
+    //   0 propertyView | 1 resizer | 2 editorView | 3 controlsResizer
+    //   | 4 controlSurfacePanel | 5 jsResizer | 6 jsEditor
+    juce::StretchableLayoutResizerBar controlsResizerBar;
     juce::StretchableLayoutResizerBar jsResizerBar;
     
     std::map<int,int> keyCodeMidiNote;
@@ -208,6 +211,9 @@ private:
 
     std::unique_ptr<DefaultToolbarItemFactory> toolbarFactory;
     std::unique_ptr<juce::Toolbar> toolbar = nullptr;
+    // Non-owning — owned by the Toolbar via getItemComponent().
+    class TransportToolbarButton* playToolbarButton = nullptr;
+    class TransportToolbarButton* recordToolbarButton = nullptr;
     
     bool initialized = false;   
     bool keyStates[128] = { false };
@@ -245,6 +251,7 @@ private:
     std::unique_ptr<SpectrumAnalyzer> spectrumAnalyzer = nullptr;
     std::unique_ptr<QuickstartComponent> quickstart = nullptr;
     std::unique_ptr<JavaScriptEditorComponent> jsEditor = nullptr;
+    std::unique_ptr<ControlSurfacePanel> controlSurfacePanel = nullptr;
 
     // Filled by getMenuForIndex when the Macros menu is built — indices into
     // this vector are the menu item IDs minus kMacroMenuIdBase. menuItemSelected

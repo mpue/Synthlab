@@ -28,11 +28,18 @@ DuplicateModuleAction::DuplicateModuleAction(SynthEditor* editor, juce::Point<in
 }
 
 bool DuplicateModuleAction::undo() {
-    
+
     if (module == nullptr) {
         return false;
     }
-    
+
+    // Audio thread iterates getModules() under a ScopedTryLock on this
+    // CriticalSection; hold the writer lock while we erase to avoid a
+    // heap-use-after-free against a mid-walk callback. See AddModuleAction
+    // for the full reasoning.
+    const juce::ScopedLock graphLock(
+        AudioManager::getInstance()->getProcessGraphLock());
+
     for (std::vector<Module*>::iterator it = editor->getModule()->getModules()->begin();it != editor->getModule()->getModules()->end();) {
         
         if ((*it)->getIndex() == module->getIndex()) {
@@ -53,9 +60,16 @@ bool DuplicateModuleAction::undo() {
 }
 
 bool DuplicateModuleAction::perform() {
-    
+
+    // Audio thread iterates getModules() and the mixer-channel vectors under
+    // a ScopedTryLock on this CriticalSection. push_back below can reallocate
+    // and invalidate the audio thread's iterator — hold the writer lock for
+    // the whole transaction. See AddModuleAction::perform for details.
+    const juce::ScopedLock graphLock(
+        AudioManager::getInstance()->getProcessGraphLock());
+
     Module* m = nullptr;
-    
+
     if (module != nullptr) {
         
         if (module->isPrefab()) {
