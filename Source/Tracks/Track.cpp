@@ -549,39 +549,72 @@ Region* Track::pasteRegion(Region* source, long targetSampleOffset) {
 		if (type != AUDIO)
 			return nullptr;
 
-		const int numSamplesToCopy = a->getNumSamples();
-		// Bei links-getrimmtem Source den sichtbaren Inhalt kopieren, nicht
-		// das Pre-Trim-Material. Siehe duplicateRegion fuer Details.
-		const long srcStart = (long) a->getSourceStartSample();
+		// Cross-Track-Paste: a gehoert zu einer ANDEREN Track-Instanz mit
+		// eigenem audioBuffer. Der Slice-Ctor liest aus a->getBuffer() ueber
+		// srcStart..srcStart+numSamples — der Bereich MUSS hart geclamped
+		// werden, sonst asserted/crashed JUCE in AudioSampleBuffer::copyFrom.
+		// duplicateRegion (cmd+D) macht genau dieses Clamp; pasteRegion (cmd+V)
+		// hat es vergessen und sich auf getNumSamples() verlassen, das je nach
+		// Trim-Pfad bis zu samples-per-pixel zu klein/zu gross zurueckkommt.
+		auto* srcBuf = a->getBuffer();
+		if (srcBuf == nullptr || srcBuf->getNumSamples() <= 0)
+			return nullptr;
+
+		const long fullBuffer = (long) srcBuf->getNumSamples();
+		const long srcStart   = juce::jlimit(0L, fullBuffer, (long) a->getSourceStartSample());
+
+		long numSamplesToCopy = a->getTrimmedNumSamples();
+		if (numSamplesToCopy <= 0)
+			numSamplesToCopy = juce::jmax(0L, fullBuffer - srcStart);
+		numSamplesToCopy = juce::jmin(numSamplesToCopy, juce::jmax(0L, fullBuffer - srcStart));
+		if (numSamplesToCopy <= 0)
+			return nullptr;
 
 		AudioRegion* duplicate = new AudioRegion(a, *manager, sampleRate, srcStart, numSamplesToCopy);
 		duplicate->setDragger(dragger);
 
 		long newSampleOffset = findNextFreeOffset(nullptr, targetSampleOffset, numSamplesToCopy);
-		int newX = (int)((double)newSampleOffset / sampleRate * zoom);
+		// Sample-akkurate Pixel-Werte mit konsistentem Runden — analog zu
+		// duplicateRegion. (int)-Cast trunkiert und schiebt das Duplikat
+		// systematisch um bis zu 1 Pixel nach links.
+		const int newX = (int) std::round((double) newSampleOffset / sampleRate * zoom);
+		const int newW = (int) std::round((double) numSamplesToCopy / sampleRate * zoom);
 
-		Rectangle<int>* bounds = new Rectangle<int>(0, 0, source->getWidth(), getHeight());
+		Rectangle<int>* bounds = new Rectangle<int>(0, 0, newW, getHeight());
 		duplicate->setBoundsUpdateInProgress(true);
-		duplicate->setBounds(newX, 0, source->getWidth(), source->getHeight());
+		duplicate->setBounds(newX, 0, newW, getHeight());
 		duplicate->setBoundsUpdateInProgress(false);
 		duplicate->setThumbnailBounds(bounds);
 		duplicate->setLoopCount(0);
 
 		this->regions.push_back(duplicate);
 		this->currentRegion = duplicate;
-		this->currentRegion->toFront(true);
 		addAndMakeVisible(duplicate);
+		duplicate->toFront(true);
 
 		clearSelection();
 		dragger->setSelected(duplicate, true);
 
-		duplicate->setSampleOffset(newSampleOffset, false, false);
+		// quantize=false: das default-true in Region::setSampleOffset rastet
+		// den Offset auf bufferSize-Vielfache — der hier berechnete
+		// newSampleOffset ist sample-genau, jede Quantisierung verschiebt das
+		// Duplikat und macht die untenstehende Mirror-Kopie inkonsistent zur
+		// Region-Position.
+		duplicate->setSampleOffset(newSampleOffset, false, false, false);
 		duplicate->setOffset(newX);
 		duplicate->setClipRefId(a->getClipRefid());
 		duplicate->addChangeListener(this);
 
 		if (zoom > 0)
 			duplicate->setZoom(zoom);
+
+		// setZoom ruft intern snapToQuarterNote(sampleOffset) — siehe Kommentar
+		// in duplicateRegion. Position danach explizit wiederherstellen.
+		duplicate->setBoundsUpdateInProgress(true);
+		duplicate->setBounds(newX, 0, newW, getHeight());
+		duplicate->setBoundsUpdateInProgress(false);
+		duplicate->setSampleOffset(newSampleOffset, false, false, false);
+		duplicate->setOffset(newX);
 
 		// Mirror the duplicate's audio into the track's shared audioBuffer
 		// at the new offset (Magnitude). Mit Out-of-bounds-Schutz.
