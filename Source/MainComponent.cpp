@@ -16,6 +16,8 @@
 #include "SynthEditor.h"
 #include "PropertyView.h"
 #include "MainTabbedComponent.h"
+#include "ShellConsoleComponent.h"
+#include "LogView.h"
 #include "MidiGate.h"
 #include "MidiNote.h"
 #include "TerminalModule.h"
@@ -90,6 +92,85 @@ using juce::ModalCallbackFunction;
 using juce::KeyPress;
 using juce::Button;
 using juce::ToolbarButton;
+
+namespace {
+    // Wrapper-Komponente fuer ein shared_ptr<MixerPanel>: haelt eine eigene
+    // shared_ptr-Kopie (Lifetime-Anker) + ein Viewport drumherum. Damit kann
+    // der MixerPanel-Inhalt in einem DockablePanel landen, ohne dass die
+    // SynthEditor-eigene shared_ptr<MixerPanel> entkoppelt werden muss.
+    class MixerDockContent : public juce::Component
+    {
+    public:
+        explicit MixerDockContent (std::shared_ptr<MixerPanel> mp)
+            : mixerPanel (std::move (mp))
+        {
+            if (mixerPanel != nullptr)
+            {
+                viewport.setViewedComponent (mixerPanel.get(), false);
+                viewport.setScrollBarsShown (true, true);
+                viewport.setScrollOnDragEnabled (false);
+                viewport.setWantsKeyboardFocus (false);
+                viewport.setMouseClickGrabsKeyboardFocus (false);
+                addAndMakeVisible (viewport);
+            }
+        }
+        void resized() override { viewport.setBounds (getLocalBounds()); }
+    private:
+        juce::Viewport viewport;
+        std::shared_ptr<MixerPanel> mixerPanel;
+    };
+
+    // Holder mit Audio-Thread-Atomic-Ref-Lifecycle: bei Construction wird der
+    // frische Pointer in den Atomic geschrieben, bei Destruction wieder
+    // genullt. Damit kann das DockablePanel mid-session geschlossen / neu
+    // erzeugt werden, ohne dass getNextAudioBlock auf einen freed pointer
+    // referenziert.
+    template <typename T>
+    class AudioRefHolder : public juce::Component
+    {
+    public:
+        AudioRefHolder (std::unique_ptr<T> owned, std::atomic<T*>& slot)
+            : audioSlot (slot), content (std::move (owned))
+        {
+            if (content != nullptr)
+            {
+                addAndMakeVisible (*content);
+                audioSlot.store (content.get(), std::memory_order_release);
+            }
+        }
+        ~AudioRefHolder() override { audioSlot.store (nullptr, std::memory_order_release); }
+        void resized() override { if (content) content->setBounds (getLocalBounds()); }
+    private:
+        std::atomic<T*>& audioSlot;
+        std::unique_ptr<T> content;
+    };
+
+    // Tools-Container: haelt die MainTabbedComponent, die als
+    // Project::setSupplemental(...) angemeldet ist. Bei Destruction
+    // setSupplemental(nullptr), sonst baumeln Project-Pointer auf toten Tab.
+    class ToolsDockContent : public juce::Component
+    {
+    public:
+        explicit ToolsDockContent (std::unique_ptr<MainTabbedComponent> t)
+            : tabs (std::move (t))
+        {
+            if (tabs != nullptr)
+            {
+                addAndMakeVisible (*tabs);
+                Project::getInstance()->setSupplemental (tabs.get());
+            }
+        }
+        ~ToolsDockContent() override
+        {
+            if (auto* proj = Project::getInstance())
+                proj->setSupplemental (nullptr);
+        }
+        void resized() override { if (tabs) tabs->setBounds (getLocalBounds()); }
+        MainTabbedComponent* getTabs() const noexcept { return tabs.get(); }
+    private:
+        std::unique_ptr<MainTabbedComponent> tabs;
+    };
+}
 
 //==============================================================================
 MainComponent::MainComponent()
@@ -761,6 +842,73 @@ void MainComponent::createStudioLayout() {
 			root->setChildSize(2, 260); // JS
 		}
 
+	// Bottom-Row Panels: Mixer, Tools, Log, Level Meter, Spektrum. Sie sollen
+	// per Default UNTER dem Editor liegen (vertikaler Split nur in der
+	// Editor-Spalte), also via dockPanel(panel, editorTabNode, Bottom) erst
+	// Mixer einhaengen — danach Tools/Log/Level/Spektrum als Tabs in einem
+	// weiteren Bottom-Slot neben Mixer.
+	auto* mixerOwned = new MixerDockContent(mixerPanel);
+	mixerDockPanel = dockManager->createPanel(
+		"mixer", "Mixer",
+		std::unique_ptr<juce::Component>(mixerOwned),
+		docking::DockSide::Center);
+	if (mixerDockPanel != nullptr) mixerDockPanel->setClosable(false);
+
+	auto toolsTabOwned = std::make_unique<MainTabbedComponent>();
+	toolsTab = toolsTabOwned.get();
+	auto* toolsHolderOwned = new ToolsDockContent(std::move(toolsTabOwned));
+	toolsDockPanel = dockManager->createPanel(
+		"tools", "Tools",
+		std::unique_ptr<juce::Component>(toolsHolderOwned),
+		docking::DockSide::Center);
+	if (toolsDockPanel != nullptr) toolsDockPanel->setClosable(false);
+
+	auto* logHolderOwned = new juce::Component(); // wird gleich ueberschrieben
+	(void) logHolderOwned;
+	logDockPanel = dockManager->createPanel(
+		"log", "Log",
+		std::make_unique<LogView>(),
+		docking::DockSide::Center);
+	if (logDockPanel != nullptr) logDockPanel->setClosable(true);
+
+	levelMeter = std::make_unique<AudioLevelMeter>();
+	levelDockPanel = dockManager->createPanel(
+		"level", "Level Meter",
+		std::make_unique<AudioRefHolder<AudioLevelMeter>>(std::move(levelMeter), levelMeterAudio),
+		docking::DockSide::Center);
+	if (levelDockPanel != nullptr) levelDockPanel->setClosable(true);
+
+	spectrumAnalyzer = std::make_unique<SpectrumAnalyzer>();
+	spectrumAnalyzer->setNumberOfBars(128);
+	spectrumDockPanel = dockManager->createPanel(
+		"spectrum", "Spektrum",
+		std::make_unique<AudioRefHolder<SpectrumAnalyzer>>(std::move(spectrumAnalyzer), spectrumAudio),
+		docking::DockSide::Center);
+	if (spectrumDockPanel != nullptr) spectrumDockPanel->setClosable(true);
+
+	// Anordnung: alle fuenf sind via Center initial in den Editor-Tab gewandert
+	// (firstTabNodeOrCreate-Verhalten). Jetzt explizit unter den Editor docken
+	// (Bottom-Split) und untereinander tabifizieren.
+	if (auto* editorTabNode = dynamic_cast<docking::DockTabNode*>(
+			editorDockPanel != nullptr ? editorDockPanel->getParentComponent() : nullptr))
+	{
+		auto* mgr = dockManager.get();
+		mgr->dockPanel(mixerDockPanel,    editorTabNode, docking::DockSide::Bottom);
+		// mixerDockPanel hat jetzt sein eigenes TabNode (rechts/unter editor).
+		if (auto* mixerTabNode = dynamic_cast<docking::DockTabNode*>(
+				mixerDockPanel != nullptr ? mixerDockPanel->getParentComponent() : nullptr))
+		{
+			mgr->dockPanel(toolsDockPanel,    mixerTabNode, docking::DockSide::Right);
+			if (auto* toolsTabNode = dynamic_cast<docking::DockTabNode*>(
+					toolsDockPanel != nullptr ? toolsDockPanel->getParentComponent() : nullptr))
+			{
+				mgr->dockPanel(logDockPanel,      toolsTabNode, docking::DockSide::Center);
+				mgr->dockPanel(levelDockPanel,    toolsTabNode, docking::DockSide::Center);
+				mgr->dockPanel(spectrumDockPanel, toolsTabNode, docking::DockSide::Center);
+			}
+		}
+	}
+
 	// Aus User-Verzeichnis (.synthlabdock) wiederherstellen, falls vorhanden.
 	loadDockLayout();
 
@@ -768,13 +916,6 @@ void MainComponent::createStudioLayout() {
 	pluginMenu = PluginManager::getInstance()->buildPluginMenu();
 #endif
 	editor->updateProject(File());
-	levelMeter = std::make_unique<AudioLevelMeter>();
-	levelMeterAudio.store(levelMeter.get(), std::memory_order_release);
-	Project::getInstance()->getSupplemental()->addTab("Level Meter", Colours::darkgrey, levelMeter.get(), false);
-	spectrumAnalyzer = std::make_unique<SpectrumAnalyzer>();
-	spectrumAnalyzer->setNumberOfBars(128);
-	spectrumAudio.store(spectrumAnalyzer.get(), std::memory_order_release);
-	Project::getInstance()->getSupplemental()->addTab("Spektrum", Colours::darkgrey, spectrumAnalyzer.get(), false);
 }
 
 void MainComponent::createPlayerLayout() {
@@ -1830,30 +1971,43 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 			editorView->getNavigator()->addChangeListener(this);
 	}
 	else if (menuItemID == 202) {
-		editorView->openConsole();
+		// "Console" Item — fuegt einen ShellConsoleComponent-Tab in das
+		// Tools-Panel (toolsTab) ein. War frueher in EditorComponent::openConsole;
+		// MainComponent uebernimmt das jetzt, weil der Tools-Tab hier verwaltet
+		// wird.
+		if (toolsTab != nullptr && parser != nullptr) {
+			auto* console = new ShellConsoleComponent(*parser);
+			toolsTab->addTab("Console", Colours::darkgrey, console, true);
+			toolsTab->setCurrentTabIndex(toolsTab->getNumTabs() - 1);
+			if (toolsDockPanel != nullptr) dockManager->activatePanel(toolsDockPanel);
+		}
 	}
 
 	else if (menuItemID == 203) {
-		if (levelMeter == nullptr) {
-			levelMeter = std::make_unique<AudioLevelMeter>();
-			levelMeterAudio.store(levelMeter.get(), std::memory_order_release);
-		}
-        Project::getInstance()->getSupplemental()->addTab("Level Meter", Colours::darkgrey, levelMeter.get(), false);
-
+		// "Level Meter" Item — Panel ist in createStudioLayout angelegt.
+		// Aktivieren bringt es nach vorn / in den Sicht-Bereich. Falls der
+		// User es vorher geschlossen hat, in Phase 3 (View-Menue) wird das
+		// Item das Panel neu anlegen; vorerst No-Op fuer den geschlossenen
+		// Fall.
+		if (dockManager != nullptr)
+			if (auto* p = dockManager->findPanel("level"))
+				dockManager->activatePanel(p);
 	}
 	else if (menuItemID == 204) {
-		if (spectrumAnalyzer == nullptr) {
-			spectrumAnalyzer = std::make_unique<SpectrumAnalyzer>();
-			spectrumAnalyzer->setNumberOfBars(128);
-			spectrumAudio.store(spectrumAnalyzer.get(), std::memory_order_release);
-		}
-        Project::getInstance()->getSupplemental()->addTab("Spektrum", Colours::darkgrey, spectrumAnalyzer.get(), false);
+		if (dockManager != nullptr)
+			if (auto* p = dockManager->findPanel("spectrum"))
+				dockManager->activatePanel(p);
 	}
 	else if (menuItemID == 205) {
 		openQuickstart();
 	}
 	else if (menuItemID == 206) {
-		editorView->openLog();
+		// "Log" Item — Log-DockablePanel aktivieren / vorholen. Re-Create-Pfad
+		// fuer den Fall, dass der User das Panel geschlossen hat, kommt in
+		// Phase 3 (View-Menue erweitern).
+		if (dockManager != nullptr)
+			if (auto* p = dockManager->findPanel("log"))
+				dockManager->activatePanel(p);
 	}
 	else if (menuItemID == 207) {
 		openJavaScriptEditor();

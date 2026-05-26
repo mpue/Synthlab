@@ -17,8 +17,8 @@
 #include "Mixer.h"
 #include "Tracks/TrackNavigator.h"
 #include "PropertyView.h"
-#include "ShellConsoleComponent.h"
-#include "LogView.h"
+// ShellConsoleComponent / LogView werden jetzt von MainComponent als
+// DockablePanel-Content verwaltet — hier nicht mehr referenziert.
 #include "CommandParser.h"
 #include "PianoRollComponent.h"
 #include "TransportDisplayComponent.h"
@@ -39,13 +39,7 @@ public:
     std::shared_ptr<MixerPanel> getMixerPanel();
     TrackNavigator* getNavigator();
     MainTabbedComponent* getEditorTab();
-    MainTabbedComponent* getBottomTab();
     void OpenTrackView();
-	void openConsole();
-	// Re-adds the LogView tab to the bottomTab if missing, otherwise just
-	// focuses it. Used by the View > Log menu to recover the log after a
-	// project open dropped it.
-	void openLog();
     virtual void changeListenerCallback (juce::ChangeBroadcaster* source) override;
     
     // Keyboard-Focus-Setup nach der vollst�ndigen Initialisierung
@@ -61,22 +55,19 @@ private:
 	CommandParser& parser;
 
     std::unique_ptr<SynthEditor> editor = nullptr;
+    // MixerPanel lebt jetzt im Mixer-DockablePanel (MainComponent). Der hier
+    // gehaltene shared_ptr ist nur der Lifetime-Anker fuer SynthEditor::setMixer.
     std::shared_ptr<MixerPanel> mixerPanel = nullptr;
     std::unique_ptr<juce::Viewport> editorView = nullptr;
-    std::unique_ptr<juce::Viewport> mixerView = nullptr;
     std::unique_ptr<juce::Viewport> trackView = nullptr;
-    
-    std::unique_ptr<MainTabbedComponent> topTab = nullptr;
-    std::unique_ptr<MainTabbedComponent> bottomTab = nullptr;
 
-    juce::StretchableLayoutManager stretchableManager;
-    juce::StretchableLayoutResizerBar resizerBar;
+    std::unique_ptr<MainTabbedComponent> topTab = nullptr;
+    // bottomTab/mixerView/console/logView sind raus — Mixer/Log/Level Meter/
+    // Spektrum/Tools sind eigene DockablePanels (im MainComponent verwaltet).
+    // stretchableManager + resizerBar raus, weil kein Top/Bottom-Split mehr.
 
     std::shared_ptr<TrackNavigator> navigator = nullptr;
     PropertyView* propertyView = nullptr;
-    
-    std::unique_ptr<ShellConsoleComponent> console = nullptr;
-    std::unique_ptr<LogView> logView = nullptr;
 
     std::unique_ptr<juce::MidiMessageSequence> sequence = nullptr;
 

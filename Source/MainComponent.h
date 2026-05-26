@@ -209,6 +209,19 @@ private:
     docking::DockablePanel* propertiesDockPanel = nullptr;
     docking::DockablePanel* editorDockPanel     = nullptr;
     docking::DockablePanel* jsDockPanel         = nullptr;
+    // Bottom-Row Panels: einzeln dock-/floatbar. Mixer + Tools sind nicht
+    // schliessbar (komplexe Lifetimes), Log/Level/Spektrum sind closable —
+    // ihre Audio-Hooks lesen ueber Atomic-Refs (siehe levelMeterAudio /
+    // spectrumAudio), sodass das Schliessen sicher ist.
+    docking::DockablePanel* mixerDockPanel    = nullptr;
+    docking::DockablePanel* toolsDockPanel    = nullptr;
+    docking::DockablePanel* logDockPanel      = nullptr;
+    docking::DockablePanel* levelDockPanel    = nullptr;
+    docking::DockablePanel* spectrumDockPanel = nullptr;
+    // Raw-Pointer auf den MainTabbedComponent, der jetzt Project::getSupplemental
+    // beliefert. Lebt im ToolsDockContent (DockablePanel-Content) — gueltig
+    // solange das Tools-Panel im DockManager existiert.
+    MainTabbedComponent* toolsTab = nullptr;
     
     std::map<int,int> keyCodeMidiNote;
     

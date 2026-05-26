@@ -21,7 +21,7 @@ using juce::Graphics;
 using juce::ResizableWindow;
 
 //==============================================================================
-EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView* properties, CommandParser& parser, TransportDisplayComponent* transport) : resizerBar(&stretchableManager, 1, false), parser(parser)
+EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView* properties, CommandParser& parser, TransportDisplayComponent* transport) : parser(parser)
 {
     this->bufferSize = bufferSize;
     this->sampleRate = sampleRate;
@@ -29,11 +29,10 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView*
 	this->transportDisplay = transport;
 
     topTab = std::make_unique<MainTabbedComponent>();
-    bottomTab = std::make_unique<MainTabbedComponent>();
-    
+
     editor = std::make_unique<SynthEditor>(sampleRate,bufferSize);
 	editorView = std::make_unique<Viewport>();
-    
+
     editorView->setSize(500,200);
     editorView->setViewedComponent(editor.get(),false);
     editorView->setScrollBarsShown(true,true);
@@ -41,64 +40,39 @@ EditorComponent::EditorComponent(float sampleRate, int bufferSize, PropertyView*
     editorView->setWantsKeyboardFocus(false);
     editorView->setMouseClickGrabsKeyboardFocus(false);
 
-    // Keyboard-Focus f�r SynthEditor einrichten
     editor->setWantsKeyboardFocus(true);
     editor->setMouseClickGrabsKeyboardFocus(true);
-    
-    // SynthEditor als KeyListener f�r das Top-Level-Component registrieren
+
+    // SynthEditor als KeyListener fuer das Top-Level-Component registrieren —
+    // zum Zeitpunkt dieses Aufrufs hat EditorComponent allerdings noch keinen
+    // Parent, getTopLevelComponent() liefert `this`. Das ist ein No-Op.
+    // MainComponent::addKeyListener(this) deckt die globalen Shortcuts schon
+    // ab, hier daher belassen / spaeter aufraeumen.
     if (auto* topLevel = getTopLevelComponent())
-    {
         topLevel->addKeyListener(editor.get());
-    }
 
     setMouseClickGrabsKeyboardFocus(true);
-	// setInterceptsMouseClicks(true, true);
-    
+
     topTab->addTab("Editor", juce::Colours::grey, editorView.get(), false);
     topTab->setInterceptsMouseClicks(true, true);
 
+    // MixerPanel wird hier nur als Lifetime-Anker erzeugt — der eigentliche
+    // Inhalt landet in MainComponent's Mixer-DockablePanel ueber den von dort
+    // gerufenen getMixerPanel(). MainComponent's MixerDockContent setzt sich
+    // selbst als Parent des MixerPanel; addAndMakeVisible hier entfaellt.
     mixerPanel = std::make_shared<MixerPanel>();
-        
-    mixerView = std::make_unique<Viewport>();
-    mixerView->setViewedComponent(mixerPanel.get(),false);
-    mixerView->setScrollBarsShown(true,true);
-    mixerView->setScrollOnDragEnabled(false);
-    mixerView->setWantsKeyboardFocus(false);
-    mixerView->setMouseClickGrabsKeyboardFocus(false);
-    
-    editor->setMixer(mixerPanel);
-    editor->addChangeListener(this);	
-	// editor->setInterceptsMouseClicks(true, true);
-	editor->setMouseClickGrabsKeyboardFocus(true);
-    
-    // Sicherstellen, dass der SynthEditor den Keyboard-Focus bekommt
-    editor->setWantsKeyboardFocus(true);
-    
-    bottomTab->addTab("Mixer", Colours::darkgrey, mixerView.get(), false);
 
-    logView = std::make_unique<LogView>();
-    bottomTab->addTab("Log", Colours::darkgrey, logView.get(), false);
+    editor->setMixer(mixerPanel);
+	editor->setMouseClickGrabsKeyboardFocus(true);
+    editor->setWantsKeyboardFocus(true);
 
     addAndMakeVisible(topTab.get());
-    addAndMakeVisible(resizerBar);
-    addAndMakeVisible(bottomTab.get());
-    
-    stretchableManager.setItemLayout (0,            // for the properties
-                                      -0.1, -0.9,   // must be between 50 pixels and 90% of the available space
-                                      -0.7);        // and its preferred size is 30% of the total available space
-    
-    stretchableManager.setItemLayout (1,            // for the resize bar
-                                      5, 5, 5);     // hard limit to 5 pixels
-    
-    stretchableManager.setItemLayout (2,            // for the main editor
-                                      -0.1, -0.9,   // size must be between 50 pixels and 90% of the available space
-                                      -0.3);
 
-    Project::getInstance()->setSupplemental(this->bottomTab.get());
+    // bottomTab / Project::setSupplemental setzt MainComponent jetzt selber,
+    // weil der supplementalTab in einem eigenen Tools-DockablePanel lebt.
 
     OpenTrackView();
-    
-    // Keyboard-Setup nach der Initialisierung
+
     setupKeyboardFocus();
 }
 
@@ -271,14 +245,12 @@ EditorComponent::~EditorComponent()
 {
     editor->setTab(nullptr);
     editor = nullptr;
-    Project::getInstance()->setSupplemental(nullptr); 
+    // setSupplemental wird von ToolsDockContent (MainComponent) gestellt /
+    // genullt — hier nichts mehr zu tun.
     editorView = nullptr;
     mixerPanel = nullptr;
-    mixerView =  nullptr;
     navigator = nullptr;
     trackView = nullptr;
-    console = nullptr;
-    logView = nullptr;
     sequence = nullptr;
 }
 
@@ -290,17 +262,8 @@ void EditorComponent::paint (Graphics& g)
 
 void EditorComponent::resized()
 {
-    mixerPanel->resized();
-    auto r = getLocalBounds();
-    
-    // make a list of two of our child components that we want to reposition
-    juce::Component* comps[] = { topTab.get(), &resizerBar, bottomTab.get()};
-    
-    // this will position the 3 components, one above the other, to fit
-    // vertically into the rectangle provided.
-    stretchableManager.layOutComponents (comps, 3,
-                                         r.getX(), r.getY(), r.getWidth(), r.getHeight(),
-                                         true, true);
+    if (topTab != nullptr)
+        topTab->setBounds (getLocalBounds());
 }
 
 TrackNavigator* EditorComponent::getNavigator()
@@ -320,37 +283,9 @@ MainTabbedComponent* EditorComponent::getEditorTab() {
     return topTab.get();
 }
 
-MainTabbedComponent* EditorComponent::getBottomTab() {
-    return bottomTab.get();
-}
-
-void EditorComponent::openConsole() {
-    console = std::make_unique<ShellConsoleComponent>(parser);
-    bottomTab->addTab("Console", Colours::darkgrey, console.get(), false);
-}
-
-void EditorComponent::openLog() {
-    if (bottomTab == nullptr)
-        return;
-
-    // LogView neu anlegen falls noetig — beim Projekt-Open kann der Owning-
-    // unique_ptr ausgenullt worden sein, sonst zeigen wir auf die existierende
-    // Instanz.
-    if (logView == nullptr)
-        logView = std::make_unique<LogView>();
-
-    // Falls die Log-Tab schon im bottomTab steckt, einfach fokussieren statt
-    // ein Duplikat anzuhaengen.
-    for (int i = 0; i < bottomTab->getNumTabs(); ++i) {
-        if (bottomTab->getTabContentComponent(i) == logView.get()) {
-            bottomTab->setCurrentTabIndex(i);
-            return;
-        }
-    }
-
-    bottomTab->addTab("Log", juce::Colours::darkgrey, logView.get(), false);
-    bottomTab->setCurrentTabIndex(bottomTab->getNumTabs() - 1);
-}
+// openConsole / openLog / getBottomTab wurden mit dem Bottom-Tab-Refactor
+// entfernt. Console-/Log-Tabs leben jetzt als eigene DockablePanels in
+// MainComponent (Console als Tab im Tools-Panel).
 
 void EditorComponent::OpenTrackView()
 {
