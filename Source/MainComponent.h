@@ -27,6 +27,7 @@
 #include "QuickstartComponent.h"
 #include "JavaScriptEditorComponent.h"
 #include "ControlSurfacePanel.h"
+#include "UI/Docking/DockingFramework.h"
 
 #define _USE_MATH_DEFINES
 #ifndef M_PI
@@ -168,7 +169,11 @@ private:
 
 	SynthEditor* editor = nullptr;
     std::unique_ptr<MainTabbedComponent> tab = nullptr;
-    std::unique_ptr<PropertyView> propertyView = nullptr    ;
+    // Ownership der drei dockbaren Hauptpanels liegt jetzt beim DockManager
+    // (jedes Panel wird via dock.createPanel mit std::unique_ptr<Component>
+    // uebergeben). MainComponent haelt rohe Pointer fuer den Zugriff — solange
+    // der DockManager existiert, ist der Pointer gueltig.
+    PropertyView* propertyView = nullptr;
     std::unique_ptr<juce::MenuBarComponent> menu = nullptr;
     std::unique_ptr<ModuleBrowser> moduleBrowser = nullptr;
     ToolbarComboBox* layerCombobox = nullptr;
@@ -180,8 +185,8 @@ private:
 
     std::shared_ptr<MixerPanel> mixerPanel = nullptr;
     juce::PopupMenu* pluginMenu = nullptr;
-    
-    std::unique_ptr<EditorComponent> editorView = nullptr;
+
+    EditorComponent* editorView = nullptr;
     ImageButton* lockButton = nullptr;
     CommandParser* parser = nullptr;
 
@@ -197,13 +202,13 @@ private:
     void createStudioLayout();
     void createPlayerLayout();
     
-    juce::StretchableLayoutManager stretchableManager;
-    juce::StretchableLayoutResizerBar resizerBar;
-    // Layout now has 7 items:
-    //   0 propertyView | 1 resizer | 2 editorView | 3 controlsResizer
-    //   | 4 controlSurfacePanel | 5 jsResizer | 6 jsEditor
-    juce::StretchableLayoutResizerBar controlsResizerBar;
-    juce::StretchableLayoutResizerBar jsResizerBar;
+    // Studio-Layout laeuft jetzt ueber den docking::DockManager. Default-
+    // Anordnung wird in createStudioLayout aufgebaut, manuelle Aenderungen
+    // werden ueber saveLayoutFile()/loadLayoutFile() persistiert (.synthlabdock).
+    std::unique_ptr<docking::DockManager> dockManager;
+    docking::DockablePanel* propertiesDockPanel = nullptr;
+    docking::DockablePanel* editorDockPanel     = nullptr;
+    docking::DockablePanel* jsDockPanel         = nullptr;
     
     std::map<int,int> keyCodeMidiNote;
     
@@ -250,8 +255,16 @@ private:
 	std::unique_ptr<AudioLevelMeter> levelMeter = nullptr;
     std::unique_ptr<SpectrumAnalyzer> spectrumAnalyzer = nullptr;
     std::unique_ptr<QuickstartComponent> quickstart = nullptr;
-    std::unique_ptr<JavaScriptEditorComponent> jsEditor = nullptr;
+    // jsEditor wird vom DockManager (via DockablePanel) besitzt. Raw-Pointer
+    // bleibt fuer die bestehenden setX-Verdrahtungen (Project::setJS, etc.) gueltig.
+    JavaScriptEditorComponent* jsEditor = nullptr;
     std::unique_ptr<ControlSurfacePanel> controlSurfacePanel = nullptr;
+
+    // Persistenz-Hilfen fuer Dock-Layout.
+    juce::File getDockLayoutFile() const;
+    void saveDockLayout();
+    void loadDockLayout();
+    void resetDockLayout();
 
     // Filled by getMenuForIndex when the Macros menu is built — indices into
     // this vector are the menu item IDs minus kMacroMenuIdBase. menuItemSelected

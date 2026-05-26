@@ -135,6 +135,24 @@
       <GROUP id="{1D219B94-DA83-5D9F-1D7A-529084FE64DE}" name="Graphics">
         <FILE id="LJWlY8" name="Geometry.h" compile="0" resource="0" file="Source/Graphics/Geometry.h"/>
       </GROUP>
+      <GROUP id="{DCKINGD0-0000-0000-0000-000000000001}" name="UI">
+        <GROUP id="{DCKINGD0-0000-0000-0000-000000000002}" name="Docking">
+          <FILE id="dck001" name="DockingFramework.h" compile="0" resource="0"
+                file="Source/UI/Docking/DockingFramework.h"/>
+          <FILE id="dck002" name="DockManager.h" compile="0" resource="0"
+                file="Source/UI/Docking/DockManager.h"/>
+          <FILE id="dck003" name="DockNode.h" compile="0" resource="0"
+                file="Source/UI/Docking/DockNode.h"/>
+          <FILE id="dck004" name="DockOverlay.h" compile="0" resource="0"
+                file="Source/UI/Docking/DockOverlay.h"/>
+          <FILE id="dck005" name="DockTypes.h" compile="0" resource="0"
+                file="Source/UI/Docking/DockTypes.h"/>
+          <FILE id="dck006" name="DockablePanel.h" compile="0" resource="0"
+                file="Source/UI/Docking/DockablePanel.h"/>
+          <FILE id="dck007" name="FloatingDockWindow.h" compile="0" resource="0"
+                file="Source/UI/Docking/FloatingDockWindow.h"/>
+        </GROUP>
+      </GROUP>
       <FILE id="ikAg2P" name="SynthlabAudioProcessor.cpp" compile="1" resource="0"
             file="Source/SynthlabAudioProcessor.cpp"/>
       <FILE id="Diry2g" name="SynthlabAudioProcessor.h" compile="0" resource="0"

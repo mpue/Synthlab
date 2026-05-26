@@ -93,10 +93,11 @@ using juce::ToolbarButton;
 
 //==============================================================================
 MainComponent::MainComponent()
-    : resizerBar(&stretchableManager, 1, true),
-      controlsResizerBar(&stretchableManager, 3, true),
-      jsResizerBar(&stretchableManager, 5, true)
 {
+	// Frueher initialisierte hier die Member-Init-Liste die drei
+	// StretchableLayoutResizerBars mit Referenz auf stretchableManager.
+	// Mit dem Umzug auf den DockManager sind die Bars + der Manager weg —
+	// keine Member mehr zu initialisieren.
 
 	// Make sure you set the size of the component after
 	// you add any child components.
@@ -228,32 +229,40 @@ MainComponent::~MainComponent()
 	}
 
 	if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
-		// jsEditor hält Raw-Pointer auf navigator + SynthEditor (gesetzt in
-		// createStudioLayout). Zerstörung VOR editorView, damit diese Pointer
-		// auch bei einer aufgeräumten Teardown-Order garantiert nie auf tote
-		// Objekte zeigen — auch wenn der aktuelle Dtor sie nicht dereferenziert.
-		// Project hält ebenfalls einen Raw-Pointer auf jsEditor — vor dem reset
-		// nullen, sonst dangling.
-		Project::getInstance()->setJavaScriptEditor(nullptr);
-		jsEditor = nullptr;
+		// Aktuelles Dock-Layout persistieren, bevor wir alles abreissen.
+		// Beim naechsten Start wird die Datei in createStudioLayout via
+		// loadDockLayout() wieder eingespielt — d.h. der User findet seine
+		// Performance-Anordnung der Panels nach Restart wieder vor.
+		saveDockLayout();
+
+		// Globale Project-Pointer VOR dem DockManager nullen. Die Reihenfolge
+		// matters, weil ~DockManager seine allPanels-OwnedArray vom Anfang weg
+		// abbaut — d.h. PropertyView (Panel-Index 0) verschwindet zuerst,
+		// Editor (Index 1) als naechstes. ~EditorComponent ruft ~SynthEditor
+		// -> cleanUp(), das `Project::getPropertyView()->selectionChanged()`
+		// aufruft (null-gecheckt). Ohne das setPropertyView(nullptr) hier
+		// laeuft cleanUp() in einen Dangling-Pointer.
+		if (auto* proj = Project::getInstance()) {
+			proj->setJavaScriptEditor(nullptr);
+			proj->setPropertyView(nullptr);
+		}
 
 		// Control-Surface haelt Raw-Pointer auf editor + Quell-Module ueber
-		// shadow-bindings (juce::Value::referTo). VOR editorView freigeben,
+		// shadow-bindings (juce::Value::referTo). VOR dockManager freigeben,
 		// sonst zeigen die Bindings auf zerstoerte Slider und der Panel-Dtor
 		// (referTo-Tear-down) liest tote ValueSources.
 		controlSurfacePanel = nullptr;
 
-		// Reihenfolge: editorView ZUERST, dann propertyView. editorView=nullptr
-		// triggert ~EditorComponent -> ~SynthEditor -> cleanUp(), das u.a.
-		// Project::getInstance()->getPropertyView()->selectionChanged() ruft.
-		// Wenn propertyView vorher schon nullptr (also tot) ist, hält Project
-		// nur noch einen Dangling-Raw-Pointer (gesetzt in createStudioLayout)
-		// und der Aufruf crasht mit UAF.
-		editorView = nullptr;
-		// Project's Pointer auf propertyView nullen, BEVOR der unique_ptr
-		// freigegeben wird — sonst hält Project einen Dangling-Pointer.
-		if (auto* proj = Project::getInstance())
-			proj->setPropertyView(nullptr);
+		// DockManager besitzt jetzt propertyView, editorView und jsEditor.
+		// Sein Dtor cleart die OwnedArray<DockablePanel> -> kaskadiert in die
+		// Content-Komponenten. Raw-Pointer hinterher null setzen, damit kein
+		// Code-Pfad sie aus Versehen noch anfasst.
+		dockManager.reset();
+		propertiesDockPanel = nullptr;
+		editorDockPanel     = nullptr;
+		jsDockPanel         = nullptr;
+		jsEditor    = nullptr;
+		editorView  = nullptr;
 		propertyView = nullptr;
 
 		tab = nullptr;
@@ -417,7 +426,13 @@ void MainComponent::createStudioLayout() {
 	statusBar = std::make_unique<StatusBarComponent>();
 	addAndMakeVisible(statusBar.get());
 
-	propertyView = std::make_unique<PropertyView>();
+	// Ownership der Hauptpanels wandert spaeter zum DockManager — hier
+	// allozieren wir die Komponenten zunaechst auf dem Heap und halten den
+	// Raw-Pointer fuer die Bestands-Verdrahtung. Erst nach dem Aufbau aller
+	// Verbindungen werden sie via dock.createPanel an den DockManager
+	// uebergeben.
+	auto* propertyViewOwned = new PropertyView();
+	propertyView = propertyViewOwned;
 	parser = new CommandParser();
 	transportDisplay = std::make_unique<TransportDisplayComponent>();
 	transportDisplay->setTransportState(0, sampleRate, 120.0, 4, 4);
@@ -433,8 +448,9 @@ void MainComponent::createStudioLayout() {
 	metronome = std::make_unique<Metronome>(44100, 128);
 	metronome->setBPM(Project::getInstance()->getTempo()); // oder Wert aus TransportDisplay
 
-	editorView = std::make_unique<EditorComponent>(sampleRate, buffersize, propertyView.get(), *parser, transportDisplay.get());
-	editor = editorView.get()->getEditor();
+	auto* editorViewOwned = new EditorComponent(sampleRate, buffersize, propertyView, *parser, transportDisplay.get());
+	editorView = editorViewOwned;
+	editor = editorView->getEditor();
 	mixerPanel = editorView->getMixerPanel();
 	mixerPanel->setSynthEditor(editor);
 
@@ -656,17 +672,14 @@ void MainComponent::createStudioLayout() {
 #else
 	propertyView->setTopLeftPosition(0, 75);
 #endif
-	editor->addEditorListener(propertyView.get());
+	editor->addEditorListener(propertyView);
 	propertyView->getBrowser()->addChangeListener(editor);
 	// Hand the editor to PropertyView so its Instruments tab can spawn an
 	// Instrument track on double-click without a plugin browser dialog.
 	propertyView->setEditor(editor);
 
-	Project::getInstance()->setPropertyView(propertyView.get());
+	Project::getInstance()->setPropertyView(propertyView);
 
-	addAndMakeVisible(propertyView.get());
-	addAndMakeVisible(resizerBar);
-	addAndMakeVisible(editorView.get());
 	editor->setTab(editorView->getEditorTab());
 	editorView->getEditorTab()->addChangeListener(this);
 	editor->addEditorListener(this);
@@ -676,57 +689,75 @@ void MainComponent::createStudioLayout() {
 	commandManager->setFirstCommandTarget(editor);
 
 	// JavaScript editor as a permanent right-hand pane. Created here so it is
-	// part of the stretchable layout from the first resized() onwards; was
-	// previously instantiated lazily into a tab inside editorView.
-	jsEditor = std::make_unique<JavaScriptEditorComponent>();
+	// part of the dock layout from the first resized() onwards; was previously
+	// instantiated lazily into a tab inside editorView.
+	auto* jsEditorOwned = new JavaScriptEditorComponent();
+	jsEditor = jsEditorOwned;
 	jsEditor->setTransportNavigator(editorView->getNavigator());
 	jsEditor->setSynthEditor(editor);
-	jsEditor->setEditorView(editorView.get());
+	jsEditor->setEditorView(editorView);
 	jsEditor->setTransportDisplay(transportDisplay.get());
 	// Publish to Project so modules (e.g. TriggerScriptModule) can reach the
 	// JS editor without each one needing its own setter wiring from here.
-	Project::getInstance()->setJavaScriptEditor(jsEditor.get());
+	Project::getInstance()->setJavaScriptEditor(jsEditor);
 
-	// Control-Surface-Panel: rechts neben dem Editor, vor der JS-Pane.
-	// Sieht in die gleiche Modulhierarchie wie der Editor und spiegelt jedes
-	// Modul mit displayAtRootLevel als Shadow-Klon. setEditor() triggert den
-	// ersten rebuild() — danach feuern Datei-Open-Pfade einen weiteren.
-	//
-	// VORERST DEAKTIVIERT: das Panel ist WIP — Shadow-Tree neben dem Editor,
-	// per-Typ-Bindings und Auto-Rebuild noch offen, und es hat im aktuellen
-	// Stand mehrere Listener-/Lifetime-Pfade die zu UAFs beitragen. Wenn die
-	// Bindings stabil sind, einfach das `if (false)` entfernen.
+	// Control-Surface-Panel: WIP, weiter deaktiviert (siehe historischer Kommentar
+	// — Shadow-Tree neben dem Editor, per-Typ-Bindings + Auto-Rebuild offen,
+	// Listener-/Lifetime-Pfade brauchen Hardening. Wenn stabil, bekommt es ein
+	// eigenes DockablePanel statt eines festen Layout-Items.).
 	constexpr bool kEnableControlSurfacePanel = false;
 	if (kEnableControlSurfacePanel) {
 		controlSurfacePanel = std::make_unique<ControlSurfacePanel>();
 		controlSurfacePanel->setEditor(editor);
-		addAndMakeVisible(controlsResizerBar);
 		addAndMakeVisible(*controlSurfacePanel);
 	}
 
-	addAndMakeVisible(jsResizerBar);
-	addAndMakeVisible(jsEditor.get());
+	// DockManager mit den drei Hauptpanels aufbauen. Ownership der gerade
+	// allozierten Komponenten geht hier auf den Manager ueber; die Raw-Pointer
+	// (propertyView, editorView, jsEditor) bleiben gueltig solange dockManager
+	// existiert.
+	dockManager = std::make_unique<docking::DockManager>();
+	addAndMakeVisible(dockManager.get());
 
-	if (kEnableControlSurfacePanel) {
-		// 7-Item-Layout: properties | resizer | editor | controlsResizer
-		//              | controlSurface | jsResizer | jsEditor
-		stretchableManager.setItemLayout(0, -0.1, -0.9, -0.2);   // properties
-		stretchableManager.setItemLayout(1, 5, 5, 5);            // resize bar
-		stretchableManager.setItemLayout(2, -0.1, -0.9, -0.45);  // main editor (Platz lassen)
-		stretchableManager.setItemLayout(3, 5, 5, 5);            // resizer Editor <-> Controls
-		stretchableManager.setItemLayout(4, -0.0, -0.5, -0.15);  // Control-Surface
-		stretchableManager.setItemLayout(5, 5, 5, 5);            // resizer Controls <-> JS
-		stretchableManager.setItemLayout(6, -0.0, -0.6, -0.2);   // JavaScript editor
-	} else {
-		// 5-Item-Layout (Control-Surface deaktiviert):
-		//   properties | resizer | editor | jsResizer | jsEditor
-		// Editor bekommt den freien Anteil zurueck.
-		stretchableManager.setItemLayout(0, -0.1, -0.9, -0.2);   // properties
-		stretchableManager.setItemLayout(1, 5, 5, 5);            // resize bar
-		stretchableManager.setItemLayout(2, -0.1, -0.9, -0.6);   // main editor
-		stretchableManager.setItemLayout(3, 5, 5, 5);            // resizer Editor <-> JS
-		stretchableManager.setItemLayout(4, -0.0, -0.6, -0.2);   // JavaScript editor
-	}
+	// DockSide::Center wuerde das Panel in den bereits existierenden Tab
+	// mergen — wir wollen drei separate Splits. Reihenfolge: Properties links
+	// (erstes Panel landet als Solo unter root), Editor rechts (anhaengen),
+	// JavaScript rechts (wieder anhaengen) → [Props | Editor | JS].
+	propertiesDockPanel = dockManager->createPanel(
+		"properties", "Properties",
+		std::unique_ptr<juce::Component>(propertyViewOwned),
+		docking::DockSide::Left);
+	editorDockPanel = dockManager->createPanel(
+		"editor", "Editor",
+		std::unique_ptr<juce::Component>(editorViewOwned),
+		docking::DockSide::Right);
+	jsDockPanel = dockManager->createPanel(
+		"javascript", "JavaScript",
+		std::unique_ptr<juce::Component>(jsEditorOwned),
+		docking::DockSide::Right);
+
+	// Strukturelle Panels sollen sich nicht zu Tode schliessen lassen —
+	// "Close" wuerde den DockManager mit verwaisten Wirings (Project::setX,
+	// EditorListener, KeyListener) zuruecklassen. Floating/Re-Docking bleibt
+	// unangetastet erlaubt.
+	if (propertiesDockPanel != nullptr) propertiesDockPanel->setClosable(false);
+	if (editorDockPanel     != nullptr) editorDockPanel    ->setClosable(false);
+	if (jsDockPanel         != nullptr) jsDockPanel        ->setClosable(false);
+
+	// Default-Initialbreiten an das alte StretchableLayout angelehnt
+	// (Editor ~60% der Breite, Properties ~20%, JS ~20%). DockSplitNode::resized
+	// normalisiert das anhand der wirklich verfuegbaren Breite, also reichen
+	// relative Pixel-Gewichte.
+	if (auto* root = dockManager->getRootNode())
+		if (root->getNumChildren() == 3)
+		{
+			root->setChildSize(0, 220); // Properties
+			root->setChildSize(1, 720); // Editor
+			root->setChildSize(2, 260); // JS
+		}
+
+	// Aus User-Verzeichnis (.synthlabdock) wiederherstellen, falls vorhanden.
+	loadDockLayout();
 
 #if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
 	pluginMenu = PluginManager::getInstance()->buildPluginMenu();
@@ -1244,6 +1275,51 @@ void MainComponent::paint(Graphics& g)
 	g.fillAll(Colour(0xff222222));
 }
 
+juce::File MainComponent::getDockLayoutFile() const
+{
+	auto dir = juce::File::getSpecialLocation(juce::File::userHomeDirectory)
+				   .getChildFile(".Synthlab");
+	if (! dir.exists())
+		dir.createDirectory();
+	return dir.getChildFile("layout.xml");
+}
+
+void MainComponent::saveDockLayout()
+{
+	if (dockManager == nullptr) return;
+	const auto state = dockManager->saveLayout();
+	auto xml = state.createXml();
+	if (xml != nullptr)
+		xml->writeTo(getDockLayoutFile(), {});
+}
+
+void MainComponent::loadDockLayout()
+{
+	if (dockManager == nullptr) return;
+	const auto file = getDockLayoutFile();
+	if (! file.existsAsFile()) return;
+
+	auto xml = juce::XmlDocument(file).getDocumentElement();
+	if (xml == nullptr) return;
+	const auto state = juce::ValueTree::fromXml(*xml);
+	if (state.isValid())
+		dockManager->loadLayout(state);
+}
+
+void MainComponent::resetDockLayout()
+{
+	// Layout-File loeschen + Reset-Aufruf entfaellt — die einfachste
+	// "Defaults"-Strategie ist ein App-Neustart, weil die initialen
+	// createPanel-Aufrufe in createStudioLayout die Default-Anordnung
+	// herstellen. Wir loeschen nur das File, damit der naechste Start sauber
+	// ist; der aktuelle DockManager bleibt mit dem aktuellen Layout im
+	// Speicher (keine Notwendigkeit, den User mitten in der Session
+	// zurueckzusetzen).
+	const auto file = getDockLayoutFile();
+	if (file.existsAsFile())
+		file.deleteFile();
+}
+
 void MainComponent::resized()
 {
 	if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO) {
@@ -1267,40 +1343,15 @@ void MainComponent::resized()
 			statusBar->toFront(false);
 		}
 
-		// Horizontal layout: propertyView | resizer | editorView | controlsResizer
-		// | controlSurfacePanel | jsResizer | jsEditor — seven children, three
-		// resizers à 5 px. Falls die Studio-Layout-Erstellung noch laeuft, sind
-		// jsEditor/controlSurfacePanel nullptr; dann faellt es auf die 3-Item-
-		// Variante zurueck.
-		// Wenn controlSurfacePanel deaktiviert (siehe kEnableControlSurfacePanel
-		// in createStudioLayout), aber jsEditor da ist, fahren wir mit 5 Items:
-		// propertyView | resizer | editorView | jsResizer | jsEditor.
-		if (jsEditor != nullptr && controlSurfacePanel != nullptr) {
-			Component* comps[] = { propertyView.get(), &resizerBar, editorView.get(),
-			                       &controlsResizerBar, controlSurfacePanel.get(),
-			                       &jsResizerBar, jsEditor.get() };
-			stretchableManager.layOutComponents(comps, 7,
-				r.getX(), r.getY() + 25, r.getWidth(), r.getHeight(),
-				false, true);
-		} else if (jsEditor != nullptr) {
-			Component* comps[] = { propertyView.get(), &resizerBar, editorView.get(),
-			                       &jsResizerBar, jsEditor.get() };
-			stretchableManager.layOutComponents(comps, 5,
-				r.getX(), r.getY() + 25, r.getWidth(), r.getHeight(),
-				false, true);
-		} else {
-			Component* comps[] = { propertyView.get(), &resizerBar, editorView.get() };
-			stretchableManager.layOutComponents(comps, 3,
-				r.getX(), r.getY() + 25, r.getWidth(), r.getHeight(),
-				false, true);
+		// Studio-Layout: DockManager belegt den ganzen Mittelbereich. Toolbar
+		// und Statusbar liegen ausserhalb, Reservierung passiert oben durch
+		// `r`. Der frueher hier sitzende StretchableLayoutManager mit drei
+		// festen Pane-Items ist weg — Anordnung, Resize und Floating uebernimmt
+		// jetzt der Manager.
+		if (dockManager != nullptr) {
+			dockManager->setBounds(r.getX(), r.getY() + 25, r.getWidth(), r.getHeight());
 		}
 
-		// stretchableManager.layOutComponents above hat propertyView bereits
-		// auf die korrekte Breite (Item 0 in der 5-Item-Reihe) gesetzt. Die
-		// alte Zeile `propertyView->setSize(r.getWidth() - editorView->getWidth(), …)`
-		// stammte aus dem 3-Item-Layout und ueberschreibt diese Breite mit
-		// `propW + zwei Resizer + jsEditor` -> propertyView ragt unter editor/
-		// jsEditor und seine Slider laufen unsichtbar rechts raus. Entfernt.
 		if (getParentComponent() != nullptr) {
 			if (cpuLoadLabel != nullptr) {
 				cpuLoadLabel->setBounds(getParentComponent()->getWidth() - 50, 0, 50, 20);
