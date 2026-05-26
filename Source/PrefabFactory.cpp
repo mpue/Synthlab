@@ -87,6 +87,8 @@
 #include "StereoMixerModule.h"
 #include "SequentialSwitchModule.h"
 #include "StereoSVFilterModule.h"
+#include "BinaryCounterModule.h"
+#include "TFlipFlopModule.h"
 
 using juce::Image;
 
@@ -359,6 +361,12 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Stereo Mixer") {
         m = new StereoMixerModule(sampleRate, bufferSize);
+    }
+    else if (prefabs[id].getName() == "Binary Counter") {
+        m = new BinaryCounterModule();
+    }
+    else if (prefabs[id].getName() == "T-Flip-Flop") {
+        m = new TFlipFlopModule();
     }
 
 

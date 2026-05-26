@@ -39,14 +39,36 @@ ADSRModule::ADSRModule(double sampleRate, int buffersize)
     for (int i = 0; i < 128;i++){
         this->envelopes[i] = new SynthLab::ADSR();
     }
-    
+
     // Single envelope for monophonic mode and modulation purposes
     this->envelope = new SynthLab::ADSR();
-    
+
     editable = false;
     prefab = true;
-    
+
     createProperties();
+
+    // Smooth-Default-Rates initial auf alle Huellkurven pushen. process()
+    // ueberschreibt das beim naechsten Block aus den Knob-Inputs, falls
+    // welche verbunden sind — aber selbst dann ist die *erste* Gate-On vor
+    // dem ersten process()-Tick sicher: keine rate=0-Falle mehr. Pflichtwert
+    // klein halten, damit Patches ohne Knob-Verbindung musikalisch nutzbar
+    // sind.
+    const float seedAttack  = this->attack;
+    const float seedDecay   = this->decay;
+    const float seedSustain = this->sustain;
+    const float seedRelease = this->release;
+    // attack/decay/release sind in setX() gegen die Member geclampt
+    // ("if (x != this->x)") — initial mit anderem Wert pre-seeden, sonst
+    // wuerden die set*-Calls als No-op rausspringen.
+    this->attack = -1.0f;
+    this->decay = -1.0f;
+    this->release = -1.0f;
+    this->sustain = -1.0f;
+    setAttack(seedAttack);
+    setDecay(seedDecay);
+    setRelease(seedRelease);
+    setSustain(seedSustain);
 }
 
 ADSRModule::~ADSRModule()

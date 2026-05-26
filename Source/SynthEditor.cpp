@@ -1478,6 +1478,10 @@ namespace {
 			applyEditMode();
 		}
 
+		Module* getSourceModule() const { return sourceModule; }
+		Module* getInstrumentAncestor() const { return instrumentAncestor; }
+		void setInstrumentAncestor(Module* instr) { instrumentAncestor = instr; }
+
 		// juce::GroupComponent's default hitTest excludes the body so clicks fall
 		// through to children. We need the body to receive clicks for layout drag,
 		// otherwise unlocked controls (which don't intercept) leak through to the
@@ -1500,22 +1504,98 @@ namespace {
 
 		// Re-evaluate whether the resizer should be active, based on the editor's
 		// current lock state. Called on construction and from SynthEditor::setLocked.
+		// Fuer Instrument-Panels gilt eine invertierte Regel: deren Layout darf
+		// auch im Lock-Modus bewegt werden, weil das Panel die "Spielflaeche" des
+		// Instruments ist und der User es als Performance-Layout positionieren
+		// will, waehrend der Rest des Projekts gesperrt bleibt.
 		void applyEditMode() {
 			if (resizer == nullptr || editor == nullptr) return;
-			const bool unlocked = !editor->isLocked();
-			resizer->setVisible(unlocked);
-			resizer->setInterceptsMouseClicks(unlocked, unlocked);
+			const bool layoutEnabled = isLayoutEditable();
+			resizer->setVisible(layoutEnabled);
+			resizer->setInterceptsMouseClicks(layoutEnabled, layoutEnabled);
+
+			// Frueher haben wir hier child->setLocked(true) +
+			// setInterceptsMouseClicks(false, false) auf jedes Kind gezwungen,
+			// damit der Group-Drag auch im Lock-Mode greift. Das hat den Lock-
+			// Mode zerstoert: Slider wurden nicht mehr fuer die User-Bedienung
+			// freigegeben (Klicks fielen durch zur Group). Ohne dieses Override
+			// verhalten sich die Children wieder standardmaessig nach
+            // Module::setLocked (lock -> intercept, unlock -> pass through).
+			// Trade-off: Layout-Edit der Children innerhalb des Panels
+			// funktioniert nur im Unlock-Mode. Drag des Panels selbst geht
+			// weiterhin per Title-Klick auch im Lock-Mode.
+		}
+
+		// Layout-Editierbarkeit dieser Group: folgt strikt dem globalen Lock.
+		// Im Lock-Mode darf nichts mehr verschoben werden — Controls bleiben
+		// bedienbar (Module::setLocked(true) -> intercept Klicks), aber Group-
+		// und Child-Drag sind aus. Rechtsklick fuer das Z-Order-Menue bleibt
+		// trotzdem moeglich (s. mouseDown — der pruefst isLayoutEditable nicht).
+		bool isLayoutEditable() const {
+			if (editor == nullptr) return false;
+			return !editor->isLocked();
 		}
 
 		void mouseDown(const juce::MouseEvent& e) override {
 			dragTarget = nullptr;
-			if (editor != nullptr && editor->isLocked()) return;
 
-			Module* hitChild = nullptr;
+			constexpr int kTitleDragHeight = 25;
+
+			// Rechtsklick zeigt das Z-Order-Kontextmenue — unabhaengig vom
+			// Lock- oder Layout-Edit-State. Re-Stacking ist eine Layout-Aktion
+			// die auch waehrend der Performance Sinn ergibt. Das Event kann
+			// von einem Child stammen, wenn dieses im Lock-Mode den Klick
+			// abfaengt und wir via addMouseListener als Listener angehaengt
+			// sind — daher Position in Group-Koords zurueckrechnen und das
+			// Hit-Module gleich aus dem Event-Component-Pfad ablesen.
+			if (e.mods.isRightButtonDown()) {
+				Module* hitChild = nullptr;
+				if (e.eventComponent != this) {
+					// Child hat den Klick abgefangen, wir bekommen ihn via
+					// Listener. Den passenden Module*-Vorfahren bestimmen,
+					// damit z.B. Klick auf den inneren Slider eines Knobs den
+					// Knob selbst als Z-Order-Target liefert.
+					juce::Component* c = e.eventComponent;
+					while (c != nullptr && c != this) {
+						if (auto* m = dynamic_cast<Module*>(c)) {
+							hitChild = m;
+							break;
+						}
+						c = c->getParentComponent();
+					}
+				} else {
+					const auto pos = e.getPosition();
+					for (int i = 0; i < getNumChildComponents(); ++i) {
+						if (auto* m = dynamic_cast<Module*>(getChildComponent(i))) {
+							if (m->getBounds().contains(pos)) { hitChild = m; break; }
+						}
+					}
+				}
+				if (hitChild != nullptr)
+					showChildContextMenu(hitChild);
+				return;
+			}
+
+			// Linksklick auf einen Child von woanders (z.B. ein gelockter Knob
+			// dispatcht via Listener an uns weiter): nicht behandeln — sonst
+			// wuerde der Group-Drag jeden Knob-Klick im Lock-Mode kapern.
+			if (e.eventComponent != this) return;
+
+			// Linksklick-Drag braucht Layout-Edit-Modus (Unlock, oder
+			// Instrument-Panel mit Override).
+			if (!isLayoutEditable()) return;
+
 			const auto pos = e.getPosition();
-			for (int i = 0; i < getNumChildComponents(); ++i) {
-				if (auto* m = dynamic_cast<Module*>(getChildComponent(i))) {
-					if (m->getBounds().contains(pos)) { hitChild = m; break; }
+			Module* hitChild = nullptr;
+			// Titel-Drag-Zone: Klicks in die oberen kTitleDragHeight Pixel
+			// greifen IMMER die Group selbst, auch wenn dort ein Child-Bounds
+			// reinragt. Sonst hat ein dicht gefuelltes Sub-Panel keinen
+			// "leeren" Greifpunkt.
+			if (pos.y >= kTitleDragHeight) {
+				for (int i = 0; i < getNumChildComponents(); ++i) {
+					if (auto* m = dynamic_cast<Module*>(getChildComponent(i))) {
+						if (m->getBounds().contains(pos)) { hitChild = m; break; }
+					}
 				}
 			}
 			dragTarget = (hitChild != nullptr) ? static_cast<juce::Component*>(hitChild)
@@ -1523,16 +1603,139 @@ namespace {
 			dragger.startDraggingComponent(dragTarget, e);
 		}
 
-		void mouseDrag(const juce::MouseEvent& e) override {
-			if (dragTarget == nullptr) return;
-			dragger.dragComponent(dragTarget, e, nullptr);
+		// Z-Order-Kontextmenue fuer ein surfaced Child. Hoeherer zIndex = weiter
+		// vorne. Wir mirrorn die Aenderung gleich nach JUCE (toFront / toBack /
+		// toBehind), sodass das Re-Stacking sofort sichtbar wird, und schreiben
+		// den Wert auf das Module zurueck, damit er beim naechsten Save / Layer-
+		// Toggle wieder aufgebaut wird.
+		void showChildContextMenu(Module* child) {
+			if (child == nullptr) return;
+
+			// Defer via MessageManager — der Rechtsklick kommt via
+			// MouseListener-Pfad waehrend Knob/Slider noch im eigenen
+			// mouseDown stecken. Ein synchrones m.show() hier kann mit deren
+			// eigenen Popups kollidieren und unsichtbar bleiben. callAsync
+			// laesst den aktuellen Event-Dispatch erst zu Ende laufen.
+			auto safeSelf  = juce::Component::SafePointer<RootLevelGroup>(this);
+			juce::Component::SafePointer<Module> safeChild(child);
+			juce::MessageManager::callAsync([safeSelf, safeChild]() {
+				if (safeSelf == nullptr || safeChild == nullptr) return;
+
+				juce::PopupMenu m;
+				m.addItem(1, "Bring to Front");
+				m.addItem(2, "Bring Forward");
+				m.addItem(3, "Send Backward");
+				m.addItem(4, "Send to Back");
+
+				const int result = m.show();
+				if (result > 0 && safeSelf != nullptr && safeChild != nullptr)
+					safeSelf->applyZOrderAction(safeChild.getComponent(), result);
+			});
 		}
 
-		void mouseUp(const juce::MouseEvent&) override {
+		void applyZOrderAction(Module* child, int action) {
+			if (child == nullptr) return;
+
+			// Aktuelle Module-Children einsammeln, sortiert nach gespeichertem
+			// zIndex. Luecken sind erlaubt (z.B. nach Laden); wir normalisieren
+			// am Ende auf 0..N-1.
+			std::vector<Module*> surfaced;
+			for (int i = 0; i < getNumChildComponents(); ++i)
+				if (auto* m = dynamic_cast<Module*>(getChildComponent(i)))
+					surfaced.push_back(m);
+
+			std::stable_sort(surfaced.begin(), surfaced.end(),
+				[](Module* a, Module* b) {
+					return (a != nullptr ? a->getZIndex() : 0)
+					     < (b != nullptr ? b->getZIndex() : 0);
+				});
+
+			auto it = std::find(surfaced.begin(), surfaced.end(), child);
+			if (it == surfaced.end()) return;
+			const int idx = (int) std::distance(surfaced.begin(), it);
+			const int lastIdx = (int) surfaced.size() - 1;
+
+			int newIdx = idx;
+			switch (action) {
+				case 1: newIdx = lastIdx; break;      // Bring to Front
+				case 2: newIdx = juce::jmin(lastIdx, idx + 1); break; // Forward
+				case 3: newIdx = juce::jmax(0, idx - 1); break;       // Backward
+				case 4: newIdx = 0; break;            // Send to Back
+				default: return;
+			}
+			if (newIdx == idx) return;
+
+			surfaced.erase(it);
+			surfaced.insert(surfaced.begin() + newIdx, child);
+
+			// JUCE-Z-Order direkt setzen: surfaced[0] erst ganz nach hinten,
+			// dann jedes weitere darueber (toFront bringt es vor das vorige).
+			// Frueher hatten wir hier addAndMakeVisible(child, i) — das ist
+			// in dieser JUCE-Version ein no-op fuer schon eingehaengte Kinder
+			// und das Re-Stacking blieb unsichtbar.
+			if (!surfaced.empty()) {
+				surfaced.front()->toBack();
+				for (size_t i = 1; i < surfaced.size(); ++i)
+					surfaced[i]->toFront(false);
+			}
+
+			// Resizer wieder ganz nach oben (resized() macht das sonst nur
+			// beim naechsten Layout-Event).
+			if (resizer != nullptr)
+				resizer->toFront(false);
+
+			// zIndex auf das Modul zurueckschreiben (0..N-1) fuer Persistenz.
+			for (int i = 0; i < (int) surfaced.size(); ++i)
+				surfaced[i]->setZIndex(i);
+
+			repaint();
+		}
+
+		void mouseDrag(const juce::MouseEvent& e) override {
+			if (dragTarget == nullptr) return;
+
+			// Linked-Drag-Trigger:
+			//  - Hauptpanel des Instruments (sourceModule selbst isInstrument):
+			//    immer linked. Es ist DIE Performance-Einheit, ein Solo-Drag
+			//    wuerde es vom Rest seines Instruments entkoppeln.
+			//  - Sub-Group-Panels: default solo (Layout innerhalb des Instr.
+			//    anpassen). Mit gehaltenem Cmd (auf macOS) bzw. Ctrl (Win/Linux)
+			//    schalten wir auf linked um — so kann der User auch von einem
+			//    Sub-Panel aus die ganze Anordnung verschieben, ohne das
+			//    Hauptpanel zu suchen.
+			const bool isMain = (sourceModule != nullptr && sourceModule->isInstrument());
+			const bool linkedRequested = e.mods.isCommandDown();
+			const bool moveAsInstrument =
+				(dragTarget == this
+				 && instrumentAncestor != nullptr
+				 && (isMain || linkedRequested));
+
+			const juce::Point<int> before = moveAsInstrument
+				? getPosition()
+				: juce::Point<int>();
+
+			dragger.dragComponent(dragTarget, e, nullptr);
+
+			if (moveAsInstrument) {
+				const juce::Point<int> delta = getPosition() - before;
+				if ((delta.x != 0 || delta.y != 0) && editor != nullptr)
+					editor->moveInstrumentGroupSiblings(this, delta);
+			}
+		}
+
+		void mouseUp(const juce::MouseEvent& e) override {
 			if (dragTarget == nullptr) return;
 
 			if (dragTarget == this && sourceModule != nullptr) {
 				sourceModule->setSurfacePos(getPosition());
+				// Geschwister-Persistenz spiegelt das mouseDrag-Trigger-Schema:
+				// nur die Faelle, in denen wir die Geschwister tatsaechlich
+				// mitbewegt haben, schreiben deren neue Positionen zurueck.
+				const bool isMain = sourceModule->isInstrument();
+				const bool linkedRequested = e.mods.isCommandDown();
+				if (instrumentAncestor != nullptr && (isMain || linkedRequested)
+					&& editor != nullptr)
+					editor->persistInstrumentGroupSiblings(this);
 			}
 			else if (auto* m = dynamic_cast<Module*>(dragTarget)) {
 				m->setSurfacePos(m->getPosition());
@@ -1543,6 +1746,11 @@ namespace {
 	private:
 		Module* sourceModule = nullptr;
 		SynthEditor* editor = nullptr;
+		// Naechster Modul-Ancestor mit isInstrument()==true; nullptr, wenn diese
+		// Group keinem Instrument untergeordnet ist. Steuert isLayoutEditable
+		// und den Geschwister-Drag (alle Groups eines Instruments wandern
+		// zusammen).
+		Module* instrumentAncestor = nullptr;
 		juce::Component* dragTarget = nullptr;
 		juce::ComponentDragger dragger;
 		std::unique_ptr<juce::ResizableCornerComponent> resizer;
@@ -1560,24 +1768,59 @@ void SynthEditor::updateRootLevelGroupEditMode() {
 	}
 }
 
+void SynthEditor::moveInstrumentGroupSiblings(juce::Component* leader, juce::Point<int> delta) {
+	auto* lead = dynamic_cast<RootLevelGroup*>(leader);
+	if (lead == nullptr) return;
+	Module* instr = lead->getInstrumentAncestor();
+	if (instr == nullptr) return;
+
+	for (int i = 0; i < rootLevelGroups.size(); ++i) {
+		auto* sibling = dynamic_cast<RootLevelGroup*>(rootLevelGroups[i]);
+		if (sibling == nullptr || sibling == lead) continue;
+		if (sibling->getInstrumentAncestor() != instr) continue;
+		sibling->setTopLeftPosition(sibling->getPosition() + delta);
+	}
+}
+
+void SynthEditor::persistInstrumentGroupSiblings(juce::Component* leader) {
+	auto* lead = dynamic_cast<RootLevelGroup*>(leader);
+	if (lead == nullptr) return;
+	Module* instr = lead->getInstrumentAncestor();
+	if (instr == nullptr) return;
+
+	for (int i = 0; i < rootLevelGroups.size(); ++i) {
+		auto* sibling = dynamic_cast<RootLevelGroup*>(rootLevelGroups[i]);
+		if (sibling == nullptr || sibling == lead) continue;
+		if (sibling->getInstrumentAncestor() != instr) continue;
+		if (auto* src = sibling->getSourceModule())
+			src->setSurfacePos(sibling->getPosition());
+	}
+}
+
 void SynthEditor::collectRootLevelControls(Module* container) {
 	// 1. Walk the whole subtree and bucket flagged controls by their immediate
 	//    parent module. We skip controls that are already direct children of the
 	//    editor root — those don't need surfacing.
 	std::map<Module*, std::vector<Module*>> bucket;
+	// Pro Bucket-Source der naechste Instrument-Ancestor (oder nullptr, wenn
+	// keiner) — speist getInstrumentAncestor() der erzeugten RootLevelGroup
+	// und damit den synchronen Geschwister-Drag.
+	std::map<Module*, Module*> bucketInstrument;
 
-	std::function<void(Module*)> walk = [&](Module* c) {
+	std::function<void(Module*, Module*)> walk = [&](Module* c, Module* instrAncestor) {
+		Module* currentInstr = (c != nullptr && c->isInstrument()) ? c : instrAncestor;
 		for (auto* m : *c->getModules()) {
 			if (m->getLayer() == Module::Layer::GUI
 				&& m->getDisplayAtRootLevel()
 				&& c != root.get()) {
 				bucket[c].push_back(m);
+				bucketInstrument[c] = currentInstr;
 			}
 			if (!m->getModules()->empty())
-				walk(m);
+				walk(m, currentInstr);
 		}
 	};
-	walk(container);
+	walk(container, nullptr);
 
 	// 2. For each source module with surfaceable controls, build a group, lay
 	//    the controls out in a row inside it, and stack the groups vertically.
@@ -1593,7 +1836,18 @@ void SynthEditor::collectRootLevelControls(Module* container) {
 		Module* source = entry.first;
 		auto& controls = entry.second;
 
+		// Z-Reihenfolge: niedriger zIndex zuerst einhaengen, damit der
+		// hoechste zuletzt addAndMakeVisible aufgerufen wird und in JUCE's
+		// Child-Liste oben landet. Stable, damit Controls mit gleichem zIndex
+		// ihre relative Reihenfolge aus dem Modul-Vektor behalten.
+		std::stable_sort(controls.begin(), controls.end(),
+			[](Module* a, Module* b) {
+				return (a != nullptr ? a->getZIndex() : 0)
+				     < (b != nullptr ? b->getZIndex() : 0);
+			});
+
 		auto* group = new RootLevelGroup(source->getName(), source, this);
+		group->setInstrumentAncestor(bucketInstrument[source]);
 
 		int autoX = padding;
 		int contentRight = padding;
@@ -1620,6 +1874,12 @@ void SynthEditor::collectRootLevelControls(Module* container) {
 			}
 			m->setTopLeftPosition(childPos.x, childPos.y);
 			group->addAndMakeVisible(m);
+			// Group als Listener anhaengen — damit das Z-Order-Kontextmenue
+			// per Rechtsklick auch ueber einem gelockten Child auftaucht
+			// (Child fangt den Klick sonst ab, group->mouseDown sieht ihn nicht).
+			// wantsEventsForAllNestedChildComponents=true, weil ein Knob seinen
+			// internen Slider als Klick-Empfaenger hat.
+			m->addMouseListener(group, true);
 
 			contentRight = std::max(contentRight, childPos.x + m->getWidth());
 			contentBottom = std::max(contentBottom, childPos.y + m->getHeight());
@@ -1650,6 +1910,13 @@ void SynthEditor::collectRootLevelControls(Module* container) {
 
 		addAndMakeVisible(group);
 		rootLevelGroups.add(group);
+
+		// applyEditMode() lief schon im RootLevelGroup-Ctor, da hatten die
+		// Children aber noch keinen Parent. Fuer Instrument-Panels muss das
+		// Click-Intercept-Override nochmal ueber die jetzt eingehaengten
+		// Children laufen, damit der Layout-Drag auch beim ersten Surfacing
+		// greift.
+		group->applyEditMode();
 	}
 }
 
@@ -1659,6 +1926,13 @@ void SynthEditor::restoreRootLevelControls() {
 
 		proxy.module->setCurrentLayer(proxy.originalLayer);
 		proxy.module->setTopLeftPosition(proxy.originalPosition.x, proxy.originalPosition.y);
+
+		// Group-MouseListener wieder ablaedeln (in collectRootLevelControls
+		// per addMouseListener fuer das Z-Order-Kontextmenue gesetzt). Sonst
+		// haengt nach dem naechsten rootLevelGroups.clear() ein dangling
+		// Listener am Modul und der naechste Klick crasht.
+		if (auto* host = proxy.module->getParentComponent())
+			proxy.module->removeMouseListener(host);
 
 		if (proxy.originalParent != nullptr) {
 			proxy.originalParent->addAndMakeVisible(proxy.module);
@@ -1993,6 +2267,7 @@ void SynthEditor::saveModule(Module* m) {
 
 		ValueTree* v = new ValueTree("Module");
 		v->setProperty("name", m->getName(), nullptr);
+		v->setProperty("isInstrument", m->isInstrument(), nullptr);
 
 		ModuleUtils::savePins(m, *v);
 		ModuleUtils::saveStructure(m->getModules(), m->getConnections(), v);

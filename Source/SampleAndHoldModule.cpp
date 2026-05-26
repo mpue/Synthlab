@@ -1,4 +1,4 @@
-/*
+        /*
   ==============================================================================
 
     SampleAndHoldModule.cpp
@@ -24,23 +24,24 @@ SampleAndHoldModule::~SampleAndHoldModule()
 
 void SampleAndHoldModule::configurePins() {
     // pins[0] = In  (VALUE) — Signal zum Sampeln
-    // pins[1] = Trig (EVENT) — auf jedes Gate wird gesampelt
+    // pins[1] = Trig (EVENT) — auf jedes Gate / Clock wird gesampelt
     // pins[2] = Out (VALUE)  — gehaltener Wert
     Pin* in = new Pin(Pin::Type::VALUE);
     in->direction = Pin::Direction::IN;
-    in->listeners.push_back(this);
     in->setName("In");
     in->setDescription("Eingang. Wert wird auf Trigger gesampelt.");
 
     triggerPin = new Pin(Pin::Type::EVENT);
     triggerPin->direction = Pin::Direction::IN;
+    // Nur am EVENT-Pin als Listener anhaengen — In/Out sind VALUE-Pins und
+    // dispatchen ohnehin keine Events. Der ueberfluessige listener-push auf
+    // In/Out hat keinen Schaden, aber es verschleiert die Rolle.
     triggerPin->listeners.push_back(this);
     triggerPin->setName("T");
-    triggerPin->setDescription("Trigger-Event. Jedes Gate-On laesst das Modul den aktuellen In-Wert kapieren.");
+    triggerPin->setDescription("Trigger-Event. Jedes Gate-On / CLOCK-Event laesst das Modul den aktuellen In-Wert kapieren.");
 
     Pin* out = new Pin(Pin::Type::VALUE);
     out->direction = Pin::Direction::OUT;
-    out->listeners.push_back(this);
     out->setName("Out");
     out->setDescription("Zuletzt gesampelter Wert (gehalten).");
 
@@ -62,12 +63,21 @@ void SampleAndHoldModule::process() {
 
 void SampleAndHoldModule::eventReceived(Event* e) {
     if (e == nullptr) return;
-    if (e->getType() != Event::Type::GATE) return;
-    // Nur auf Gate-On sampeln (value > 0); Gate-Off ignorieren.
-    if (e->getValue() <= 0) return;
+
+    // Akzeptier-Kriterium analog zu BinaryCounter/T-Flip-Flop: CLOCK
+    // (MidiClock-Pulse) ODER Gate-On (value > 0). Frueher war nur Gate-On
+    // erlaubt — eine direkte Clock-Quelle hat dadurch nichts ausgeloest und
+    // der Out blieb auf seinem Startwert kleben.
+    const auto type = e->getType();
+    const bool isTrigger =
+        type == Event::Type::CLOCK
+        || (type == Event::Type::GATE && e->getValue() > 0);
+    if (!isTrigger) return;
+
     if (pins.size() < 1) return;
 
-    if (pins.at(0)->getConnections().size() == 1) {
+    if (pins.at(0)->getConnections().size() == 1
+        && pins.at(0)->getConnections().at(0) != nullptr) {
         held = pins.at(0)->getConnections().at(0)->getValue();
     }
     // Sofort auch nach aussen propagieren, sonst zieht der Out-Pin erst

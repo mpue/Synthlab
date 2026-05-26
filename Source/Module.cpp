@@ -108,6 +108,10 @@ void Module::createProperties() {
 
     displayRootValue = new Value();
     displayRootListener = new DisplayRootListener(*displayRootValue, this);
+
+    isInstrumentValue = new Value();
+    isInstrumentValue->setValue(instrumentFlag);
+    isInstrumentListener = new InstrumentListener(*isInstrumentValue, this);
 }
 
 Module::~Module()
@@ -118,6 +122,8 @@ Module::~Module()
     delete nameValue;
     delete displayRootListener;
     delete displayRootValue;
+    delete isInstrumentListener;
+    delete isInstrumentValue;
     delete resizer;
     //[/Destructor_pre]
 
@@ -215,15 +221,21 @@ void Module::paint(Graphics& g)
     }
     g.drawRect(moduleArea.toFloat());
 
-    //// 4. Icon zeichnen (Position anpassen f�r reduzierten Bereich)
-    //{
-    //    int x = 28, y = 44, width = 64, height = 64;
-    //    g.setColour(Colours::black);        
-    //    g.drawImageWithin(cachedImage_materialicons_301_viewmodule_64_0_ffffff_none_png_1,
-    //        x, y, width, height,
-    //        RectanglePlacement::centred,
-    //        false);
-    //}
+    // 4. Instrument-Icon: zeigt das Standard-Modul-Icon zentriert im Body,
+    // wenn das Modul als Instrument markiert ist. Macht beim Stoebern durch
+    // den Track-Graph auf einen Blick klar, welches Modul der Sound-Source
+    // einer Instrument-Spur ist (statt es ueber den Namen ableiten zu muessen).
+    if (instrumentFlag) {
+        const int iconSize = juce::jmin(64,
+                                        juce::jmax(16, juce::jmin(moduleArea.getWidth(),
+                                                                  moduleArea.getHeight()) - 16));
+        const int iconX = moduleArea.getX() + (moduleArea.getWidth()  - iconSize) / 2;
+        const int iconY = moduleArea.getY() + (moduleArea.getHeight() - iconSize) / 2;
+        g.drawImageWithin(cachedImage_materialicons_301_viewmodule_64_0_ffffff_none_png_1,
+                          iconX, iconY, iconSize, iconSize,
+                          juce::RectanglePlacement::centred,
+                          false);
+    }
 
     // 5. Pins zeichnen — mit visuellem Aktivitäts-Glow
     const juce::int64 nowMs = juce::Time::getMillisecondCounter();
@@ -521,9 +533,14 @@ void Module::eventReceived(Event *e) {
  Array<PropertyComponent*>& Module::getProperties() {
     nameProp = new TextPropertyComponent(*nameValue, "Name", 16, false, true);
     auto* displayRootProp = new BooleanPropertyComponent(*displayRootValue, "Display at root", "Enabled");
+    // Auf Save (.slb) trifft dieses Flag den Add-Module-Track-Picker — auch
+    // sichtbar fuer Prefabs, da die Wahl, ob ein selbstgebautes Modul wie ein
+    // Instrument verkabelt wird, vor dem Save getroffen werden muss.
+    auto* isInstrumentProp = new BooleanPropertyComponent(*isInstrumentValue, "Is instrument", "Enabled");
     properties = Array<PropertyComponent*>();
     properties.add(nameProp);
     properties.add(displayRootProp);
+    properties.add(isInstrumentProp);
     return properties;
 }
 

@@ -73,8 +73,12 @@ protected:
     float decayBase;
     float releaseBase;
  
-    int velocity;
-    
+    // Default 0, sonst liefert process() im idle-Pfad output/128*GARBAGE.
+    // Zwar greift state==env_idle und output=0 dort, sodass das Ergebnis
+    // dennoch 0 waere — aber NaN-Garbage wuerde das Produkt vergiften und
+    // jeder Downstream-Multiplikator gibt dann NaN weiter. Defensive Init.
+    int velocity = 0;
+
     float calcCoef(float rate, float targetRatio);
     
 };

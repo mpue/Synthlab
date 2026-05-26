@@ -89,16 +89,21 @@ SelectionModel::State SelectionModel::checkForHitAndSelect(juce::Point<int> pos,
     }
 
     if (hit && hitModule != nullptr) {
-        // Single-click (no Shift) collapses the selection to just the clicked
-        // module — even if that module was already part of a larger multi-
-        // selection. The old `if (!selectionContains(m))` guard skipped this
-        // whole block when the hit was already selected, so a prior box- or
-        // shift-select stayed glued together and any subsequent drag moved
-        // every still-selected module.
+        // Standard Multi-Drag-UX:
+        //  - Klick auf ein NICHT selektiertes Modul: alte Selektion verwerfen,
+        //    nur das angeklickte selektieren (Standard-Klick).
+        //  - Klick auf ein BEREITS selektiertes Modul: Selektion erhalten —
+        //    so kann der nachfolgende Drag die ganze Gruppe verschieben. Frueher
+        //    wurde hier auch dann clearSelection() gerufen, dadurch ging beim
+        //    Drag jedes Mal alles ausser dem geklickten Modul verloren.
+        //  - Shift-Klick: Selektion erweitern.
         if (!additionalSelect && shouldDeselect) {
-            clearSelection();
-            hitModule->setSelected(true);
-            getSelectedModules().push_back(hitModule);
+            if (!selectionContains(hitModule)) {
+                clearSelection();
+                hitModule->setSelected(true);
+                getSelectedModules().push_back(hitModule);
+            }
+            // hitModule schon selektiert -> Selektion unangetastet lassen.
         } else if (!selectionContains(hitModule)) {
             // Shift-click or non-deselect path: extend the selection.
             hitModule->setSelected(true);

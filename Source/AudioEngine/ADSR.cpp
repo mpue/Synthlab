@@ -24,12 +24,20 @@
 
 SynthLab::ADSR::ADSR(void) {
     reset();
-    setAttackRate(0);
-    setDecayRate(0);
-    setReleaseRate(0);
+    // Target-Ratios MUESSEN vor den Rate-Settern stehen — setAttackRate /
+    // setDecayRate / setReleaseRate lesen sie zur Coef-Berechnung. Frueher
+    // war die Reihenfolge umgekehrt: der erste set*Rate(0)-Call benutzte
+    // uninitialisierte targetRatio-Felder, was beim allerersten Tastendruck
+    // (vor dem ersten process()-Rate-Update) zu einem hoerbaren "Schnappen"
+    // gefuehrt hat. setTargetRatio*() recomputed die Coefs danach noch einmal,
+    // aber nur mit dem inzwischen gueltigen Rate-Wert — also: erst Ratios,
+    // dann Rates.
     setSustainLevel(1.0);
     setTargetRatioA(0.3);
     setTargetRatioDR(0.0001);
+    setAttackRate(0);
+    setDecayRate(0);
+    setReleaseRate(0);
 }
 
 SynthLab::ADSR::~ADSR(void) {

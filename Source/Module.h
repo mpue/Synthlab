@@ -176,12 +176,45 @@ public:
         juce::Value value;
     };
 
+    // Marks the module as an instrument-style sound source: a user-saved .slb
+    // with this flag set shows up under Edit -> Add Module Track and gets
+    // wired into a track like a PluginModule (MidiGate -> TrackIn -> module ->
+    // AudioOut). Has no runtime effect on its own — purely metadata.
+    struct InstrumentListener : juce::Value::Listener
+    {
+        InstrumentListener(juce::Value& v, Module* module) : module(module), value(v) { value.addListener(this); }
+        ~InstrumentListener() {}
+
+        void valueChanged(juce::Value& value) override {
+            module->setIsInstrument(value.toString().getIntValue() > 0);
+        }
+        Module* module;
+        juce::Value value;
+    };
+
     bool getDisplayAtRootLevel() const { return displayAtRootLevel; }
     void setDisplayAtRootLevel(bool val) {
         displayAtRootLevel = val;
         if (displayRootValue != nullptr)
             displayRootValue->setValue(val);
     }
+
+    bool isInstrument() const { return instrumentFlag; }
+    void setIsInstrument(bool val) {
+        if (instrumentFlag == val) return;
+        instrumentFlag = val;
+        if (isInstrumentValue != nullptr)
+            isInstrumentValue->setValue(val);
+        repaint();
+    }
+
+    // Z-Reihenfolge fuer das Surfacing in einer RootLevelGroup. Hoeherer Wert
+    // = weiter vorne. Wird beim Laden ueber loadModule gefuellt und beim
+    // Save in saveStructure persistiert. RootLevelGroup sortiert seine
+    // surfaced Children beim Aufbau nach diesem Wert; das Kontextmenue der
+    // Group manipuliert ihn ueber "Bring to Front" usw.
+    int getZIndex() const { return zIndex; }
+    void setZIndex(int z) { zIndex = z; }
 
     // Position used by the root-level "Controls only" surfacing. For a module
     // whose children are surfaced, this is the group's top-left in editor
@@ -233,6 +266,12 @@ protected:
     DisplayRootListener* displayRootListener = nullptr;
     juce::Value* displayRootValue = nullptr;
     bool displayAtRootLevel = false;
+
+    InstrumentListener* isInstrumentListener = nullptr;
+    juce::Value* isInstrumentValue = nullptr;
+    bool instrumentFlag = false;
+
+    int zIndex = 0;
     juce::Point<int> surfacePos { -1, -1 };
     juce::Point<int> surfaceSize { 0, 0 };
 

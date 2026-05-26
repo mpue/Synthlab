@@ -13,6 +13,8 @@
 
 #include "../SynthEditor.h"
 #include "../Module.h"
+#include "../ModuleUtils.h"
+#include "../PrefabFactory.h"
 #include "../Pin.h"
 #include "../Connection.h"
 #include "../Project/Project.h"
@@ -21,6 +23,7 @@
 #include "../MixerPanel.h"
 #include "../TrackUtil.h"
 #include "../AudioManager.h"
+#include "../Terminal.h"
 
 #include "../Tracks/Track.h"
 #include "../Tracks/TrackNavigator.h"
@@ -53,6 +56,16 @@ AddTrackAction::AddTrackAction(SynthEditor* editor_,
                                Type type_,
                                juce::String instrumentName_)
     : editor(editor_), navigator(navigator_), type(type_), instrumentName(instrumentName_)
+{
+}
+
+AddTrackAction::AddTrackAction(SynthEditor* editor_,
+                               TrackNavigator* navigator_,
+                               juce::File moduleFile_)
+    : editor(editor_), navigator(navigator_),
+      type(Type::ModuleInstrument),
+      instrumentName(moduleFile_.getFileNameWithoutExtension()),
+      moduleFile(moduleFile_)
 {
 }
 
@@ -121,9 +134,10 @@ bool AddTrackAction::perform()
 
     if (!built) {
         switch (type) {
-            case Type::Audio:      buildAudio(); break;
-            case Type::Midi:       buildMidi(); break;
-            case Type::Instrument: buildInstrument(); break;
+            case Type::Audio:            buildAudio(); break;
+            case Type::Midi:             buildMidi(); break;
+            case Type::Instrument:       buildInstrument(); break;
+            case Type::ModuleInstrument: buildModuleInstrument(); break;
         }
         built    = (track != nullptr);
         attached = built;
@@ -357,6 +371,158 @@ void AddTrackAction::buildInstrument()
 
     if (pm != nullptr && Settings::getInstance()->getOpenPluginWindowAutomatically())
         pm->openPluginWindow();
+}
+
+// ---------------------------------------------------------------------------
+
+namespace {
+    // Pin-Discovery fuer User-Module: erste EVENT-IN ist der MIDI-Eingang,
+    // die ersten zwei AUDIO-OUTs sind L/R. Liefert -1, wenn der entsprechende
+    // Pin fehlt — der Aufrufer entscheidet, ob die Track-Konstruktion dann
+    // abbricht (wir lassen sie weiterlaufen und ueberspringen das fehlende
+    // Wire, damit der User das Modul trotzdem in seinem Track sieht und
+    // diagnostizieren kann).
+    int findFirstPin(juce::Component* /*unused*/, Module* mod,
+                     Pin::Type wantedType, Pin::Direction wantedDir,
+                     int skipBefore = -1)
+    {
+        if (mod == nullptr) return -1;
+        for (int i = 0; i < (int) mod->pins.size(); ++i) {
+            if (i <= skipBefore) continue;
+            Pin* p = mod->pins[(size_t) i];
+            if (p == nullptr) continue;
+            if (p->getType() == wantedType && p->direction == wantedDir)
+                return i;
+        }
+        return -1;
+    }
+}
+
+void AddTrackAction::buildModuleInstrument()
+{
+    if (!moduleFile.existsAsFile()) {
+        juce::Logger::writeToLog("AddTrackAction(ModuleInstrument): file missing: "
+                                 + moduleFile.getFullPathName());
+        return;
+    }
+
+    // .slb laden — gleiche Schritte wie SynthEditor::showPrefabMenu fuer
+    // User-Module: XML -> ValueTree -> ModuleUtils::loadFromXml. Index-
+    // Kollisionen heilen wir hier nicht (das macht der Project-Load-Pfad
+    // sowieso bei naechsten Save/Load).
+    std::unique_ptr<juce::XmlElement> xml = juce::XmlDocument(moduleFile).getDocumentElement();
+    if (xml == nullptr) {
+        juce::Logger::writeToLog("AddTrackAction(ModuleInstrument): XML parse failed: "
+                                 + moduleFile.getFullPathName());
+        return;
+    }
+    juce::ValueTree v = juce::ValueTree::fromXml(*xml);
+
+    Module* userMod = ModuleUtils::loadFromXml(v, editor);
+    if (userMod == nullptr) {
+        juce::Logger::writeToLog("AddTrackAction(ModuleInstrument): loadFromXml returned null");
+        return;
+    }
+    userMod->setName(v.getProperty("name"));
+
+    // Index-Range bumpen, damit der naechste Prefab nicht in den frisch
+    // geladenen Submodulen kollidiert (siehe SynthEditor::loadModule).
+    {
+        long localMax = userMod->getIndex();
+        const long childMax = ModuleUtils::maxIndexInTree(userMod->getModules());
+        if (childMax > localMax) localMax = childMax;
+        PrefabFactory::getInstance()->updateLastModuleIndex(localMax);
+    }
+
+    const int channel = TrackUtil::getNextFreeMidiChannel(navigator);
+
+    Point<int> pos = editor->getNextTrackStartPosition();
+
+    auto* gate = dynamic_cast<MidiGate*>(addModuleNow(pos, kPrefabMidiGate));
+    if (gate != nullptr) gate->setChannel(channel);
+
+    pos.x += 160;
+    auto* ti = dynamic_cast<TrackIn*>(addModuleNow(pos, kPrefabTrackIn));
+
+    track = new Track(Track::Type::INSTRUMENT,
+                       Project::getInstance()->getSampleRate(),
+                       navigator->getDragger());
+    track->setType(Track::Type::INSTRUMENT);
+    track->setInstrumentName(instrumentName);
+    track->setName(instrumentName);
+    if (ti != nullptr) ti->setTrack(track);
+    navigator->addTrack(track);
+    track->setVolume(1.0f);
+    track->setMidiChannel(channel, false);
+
+    if (gate != nullptr && ti != nullptr)
+        wireConnection(ti, 4, gate, 1, true);
+
+    // User-Modul wie ein Prefab in den Graph einhaengen — gleiche Schritte
+    // wie AddModuleAction::perform() fuer den preset-module Pfad: position,
+    // editor-listener, Visibility, modules-Vektor. addModuleNow geht nicht,
+    // weil das ueber AddModuleAction laeuft, der keinen .slb-Loader hat.
+    pos.x += 160;
+    userMod->setTopLeftPosition(pos);
+    userMod->savePosition();
+    userMod->setUiPosition(pos.x, pos.y);
+    userMod->saveUiPosition();
+    editor->addChangeListener(userMod);
+    editor->addAndMakeVisible(userMod);
+    editor->getModule()->getModules()->push_back(userMod);
+    // In modules eintragen, damit doDetach/doAttach das Modul gemeinsam mit
+    // dem Rest der Track-Assembly erfassen.
+    modules.push_back(userMod);
+
+    // Pin-Discovery — heuristisch nach Typ/Direction.
+    const int midiInIdx   = findFirstPin(nullptr, userMod, Pin::Type::EVENT, Pin::Direction::IN);
+    const int audioOutL   = findFirstPin(nullptr, userMod, Pin::Type::AUDIO, Pin::Direction::OUT);
+    const int audioOutR   = findFirstPin(nullptr, userMod, Pin::Type::AUDIO, Pin::Direction::OUT, audioOutL);
+
+    if (midiInIdx >= 0 && ti != nullptr)
+        wireConnection(userMod, midiInIdx, ti, 5, true);
+    else
+        juce::Logger::writeToLog("AddTrackAction(ModuleInstrument): no EVENT IN on user module — MIDI unrouted");
+
+    pos.x += 160;
+
+    const bool preferAuxOut =
+        Settings::getInstance()->getNewTrackOutputType()
+            == Settings::NewTrackOutputType::AuxOut;
+
+    if (preferAuxOut) {
+        auto* ao = dynamic_cast<AuxOut*>(addModuleNow(pos, kPrefabAuxOut));
+        if (ao != nullptr) {
+            if (audioOutL >= 0) wireConnection(userMod, audioOutL, ao, 0, true);
+            if (audioOutR >= 0) wireConnection(userMod, audioOutR, ao, 1, true);
+            destinationModule = ao;
+        }
+    } else {
+        auto* ao = dynamic_cast<AudioOut*>(addModuleNow(pos, kPrefabAudioOut));
+        if (ao != nullptr) {
+            const bool taken = (ao->pins.at(0)->getConnections().size() > 0
+                             || ao->pins.at(1)->getConnections().size() > 0);
+            if (!taken) {
+                if (audioOutL >= 0) wireConnection(userMod, audioOutL, ao, 0, true);
+                if (audioOutR >= 0) wireConnection(userMod, audioOutR, ao, 1, true);
+                ao->setVolume(1.0f);
+                destinationModule = ao;
+            } else {
+                auto* aux = dynamic_cast<AuxOut*>(addModuleNow(pos, kPrefabAuxOut));
+                if (aux != nullptr) {
+                    if (audioOutL >= 0) wireConnection(userMod, audioOutL, aux, 0, true);
+                    if (audioOutR >= 0) wireConnection(userMod, audioOutR, aux, 1, true);
+                    destinationModule = aux;
+                }
+            }
+        }
+    }
+
+    if (audioOutL < 0 || audioOutR < 0)
+        juce::Logger::writeToLog("AddTrackAction(ModuleInstrument): user module has fewer than 2 AUDIO OUT pins");
+
+    if (track != nullptr && destinationModule != nullptr)
+        TrackUtil::LinkTrackToMixerPanel(track, destinationModule, editor);
 }
 
 // ---------------------------------------------------------------------------

@@ -77,10 +77,16 @@ private:
 	SynthLab::ADSR* envelopes[128];
     int currentSample = 0;
     
-    float attack = 0;
-    float decay = 0;
-    float sustain = 0.8;
-    float release = 0;
+    // Defaults: eine kleine, aber NICHT-null Attack/Decay/Release. Ohne das
+    // schnappt die Huellkurve beim allerersten Gate-On (vor dem ersten
+    // setAttack-Update via Knob-Input) mit rate=0 in einem Sample auf 1.0.
+    // 5 ms / 50 ms / 100 ms decken die meisten Synth-Patches als musikalisch
+    // sinnvolle Startwerte ab; sobald ein A/D/R-Knob verbunden ist, ueberschreibt
+    // process() diese Werte beim naechsten Block.
+    float attack = 0.005f;
+    float decay = 0.05f;
+    float sustain = 0.8f;
+    float release = 0.1f;
     
     float value = 0;
     bool gate[128] = {false};

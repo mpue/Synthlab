@@ -691,40 +691,42 @@ void MainComponent::createStudioLayout() {
 	// Sieht in die gleiche Modulhierarchie wie der Editor und spiegelt jedes
 	// Modul mit displayAtRootLevel als Shadow-Klon. setEditor() triggert den
 	// ersten rebuild() — danach feuern Datei-Open-Pfade einen weiteren.
-	controlSurfacePanel = std::make_unique<ControlSurfacePanel>();
-	controlSurfacePanel->setEditor(editor);
-	addAndMakeVisible(controlsResizerBar);
-	addAndMakeVisible(*controlSurfacePanel);
+	//
+	// VORERST DEAKTIVIERT: das Panel ist WIP — Shadow-Tree neben dem Editor,
+	// per-Typ-Bindings und Auto-Rebuild noch offen, und es hat im aktuellen
+	// Stand mehrere Listener-/Lifetime-Pfade die zu UAFs beitragen. Wenn die
+	// Bindings stabil sind, einfach das `if (false)` entfernen.
+	constexpr bool kEnableControlSurfacePanel = false;
+	if (kEnableControlSurfacePanel) {
+		controlSurfacePanel = std::make_unique<ControlSurfacePanel>();
+		controlSurfacePanel->setEditor(editor);
+		addAndMakeVisible(controlsResizerBar);
+		addAndMakeVisible(*controlSurfacePanel);
+	}
 
 	addAndMakeVisible(jsResizerBar);
 	addAndMakeVisible(jsEditor.get());
 
-	// 7-Item-Layout: properties | resizer | editor | controlsResizer
-	//              | controlSurface | jsResizer | jsEditor
-	stretchableManager.setItemLayout(0,            // properties
-		-0.1, -0.9,
-		-0.2);
-
-	stretchableManager.setItemLayout(1,            // resize bar
-		5, 5, 5);
-
-	stretchableManager.setItemLayout(2,            // main editor
-		-0.1, -0.9,
-		-0.45);       // a bit weniger preferred, um Platz für die Controls zu lassen
-
-	stretchableManager.setItemLayout(3,            // resizer Editor <-> Controls
-		5, 5, 5);
-
-	stretchableManager.setItemLayout(4,            // Control-Surface (right of editor)
-		-0.0, -0.5,   // kann auf 0 zugezogen werden
-		-0.15);
-
-	stretchableManager.setItemLayout(5,            // resizer Controls <-> JS
-		5, 5, 5);
-
-	stretchableManager.setItemLayout(6,            // JavaScript editor (rechte Pane)
-		-0.0, -0.6,
-		-0.2);
+	if (kEnableControlSurfacePanel) {
+		// 7-Item-Layout: properties | resizer | editor | controlsResizer
+		//              | controlSurface | jsResizer | jsEditor
+		stretchableManager.setItemLayout(0, -0.1, -0.9, -0.2);   // properties
+		stretchableManager.setItemLayout(1, 5, 5, 5);            // resize bar
+		stretchableManager.setItemLayout(2, -0.1, -0.9, -0.45);  // main editor (Platz lassen)
+		stretchableManager.setItemLayout(3, 5, 5, 5);            // resizer Editor <-> Controls
+		stretchableManager.setItemLayout(4, -0.0, -0.5, -0.15);  // Control-Surface
+		stretchableManager.setItemLayout(5, 5, 5, 5);            // resizer Controls <-> JS
+		stretchableManager.setItemLayout(6, -0.0, -0.6, -0.2);   // JavaScript editor
+	} else {
+		// 5-Item-Layout (Control-Surface deaktiviert):
+		//   properties | resizer | editor | jsResizer | jsEditor
+		// Editor bekommt den freien Anteil zurueck.
+		stretchableManager.setItemLayout(0, -0.1, -0.9, -0.2);   // properties
+		stretchableManager.setItemLayout(1, 5, 5, 5);            // resize bar
+		stretchableManager.setItemLayout(2, -0.1, -0.9, -0.6);   // main editor
+		stretchableManager.setItemLayout(3, 5, 5, 5);            // resizer Editor <-> JS
+		stretchableManager.setItemLayout(4, -0.0, -0.6, -0.2);   // JavaScript editor
+	}
 
 #if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
 	pluginMenu = PluginManager::getInstance()->buildPluginMenu();
@@ -1270,11 +1272,20 @@ void MainComponent::resized()
 		// resizers à 5 px. Falls die Studio-Layout-Erstellung noch laeuft, sind
 		// jsEditor/controlSurfacePanel nullptr; dann faellt es auf die 3-Item-
 		// Variante zurueck.
+		// Wenn controlSurfacePanel deaktiviert (siehe kEnableControlSurfacePanel
+		// in createStudioLayout), aber jsEditor da ist, fahren wir mit 5 Items:
+		// propertyView | resizer | editorView | jsResizer | jsEditor.
 		if (jsEditor != nullptr && controlSurfacePanel != nullptr) {
 			Component* comps[] = { propertyView.get(), &resizerBar, editorView.get(),
 			                       &controlsResizerBar, controlSurfacePanel.get(),
 			                       &jsResizerBar, jsEditor.get() };
 			stretchableManager.layOutComponents(comps, 7,
+				r.getX(), r.getY() + 25, r.getWidth(), r.getHeight(),
+				false, true);
+		} else if (jsEditor != nullptr) {
+			Component* comps[] = { propertyView.get(), &resizerBar, editorView.get(),
+			                       &jsResizerBar, jsEditor.get() };
+			stretchableManager.layOutComponents(comps, 5,
 				r.getX(), r.getY() + 25, r.getWidth(), r.getHeight(),
 				false, true);
 		} else {
@@ -1320,6 +1331,10 @@ namespace {
     constexpr int kMacroMenuIdBase   = 5000;
     constexpr int kTestMenuIdBase    = 7000;
     constexpr int kRunAllTestsId     = 6999;  // sits just before the test range
+    // Sitzt oberhalb der Test-Range. Indizes [0..n) korrespondieren zu
+    // MainComponent::moduleTrackFiles und werden bei Klick im Edit-Menue
+    // ausgewertet.
+    constexpr int kModuleTrackMenuIdBase = 9000;
 
     juce::File getMacroDir()
     {
@@ -1384,6 +1399,70 @@ namespace {
             menu.addItem (id, f.getFileNameWithoutExtension());
         }
     }
+
+    juce::File getUserModulesDirForTrackPicker()
+    {
+        auto dir = juce::File::getSpecialLocation(juce::File::userHomeDirectory)
+                       .getChildFile(".Synthlab/modules");
+        if (!dir.exists())
+            dir.createDirectory();
+        return dir;
+    }
+
+    // Liefert true, wenn die .slb-Datei isInstrument=1 setzt. Wir parsen das
+    // XML hier on-demand pro Menue-Aufbau — das ist deutlich seltener als ein
+    // Audio-Block und im Vergleich zum Plugin-Scanner trivial. ValueTree-
+    // Property-Lookup statt eines Streams, damit das auch fuer Legacy-Dateien
+    // ohne das Attribut sauber 0 zurueckliefert.
+    bool slbIsMarkedInstrument(const juce::File& file)
+    {
+        std::unique_ptr<juce::XmlElement> xml = juce::XmlDocument(file).getDocumentElement();
+        if (xml == nullptr) return false;
+        juce::ValueTree v = juce::ValueTree::fromXml(*xml);
+        return v.getProperty("isInstrument").toString().getIntValue() > 0;
+    }
+
+    // Identisch in Form zu buildScriptMenu, aber filtert .slb-Files nach
+    // isInstrument=1. Subordner-Aeste werden uebersprungen, wenn sie nichts
+    // Passendes enthalten.
+    void buildModuleTrackMenu(const juce::File& dir,
+                              juce::PopupMenu& menu,
+                              std::vector<juce::File>& files)
+    {
+        juce::Array<juce::File> subdirs;
+        dir.findChildFiles(subdirs, juce::File::findDirectories, false);
+        ByFileName cmp;
+        subdirs.sort(cmp);
+
+        for (const auto& sub : subdirs)
+        {
+            juce::PopupMenu sm;
+            const size_t beforeCount = files.size();
+            buildModuleTrackMenu(sub, sm, files);
+            if (files.size() != beforeCount)
+                menu.addSubMenu(sub.getFileName(), sm);
+        }
+
+        juce::Array<juce::File> slbFiles;
+        dir.findChildFiles(slbFiles, juce::File::findFiles, false, "*.slb");
+        slbFiles.sort(cmp);
+
+        for (const auto& f : slbFiles)
+        {
+            if (!slbIsMarkedInstrument(f))
+                continue;
+            const int id = kModuleTrackMenuIdBase + (int) files.size();
+            files.push_back(f);
+            menu.addItem(id, f.getFileNameWithoutExtension());
+        }
+    }
+}
+
+bool MainComponent::buildAddModuleTrackMenu(juce::PopupMenu& menu)
+{
+    moduleTrackFiles.clear();
+    buildModuleTrackMenu(getUserModulesDirForTrackPicker(), menu, moduleTrackFiles);
+    return !moduleTrackFiles.empty();
 }
 
 PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
@@ -1468,6 +1547,16 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addItem(8, "Add Audio Track", true, false, nullptr);
 		menu.addItem(9, "Add MIDI Track", true, false, nullptr);
 		menu.addItem(10, "Add Instrument Track", true, false, nullptr);
+		// "Add Module Track" expandiert zu allen User-Modulen (.slb in
+		// ~/.Synthlab/modules/) mit isInstrument=1. Bleibt disabled, wenn keines
+		// existiert — sonst klickt der User ins Leere. Die Picker-Item-IDs
+		// liegen in einem hohen Bereich (ab kModuleTrackMenuIdBase, s.u.) und
+		// werden im Handler ausgewertet.
+		{
+			juce::PopupMenu moduleTracks;
+			const bool hasAny = buildAddModuleTrackMenu(moduleTracks);
+			menu.addSubMenu("Add Module Track", moduleTracks, hasAny);
+		}
 		menu.addItem(11, "Add MIDI Clip", true, false, nullptr);
 		menu.addSubMenu("Align", alignMenu);
 		menu.addSeparator();
@@ -1576,6 +1665,24 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 				+ juce::String (failed) + " failed ====\n";
 		jsEditor->appendOutput (summary,
 			failed == 0 ? juce::Colours::lightgreen : juce::Colours::tomato);
+		return;
+	}
+
+	// Add-Module-Track Picker: IDs ab kModuleTrackMenuIdBase indizieren
+	// moduleTrackFiles. Vor der Test-Range pruefen, weil hoeher liegend.
+	if (menuItemID >= kModuleTrackMenuIdBase) {
+		const size_t idx = (size_t) (menuItemID - kModuleTrackMenuIdBase);
+		if (idx < moduleTrackFiles.size()) {
+			if (editorView->getNavigator() == nullptr) {
+				editorView->OpenTrackView();
+				editorView->getNavigator()->addChangeListener(this);
+			}
+			auto* action = new AddTrackAction(editor, editorView->getNavigator(),
+			                                  moduleTrackFiles[idx]);
+			Project::getInstance()->getUndoManager()->beginNewTransaction();
+			Project::getInstance()->getUndoManager()->perform(action);
+			editor->repaint();
+		}
 		return;
 	}
 

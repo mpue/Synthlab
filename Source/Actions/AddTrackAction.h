@@ -29,12 +29,22 @@ class Connection;
 class AddTrackAction : public juce::UndoableAction
 {
 public:
-    enum class Type { Audio, Midi, Instrument };
+    enum class Type { Audio, Midi, Instrument, ModuleInstrument };
 
     AddTrackAction(SynthEditor* editor,
                    TrackNavigator* navigator,
                    Type type,
                    juce::String instrumentName = {});
+
+    // ModuleInstrument-Variante: statt eines Plugin-Namens wird hier der Pfad
+    // zur .slb-Datei mitgegeben. Die Datei wird in perform() einmalig geladen
+    // und genauso wie ein PluginModule verkabelt (MidiGate -> TrackIn ->
+    // UserModule -> AudioOut/AuxOut). Pin-Discovery via Typ/Direction —
+    // erstes EVENT-IN, erste zwei AUDIO-OUTs.
+    AddTrackAction(SynthEditor* editor,
+                   TrackNavigator* navigator,
+                   juce::File moduleFile);
+
     ~AddTrackAction() override;
 
     bool perform() override;
@@ -53,6 +63,7 @@ private:
     TrackNavigator* navigator = nullptr;
     Type            type;
     juce::String    instrumentName;
+    juce::File      moduleFile; // nur fuer Type::ModuleInstrument
 
     Track*  track             = nullptr;
     int     navigatorIndex    = -1;
@@ -70,6 +81,7 @@ private:
     void buildAudio();
     void buildMidi();
     void buildInstrument();
+    void buildModuleInstrument();
 
     Module* addModuleNow(juce::Point<int> pos, long prefabId);
     void    wireConnection(Module* srcMod, int srcPinIdx,

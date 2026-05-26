@@ -262,6 +262,13 @@ private:
     // with its own ID base so the two ranges don't collide.
     std::vector<juce::File> testFiles;
 
+    // Add-Module-Track Picker: scannt ~/.Synthlab/modules/ rekursiv nach .slb-
+    // Dateien mit isInstrument=1. moduleTrackFiles[idx] gehört zur Menu-ID
+    // (idx + kModuleTrackMenuIdBase). Liefert true, wenn mindestens ein Modul
+    // gefunden wurde.
+    std::vector<juce::File> moduleTrackFiles;
+    bool buildAddModuleTrackMenu(juce::PopupMenu& menu);
+
     // Statuszeile am unteren Fensterrand (Studio-Modus). CPU/RAM/Audio/Tempo.
     std::unique_ptr<StatusBarComponent> statusBar = nullptr;
 

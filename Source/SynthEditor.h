@@ -130,6 +130,14 @@ public:
     void duplicateSelected();
     void setLocked(bool lock);
     bool isLocked();
+    // Instrument-Layout-Drag: wandert ein RootLevelGroup, das zu einem
+    // Instrument gehoert, ziehen alle Geschwister-Groups desselben Instruments
+    // synchron mit (Inst-Hauptpanel + alle Sub-Group-Panels als eine Einheit).
+    // leader / delta sind Component*/Point — den konkreten RootLevelGroup*-Typ
+    // intern via dynamic_cast aufloesen, weil die Klasse im anonymen Namespace
+    // lebt und ueber rootLevelGroups nur Component*-Eintraege liefert.
+    void moveInstrumentGroupSiblings(juce::Component* leader, juce::Point<int> delta);
+    void persistInstrumentGroupSiblings(juce::Component* leader);
     void setModuleLocked(Module* m, bool locked);    
     void drawConnections(Graphics& g);    
     void dragSelection();

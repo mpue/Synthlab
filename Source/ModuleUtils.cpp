@@ -342,6 +342,8 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
 	m->setUiPosition(mod.getProperty("ui_x").toString().getIntValue(), mod.getProperty("ui_y").toString().getIntValue());
 	m->saveUiPosition();
 	m->setDisplayAtRootLevel(mod.getProperty("displayAtRootLevel").toString().getIntValue() > 0);
+	m->setIsInstrument(mod.getProperty("isInstrument").toString().getIntValue() > 0);
+	m->setZIndex(mod.getProperty("zIndex").toString().getIntValue());
 	if (mod.hasProperty("surface_x") && mod.hasProperty("surface_y")) {
 		m->setSurfacePos({ mod.getProperty("surface_x").toString().getIntValue(),
 		                   mod.getProperty("surface_y").toString().getIntValue() });
@@ -689,6 +691,8 @@ void ModuleUtils::saveStructure(std::vector<Module*>* modules, std::vector<Conne
 		file.setProperty("isPrefab", (*it)->isPrefab(), nullptr);
 		file.setProperty("prefabId", (*it)->getId(), nullptr);
 		file.setProperty("displayAtRootLevel", (*it)->getDisplayAtRootLevel(), nullptr);
+		file.setProperty("isInstrument", (*it)->isInstrument(), nullptr);
+		file.setProperty("zIndex", (*it)->getZIndex(), nullptr);
 		if ((*it)->hasSurfacePos()) {
 			file.setProperty("surface_x", (*it)->getSurfacePos().getX(), nullptr);
 			file.setProperty("surface_y", (*it)->getSurfacePos().getY(), nullptr);
@@ -972,6 +976,10 @@ Module* ModuleUtils::loadFromXml(juce::ValueTree& v, ChangeBroadcaster* broadcas
 	// updateIndices(v, Time::getMillisecondCounter());
 	loadPins(m, v);
 	loadStructure(m->getModules(), m->getConnections(), &v, broadcaster);
+
+	// Instrument-Flag (.slb-Metadatum) wird vom Add-Module-Track-Picker
+	// gelesen, damit nur entsprechend markierte User-Module dort auftauchen.
+	m->setIsInstrument(v.getProperty("isInstrument").toString().getIntValue() > 0);
 
 	m->resized();
 

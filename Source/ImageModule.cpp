@@ -42,6 +42,11 @@ ImageModule::ImageModule()
 }
 
 void ImageModule::createProperties() {
+    // Basis-Werte (nameValue, displayRootValue, isInstrumentValue) initialisieren,
+    // sonst sind die Pointer NULL und der "Display at root"-/Instrument-Toggle
+    // unten in getProperties() crasht beim Anlegen des BooleanPropertyComponent.
+    Module::createProperties();
+
     imageValue = new Value();
     imageListener = new ImageListener(*imageValue, this);
     imagePathValue = new Value();
@@ -107,14 +112,21 @@ void ImageModule::setImage(String imagePath) {
 }
 
 juce::Array<PropertyComponent*>& ImageModule::getProperties() {
-    
+
     properties = juce::Array<PropertyComponent*>();
     imageProp = new FileButtonPropertyComponent("Select image", *imageValue);
     imagePathProp = new TextPropertyComponent(*imagePathValue,"Path",16, false,true);
+    // Damit Image-Module (z.B. Hintergrund-Bilder eines Instrument-Panels)
+    // ebenfalls per "Display at root" auf die Surface-Ebene gehoben werden
+    // koennen. Spiegelt die Basis-Property aus Module::getProperties() —
+    // hier explizit, weil getProperties() ueberschrieben ist.
+    auto* displayRootProp = new juce::BooleanPropertyComponent(
+        *displayRootValue, "Display at root", "Enabled");
 
     properties.add(imageProp);
     properties.add(imagePathProp);
-    
+    properties.add(displayRootProp);
+
     return properties;
 }
 
