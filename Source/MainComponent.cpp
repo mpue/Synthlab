@@ -1666,6 +1666,60 @@ void MainComponent::importMidiFileToTrack(const juce::MidiFile& midiFile, Track*
 		"Imported MIDI file with " + juce::String(midiFile.getNumTracks()) + " tracks");
 }
 
+void MainComponent::showOrCreateLogPanel()
+{
+	if (dockManager == nullptr) return;
+	if (auto* p = dockManager->findPanel("log"))
+	{
+		dockManager->activatePanel(p);
+		return;
+	}
+	auto* panel = dockManager->createPanel(
+		"log", "Log",
+		std::make_unique<LogView>(),
+		docking::DockSide::Center);
+	if (panel != nullptr) panel->setClosable(true);
+	logDockPanel = panel;
+}
+
+void MainComponent::showOrCreateLevelMeterPanel()
+{
+	if (dockManager == nullptr) return;
+	if (auto* p = dockManager->findPanel("level"))
+	{
+		dockManager->activatePanel(p);
+		return;
+	}
+	auto holder = std::make_unique<AudioRefHolder<AudioLevelMeter>>(
+		std::make_unique<AudioLevelMeter>(), levelMeterAudio);
+	auto* panel = dockManager->createPanel(
+		"level", "Level Meter",
+		std::move(holder),
+		docking::DockSide::Center);
+	if (panel != nullptr) panel->setClosable(true);
+	levelDockPanel = panel;
+}
+
+void MainComponent::showOrCreateSpectrumPanel()
+{
+	if (dockManager == nullptr) return;
+	if (auto* p = dockManager->findPanel("spectrum"))
+	{
+		dockManager->activatePanel(p);
+		return;
+	}
+	auto fresh = std::make_unique<SpectrumAnalyzer>();
+	fresh->setNumberOfBars(128);
+	auto holder = std::make_unique<AudioRefHolder<SpectrumAnalyzer>>(
+		std::move(fresh), spectrumAudio);
+	auto* panel = dockManager->createPanel(
+		"spectrum", "Spektrum",
+		std::move(holder),
+		docking::DockSide::Center);
+	if (panel != nullptr) panel->setClosable(true);
+	spectrumDockPanel = panel;
+}
+
 juce::File MainComponent::getDockLayoutFile() const
 {
 	auto dir = juce::File::getSpecialLocation(juce::File::userHomeDirectory)
@@ -1962,12 +2016,22 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addSeparator();
 		menu.addItem(201, "Tracks", true, false, nullptr);
 		menu.addItem(202, "Console", true, false, nullptr);
-		menu.addItem(206, "Log", true, false, nullptr);
-		menu.addItem(203, "Level Meters", true, false, nullptr);
-		menu.addItem(204, "Input Spectrum", true, false, nullptr);
-		menu.addSeparator();
 		menu.addItem(205, "Quickstart", true, false, nullptr);
+		menu.addSeparator();
+		// DockablePanel-Show-Items. isTicked = panel-ist-aktuell-offen.
+		// "Show Properties / Editor / JavaScript" sind nicht aufgefuehrt —
+		// diese drei sind nicht-schliessbar und damit immer da.
+		auto isPanelOpen = [this](const juce::String& id) {
+			return dockManager != nullptr && dockManager->findPanel(id) != nullptr;
+		};
+		menu.addItem(210, "Show Mixer",      true, isPanelOpen("mixer"));
+		menu.addItem(211, "Show Tools",      true, isPanelOpen("tools"));
+		menu.addItem(206, "Show Log",        true, isPanelOpen("log"));
+		menu.addItem(203, "Show Level Meter",true, isPanelOpen("level"));
+		menu.addItem(204, "Show Spektrum",   true, isPanelOpen("spectrum"));
 		menu.addItem(207, "JavaScript Editor", true, false, nullptr);
+		menu.addSeparator();
+		menu.addItem(212, "Reset Dock Layout", true, false, nullptr);
 	}
 	else if (index == 2) {
 
@@ -2227,33 +2291,44 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	}
 
 	else if (menuItemID == 203) {
-		// "Level Meter" Item — Panel ist in createStudioLayout angelegt.
-		// Aktivieren bringt es nach vorn / in den Sicht-Bereich. Falls der
-		// User es vorher geschlossen hat, in Phase 3 (View-Menue) wird das
-		// Item das Panel neu anlegen; vorerst No-Op fuer den geschlossenen
-		// Fall.
-		if (dockManager != nullptr)
-			if (auto* p = dockManager->findPanel("level"))
-				dockManager->activatePanel(p);
+		showOrCreateLevelMeterPanel();
 	}
 	else if (menuItemID == 204) {
-		if (dockManager != nullptr)
-			if (auto* p = dockManager->findPanel("spectrum"))
-				dockManager->activatePanel(p);
+		showOrCreateSpectrumPanel();
 	}
 	else if (menuItemID == 205) {
 		openQuickstart();
 	}
 	else if (menuItemID == 206) {
-		// "Log" Item — Log-DockablePanel aktivieren / vorholen. Re-Create-Pfad
-		// fuer den Fall, dass der User das Panel geschlossen hat, kommt in
-		// Phase 3 (View-Menue erweitern).
-		if (dockManager != nullptr)
-			if (auto* p = dockManager->findPanel("log"))
-				dockManager->activatePanel(p);
+		showOrCreateLogPanel();
 	}
 	else if (menuItemID == 207) {
 		openJavaScriptEditor();
+	}
+	else if (menuItemID == 210) {
+		// Show Mixer — Mixer ist nicht-schliessbar, also nur Activate. Falls
+		// jemand die Closability spaeter umstellt, wuerde hier ein Re-Create
+		// noetig.
+		if (dockManager != nullptr)
+			if (auto* p = dockManager->findPanel("mixer"))
+				dockManager->activatePanel(p);
+	}
+	else if (menuItemID == 211) {
+		// Show Tools — analog, Tools ist nicht-schliessbar.
+		if (dockManager != nullptr)
+			if (auto* p = dockManager->findPanel("tools"))
+				dockManager->activatePanel(p);
+	}
+	else if (menuItemID == 212) {
+		// Reset Dock Layout — Layout-File loeschen, dem User Hinweis, dass
+		// der Restart das Default-Layout wiederherstellt. (Mid-Session reset
+		// wuerde das aktuelle DockManager-Tree umbauen — komplex und nicht
+		// gefragt.)
+		resetDockLayout();
+		juce::AlertWindow::showMessageBox(juce::AlertWindow::InfoIcon,
+			"Reset Dock Layout",
+			"Das gespeicherte Dock-Layout wurde geloescht. Beim naechsten Start "
+			"erscheinen die Panels wieder in der Default-Anordnung.");
 	}
 
 	else if (menuItemID == 8) {

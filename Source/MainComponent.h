@@ -221,6 +221,12 @@ private:
     void importMidi();
     void importMidiFileToTrack(const juce::MidiFile& midiFile, Track* track);
 
+    // Show-X / Re-Open-Helfer fuer das View-Menue: aktiviert das Panel,
+    // wenn vorhanden; sonst Re-Create.
+    void showOrCreateLogPanel();
+    void showOrCreateLevelMeterPanel();
+    void showOrCreateSpectrumPanel();
+
     virtual juce::StringArray getMenuBarNames() override;
     virtual juce::PopupMenu getMenuForIndex(int index, const juce::String & menuName) override;
     virtual void menuItemSelected(int menuItemID, int topLevelMenuIndex) override;
