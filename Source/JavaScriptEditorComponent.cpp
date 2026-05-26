@@ -21,7 +21,7 @@
 #include "Tracks/MidiRegion.h"
 #include "Plugins/PluginManager.h"
 #include "PluginModule.h"
-#include "EditorComponent.h"
+// EditorComponent ist aufgeloest — JS-Editor referenziert nichts mehr daraus.
 #include "TransportDisplayComponent.h"
 #include "SynthEditor.h"
 
@@ -620,10 +620,8 @@ namespace
     duk_ret_t native_ui_openTrackView (duk_context* ctx)
     {
         if (currentEditor == nullptr) { duk_push_boolean (ctx, false); return 1; }
-        auto* ev = currentEditor->getEditorView();
-        if (ev == nullptr) { duk_push_boolean (ctx, false); return 1; }
-        ev->OpenTrackView();
-        duk_push_boolean (ctx, true);
+        const bool ok = currentEditor->invokeOpenTrackView();
+        duk_push_boolean (ctx, ok);
         return 1;
     }
 

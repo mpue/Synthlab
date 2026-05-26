@@ -22,7 +22,6 @@
 
 class TrackNavigator;
 class SynthEditor;
-class EditorComponent;
 class TransportDisplayComponent;
 
 // Defined out-of-line in the .cpp — forward-declared here so we can hold
@@ -48,9 +47,17 @@ public:
     void setSynthEditor (SynthEditor* ed) { synthEditor = ed; }
     SynthEditor* getSynthEditor() const   { return synthEditor; }
 
-    // Required for synthlab.ui.openTrackView (EditorComponent::OpenTrackView).
-    void setEditorView (EditorComponent* v) { editorView = v; }
-    EditorComponent* getEditorView() const  { return editorView; }
+    // Callback fuer synthlab.ui.openTrackView() — frueher direkt
+    // EditorComponent::OpenTrackView. EditorComponent ist weg, also reicht
+    // MainComponent uns hier eine Closure rein, die in dessen Kontext den
+    // Navigator-Tab vorholt.
+    void setOpenTrackViewCallback (std::function<void()> cb) { openTrackViewCb = std::move (cb); }
+    bool invokeOpenTrackView()
+    {
+        if (! openTrackViewCb) return false;
+        openTrackViewCb();
+        return true;
+    }
 
     // Required for synthlab.transport.{get,set}Metronome — the metronome
     // active flag lives on the transport display widget; the audio callback
@@ -113,8 +120,8 @@ private:
 
     TrackNavigator*           transportNavigator = nullptr;
     SynthEditor*              synthEditor        = nullptr;
-    EditorComponent*          editorView         = nullptr;
     TransportDisplayComponent* transportDisplay  = nullptr;
+    std::function<void()>     openTrackViewCb;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (JavaScriptEditorComponent)
 };

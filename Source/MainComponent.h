@@ -10,7 +10,8 @@
 #include "Tracks/PositionMarker.h"
 #include "MixerPanel.h"
 #include "ToolbarComboBox.h"
-#include "EditorComponent.h"
+// EditorComponent ist mit dem Docking-Refactor aufgeloest worden — editor,
+// mixerPanel, navigator und editorAreaTab liegen direkt in MainComponent.
 #include "DefaultToolbarItemFactory.h"
 #include "ModuleBrowser.h"
 #include "AudioEngine/ADSR.h"
@@ -53,6 +54,8 @@ inline float fastCos(float x) {
 class BounceThread;
 class ChatGPTInterface;
 class StatusBarComponent;
+class ShellConsoleComponent;
+class Track;
 
 class MainComponent   : public juce::AudioAppComponent,
                         public juce::MenuBarModel,
@@ -144,7 +147,10 @@ public:
     }
 
 
-    TrackNavigator* navigator = nullptr;
+    // shared_ptr, weil TrackNavigator frueher in EditorComponent als
+    // shared_ptr lebte (Bestands-Konvention) und SynthEditor::setNavigator
+    // den raw Pointer per .get() weiterreicht.
+    std::shared_ptr<TrackNavigator> navigator = nullptr;
     MidiProcessor* midiProcessor = nullptr;
 
 private:
@@ -167,6 +173,12 @@ private:
     // — der Root-`editor` hat dann eine leere Selection und es passiert nichts.
     SynthEditor* getActiveSubEditor() const;
 
+	// editor: Raw-Pointer-Member (existierende Callsites bleiben). Lifetime
+	// haengt am editorOwned unique_ptr, deklariert nach dockManager — damit
+	// editorOwned NACH dockManager zerstoert wird (Member-Reverse-Order):
+	// dockManager raumt die Editor-DockablePanel ab (die nur den
+	// editorViewport als Content haelt), dann faellt editorOwned, dann
+	// SynthEditor::~ runs gegen ein bereits sauberes Project-State.
 	SynthEditor* editor = nullptr;
     std::unique_ptr<MainTabbedComponent> tab = nullptr;
     // Ownership der drei dockbaren Hauptpanels liegt jetzt beim DockManager
@@ -186,9 +198,28 @@ private:
     std::shared_ptr<MixerPanel> mixerPanel = nullptr;
     juce::PopupMenu* pluginMenu = nullptr;
 
-    EditorComponent* editorView = nullptr;
+    // Editor-Bereich liegt jetzt direkt in MainComponent (EditorComponent
+    // wurde aufgeloest, siehe feat/docking Phase 2). DockablePanel "Editor"
+    // bekommt editorAreaTab als Content. Lifetime der inneren Components:
+    // editorAreaTab gehoert dem Panel (per unique_ptr beim createPanel
+    // uebergeben), editorViewport/trackViewport leben als unique_ptr in
+    // MainComponent, die SynthEditor- und TrackNavigator-Komponenten haengen
+    // viewed-by-Viewport (mit deleteWhenRemoved=false; MainComponent ownt
+    // editor via unique_ptr<SynthEditor>, navigator als shared_ptr).
+    // Raw-Member: Ownership liegt beim "Editor" DockablePanel. Gueltig
+    // solange dockManager existiert (Editor-Panel ist closable=false).
+    MainTabbedComponent* editorAreaTab = nullptr;
+    std::unique_ptr<juce::Viewport>      editorViewport = nullptr;
+    std::unique_ptr<juce::Viewport>      trackViewport  = nullptr;
+    std::unique_ptr<ShellConsoleComponent> consoleComponent = nullptr;
     ImageButton* lockButton = nullptr;
     CommandParser* parser = nullptr;
+
+    // Methoden, die frueher EditorComponent zur Verfuegung stellte.
+    void openTrackView();
+    void importAudio();
+    void importMidi();
+    void importMidiFileToTrack(const juce::MidiFile& midiFile, Track* track);
 
     virtual juce::StringArray getMenuBarNames() override;
     virtual juce::PopupMenu getMenuForIndex(int index, const juce::String & menuName) override;
@@ -206,6 +237,13 @@ private:
     // Anordnung wird in createStudioLayout aufgebaut, manuelle Aenderungen
     // werden ueber saveLayoutFile()/loadLayoutFile() persistiert (.synthlabdock).
     std::unique_ptr<docking::DockManager> dockManager;
+
+    // Editor-Lifetime-Owner: nach dockManager deklariert, sodass die Member-
+    // Reverse-Destruktion erst die DockablePanels abraumt (incl. editorAreaTab
+    // im Editor-Panel, das nur den editorViewport als Content haelt) und dann
+    // editorOwned ~SynthEditor laufen laesst. Project-Pointer auf PropertyView
+    // sind zu dem Zeitpunkt schon genullt (siehe destructor unten).
+    std::unique_ptr<SynthEditor> editorOwned = nullptr;
     docking::DockablePanel* propertiesDockPanel = nullptr;
     docking::DockablePanel* editorDockPanel     = nullptr;
     docking::DockablePanel* jsDockPanel         = nullptr;

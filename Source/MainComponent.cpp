@@ -339,7 +339,7 @@ MainComponent::~MainComponent()
 		// (referTo-Tear-down) liest tote ValueSources.
 		controlSurfacePanel = nullptr;
 
-		// DockManager besitzt jetzt propertyView, editorView und jsEditor.
+		// DockManager besitzt jetzt propertyView, editorAreaTab und jsEditor.
 		// Sein Dtor cleart die OwnedArray<DockablePanel> -> kaskadiert in die
 		// Content-Komponenten. Raw-Pointer hinterher null setzen, damit kein
 		// Code-Pfad sie aus Versehen noch anfasst.
@@ -347,9 +347,20 @@ MainComponent::~MainComponent()
 		propertiesDockPanel = nullptr;
 		editorDockPanel     = nullptr;
 		jsDockPanel         = nullptr;
-		jsEditor    = nullptr;
-		editorView  = nullptr;
-		propertyView = nullptr;
+		mixerDockPanel = nullptr;
+		toolsDockPanel = nullptr;
+		logDockPanel = nullptr;
+		levelDockPanel = nullptr;
+		spectrumDockPanel = nullptr;
+		jsEditor       = nullptr;
+		propertyView   = nullptr;
+		editorAreaTab  = nullptr;
+		toolsTab       = nullptr;
+
+		// editorViewport/trackViewport/consoleComponent/editorOwned werden
+		// von Member-Destruktion gegen Ende der Funktion abgeraumt. editor
+		// (raw Pointer auf editorOwned.get()) bleibt formal noch gueltig bis
+		// dahin — verwendete UI-Pfade sind aber schon abgehaengt.
 
 		tab = nullptr;
 		delete lockButton;
@@ -370,7 +381,6 @@ MainComponent::~MainComponent()
 	}
 	else if (Project::getInstance()->getAppMode() == Project::AppMode::PLAYER) {
 		delete editor;
-		editorView = nullptr;
 		if (auto* proj = Project::getInstance())
 			proj->setPropertyView(nullptr);
 		propertyView = nullptr;
@@ -534,18 +544,47 @@ void MainComponent::createStudioLayout() {
 	metronome = std::make_unique<Metronome>(44100, 128);
 	metronome->setBPM(Project::getInstance()->getTempo()); // oder Wert aus TransportDisplay
 
-	auto* editorViewOwned = new EditorComponent(sampleRate, buffersize, propertyView, *parser, transportDisplay.get());
-	editorView = editorViewOwned;
-	editor = editorView->getEditor();
-	mixerPanel = editorView->getMixerPanel();
-	mixerPanel->setSynthEditor(editor);
+	// Editor + dessen TopTab direkt im MainComponent aufbauen (EditorComponent
+	// wurde aufgeloest). DockablePanel "Editor" bekommt editorAreaTab als
+	// Content; editorViewport haelt den SynthEditor (deleteWhenRemoved=false,
+	// Lifetime ueber editorOwned). Reihenfolge analog zum alten EditorComponent-
+	// Ctor, damit alle nachgelagerten Wirings (PropertyView, JS-Editor, etc.)
+	// unveraendert greifen.
+	editorOwned = std::make_unique<SynthEditor>(sampleRate, buffersize);
+	editor = editorOwned.get();
 
-	if (navigator == nullptr) {
-		navigator = editorView->getNavigator();
-	}
+	editorViewport = std::make_unique<juce::Viewport>();
+	editorViewport->setSize(500, 200);
+	editorViewport->setViewedComponent(editor, false);
+	editorViewport->setScrollBarsShown(true, true);
+	editorViewport->setScrollOnDragEnabled(false);
+	editorViewport->setWantsKeyboardFocus(false);
+	editorViewport->setMouseClickGrabsKeyboardFocus(false);
+
+	editor->setWantsKeyboardFocus(true);
+	editor->setMouseClickGrabsKeyboardFocus(true);
+
+	auto editorAreaTabOwned = std::make_unique<MainTabbedComponent>();
+	editorAreaTab = editorAreaTabOwned.get();
+	editorAreaTab->addTab("Editor", juce::Colours::grey, editorViewport.get(), false);
+	editorAreaTab->setInterceptsMouseClicks(true, true);
+
+	// MixerPanel — wird in MainComponent gehalten (shared_ptr) und vom Mixer-
+	// DockablePanel via MixerDockContent angezeigt. Erzeugung VOR dem
+	// SynthEditor::setMixer-Aufruf, weil setMixer den Pointer aufnimmt.
+	mixerPanel = std::make_shared<MixerPanel>();
+	mixerPanel->setSynthEditor(editor);
+	editor->setMixer(mixerPanel);
+
+	// Navigator + Track-Tab anlegen — frueher passierte das am Ende des
+	// EditorComponent-Ctors via OpenTrackView(). Wir rufen die jetzt am
+	// MainComponent lebende openTrackView() explizit auf, damit nachfolgende
+	// Wirings (`navigator->addChangeListener(this)` etc.) einen gueltigen
+	// Pointer haben.
+	openTrackView();
 
 	navigator->addChangeListener(this);
-	getTopLevelComponent()->addKeyListener(navigator);
+	getTopLevelComponent()->addKeyListener(navigator.get());
 
 	parser->registerCommand("help", [this](const std::vector<std::string>&) -> std::string {
 		return parser->displayHelp();
@@ -565,15 +604,15 @@ void MainComponent::createStudioLayout() {
 
 		if (args[0] == "instrument") {
 			if (args.size() < 2) return "Error: Missing instrument name.";
-			TrackUtil::createVirtualInstrumentTrack(args.at(1), pos, navigator, editor);
+			TrackUtil::createVirtualInstrumentTrack(args.at(1), pos, navigator.get(), editor);
 			return "Instrument track added.";
 		}
 		if (args[0] == "midi") {
-			TrackUtil::createMIDITrack(editor, navigator, editor->getModule());
+			TrackUtil::createMIDITrack(editor, navigator.get(), editor->getModule());
 			return "MIDI track added.";
 		}
 		if (args[0] == "audio") {
-			TrackUtil::createAudioTrack(editor, navigator, editor->getModule());
+			TrackUtil::createAudioTrack(editor, navigator.get(), editor->getModule());
 			return "Audio track added.";
 		}
 		if (args[0] == "midiregion") {
@@ -766,8 +805,8 @@ void MainComponent::createStudioLayout() {
 
 	Project::getInstance()->setPropertyView(propertyView);
 
-	editor->setTab(editorView->getEditorTab());
-	editorView->getEditorTab()->addChangeListener(this);
+	editor->setTab(editorAreaTab);
+	editorAreaTab->addChangeListener(this);
 	editor->addEditorListener(this);
 	addMouseListener(propertyView->getBrowser(), false);
 
@@ -779,9 +818,10 @@ void MainComponent::createStudioLayout() {
 	// instantiated lazily into a tab inside editorView.
 	auto* jsEditorOwned = new JavaScriptEditorComponent();
 	jsEditor = jsEditorOwned;
-	jsEditor->setTransportNavigator(editorView->getNavigator());
+	jsEditor->setTransportNavigator(navigator.get());
 	jsEditor->setSynthEditor(editor);
-	jsEditor->setEditorView(editorView);
+	// openTrackView ist jetzt MainComponent-Methode; Callback hier reichen.
+	jsEditor->setOpenTrackViewCallback([this]() { openTrackView(); });
 	jsEditor->setTransportDisplay(transportDisplay.get());
 	// Publish to Project so modules (e.g. TriggerScriptModule) can reach the
 	// JS editor without each one needing its own setter wiring from here.
@@ -813,9 +853,12 @@ void MainComponent::createStudioLayout() {
 		"properties", "Properties",
 		std::unique_ptr<juce::Component>(propertyViewOwned),
 		docking::DockSide::Left);
+	// "Editor" Panel content = editorAreaTab (MainTabbedComponent mit
+	// Editor/Navigator/Quickstart Sub-Tabs). Ownership wandert zum
+	// DockablePanel; der Raw-Pointer editorAreaTab bleibt gueltig.
 	editorDockPanel = dockManager->createPanel(
 		"editor", "Editor",
-		std::unique_ptr<juce::Component>(editorViewOwned),
+		std::unique_ptr<juce::Component>(editorAreaTabOwned.release()),
 		docking::DockSide::Right);
 	jsDockPanel = dockManager->createPanel(
 		"javascript", "JavaScript",
@@ -1427,6 +1470,202 @@ void MainComponent::paint(Graphics& g)
 	g.fillAll(Colour(0xff222222));
 }
 
+void MainComponent::openTrackView()
+{
+	// Frueher EditorComponent::OpenTrackView. Erzeugt navigator bei
+	// Bedarf, haengt ihn in den trackViewport, und fuegt einen "Navigator"-
+	// Sub-Tab in den editorAreaTab ein.
+	if (navigator == nullptr)
+	{
+		trackViewport = std::make_unique<juce::Viewport>();
+		navigator = std::make_shared<TrackNavigator>(
+			AudioManager::getInstance()->getDeviceManager(),
+			trackViewport.get(),
+			propertyView,
+			transportDisplay.get());
+
+		PrefabFactory::getInstance()->init(navigator.get());
+		editor->setNavigator(navigator.get());
+		navigator->setEditor(editor);
+		trackViewport->setSize(500, 200);
+		trackViewport->setViewedComponent(navigator.get());
+		trackViewport->setScrollBarsShown(true, true);
+		trackViewport->setScrollOnDragEnabled(false);
+		trackViewport->setInterceptsMouseClicks(true, true);
+
+		// Frueher: trackView->addMouseListener(editorComponent, true). Der
+		// EditorComponent ist weg — Listener-Pfad ueber MainComponent ist
+		// in der heutigen Architektur ungenutzt (kein MainComponent::mouseUp
+		// auf navigator-Klicks). Weglassen.
+
+		if (auto* tl = getTopLevelComponent())
+			tl->addKeyListener(navigator.get());
+		navigator->setMouseClickGrabsKeyboardFocus(true);
+		navigator->setWantsKeyboardFocus(true);
+		navigator->setInterceptsMouseClicks(true, true);
+		navigator->toFront(false);
+	}
+
+	if (editorAreaTab == nullptr) return;
+
+	// Doppel-Tab vermeiden, sonst landet jedes openTrackView() in einem
+	// neuen "Navigator" Tab.
+	for (int i = 0; i < editorAreaTab->getNumTabs(); ++i)
+	{
+		if (editorAreaTab->getTabNames()[i] == "Navigator")
+		{
+			editorAreaTab->setCurrentTabIndex(i);
+			navigator->setInterceptsMouseClicks(true, true);
+			navigator->toFront(true);
+			return;
+		}
+	}
+	editorAreaTab->addTab("Navigator", juce::Colours::grey, trackViewport.get(), false);
+	editorAreaTab->setCurrentTabIndex(editorAreaTab->getNumTabs() - 1);
+	navigator->setInterceptsMouseClicks(true, true);
+	navigator->toFront(true);
+}
+
+void MainComponent::importAudio()
+{
+	if (navigator == nullptr || navigator->getCurrentTrack() == nullptr) return;
+
+	FileChooser chooser("Select a file to add...");
+	if (! chooser.browseForFileToOpen()) return;
+	File file = chooser.getResult();
+	const auto ext = file.getFileExtension().toLowerCase();
+	if (ext == ".wav" || ext == ".aif" || ext == ".mp3")
+	{
+		navigator->getCurrentTrack()->addRegion(
+			file.getFileNameWithoutExtension(), file, this->sampleRate);
+		Project::getInstance()->addAudioFile(
+			file.getFileNameWithoutExtension(), file.getFullPathName());
+		navigator->repaint();
+	}
+}
+
+void MainComponent::importMidi()
+{
+	if (navigator == nullptr || navigator->getCurrentTrack() == nullptr)
+	{
+		juce::AlertWindow::showMessageBox(juce::AlertWindow::WarningIcon,
+			"No Track Selected",
+			"Please select a MIDI or Instrument track before importing MIDI files.");
+		return;
+	}
+
+	Track* currentTrack = navigator->getCurrentTrack();
+	if (currentTrack->getType() != Track::MIDI && currentTrack->getType() != Track::INSTRUMENT)
+	{
+		juce::AlertWindow::showMessageBox(juce::AlertWindow::WarningIcon,
+			"Invalid Track Type",
+			"MIDI files can only be imported to MIDI or Instrument tracks.");
+		return;
+	}
+
+	FileChooser chooser("Select MIDI file to import...",
+		File::getSpecialLocation(File::userDocumentsDirectory),
+		"*.mid;*.midi");
+	if (! chooser.browseForFileToOpen()) return;
+	File file = chooser.getResult();
+	const auto ext = file.getFileExtension().toLowerCase();
+	if (ext != ".mid" && ext != ".midi")
+	{
+		juce::AlertWindow::showMessageBox(juce::AlertWindow::WarningIcon,
+			"Invalid File Type", "Please select a valid MIDI file (.mid or .midi)");
+		return;
+	}
+
+	juce::MidiFile midiFile;
+	juce::FileInputStream fileStream(file);
+	if (midiFile.readFrom(fileStream))
+	{
+		importMidiFileToTrack(midiFile, currentTrack);
+		navigator->repaint();
+		juce::Logger::getCurrentLogger()->writeToLog(
+			"Successfully imported MIDI file: " + file.getFileName());
+	}
+	else
+	{
+		juce::AlertWindow::showMessageBox(juce::AlertWindow::WarningIcon,
+			"Import Error", "Failed to read MIDI file: " + file.getFileName());
+	}
+}
+
+void MainComponent::importMidiFileToTrack(const juce::MidiFile& midiFile, Track* track)
+{
+	if (! track || midiFile.getNumTracks() == 0) return;
+
+	const long startPosition = navigator->getSamplePosition();
+	double midiLengthInSeconds = midiFile.getLastTimestamp();
+	long regionLengthInSamples = (long)(midiLengthInSeconds * this->sampleRate);
+	if (regionLengthInSamples < (long) this->sampleRate)
+		regionLengthInSamples = (long) this->sampleRate;
+
+	MidiRegion* region = track->addMidiRegion(this->sampleRate, startPosition, regionLengthInSamples);
+	if (! region) {
+		juce::Logger::getCurrentLogger()->writeToLog("Failed to create MIDI region");
+		return;
+	}
+
+	for (int trackIndex = 0; trackIndex < midiFile.getNumTracks(); ++trackIndex)
+	{
+		const juce::MidiMessageSequence* sequence = midiFile.getTrack(trackIndex);
+		if (! sequence) continue;
+
+		double ticksPerSecond = midiFile.getTimeFormat();
+		if (midiFile.getTimeFormat() < 0)
+		{
+			const int framesPerSecond = -(midiFile.getTimeFormat() >> 8);
+			const int ticksPerFrame   = midiFile.getTimeFormat() & 0xFF;
+			ticksPerSecond = framesPerSecond * ticksPerFrame;
+		}
+		else
+		{
+			const double bpm = 120.0;
+			ticksPerSecond = (bpm / 60.0) * midiFile.getTimeFormat();
+		}
+
+		for (int i = 0; i < sequence->getNumEvents(); ++i)
+		{
+			auto* event = sequence->getEventPointer(i);
+			if (! event) continue;
+			const juce::MidiMessage& message = event->message;
+
+			const double timeInSeconds = message.getTimeStamp() / ticksPerSecond;
+			const int    sampleOffset  = (int)(timeInSeconds * this->sampleRate);
+
+			if (message.isNoteOnOrOff() || message.isController() || message.isPitchWheel())
+			{
+				juce::MidiMessage* newMessage = nullptr;
+				if (message.isNoteOn())
+					newMessage = new juce::MidiMessage(juce::MidiMessage::noteOn(
+						track->getMidiChannel(), message.getNoteNumber(), message.getVelocity()));
+				else if (message.isNoteOff())
+					newMessage = new juce::MidiMessage(juce::MidiMessage::noteOff(
+						track->getMidiChannel(), message.getNoteNumber(), message.getVelocity()));
+				else if (message.isController())
+					newMessage = new juce::MidiMessage(juce::MidiMessage::controllerEvent(
+						track->getMidiChannel(), message.getControllerNumber(), message.getControllerValue()));
+				else if (message.isPitchWheel())
+					newMessage = new juce::MidiMessage(juce::MidiMessage::pitchWheel(
+						track->getMidiChannel(), message.getPitchWheelValue()));
+				else
+					newMessage = new juce::MidiMessage(message);
+
+				newMessage->setTimeStamp(sampleOffset);
+				region->addMessage(newMessage, timeInSeconds, sampleOffset);
+			}
+		}
+	}
+
+	region->rebuildThumbnail();
+	region->updateThumb();
+	region->repaint();
+	juce::Logger::getCurrentLogger()->writeToLog(
+		"Imported MIDI file with " + juce::String(midiFile.getNumTracks()) + " tracks");
+}
+
 juce::File MainComponent::getDockLayoutFile() const
 {
 	auto dir = juce::File::getSpecialLocation(juce::File::userHomeDirectory)
@@ -1509,8 +1748,8 @@ void MainComponent::resized()
 				cpuLoadLabel->setBounds(getParentComponent()->getWidth() - 50, 0, 50, 20);
 				loadSlider->setBounds(getParentComponent()->getWidth() - 150, 10, 100, 10);
 			}
-			if (editorView != nullptr) {
-				editorView->getEditor()->resized();
+			if (editorViewport != nullptr) {
+				editor->resized();
 			}
 			if (menu != nullptr) {
 				menu->setBounds(0, 0, getParentWidth(), 25);
@@ -1519,9 +1758,13 @@ void MainComponent::resized()
 		}
 	}
 	else {
-		if (getParentComponent() != nullptr && editorView != nullptr) {
-			editorView->setSize(getParentWidth(), getParentHeight());
-			editorView->getEditor()->resized();
+		// Player-Modus (kein DockManager) — editor liegt im Wesentlichen pur
+		// im MainComponent. Frueher hier: editorView->setSize(parent size)
+		// (das EditorComponent als Voll-Container). Mit der Aufloesung wird
+		// der editor direkt skaliert; resized() rechnet sein internes Canvas.
+		if (getParentComponent() != nullptr && editor != nullptr) {
+			editor->setSize(getParentWidth(), getParentHeight());
+			editor->resized();
 		}
 	}
 }
@@ -1876,11 +2119,11 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	if (menuItemID >= kModuleTrackMenuIdBase) {
 		const size_t idx = (size_t) (menuItemID - kModuleTrackMenuIdBase);
 		if (idx < moduleTrackFiles.size()) {
-			if (editorView->getNavigator() == nullptr) {
-				editorView->OpenTrackView();
-				editorView->getNavigator()->addChangeListener(this);
+			if (navigator.get() == nullptr) {
+				openTrackView();
+				navigator.get()->addChangeListener(this);
 			}
-			auto* action = new AddTrackAction(editor, editorView->getNavigator(),
+			auto* action = new AddTrackAction(editor, navigator.get(),
 			                                  moduleTrackFiles[idx]);
 			Project::getInstance()->getUndoManager()->beginNewTransaction();
 			Project::getInstance()->getUndoManager()->perform(action);
@@ -1912,10 +2155,10 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 		openSettings();
 	}
 	else if (menuItemID == 6) {
-		editorView->ImportAudio();
+		importAudio();
 	}
 	else if (menuItemID == 12) {
-		editorView->ImportMidi();
+		importMidi();
 	}
 	else if (menuItemID == 13) {
 		showBounceDialog();
@@ -1928,9 +2171,9 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 		if (chooser.browseForDirectory()) {
 			File folder = chooser.getResult();
 
-			if (editorView->getNavigator() == nullptr) {
-				editorView->OpenTrackView();
-				editorView->getNavigator()->addChangeListener(this);
+			if (navigator.get() == nullptr) {
+				openTrackView();
+				navigator.get()->addChangeListener(this);
 			}
 
 			Array<File> wavFiles;
@@ -1940,7 +2183,7 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 			const double sr = Project::getInstance()->getSampleRate();
 
 			for (const File& file : wavFiles) {
-				Track* t = TrackUtil::createAudioTrack(editor, editorView->getNavigator(), editor->getModule());
+				Track* t = TrackUtil::createAudioTrack(editor, navigator.get(), editor->getModule());
 				if (t != nullptr) {
 					t->setName(file.getFileNameWithoutExtension());
 					t->addRegion(file.getFileNameWithoutExtension(), file, sr);
@@ -1948,16 +2191,16 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 				}
 			}
 
-			editorView->getNavigator()->adjustHeight();
-			editorView->getNavigator()->repaint();
+			navigator.get()->adjustHeight();
+			navigator.get()->repaint();
 			editor->repaint();
 		}
 	}
 	else if (menuItemID == 7) {
-		editorView->getNavigator()->setPlaying(true);
+		navigator.get()->setPlaying(true);
 	}
 	else if (menuItemID == 7) {
-		editorView->getNavigator()->setPlaying(false);
+		navigator.get()->setPlaying(false);
 	}
 
 #if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
@@ -1966,9 +2209,9 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	}
 #endif
 	else if (menuItemID == 201) {
-		editorView->OpenTrackView();
-		if (editorView->getNavigator() != nullptr)
-			editorView->getNavigator()->addChangeListener(this);
+		openTrackView();
+		if (navigator.get() != nullptr)
+			navigator.get()->addChangeListener(this);
 	}
 	else if (menuItemID == 202) {
 		// "Console" Item — fuegt einen ShellConsoleComponent-Tab in das
@@ -2015,47 +2258,47 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 
 	else if (menuItemID == 8) {
 
-		if (editorView->getNavigator() == nullptr) {
-			editorView->OpenTrackView();
-			editorView->getNavigator()->addChangeListener(this);
+		if (navigator.get() == nullptr) {
+			openTrackView();
+			navigator.get()->addChangeListener(this);
 		}
-		auto* action = new AddTrackAction(editor, editorView->getNavigator(),
+		auto* action = new AddTrackAction(editor, navigator.get(),
 		                                  AddTrackAction::Type::Audio);
 		Project::getInstance()->getUndoManager()->beginNewTransaction();
 		Project::getInstance()->getUndoManager()->perform(action);
 		editor->repaint();
 	}
 	else if (menuItemID == 9) {
-		if (editorView->getNavigator() == nullptr) {
-			editorView->OpenTrackView();
-			editorView->getNavigator()->addChangeListener(this);
+		if (navigator.get() == nullptr) {
+			openTrackView();
+			navigator.get()->addChangeListener(this);
 		}
-		auto* action = new AddTrackAction(editor, editorView->getNavigator(),
+		auto* action = new AddTrackAction(editor, navigator.get(),
 		                                  AddTrackAction::Type::Midi);
 		Project::getInstance()->getUndoManager()->beginNewTransaction();
 		Project::getInstance()->getUndoManager()->perform(action);
 		editor->repaint();
 	}
 	else if (menuItemID == 10) {
-		if (editorView->getNavigator() == nullptr) {
-			editorView->OpenTrackView();
-			editorView->getNavigator()->addChangeListener(this);
+		if (navigator.get() == nullptr) {
+			openTrackView();
+			navigator.get()->addChangeListener(this);
 		}
 		editor->addVirtualInstrumentTrack();
 		editor->repaint();
 	}
 	else if (menuItemID == 11)
 	{
-		if (editorView->getNavigator()->getCurrentTrack() != nullptr)
+		if (navigator.get()->getCurrentTrack() != nullptr)
 		{
 			const double sr  = Project::getInstance()->getSampleRate();
 			const float  bpm = Project::getInstance()->getTempo();
 			const int    beatsPerBar = 4;
 			const long   oneBarSamples = (long)(beatsPerBar * (60.0 / bpm) * sr);
 
-			editorView->getNavigator()->getCurrentTrack()->addMidiRegion(
+			navigator.get()->getCurrentTrack()->addMidiRegion(
 				sr,
-				editorView->getNavigator()->getSamplePosition(),
+				navigator.get()->getSamplePosition(),
 				oneBarSamples);
 		}
 	}
@@ -2164,13 +2407,13 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 			if (t != nullptr) t->reverseSelectedAudioRegions();
 	}
 	else if (menuItemID == 47) {
-		NormalizeRegionAction* action = new NormalizeRegionAction(navigator);
+		NormalizeRegionAction* action = new NormalizeRegionAction(navigator.get());
 		Project::getInstance()->getUndoManager()->beginNewTransaction();
 		Project::getInstance()->getUndoManager()->perform(action);
 
 	}
 	else if (menuItemID == 48) {
-		FadeRegionAction* action = new FadeRegionAction(navigator);
+		FadeRegionAction* action = new FadeRegionAction(navigator.get());
 		Project::getInstance()->getUndoManager()->beginNewTransaction();
 		Project::getInstance()->getUndoManager()->perform(action);
 	}
@@ -2188,7 +2431,7 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	}
 	else if (menuItemID == 60) {
 		if (navigator != nullptr && navigator->getCurrentTrack() != nullptr) {
-			auto* action = new TrackDeleteAction(navigator, editor);
+			auto* action = new TrackDeleteAction(navigator.get(), editor);
 			Project::getInstance()->getUndoManager()->beginNewTransaction();
 			Project::getInstance()->getUndoManager()->perform(action);
 		}
@@ -2288,21 +2531,21 @@ void MainComponent::restoreNavigatorAfterOpen() {
 	juce::Component::SafePointer<MainComponent> safeThis(this);
 	juce::Timer::callAfterDelay(150, [safeThis]() {
 		if (auto* self = safeThis.getComponent()) {
-			if (self->editorView != nullptr
-				&& self->editorView->getNavigator() != nullptr
-				&& !self->editorView->getNavigator()->getTracks().empty())
+			if (self->editorViewport != nullptr
+				&& self->navigator.get() != nullptr
+				&& !self->navigator.get()->getTracks().empty())
 			{
-				self->editorView->OpenTrackView();
+				self->openTrackView();
 			}
 		}
 	});
 }
 
 void MainComponent::openQuickstart() {
-	if (editorView == nullptr)
+	if (editorViewport == nullptr)
 		return;
 
-	auto* tabs = editorView->getEditorTab();
+	auto* tabs = editorAreaTab;
 	if (tabs == nullptr)
 		return;
 
@@ -2330,9 +2573,9 @@ void MainComponent::openQuickstart() {
 #endif
 
 		quickstart->setOnCreateInstrumentTrack([this]() {
-			if (editorView->getNavigator() == nullptr) {
-				editorView->OpenTrackView();
-				editorView->getNavigator()->addChangeListener(this);
+			if (navigator.get() == nullptr) {
+				openTrackView();
+				navigator.get()->addChangeListener(this);
 			}
 			editor->addVirtualInstrumentTrack();
 			editor->repaint();
@@ -2376,7 +2619,7 @@ void MainComponent::openQuickstart() {
 #endif
 
 		quickstart->setInstrumentTrackProvider([this]() {
-			auto* nav = editorView->getNavigator();
+			auto* nav = navigator.get();
 			if (nav == nullptr) return false;
 			for (auto* t : nav->getTracks()) {
 				if (t != nullptr && t->getType() == Track::INSTRUMENT)
@@ -2542,8 +2785,8 @@ void MainComponent::modifierKeysChanged(const juce::ModifierKeys& modifiers) {
 SynthEditor* MainComponent::getActiveSubEditor() const {
 	// Studio-Layout: topTab[0] = Viewport(root editor), topTab[1..] = Viewport(sub editor).
 	// Player-Layout: kein editorView, dann gibt es nur den Root.
-	if (editorView == nullptr) return editor;
-	auto* tabs = editorView->getEditorTab();
+	if (editorViewport == nullptr) return editor;
+	auto* tabs = editorAreaTab;
 	if (tabs == nullptr) return editor;
 	if (auto* vp = dynamic_cast<juce::Viewport*>(tabs->getCurrentContentComponent())) {
 		if (auto* se = dynamic_cast<SynthEditor*>(vp->getViewedComponent()))
@@ -2560,8 +2803,8 @@ bool MainComponent::keyPressed(const juce::KeyPress& key, juce::Component* origi
 	// Space selbst (Eingabe), also wird das Toggle nicht beim Tippen
 	// ausgeloest.
 	if (key == juce::KeyPress::spaceKey) {
-		if (editorView != nullptr) {
-			if (auto* nav = editorView->getNavigator())
+		if (editorViewport != nullptr) {
+			if (auto* nav = navigator.get())
 				nav->togglePlayStop();
 		}
 		return true;
@@ -2588,8 +2831,8 @@ bool MainComponent::keyPressed(const juce::KeyPress& key, juce::Component* origi
 	}
 	if (key.getKeyCode() == KeyPress::deleteKey || key.getKeyCode() == KeyPress::backspaceKey) {
 		SynthEditor* active = getActiveSubEditor();
-		TrackNavigator* nav = (active == editor && editorView != nullptr)
-			? editorView->getNavigator()
+		TrackNavigator* nav = (active == editor && editorViewport != nullptr)
+			? navigator.get()
 			: nullptr;
 		SynthEditor::deleteSelectionWithCascade(active, nav);
 	}
@@ -2624,8 +2867,8 @@ void MainComponent::buttonClicked(Button* b)
 
 		if (tb->getItemId() == toolbarFactory->delete_element) {
 			SynthEditor* active = getActiveSubEditor();
-			TrackNavigator* nav = (active == editor && editorView != nullptr)
-				? editorView->getNavigator()
+			TrackNavigator* nav = (active == editor && editorViewport != nullptr)
+				? navigator.get()
 				: nullptr;
 			SynthEditor::deleteSelectionWithCascade(active, nav);
 		}

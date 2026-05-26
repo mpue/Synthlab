@@ -530,10 +530,6 @@
                 file="Source/CustomLookAndFeel.h"/>
           <FILE id="YWB21v" name="DefaultToolbarItemFactory.h" compile="0" resource="0"
                 file="Source/DefaultToolbarItemFactory.h"/>
-          <FILE id="N2Og2a" name="EditorComponent.cpp" compile="1" resource="0"
-                file="Source/EditorComponent.cpp"/>
-          <FILE id="E8kosS" name="EditorComponent.h" compile="0" resource="0"
-                file="Source/EditorComponent.h"/>
           <FILE id="cQOqpY" name="ElegantDarkLookAndFeel.h" compile="0" resource="0"
                 file="Source/ElegantDarkLookAndFeel.h"/>
           <FILE id="yuob1A" name="ExtendedFileBrowser.cpp" compile="1" resource="0"
