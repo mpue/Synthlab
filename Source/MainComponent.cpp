@@ -235,6 +235,11 @@ MainComponent::~MainComponent()
 		// Performance-Anordnung der Panels nach Restart wieder vor.
 		saveDockLayout();
 
+		// Audio-Thread-Refs zuerst nullen, damit getNextAudioBlock waehrend
+		// des Teardowns nicht in einen sterbenden LevelMeter/Spektrum greift.
+		levelMeterAudio.store(nullptr, std::memory_order_release);
+		spectrumAudio.store(nullptr, std::memory_order_release);
+
 		// Globale Project-Pointer VOR dem DockManager nullen. Die Reihenfolge
 		// matters, weil ~DockManager seine allPanels-OwnedArray vom Anfang weg
 		// abbaut — d.h. PropertyView (Panel-Index 0) verschwindet zuerst,
@@ -764,9 +769,11 @@ void MainComponent::createStudioLayout() {
 #endif
 	editor->updateProject(File());
 	levelMeter = std::make_unique<AudioLevelMeter>();
+	levelMeterAudio.store(levelMeter.get(), std::memory_order_release);
 	Project::getInstance()->getSupplemental()->addTab("Level Meter", Colours::darkgrey, levelMeter.get(), false);
 	spectrumAnalyzer = std::make_unique<SpectrumAnalyzer>();
 	spectrumAnalyzer->setNumberOfBars(128);
+	spectrumAudio.store(spectrumAnalyzer.get(), std::memory_order_release);
 	Project::getInstance()->getSupplemental()->addTab("Spektrum", Colours::darkgrey, spectrumAnalyzer.get(), false);
 }
 
@@ -886,11 +893,15 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 			inputCaptureBuffer.copyFrom(ch, 0, *bufferToFill.buffer, ch, bufferToFill.startSample, nSamps);
 	}
 
-	if (levelMeter != nullptr)
-		levelMeter->processAudioBlock(bufferToFill);
+	// Audio-Thread liest die Atomic-Refs, damit die UI-Seite das Panel
+	// schliessen / re-konstruieren kann, ohne dass dieser Aufruf in einen
+	// freed pointer fuehrt. Wenn das Panel zu ist, ist der Pointer einfach
+	// nullptr und wir ueberspringen den Block.
+	if (auto* lm = levelMeterAudio.load(std::memory_order_acquire))
+		lm->processAudioBlock(bufferToFill);
 
-	if (spectrumAnalyzer)
-		spectrumAnalyzer->getNextAudioBlock(bufferToFill);
+	if (auto* sa = spectrumAudio.load(std::memory_order_acquire))
+		sa->getNextAudioBlock(bufferToFill);
 
 	bufferToFill.clearActiveBufferRegion();
 
@@ -1825,6 +1836,7 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	else if (menuItemID == 203) {
 		if (levelMeter == nullptr) {
 			levelMeter = std::make_unique<AudioLevelMeter>();
+			levelMeterAudio.store(levelMeter.get(), std::memory_order_release);
 		}
         Project::getInstance()->getSupplemental()->addTab("Level Meter", Colours::darkgrey, levelMeter.get(), false);
 
@@ -1833,6 +1845,7 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 		if (spectrumAnalyzer == nullptr) {
 			spectrumAnalyzer = std::make_unique<SpectrumAnalyzer>();
 			spectrumAnalyzer->setNumberOfBars(128);
+			spectrumAudio.store(spectrumAnalyzer.get(), std::memory_order_release);
 		}
         Project::getInstance()->getSupplemental()->addTab("Spektrum", Colours::darkgrey, spectrumAnalyzer.get(), false);
 	}

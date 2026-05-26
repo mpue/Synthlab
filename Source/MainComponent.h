@@ -254,6 +254,15 @@ private:
     
 	std::unique_ptr<AudioLevelMeter> levelMeter = nullptr;
     std::unique_ptr<SpectrumAnalyzer> spectrumAnalyzer = nullptr;
+
+    // Audio-Thread liest diese atomar — UI-Thread setzt sie bei Construction
+    // der zugehoerigen Komponente und nullt sie bei Destruction. Damit
+    // koennen LevelMeter/SpectrumAnalyzer spaeter in schliessbaren
+    // DockablePanels leben, ohne dass getNextAudioBlock auf einen freed
+    // pointer dereft. Solange noch beide Felder (unique_ptr + atomic)
+    // existieren, hat das Atomic den gleichen Wert wie der unique_ptr.
+    std::atomic<AudioLevelMeter*>  levelMeterAudio { nullptr };
+    std::atomic<SpectrumAnalyzer*> spectrumAudio   { nullptr };
     std::unique_ptr<QuickstartComponent> quickstart = nullptr;
     // jsEditor wird vom DockManager (via DockablePanel) besitzt. Raw-Pointer
     // bleibt fuer die bestehenden setX-Verdrahtungen (Project::setJS, etc.) gueltig.
