@@ -406,6 +406,15 @@ MainComponent::~MainComponent()
 
 	stopTimer();
 
+	// Editor explizit VOR midiProcessor zerstoeren. Sonst feuert ~SynthEditor
+	// im Member-Reverse-Destruktur-Phase setRunning(true) am Ende seiner Dtor-
+	// Logik (siehe SynthEditor.cpp:126), die FastBus-publish triggert eine
+	// MidiProcessor-Lambda, die auf einem dann schon ge'delete'eten MidiProcessor-
+	// `this` startTimer aufruft -> EXC_BAD_ACCESS. Reihenfolge hier: erst Editor
+	// (laesst FastBus-publish auf einen noch lebenden MidiProcessor laufen),
+	// dann MidiProcessor (und FastBus-Subscription stirbt mit ihm via Funktor-
+	// Destruktor).
+	editorOwned.reset();
 	delete midiProcessor;
 	chat = nullptr;
 
