@@ -252,6 +252,16 @@ inline void DockSplitNode::resized()
     int sum = 0;
     for (auto s : sizes) sum += juce::jmax (0, s);
 
+    // Wenn das Layout noch keinen Platz hat (typisch direkt nach loadLayout(),
+    // wenn der DockManager noch nicht von MainComponent::resized() gesized
+    // wurde): die gespeicherten Groessen NICHT klobbern. Sonst skaliert der
+    // jmax(40, ...)-Clamp unten alle children auf das Minimum 40, das
+    // Verhaeltnis 200:1500:320 geht verloren und beim spaeteren echten resize
+    // landen wir bei gleich verteilten Splits. Wir verschieben das Layout-
+    // Recompute auf den naechsten resized()-Tick mit echtem Platz.
+    if (contentAvail <= 0)
+        return;
+
     if (sum <= 0)
     {
         const int each = contentAvail / juce::jmax (1, (int) children.size());
