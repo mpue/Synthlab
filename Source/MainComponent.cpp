@@ -2917,24 +2917,37 @@ bool MainComponent::keyPressed(const juce::KeyPress& key, juce::Component* origi
 		return true;
 	}
 
+	// Modifier-Shortcuts (Cmd+T / +D / +C / +V / +X / +B / +L / +E / +M)
+	// liegen am Navigator als zweiter KeyListener auf dem Top-Level. Wenn
+	// wir hier am MainComponent-Listener unbedingt true zurueckgeben,
+	// stoppt JUCE die Dispatch-Kette und der Navigator sieht sie nie. Reine
+	// modifier-lose Tasten dagegen sind explizit hier oben verkabelt (y/x
+	// = Oktave, l = Layer, d+Alt = Duplikat im Editor, Backspace = Delete).
+	if (key.getModifiers().isCommandDown() || key.getModifiers().isCtrlDown())
+		return false;
+
 	if (key.getTextCharacter() == 'y') {
 		if (currentOctave > 0) {
 			currentOctave--;
 		}
+		return true;
 	}
 	if (key.getTextCharacter() == 'x') {
 		if (currentOctave < 8) {
 			currentOctave++;
 		}
+		return true;
 	}
 	if (key.getTextCharacter() == 'l') {
 		layer = (layer + 1) % 4;
 		editor->setCurrentLayer(layer);
 		editor->repaint();
+		return true;
 	}
 	if (key.getTextCharacter() == 'd' && isOptionPressed) {
 		editor->duplicateSelected();
 		editor->repaint();
+		return true;
 	}
 	if (key.getKeyCode() == KeyPress::deleteKey || key.getKeyCode() == KeyPress::backspaceKey) {
 		SynthEditor* active = getActiveSubEditor();
@@ -2942,9 +2955,12 @@ bool MainComponent::keyPressed(const juce::KeyPress& key, juce::Component* origi
 			? navigator.get()
 			: nullptr;
 		SynthEditor::deleteSelectionWithCascade(active, nav);
+		return true;
 	}
 
-	return true;
+	// Default: nicht konsumieren — andere Listener (Navigator, Editor,
+	// Command-Manager) sollen ihre Chance bekommen.
+	return false;
 }
 
 

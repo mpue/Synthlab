@@ -44,11 +44,22 @@ AudioRegion::AudioRegion(AudioRegion* other, AudioFormatManager& manager, double
     this->thumbnail->addBlock(0, *audioBuffer, 0, numSamples);
 
     this->name = other->getName();
-    // Inherit the source-file reference and offset within it. Without these,
-    // split halves and duplicates serialize with empty clipRefId and the
-    // project becomes unloadable (SmartSample throws on the empty path).
+    // clipRefId erben, damit zwischen Slice-Anlage und naechstem Save kein
+    // leerer Ref-Id-Pfad in der Serialisierung landet (SmartSample wuerde
+    // beim Load auf leerem Pfad werfen). Der Save-Pfad ueberschreibt
+    // clipRefId beim Persistieren des mutierten Buffers ohnehin.
     this->clipRefId = other->clipRefId;
-    this->sourceStartSample = other->sourceStartSample + startSample;
+    // Der frisch allokierte audioBuffer ist die Scheibe selbst (Indices
+    // [0..numSamples)). sourceStartSample wird in Track::getSample als
+    // Buffer-Offset addiert — der Wert MUSS also 0 sein, sonst liest die
+    // rechte Splittehaelfte um startSample versetzt und faellt am Ende in
+    // out-of-bounds (sichtbar als verschobenes Audio + Stille kurz vor dem
+    // Region-Ende). bufferMutated triggert beim naechsten Save das
+    // Schreiben einer eigenen WAV mit neuem clipRefId — anschliessend
+    // matcht die Persistenz (sss=0, numSamples=Scheibenlaenge) wieder das
+    // Runtime-Modell "Buffer = volle Quell-Datei".
+    this->sourceStartSample = 0;
+    this->bufferMutated = true;
     // Tempo-Follow Status mit kopieren — Splits/Duplikate sollen sich genauso
     // verhalten wie das Original (z.B. nach einem Split einer warped Region).
     this->referenceTempo = other->referenceTempo;

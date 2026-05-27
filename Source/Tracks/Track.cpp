@@ -1098,10 +1098,16 @@ void Track::splitRegion()
     if (!baseRegion)
         return;
 
-    // Selection-Pflicht entfernt — DAW-typisch (Logic, Reaper) splittet ein
-    // "Scissor-at-Playhead" alle Regionen die unter dem Marker liegen, ohne
-    // dass man sie vorher anklicken muss. Vorher hat split ohne sichtbares
-    // Feedback abgebrochen wenn die Region nicht selektiert war.
+    // Nur selektierte Regionen am Marker schneiden. Ohne diese Pruefung wuerde
+    // der von TrackNavigator ueber alle Tracks ausgerollte Split-Loop jede
+    // Region unter dem Playhead schneiden — auch wenn der User nur eine
+    // bestimmte gemeint hat. Selektion kann ueber zwei Quellen kommen:
+    // Region::selected (Flag, gesetzt z.B. via TrackNavigator-Hintergrundklick)
+    // oder MultiComponentDragger (Direkt-Klick auf die Region selbst).
+    const bool isSelected = baseRegion->isSelected()
+                         || (dragger != nullptr && dragger->isSelected(baseRegion));
+    if (!isSelected)
+        return;
 
     // Edge-Case: Marker liegt genau am Rand der Region — kein sinnvoller Split.
     const long offset = baseRegion->getSampleOffset();
@@ -1124,8 +1130,14 @@ void Track::splitRegion()
     const int rightW = (int) std::round((double) numRight / sampleRate * zoom);
 
     if (AudioRegion* region = dynamic_cast<AudioRegion*>(baseRegion)) {
-        AudioRegion* leftRegion  = new AudioRegion(region, *manager, sampleRate, 0, numLeft);
-        AudioRegion* rightRegion = new AudioRegion(region, *manager, sampleRate, numLeft, numRight);
+        // Buffer-absolute Offsets uebergeben (der Slice-Ctor liest direkt aus
+        // other->getBuffer()): wenn die Quelle bereits links getrimmt war
+        // (sourceStartSample > 0), faengt der sichtbare Inhalt erst dort an.
+        // Mit region-relativen Offsets (0 / numLeft) wuerden wir sonst die
+        // abgeschnittene Front in die linke Haelfte kopieren.
+        const long otherSss = region->getSourceStartSample();
+        AudioRegion* leftRegion  = new AudioRegion(region, *manager, sampleRate, otherSss,           numLeft);
+        AudioRegion* rightRegion = new AudioRegion(region, *manager, sampleRate, otherSss + numLeft, numRight);
 
         Rectangle<int>* leftBounds  = new Rectangle<int>(0, 0, leftRegion->getThumbnail()->getTotalLength() * 20, getHeight());
         Rectangle<int>* rightBounds = new Rectangle<int>(0, 0, rightRegion->getThumbnail()->getTotalLength() * 20, getHeight());
@@ -1156,6 +1168,25 @@ void Track::splitRegion()
         Project::getInstance()->getUndoManager()->beginNewTransaction();
         Project::getInstance()->getUndoManager()->perform(
             new SplitRegionAction(this, region, leftRegion, rightRegion));
+
+        // attachRegion() (gerade von SplitRegionAction::perform ausgefuehrt)
+        // ruft AudioRegion::setZoom auf, das unbedingt sampleOffset auf die
+        // naechste Viertelnote snappt. Fuer den Split ist das ungewollt: die
+        // rechte Haelfte beginnt am Playhead, der nur zufaellig auf einem
+        // Viertel liegt — sonst entsteht eine sichtbare Luecke zwischen den
+        // Haelften, und die rechte rastet zum Raster. Workaround analog
+        // duplicateRegion: Position und Offset nach setZoom explizit
+        // wiederherstellen. setBoundsUpdateInProgress(true) blockt den
+        // componentMovedOrResized-Reentrant, sonst snappt der gleich nochmal.
+        auto restoreSplitHalf = [this](AudioRegion* half, long sampleOff, int x, int w) {
+            half->setBoundsUpdateInProgress(true);
+            half->setBounds(x, 0, w, getHeight());
+            half->setBoundsUpdateInProgress(false);
+            half->setSampleOffset(sampleOff, false, false, false);
+            half->setOffset(x);
+        };
+        restoreSplitHalf(leftRegion,  offset,    leftX,  leftW);
+        restoreSplitHalf(rightRegion, sampleNum, rightX, rightW);
         return;
     }
 

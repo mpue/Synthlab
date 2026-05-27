@@ -1599,7 +1599,18 @@ void TrackNavigator::changeListenerCallback(ChangeBroadcaster* source)
 
 bool TrackNavigator::keyPressed(const KeyPress& key, Component* originatingComponent) {
 
-	if (!hasFocus) {
+	// hasFocus-Gate nur fuer modifier-LOSE Tasten anwenden — sonst gehen im
+	// Docking-Layout alle Cmd+T/D/C/V/X-Shortcuts verloren, weil der Fokus
+	// fast immer in einem anderen Dock-Panel (Editor, Mixer, leerer Tab)
+	// liegt und der Navigator focusGained() nie sieht. Modifier-Tastendrucke
+	// wie Cmd+X kollidieren nicht mit Text-Eingaben und sollen global
+	// triggern, solange der Top-Level Key-Listener sie an uns durchreicht.
+	// Reine Tasten (Space, +/-) bleiben fokus-gated, sonst wuerde z.B.
+	// Space waehrend einer Texteingabe Play/Stop togglen.
+	const bool hasModifier = key.getModifiers().isCommandDown()
+	                      || key.getModifiers().isAltDown()
+	                      || key.getModifiers().isCtrlDown();
+	if (!hasFocus && !hasModifier) {
 		return false;
 	}
 
