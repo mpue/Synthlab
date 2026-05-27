@@ -933,8 +933,6 @@ void MainComponent::createStudioLayout() {
 		docking::DockSide::Center);
 	if (toolsDockPanel != nullptr) toolsDockPanel->setClosable(false);
 
-	auto* logHolderOwned = new juce::Component(); // wird gleich ueberschrieben
-	(void) logHolderOwned;
 	logDockPanel = dockManager->createPanel(
 		"log", "Log",
 		std::make_unique<LogView>(),
