@@ -415,6 +415,14 @@ MainComponent::~MainComponent()
 	// dann MidiProcessor (und FastBus-Subscription stirbt mit ihm via Funktor-
 	// Destruktor).
 	editorOwned.reset();
+
+	// Navigator explizit VOR trackViewport zerstoeren. ~TrackNavigator ruft
+	// `view->getHorizontalScrollBar().removeListener(this)` — `view` ist ein
+	// roher Pointer auf trackViewport. Bei Member-Reverse-Destruktion ginge
+	// trackViewport (Zeile spaeter im Header) erst, dann erst navigator
+	// (shared_ptr-Member frueher) -> UAF im Scroll-Listener-Cleanup.
+	navigator.reset();
+
 	delete midiProcessor;
 	chat = nullptr;
 
