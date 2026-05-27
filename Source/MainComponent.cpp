@@ -1507,7 +1507,14 @@ void MainComponent::openTrackView()
 		editor->setNavigator(navigator.get());
 		navigator->setEditor(editor);
 		trackViewport->setSize(500, 200);
-		trackViewport->setViewedComponent(navigator.get());
+		// Zweites Argument false: viewport NICHT als Owner — navigator ist
+		// shared_ptr, also wuerde der Viewport-Dtor per default `delete
+		// navigator.get()` rufen waehrend der shared_ptr noch lebt -> Double-
+		// Free (SIGABRT in libsystem_malloc). Frueher in EditorComponent stand
+		// hier auch nur `setViewedComponent(navigator.get())` ohne den false,
+		// aber dort wurde Viewport vor navigator zerstoert und der Bug blieb
+		// latent.
+		trackViewport->setViewedComponent(navigator.get(), false);
 		trackViewport->setScrollBarsShown(true, true);
 		trackViewport->setScrollOnDragEnabled(false);
 		trackViewport->setInterceptsMouseClicks(true, true);
