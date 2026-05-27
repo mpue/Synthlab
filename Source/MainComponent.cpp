@@ -339,6 +339,16 @@ MainComponent::~MainComponent()
 		// (referTo-Tear-down) liest tote ValueSources.
 		controlSurfacePanel = nullptr;
 
+		// SynthEditor::tab ist ein raw-Pointer auf editorAreaTab. dockManager
+		// zerstoert gleich das Editor-DockablePanel und damit editorAreaTab;
+		// danach laeuft beim Member-Reverse-Destruktur editorOwned -> ~Synth-
+		// Editor -> cleanUp(), das tab->getNumTabs() ruft. Ohne setTab(nullptr)
+		// derefferiert das freed memory. Frueher passierte das im
+		// EditorComponent-Dtor; nach dessen Aufloesung muss MainComponent es
+		// machen.
+		if (editor != nullptr)
+			editor->setTab(nullptr);
+
 		// DockManager besitzt jetzt propertyView, editorAreaTab und jsEditor.
 		// Sein Dtor cleart die OwnedArray<DockablePanel> -> kaskadiert in die
 		// Content-Komponenten. Raw-Pointer hinterher null setzen, damit kein
