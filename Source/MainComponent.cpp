@@ -1778,6 +1778,15 @@ void MainComponent::showOrCreatePianoRollPanel(std::unique_ptr<PianoRollEditor> 
 	if (panel != nullptr)
 	{
 		panel->setClosable(true);
+
+		// Standardmaessig landet ein Center-Panel im ersten Tab-Node (Editor,
+		// oben/links). Stattdessen in den unteren Tab-Bereich zum Mixer
+		// tabifizieren, sofern der Mixer (noch) gedockt ist.
+		if (auto* mixer = dockManager->findPanel("mixer"))
+			if (auto* mixerTabNode = dynamic_cast<docking::DockTabNode*>(
+					mixer->getParentComponent()))
+				dockManager->dockPanel(panel, mixerTabNode, docking::DockSide::Center);
+
 		dockManager->activatePanel(panel);
 	}
 }
@@ -1807,6 +1816,14 @@ void MainComponent::showOrCreateEventEditorPanel(std::unique_ptr<MidiRegionEvent
 	if (panel != nullptr)
 	{
 		panel->setClosable(true);
+
+		// Wie beim PianoRoll: in den unteren Tab-Bereich zum Mixer tabifizieren
+		// statt im Editor-Tab oben/links zu landen.
+		if (auto* mixer = dockManager->findPanel("mixer"))
+			if (auto* mixerTabNode = dynamic_cast<docking::DockTabNode*>(
+					mixer->getParentComponent()))
+				dockManager->dockPanel(panel, mixerTabNode, docking::DockSide::Center);
+
 		dockManager->activatePanel(panel);
 	}
 }
