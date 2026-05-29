@@ -11,12 +11,13 @@
 #pragma once
 
 #include <JuceHeader.h>
-#include <rubberband/RubberBandStretcher.h>
+#include "stretch/signalsmith-stretch.h"
+#include "Settings.h"
 
 namespace AudioUtils
 {
     /**
-     * Generic Rubberband offline processing: time-stretch and/or pitch-shift.
+     * Generic offline time-stretch and/or pitch-shift via signalsmith-stretch.
      * Returns a freshly allocated buffer the caller owns. Use the thin wrappers
      * stretchBufferRubberband (time only) and pitchShiftBufferRubberband
      * (pitch only) instead of calling this directly.
@@ -51,78 +52,83 @@ namespace AudioUtils
             return out;
         }
 
-        using Stretcher = RubberBand::RubberBandStretcher;
-        const Stretcher::Options opts =
-              Stretcher::OptionProcessOffline
-            | Stretcher::OptionEngineFaster
-            | Stretcher::OptionStretchPrecise
-            | Stretcher::OptionFormantPreserved;
+        // Tuning kommt aus den App-Settings — Block/Intervall als Anteil der
+        // Sample-Rate (signalsmith-Preset waere 0.12/0.03), Formant-Erhalt nur
+        // bei echtem Pitch-Shift relevant.
+        const auto* s = Settings::getInstance();
+        const double blockPct    = s->getStretchBlockPercent();
+        const double intervalPct = s->getStretchIntervalPercent();
+        const bool   preserveFormants = s->getStretchFormantPreservation();
 
-        Stretcher rb((size_t) sampleRate, (size_t) numChannels, opts, timeRatio, pitchScale);
-        rb.setMaxProcessSize(8192);
-        rb.setExpectedInputDuration((size_t) inSamples);
+        signalsmith::stretch::SignalsmithStretch<float> stretch;
+        stretch.configure(numChannels,
+                          (int) std::lround(sampleRate * blockPct),
+                          (int) std::lround(sampleRate * intervalPct));
+        if (std::abs(pitchScale - 1.0) > 1e-9)
+        {
+            stretch.setTransposeFactor((float) pitchScale);
+            if (preserveFormants)
+                stretch.setFormantSemitones(0.0f, true);
+        }
 
         std::unique_ptr<juce::AudioSampleBuffer> out(new juce::AudioSampleBuffer(numChannels, outSamples));
         out->clear();
 
-        // Study-Pass: Rubberband bekommt den ganzen Input vorab gezeigt, damit
-        // der Offline-Stretcher Transients/Phasen besser planen kann.
+        // signalsmith-stretch ist eine Streaming-Engine mit interner Latenz:
+        // beim ersten process()-Aufruf ist der Output um outputLatency()
+        // Samples gegenueber dem Input verzoegert. Wuerden wir naiv
+        // process(in, N, out, M) aufrufen, waeren die ersten L Output-Samples
+        // Ramp-Up-Stille — das ganze Audio im Buffer schoebe sich um L
+        // Samples nach hinten und das Timing relativ zur Region waere weg.
+        //
+        // Sauberer Offline-Trick: wir rendern in einen *groesseren* Temp-Out
+        // (M + L Samples) und fuettern dafuer einen entsprechend gepaddeten
+        // Input (N + L/timeRatio Samples, Tail = Stille). Damit bleibt die
+        // implizite Stretch-Ratio M/N erhalten, und wir koennen die ersten L
+        // Output-Samples einfach verwerfen — uebrig bleibt timing-korrektes
+        // Audio von Sample 0 an.
+        //
+        // WICHTIG: die Lib trennt analysisLatency (inputLatency(), in Input-
+        // Samples) und synthesisLatency (outputLatency(), in Output-Samples).
+        // Trimmt man nur synthesisLatency, bleibt ein Rest-Versatz von
+        // analysisLatency * timeRatio Output-Samples uebrig — am Anfang als
+        // kleine Stille-Luecke hoerbar. Wir rechnen beide Anteile zusammen.
+        const int outLat       = stretch.outputLatency();
+        const int inLat        = stretch.inputLatency();
+        const int leadOffset   = outLat + (int) std::ceil((double) inLat * timeRatio);
+        const int extraInput   = (int) std::ceil((double) leadOffset / timeRatio);
+        const int paddedIn     = inSamples  + extraInput;
+        const int paddedOutLen = outSamples + leadOffset;
+
+        std::vector<std::vector<float>> padIn ((size_t) numChannels);
+        std::vector<std::vector<float>> tmpOut((size_t) numChannels);
+        std::vector<const float*> inPtrs ((size_t) numChannels, nullptr);
+        std::vector<float*>       outPtrs((size_t) numChannels, nullptr);
+        for (int ch = 0; ch < numChannels; ++ch)
         {
-            const int kBlock = 8192;
-            int pos = 0;
-            std::vector<const float*> ptrs((size_t) numChannels, nullptr);
-            while (pos < inSamples)
-            {
-                const int n = juce::jmin(kBlock, inSamples - pos);
-                for (int ch = 0; ch < numChannels; ++ch)
-                    ptrs[(size_t) ch] = input.getReadPointer(ch) + pos;
-                rb.study(ptrs.data(), (size_t) n, pos + n >= inSamples);
-                pos += n;
-            }
+            padIn[(size_t) ch].assign((size_t) paddedIn, 0.0f);
+            std::copy(input.getReadPointer(ch),
+                      input.getReadPointer(ch) + inSamples,
+                      padIn[(size_t) ch].data());
+            inPtrs[(size_t) ch] = padIn[(size_t) ch].data();
+
+            tmpOut[(size_t) ch].assign((size_t) paddedOutLen, 0.0f);
+            outPtrs[(size_t) ch] = tmpOut[(size_t) ch].data();
         }
 
-        // Process-Pass: in Bloecken Input einspeisen, jedes Mal alles
-        // verfuegbare Output abgreifen.
-        {
-            const int kBlock = 8192;
-            int inPos  = 0;
-            int outPos = 0;
+        stretch.process(inPtrs.data(), paddedIn, outPtrs.data(), paddedOutLen);
 
-            std::vector<const float*> inPtrs((size_t) numChannels, nullptr);
-            std::vector<float*>       outPtrs((size_t) numChannels, nullptr);
-
-            auto drainAvailable = [&]() {
-                while (true)
-                {
-                    const int avail = rb.available();
-                    if (avail <= 0) break;
-                    const int n = juce::jmin(avail, outSamples - outPos);
-                    if (n <= 0) break;
-                    for (int ch = 0; ch < numChannels; ++ch)
-                        outPtrs[(size_t) ch] = out->getWritePointer(ch) + outPos;
-                    const size_t got = rb.retrieve(outPtrs.data(), (size_t) n);
-                    outPos += (int) got;
-                    if ((int) got < n) break;
-                }
-            };
-
-            while (inPos < inSamples)
-            {
-                const int n = juce::jmin(kBlock, inSamples - inPos);
-                for (int ch = 0; ch < numChannels; ++ch)
-                    inPtrs[(size_t) ch] = input.getReadPointer(ch) + inPos;
-                rb.process(inPtrs.data(), (size_t) n, inPos + n >= inSamples);
-                inPos += n;
-                drainAvailable();
-            }
-            drainAvailable();
-        }
+        // Latenz-Offset abschneiden — die ersten leadOffset Samples sind
+        // Algorithmus-Priming, das eigentliche Audio beginnt bei Index
+        // leadOffset.
+        for (int ch = 0; ch < numChannels; ++ch)
+            out->copyFrom(ch, 0, tmpOut[(size_t) ch].data() + leadOffset, outSamples);
 
         return out.release();
     }
 
     /**
-     * Time-stretch an audio buffer using Rubberband, pitch preserved.
+     * Time-stretch an audio buffer, pitch preserved.
      * @param timeRatio 2.0 = twice as long, 0.5 = half as long, 1.0 = copy.
      */
     static juce::AudioSampleBuffer* stretchBufferRubberband(const juce::AudioSampleBuffer& input,
@@ -133,7 +139,7 @@ namespace AudioUtils
     }
 
     /**
-     * Pitch-shift an audio buffer using Rubberband, time preserved.
+     * Pitch-shift an audio buffer, time preserved.
      * @param semitones positive = up, negative = down. 12 = one octave.
      */
     static juce::AudioSampleBuffer* pitchShiftBufferRubberband(const juce::AudioSampleBuffer& input,

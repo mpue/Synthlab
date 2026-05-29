@@ -28,7 +28,14 @@ public:
      * @param broadcaster the brocaster to register the child modules to
      *
      */
-    static void loadStructure(std::vector<Module *>* modules, std::vector<Connection*>* connections,juce::ValueTree *v, ChangeBroadcaster* broadcaster);
+    static void loadStructure(std::vector<Module *>* modules, std::vector<Connection*>* connections,juce::ValueTree *v, ChangeBroadcaster* broadcaster, std::function<void()> onModuleLoaded = {});
+
+    /**
+     * Recursively counts the number of <Module> entries inside the <Modules>
+     * children of v (including nested submodules). Used by the project-load
+     * progress dialog to compute a percentage before loadStructure runs.
+     */
+    static int countModulesInValueTree(const juce::ValueTree& v);
     
     /**
      * Loads connections of a module from a ValueTree

@@ -369,7 +369,11 @@ private:
 	virtual bool keyPressed(const KeyPress& key, Component* originatingComponent) override;
 	virtual void mouseDrag(const MouseEvent& event) override;
 
-	std::unique_ptr<PianoRollEditor> pianoRoll = nullptr;
+	// Owner ist seit dem Docking-Refactor das pianoroll-DockablePanel
+	// (MainComponent::showOrCreatePianoRollPanel). Wir halten hier nur eine
+	// SafePointer-Referenz, damit Timer-Callback / clear-Pfade auf eine
+	// vom User geschlossene Roll keine dangling-Pointer mehr sehen.
+	juce::Component::SafePointer<PianoRollEditor> pianoRoll;
 
 	double loopStart = 0;
 	double loopEnd = 0;

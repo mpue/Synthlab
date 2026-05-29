@@ -192,6 +192,17 @@ PropertyView::PropertyView () : TimeSliceThread("PropertyWatcher")
 PropertyView::~PropertyView()
 {
     //[Destructor_pre]. You can add your own custom destruction code here..
+    // Vom EditorListener-Vector abmelden BEVOR irgendwas anderes laeuft.
+    // PropertyView wird im Studio-Teardown via dockManager.reset() zerstoert,
+    // SynthEditor::cleanUp() (kommt erst spaeter beim editorOwned.reset())
+    // iteriert sonst ueber einen dangling PropertyView*-Pointer und ruft
+    // virtual beforeCleanUp() darauf -> EXC_BAD_ACCESS im vtable-Lookup
+    // (Release; Debug zeigte's nicht, weil der freed memory oft noch
+    // konsistent genug aussah). editor bleibt zu diesem Zeitpunkt gueltig
+    // (lebt im editorOwned, das erst nach dockManager.reset() faellt).
+    if (editor != nullptr)
+        editor->removeEditorListener(this);
+
     // Detach the custom L&F before propertyTab (which owns propertyPanel) is
     // reset. setLookAndFeel(nullptr) walks the children and clears their
     // pointers; doing this AFTER the panel is destroyed would dereference

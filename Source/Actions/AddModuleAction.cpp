@@ -78,7 +78,16 @@ bool AddModuleAction::perform() {
         AudioManager::getInstance()->getProcessGraphLock());
 
     Module* m = module;
-    
+
+    // Wenn module noch nicht gesetzt ist, haben wir m gerade frisch alloziert
+    // (PrefabFactory::getPrefab returnt einen neuen Pointer). Bei spaeterem
+    // return false MUSS dieser Pointer hier in der Funktion freigegeben werden
+    // — der UndoManager destruct'd die Action bei perform()==false, aber der
+    // dtor faesst module nicht an (steht noch nullptr). Bisher fuehrte das
+    // beim "Audio In auf bereits voll belegtem Stereo-Interface"-Pfad zu
+    // einem AudioIn-Leak pro Track-Add, der beim App-Exit als
+    // LeakedObjectDetector<AudioIn> sichtbar wurde.
+    const bool freshlyAllocated = (m == nullptr);
     if (m == nullptr) {
         m = PrefabFactory::getInstance()->getPrefab(moduleId, editor->getSampleRate(), editor->getBufferSize());
     }
@@ -119,16 +128,20 @@ bool AddModuleAction::perform() {
             }
         }
         else {
-            // Modul NICHT löschen: module zeigt darauf, der UndoManager
-            // verwirft die Action bei return false. delete würde den Pointer,
-            // den getModule() liefert, zu Freed-Memory machen.
+            // Frisch alloziertes Modul wieder freigeben — sonst LeakedObject-
+            // Detector beim App-Exit. Bei einem REDO (module war non-null
+            // beim Entry) lassen wir m stehen, der gehoert dann noch der
+            // vorherigen erfolgreichen Action.
+            if (freshlyAllocated) {
+                delete m;
+            }
             return false;
         }
 
     }
 
     // add an aux channel, which is routable
-    
+
     AuxOut* aux;
 
     if ((aux = dynamic_cast<AuxOut*>(m)) != NULL) {
@@ -180,13 +193,17 @@ bool AddModuleAction::perform() {
             }
         }
         else {
-            // Modul NICHT löschen: module zeigt darauf, der UndoManager
-            // verwirft die Action bei return false. delete würde den Pointer,
-            // den getModule() liefert, zu Freed-Memory machen.
+            // Frisch alloziertes Modul wieder freigeben — siehe AudioOut-
+            // Pfad oben. Genau dieser Zweig (Stereo-Interface, "track 2"
+            // ueberlauft das Limit) hat den AudioIn-Leak beim File-Reopen
+            // produziert.
+            if (freshlyAllocated) {
+                delete m;
+            }
             return false;
         }
     }
-    
+
     TerminalModule* t;
     
     if ((t = dynamic_cast<TerminalModule*>(m)) != NULL) {

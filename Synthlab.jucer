@@ -114,6 +114,7 @@
       <FILE id="q1YVvz" name="sine.png" compile="0" resource="1" file="Images/sine.png"/>
       <FILE id="ox04YZ" name="snapshot.png" compile="0" resource="1" file="Images/snapshot.png"/>
       <FILE id="Grgqb1" name="speaker.png" compile="0" resource="1" file="Images/speaker.png"/>
+      <FILE id="ySEycV" name="splash.png" compile="0" resource="1" file="Images/splash.png"/>
       <FILE id="e6TDlD" name="stereodelay.png" compile="0" resource="1" file="Images/stereodelay.png"/>
       <FILE id="oa95Wx" name="stop.png" compile="0" resource="1" file="Images/stop.png"/>
       <FILE id="Abg7RO" name="synthlab.png" compile="0" resource="1" file="Images/synthlab.png"/>
@@ -139,16 +140,11 @@
         <GROUP id="{DCKINGD0-0000-0000-0000-000000000002}" name="Docking">
           <FILE id="dck001" name="DockingFramework.h" compile="0" resource="0"
                 file="Source/UI/Docking/DockingFramework.h"/>
-          <FILE id="dck002" name="DockManager.h" compile="0" resource="0"
-                file="Source/UI/Docking/DockManager.h"/>
-          <FILE id="dck003" name="DockNode.h" compile="0" resource="0"
-                file="Source/UI/Docking/DockNode.h"/>
-          <FILE id="dck004" name="DockOverlay.h" compile="0" resource="0"
-                file="Source/UI/Docking/DockOverlay.h"/>
-          <FILE id="dck005" name="DockTypes.h" compile="0" resource="0"
-                file="Source/UI/Docking/DockTypes.h"/>
-          <FILE id="dck006" name="DockablePanel.h" compile="0" resource="0"
-                file="Source/UI/Docking/DockablePanel.h"/>
+          <FILE id="dck002" name="DockManager.h" compile="0" resource="0" file="Source/UI/Docking/DockManager.h"/>
+          <FILE id="dck003" name="DockNode.h" compile="0" resource="0" file="Source/UI/Docking/DockNode.h"/>
+          <FILE id="dck004" name="DockOverlay.h" compile="0" resource="0" file="Source/UI/Docking/DockOverlay.h"/>
+          <FILE id="dck005" name="DockTypes.h" compile="0" resource="0" file="Source/UI/Docking/DockTypes.h"/>
+          <FILE id="dck006" name="DockablePanel.h" compile="0" resource="0" file="Source/UI/Docking/DockablePanel.h"/>
           <FILE id="dck007" name="FloatingDockWindow.h" compile="0" resource="0"
                 file="Source/UI/Docking/FloatingDockWindow.h"/>
         </GROUP>
@@ -160,9 +156,9 @@
       <FILE id="EbqCtx" name="ChatGPTInterface.h" compile="0" resource="0"
             file="Source/ChatGPTInterface.h"/>
       <FILE id="o8rkDp" name="CommandParser.h" compile="0" resource="0" file="Source/CommandParser.h"/>
-      <GROUP id="{B7C33A19-23F0-17A9-B061-BBB991E079B2}" name="rubberband">
-        <FILE id="csvtr7" name="RubberBandStretcher.h" compile="0" resource="0"
-              file="Source/rubberband/RubberBandStretcher.h"/>
+      <GROUP id="{B7C33A19-23F0-17A9-B061-BBB991E079B2}" name="stretch">
+        <FILE id="csvtr7" name="signalsmith-stretch.h" compile="0" resource="0"
+              file="Source/stretch/signalsmith-stretch.h"/>
       </GROUP>
       <FILE id="j0wLxh" name="Session.cpp" compile="1" resource="0" file="Source/Session.cpp"/>
       <FILE id="xr1D6n" name="Session.h" compile="0" resource="0" file="Source/Session.h"/>
@@ -516,6 +512,8 @@
                 file="Source/AudioThumbnailComponent.h"/>
           <FILE id="Iy7juv" name="BounceProgressDialog.h" compile="0" resource="0"
                 file="Source/BounceProgressDialog.h"/>
+          <FILE id="PrLdPd" name="ProjectLoadProgressDialog.h" compile="0" resource="0"
+                file="Source/ProjectLoadProgressDialog.h"/>
           <FILE id="jP1nSs" name="Cell.cpp" compile="1" resource="0" file="Source/Cell.cpp"/>
           <FILE id="MFLi3W" name="Cell.h" compile="0" resource="0" file="Source/Cell.h"/>
           <FILE id="q9OyvC" name="CloseableTabButton.cpp" compile="1" resource="0"
@@ -917,10 +915,10 @@
   </MAINGROUP>
   <EXPORTFORMATS>
     <XCODE_MAC targetFolder="Builds/MacOSX" smallIcon="udjGbx" bigIcon="udjGbx"
-               microphonePermissionNeeded="1" extraLinkerFlags="-L/opt/homebrew/opt/rubberband/lib -lrubberband">
+               microphonePermissionNeeded="1">
       <CONFIGURATIONS>
-        <CONFIGURATION isDebug="1" name="Debug" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest&#10;/opt/homebrew/opt/rubberband/include&#10;"/>
-        <CONFIGURATION isDebug="0" name="Release" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest&#10;/opt/homebrew/opt/rubberband/include"/>
+        <CONFIGURATION isDebug="1" name="Debug" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest&#10;"/>
+        <CONFIGURATION isDebug="0" name="Release" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_core" path="../JUCE/modules"/>

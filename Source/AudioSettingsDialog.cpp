@@ -85,6 +85,77 @@ public:
                 autoOpenPluginToggle.getToggleState());
         };
         addAndMakeVisible(autoOpenPluginToggle);
+
+        splashToggle.setButtonText("Show splash on startup");
+        splashToggle.setColour(juce::ToggleButton::textColourId, kTextPrimary);
+        splashToggle.setColour(juce::ToggleButton::tickColourId, kAccentColour);
+        splashToggle.setColour(juce::ToggleButton::tickDisabledColourId, kBorderColour);
+        splashToggle.setToggleState(
+            Settings::getInstance()->getShowSplashOnStartup(),
+            juce::dontSendNotification);
+        splashToggle.onClick = [this]
+        {
+            Settings::getInstance()->setShowSplashOnStartup(
+                splashToggle.getToggleState());
+        };
+        addAndMakeVisible(splashToggle);
+
+        // --- Time-stretch quality (signalsmith-stretch tuning) ---
+        stretchSectionLabel.setText("Time-stretch quality", juce::dontSendNotification);
+        stretchSectionLabel.setColour(juce::Label::textColourId, kTextPrimary);
+        stretchSectionLabel.setFont(juce::Font(15.0f, juce::Font::bold));
+        addAndMakeVisible(stretchSectionLabel);
+
+        auto setupPercentSlider = [this](juce::Slider& s, double minV, double maxV, double current)
+        {
+            s.setSliderStyle(juce::Slider::LinearHorizontal);
+            s.setTextBoxStyle(juce::Slider::TextBoxRight, false, 70, 22);
+            s.setRange(minV, maxV, 0.005);
+            s.setNumDecimalPlacesToDisplay(3);
+            s.setValue(current, juce::dontSendNotification);
+            s.setColour(juce::Slider::backgroundColourId,   kSurfaceLight);
+            s.setColour(juce::Slider::trackColourId,        kAccentColour);
+            s.setColour(juce::Slider::thumbColourId,        kAccentSecondary);
+            s.setColour(juce::Slider::textBoxBackgroundColourId, kSurfaceLight);
+            s.setColour(juce::Slider::textBoxTextColourId,  kTextPrimary);
+            s.setColour(juce::Slider::textBoxOutlineColourId, kBorderColour);
+            addAndMakeVisible(s);
+        };
+
+        blockPercentLabel.setText("Block size (% of sample rate):", juce::dontSendNotification);
+        blockPercentLabel.setColour(juce::Label::textColourId, kTextPrimary);
+        addAndMakeVisible(blockPercentLabel);
+
+        setupPercentSlider(blockPercentSlider, 0.05, 0.30,
+                           Settings::getInstance()->getStretchBlockPercent());
+        blockPercentSlider.onValueChange = [this]
+        {
+            Settings::getInstance()->setStretchBlockPercent(blockPercentSlider.getValue());
+        };
+
+        intervalPercentLabel.setText("Interval (% of sample rate):", juce::dontSendNotification);
+        intervalPercentLabel.setColour(juce::Label::textColourId, kTextPrimary);
+        addAndMakeVisible(intervalPercentLabel);
+
+        setupPercentSlider(intervalPercentSlider, 0.005, 0.08,
+                           Settings::getInstance()->getStretchIntervalPercent());
+        intervalPercentSlider.onValueChange = [this]
+        {
+            Settings::getInstance()->setStretchIntervalPercent(intervalPercentSlider.getValue());
+        };
+
+        formantToggle.setButtonText("Preserve formants on pitch shift");
+        formantToggle.setColour(juce::ToggleButton::textColourId,         kTextPrimary);
+        formantToggle.setColour(juce::ToggleButton::tickColourId,         kAccentColour);
+        formantToggle.setColour(juce::ToggleButton::tickDisabledColourId, kBorderColour);
+        formantToggle.setToggleState(
+            Settings::getInstance()->getStretchFormantPreservation(),
+            juce::dontSendNotification);
+        formantToggle.onClick = [this]
+        {
+            Settings::getInstance()->setStretchFormantPreservation(formantToggle.getToggleState());
+        };
+        addAndMakeVisible(formantToggle);
     }
 
     void resized() override
@@ -98,6 +169,27 @@ public:
         area.removeFromTop(10);
         auto row2 = area.removeFromTop(28);
         autoOpenPluginToggle.setBounds(row2.removeFromLeft(440));
+
+        area.removeFromTop(6);
+        auto row2b = area.removeFromTop(28);
+        splashToggle.setBounds(row2b.removeFromLeft(440));
+
+        area.removeFromTop(22);
+        stretchSectionLabel.setBounds(area.removeFromTop(24));
+        area.removeFromTop(6);
+
+        auto rowBlock = area.removeFromTop(28);
+        blockPercentLabel.setBounds(rowBlock.removeFromLeft(220));
+        blockPercentSlider.setBounds(rowBlock.removeFromLeft(330));
+
+        area.removeFromTop(6);
+        auto rowInterval = area.removeFromTop(28);
+        intervalPercentLabel.setBounds(rowInterval.removeFromLeft(220));
+        intervalPercentSlider.setBounds(rowInterval.removeFromLeft(330));
+
+        area.removeFromTop(8);
+        auto rowFormant = area.removeFromTop(28);
+        formantToggle.setBounds(rowFormant.removeFromLeft(440));
     }
 
     void paint(juce::Graphics& g) override
@@ -120,6 +212,14 @@ private:
     juce::Label        outputTypeLabel;
     juce::ComboBox     outputTypeBox;
     juce::ToggleButton autoOpenPluginToggle;
+    juce::ToggleButton splashToggle;
+
+    juce::Label        stretchSectionLabel;
+    juce::Label        blockPercentLabel;
+    juce::Slider       blockPercentSlider;
+    juce::Label        intervalPercentLabel;
+    juce::Slider       intervalPercentSlider;
+    juce::ToggleButton formantToggle;
 };
 
 AudioSettingsDialog::AudioSettingsDialog(juce::AudioDeviceManager& dm)

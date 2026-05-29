@@ -1188,7 +1188,7 @@ namespace
         // registerSynthlabApi puts on the global object.
         static const std::map<juce::String, std::vector<ApiMember>> table = {
             { "", {
-                { "synthlab", "synthlab", "Synthlab API root",                  -1 },
+                { "synthlab", "synthlab", "Synthlab API root",                    -1 },
                 { "console",  "console",  "Logging",                            -1 },
                 { "print",    "print()",  "(...args) -> output",                  1 },
                 { "alert",    "alert()",  "(message, [title]) -> modal info dialog", 1 },

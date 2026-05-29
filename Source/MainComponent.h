@@ -56,6 +56,8 @@ class ChatGPTInterface;
 class StatusBarComponent;
 class ShellConsoleComponent;
 class Track;
+class PianoRollEditor;
+class MidiRegionEventEditor;
 
 class MainComponent   : public juce::AudioAppComponent,
                         public juce::MenuBarModel,
@@ -152,6 +154,17 @@ public:
     // den raw Pointer per .get() weiterreicht.
     std::shared_ptr<TrackNavigator> navigator = nullptr;
     MidiProcessor* midiProcessor = nullptr;
+
+    // Piano-Roll als eigenes Dock-Panel. Aufgerufen vom TrackNavigator bei
+    // Doppelklick auf eine MidiRegion. Editor wird hier vom Aufrufer mit
+    // verkabelten Callbacks geliefert; Ownership wandert ins DockablePanel.
+    void showOrCreatePianoRollPanel (std::unique_ptr<PianoRollEditor> editor);
+    void closePianoRollPanel();
+
+    // MIDI-Event-Editor analog: eigenes Dock-Panel, vom TrackNavigator bei
+    // Cmd+M (Region-Menu "Event editor") gefuellt. Owner ist das Panel.
+    void showOrCreateEventEditorPanel (std::unique_ptr<MidiRegionEventEditor> editor);
+    void closeEventEditorPanel();
 
 private:
     //==============================================================================

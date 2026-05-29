@@ -26,6 +26,7 @@
 #include "Actions/RemoveSelectedAction.h"
 #include "Actions/MoveSelectedAction.h"
 #include "Project/Project.h"
+#include "ProjectLoadProgressDialog.h"
 #include "LabelModule.h"
 #include "SamplerModule.h"
 #include "OneShotTimer.h"
@@ -2199,6 +2200,11 @@ void SynthEditor::loadFromString(juce::String in) {
 
 	std::unique_ptr<XmlElement> xml = XmlDocument(in).getDocumentElement();
 
+	if (xml == nullptr) {
+		juce::Logger::writeToLog("loadFromString: XML parse failed — aborting.");
+		return;
+	}
+
 	ValueTree v = ValueTree::fromXml(*xml.get());
 
 	setRunning(false);
@@ -2290,6 +2296,16 @@ Module* SynthEditor::loadModule() {
 
 		File file = chooser.getResult();
 		std::unique_ptr<XmlElement> xml = XmlDocument(file).getDocumentElement();
+
+		if (xml == nullptr) {
+			juce::Logger::writeToLog("loadModule: XML parse failed for "
+				+ file.getFullPathName());
+			juce::AlertWindow::showMessageBoxAsync(
+				juce::AlertWindow::WarningIcon,
+				"Could not open module",
+				"The selected file could not be parsed as a module.");
+			return nullptr;
+		}
 
 		Project::getInstance()->addRecentFile(file.getFullPathName());
 		ValueTree v = ValueTree::fromXml(*xml.get());
@@ -2552,9 +2568,8 @@ void SynthEditor::openEditor(Module* m) {
 	// SynthEditor implementiert KeyListener (zwei-Argument keyPressed). Damit
 	// modifierKeysChanged + keyPressed im Sub-Editor ueberhaupt feuern (Shift-A
 	// fuer Add-Menue, Cmd-A fuer Select-All), muss der Editor als KeyListener
-	// auf sich selbst registriert sein — beim Haupt-Editor uebernimmt das
-	// EditorComponent ueber topLevel->addKeyListener. Im Sub-Tab gibt es das
-	// Setup nicht, also hier dranschrauben.
+	// auf sich selbst registriert sein. Selbe Logik beim Root-Editor laeuft
+	// in MainComponent::MainComponent (Suche nach "editor->addKeyListener(editor)").
 	editor->addKeyListener(editor);
 	tab->addTab(m->getName(), Colours::darkgrey, editorView, false);
 	openViews.push_back(editorView);
@@ -2623,10 +2638,24 @@ void SynthEditor::openFile() {
 
 		URL url = chooser.getURLResult();
 		InputStream* is = url.createInputStream(false);
+		if (is == nullptr) {
+			juce::Logger::writeToLog("openFile (iOS): could not open input stream for "
+				+ url.toString(false));
+			return;
+		}
 		String data = is->readEntireStreamAsString();
 		delete is;
 
 		ScopedPointer<XmlElement> xml = XmlDocument(data).getDocumentElement();
+
+		if (xml == nullptr) {
+			juce::Logger::writeToLog("openFile (iOS): XML parse failed.");
+			juce::AlertWindow::showMessageBoxAsync(
+				juce::AlertWindow::WarningIcon,
+				"Could not open project",
+				"The selected file is not a valid Synthlab project.");
+			return;
+		}
 
 		ValueTree v = ValueTree::fromXml(*xml.get());
 		setRunning(false);
@@ -2709,14 +2738,74 @@ void SynthEditor::openFile(juce::File file) {
 	cleanUp();
 	newFile(/*askIfDirty=*/ false);
 
+	// Defektes Projektfile darf den App-Prozess nicht reissen. Der Crash
+	// ueber Loader -> Plugin-State-Restore -> NSApp-Rethrow ist bisher der
+	// Hauptweg, ueber den eine kaputte .slb die App killt; alles ab hier
+	// laeuft daher in einem try/catch, der im Fehlerfall den Editor in den
+	// "frisches, leeres Projekt"-Zustand zurueckdreht und einen Dialog
+	// zeigt, statt durchzucrashen.
+	// Muss aussen stehen, damit der catch-Handler den Progress-Dialog
+	// schliessen kann, wenn der Load mittendrin wirft.
+	juce::Component::SafePointer<juce::DialogWindow> progressWindow;
+
+	auto dismissProgress = [&progressWindow]() {
+		if (auto* dw = progressWindow.getComponent())
+			dw->exitModalState(0);
+	};
+
+	auto reportLoadFailure = [&file](const juce::String& detail) {
+		juce::Logger::writeToLog("openFile: load failed for "
+			+ file.getFullPathName() + " — " + detail);
+		juce::AlertWindow::showMessageBoxAsync(
+			juce::AlertWindow::WarningIcon,
+			"Could not open project",
+			"The file\n" + file.getFullPathName()
+				+ "\ncould not be loaded:\n" + detail
+				+ "\n\nStarting with an empty project.");
+	};
+
+	try {
+
 	std::unique_ptr<XmlElement> xml = XmlDocument(file).getDocumentElement();
-	if (xml == nullptr)
+	if (xml == nullptr) {
+		reportLoadFailure("file is not a valid Synthlab project (XML parse failed).");
+		newFile(/*askIfDirty=*/ false);
+		setRunning(true);
 		return;
+	}
 
 	Project::getInstance()->addRecentFile(file.getFullPathName());
 
 	ValueTree v = ValueTree::fromXml(*xml.get());
-	ModuleUtils::loadStructure(root->getModules(), root->getConnections(), &v, this);
+
+	// Progress dialog. Project load runs synchronously on the message thread
+	// (plugin APIs require it) under the audio graph lock, so no general
+	// message pump is safe — broadcaster listeners must not observe the tree
+	// mid-build. ProjectLoadProgressDialog::setProgress flushes only paints
+	// via ComponentPeer::performAnyPendingRepaintsNow.
+	const int totalModules = ModuleUtils::countModulesInValueTree(v);
+	auto* progressDialog = new ProjectLoadProgressDialog();
+	juce::DialogWindow::LaunchOptions progressOpts;
+	progressOpts.dialogTitle = "Projekt wird geladen...";
+	progressOpts.dialogBackgroundColour = juce::Colours::black;
+	progressOpts.useNativeTitleBar = true;
+	progressOpts.resizable = false;
+	progressOpts.escapeKeyTriggersCloseButton = false;
+	progressOpts.content.setOwned(progressDialog);
+	progressOpts.content->setSize(400, 80);
+	progressWindow = progressOpts.launchAsync();
+	juce::Component::SafePointer<ProjectLoadProgressDialog> progressSafe = progressDialog;
+	if (progressSafe)
+		progressSafe->setProgress(0.0);
+
+	int modulesDone = 0;
+	auto onModuleLoaded = [&modulesDone, totalModules, progressSafe]() {
+		++modulesDone;
+		if (auto* d = progressSafe.getComponent())
+			d->setProgress(totalModules > 0 ? (double)modulesDone / (double)totalModules : 1.0);
+	};
+
+	ModuleUtils::loadStructure(root->getModules(), root->getConnections(), &v, this, onModuleLoaded);
 
 	// Walk the full tree (incl. nested submodules) when seeding
 	// PrefabFactory::lastModuleIndex. Old root-only scan let nested indices
@@ -2799,7 +2888,31 @@ void SynthEditor::openFile(juce::File file) {
 	// this path instead of popping a Save-As dialog.
 	Project::getInstance()->setNewFile(false);
 
+	if (progressSafe)
+		progressSafe->setProgress(1.0);
+	if (auto* dw = progressWindow.getComponent())
+		dw->exitModalState(0);
+
 	setRunning(true);
+	return;
+
+	} catch (const std::exception& e) {
+		// loadStructure / plugin restore / region constructors koennen werfen;
+		// Editor in einen sauberen Zustand zurueckdrehen, damit die App weiter
+		// nutzbar bleibt. Progress-Dialog vorher wegklicken — sonst bleibt er
+		// halbvoll stehen, blockiert die UI und wirkt wie ein Hang.
+		dismissProgress();
+		try { cleanUp(); } catch (...) {}
+		try { newFile(/*askIfDirty=*/ false); } catch (...) {}
+		setRunning(true);
+		reportLoadFailure(juce::String(e.what()));
+	} catch (...) {
+		dismissProgress();
+		try { cleanUp(); } catch (...) {}
+		try { newFile(/*askIfDirty=*/ false); } catch (...) {}
+		setRunning(true);
+		reportLoadFailure("unknown error during project load.");
+	}
 }
 
 bool SynthEditor::saveFileTo(const juce::File& target)
@@ -2934,6 +3047,15 @@ void SynthEditor::openTracks(File file)
 	}
 
 	std::unique_ptr<XmlElement> xml = XmlDocument(trackDataFile).getDocumentElement();
+
+	// Tracks-XML kann fehlen oder kaputt sein, ohne dass das eigentliche
+	// Projekt-XML defekt war. Bisheriger Deref crashte hart — jetzt
+	// laden wir das Modul-Graph trotzdem, Tracks bleiben halt leer.
+	if (xml == nullptr) {
+		juce::Logger::writeToLog("openTracks: tracks XML missing or unparsable at "
+			+ trackDataFile.getFullPathName() + " — skipping track restore.");
+		return;
+	}
 
 	ValueTree v = ValueTree::fromXml(*xml.get());
 	setRunning(false);

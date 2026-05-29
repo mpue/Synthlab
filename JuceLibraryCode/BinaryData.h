@@ -251,6 +251,9 @@ namespace BinaryData
     extern const char*   speaker_png;
     const int            speaker_pngSize = 4111;
 
+    extern const char*   splash_png;
+    const int            splash_pngSize = 1595837;
+
     extern const char*   stereodelay_png;
     const int            stereodelay_pngSize = 4796;
 
@@ -279,7 +282,7 @@ namespace BinaryData
     const int            whitenoise_pngSize = 7446;
 
     // Number of elements in the namedResourceList and originalFileNames arrays.
-    const int namedResourceListSize = 90;
+    const int namedResourceListSize = 91;
 
     // Points to the start of a list of resource names.
     extern const char* namedResourceList[];

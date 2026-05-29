@@ -21,6 +21,7 @@
 #include <iostream>
 #include "../ExtendedFileBrowser.h"
 #include "../PianoRollComponent.h"
+#include "../MainComponent.h"
 #include "../MidiRegionEventEditor.h"
 #include "../PluginModule.h"
 #include "../MidiProcessor.h"
@@ -189,20 +190,23 @@ void TrackNavigator::clearTracks() {
 	// JUCE meldet uns das componentBeingDeleted, wenn die Region verschwindet,
 	// aber der PianoRollEditor selbst bleibt sonst nach dem File-Wechsel mit
 	// gestorbener Region und totem Track-Backref leben — sicherer ist, ihn
-	// jetzt mit den Tracks gemeinsam wegzuwerfen. Vorher die Supplemental-
-	// Tab-Referenz raus, sonst greift ein spaeterer removeTab() auf die
-	// bereits freigegebene Komponente zu.
+	// jetzt mit den Tracks gemeinsam wegzuwerfen. Owner ist seit dem Docking-
+	// Refactor das pianoroll-DockablePanel; closePianoRollPanel zerstoert
+	// Panel + Editor in einem Rutsch, die SafePointer nullt sich selbst.
 	if (pianoRoll != nullptr) {
-		if (auto* sup = Project::getInstance()->getSupplemental()) {
-			for (int i = sup->getNumTabs(); --i >= 0;) {
-				if (sup->getTabContentComponent(i) == pianoRoll.get()) {
-					sup->removeTab(i);
-					break;
-				}
-			}
-		}
+		if (auto* mc = findParentComponentOfClass<MainComponent>())
+			mc->closePianoRollPanel();
 		pianoRoll = nullptr;
 	}
+
+	// Event-Editor analog mit abreissen — der haengt an einer MidiRegion,
+	// die gleich zerstoert wird. Ohne dieses Close haette das Dock-Panel
+	// nach dem File-Wechsel einen dangling MidiRegion* in seinen
+	// ListBoxModel-Callbacks. closeEventEditorPanel() ist no-op wenn
+	// nichts offen ist, also unbedingt billig.
+	if (auto* mc = findParentComponentOfClass<MainComponent>())
+		mc->closeEventEditorPanel();
+
 	currentTrack = nullptr;
 
 	for (std::vector<Track*>::iterator it = tracks.begin(); it != tracks.end(); ++it) {
@@ -1205,13 +1209,12 @@ StringArray TrackNavigator::getTrackList()
 
 void TrackNavigator::openPianoRoll(MidiRegion* r)
 {
-	if (pianoRoll != nullptr) {
-		pianoRoll = nullptr;
-	}
-	// PianoRollEditor wrappt PianoRollComponent + Toolbar (Tool / Grid /
-	// Scale / Snap). Die eigentlichen Callbacks haengen weiterhin am inneren
-	// Roll, damit der Transport-Sync und der Playback-Marker funktionieren.
-	pianoRoll = std::make_unique<PianoRollEditor>(r, Project::getInstance()->getSampleRate());
+	// Editor + Callbacks lokal aufbauen, dann ans MainComponent ueberreichen.
+	// Owner wird ab dem createPanel-Aufruf das DockablePanel "pianoroll";
+	// wir behalten nur eine SafePointer-Referenz fuer Transport-Sync im
+	// Timer-Callback und fuer den clearTracks-Cleanup-Pfad.
+	auto editor = std::make_unique<PianoRollEditor>(r, Project::getInstance()->getSampleRate());
+	auto* editorPtr = editor.get();
 
 	// Projekt-Tempo an die Piano Roll uebergeben. Ohne das laeuft der
 	// interne Default (120 BPM) gegen das Projekt — bei z.B. 60 BPM
@@ -1219,11 +1222,11 @@ void TrackNavigator::openPianoRoll(MidiRegion* r)
 	// landet auf der zweiten Bar-Linie und der User liest sie als
 	// "Takt 3" statt "Takt 2". (Tempo-Aenderungen waehrend die Roll
 	// offen ist: zurzeit nicht live propagiert — Roll neu oeffnen.)
-	pianoRoll->getRoll().setBPM(Project::getInstance()->getTempo());
+	editorPtr->getRoll().setBPM(Project::getInstance()->getTempo());
 
-	pianoRoll->getRoll().setGridResolution(16);
+	editorPtr->getRoll().setGridResolution(16);
 
-	pianoRoll->getRoll().onPlayToggle = [this]() {
+	editorPtr->getRoll().onPlayToggle = [this]() {
 		togglePlayStop();
 	};
 
@@ -1234,7 +1237,7 @@ void TrackNavigator::openPianoRoll(MidiRegion* r)
 	// Ohne das springt der globale Marker beim Klick in die Piano-Roll auf
 	// 0 (statt auf sampleOffset), und die Marker-Position passt nicht mehr
 	// zu den Noten, neben die der User geklickt hat.
-	pianoRoll->getRoll().onMarkerPositionChanged = [this, r](double samplePos) {
+	editorPtr->getRoll().onMarkerPositionChanged = [this, r](double samplePos) {
 		const double offsetSample = (r != nullptr) ? (double) r->getSampleOffset() : 0.0;
 		const double base         = (r != nullptr) ? (double) r->getSourceStartSample() : 0.0;
 		const double timelineSamples = samplePos - base + offsetSample;
@@ -1251,7 +1254,7 @@ void TrackNavigator::openPianoRoll(MidiRegion* r)
 	// wie externe MIDI-Hardware (MidiProcessor::handleIncomingMidiMessage),
 	// damit Routing und aktiver Kanal automatisch passen. Kanal kommt vom
 	// aktuell selektierten Track (Fallback: 1).
-	pianoRoll->getRoll().onPianoKeyPlayed = [this](int note, int velocity, bool noteOn) {
+	editorPtr->getRoll().onPianoKeyPlayed = [this](int note, int velocity, bool noteOn) {
 		auto* mp = Project::getInstance()->getMidiProcessor();
 		if (mp == nullptr) return;
 		Track* current = getCurrentTrack();
@@ -1262,19 +1265,32 @@ void TrackNavigator::openPianoRoll(MidiRegion* r)
 		mp->handleIncomingMidiMessage(nullptr, msg);
 	};
 
-	Project::getInstance()->getSupplemental()->addTab("Piano roll", Colours::darkgrey, pianoRoll.get(), false);
-	Project::getInstance()->getSupplemental()->setCurrentTabIndex(Project::getInstance()->getSupplemental()->getNumTabs() - 1);
+	// SafePointer VOR move() setzen — danach besitzt der unique_ptr-Move
+	// das Original; wir wollen aber weiter via editorPtr darauf zugreifen,
+	// nachdem das DockablePanel ihn aufgenommen hat (raw pointer bleibt
+	// gueltig, das Component-Lifetime managed jetzt das Panel).
+	pianoRoll = editorPtr;
+
+	if (auto* mc = findParentComponentOfClass<MainComponent>())
+		mc->showOrCreatePianoRollPanel(std::move(editor));
 }
 
 void TrackNavigator::openEventEditor(MidiRegion* r)
 {
+	// Falls eine Piano-Roll offen ist: schliesse sie ueber den Dock-Pfad —
+	// das einfache pianoRoll=nullptr wuerde nur die SafePointer leeren, das
+	// DockablePanel mit verwaistem Editor bliebe stehen.
 	if (pianoRoll != nullptr) {
+		if (auto* mc = findParentComponentOfClass<MainComponent>())
+			mc->closePianoRollPanel();
 		pianoRoll = nullptr;
 	}
-	auto* eventEditor = new MidiRegionEventEditor(r, Project::getInstance()->getSampleRate());
 
-	Project::getInstance()->getSupplemental()->addTab("Event editor", Colours::darkgrey, eventEditor, true);
-	Project::getInstance()->getSupplemental()->setCurrentTabIndex(Project::getInstance()->getSupplemental()->getNumTabs() - 1);
+	// Event-Editor als eigenes Dock-Panel — selbes Muster wie Piano-Roll.
+	// Owner ab createPanel ist das DockablePanel "eventeditor".
+	auto editor = std::make_unique<MidiRegionEventEditor>(r, Project::getInstance()->getSampleRate());
+	if (auto* mc = findParentComponentOfClass<MainComponent>())
+		mc->showOrCreateEventEditorPanel(std::move(editor));
 }
 
 

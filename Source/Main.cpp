@@ -23,6 +23,126 @@
 #include "HTTPServer.h"
 #include "SynthlabLogger.h"
 #include "CrashHandler.h"
+#include "Settings.h"
+#include "SplashScreenComponent.h"
+
+namespace
+{
+    // First-Run-Bootstrap: kopiert macros + modules aus dem App-Bundle
+    // (Contents/Resources/InitialData/{macros,modules}) nach
+    // ~/.Synthlab/{macros,modules}, wenn das Ziel noch fehlt oder leer
+    // ist. So bekommt der User bei einer frischen Installation die mit-
+    // gelieferten Sample-Macros/-Module, aber spaetere User-Aenderungen
+    // werden bei einem Update NICHT ueberschrieben.
+    //
+    // Im Dev-Run (App liegt nicht in einem fertigen Bundle / kein
+    // InitialData-Ordner) ist die Funktion ein No-Op — Source liegt in
+    // dem Fall sowieso direkt im Projektordner.
+    void bootstrapUserDataDirsFromBundle()
+    {
+        using juce::File;
+
+        const File home   = File::getSpecialLocation (File::userHomeDirectory);
+        const File appDir = home.getChildFile (".Synthlab");
+        if (! appDir.exists())
+            appDir.createDirectory();
+
+       #if JUCE_MAC
+        const File appBundle   = File::getSpecialLocation (File::currentApplicationFile);
+        const File initialData = appBundle.getChildFile ("Contents/Resources/InitialData");
+       #else
+        // Linux/Windows: Resources liegt neben dem Binary. Bootstrap ist
+        // hier noch nicht produktiv verkabelt — wenn der Ordner zufaellig
+        // existiert, wird er aber trotzdem benutzt.
+        const File appBundle   = File::getSpecialLocation (File::currentExecutableFile).getParentDirectory();
+        const File initialData = appBundle.getChildFile ("InitialData");
+       #endif
+
+        if (! initialData.isDirectory())
+            return;
+
+        auto copyIfMissing = [] (const File& src, const File& dst)
+        {
+            if (! src.isDirectory())
+                return;
+
+            // Ziel ueberspringen, wenn es schon Inhalt hat — der User
+            // hat das Verzeichnis dann selbst angelegt/befuellt und wir
+            // wollen nicht reinpfuschen.
+            if (dst.exists())
+            {
+                juce::Array<File> existing;
+                dst.findChildFiles (existing, File::findFilesAndDirectories, false);
+                if (! existing.isEmpty())
+                    return;
+            }
+            else
+            {
+                dst.createDirectory();
+            }
+
+            const auto result = src.copyDirectoryTo (dst);
+            juce::Logger::writeToLog ("Bootstrap: " + src.getFullPathName()
+                                    + " -> " + dst.getFullPathName()
+                                    + (result ? " (ok)" : " (FAILED)"));
+        };
+
+        copyIfMissing (initialData.getChildFile ("macros"),
+                       appDir.getChildFile ("macros"));
+        copyIfMissing (initialData.getChildFile ("modules"),
+                       appDir.getChildFile ("modules"));
+    }
+
+    // Plugins: Bundles unter Contents/Resources/InitialPlugins/{VST3,Components}/
+    // landen beim ersten Start in ~/Library/Audio/Plug-Ins/{VST3,Components}/.
+    // Pro Bundle einzeln, weil wir vorhandene Installationen NICHT ueberschreiben
+    // wollen — der User koennte eine neuere Version selbst installiert haben.
+    void bootstrapBundledAudioPlugins()
+    {
+       #if JUCE_MAC
+        using juce::File;
+
+        const File appBundle = File::getSpecialLocation (File::currentApplicationFile);
+        const File initialPlugins = appBundle.getChildFile ("Contents/Resources/InitialPlugins");
+        if (! initialPlugins.isDirectory())
+            return;
+
+        const File home = File::getSpecialLocation (File::userHomeDirectory);
+
+        auto installFolder = [&] (const juce::String& subdir, const juce::String& extension)
+        {
+            const File srcDir = initialPlugins.getChildFile (subdir);
+            if (! srcDir.isDirectory())
+                return;
+
+            const File dstDir = home.getChildFile ("Library/Audio/Plug-Ins").getChildFile (subdir);
+            if (! dstDir.exists())
+                dstDir.createDirectory();
+
+            juce::Array<File> bundles;
+            // VST3/AU sind ihrerseits Verzeichnis-Bundles — findChildFiles mit
+            // findDirectories + Wildcard-Filter ueber die Endung.
+            srcDir.findChildFiles (bundles, File::findDirectories, /*recursive*/ false,
+                                   "*" + extension);
+
+            for (const auto& b : bundles)
+            {
+                const File target = dstDir.getChildFile (b.getFileName());
+                if (target.exists())
+                    continue; // niemals ueberschreiben
+
+                const bool ok = b.copyDirectoryTo (target);
+                juce::Logger::writeToLog ("Bootstrap-Plugin: " + b.getFileName()
+                                        + " -> " + target.getFullPathName()
+                                        + (ok ? " (ok)" : " (FAILED)"));
+            }
+        };
+
+        installFolder ("VST3",       ".vst3");
+        installFolder ("Components", ".component");
+       #endif
+    }
+}
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
 #if JUCE_WINDOWS
@@ -58,6 +178,14 @@ public:
 
 		Logger::writeToLog("Command line: " + commandLine);
 
+		// First-Run-Daten ins ~/.Synthlab kopieren, bevor MainWindow den
+		// modules-Ordner scannt (Add-Module-Track-Menue, User-Modules-
+		// Section im Add-Menue).
+		bootstrapUserDataDirsFromBundle();
+		// Mitgelieferte VST3/AU-Plugins ins System-Plugin-Verzeichnis
+		// kopieren (nur fehlende — vorhandene Installationen bleiben).
+		bootstrapBundledAudioPlugins();
+
 		server = new HTTPServer(8080);
 		server->startThread();
 
@@ -77,6 +205,19 @@ public:
 		}
 		else {
 			mainWindow = new MainWindow(getApplicationName());
+
+			// Splash erst NACH MainWindow zeigen — er soll als modaler
+			// Overlay erscheinen, waehrend das Hauptfenster im Hintergrund
+			// schon voll gerendert ist. setVisible(true) wird in MainWindow
+			// per callAsync gepostet, der erste paint() kommt aber erst im
+			// naechsten Message-Loop-Cycle. Mit callAfterDelay geben wir dem
+			// Fenster ein paar 100ms, sich aufzubauen — sonst sitzt der
+			// Splash auf einem leeren/grauen Window. Toggle persistiert
+			// ueber Settings.
+			if (Settings::getInstance()->getShowSplashOnStartup())
+			{
+				juce::Timer::callAfterDelay (350, [] { SplashScreenComponent::launch(); });
+			}
 		}
 
 	}

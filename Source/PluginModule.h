@@ -108,6 +108,24 @@ private:
     int currentProgram = 0;
     std::atomic<int64_t> currentSample { 0 };
 
+    // Sidechain-Status. 0 = kein zweiter Input-Bus / Plugin akzeptiert keine
+    // SC-Konfiguration; 1 = Mono-Sidechain; 2 = Stereo-Sidechain. scLeft/Right-
+    // PinIdx zeigen auf die nachgereichten Pins in `pins` (Module::addPin
+    // pusht sie an's Ende). -1 = Pin nicht existent (Mono-SC hat kein
+    // scRightPinIdx).
+    int sidechainChannels = 0;
+    int scLeftPinIdx  = -1;
+    int scRightPinIdx = -1;
+
+    // Versucht den zweiten Input-Bus des frisch geladenen Plugins auf Stereo
+    // (Fallback Mono) zu konfigurieren. Muss VOR prepareToPlay laufen, sonst
+    // bleibt das Plugin auf seinem Default-Layout. Setzt sidechainChannels.
+    void trySetupSidechainBus(juce::AudioPluginInstance& p);
+
+    // Legt SC L (+ ggf. SC R) als IN-Pins am Modul an. Aufruf erst nachdem
+    // trySetupSidechainBus sidechainChannels > 0 gesetzt hat.
+    void addSidechainPins();
+
     double sampleRate;
     int buffersize;
 

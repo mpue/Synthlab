@@ -144,6 +144,12 @@ void PluginModule::selectPlugin(String name)
 					return;
 				}
 
+				// Sidechain VOR prepareToPlay konfigurieren — setBusesLayout
+				// aendert die Channel-Anzahl, ein bereits prepared Plugin
+				// koennte das zurueckweisen. Setzt sidechainChannels (Member),
+				// das beim spaeteren addSidechainPins() ausgelesen wird.
+				trySetupSidechainBus(*instance);
+
 				// Call prepareToPlay on the new instance before it becomes
 				// visible to the audio thread. Use the device's actual values
 				// (same ones used in createPluginInstance above) to avoid
@@ -157,6 +163,12 @@ void PluginModule::selectPlugin(String name)
 					const ScopedLock sl(lock);
 					plugin.reset(instance.release());
 				}
+
+				// SC-Pins erst NACH dem Swap anhaengen — Module::addPin
+				// pusht die Pins an's Ende von `pins` und ruft repaint, das
+				// auf der Message-Thread-Seite passieren muss.
+				if (sidechainChannels > 0)
+					addSidechainPins();
 			}
 		}
 
@@ -169,6 +181,73 @@ void PluginModule::selectPlugin(String name)
 		plugin->setPlayHead(playHead);
 
 	}
+}
+
+void PluginModule::trySetupSidechainBus(juce::AudioPluginInstance& p)
+{
+	sidechainChannels = 0;
+
+	// Plugin ohne 2. Input-Bus -> kein Sidechain, Defaults stehen lassen.
+	if (p.getBusCount(true) < 2)
+		return;
+
+	if (p.getBus(true, 1) == nullptr)
+		return;
+
+	auto layout = p.getBusesLayout();
+	if (layout.inputBuses.size() < 2)
+		return;
+
+	// Stereo zuerst — typischer Fall fuer Kompressoren / Gates / Vocoder.
+	// Mono als Fallback fuer Plugins, deren SC-Bus nur Mono akzeptiert.
+	layout.inputBuses.getReference(1) = juce::AudioChannelSet::stereo();
+	if (p.setBusesLayout(layout))
+	{
+		sidechainChannels = 2;
+		return;
+	}
+
+	layout.inputBuses.getReference(1) = juce::AudioChannelSet::mono();
+	if (p.setBusesLayout(layout))
+	{
+		sidechainChannels = 1;
+		return;
+	}
+
+	// Plugin will weder Stereo noch Mono Sidechain -> Layout vor unserer
+	// Aenderung wiederherstellen (sonst bleibt es im "kaputten" Zustand).
+	layout = p.getBusesLayout();
+	(void) p.setBusesLayout(layout);
+}
+
+void PluginModule::addSidechainPins()
+{
+	if (sidechainChannels <= 0)
+		return;
+
+	// Erste SC-Pin immer. Bei Stereo-SC kommt SC R hinterher; Module::addPin
+	// positioniert beide unter den existierenden Input-Pins (L/R/Gate).
+	auto* l = new Pin(Pin::Type::AUDIO);
+	l->direction = Pin::Direction::IN;
+	l->setName(sidechainChannels == 1 ? "SC" : "SC L");
+	l->listeners.push_back(this);
+	addPin(Pin::Direction::IN, l);
+	scLeftPinIdx = (int) pins.size() - 1;
+
+	if (sidechainChannels == 2)
+	{
+		auto* r = new Pin(Pin::Type::AUDIO);
+		r->direction = Pin::Direction::IN;
+		r->setName("SC R");
+		r->listeners.push_back(this);
+		addPin(Pin::Direction::IN, r);
+		scRightPinIdx = (int) pins.size() - 1;
+	}
+
+	// Modul-Hoehe um 20 px pro Pin nachschieben, sonst zeichnen die neuen
+	// Pin-Punkte (y >= 70 bzw. 90) am unteren Rand des originalen 140-px-
+	// Rahmens schon dicht — bei 90+10 ueber den Rand hinaus.
+	setSize(getWidth(), getHeight() + sidechainChannels * 20);
 }
 
 String PluginModule::getPluginName()
@@ -263,6 +342,23 @@ void PluginModule::processInternal(MidiBuffer* externalBuffer, int numSamples)
 		audioBuffer->copyFrom(0, 0, *pins[0]->getConnections()[0]->getAudioBuffer(), 0, 0, numSamples);
 		audioBuffer->copyFrom(1, 0, *pins[1]->getConnections()[0]->getAudioBuffer(), 0, 0, numSamples);
 	}
+
+	// Sidechain: pins[scLeftPinIdx] / pins[scRightPinIdx] in Buffer-Kanaele
+	// 2 (+3) hineinkopieren. audioBuffer wurde oben auf max(numIn,numOut)
+	// gesized; wenn der SC-Bus aktiv ist, ist numIn >= 3 (Mono-SC) bzw. >=4
+	// (Stereo-SC). Unconnected SC-Pin -> Kanal bleibt 0 (clear() oben), das
+	// Plugin sieht Stille, was korrektes "kein SC-Signal"-Verhalten ist.
+	auto fillScChannel = [&](int pinIdx, int destChannel) {
+		if (pinIdx < 0 || pinIdx >= (int) pins.size()) return;
+		if (destChannel >= audioBuffer->getNumChannels()) return;
+		auto& pin = *pins[pinIdx];
+		if (pin.getConnections().empty()) return;
+		auto* src = pin.getConnections()[0]->getAudioBuffer();
+		if (src == nullptr) return;
+		audioBuffer->copyFrom(destChannel, 0, *src, 0, 0, numSamples);
+	};
+	if (sidechainChannels >= 1) fillScChannel(scLeftPinIdx,  2);
+	if (sidechainChannels >= 2) fillScChannel(scRightPinIdx, 3);
 
 	// Snapshot MIDI under midiLock before acquiring the plugin lock — the two
 	// locks must never be held simultaneously to prevent deadlock with
@@ -374,7 +470,7 @@ int PluginModule::getCurrentProgram()
 	return currentProgram;
 }
 
-void PluginModule::setCurrentProgram(int program)
+void PluginModule::setCurrentProgram( int program)
 {
 	currentProgram = program;
 	if (plugin && program >= 0 && program < plugin->getNumPrograms())
@@ -385,15 +481,29 @@ void PluginModule::setPluginState(String state)
 {
 	auto mos = std::make_unique<MemoryOutputStream>();
 	Base64::convertFromBase64(*mos, state);
-	if (plugin)
-		plugin->setStateInformation(mos->getData(), (int)mos->getDataSize());
+	if (plugin) {
+		// Plugin-Internas koennen bei manipuliertem/abgeschnittenem
+		// State-Blob werfen oder ueber Bord gehen. Ein einzelner kaputter
+		// Preset darf nicht das ganze Projekt-Load killen — wir loggen
+		// und lassen das Plugin mit Default-Settings weiterlaufen.
+		try {
+			plugin->setStateInformation(mos->getData(), (int)mos->getDataSize());
+		} catch (const std::exception& e) {
+			juce::Logger::writeToLog("PluginModule::setPluginState: "
+				+ juce::String(pluginName) + " threw during restore: "
+				+ juce::String(e.what()));
+		} catch (...) {
+			juce::Logger::writeToLog("PluginModule::setPluginState: "
+				+ juce::String(pluginName) + " threw unknown exception during restore.");
+		}
+	}
 }
 
 String PluginModule::getPluginState()
 {
 	if (plugin)
 	{
-		MemoryBlock mb(65536, true);
+		MemoryBlock mb;
 		plugin->getStateInformation(mb);
 		return Base64::toBase64(mb.getData(), mb.getSize());
 	}

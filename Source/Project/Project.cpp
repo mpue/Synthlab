@@ -37,13 +37,13 @@ void Project::addRecentFile(juce::String path) {
     
     String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
     File appDir = File(userHome+"/.Synthlab");
-    
+
     if (!appDir.exists()) {
         appDir.createDirectory();
     }
-    
+
     File configFile = File(userHome+"/.Synthlab/recent.xml");
-    
+
     if (!configFile.exists()) {
         configFile.create();
     }
@@ -79,13 +79,13 @@ void Project::loadRecentFileList() {
     String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
     
     File appDir = File(userHome+"/.Synthlab");
-    
+
     if (!appDir.exists()) {
         appDir.createDirectory();
     }
-    
+
     File configFile = File(userHome+"/.Synthlab/recent.xml");
-    
+
     if (configFile.exists()) {
         std::unique_ptr<XmlElement> xml = XmlDocument(configFile).getDocumentElement();
         ValueTree v = ValueTree::fromXml(*xml.get());

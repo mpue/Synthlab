@@ -1,2 +1,5 @@
 Builds/**
 .claude/
+dist/
+*.dmg
+.DS_Store

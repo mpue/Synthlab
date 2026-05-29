@@ -40,6 +40,8 @@
 #include "Tracks/BounceThread.h"
 #include "Tracks/Track.h"
 #include "Tracks/TrackNavigator.h"
+#include "PianoRollEditor.h"
+#include "MidiRegionEventEditor.h"
 #include "Session.h"
 #include "AudioSettingsDialog.h"
 #include "BounceDialog.h"
@@ -175,10 +177,6 @@ namespace {
 //==============================================================================
 MainComponent::MainComponent()
 {
-	// Frueher initialisierte hier die Member-Init-Liste die drei
-	// StretchableLayoutResizerBars mit Referenz auf stretchableManager.
-	// Mit dem Umzug auf den DockManager sind die Bars + der Manager weg —
-	// keine Member mehr zu initialisieren.
 
 	// Make sure you set the size of the component after
 	// you add any child components.
@@ -192,8 +190,10 @@ MainComponent::MainComponent()
 	// This replicates what the user has to do manually ("switch to internal,
 	// then switch to Tascam") – some USB interfaces only work when the device
 	// manager performs an explicit device switch rather than opening them cold.
-	auto savedAudioConfig = loadAudioConfig();
-	if (savedAudioConfig != nullptr)
+
+    auto savedAudioConfig = loadAudioConfig();
+	
+    if (savedAudioConfig != nullptr)
 	{
 		juce::String savedXml = savedAudioConfig->toString();
 		juce::Timer::callAfterDelay(1500, [this, savedXml]()
@@ -250,6 +250,13 @@ MainComponent::MainComponent()
 	addKeyListener(commandManager->getKeyMappings());
 	setApplicationCommandManagerToWatch(commandManager.get());
 	addKeyListener(this);
+	// Damit SynthEditor::keyPressed(KeyPress, Component*) auf dem Root-Editor
+	// ueberhaupt feuert (Shift-A oeffnet Add-Menue, Ctrl/Cmd-A waehlt alle),
+	// muss der Editor als KeyListener auf sich selbst haengen. Im Sub-Editor-
+	// Pfad (SynthEditor::openSubModule) wird genau das auch gemacht — beim
+	// Root-Editor stand das frueher im (mittlerweile aufgeloesten) EditorComponent
+	// und ist beim Refactor verloren gegangen.
+	editor->addKeyListener(editor);
 	editor->setMouseClickGrabsKeyboardFocus(true);
 	editor->setWantsKeyboardFocus(true);
 	resized();
@@ -1750,6 +1757,65 @@ void MainComponent::showOrCreateSpectrumPanel()
 		docking::DockSide::Center);
 	if (panel != nullptr) panel->setClosable(true);
 	spectrumDockPanel = panel;
+}
+
+void MainComponent::showOrCreatePianoRollPanel(std::unique_ptr<PianoRollEditor> editor)
+{
+	if (dockManager == nullptr || editor == nullptr) return;
+
+	// Bestehendes Piano-Roll-Panel weg — der Aufrufer hat den Editor schon
+	// frisch fuer die jetzt geklickte MidiRegion verkabelt (Callbacks
+	// binden auf MidiRegion*). Wir versuchen NICHT, den Content im alten
+	// Panel umzubiegen, sonst leakt der alte PianoRollEditor und seine
+	// Callbacks zeigen weiter auf die alte Region.
+	if (auto* existing = dockManager->findPanel("pianoroll"))
+		dockManager->closePanel(existing);
+
+	auto* panel = dockManager->createPanel(
+		"pianoroll", "Piano Roll",
+		std::unique_ptr<juce::Component>(editor.release()),
+		docking::DockSide::Center);
+	if (panel != nullptr)
+	{
+		panel->setClosable(true);
+		dockManager->activatePanel(panel);
+	}
+}
+
+void MainComponent::closePianoRollPanel()
+{
+	if (dockManager == nullptr) return;
+	if (auto* p = dockManager->findPanel("pianoroll"))
+		dockManager->closePanel(p);
+}
+
+void MainComponent::showOrCreateEventEditorPanel(std::unique_ptr<MidiRegionEventEditor> editor)
+{
+	if (dockManager == nullptr || editor == nullptr) return;
+
+	// Selbe Logik wie beim PianoRoll: ein evtl. bestehendes Panel wird
+	// verworfen, weil der Editor auf eine konkrete MidiRegion verkabelt
+	// wurde — Content im alten Panel zu ersetzen wuerde den alten Editor
+	// leaken und Callbacks an die alte Region zeigen lassen.
+	if (auto* existing = dockManager->findPanel("eventeditor"))
+		dockManager->closePanel(existing);
+
+	auto* panel = dockManager->createPanel(
+		"eventeditor", "Event Editor",
+		std::unique_ptr<juce::Component>(editor.release()),
+		docking::DockSide::Center);
+	if (panel != nullptr)
+	{
+		panel->setClosable(true);
+		dockManager->activatePanel(panel);
+	}
+}
+
+void MainComponent::closeEventEditorPanel()
+{
+	if (dockManager == nullptr) return;
+	if (auto* p = dockManager->findPanel("eventeditor"))
+		dockManager->closePanel(p);
 }
 
 juce::File MainComponent::getDockLayoutFile() const

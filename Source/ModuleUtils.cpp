@@ -41,7 +41,18 @@
 #include "VocoderModule.h"
 #include "RadioGroupModule.h"
 
-void ModuleUtils::loadStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections, juce::ValueTree* v, ChangeBroadcaster* broadcaster) {
+int ModuleUtils::countModulesInValueTree(const juce::ValueTree& v) {
+	int count = 0;
+	juce::ValueTree mods = v.getChildWithName("Modules");
+	for (int i = 0; i < mods.getNumChildren(); ++i) {
+		juce::ValueTree mod = mods.getChild(i);
+		++count;
+		count += countModulesInValueTree(mod);
+	}
+	return count;
+}
+
+void ModuleUtils::loadStructure(std::vector<Module*>* modules, std::vector<Connection*>* connections, juce::ValueTree* v, ChangeBroadcaster* broadcaster, std::function<void()> onModuleLoaded) {
 	ValueTree mods = v->getChildWithName("Modules");
 
 	for (int i = 0; i < mods.getNumChildren(); i++) {
@@ -51,7 +62,7 @@ void ModuleUtils::loadStructure(std::vector<Module*>* modules, std::vector<Conne
 		configureModule(m, mod, broadcaster);
 		modules->push_back(m);
 
-		loadStructure(m->getModules(), m->getConnections(), &mod, broadcaster);
+		loadStructure(m->getModules(), m->getConnections(), &mod, broadcaster, onModuleLoaded);
 		ValueTree childCons = mod.getChildWithName("Connections");
 		Logger::writeToLog("Module " + m->getName() + " has " + String(childCons.getNumChildren()) + " connections.");
 		if (childCons.getNumChildren() > 0)
@@ -100,6 +111,9 @@ void ModuleUtils::loadStructure(std::vector<Module*>* modules, std::vector<Conne
 			if (mod.hasProperty("channelName"))
 				_v->setSavedChannelName(mod.getProperty("channelName").toString());
 		}
+
+		if (onModuleLoaded)
+			onModuleLoaded();
 	}
 
 	ValueTree cons = v->getChildWithName("Connections");
