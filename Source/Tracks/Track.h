@@ -56,6 +56,7 @@ public:
     
     long getGridSizeInSamples() const;
     int getGridSizeInPixels() const;
+    bool isGridEnabled() const { return gridEnabled; }
     GridSize gridSize;
     void drawGrid(Graphics& g);
     void AddEventListener(EventListener* listener);

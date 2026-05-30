@@ -249,9 +249,15 @@ public:
 	void relayoutTracks();
 
 	bool isInterestedInDragSource(const SourceDetails& dragSourceDetails) override;
+	void itemDragEnter(const SourceDetails& dragSourceDetails) override;
+	void itemDragMove(const SourceDetails& dragSourceDetails) override;
+	void itemDragExit(const SourceDetails& dragSourceDetails) override;
 	void itemDropped(const SourceDetails& dragSourceDetails) override;
 
 	bool isInterestedInFileDrag(const StringArray& files) override;
+	void fileDragEnter(const StringArray& files, int x, int y) override;
+	void fileDragMove(const StringArray& files, int x, int y) override;
+	void fileDragExit(const StringArray& files) override;
 	void filesDropped(const StringArray& files, int x, int y) override;
 
 	inline void addChangeListener(ChangeListener* listener) {
@@ -281,6 +287,29 @@ private:
 	// TrackUtil::createAudioTrack, damit dieselbe Verdrahtung wie beim
 	// Menü-Pfad entsteht; fällt sonst auf addTrack(Type::AUDIO,…) zurück.
 	Track* createAudioTrackForDrop();
+
+	// --- Drag&Drop-Preview (halbtransparentes Vorschau-Rechteck am Cursor,
+	// grid-gesnappt) ---------------------------------------------------------
+	// Aktualisiert/zeichnet die Vorschau fuer eine an (x,y) gehaltene Audio-
+	// Datei; clearDragPreview() blendet sie wieder aus.
+	void updateDragPreview(const juce::String& filePath, int x, int y);
+	void clearDragPreview();
+
+	// Navigator-X (Content-Koordinaten, inkl. kControlsWidth) <-> Sampleposition.
+	long sampleForNavigatorX(int x) const;
+	int  navigatorXForSample(long sample) const;
+	// Auf das Raster des Ziel-Tracks (oder Default, falls null) gesnappte Position.
+	long gridSamplesForTrack(Track* target) const;
+	long snapSampleToGrid(Track* target, long sample) const;
+	// Laenge der Audiodatei in Sekunden (gecached pro Pfad); 0 wenn unlesbar.
+	double audioFileLengthSeconds(const juce::File& file);
+
+	bool dragPreviewActive = false;
+	juce::Rectangle<int> dragPreviewRect;
+	long dragPreviewSample = 0;
+	juce::String dragPreviewCachedPath;
+	double dragPreviewCachedSeconds = 0.0;
+	juce::AudioFormatManager dragFormatManager;
 
 	// Schreibt das Recording-Buffer einer frisch aufgenommenen AudioRegion
 	// als WAV auf Platte, registriert die Datei unter einem stabilen refId

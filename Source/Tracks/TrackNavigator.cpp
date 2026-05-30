@@ -45,6 +45,7 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 	this->timeLine->setTempoAndTimeSignature(Project::getInstance()->getTempo(),4,4);
 	addAndMakeVisible(timeLine.get());
 	this->deviceManager = deviceManager;
+	this->dragFormatManager.registerBasicFormats();
 	this->zoom = 40.0f;
 	int64 lengthInSamples = Project::getInstance()->getTrackLength() * Project::getInstance()->getSampleRate();
 	this->marker = new PositionMarker(lengthInSamples);
@@ -501,12 +502,34 @@ Track* TrackNavigator::trackAtY(int y) const
 	return nullptr;
 }
 
+// Liefert den Pfad der ersten gehaltenen Audiodatei (oder leer).
+static juce::String firstAudioFilePath(const juce::StringArray& files)
+{
+	for (const auto& filename : files)
+	{
+		juce::File file(filename);
+		juce::String ext = file.getFileExtension().toLowerCase();
+		if (ext == ".wav" || ext == ".mp3" || ext == ".flac" || ext == ".ogg" ||
+			ext == ".aiff" || ext == ".aif" || ext == ".m4a" || ext == ".wma")
+			return filename;
+	}
+	return {};
+}
+
 void TrackNavigator::filesDropped(const StringArray& files, int x, int y)
 {
+	clearDragPreview();
+
 	// Track an der Drop-Y-Position bestimmen — gibt es dort keinen, legen wir
 	// genau einen neuen Audio-Track an, in den alle gedroppten Dateien
 	// fallen (statt für jede Datei einen separaten Track zu erzeugen).
 	Track* target = trackAtY(y);
+	const double sr = Project::getInstance()->getSampleRate();
+
+	// Drop-X -> grid-gesnappte Startposition. Mehrere Dateien werden ab dieser
+	// Position hintereinander gelegt (Cursor wird je Region weitergeschoben),
+	// damit sie nicht uebereinander landen.
+	long cursor = -1;
 
 	for (const auto& filename : files)
 	{
@@ -523,8 +546,14 @@ void TrackNavigator::filesDropped(const StringArray& files, int x, int y)
 			}
 
 			if (target != nullptr) {
-				target->addRegion(file.getFileNameWithoutExtension(), file, Project::getInstance()->getSampleRate());
+				if (cursor < 0)
+					cursor = snapSampleToGrid(target, sampleForNavigatorX(x));
+
+				target->addRegion(file.getFileNameWithoutExtension(), file, sr, cursor, 0);
 				Project::getInstance()->addAudioFile(file.getFileNameWithoutExtension(), file.getFullPathName());
+
+				long lenSamples = (long)(audioFileLengthSeconds(file) * sr);
+				cursor += juce::jmax((long)1, lenSamples);
 			}
 		}
 	}
@@ -542,6 +571,8 @@ void TrackNavigator::filesDropped(const StringArray& files, int x, int y)
 
 void TrackNavigator::itemDropped(const SourceDetails& dragSourceDetails)
 {
+	clearDragPreview();
+
 	juce::File file = juce::File(dragSourceDetails.description.toString());
 
 	Track* target = trackAtY(dragSourceDetails.localPosition.getY());
@@ -554,7 +585,10 @@ void TrackNavigator::itemDropped(const SourceDetails& dragSourceDetails)
 		return;
 	}
 
-	target->addRegion(file.getFileNameWithoutExtension(), file, Project::getInstance()->getSampleRate());
+	const double sr = Project::getInstance()->getSampleRate();
+	const long samplePos = snapSampleToGrid(target, sampleForNavigatorX(dragSourceDetails.localPosition.getX()));
+
+	target->addRegion(file.getFileNameWithoutExtension(), file, sr, samplePos, 0);
 	Project::getInstance()->addAudioFile(file.getFileNameWithoutExtension(), file.getFullPathName());
 
 	for (auto* t : tracks)
@@ -565,6 +599,118 @@ void TrackNavigator::itemDropped(const SourceDetails& dragSourceDetails)
 	sendChangeMessage();
 
 	Logger::getCurrentLogger()->writeToLog(dragSourceDetails.description.toString());
+}
+
+// === Drag-Preview ==========================================================
+
+void TrackNavigator::fileDragEnter(const StringArray& files, int x, int y) { fileDragMove(files, x, y); }
+
+void TrackNavigator::fileDragMove(const StringArray& files, int x, int y)
+{
+	const juce::String path = firstAudioFilePath(files);
+	if (path.isEmpty()) { clearDragPreview(); return; }
+	updateDragPreview(path, x, y);
+}
+
+void TrackNavigator::fileDragExit(const StringArray& /*files*/) { clearDragPreview(); }
+
+void TrackNavigator::itemDragEnter(const SourceDetails& d) { itemDragMove(d); }
+
+void TrackNavigator::itemDragMove(const SourceDetails& d)
+{
+	updateDragPreview(d.description.toString(), d.localPosition.getX(), d.localPosition.getY());
+}
+
+void TrackNavigator::itemDragExit(const SourceDetails& /*d*/) { clearDragPreview(); }
+
+void TrackNavigator::updateDragPreview(const juce::String& filePath, int x, int y)
+{
+	juce::File file(filePath);
+	Track* target = trackAtY(y);
+
+	const long snapped = snapSampleToGrid(target, sampleForNavigatorX(x));
+	const double seconds = audioFileLengthSeconds(file);
+	const int w = juce::jmax(2, juce::roundToInt(seconds * (double)zoom));
+	const int px = navigatorXForSample(snapped);
+
+	int ry, rh;
+	if (target != nullptr) {
+		ry = target->getY();
+		rh = target->getHeight();
+	}
+	else if (!tracks.empty()) {
+		Track* last = tracks.back();
+		ry = last->getY() + last->getHeight();
+		rh = last->getHeight();
+	}
+	else {
+		ry = timelineOffset;
+		rh = 80;
+	}
+
+	dragPreviewSample = snapped;
+	dragPreviewRect = juce::Rectangle<int>(px, ry, w, rh);
+	dragPreviewActive = true;
+	repaint();
+}
+
+void TrackNavigator::clearDragPreview()
+{
+	if (!dragPreviewActive) return;
+	dragPreviewActive = false;
+	repaint();
+}
+
+long TrackNavigator::sampleForNavigatorX(int x) const
+{
+	if (zoom <= 0.0f) return 0;
+	const double sr = Project::getInstance()->getSampleRate();
+	double localPx = (double)x - (double)kControlsWidth;
+	if (localPx < 0.0) localPx = 0.0;
+	return (long)(localPx * sr / (double)zoom);
+}
+
+int TrackNavigator::navigatorXForSample(long sample) const
+{
+	const double sr = Project::getInstance()->getSampleRate();
+	if (sr <= 0.0) return kControlsWidth;
+	return kControlsWidth + juce::roundToInt((double)sample * (double)zoom / sr);
+}
+
+long TrackNavigator::gridSamplesForTrack(Track* target) const
+{
+	if (target != nullptr) {
+		if (!target->isGridEnabled()) return 0;
+		return target->getGridSizeInSamples();
+	}
+	// Default: Viertelnote bei Projekt-Tempo (so starten neue Drop-Tracks).
+	const double sr = Project::getInstance()->getSampleRate();
+	const double bpm = Project::getInstance()->getTempo();
+	if (bpm <= 0.0) return 0;
+	return (long)(sr / (bpm / 60.0));
+}
+
+long TrackNavigator::snapSampleToGrid(Track* target, long sample) const
+{
+	const long grid = gridSamplesForTrack(target);
+	if (grid <= 0) return juce::jmax((long)0, sample);
+	const long snapped = ((sample + grid / 2) / grid) * grid;
+	return juce::jmax((long)0, snapped);
+}
+
+double TrackNavigator::audioFileLengthSeconds(const juce::File& file)
+{
+	if (file.getFullPathName() == dragPreviewCachedPath)
+		return dragPreviewCachedSeconds;
+
+	double seconds = 0.0;
+	std::unique_ptr<juce::AudioFormatReader> reader(dragFormatManager.createReaderFor(file));
+	if (reader != nullptr && reader->sampleRate > 0.0)
+		seconds = (double)reader->lengthInSamples / reader->sampleRate;
+
+	dragPreviewCachedPath = file.getFullPathName();
+	dragPreviewCachedSeconds = seconds;
+	return seconds;
 }
 
 void TrackNavigator::timerCallback()
@@ -2043,6 +2189,19 @@ void TrackNavigator::mouseDrag(const MouseEvent& event) {
 }
 
 void TrackNavigator::paintOverChildren(juce::Graphics& g) {
+	// Drag&Drop-Vorschau: halbtransparentes Rechteck an der grid-gesnappten
+	// Position, an der die Region beim Loslassen landen wuerde.
+	if (dragPreviewActive) {
+		auto r = dragPreviewRect.toFloat().reduced(0.0f, 2.0f);
+		g.setColour(juce::Colours::aqua.withAlpha(0.25f));
+		g.fillRoundedRectangle(r, 6.0f);
+		g.setColour(juce::Colours::aqua.withAlpha(0.9f));
+		g.drawRoundedRectangle(r, 6.0f, 1.5f);
+		// Snap-Linie an der Startkante hervorheben.
+		g.fillRect((float)dragPreviewRect.getX() - 1.0f, (float)dragPreviewRect.getY(),
+		           2.0f, (float)dragPreviewRect.getHeight());
+	}
+
 	// Empty-State-Hint entfernt — leeres Projekt bekommt 2 Default-Audio-Tracks
 	// (siehe ensureDefaultAudioTracks). DAW-typisch und loest das Drop-Problem
 	// ohne Hint-Text.

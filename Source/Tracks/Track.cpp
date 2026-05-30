@@ -807,8 +807,17 @@ void Track::addRegion(juce::String refId, juce::File file, double sampleRate, lo
 	if (zoom > 0)
 		region->setZoom(zoom);
 
-	audioBuffer->copyFrom(0, region->getSampleOffset(), *region->getBuffer(), 0, 0, region->getBuffer()->getNumSamples());
-	audioBuffer->copyFrom(1, region->getSampleOffset(), *region->getBuffer(), 1, 0, region->getBuffer()->getNumSamples());
+	// Mono-Quellen liefern nur Kanal 0 — direkt aus Kanal 1 zu lesen waere ein
+	// Out-of-Range-Zugriff. Mono auf beide Bus-Kanaele spiegeln (wie im
+	// positionslosen addRegion-Overload).
+	if (region->getBuffer()->getNumChannels() == 1) {
+		audioBuffer->copyFrom(0, region->getSampleOffset(), *region->getBuffer(), 0, 0, region->getBuffer()->getNumSamples());
+		audioBuffer->copyFrom(1, region->getSampleOffset(), *region->getBuffer(), 0, 0, region->getBuffer()->getNumSamples());
+	}
+	else {
+		audioBuffer->copyFrom(0, region->getSampleOffset(), *region->getBuffer(), 0, 0, region->getBuffer()->getNumSamples());
+		audioBuffer->copyFrom(1, region->getSampleOffset(), *region->getBuffer(), 1, 0, region->getBuffer()->getNumSamples());
+	}
 
 	repaint();
 }
