@@ -1292,7 +1292,16 @@ inline void DockManager::loadLayout (const juce::ValueTree& state)
         }
     }
 
-    // Place any unreferenced panels in the first tab node.
+    // Unreferenzierte Panels nachbehandeln. Ein im geladenen Layout nicht
+    // vorkommendes Panel wurde entweder vom User geschlossen oder ist neu
+    // hinzugekommen. Erst sammeln (closePanel mutiert allPanels), dann
+    // entscheiden:
+    //   - closable  => geschlossen lassen (Panel wird entfernt). Sonst taucht
+    //                  z.B. der zuletzt geschlossene JavaScript-Editor beim
+    //                  Start wieder auf — als Waise im ersten Tab-Node links.
+    //   - !closable => strukturelles Panel, als Sicherheitsnetz einhaengen,
+    //                  damit es nie ganz verschwindet (z.B. nach App-Update).
+    std::vector<DockablePanel*> unreferenced;
     for (auto* p : allPanels)
     {
         bool placed = false;
@@ -1304,6 +1313,14 @@ inline void DockManager::loadLayout (const juce::ValueTree& state)
                 if (auto* tn = fw->getTabNode())
                     if (tn->indexOf (p) >= 0) { placed = true; break; }
         if (! placed)
+            unreferenced.push_back (p);
+    }
+
+    for (auto* p : unreferenced)
+    {
+        if (p->isClosable())
+            closePanel (p);
+        else
             firstTabNodeOrCreate()->addPanel (p);
     }
 
