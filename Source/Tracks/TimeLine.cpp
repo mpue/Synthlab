@@ -64,11 +64,24 @@ void TimeLine::paint(Graphics& g)
             : length;
         const int totalBars = static_cast<int>(visibleSeconds / secondsPerBar) + 1;
 
-        // Bei niedrigem Zoom werden Takte/Beats sonst zu eng beieinander
-        // gezeichnet. Ab Zoomstufe <= 10 nur noch jeden 4. Takt anzeigen
-        // (ohne Beat-/Viertel-Unterteilungen).
-        const bool sparseMode = (zoom <= 10.0f);
-        const int barStep = sparseMode ? 4 : 1;
+        // Dynamische Rasterdichte: je nach Zoom werden Taktlinien/Beschriftung
+        // ausgeduennt, damit sich nichts ueberlappt. barStep ist die kleinste
+        // Zweierpotenz, bei der beschriftete Takte mindestens minBarSpacingPx
+        // auseinanderliegen — weit rausgezoomt => grosser Step => deutlich
+        // weniger Einteilungen. Beats/Viertel nur, wenn genug Platz ist.
+        const double pixelsPerBar  = secondsPerBar  * pixelsPerSecond;
+        const double pixelsPerBeat = secondsPerBeat * pixelsPerSecond;
+
+        const double minBarSpacingPx = 64.0;   // ~2x Label-Breite
+        int barStep = 1;
+        if (pixelsPerBar > 0.0)
+            while (pixelsPerBar * barStep < minBarSpacingPx)
+                barStep *= 2;
+
+        // Beat- und Viertel-Unterteilungen nur bei voller Takt-Aufloesung und
+        // wenn die einzelnen Striche klar getrennt waeren.
+        const bool drawBeats    = (barStep == 1) && (pixelsPerBeat >= 14.0);
+        const bool drawQuarters = (barStep == 1) && (pixelsPerBeat >= 44.0);
 
         // Haupt-Taktlinien und Beat-Linien zeichnen
         for (int bar = 1; bar <= totalBars; ++bar)
@@ -78,7 +91,7 @@ void TimeLine::paint(Graphics& g)
                 continue;
 
             const double barStartSec = (bar - 1) * secondsPerBar;
-            const int beatsToDraw = sparseMode ? 1 : timeSigNumerator;
+            const int beatsToDraw = drawBeats ? timeSigNumerator : 1;
 
             for (int beat = 0; beat < beatsToDraw; ++beat)
             {
@@ -103,7 +116,7 @@ void TimeLine::paint(Graphics& g)
                 }
 
                 // 1/4-Takt Unterteilungen zeichnen (schw�chere Linien)
-                if (!sparseMode)
+                if (drawQuarters)
                 {
                     g.setColour(Colours::lightgrey);
                     for (int quarter = 1; quarter < 4; ++quarter)

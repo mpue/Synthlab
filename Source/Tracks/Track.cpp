@@ -1840,14 +1840,30 @@ void Track::drawGrid(Graphics& g) {
 	// WICHTIG: Verwende exakte Multiplikation statt akkumulierte Addition
 	int gridCount = (int)(getWidth() * sampleRate / (zoom * samplesPerGrid)) + 2;
 
+	// Dynamische Rasterdichte analog zur Timeline: weit rausgezoomt wuerden die
+	// Gridlinien sonst zu einem grauen Block verschmelzen. gridStep ist die
+	// kleinste Zweierpotenz, bei der die gezeichneten Linien mindestens
+	// minGridSpacingPx auseinanderliegen — der Bar-1-Strich wird unabhaengig
+	// davon immer gezeichnet.
+	const double pixelsPerGrid   = (double) samplesPerGrid * zoom / sampleRate;
+	const double minGridSpacingPx = 28.0;
+	int gridStep = 1;
+	if (pixelsPerGrid > 0.0)
+		while (pixelsPerGrid * gridStep < minGridSpacingPx)
+			gridStep *= 2;
+
 	for (int i = 0; i <= gridCount; i++) {
 		// Exakte Berechnung für jeden Grid-Punkt
 		long exactSample = i * samplesPerGrid;
 		double exactPixel = (double)exactSample * zoom / sampleRate;
 		int pixelPos = (int)std::round(exactPixel);
 
+		const bool isBarOne = (exactSample == samplesPerBar);
+		if ((i % gridStep) != 0 && !isBarOne)
+			continue;
+
 		if (pixelPos >= 0 && pixelPos < getWidth()) {
-			if (exactSample == samplesPerBar) {
+			if (isBarOne) {
 				// Dicker, deutlich sichtbarer Strich am Ende von Takt 0 /
 				// Beginn von Takt 1.
 				g.setColour(Colours::white.withAlpha(0.65f));
