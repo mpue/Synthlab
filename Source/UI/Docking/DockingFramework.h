@@ -50,9 +50,10 @@ inline void DockablePanel::notifyTabRefresh()
 inline DockTabNode::DockTabNode (DockManager& m) : DockNode (m)
 {
     tabBar = std::make_unique<DockTabBar> (m.getTheme());
-    tabBar->onTabClicked   = [this] (int i)                              { onTabClick (i); };
-    tabBar->onTabDragStart = [this] (int i, const juce::MouseEvent& e)   { onTabDragStart (i, e); };
-    tabBar->onTabClose     = [this] (int i)                              { onTabClose (i); };
+    tabBar->onTabClicked     = [this] (int i)                              { onTabClick (i); };
+    tabBar->onTabDragStart   = [this] (int i, const juce::MouseEvent& e)   { onTabDragStart (i, e); };
+    tabBar->onTabClose       = [this] (int i)                              { onTabClose (i); };
+    tabBar->onTabDoubleClick = [this] (int)                                { manager.toggleMaximizeTabNode (this); };
     addAndMakeVisible (*tabBar);
 }
 
@@ -546,7 +547,72 @@ inline void DockManager::paint (juce::Graphics& g)
 
 inline void DockManager::resized()
 {
-    if (rootNode) rootNode->setBounds (getLocalBounds());
+    if (maximizedNode != nullptr)
+    {
+        // Maximiertes Tab-Node liegt ausserhalb des Baums und deckt die
+        // gesamte Dock-Flaeche ab; der (ggf. veraenderte) Baum bleibt
+        // verborgen, bis restoreMaximizedNode() ihn zurueckhaengt.
+        if (rootNode) rootNode->setVisible (false);
+        maximizedNode->setBounds (getLocalBounds());
+        maximizedNode->toFront (false);
+        return;
+    }
+
+    if (rootNode)
+    {
+        rootNode->setVisible (true);
+        rootNode->setBounds (getLocalBounds());
+    }
+}
+
+inline void DockManager::toggleMaximizeTabNode (DockTabNode* node)
+{
+    if (node == nullptr) return;
+
+    // Bereits etwas maximiert? Dann nur wiederherstellen — im maximierten
+    // Zustand ist ohnehin nur dieses eine Node sichtbar.
+    if (maximizedNode != nullptr)
+    {
+        restoreMaximizedNode();
+        return;
+    }
+
+    // Nur gedockte Tab-Nodes (Parent ist ein DockSplitNode) lassen sich
+    // maximieren; Nodes in Floating-Fenstern werden ignoriert.
+    auto* parent = dynamic_cast<DockSplitNode*> (node->getParentComponent());
+    if (parent == nullptr) return;
+
+    const int idx = parent->indexOf (node);
+    if (idx < 0) return;
+
+    maximizedOrigParent = parent;
+    maximizedOrigIndex  = idx;
+    maximizedOrigSize   = parent->getChildSize (idx);
+
+    maximizedHeld = parent->removeChild (idx); // detacht Node, gibt Ownership
+    maximizedNode = node;
+
+    addAndMakeVisible (*maximizedNode);
+    resized();
+}
+
+inline void DockManager::restoreMaximizedNode()
+{
+    if (maximizedNode == nullptr) return;
+
+    removeChildComponent (maximizedNode);
+
+    if (maximizedOrigParent != nullptr && maximizedHeld != nullptr)
+        maximizedOrigParent->addChild (std::move (maximizedHeld),
+                                       maximizedOrigSize, maximizedOrigIndex);
+
+    maximizedNode       = nullptr;
+    maximizedHeld.reset();
+    maximizedOrigParent = nullptr;
+    maximizedOrigIndex  = 0;
+    maximizedOrigSize   = 0;
+
+    resized();
 }
 
 inline void DockManager::repaintAll()
@@ -582,6 +648,7 @@ inline DockablePanel* DockManager::findPanel (const juce::String& id) const
 
 inline void DockManager::addPanelInitially (DockablePanel* p, DockSide side)
 {
+    restoreMaximizedNode();
     if (rootNode->getNumChildren() == 0)
     {
         auto tab = std::make_unique<DockTabNode> (*this);
@@ -642,6 +709,8 @@ inline void DockManager::detachPanelFromLayout (DockablePanel* p)
 inline void DockManager::closePanel (DockablePanel* p)
 {
     if (p == nullptr) return;
+    restoreMaximizedNode();
+    if (p->onClosed) p->onClosed(); // Host darf rohe Pointer auf den Content nullen
     detachPanelFromLayout (p);
     allPanels.removeObject (p, true);
     simplifyTree();
@@ -650,6 +719,7 @@ inline void DockManager::closePanel (DockablePanel* p)
 inline void DockManager::activatePanel (DockablePanel* p)
 {
     if (p == nullptr) return;
+    restoreMaximizedNode();
     std::vector<DockTabNode*> nodes;
     rootNode->collectTabNodes (nodes);
     for (auto* n : nodes)
@@ -693,6 +763,7 @@ inline void DockManager::ensureRootOrientation (SplitOrientation o)
 inline void DockManager::dockPanel (DockablePanel* p, DockTabNode* target, DockSide side)
 {
     if (p == nullptr || target == nullptr) return;
+    restoreMaximizedNode();
 
     if (side == DockSide::Center)
     {
@@ -758,6 +829,7 @@ inline void DockManager::dockTabsRelative (std::unique_ptr<DockTabNode> source,
 inline void DockManager::dockPanelAtEdge (DockablePanel* p, DockSide side)
 {
     if (p == nullptr || side == DockSide::None || side == DockSide::Center) return;
+    restoreMaximizedNode();
     detachPanelFromLayout (p);
     auto newTab = std::make_unique<DockTabNode> (*this);
     newTab->addPanel (p);
@@ -781,6 +853,7 @@ inline FloatingDockWindow* DockManager::floatPanel (DockablePanel* p,
                                                     juce::Point<int> size)
 {
     if (p == nullptr) return nullptr;
+    restoreMaximizedNode();
     detachPanelFromLayout (p);
 
     auto tab = std::make_unique<DockTabNode> (*this);
@@ -973,6 +1046,7 @@ inline void DockManager::updateDragOverlay (juce::Point<int> screenPos)
 inline void DockManager::beginTabDrag (DockablePanel* p, const juce::MouseEvent& e)
 {
     if (dragMode != DragMode::None || p == nullptr) return;
+    restoreMaximizedNode();
     dragMode     = DragMode::GhostFromTab;
     draggedPanel = p;
 
@@ -1154,6 +1228,10 @@ inline std::unique_ptr<DockNode> DockManager::loadNode (const juce::ValueTree& v
 inline void DockManager::loadLayout (const juce::ValueTree& state)
 {
     if (! state.hasType (ids::Layout)) return;
+
+    // Ein evtl. maximiertes Node zuerst zurueck in den Baum haengen, sonst
+    // wuerde es beim Neuaufbau des rootNode verwaist zurueckbleiben.
+    restoreMaximizedNode();
 
     // Detach every panel from the current layout (without deleting).
     for (auto* p : allPanels)

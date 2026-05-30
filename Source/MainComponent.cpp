@@ -847,19 +847,11 @@ void MainComponent::createStudioLayout() {
 	commandManager->registerAllCommandsForTarget(editor);
 	commandManager->setFirstCommandTarget(editor);
 
-	// JavaScript editor as a permanent right-hand pane. Created here so it is
-	// part of the dock layout from the first resized() onwards; was previously
-	// instantiated lazily into a tab inside editorView.
-	auto* jsEditorOwned = new JavaScriptEditorComponent();
-	jsEditor = jsEditorOwned;
-	jsEditor->setTransportNavigator(navigator.get());
-	jsEditor->setSynthEditor(editor);
-	// openTrackView ist jetzt MainComponent-Methode; Callback hier reichen.
-	jsEditor->setOpenTrackViewCallback([this]() { openTrackView(); });
-	jsEditor->setTransportDisplay(transportDisplay.get());
-	// Publish to Project so modules (e.g. TriggerScriptModule) can reach the
-	// JS editor without each one needing its own setter wiring from here.
-	Project::getInstance()->setJavaScriptEditor(jsEditor);
+	// JavaScript editor as a right-hand pane. Created here so it is part of the
+	// dock layout from the first resized() onwards; was previously instantiated
+	// lazily into a tab inside editorView. Schliessbar — Wiederanzeige via Menue
+	// (showOrCreateJavaScriptPanel).
+	auto* jsEditorOwned = createJavaScriptEditorComponent();
 
 	// Control-Surface-Panel: WIP, weiter deaktiviert (siehe historischer Kommentar
 	// — Shadow-Tree neben dem Editor, per-Typ-Bindings + Auto-Rebuild offen,
@@ -905,7 +897,19 @@ void MainComponent::createStudioLayout() {
 	// unangetastet erlaubt.
 	if (propertiesDockPanel != nullptr) propertiesDockPanel->setClosable(false);
 	if (editorDockPanel     != nullptr) editorDockPanel    ->setClosable(false);
-	if (jsDockPanel         != nullptr) jsDockPanel        ->setClosable(false);
+
+	// JS-Panel darf geschlossen werden — beim Schliessen die rohen Pointer +
+	// Project-Wiring nullen, sonst dangling. Wiederanzeige ueber das Menue.
+	if (jsDockPanel != nullptr)
+	{
+		jsDockPanel->setClosable(true);
+		jsDockPanel->onClosed = [this]()
+		{
+			jsEditor    = nullptr;
+			jsDockPanel = nullptr;
+			if (auto* proj = Project::getInstance()) proj->setJavaScriptEditor(nullptr);
+		};
+	}
 
 	// Default-Initialbreiten an das alte StretchableLayout angelehnt
 	// (Editor ~60% der Breite, Properties ~20%, JS ~20%). DockSplitNode::resized
@@ -1847,6 +1851,9 @@ juce::File MainComponent::getDockLayoutFile() const
 void MainComponent::saveDockLayout()
 {
 	if (dockManager == nullptr) return;
+	// Maximiertes Node liegt ausserhalb des Layout-Baums — vor dem Speichern
+	// zurueckhaengen, sonst fehlt es in der persistierten Struktur.
+	dockManager->restoreMaximizedNode();
 	const auto state = dockManager->saveLayout();
 	auto xml = state.createXml();
 	if (xml != nullptr)
@@ -2830,12 +2837,51 @@ void MainComponent::openQuickstart() {
 	tabs->setCurrentTabIndex(tabs->getNumTabs() - 1);
 }
 
-void MainComponent::openJavaScriptEditor() {
-	// JS editor is now a permanent right-hand pane (created in
-	// createStudioLayout). The menu entry just focuses it so the user can
-	// start typing.
+JavaScriptEditorComponent* MainComponent::createJavaScriptEditorComponent() {
+	auto* c = new JavaScriptEditorComponent();
+	jsEditor = c;
+	jsEditor->setTransportNavigator(navigator.get());
+	jsEditor->setSynthEditor(editor);
+	// openTrackView ist jetzt MainComponent-Methode; Callback hier reichen.
+	jsEditor->setOpenTrackViewCallback([this]() { openTrackView(); });
+	jsEditor->setTransportDisplay(transportDisplay.get());
+	// Publish to Project so modules (e.g. TriggerScriptModule) can reach the
+	// JS editor without each one needing its own setter wiring from here.
+	Project::getInstance()->setJavaScriptEditor(jsEditor);
+	return c;
+}
+
+void MainComponent::showOrCreateJavaScriptPanel() {
+	if (dockManager == nullptr) return;
+
+	if (auto* existing = dockManager->findPanel("javascript")) {
+		dockManager->activatePanel(existing);
+	}
+	else {
+		auto* jsEditorOwned = createJavaScriptEditorComponent();
+		jsDockPanel = dockManager->createPanel(
+			"javascript", "JavaScript",
+			std::unique_ptr<juce::Component>(jsEditorOwned),
+			docking::DockSide::Right);
+		if (jsDockPanel != nullptr) {
+			jsDockPanel->setClosable(true);
+			jsDockPanel->onClosed = [this]() {
+				jsEditor    = nullptr;
+				jsDockPanel = nullptr;
+				if (auto* proj = Project::getInstance()) proj->setJavaScriptEditor(nullptr);
+			};
+			dockManager->activatePanel(jsDockPanel);
+		}
+	}
+
 	if (jsEditor != nullptr)
 		jsEditor->grabKeyboardFocus();
+}
+
+void MainComponent::openJavaScriptEditor() {
+	// Menue-Eintrag: JS-Panel in den Vordergrund holen — oder neu anlegen,
+	// falls der User es geschlossen hat.
+	showOrCreateJavaScriptPanel();
 }
 
 void MainComponent::openSettings() {

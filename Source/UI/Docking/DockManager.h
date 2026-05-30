@@ -111,6 +111,21 @@ public:
     FloatingDockWindow* floatPanel (DockablePanel* p, juce::Point<int> screenPos,
                                     juce::Point<int> size = { 360, 240 });
 
+    //----- Maximize -------------------------------------------------------
+
+    /** Toggles maximize for a docked tab node: pulls it out of the layout
+        tree so it fills the whole dock area, or restores it if it (or any
+        other node) is already maximized. No-op for nodes that don't live in
+        the main dock tree (e.g. inside a floating window). */
+    void toggleMaximizeTabNode (DockTabNode* node);
+
+    /** Restores a maximized node back into its original tree slot. No-op if
+        nothing is maximized. Called automatically before structural changes
+        so the layout tree is never persisted/mutated in a maximized state. */
+    void restoreMaximizedNode();
+
+    bool hasMaximizedNode() const noexcept { return maximizedNode != nullptr; }
+
     //----- Persistence ----------------------------------------------------
 
     /** Captures the current layout as a juce::ValueTree.  Panels are
@@ -160,6 +175,13 @@ private:
     juce::Point<int>     floatingDragOffset;          // mouseDown - window topLeft
     std::unique_ptr<DockDragGhost> ghost;
     DockTabNode*         hoveredTabNode = nullptr;
+
+    //----- Maximize state -------------------------------------------------
+    DockTabNode*              maximizedNode       = nullptr; // == maximizedHeld.get()
+    std::unique_ptr<DockNode> maximizedHeld;                 // owns node while pulled out
+    DockSplitNode*            maximizedOrigParent = nullptr;
+    int                       maximizedOrigIndex  = 0;
+    int                       maximizedOrigSize   = 0;
 
     //----- Helpers --------------------------------------------------------
     void                 addPanelInitially (DockablePanel* p, DockSide side);

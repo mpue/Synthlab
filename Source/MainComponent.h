@@ -174,6 +174,12 @@ private:
     void openSettings();
     void openQuickstart();
     void openJavaScriptEditor();
+    // Erzeugt + verkabelt eine neue JavaScriptEditorComponent (setzt jsEditor
+    // und den Project-Pointer). Owner ist der Aufrufer bis zum createPanel().
+    JavaScriptEditorComponent* createJavaScriptEditorComponent();
+    // Bringt das JS-Panel in den Vordergrund oder legt es neu an, falls es
+    // geschlossen wurde. Vom Menue ("JavaScript Editor") genutzt.
+    void showOrCreateJavaScriptPanel();
     // SynthEditor::cleanUp() (am Anfang von openFile aufgerufen) entfernt alle
     // Tabs ausser Editor. Nach dem Laden bringt diese Helper den Navigator-Tab
     // wieder zurueck und in den Vordergrund — ueber alle File-Open-Pfade

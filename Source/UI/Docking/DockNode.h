@@ -26,6 +26,7 @@ public:
     std::function<void (int)>                            onTabClicked;
     std::function<void (int, const juce::MouseEvent&)>   onTabDragStart;
     std::function<void (int)>                            onTabClose;
+    std::function<void (int)>                            onTabDoubleClick;
 
     DockTabBar (const DockTheme& t) : theme (t) { setWantsKeyboardFocus (false); }
 
@@ -174,6 +175,13 @@ public:
 
         pressedTab = pressedClose = -1;
         dragTriggered = false;
+    }
+
+    void mouseDoubleClick (const juce::MouseEvent& e) override
+    {
+        const int t = hitTestTab (e.getPosition());
+        if (t != -1 && hitTestClose (e.getPosition()) == -1 && onTabDoubleClick)
+            onTabDoubleClick (t);
     }
 
     //------------------------------------------------------------------------

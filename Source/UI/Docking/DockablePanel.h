@@ -65,6 +65,12 @@ public:
     void setDockManager (DockManager* mgr) noexcept { manager = mgr; }
     DockManager* getDockManager() const noexcept    { return manager; }
 
+    /** Invoked by DockManager::closePanel right before the panel is deleted.
+        Hosts use this to null out any raw pointers / global wirings that
+        referenced the panel's content (otherwise a closable host panel would
+        leave dangling pointers behind). */
+    std::function<void()> onClosed;
+
     /** Whether this panel offers a close-X on its tab. Defaults to true so
         legacy callers behave unchanged; structural panels owned by the host
         application (e.g. the main editor view) should set this to false to
