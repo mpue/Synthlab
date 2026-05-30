@@ -375,5 +375,10 @@ private:
 
     CriticalSection lock;
 
+    // App-weites Tooltip-Fenster. Ohne eine TooltipWindow-Instanz zeigt JUCE
+    // gar keine Tooltips an (auch nicht die per setTooltip gesetzten). An
+    // `this` gehaengt, damit es den gesamten Editor abdeckt.
+    juce::TooltipWindow tooltipWindow { this };
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

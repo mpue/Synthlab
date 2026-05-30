@@ -20,7 +20,8 @@ namespace docking
 //  DockTabBar - the row of tabs at the top of a DockTabNode.
 //  Self-contained: depends only on DockTheme.
 //============================================================================
-class DockTabBar : public juce::Component
+class DockTabBar : public juce::Component,
+                   public juce::TooltipClient
 {
 public:
     std::function<void (int)>                            onTabClicked;
@@ -182,6 +183,16 @@ public:
         const int t = hitTestTab (e.getPosition());
         if (t != -1 && hitTestClose (e.getPosition()) == -1 && onTabDoubleClick)
             onTabDoubleClick (t);
+    }
+
+    // Tooltip ueber einem Tab-Titel — weist auf das Doppelklick-Maximieren hin.
+    // Nicht ueber dem Close-X oder im leeren Bereich.
+    juce::String getTooltip() override
+    {
+        const auto p = getMouseXYRelative();
+        if (hitTestTab (p) != -1 && hitTestClose (p) == -1)
+            return "Double click to maximize";
+        return {};
     }
 
     //------------------------------------------------------------------------
