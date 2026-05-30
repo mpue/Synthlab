@@ -411,7 +411,14 @@ void TrackNavigator::adjustHeight()
 		if (vw > 0) minWidth  = vw;
 	}
 	if (minHeight > height) height = minHeight;
-	int width = juce::jmax(getWidth(), minWidth);
+
+	// Content-Breite zentral hier ableiten, nicht nur im Zoom-Handler. Sonst
+	// bleibt der Navigator nach Track-/Clip-Erzeugung auf der alten (zu
+	// schmalen) Breite stehen, bis ein Zoom-Event setSize() mit
+	// getMaxLength()*zoom triggert — genau der gemeldete "erst nach Einzoomen
+	// richtig"-Effekt. kControlsWidth, weil Timeline/Marker/Tracks dort starten.
+	const int contentWidth = kControlsWidth + (int)(getMaxLength() * zoom);
+	int width = juce::jmax(contentWidth, minWidth);
 
 	setSize(width, height);
 	this->marker->setBounds(kControlsWidth, 0, 2, getHeight());
