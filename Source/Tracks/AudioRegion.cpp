@@ -548,10 +548,23 @@ void AudioRegion::paint (Graphics& g)
     g.setColour(stroke);
     g.drawRoundedRectangle(b.getX(), b.getY(), effectiveWidth, b.getHeight(), 10, 1.0f);
 
-    g.setColour(textCol);
-    g.setFont(14.0);
-    g.drawText(name, 10, 10, 140, 20, juce::Justification::left);
-    g.drawText(juce::String(sampleOffset), 10, 30, 140, 20, juce::Justification::left);
+    // Clip-Name. Faellt auf clipRefId zurueck, falls `name` leer ist (kann beim
+    // Reload passieren, wenn getAudioPath(clipRefId) keinen aufloesbaren Pfad
+    // liefert -> File("").getFileNameWithoutExtension() == "").
+    juce::String label = name.isNotEmpty() ? name : clipRefId;
+    if (label.isNotEmpty()) {
+        g.setFont(14.0f);
+        // Dunkler Hintergrund-Streifen: garantiert Lesbarkeit ueber der hellen
+        // Wellenform, unabhaengig von der Track-Farbe.
+        juce::Rectangle<int> labelArea(b.getX() + 6, b.getY() + 6,
+                                       juce::jmax(0, effectiveWidth - 12), 18);
+        const int textW = g.getCurrentFont().getStringWidth(label) + 12;
+        labelArea = labelArea.withWidth(juce::jmin(labelArea.getWidth(), textW));
+        g.setColour(juce::Colours::black.withAlpha(0.45f));
+        g.fillRoundedRectangle(labelArea.toFloat(), 4.0f);
+        g.setColour(juce::Colours::white);
+        g.drawText(label, labelArea.reduced(5, 0), juce::Justification::centredLeft, true);
+    }
 
     if (loop) {
         for (int i = 1; i <= loopCount; i++) {
