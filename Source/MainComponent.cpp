@@ -40,6 +40,8 @@
 #include "Tracks/BounceThread.h"
 #include "Tracks/Track.h"
 #include "Tracks/TrackNavigator.h"
+#include "Tracks/TimeLine.h"
+#include "Tracks/TimelineMarker.h"
 #include "PianoRollEditor.h"
 #include "MidiRegionEventEditor.h"
 #include "Session.h"
@@ -94,6 +96,302 @@ using juce::ModalCallbackFunction;
 using juce::KeyPress;
 using juce::Button;
 using juce::ToolbarButton;
+
+// ===========================================================================
+// Auto Arrange — baut aus dem Loop-Bereich automatisch eine Songstruktur.
+//
+// Modell (nicht-destruktiv): Der Loop-Bereich ist EIN "Block". Block 0 sind
+// die bereits im Loop liegenden Originalregionen — die bleiben unangetastet.
+// Pro Section/Wiederholung wird ein weiterer Block als Kopie hinter den
+// vorigen gelegt; blockLen == exakte Loop-Laenge, damit alles nahtlos
+// aneinanderschliesst. Optional werden Section-Marker auf der Timeline
+// gesetzt. Undo nimmt genau die erzeugten Kopien + Marker zurueck.
+// ===========================================================================
+namespace {
+
+struct ArrangeSection {
+	juce::String name;
+	int          repeats = 0;   // Anzahl Loop-Bloecke dieser Section
+};
+
+class AutoArrangeAction : public juce::UndoableAction {
+public:
+	AutoArrangeAction(TrackNavigator* nav,
+	                  long loopStartSamples,
+	                  long blockLenSamples,
+	                  std::vector<ArrangeSection> sectionsIn,
+	                  bool placeMarkersIn,
+	                  double sampleRateIn)
+		: navigator(nav),
+		  loopStart(loopStartSamples),
+		  blockLen(blockLenSamples),
+		  sections(std::move(sectionsIn)),
+		  placeMarkers(placeMarkersIn),
+		  sampleRate(sampleRateIn)
+	{}
+
+	bool perform() override
+	{
+		createdRegions.clear();
+		createdMarkers.clear();
+
+		if (navigator == nullptr || blockLen <= 0 || sampleRate <= 0.0)
+			return false;
+
+		const long loopEnd = loopStart + blockLen;
+
+		// Teilnehmende Tracks + ihre Quell-Regionen (Block 0). Nur Tracks mit
+		// Inhalt im Loop-Bereich werden arrangiert; leere Tracks bleiben leer.
+		struct TrackSources { Track* track; std::vector<Region*> sources; };
+		std::vector<TrackSources> participating;
+
+		for (Track* t : navigator->getTracks()) {
+			if (t == nullptr) continue;
+			std::vector<Region*> src;
+			for (Region* r : t->getRegions()) {
+				if (r == nullptr) continue;
+				const long off = (long) r->getSampleOffset();
+				const long end = off + (long) r->getNumSamples();
+				if (off < loopEnd && end > loopStart)   // ueberlappt den Loop
+					src.push_back(r);
+			}
+			if (!src.empty())
+				participating.push_back({ t, std::move(src) });
+		}
+
+		int totalBlocks = 0;
+		for (const auto& s : sections)
+			totalBlocks += juce::jmax(0, s.repeats);
+		if (totalBlocks <= 0)
+			return false;
+
+		// Bloecke 1..totalBlocks-1 als Kopien anlegen (Block 0 == Originale).
+		for (int i = 1; i < totalBlocks; ++i) {
+			const long blockBase = loopStart + (long) i * blockLen;
+			for (auto& ts : participating) {
+				for (Region* src : ts.sources) {
+					const long rel = juce::jmax((long) 0,
+					                            (long) src->getSampleOffset() - loopStart);
+					Region* placed = ts.track->pasteRegion(src, blockBase + rel);
+					if (placed != nullptr)
+						createdRegions.push_back({ ts.track, placed });
+				}
+			}
+		}
+
+		// Section-Marker setzen (an jeder Section-Grenze, inkl. Block 0).
+		if (placeMarkers && navigator->getTimeLine() != nullptr) {
+			long cumBlocks = 0;
+			for (const auto& s : sections) {
+				if (s.repeats <= 0) continue;
+				const double pos = (double) (loopStart + cumBlocks * blockLen) / sampleRate;
+				TimelineMarker m;
+				m.position = pos;
+				m.name     = s.name;
+				m.type     = TimelineMarker::Type::Normal;
+				navigator->getTimeLine()->addMarker(m);
+				createdMarkers.push_back(pos);
+				cumBlocks += s.repeats;
+			}
+		}
+
+		refresh();
+		return true;
+	}
+
+	bool undo() override
+	{
+		for (auto& cr : createdRegions)
+			if (cr.track != nullptr && cr.region != nullptr)
+				cr.track->removeRegion(cr.region, true);
+		createdRegions.clear();
+
+		if (navigator != nullptr && navigator->getTimeLine() != nullptr) {
+			auto* tl = navigator->getTimeLine();
+			for (double pos : createdMarkers) {
+				const auto& mk = tl->getMarkers();
+				for (int idx = 0; idx < (int) mk.size(); ++idx) {
+					if (std::abs(mk[idx].position - pos) < 1e-6) {
+						tl->removeMarker(idx);
+						break;
+					}
+				}
+			}
+		}
+		createdMarkers.clear();
+
+		refresh();
+		return true;
+	}
+
+	juce::String getDescription() const { return "Auto Arrange"; }
+
+private:
+	void refresh()
+	{
+		if (navigator == nullptr) return;
+		navigator->adjustHeight();
+		navigator->repaint();
+		navigator->sendChangeMessage();
+	}
+
+	struct Created { Track* track = nullptr; Region* region = nullptr; };
+
+	TrackNavigator*             navigator   = nullptr;
+	long                        loopStart   = 0;
+	long                        blockLen    = 0;
+	std::vector<ArrangeSection> sections;
+	bool                        placeMarkers = true;
+	double                      sampleRate   = 0.0;
+
+	std::vector<Created> createdRegions;
+	std::vector<double>  createdMarkers;
+};
+
+// Modaler Dialog: editierbare Section-Liste (Name + Anzahl Loop-Bloecke),
+// Marker-Toggle und Live-Zusammenfassung. Liefert die konfigurierten Sections
+// per Callback zurueck.
+class AutoArrangeDialog : public juce::Component {
+public:
+	AutoArrangeDialog(double blockSeconds, double blockBars)
+		: blockSeconds(blockSeconds), blockBars(blockBars)
+	{
+		header.setText("Auto Arrange — Songstruktur aus dem Loop-Bereich",
+		               juce::dontSendNotification);
+		header.setFont(juce::Font(16.0f, juce::Font::bold));
+		addAndMakeVisible(header);
+
+		blockInfo.setJustificationType(juce::Justification::centredLeft);
+		blockInfo.setText(juce::String("Loop-Block: ")
+		                  + juce::String(blockBars, 2) + " Takte  ("
+		                  + juce::String(blockSeconds, 2) + " s)",
+		                  juce::dontSendNotification);
+		addAndMakeVisible(blockInfo);
+
+		colName.setText("Section", juce::dontSendNotification);
+		colName.setFont(juce::Font(12.0f, juce::Font::bold));
+		colReps.setText("x Loop", juce::dontSendNotification);
+		colReps.setFont(juce::Font(12.0f, juce::Font::bold));
+		addAndMakeVisible(colName);
+		addAndMakeVisible(colReps);
+
+		// Default-Popstruktur (genau kNumRows Eintraege). repeats == Anzahl
+		// Loop-Bloecke der Section.
+		const std::pair<const char*, int> defaults[kNumRows] = {
+			{ "Intro",  1 }, { "Verse",  2 }, { "Chorus", 2 }, { "Verse",  2 },
+			{ "Chorus", 2 }, { "Bridge", 1 }, { "Chorus", 2 }, { "Outro",  1 },
+		};
+
+		for (int i = 0; i < kNumRows; ++i) {
+			auto name = std::make_unique<juce::TextEditor>();
+			auto reps = std::make_unique<juce::TextEditor>();
+			name->setText(defaults[i].first, juce::dontSendNotification);
+			reps->setText(juce::String(defaults[i].second), juce::dontSendNotification);
+			reps->setInputRestrictions(3, "0123456789");
+			name->onTextChange = [this]{ updateSummary(); };
+			reps->onTextChange = [this]{ updateSummary(); };
+			addAndMakeVisible(*name);
+			addAndMakeVisible(*reps);
+			nameEditors.push_back(std::move(name));
+			repsEditors.push_back(std::move(reps));
+		}
+
+		markersToggle.setButtonText("Section-Marker auf der Timeline setzen");
+		markersToggle.setToggleState(true, juce::dontSendNotification);
+		addAndMakeVisible(markersToggle);
+
+		summary.setJustificationType(juce::Justification::centredLeft);
+		addAndMakeVisible(summary);
+
+		arrangeButton.setButtonText("Arrange");
+		cancelButton.setButtonText("Cancel");
+		arrangeButton.onClick = [this]{ if (onArrange) onArrange(); };
+		cancelButton.onClick  = [this]{ if (onCancel)  onCancel();  };
+		addAndMakeVisible(arrangeButton);
+		addAndMakeVisible(cancelButton);
+
+		updateSummary();
+		setSize(420, 150 + kNumRows * 30 + 90);
+	}
+
+	void paint(juce::Graphics& g) override { g.fillAll(juce::Colour(0xff2b2b2b)); }
+
+	void resized() override
+	{
+		auto r = getLocalBounds().reduced(14);
+		header.setBounds(r.removeFromTop(24));
+		r.removeFromTop(4);
+		blockInfo.setBounds(r.removeFromTop(20));
+		r.removeFromTop(8);
+
+		auto headerRow = r.removeFromTop(18);
+		colReps.setBounds(headerRow.removeFromRight(70));
+		colName.setBounds(headerRow);
+
+		for (int i = 0; i < kNumRows; ++i) {
+			auto row = r.removeFromTop(28).reduced(0, 2);
+			repsEditors[i]->setBounds(row.removeFromRight(70));
+			row.removeFromRight(8);
+			nameEditors[i]->setBounds(row);
+		}
+
+		r.removeFromTop(6);
+		markersToggle.setBounds(r.removeFromTop(24));
+		r.removeFromTop(4);
+		summary.setBounds(r.removeFromTop(22));
+		r.removeFromTop(8);
+
+		auto buttons = r.removeFromTop(30);
+		arrangeButton.setBounds(buttons.removeFromRight(110));
+		buttons.removeFromRight(8);
+		cancelButton.setBounds(buttons.removeFromRight(110));
+	}
+
+	std::vector<ArrangeSection> getSections() const
+	{
+		std::vector<ArrangeSection> out;
+		for (int i = 0; i < kNumRows; ++i) {
+			const juce::String nm = nameEditors[i]->getText().trim();
+			const int reps = repsEditors[i]->getText().getIntValue();
+			if (nm.isNotEmpty() && reps > 0)
+				out.push_back({ nm, reps });
+		}
+		return out;
+	}
+
+	bool getPlaceMarkers() const { return markersToggle.getToggleState(); }
+
+	std::function<void()> onArrange;
+	std::function<void()> onCancel;
+
+private:
+	void updateSummary()
+	{
+		int blocks = 0;
+		for (int i = 0; i < kNumRows; ++i) {
+			if (nameEditors[i]->getText().trim().isNotEmpty())
+				blocks += juce::jmax(0, repsEditors[i]->getText().getIntValue());
+		}
+		const double totalSec = blocks * blockSeconds;
+		summary.setText("Gesamt: " + juce::String(blocks) + " Bloecke  ~ "
+		                + juce::String((int) (totalSec / 60.0)) + ":"
+		                + juce::String((int) std::fmod(totalSec, 60.0)).paddedLeft('0', 2)
+		                + " min", juce::dontSendNotification);
+	}
+
+	static constexpr int kNumRows = 8;
+
+	double blockSeconds = 0.0;
+	double blockBars    = 0.0;
+
+	juce::Label header, blockInfo, colName, colReps, summary;
+	std::vector<std::unique_ptr<juce::TextEditor>> nameEditors;
+	std::vector<std::unique_ptr<juce::TextEditor>> repsEditors;
+	juce::ToggleButton markersToggle;
+	juce::TextButton   arrangeButton, cancelButton;
+};
+
+} // namespace
 
 namespace {
     // Wrapper-Komponente fuer ein shared_ptr<MixerPanel>: haelt eine eigene
@@ -2210,6 +2508,8 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addItem(70, "Bounce in Place", true, false, nullptr);
 		menu.addItem(45, "Delete", true, false, nullptr);
 		menu.addSeparator();
+		menu.addItem(90, "Auto Arrange...", true, false, nullptr);
+		menu.addSeparator();
 
 		PopupMenu audioMenu = PopupMenu();
 		audioMenu.addItem(42, "Detect BPM", true, false, nullptr);
@@ -2639,6 +2939,9 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	else if (menuItemID == 70) { // Bounce in Place
 		if (navigator != nullptr)
 			navigator->bounceSelectedRegionsInPlace();
+	}
+	else if (menuItemID == 90) { // Auto Arrange...
+		showAutoArrangeDialog();
 	}
 	else if (menuItemID == 71) { // Cut
 		if (navigator != nullptr) {
@@ -3592,6 +3895,70 @@ void MainComponent::showBounceDialog()
 	options.escapeKeyTriggersCloseButton = true;
 	options.useNativeTitleBar = true;
 	options.resizable = false;
+	options.componentToCentreAround = this;
+
+	auto* window = options.launchAsync();
+	Project::getInstance()->getOpenWindows().push_back(window);
+}
+
+void MainComponent::showAutoArrangeDialog()
+{
+	if (navigator == nullptr) return;
+	TimeLine* tl = navigator->getTimeLine();
+	if (tl == nullptr) return;
+
+	const double sr           = Project::getInstance()->getSampleRate();
+	const double loopStartSec = tl->getLoopStart();
+	const double loopEndSec   = tl->getLoopEnd();
+
+	if (!tl->isLoopEnabled() || (loopEndSec - loopStartSec) <= 1e-6) {
+		juce::AlertWindow::showMessageBoxAsync(
+			juce::AlertWindow::InfoIcon,
+			"Auto Arrange",
+			"Bitte zuerst einen Loop-Bereich auf der Timeline setzen — daraus wird die Songstruktur gebaut.");
+		return;
+	}
+
+	const long loopStartSamples = (long) std::llround(loopStartSec * sr);
+	const long blockLenSamples  = (long) std::llround((loopEndSec - loopStartSec) * sr);
+	if (blockLenSamples <= 0) return;
+
+	const double bpm           = Project::getInstance()->getTempo();
+	const double samplesPerBar = (bpm > 0.0) ? (sr / (bpm / 60.0)) * 4.0 : 0.0;
+	const double blockBars     = samplesPerBar > 0.0 ? (double) blockLenSamples / samplesPerBar : 0.0;
+	const double blockSeconds  = (double) blockLenSamples / sr;
+
+	auto* dialog = new AutoArrangeDialog(blockSeconds, blockBars);
+
+	dialog->onArrange = [this, dialog, loopStartSamples, blockLenSamples, sr]() {
+		// Werte VOR dem Schliessen einsammeln — exitModalState gibt den Dialog frei.
+		auto       sections = dialog->getSections();
+		const bool markers  = dialog->getPlaceMarkers();
+
+		if (auto* dw = dialog->findParentComponentOfClass<juce::DialogWindow>())
+			dw->exitModalState(0);
+
+		if (sections.empty() || navigator == nullptr) return;
+
+		auto* action = new AutoArrangeAction(navigator.get(), loopStartSamples,
+		                                     blockLenSamples, std::move(sections),
+		                                     markers, sr);
+		Project::getInstance()->getUndoManager()->beginNewTransaction();
+		Project::getInstance()->getUndoManager()->perform(action);
+	};
+
+	dialog->onCancel = [dialog]() {
+		if (auto* dw = dialog->findParentComponentOfClass<juce::DialogWindow>())
+			dw->exitModalState(0);
+	};
+
+	juce::DialogWindow::LaunchOptions options;
+	options.content.setOwned(dialog);
+	options.dialogTitle            = "Auto Arrange";
+	options.dialogBackgroundColour = juce::Colour(0xff222222);
+	options.escapeKeyTriggersCloseButton = true;
+	options.useNativeTitleBar      = true;
+	options.resizable              = false;
 	options.componentToCentreAround = this;
 
 	auto* window = options.launchAsync();

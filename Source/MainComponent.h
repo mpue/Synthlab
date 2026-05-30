@@ -105,6 +105,7 @@ public:
     juce::String loadClaudeApiKey() const;
     void saveClaudeApiKey(const juce::String& key);
     void showClaudeApiKeyDialog();
+    void showAutoArrangeDialog();
 
     // command handling
     virtual ApplicationCommandTarget* getNextCommandTarget() override;

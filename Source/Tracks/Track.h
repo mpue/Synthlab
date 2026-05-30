@@ -140,6 +140,12 @@ public:
     long findNextFreeOffset(Region* moving, long desiredOffset, long length) const;
 
     void removeSelectedRegions(bool clear);
+    // Entfernt genau eine Region (per Pointer) sicher — gleiche Teardown-
+    // Reihenfolge wie removeSelectedRegions (Recording-Pointer loesen, aus der
+    // Dragger-Selektion nehmen, ChangeListener abmelden), damit kein
+    // freed-pointer mehr referenziert wird. Wird u.a. vom Auto-Arrange-Undo
+    // genutzt, das gezielt seine erzeugten Kopien zuruecknimmt.
+    void removeRegion(Region* r, bool clear);
     void duplicateSelectedRegions();
 
     // Mehrere selektierte AudioRegions auf diesem Track zu einer einzigen

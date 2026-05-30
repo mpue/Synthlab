@@ -149,6 +149,40 @@ void Track::removeSelectedRegions(bool clear) {
 
 }
 
+void Track::removeRegion(Region* r, bool clear) {
+	if (r == nullptr) return;
+
+	for (std::vector<Region*>::iterator it = regions.begin(); it != regions.end(); ++it) {
+		if (*it != r) continue;
+
+		clearRecordingRegionIfMatches(*it);
+		if (dragger != nullptr)
+			dragger->setSelected(*it, false);
+		if (currentRegion == *it)
+			currentRegion = nullptr;
+		(*it)->removeAllChangeListeners();
+
+		if (clear && audioBuffer != nullptr) {
+			// Buffer-Bereich der Region nullen — aber hart clampen. Auto-
+			// arrangierte Kopien koennen ueber das Track-Ende (audioBuffer-
+			// Laenge) hinausragen; ein ungeclamptes clear() wuerde in JUCE
+			// asserten/out-of-range gehen.
+			const long off    = (long) (*it)->getSampleOffset();
+			const long len    = (long) (*it)->getNumSamples();
+			const long bufLen = (long) audioBuffer->getNumSamples();
+			const long cs = juce::jlimit((long) 0, bufLen, off);
+			const long ce = juce::jlimit((long) 0, bufLen, off + len);
+			if (ce > cs)
+				audioBuffer->clear((int) cs, (int) (ce - cs));
+		}
+
+		delete *it;
+		regions.erase(it);
+		repaint();
+		return;
+	}
+}
+
 AudioRegion* Track::mergeSelectedAudioRegions() {
 	// Selektierte AudioRegions einsammeln (Region-Flag ODER Dragger,
 	// gleiche Logik wie bounceSelectedRegionsInPlace).
