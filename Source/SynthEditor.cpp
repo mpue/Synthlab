@@ -3224,6 +3224,15 @@ void SynthEditor::openTracks(File file)
 			// das ValueTree als "Automation"-Child geschrieben hat.
 			if (loadedTrack != nullptr) {
 
+				// Track-Namen final aus dem Save uebernehmen. addRegion()/
+				// addMidiRegion() setzen bei der ERSTEN Region den Track-Namen
+				// auf den Region-Namen (Default-Naming beim Clip-Drop) und
+				// ueberschreiben damit den weiter oben gesetzten geladenen
+				// Namen — daher hier nach dem Region-Load erneut setzen.
+				const juce::String savedTrackName = track.getProperty("name").toString();
+				if (savedTrackName.isNotEmpty())
+					loadedTrack->setName(savedTrackName);
+
                 Logger::getCurrentLogger()->writeToLog("Loading track "+loadedTrack->getName());
 
 				ValueTree autoTree = track.getChildWithName("Automation");
