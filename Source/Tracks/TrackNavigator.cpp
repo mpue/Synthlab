@@ -282,13 +282,20 @@ void TrackNavigator::eventReceived(Event* e)
 }
 
 void TrackNavigator::allNotesOff() {
-	for (int i = 0; i < Project::getInstance()->getRoot()->getModules()->size(); i++) {
+	// getRoot() ist nullptr, solange kein Modular-Baum gesetzt ist (z.B. Projekt
+	// nur mit Tracks) — dann darf ->getModules() nicht dereferenziert werden.
+	auto* root = Project::getInstance()->getRoot();
+	if (root == nullptr) return;
+	auto* mods = root->getModules();
+	if (mods == nullptr) return;
+
+	for (int i = 0; i < (int) mods->size(); i++) {
 
 		for (int j = 0; j < 16; j++) {
-			Project::getInstance()->getMidiProcessor()->sendMidiStopMessage(Project::getInstance()->getRoot()->getModules()->at(i), j);
+			Project::getInstance()->getMidiProcessor()->sendMidiStopMessage(mods->at(i), j);
 
 			for (int k = 0; k < 128; k++) {
-				Project::getInstance()->getMidiProcessor()->sendGateMessage(Project::getInstance()->getRoot()->getModules()->at(i), j, 0, k, false);
+				Project::getInstance()->getMidiProcessor()->sendGateMessage(mods->at(i), j, 0, k, false);
 			}
 		}
 	}
@@ -1079,14 +1086,20 @@ void TrackNavigator::ResetMarkerPosition()
     // Synchronisiere auch die PluginModules, sonst sieht ein
     // tempo-sync-empfindlicher Synth (Avenger) beim nächsten Play
     // einen Transport-Sprung und spinnt.
-    for (int i = 0; i < Project::getInstance()->getRoot()->getModules()->size(); i++) {
-        if (auto* module = dynamic_cast<PluginModule*>(
-                Project::getInstance()->getRoot()->getModules()->at(i))) {
-            module->requestPositionReset(0);
-            module->requestReset();
+    // getRoot() ist nullptr, solange SynthEditor seinen Root-Module-Baum noch
+    // nicht gebaut hat bzw. das Projekt nur Tracks ohne Modular-Baum enthaelt —
+    // dann darf ->getModules() nicht dereferenziert werden (siehe mouseDown).
+    if (auto* root = Project::getInstance()->getRoot()) {
+        if (auto* mods = root->getModules()) {
+            for (int i = 0; i < (int) mods->size(); i++) {
+                if (auto* module = dynamic_cast<PluginModule*>(mods->at(i))) {
+                    module->requestPositionReset(0);
+                    module->requestReset();
+                }
+            }
         }
     }
-    
+
     sendChangeMessage();
 }
 
@@ -1156,13 +1169,20 @@ void TrackNavigator::setSamplePosition(int position) {
 		tracks.at(i)->setSamplePosition(this->getSamplePosition());
 	}
     
-    for (int i = 0; i < Project::getInstance()->getRoot()->getModules()->size(); i++) {
-        if (auto* module = dynamic_cast<PluginModule*>(
-                Project::getInstance()->getRoot()->getModules()->at(i))) {
-            module->setCurrentSample(this->samplePosition);
+    // getRoot() liefert nullptr, solange SynthEditor seinen Root-Module-Baum
+    // noch nicht gebaut hat bzw. das Projekt nur Tracks ohne Modular-Baum
+    // enthaelt (z.B. Audio-Track + User-Modul, bevor setRoot() lief). Der
+    // bisherige Code pruefte nur getModules(), nicht getRoot() selbst, und
+    // crashte hier auf dem Audio-Thread (siehe mouseDown fuer dasselbe Muster).
+    if (auto* root = Project::getInstance()->getRoot()) {
+        if (auto* mods = root->getModules()) {
+            for (int i = 0; i < (int) mods->size(); i++) {
+                if (auto* module = dynamic_cast<PluginModule*>(mods->at(i))) {
+                    module->setCurrentSample(this->samplePosition);
+                }
+            }
         }
     }
-
     
 	this->position = (float)samplePosition / Project::getInstance()->getSampleRate();
 }
@@ -1209,18 +1229,22 @@ void TrackNavigator::setPlaying(bool playing) {
 			tracks.at(i)->setCurrentMarkerPosition(position);
 		}
 	}
-	for (int i = 0; i < Project::getInstance()->getRoot()->getModules()->size(); i++) {
-
-		PluginModule* module = nullptr;
-
-		if ((module = dynamic_cast<PluginModule*>(Project::getInstance()->getRoot()->getModules()->at(i))) != nullptr) {
-			module->getPlayHead()->setRecording(false);
-            module->getPlayHead()->setPlaying(playing);
-            if (playing) {
-                module->requestPositionReset(this->samplePosition);
-                module->requestReset();
-            }
-        }
+	// getRoot() ist nullptr, solange kein Modular-Baum gesetzt ist — der
+	// bisherige Code dereferenzierte ihn ungeprueft und crashte beim Play
+	// eines reinen Track-Projekts (gleiches Muster wie mouseDown/setSamplePosition).
+	if (auto* root = Project::getInstance()->getRoot()) {
+		if (auto* mods = root->getModules()) {
+			for (int i = 0; i < (int) mods->size(); i++) {
+				if (auto* module = dynamic_cast<PluginModule*>(mods->at(i))) {
+					module->getPlayHead()->setRecording(false);
+					module->getPlayHead()->setPlaying(playing);
+					if (playing) {
+						module->requestPositionReset(this->samplePosition);
+						module->requestReset();
+					}
+				}
+			}
+		}
 	}
 
 	sendChangeMessage();

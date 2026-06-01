@@ -35,7 +35,7 @@ public:
     }
     virtual juce::String getDescription() override {
         return "Stereo State-Variable Filter (TPT). InL/InR + F/Q/Mod/Drive. "
-               "Outputs: LP_L/LP_R, HP_L/HP_R, BP_L/BP_R, N_L/N_R — alle "
+               "Outputs: LP_L/LP_R, HP_L/HP_R, BP_L/BP_R, N_L/N_R - alle "
                "Modi parallel. Properties: 24dB-Kaskade, Stereo-Spread "
                "(Cutoff-Versatz L/R fuer Stereo-Charakter).";
     }

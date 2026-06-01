@@ -298,7 +298,12 @@ juce::Array<juce::PropertyComponent*>& RadioGroupModule::getProperties()
     if (labelsValue) labelsValue->setValue(labelsCsv());
     if (valuesValue) valuesValue->setValue(valuesCsv());
 
-    properties.clear();
+    // Basis-Properties (Name, "Display at root", Is instrument) uebernehmen —
+    // ohne den Aufruf fehlte dem RadioGroup-Modul die "Display at root"-Checkbox,
+    // sodass es nicht aufs Control-Surface/Root-Level geflaggt werden konnte.
+    // Module::getProperties() setzt `properties` frisch auf und fuellt die Basis;
+    // die RadioGroup-spezifischen Properties haengen wir danach an.
+    Module::getProperties();
 
     countProp  = new juce::SliderPropertyComponent(*countValue,  "Buttons", 1.0, (double) kMaxButtons, 1.0, 1.0, true);
     labelsProp = new juce::TextPropertyComponent(*labelsValue, "Labels (csv)", 256, false, true);

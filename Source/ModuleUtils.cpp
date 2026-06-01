@@ -72,8 +72,20 @@ void ModuleUtils::loadStructure(std::vector<Module*>* modules, std::vector<Conne
 
 		if ((t = dynamic_cast<TerminalModule*>(m)) != nullptr) {
 			t->setIndex(mod.getProperty("index").toString().getLargeIntValue());
+			// Gespeicherten Terminal-Typ wiederherstellen. Terminals sind Prefabs,
+			// und loadModule stellt fuer Prefab-Pins nur den Index wieder her, nicht
+			// den Typ — der Terminal-Modul-Typ selbst wurde bisher gar nicht geladen.
+			// Ohne das bleibt der Prefab-Default (VALUE) stehen, und
+			// TerminalModule::process() ueberspringt das AUDIO-Forwarding: ein
+			// Audio-Terminal leitet nach dem Laden kein Signal mehr durch (Symptom:
+			// User-Modul mit Audio-In/Out ist nach Reload tot bzw. falsch geroutet).
+			// setType() setzt zugleich den Typ des inneren Pins.
+			if (mod.hasProperty("type"))
+				t->setType(static_cast<Terminal::Type>(
+					mod.getProperty("type").toString().getIntValue()));
 		}
 		connectTerminals(m);
+		reconcileTerminals(m);
 
 		if (!m->isPrefab() && m->getModules()->size() > 0) {
 			int w = (int)mod.getProperty("width", 0);
@@ -506,6 +518,78 @@ void ModuleUtils::connectTerminals(Module* m) {
 				}
 			}
 
+		}
+	}
+}
+
+void ModuleUtils::reconcileTerminals(Module* m) {
+	if (m == nullptr || m->getModules() == nullptr) return;
+
+	std::vector<Module*>* kids = m->getModules();
+
+	// --- 1) Create interface pins for child terminals that have none ---------
+	// A terminal whose index matches no interface pin of m is invisible to the
+	// outside world: connectTerminals() found nothing to wire it to, so the
+	// terminal "is not shown at the module" and routes no signal. Expose it by
+	// creating the missing pin and pairing it on the terminal's saved index.
+	bool hasTerminals = false;
+
+	for (Module* child : *kids) {
+		TerminalModule* t = dynamic_cast<TerminalModule*>(child);
+		if (t == nullptr) continue;
+		hasTerminals = true;
+
+		bool hasPin = false;
+		for (Pin* p : m->getPins()) {
+			if (p != nullptr && p->index == t->getIndex()) { hasPin = true; break; }
+		}
+		if (hasPin) continue;
+
+		Pin::Direction dir = (t->getDirection() == Terminal::Direction::IN)
+			? Pin::Direction::IN : Pin::Direction::OUT;
+
+		Pin* p = new Pin(t->getType());
+		m->addPin(dir, p);          // positions the pin + pushes it + registers m as listener
+		p->index = t->getIndex();   // keep the convention pin.index == terminal.index
+		p->setType(t->getType());
+		p->setName(t->getName());
+
+		// Wire terminal <-> interface pin exactly like addTerminal()/connectTerminals().
+		t->getPins().at(0)->setTerminal(p);
+		t->getPins().at(0)->setType(t->getType());
+		p->listeners.push_back(t);
+		t->addChangeListener(p);
+
+		Logger::writeToLog("reconcileTerminals: exposed terminal '" + t->getName()
+			+ "' idx=" + String(t->getIndex()) + " on '" + m->getName()
+			+ "' (created missing interface pin)");
+	}
+
+	// --- 2) Drop orphan interface pins with no backing terminal --------------
+	// Only on terminal-backed group modules: every interface pin of such a
+	// module should pair with a child terminal. A pin that does not is the
+	// leftover of a deleted TerminalModule ("verwaistes Terminal") and routes
+	// nowhere — remove it. Never touch a real prefab module's intrinsic pins.
+	if (m->isPrefab() || !hasTerminals) return;
+
+	std::set<long> termIndices;
+	for (Module* child : *kids) {
+		TerminalModule* t = dynamic_cast<TerminalModule*>(child);
+		if (t != nullptr) termIndices.insert(t->getIndex());
+	}
+
+	std::vector<Pin*>& pins = m->getPins();
+	for (auto it = pins.begin(); it != pins.end(); ) {
+		Pin* p = *it;
+		if (p != nullptr && termIndices.count(p->index) == 0) {
+			Logger::writeToLog("reconcileTerminals: removed orphan interface pin idx="
+				+ String(p->index) + " ('" + p->getName() + "') on '" + m->getName()
+				+ "' (no backing terminal)");
+			it = pins.erase(it);
+			delete p;
+		}
+		else {
+			++it;
 		}
 	}
 }
@@ -998,6 +1082,7 @@ Module* ModuleUtils::loadFromXml(juce::ValueTree& v, ChangeBroadcaster* broadcas
 	m->resized();
 
 	ModuleUtils::connectTerminals(m);
+	ModuleUtils::reconcileTerminals(m);
 
 	return m;
 }

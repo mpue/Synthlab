@@ -2553,6 +2553,15 @@ void SynthEditor::openEditor(Module* m) {
 		}
 	}
 
+	// Der SynthEditor(double,int)-Ctor setzt Project::setRoot(seinen frischen
+	// "Root"), und setModuleRef() unten gibt genau dieses Modul gleich wieder
+	// frei — ohne Bewahrung bliebe Project::getRoot() ein dangling Pointer auf
+	// das freigegebene Sub-Editor-Root. Der echte Projekt-Root ist und bleibt
+	// der des Haupt-Editors; daher hier sichern und nach setModuleRef
+	// wiederherstellen. (TrackNavigator iteriert Project::getRoot() auf dem
+	// Audio-Thread und crashte sonst beim Play, sobald ein Sub-Editor offen war.)
+	Module* projectRoot = Project::getInstance()->getRoot();
+
 	SynthEditor* editor = new SynthEditor(_sampleRate, bufferSize);
 	Viewport* editorView = new Viewport();
 	editorView->setSize(500, 200);
@@ -2562,6 +2571,9 @@ void SynthEditor::openEditor(Module* m) {
 	editorView->setWantsKeyboardFocus(false);
 	editorView->setMouseClickGrabsKeyboardFocus(false);
 	editor->setModuleRef(m);
+	// Project::root zuruecksetzen — der Ctor oben hat ihn auf den jetzt
+	// freigegebenen Sub-Editor-Root umgebogen.
+	Project::getInstance()->setRoot(projectRoot);
 	editor->setIndex(static_cast<int>(m->getIndex()));
 	editor->setTab(tab);
 	editor->addEditorListener(Project::getInstance()->getPropertyView());

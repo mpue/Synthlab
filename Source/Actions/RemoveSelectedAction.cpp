@@ -14,6 +14,7 @@
 #include "../AuxOut.h"
 #include "../AudioManager.h"
 #include "../MixerPanel.h"
+#include "../TerminalModule.h"
 #include <algorithm>
 #include <set>
 
@@ -25,6 +26,10 @@ RemoveSelectedAction::~RemoveSelectedAction() {
     if (!modulesInEditor) {
         for (auto* c : removedConnections) delete c;
         for (auto* m : removedModules)     delete m;
+        // Interface pins of removed terminals are deleted last: a removed
+        // TerminalModule's inner pin keeps a ->terminal pointer at these, but
+        // neither destructor dereferences the cross-link, so the order is safe.
+        for (auto& op : removedInterfacePins) delete op.pin;
     }
 }
 
@@ -127,6 +132,30 @@ bool RemoveSelectedAction::perform() {
                 }
             }
         }
+
+        // A removed TerminalModule is paired with an interface pin on the
+        // parent (pair convention: pin.index == terminal.index, see
+        // ModuleUtils::connectTerminals). That pin must be removed too —
+        // leaving it behind is exactly the "orphaned terminal on the module"
+        // bug. Collect against the original vector, then erase highest-first so
+        // the recorded positions stay valid; undo() re-inserts lowest-first.
+        auto& parentPins = rootMod->getPins();
+        for (auto* m : removedModules) {
+            if (dynamic_cast<TerminalModule*>(m) == nullptr) continue;
+            const long termIdx = m->getIndex();
+            for (size_t k = 0; k < parentPins.size(); ++k) {
+                if (parentPins[k] != nullptr && parentPins[k]->index == termIdx) {
+                    removedInterfacePins.push_back({ parentPins[k], k });
+                    break;
+                }
+            }
+        }
+        std::sort(removedInterfacePins.begin(), removedInterfacePins.end(),
+                  [](const OrphanedPin& a, const OrphanedPin& b) { return a.pos < b.pos; });
+        for (auto it = removedInterfacePins.rbegin(); it != removedInterfacePins.rend(); ++it) {
+            if (it->pos < parentPins.size())
+                parentPins.erase(parentPins.begin() + it->pos);
+        }
     } else {
         // Redo: re-remove connections and pin links that undo() restored
         for (auto& link : removedPinLinks) {
@@ -137,6 +166,12 @@ bool RemoveSelectedAction::perform() {
         for (auto* c : removedConnections) {
             auto it = std::find(rootCons->begin(), rootCons->end(), c);
             if (it != rootCons->end()) rootCons->erase(it);
+        }
+        // Re-remove the paired interface pins that undo() re-inserted.
+        auto& parentPins = rootMod->getPins();
+        for (auto& op : removedInterfacePins) {
+            auto it = std::find(parentPins.begin(), parentPins.end(), op.pin);
+            if (it != parentPins.end()) parentPins.erase(it);
         }
     }
 
@@ -196,6 +231,17 @@ bool RemoveSelectedAction::undo() {
 
     for (auto& link : removedPinLinks)
         link.outer->getConnections().push_back(link.inner);
+
+    // Re-insert the paired interface pins removed in perform(). removedInterfacePins
+    // is sorted by ascending position, so inserting in order restores each pin to
+    // its original slot (earlier inserts make the later positions valid again).
+    {
+        auto& parentPins = rootMod->getPins();
+        for (auto& op : removedInterfacePins) {
+            size_t at = op.pos < parentPins.size() ? op.pos : parentPins.size();
+            parentPins.insert(parentPins.begin() + at, op.pin);
+        }
+    }
 
     for (auto* c : removedConnections)
         rootCons->push_back(c);

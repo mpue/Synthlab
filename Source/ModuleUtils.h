@@ -62,7 +62,22 @@ public:
      * @param broadcaster the brocaster to register the module to
      */
     static void connectTerminals(Module* m);
-    
+
+    /**
+     * Reconcile a module's interface pins with its child TerminalModules so the
+     * invariant `interface-pin.index == terminal.index` holds in both
+     * directions. Repairs files that were saved while the pairing was broken:
+     *   - a child terminal with no matching interface pin gets one created and
+     *     wired (fixes "terminal not shown at the module" / missing outputs);
+     *   - an interface pin with no backing terminal is removed (fixes orphaned
+     *     terminals left behind by a deleted TerminalModule).
+     * Pin removal only runs on terminal-backed group modules (never on a real
+     * prefab whose pins are intrinsic). Call right after connectTerminals(m).
+     *
+     * @param m the target module
+     */
+    static void reconcileTerminals(Module* m);
+
     /**
      * Checks for an existing connection
      *

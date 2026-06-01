@@ -2546,11 +2546,6 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		macroFiles.clear();
 		const auto dir = getMacroDir();
 		buildScriptMenu (dir, menu, macroFiles, kMacroMenuIdBase);
-
-		if (macroFiles.empty()) {
-			menu.addItem (0, "(drop .js files in " + dir.getFullPathName() + ")",
-			              false, false);  // disabled, just informational
-		}
 	}
 
 	// Tests: dedicated menu rooted at ~/.Synthlab/test/. Has a fixed "Run All
@@ -2564,11 +2559,6 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addSeparator();
 
 		buildScriptMenu (dir, menu, testFiles, kTestMenuIdBase);
-
-		if (testFiles.empty()) {
-			menu.addItem (0, "(drop .js test files in " + dir.getFullPathName() + ")",
-			              false, false);
-		}
 	}
 
 	return menu;
