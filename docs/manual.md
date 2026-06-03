@@ -106,9 +106,19 @@ In the example below, the **Lupo** track is armed and ready to record, while the
 
 The Track Nabigator gives you the ability to navigate in your composition.
 
-In order to select a track left click in the according track lane. To resize a track just grab the track separator between the tracks and drag it with the mouse. I you'd like to resize all tracks simultaneously, hold the OPTION key, while dragging.
+In order to select a track left click in the according track lane. To resize a track just grab the track separator between the tracks and drag it with the mouse. If you'd like to resize all tracks simultaneously, hold the OPTION key while dragging.
 
 **Tracks can currently not be reordered**
+
+The Track Navigator responds to the following keyboard shortcuts:
+
+| Shortcut | Function |
+| -------- | -------- |
+| Space    | Start / stop playback |
+| +        | Zoom in (horizontal) |
+| -        | Zoom out (horizontal) |
+
+The transport shortcut (**Space**) works globally, from any panel. The zoom shortcuts require the Track Navigator to have keyboard focus — click into the timeline first.
 
 ---
 
@@ -142,22 +152,35 @@ The commands for editing regions are common for MIDI and AUDIO regions:
 
 | Shortcut    |  Function        |
 | -------     | -----------------|
+| CMD + C     | Copy selected region(s) to the clipboard |
+| CMD + V     | Paste region(s) at the playhead into the current track |
 | CMD + D     | Duplicate selected region(s) |
-| CMD + C     | Copy selected region(s) |
-| CMD + V     | Paste selected region(s) |
-| CMD + X     | Delete selected region(s) |
-| CMD + T     | Split selected region(s) at marker |
+| CMD + X     | Cut selected region(s) (copy, then remove) |
+| CMD + T     | Split selected region(s) at the marker |
+| CMD + L     | Toggle loop on the selected region(s) |
+| CMD + E     | Open the current MIDI region in the Piano Roll |
+| CMD + M     | Open the current MIDI region in the Event Editor |
+| CMD + B     | Bounce the selected region(s) in place |
 
 
 There are two types of regions.
 
 ### MIDI Regions
 
-MIDI Regions hold MIDI notes and events such as CC changes or automation data. If you double click a MIDI Region, the Piano Roll editor will be openened.
+MIDI Regions hold MIDI notes and events such as CC changes or automation data. If you double click a MIDI Region, the Piano Roll editor will be opened. Selecting a MIDI region shows its **Name** and **Length** in the Properties panel.
+
+![MIDI Region](images/midi_region.png)
 
 ### Audio Regions
 
-Audio Regions hold Audio Data and can be moved and resized the same way MIDI regions do.
+Audio Regions hold audio data and can be moved and resized the same way MIDI regions do. In addition to **Name** and **Length**, the Properties panel for an audio region exposes:
+
+- **Pitch (semitones)** — transpose the audio up or down
+- **Reference Tempo (BPM)** — the tempo the audio was recorded at
+- **Follow Tempo** — when enabled, the region is time-stretched to follow the project tempo
+- **Gain** — playback level of the region
+
+![Audio Region](images/audio_region.png)
 
 ---
 
@@ -187,28 +210,80 @@ This view is useful for understanding and customizing the signal flow of complex
 
 ## 12. Building Instruments and Useful Stuff
 
-As you might have guessed, you can also build you own instruments with Synthlab in a convenient way. For this, Synthlab provides over 80 modules. We will not be discussing each module here in detail, if you want to know what each module doed se the appendix for reference.
+As you might have guessed, you can also build your own instruments with Synthlab in a convenient way. For this, Synthlab provides over 80 modules. We will not be discussing each module here in detail; if you want to know what each module does, see the appendix for reference.
 
 ### Basics
 
-Consider the following panel of a patch:
+Every instrument in Synthlab is a **patch** — a graph of modules wired together. The same patch can be viewed two ways: as a clean front panel of controls, and as the underlying node graph.
 
+Consider the following front panel of a patch:
 
 ![Panel](images/2_osc_patch.png)
 
-The patch of this Panel looks like this:
+The patch behind this panel looks like this:
 
 ![Example Patch](images/patch_example.png)
 
-This patch contains although most of the conceptual things of Synthlab you need to know.
+This patch contains most of the conceptual things of Synthlab you need to know.
 
-But let's begin with a very simple patch.
+You can switch the editor between **Controls only** (front panel) and the full graph using the view selector in the toolbar. The "Controls only" view of a three-oscillator instrument together with its mixer looks like this:
 
-As patcg can contain a variety of modules, we take a very simple one: 
+![Controls Only](images/synthlab1.jpeg)
 
-The noise module
+…and the corresponding full module graph:
 
+![Full Patch](images/synthlab2.jpeg)
 
+### Adding Modules
+
+New modules are added from the **Browse modules** menu. Press **Shift + A** (or right-click the canvas) to open it, type to filter the list, and click a module to drop it onto the canvas.
+
+![Browse Modules](images/synthlab4.jpeg)
+
+### A Drum Patch
+
+Modules are not limited to synthesizers. The patch below drives a **Sampler** from a **Step sequencer** and an **ADSR**, through a stereo delay to the audio out — a complete drum machine built from modules:
+
+![Drum Patch](images/synthlab3.jpeg)
+
+### The Console
+
+Synthlab includes a built-in console for driving the application with text commands. Type `help` for a list of available commands — from here you can add tracks and regions, manage MIDI and audio, add or delete modules, and inspect the current track.
+
+![Console](images/synthlab7.png)
+
+### Patch Editor Shortcuts
+
+When the instrument editor (Structure / patch view) has focus, the following shortcuts are available:
+
+| Shortcut           | Function |
+| ------------------ | -------- |
+| Shift + A          | Open the **Browse modules** menu at the mouse position |
+| Ctrl + A           | Select all modules |
+| CMD + D            | Duplicate the selected module(s) |
+| Alt + D            | Duplicate the selected module(s) |
+| Delete / Backspace | Delete the selected modules and connections |
+| CMD + N            | New patch |
+| CMD + S            | Save |
+| CMD + Shift + S    | Save As… |
+| CMD + L            | Load |
+
+### Playing with the Computer Keyboard
+
+You can play the instrument on the currently selected track straight from your computer keyboard. The keys are laid out like a piano — the lower letter row plays the white keys and the upper row the black keys:
+
+| Key | Note | Key | Note |
+| --- | ---- | --- | ---- |
+| A   | C    | E   | D♯   |
+| S   | D    | T   | F♯   |
+| D   | E    | Z   | G♯   |
+| F   | F    | U   | A♯   |
+| G   | G    | O   | C♯ (next octave) |
+| H   | A    |     |      |
+| J   | B    |     |      |
+| K   | C (next octave) | | |
+
+Use **X** to shift the keyboard one octave up and **Y** to shift it one octave down. **L** cycles the active editor layer.
 
 
 
@@ -266,5 +341,7 @@ Each pad can be configured individually in the right panel:
 Additional pad options include **Reverse** (plays the sample backwards), **Choke** (mutes other pads in the same choke group), **Load Sample** (browse for a sample file), and **Clear** (removes the assigned sample).
 
 Kits can be saved and recalled using the **Presets** dropdown at the top.
+
+![SA-1 Drum Sampler](images/11_sa-1.png)
 
 ![SA-1 Drum Sampler](images/11_sa-1.png)
