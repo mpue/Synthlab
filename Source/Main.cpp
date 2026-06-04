@@ -19,6 +19,7 @@
 #include "PrefabFactory.h"
 #include "MessageBus/MessageBus.h"
 #include "Plugins/PluginManager.h"
+#include "Plugins/SubprocessPluginScanner.h"
 // #include <gtest.h>
 #include "HTTPServer.h"
 #include "SynthlabLogger.h"
@@ -172,6 +173,16 @@ public:
 	{
 		// This method is where you should put your application's initialisation code..
 
+		// GANZ FRUEH: Laeuft dieser Prozess als sandboxed Plugin-Scan-Worker?
+		// Wenn ja, kein GUI/Audio/HTTP starten — nur scannen und auf den
+		// Master warten. Muss vor allem anderen passieren (HTTP-Port-Konflikt,
+		// CrashHandler etc.).
+		if (PluginScanWorker::tryRunAsScannerProcess(commandLine))
+		{
+			scannerWorkerMode = true;
+			return;
+		}
+
 		SynthlabLogger::get().install();
 		CrashHandler::install();
 		CrashHandler::checkForPreviousCrashes();
@@ -224,6 +235,11 @@ public:
 
 	void shutdown() override
 	{
+		// Scanner-Worker hat nie GUI/Audio/HTTP/Singletons initialisiert —
+		// nichts abzuraeumen, und server ist nullptr (sonst Null-Deref).
+		if (scannerWorkerMode)
+			return;
+
 		if (mainWindow != nullptr)
 			mainWindow->setLookAndFeel(nullptr);
 		LookAndFeel::setDefaultLookAndFeel(nullptr);
@@ -339,6 +355,7 @@ public:
 private:
 	MainWindow* mainWindow = nullptr;
 	HTTPServer* server = nullptr;
+	bool scannerWorkerMode = false;
 };
 
 //==============================================================================

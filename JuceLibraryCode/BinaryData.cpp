@@ -30,30 +30,6 @@ static const unsigned char temp_binary_data_0[] =
 "the full work plan, architecture rules, baseline tracker and remaining\n"
 "work (Projucer re-save, manual smoke tests, sanitizer runs).\n"
 "\n"
-"# Project Status (February 2026)\n"
-"\n"
-"After 466 commits and years of work, I'm archiving this project.\n"
-"\n"
-"**What I learned:**\n"
-"- JUCE framework mastery\n"
-"- Complex audio engine architecture\n"
-"- VST3 hosting\n"
-"- Multi-platform audio development\n"
-"\n"
-"**Why I'm stopping:**\n"
-"- The scope became too large for a solo project\n"
-"- I've moved on to other interests (cflux, AI-assisted development)\n"
-"- Synthlab was an incredible learning journey, but it's time to let it rest\n"
-"\n"
-"**For anyone interested:**\n"
-"- The code is here, feel free to fork\n"
-"- Contact me if you want to continue it\n"
-"- I'm proud of what I built, even if it's not \"finished\"\n"
-"\n"
-"Thanks to everyone who starred this project. \xe2\x9d\xa4\xef\xb8\x8f\n"
-"\n"
-"Original tetx below:\n"
-"\n"
 "# Synthlab\n"
 "Modular Synthesizer Studio\n"
 "\n"
@@ -63332,7 +63308,7 @@ const char* getNamedResource (const char* resourceNameUTF8, int& numBytes)
 
     switch (hash)
     {
-        case 0x64791dc8:  numBytes = 3544; return README_md;
+        case 0x64791dc8:  numBytes = 2859; return README_md;
         case 0xbff7e428:  numBytes = 8449; return _2osc_gate_slb;
         case 0x126b2978:  numBytes = 15803; return _3osc_broad_slb;
         case 0xea0a5b91:  numBytes = 17120; return _3oscV2_slb;

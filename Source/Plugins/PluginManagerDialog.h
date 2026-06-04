@@ -20,7 +20,8 @@ class PluginManagerDialog : public juce::Component,
 public:
     PluginManagerDialog(juce::AudioPluginFormatManager& apfm,
                         juce::KnownPluginList& list,
-                        juce::PropertiesFile* props);
+                        juce::PropertiesFile* props,
+                        const juce::File& deadMansPedalFile);
     ~PluginManagerDialog() override;
 
     void paint(juce::Graphics&) override;
@@ -32,7 +33,8 @@ public:
     static juce::DialogWindow* show(juce::AudioPluginFormatManager& apfm,
                                     juce::KnownPluginList& list,
                                     juce::PropertiesFile* props,
-                                    juce::LookAndFeel* lf);
+                                    juce::LookAndFeel* lf,
+                                    const juce::File& deadMansPedalFile);
 
 private:
     void changeListenerCallback(juce::ChangeBroadcaster*) override;

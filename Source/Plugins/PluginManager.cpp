@@ -8,6 +8,7 @@
 
 #include "PluginManager.h"
 #include "PluginManagerDialog.h"
+#include "SubprocessPluginScanner.h"
 #include "../Project/Project.h"
 
 using juce::AudioPluginFormatManager;
@@ -43,6 +44,12 @@ void PluginManager::scanPlugins() {
         updatePluginList();
     }
 
+    // Sandboxed Out-of-Process-Scanner: jedes Plugin wird in einem
+    // Kindprozess geladen. Crasht eins, stirbt nur der Kindprozess, JUCE
+    // blacklistet die Datei und der Scan laeuft KOMPLETT durch (statt die
+    // ganze App mitzureissen).
+    pluginList->setCustomScanner (std::make_unique<SubprocessPluginScanner>());
+
     PropertiesFile::Options options;
     
     String userHome = File::getSpecialLocation(File::userHomeDirectory).getFullPathName();
@@ -56,8 +63,15 @@ void PluginManager::scanPlugins() {
     File file = File(userHome+"/.Synthlab/plugin.properties");
     auto props = std::make_unique<PropertiesFile>(file, options);
 
+    // dead-man's-pedal: persistente Datei, in der JUCE waehrend des Scans
+    // das gerade geladene Plugin vermerkt. Crasht ein Plugin (z.B. NI
+    // Transient Master), bleibt sein Pfad stehen und wird beim naechsten
+    // Scan automatisch geblacklistet, statt erneut zu crashen.
+    File deadMansPedal = File(userHome+"/.Synthlab/plugin_scan_crashlog");
+
     auto* dialog = PluginManagerDialog::show(*apfm, *pluginList, props.get(),
-                                             Project::getInstance()->getLookAndFeel());
+                                             Project::getInstance()->getLookAndFeel(),
+                                             deadMansPedal);
 
     // Persist scan results when the user closes the dialog. We can't block
     // here (the dialog is async), so attach a callback that fires on close.

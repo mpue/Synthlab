@@ -5,6 +5,18 @@
 #
 # Optionen:
 #   -b, --build       erzwingt vorher einen Release-Build via xcodebuild
+#   -a, --arch ARCH   Ziel-Architektur fuer den Build: x86_64 | arm64 |
+#                     universal. Ohne Angabe baut xcodebuild mit den
+#                     Projekt-Defaults (auf Apple Silicon i.d.R. arm64).
+#                     Wird die Architektur gesetzt, landet sie auch im
+#                     DMG-Namen (z.B. Synthlab-1.2.3-arm64.dmg), damit sich
+#                     Intel- und ARM-Download nicht ueberschreiben.
+#   -p, --build-plugins
+#                     baut vorher alle Plugins frisch (ruft im PLUGINS_DIR
+#                     build_all.sh auf) — mit --arch in derselben
+#                     Architektur wie die App. So erzeugt EIN Aufruf
+#                     App + Plugins fuer eine Ziel-Architektur, z.B.:
+#                       ./make-installer.sh --arch arm64 --build-plugins
 #   -o, --out DIR     Output-Verzeichnis fuer die DMG (Default: dist/)
 #   -s, --sign        signiert .app + DMG mit der ersten gefundenen
 #                     'Developer ID Application'-Identity und notarisiert
@@ -37,17 +49,21 @@ PLUGINS_DIR="${PLUGINS_DIR:-$PROJECT_DIR/../plugins}"
 DO_BUILD=0
 DO_SIGN=0
 DO_NOTARIZE=1
+DO_BUILD_PLUGINS=0
+ARCH=""
 NOTARY_PROFILE="${NOTARY_PROFILE:-Synthlab}"
 SIGN_IDENTITY="${SIGN_IDENTITY:-}"
 
 usage() {
-    sed -n '3,22p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '3,34p' "$0" | sed 's/^# \{0,1\}//'
     exit 0
 }
 
 while [ $# -gt 0 ]; do
     case "$1" in
         -b|--build)     DO_BUILD=1; shift ;;
+        -a|--arch)      ARCH="$2"; shift 2 ;;
+        -p|--build-plugins) DO_BUILD_PLUGINS=1; shift ;;
         -o|--out)       OUT_DIR="$2"; shift 2 ;;
         -s|--sign)      DO_SIGN=1; shift ;;
         --no-notarize)  DO_NOTARIZE=0; shift ;;
@@ -56,8 +72,31 @@ while [ $# -gt 0 ]; do
     esac
 done
 
+# Architektur validieren und xcodebuild-ARCHS ableiten. Leer = Projekt-
+# Default (kein Override). ARCH_SUFFIX haengt spaeter an den DMG-Namen.
+XCODE_ARCH_ARGS=()
+ARCH_SUFFIX=""
+case "$ARCH" in
+    "")          ;;  # keine Vorgabe
+    x86_64|arm64)
+        XCODE_ARCH_ARGS=( "ARCHS=$ARCH" "ONLY_ACTIVE_ARCH=NO" )
+        ARCH_SUFFIX="-$ARCH" ;;
+    universal)
+        XCODE_ARCH_ARGS=( "ARCHS=x86_64 arm64" "ONLY_ACTIVE_ARCH=NO" )
+        ARCH_SUFFIX="-universal" ;;
+    *)
+        echo "Ungueltige Architektur: $ARCH (erlaubt: x86_64 | arm64 | universal)" >&2
+        exit 2 ;;
+esac
+
+# Eine explizite Architektur erzwingt einen frischen Build — ein bereits
+# vorhandenes Bundle koennte sonst die falsche Architektur haben.
+if [ -n "$ARCH" ]; then
+    DO_BUILD=1
+fi
+
 if [ "$DO_BUILD" = "1" ] || [ ! -d "$APP_PATH" ]; then
-    echo "==> Release-Build via xcodebuild"
+    echo "==> Release-Build via xcodebuild${ARCH:+ ($ARCH)}"
     if ! command -v xcodebuild >/dev/null 2>&1; then
         echo "xcodebuild nicht gefunden — installiere Xcode oder setze den" >&2
         echo "Developer-Pfad mit:  sudo xcode-select -s /Applications/Xcode.app" >&2
@@ -75,6 +114,7 @@ if [ "$DO_BUILD" = "1" ] || [ ! -d "$APP_PATH" ]; then
         -project "$XCODE_PROJ" \
         -configuration Release \
         -target "$XCODE_TARGET" \
+        ${XCODE_ARCH_ARGS[@]+"${XCODE_ARCH_ARGS[@]}"} \
         -quiet
 fi
 
@@ -90,7 +130,7 @@ VERSION="$(/usr/libexec/PlistBuddy \
     -c 'Print :CFBundleShortVersionString' \
     "$APP_PATH/Contents/Info.plist" 2>/dev/null || echo "0.0.0")"
 
-DMG_NAME="${APP_NAME}-${VERSION}"
+DMG_NAME="${APP_NAME}-${VERSION}${ARCH_SUFFIX}"
 DMG_PATH="$OUT_DIR/${DMG_NAME}.dmg"
 
 mkdir -p "$OUT_DIR"
@@ -123,6 +163,24 @@ fi
 # spaeteren Bundle-Hash, falls signiert wird.
 find "$INITIAL_DATA_DIR" -name '.DS_Store' -delete 2>/dev/null || true
 
+# ── Plugins optional vorher bauen ────────────────────────────────────
+# Mit --build-plugins ruft EIN Aufruf das build_all.sh im PLUGINS_DIR auf
+# und reicht --arch durch — so entstehen App + Plugins in derselben
+# Architektur. Ohne den Schalter werden nur bereits vorhandene Release-
+# Bundles eingesammelt (altes Verhalten).
+if [ "$DO_BUILD_PLUGINS" = "1" ]; then
+    PLUGINS_BUILD_SCRIPT="$PLUGINS_DIR/build_all.sh"
+    if [ ! -x "$PLUGINS_BUILD_SCRIPT" ] && [ ! -f "$PLUGINS_BUILD_SCRIPT" ]; then
+        echo "Plugin-Build-Script nicht gefunden: $PLUGINS_BUILD_SCRIPT" >&2
+        echo "PLUGINS_DIR pruefen oder --build-plugins weglassen." >&2
+        exit 1
+    fi
+    echo "==> Baue Plugins via $PLUGINS_BUILD_SCRIPT${ARCH:+ ($ARCH)}"
+    BUILD_ALL_ARGS=()
+    [ -n "$ARCH" ] && BUILD_ALL_ARGS=( --arch "$ARCH" )
+    bash "$PLUGINS_BUILD_SCRIPT" ${BUILD_ALL_ARGS[@]+"${BUILD_ALL_ARGS[@]}"}
+fi
+
 # ── Plugins ins Bundle injizieren ────────────────────────────────────
 # Sucht in PLUGINS_DIR/*/Builds/MacOSX/build/Release/ nach .vst3 und
 # .component. Beim ersten App-Start kopiert Main.cpp die Bundles dann
@@ -137,6 +195,33 @@ if [ -d "$PLUGINS_DIR" ]; then
     plugin_vst3=0
     plugin_au=0
     plugin_missing=0
+    plugin_archwarn=0
+
+    # Prueft via lipo, ob das Bundle-Binary die mit --arch gewuenschte
+    # Architektur enthaelt, und warnt sonst (bricht NICHT ab — alte
+    # Bundles sollen den Build nicht verhindern). Bei leerem ARCH no-op.
+    check_bundle_arch() {
+        local bundle="$1"
+        [ -n "$ARCH" ] || return 0
+        command -v lipo >/dev/null 2>&1 || return 0
+        local exe
+        exe="$(ls "$bundle"/Contents/MacOS/* 2>/dev/null | head -1)"
+        [ -n "$exe" ] && [ -f "$exe" ] || return 0
+        local archs
+        archs="$(lipo -archs "$exe" 2>/dev/null)" || return 0
+        local ok=1
+        case "$ARCH" in
+            universal)
+                case " $archs " in *" x86_64 "*) ;; *) ok=0 ;; esac
+                case " $archs " in *" arm64 "*) ;; *) ok=0 ;; esac ;;
+            *)
+                case " $archs " in *" $ARCH "*) ;; *) ok=0 ;; esac ;;
+        esac
+        if [ "$ok" = "0" ]; then
+            echo "    ! $(basename "$bundle"): Architektur '$archs' != Ziel '$ARCH' — mit --build-plugins neu bauen" >&2
+            plugin_archwarn=$((plugin_archwarn + 1))
+        fi
+    }
 
     echo "==> Sammle Plugins aus  $PLUGINS_DIR"
     # Plugin-Projekte = direkte Unterverzeichnisse mit einer .jucer-Datei.
@@ -158,12 +243,14 @@ if [ -d "$PLUGINS_DIR" ]; then
             for vst3 in "$release_dir"/*.vst3; do
                 [ -e "$vst3" ] || continue
                 cp -R "$vst3" "$PLUGINS_VST3_DIR/"
+                check_bundle_arch "$vst3"
                 plugin_vst3=$((plugin_vst3 + 1))
                 found_for_this=1
             done
             for au in "$release_dir"/*.component; do
                 [ -e "$au" ] || continue
                 cp -R "$au" "$PLUGINS_AU_DIR/"
+                check_bundle_arch "$au"
                 plugin_au=$((plugin_au + 1))
                 found_for_this=1
             done
@@ -179,6 +266,9 @@ if [ -d "$PLUGINS_DIR" ]; then
     echo "    Plugins gesammelt: $plugin_vst3 VST3 / $plugin_au AU"
     if [ "$plugin_missing" -gt 0 ]; then
         echo "    ($plugin_missing von $plugin_total Plugins ohne Release-Build)"
+    fi
+    if [ "$plugin_archwarn" -gt 0 ]; then
+        echo "    ($plugin_archwarn Bundle(s) nicht in Ziel-Architektur '$ARCH' — siehe Warnungen oben)" >&2
     fi
 else
     echo "    (kein Plugins-Verzeichnis unter $PLUGINS_DIR — uebersprungen)"

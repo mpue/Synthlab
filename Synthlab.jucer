@@ -304,6 +304,10 @@
               file="Source/Plugins/PluginManagerDialog.h"/>
         <FILE id="PMDgCp" name="PluginManagerDialog.cpp" compile="1" resource="0"
               file="Source/Plugins/PluginManagerDialog.cpp"/>
+        <FILE id="SPScnH" name="SubprocessPluginScanner.h" compile="0" resource="0"
+              file="Source/Plugins/SubprocessPluginScanner.h"/>
+        <FILE id="SPScnC" name="SubprocessPluginScanner.cpp" compile="1" resource="0"
+              file="Source/Plugins/SubprocessPluginScanner.cpp"/>
         <FILE id="pB2cFg" name="PluginBrowserComponent.h" compile="0" resource="0"
               file="Source/Plugins/PluginBrowserComponent.h"/>
       </GROUP>

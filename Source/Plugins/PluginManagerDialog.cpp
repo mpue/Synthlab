@@ -28,10 +28,16 @@ namespace
 
 PluginManagerDialog::PluginManagerDialog(juce::AudioPluginFormatManager& apfm,
                                          juce::KnownPluginList& list,
-                                         juce::PropertiesFile* props)
+                                         juce::PropertiesFile* props,
+                                         const juce::File& deadMansPedalFile)
     : pluginList(list)
 {
-    listComponent = std::make_unique<juce::PluginListComponent>(apfm, list, juce::File(), props);
+    // deadMansPedalFile (NICHT leer lassen!): JUCE traegt hier vor dem Laden
+    // jedes Plugin ein und entfernt es nach erfolgreichem Scan wieder. Crasht
+    // ein Plugin beim Scan (z.B. NI Transient Master in seiner Telemetrie-
+    // Init), bleibt der Eintrag stehen und wird beim naechsten Scan
+    // automatisch geblacklistet — sonst crasht der Scan bei JEDEM Versuch.
+    listComponent = std::make_unique<juce::PluginListComponent>(apfm, list, deadMansPedalFile, props);
     addAndMakeVisible(listComponent.get());
 
     // Push our palette into the JUCE list so the inner table/buttons match
@@ -197,9 +203,10 @@ void PluginManagerDialog::buttonClicked(juce::Button* b)
 juce::DialogWindow* PluginManagerDialog::show(juce::AudioPluginFormatManager& apfm,
                                               juce::KnownPluginList& list,
                                               juce::PropertiesFile* props,
-                                              juce::LookAndFeel* lf)
+                                              juce::LookAndFeel* lf,
+                                              const juce::File& deadMansPedalFile)
 {
-    auto* dialog = new PluginManagerDialog(apfm, list, props);
+    auto* dialog = new PluginManagerDialog(apfm, list, props, deadMansPedalFile);
     if (lf != nullptr)
         dialog->setLookAndFeel(lf);
 
