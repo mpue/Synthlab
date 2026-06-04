@@ -2,6 +2,7 @@
 #include "Connection.h"
 #include "AudioManager.h"
 #include "Plugins/PluginManager.h"
+#include "Plugins/SubprocessPluginScanner.h"
 #include "Project/Project.h"
 
 
@@ -133,6 +134,24 @@ void PluginModule::selectPlugin(String name)
 			if (xml)
 			{
 				pd.loadFromXml(*xml);
+
+				// Sandbox-Validierung VOR der echten In-Process-Instanz:
+				// Plugin in einem Kindprozess instanziieren + prepareToPlay
+				// + ein paar processBlock. Crasht/haengt es dort, lehnen wir
+				// es ab, statt Synthlab mitzureissen. Ergebnis wird gecached,
+				// d.h. nur der erste Ladevorgang pro Plugin-Version testet.
+				String valError;
+				if (!SubprocessPluginScanner::validatePlugin(
+						pd, device->getCurrentSampleRate(),
+						device->getCurrentBufferSizeSamples(), valError))
+				{
+					AlertWindow::showMessageBoxAsync(
+						AlertWindow::WarningIcon,
+						"Plugin abgelehnt",
+						"\"" + name + "\" wurde NICHT geladen.\n\n" + valError);
+					return;
+				}
+
 				String error;
 				auto instance = PluginManager::getInstance()->apfm
 					->createPluginInstance(pd, device->getCurrentSampleRate(),

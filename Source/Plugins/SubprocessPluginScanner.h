@@ -51,6 +51,21 @@ public:
         auf beiden Seiten identisch sein (siehe PluginScanWorker). */
     static const char* getCommandLineUID() noexcept { return "synthlabPluginScan"; }
 
+    //==============================================================================
+    /** Prueft ein Plugin out-of-process, BEVOR es im Hauptprozess geladen wird:
+        instanziieren + prepareToPlay + ein paar processBlock-Aufrufe in einem
+        Kindprozess. Crasht oder haengt das Plugin dabei, stirbt nur der
+        Kindprozess und diese Funktion gibt false zurueck (mit Grund in
+        errorMessage) — der Hauptprozess bleibt am Leben.
+
+        Ergebnisse werden pro (uniqueId + fileTime) gecached, damit wiederholtes
+        Laden desselben Plugins nicht jedes Mal neu validiert.
+
+        @returns true wenn das Plugin den Sandbox-Test ueberlebt hat. */
+    static bool validatePlugin (const juce::PluginDescription& desc,
+                                double sampleRate, int blockSize,
+                                juce::String& errorMessage);
+
 private:
     struct Coordinator;
     std::unique_ptr<Coordinator> coordinator;
