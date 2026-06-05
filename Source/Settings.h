@@ -83,6 +83,17 @@ public:
         save();
     }
 
+    // Auto Track Arming. Wenn aktiv, schaltet ein Klick auf einen Track diesen
+    // record-scharf und disarmt alle anderen. Default aus.
+    bool getAutoTrackArming() const { return autoTrackArming; }
+
+    void setAutoTrackArming(bool b)
+    {
+        if (autoTrackArming == b) return;
+        autoTrackArming = b;
+        save();
+    }
+
 private:
     Settings() { load(); }
 
@@ -119,6 +130,9 @@ private:
 
         showSplashOnStartup =
             xml->getBoolAttribute("showSplashOnStartup", true);
+
+        autoTrackArming =
+            xml->getBoolAttribute("autoTrackArming", false);
     }
 
     void save() const
@@ -131,6 +145,7 @@ private:
         xml.setAttribute("stretchIntervalPercent",     stretchIntervalPercent);
         xml.setAttribute("stretchFormantPreservation", stretchFormantPreservation);
         xml.setAttribute("showSplashOnStartup",        showSplashOnStartup);
+        xml.setAttribute("autoTrackArming",            autoTrackArming);
         xml.writeTo(getSettingsFile());
     }
 
@@ -140,4 +155,5 @@ private:
     double             stretchIntervalPercent     { 0.02 };
     bool               stretchFormantPreservation { true };
     bool               showSplashOnStartup        { true };
+    bool               autoTrackArming            { false };
 };

@@ -29,6 +29,7 @@
 #include "../AudioManager.h"
 #include "../MixerPanel.h"
 #include "MasterChannelPanel.h"
+#include "../Settings.h"
 
 using namespace std;
 
@@ -236,6 +237,22 @@ void TrackNavigator::moved() {
 			tc->setTopLeftPosition(viewX, tc->getY());
 	}
 	// Marker und Timeline bleiben Sample-bezogen — die scrollen mit.
+}
+
+void TrackNavigator::applyAutoArm(Track* selected) {
+	if (selected == nullptr)
+		return;
+	if (!Settings::getInstance()->getAutoTrackArming())
+		return;
+
+	for (Track* t : tracks) {
+		if (t == nullptr) continue;
+		t->setRecording(t == selected);
+	}
+
+	// Die "R"-Toggles in den TrackControl-Strips an den neuen Arm-Zustand
+	// angleichen.
+	syncTrackControls();
 }
 
 void TrackNavigator::syncTrackControls() {
@@ -2394,6 +2411,7 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 		r->setSelected(true);
 		currentTrack = r;
 		deviceManager->setDefaultMidiOutput(currentTrack->getMidiOutputDevice());
+		applyAutoArm(r);
 		propertyView->selectionChanged(r);
 		sendChangeMessage();
 		repaint();
@@ -2410,6 +2428,7 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 					if (bounds.contains(x, y)) {
 						currentTrack = tracks.at(i);
 						tracks.at(i)->setSelected(true);
+						applyAutoArm(tracks.at(i));
 						propertyView->selectionChanged(tracks.at(i));
 
 						for (int j = 0; j < tracks.at(i)->getRegions().size(); j++) {

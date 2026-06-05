@@ -189,6 +189,11 @@ public:
 	// Mutation aufgerufen werden.
 	void syncTrackControls();
 
+	// Auto Track Arming (Settings). Wenn aktiv, wird der uebergebene Track
+	// record-scharf geschaltet und alle anderen disarmt. No-op, wenn die
+	// Option aus ist oder selected nullptr ist.
+	void applyAutoArm(Track* selected);
+
 	void openPianoRoll(MidiRegion* r);
 	void openEventEditor(MidiRegion* r);
 

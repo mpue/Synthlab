@@ -100,6 +100,20 @@ public:
         };
         addAndMakeVisible(splashToggle);
 
+        autoArmToggle.setButtonText("Auto-arm clicked track (disarm others)");
+        autoArmToggle.setColour(juce::ToggleButton::textColourId, kTextPrimary);
+        autoArmToggle.setColour(juce::ToggleButton::tickColourId, kAccentColour);
+        autoArmToggle.setColour(juce::ToggleButton::tickDisabledColourId, kBorderColour);
+        autoArmToggle.setToggleState(
+            Settings::getInstance()->getAutoTrackArming(),
+            juce::dontSendNotification);
+        autoArmToggle.onClick = [this]
+        {
+            Settings::getInstance()->setAutoTrackArming(
+                autoArmToggle.getToggleState());
+        };
+        addAndMakeVisible(autoArmToggle);
+
         // --- Time-stretch quality (signalsmith-stretch tuning) ---
         stretchSectionLabel.setText("Time-stretch quality", juce::dontSendNotification);
         stretchSectionLabel.setColour(juce::Label::textColourId, kTextPrimary);
@@ -174,6 +188,10 @@ public:
         auto row2b = area.removeFromTop(28);
         splashToggle.setBounds(row2b.removeFromLeft(440));
 
+        area.removeFromTop(6);
+        auto row2c = area.removeFromTop(28);
+        autoArmToggle.setBounds(row2c.removeFromLeft(440));
+
         area.removeFromTop(22);
         stretchSectionLabel.setBounds(area.removeFromTop(24));
         area.removeFromTop(6);
@@ -213,6 +231,7 @@ private:
     juce::ComboBox     outputTypeBox;
     juce::ToggleButton autoOpenPluginToggle;
     juce::ToggleButton splashToggle;
+    juce::ToggleButton autoArmToggle;
 
     juce::Label        stretchSectionLabel;
     juce::Label        blockPercentLabel;
