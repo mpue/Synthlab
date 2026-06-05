@@ -330,6 +330,33 @@ public:
 
     AutomationLane* getAutomationLane() const { return automationLane.get(); }
 
+    // ----- Bus-Automation (dedizierte Lane) ------------------------------------
+    // Zweites, von der Plugin-Automation unabhaengiges Overlay. Automatisiert die
+    // Bus-Anbindung dieses Tracks: Send-Staerke auf einen Bus sowie das
+    // Volume/Pan/Mute des Bus-Channels. Die Lanes leben im selben automationModel
+    // wie die Plugin-Lanes, nur mit gescopter paramId "bus:<busModuleIndex>:<kind>".
+    enum class BusParam { Send, Volume, Pan, Mute };
+    static const char* busParamSuffix(BusParam p);             // "send"|"volume"|"pan"|"mute"
+    static juce::String busLaneParamId(long busModuleIndex, BusParam p);
+
+    void setBusAutomationVisible(bool visible);
+    bool isBusAutomationVisible() const { return busAutomationVisible; }
+
+    // Bindet das Bus-Overlay an die Lane fuer (busModuleIndex, kind). Legt die
+    // Lane idempotent an, falls noch nicht vorhanden.
+    void setBusAutomationTarget(long busModuleIndex, BusParam kind);
+
+    long     getBusAutomationCurrentBusIndex() const { return busAutomationCurrentBusIndex; }
+    BusParam getBusAutomationCurrentParam()    const { return busAutomationCurrentParam; }
+    bool     hasBusAutomationTarget()          const { return busAutomationCurrentBusIndex >= 0; }
+
+    AutomationLane* getBusAutomationLane() const { return busAutomationLane.get(); }
+
+    // Verfuegbare Buses fuer die Bus-Automation-Auswahl als (busModuleIndex, name).
+    // Kapselt den Mixer-/Editor-Zugriff, damit TrackControl keine schweren Header
+    // ziehen muss. Leer, wenn kein Editor/Mixer erreichbar oder keine Buses da.
+    std::vector<std::pair<long, juce::String>> getBusList() const;
+
     // ----- Multi-Lane Automation (Phase 1+3 Wiring) ----------------------------
     // Pro Plugin-Parameter eine Lane oder keine. Stabile Uuids ueber Save/Load.
     synthlab::automation::Model&       getAutomationModel()       { return automationModel; }
@@ -407,6 +434,10 @@ public:
 private:
 
     void dispatchMidiMessages(const std::vector<juce::MidiMessage*>& messages);
+
+    // Audio-Thread: wendet alle "bus:*"-Lanes des automationModel direkt auf ihre
+    // Ziele an (Send.amount bzw. Mixer::Channel(BUS) Volume/Pan/Mute).
+    void applyBusAutomationAt(int position);
 
     juce::StringArray getTypeNames() const
     {
@@ -554,6 +585,13 @@ private:
     int  automationParamIndex = -1;
     juce::String automationCurrentParamId; // gescoped: "slot:paramId"
     juce::String automationCurrentSlot;    // "instr" | "fx0"..
+
+    // Dediziertes Bus-Automation-Overlay (unabhaengig von automationLane). Bindet
+    // an Lanes mit paramId "bus:<idx>:<kind>" im selben automationModel.
+    std::unique_ptr<AutomationLane> busAutomationLane;
+    bool     busAutomationVisible        = false;
+    long     busAutomationCurrentBusIndex = -1;
+    BusParam busAutomationCurrentParam    = BusParam::Send;
 
     // Mirror der FX-Plugin-Pointer aus dem MasterChannelPanel. Wird vom Panel
     // gepflegt (insertFX/removeFX/applyFXChainState/reconstructFXChainFromGraph).

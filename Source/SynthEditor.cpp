@@ -3251,6 +3251,17 @@ void SynthEditor::openTracks(File file)
 				if (autoTree.isValid())
 					loadedTrack->getAutomationModel().fromValueTree(autoTree);
 
+				// UI-Zustand der Bus-Automation wiederherstellen. setBusAutomationTarget
+				// bindet das Overlay an die oben bereits geladene Lane (findOrCreate
+				// findet sie). syncFromTrack() im TrackControl uebernimmt danach
+				// Toggle-Status und Dropdown-Auswahl beim Navigator-Layout.
+				const long busAutoBus = (long) (juce::int64) track.getProperty("busAutoBus", (juce::int64) -1);
+				if (busAutoBus >= 0) {
+					const int busAutoParam = (int) track.getProperty("busAutoParam", 0);
+					loadedTrack->setBusAutomationTarget(busAutoBus, (Track::BusParam) busAutoParam);
+				}
+				loadedTrack->setBusAutomationVisible((bool) track.getProperty("busAutoVisible", false));
+
 				// Bus-Sends pro Track laden. Bus-Existenz wird nicht geprueft:
 				// der BusOut wird beim Load des Patch-XML separat ueber
 				// configureAudioModule registriert; wenn der referenzierte

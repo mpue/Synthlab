@@ -190,6 +190,14 @@ public:
                                   juce::dontSendNotification);
         styleToggle(autoButton, juce::Colour(0xff4caf50));
 
+        // Bus-Automation-Toggle ("B"). Dediziertes, von "A" unabhaengiges Overlay
+        // fuer Bus-Send / Bus-Volume/Pan/Mute. Bus-Lila als Aktiv-Farbe (analog
+        // zum Bus-Stripe im MasterChannelPanel).
+        busButton.setButtonText("B");
+        busButton.setToggleState(track != nullptr && track->isBusAutomationVisible(),
+                                 juce::dontSendNotification);
+        styleToggle(busButton, juce::Colour(0xff995cd9));
+
         // Record-Arm-Toggle ("R"). Setzt nur das Track-internal recording-Flag —
         // der eigentliche Recording-Roll-Start passiert ueber den
         // TrackNavigator/Transport. So koennen mehrere Tracks gleichzeitig
@@ -250,6 +258,12 @@ public:
 
         paramBox.setTextWhenNothingSelected("Parameter ");
         styleCombo(paramBox);
+
+        busBox.setTextWhenNothingSelected("Bus ");
+        styleCombo(busBox);
+
+        busParamBox.setTextWhenNothingSelected("Bus-Param ");
+        styleCombo(busParamBox);
     }
 
     ~TrackControl() override
@@ -257,10 +271,12 @@ public:
         muteButton.removeListener(this);
         soloButton.removeListener(this);
         autoButton.removeListener(this);
+        busButton.removeListener(this);
         recButton.removeListener(this);
         muteButton.setLookAndFeel(nullptr);
         soloButton.setLookAndFeel(nullptr);
         autoButton.setLookAndFeel(nullptr);
+        busButton.setLookAndFeel(nullptr);
         recButton.setLookAndFeel(nullptr);
         panSlider.removeListener(this);
         volSlider.removeListener(this);
@@ -268,6 +284,10 @@ public:
         pluginBox.setLookAndFeel(nullptr);
         paramBox.removeListener(this);
         paramBox.setLookAndFeel(nullptr);
+        busBox.removeListener(this);
+        busBox.setLookAndFeel(nullptr);
+        busParamBox.removeListener(this);
+        busParamBox.setLookAndFeel(nullptr);
     }
 
     void paint(juce::Graphics& g) override
@@ -297,18 +317,20 @@ public:
         nameLabel.setBounds(r.removeFromTop(16));
         r.removeFromTop(2);
 
-        // M / S / A / R Buttons + Pan-Slider in einer Reihe.
-        // Buttons + Gaps zusammen 4*18 + 3*1 = 75 px, danach 4 px Luft, dann
-        // Pan-Label (18) und der Rest fuer den Pan-Slider — passt in
-        // kControlsWidth=140 inkl. der reduced(6,4)-Innenabstaende.
+        // M / S / A / B / R Buttons in einer Reihe, danach Pan-Label + Pan-Slider.
+        // Fuenf Toggles zu je 16 px + 4*1 Gaps = 84 px, danach 4 px Luft, Pan-
+        // Label (18) und der Rest fuer den Pan-Slider — passt in kControlsWidth=140
+        // inkl. der reduced(6,4)-Innenabstaende.
         auto row1 = r.removeFromTop(18);
-        muteButton.setBounds(row1.removeFromLeft(18));
+        muteButton.setBounds(row1.removeFromLeft(16));
         row1.removeFromLeft(1);
-        soloButton.setBounds(row1.removeFromLeft(18));
+        soloButton.setBounds(row1.removeFromLeft(16));
         row1.removeFromLeft(1);
-        autoButton.setBounds(row1.removeFromLeft(18));
+        autoButton.setBounds(row1.removeFromLeft(16));
         row1.removeFromLeft(1);
-        recButton.setBounds(row1.removeFromLeft(18));
+        busButton.setBounds(row1.removeFromLeft(16));
+        row1.removeFromLeft(1);
+        recButton.setBounds(row1.removeFromLeft(16));
         row1.removeFromLeft(4);
         panLabel.setBounds(row1.removeFromLeft(18));
         panSlider.setBounds(row1);
@@ -329,7 +351,19 @@ public:
             r.removeFromTop(2);
         }
         if (paramBox.isVisible())
+        {
             paramBox.setBounds(r.removeFromTop(26));
+            r.removeFromTop(2);
+        }
+
+        // Bus-Automation-Dropdowns darunter. Nur sichtbar bei aktivem "B".
+        if (busBox.isVisible())
+        {
+            busBox.setBounds(r.removeFromTop(26));
+            r.removeFromTop(2);
+        }
+        if (busParamBox.isVisible())
+            busParamBox.setBounds(r.removeFromTop(26));
     }
 
     // Vom Navigator aufgerufen, wenn die Werte am Track von außen geändert
@@ -341,11 +375,13 @@ public:
         muteButton.setToggleState(track->isMute(), juce::dontSendNotification);
         soloButton.setToggleState(track->isSolo(), juce::dontSendNotification);
         autoButton.setToggleState(track->isAutomationVisible(), juce::dontSendNotification);
+        busButton.setToggleState(track->isBusAutomationVisible(), juce::dontSendNotification);
         recButton.setToggleState(track->isRecording(), juce::dontSendNotification);
         panSlider.setValue(track->getPan(), juce::dontSendNotification);
         volSlider.setValue(track->getVolume(), juce::dontSendNotification);
 
         refreshParamBoxVisibility();
+        refreshBusBoxVisibility();
         repaint();
     }
 
@@ -368,6 +404,71 @@ private:
             paramBox.setVisible(false);
         }
         resized();
+    }
+
+    void refreshBusBoxVisibility()
+    {
+        const bool show = track != nullptr && track->isBusAutomationVisible();
+        if (show)
+        {
+            populateBusBox();
+            populateBusParamBox();
+            busBox.setVisible(true);
+            busParamBox.setVisible(true);
+        }
+        else
+        {
+            busBox.setVisible(false);
+            busParamBox.setVisible(false);
+        }
+        resized();
+    }
+
+    // Listet die verfuegbaren Buses (track->getBusList(): busModuleIndex + Name).
+    // ItemId == busModuleIndex + 1 (ids > 0). Stellt die aktuelle Track-Auswahl
+    // wieder her, sonst Bus 1 vorselektieren.
+    void populateBusBox()
+    {
+        busBox.clear(juce::dontSendNotification);
+        currentBusList.clear();
+        if (track == nullptr) return;
+
+        currentBusList = track->getBusList();
+        if (currentBusList.empty())
+        {
+            busBox.addItem("(kein Bus)", 1);
+            busBox.setSelectedId(0, juce::dontSendNotification);
+            busBox.setEnabled(false);
+            return;
+        }
+        busBox.setEnabled(true);
+        for (const auto& b : currentBusList)
+            busBox.addItem(b.second, (int) b.first + 1);
+
+        const long cur = track->getBusAutomationCurrentBusIndex();
+        if (cur >= 0)
+            busBox.setSelectedId((int) cur + 1, juce::dontSendNotification);
+        if (busBox.getSelectedId() == 0)
+            busBox.setSelectedId((int) currentBusList.front().first + 1,
+                                 juce::dontSendNotification);
+    }
+
+    // Vier feste Bus-Parameter. ItemId 1..4 == BusParam-Enum + 1.
+    void populateBusParamBox()
+    {
+        busParamBox.clear(juce::dontSendNotification);
+        busParamBox.setEnabled(true);
+        busParamBox.addItem("Send",   (int) Track::BusParam::Send   + 1);
+        busParamBox.addItem("Volume", (int) Track::BusParam::Volume + 1);
+        busParamBox.addItem("Pan",    (int) Track::BusParam::Pan    + 1);
+        busParamBox.addItem("Mute",   (int) Track::BusParam::Mute   + 1);
+
+        if (track != nullptr && track->hasBusAutomationTarget())
+            busParamBox.setSelectedId((int) track->getBusAutomationCurrentParam() + 1,
+                                      juce::dontSendNotification);
+        else
+            busParamBox.setSelectedId((int) Track::BusParam::Send + 1,
+                                      juce::dontSendNotification);
     }
 
     // Fuellt die Plugin-ComboBox aus track->getAutomationTargets(): Instrument
@@ -459,6 +560,15 @@ private:
             track->setAutomationVisible(autoButton.getToggleState());
             refreshParamBoxVisibility();
         }
+        else if (b == &busButton)
+        {
+            track->setBusAutomationVisible(busButton.getToggleState());
+            refreshBusBoxVisibility();
+            // Auswahl direkt binden, damit das frisch sichtbare Overlay sofort
+            // eine Lane hat (sonst schreibt der Nutzer in den Scratch-Lane).
+            if (busButton.getToggleState())
+                applyBusSelection();
+        }
         else if (b == &recButton) track->setRecording(recButton.getToggleState());
     }
 
@@ -469,9 +579,25 @@ private:
         else if (s == &volSlider) track->setVolume((float)volSlider.getValue());
     }
 
+    // Bindet das Bus-Overlay an die aktuell in busBox/busParamBox gewaehlte Lane.
+    void applyBusSelection()
+    {
+        if (track == nullptr) return;
+        const int busSel   = busBox.getSelectedId();      // == busModuleIndex + 1
+        const int paramSel = busParamBox.getSelectedId(); // == BusParam + 1
+        if (busSel <= 0 || paramSel <= 0 || currentBusList.empty()) return;
+        track->setBusAutomationTarget((long) busSel - 1,
+                                      (Track::BusParam) (paramSel - 1));
+    }
+
     void comboBoxChanged(juce::ComboBox* c) override
     {
         if (track == nullptr) return;
+        if (c == &busBox || c == &busParamBox)
+        {
+            applyBusSelection();
+            return;
+        }
         if (c == &pluginBox)
         {
             populateParamBox();
@@ -511,15 +637,22 @@ private:
     juce::TextButton  muteButton;
     juce::TextButton  soloButton;
     juce::TextButton  autoButton;
+    juce::TextButton  busButton;
     juce::TextButton  recButton;
     juce::Slider      panSlider, volSlider;
     juce::Label       panLabel, volLabel;
     juce::ComboBox    pluginBox;  // Instrument + FX-Slots
     juce::ComboBox    paramBox;   // Parameter im gewaehlten Plugin
+    juce::ComboBox    busBox;      // verfuegbare Buses (Bus-Automation)
+    juce::ComboBox    busParamBox; // Send / Volume / Pan / Mute
 
     // Spiegel der Plugin-Targets, die in pluginBox gelistet sind, in der
     // gleichen Reihenfolge. Wird in populatePluginBox() gefuellt.
     std::vector<std::pair<juce::String, PluginModule*>> currentPluginTargets;
+
+    // Spiegel der Buses (busModuleIndex, name) aus track->getBusList(), in der
+    // gleichen Reihenfolge wie in busBox. Wird in populateBusBox() gefuellt.
+    std::vector<std::pair<long, juce::String>> currentBusList;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(TrackControl)
 };

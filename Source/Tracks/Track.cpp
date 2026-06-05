@@ -23,6 +23,9 @@
 #include "../MessageBus/FastBus.h"
 #include "AutomationLane.h"
 #include "../PluginModule.h"
+#include "../SynthEditor.h"
+#include "../MixerPanel.h"
+#include "../BusOut.h"
 
 //==============================================================================
 Track::Track(Type type, double sampleRate, MultiComponentDragger* dragger)
@@ -55,6 +58,11 @@ Track::Track(Type type, double sampleRate, MultiComponentDragger* dragger)
 	automationLane = std::make_unique<AutomationLane>(this, sampleRate);
 	automationLane->setZoom(zoom);
 	addChildComponent(automationLane.get());
+
+	// Dediziertes Bus-Automation-Overlay (gleiche Komponente, eigenes Binding).
+	busAutomationLane = std::make_unique<AutomationLane>(this, sampleRate);
+	busAutomationLane->setZoom(zoom);
+	addChildComponent(busAutomationLane.get());
 
 	setHeight(Project::DEFAULT_TRACK_HEIGHT);
 	// setMouseClickGrabsKeyboardFocus(true);
@@ -1309,6 +1317,15 @@ void Track::setSamplePosition(int position, bool dispatchEvents)
 		}
 	}
 
+	// Bus-Automation: anders als die Plugin-Lanes werden Bus-Ziele NICHT auf den
+	// Message-Thread deferred — Send.amount und Mixer::Channel(BUS) sind plain
+	// scalars ohne Plugin-UI-Listener und werden ohnehin vom Audio-Loop gelesen.
+	// Direkter Write hier ist thread-konsistent (gleiche Begruendung wie der
+	// "phantom send"-Kommentar in Track.h). Wirkt im naechsten Block (1 Block
+	// Latenz), weil setSamplePosition am Block-Ende laeuft.
+	if (dispatchEvents)
+		applyBusAutomationAt(position);
+
 	if ((type == MIDI || type == INSTRUMENT) && position != samplePosition) {
 
 		const int bufferSize = Project::getInstance()->getBufferSize();
@@ -1459,6 +1476,8 @@ void Track::setZoom(float zoom)
 
 	if (automationLane != nullptr)
 		automationLane->setZoom(zoom);
+	if (busAutomationLane != nullptr)
+		busAutomationLane->setZoom(zoom);
 }
 
 String Track::getName()
@@ -1926,6 +1945,12 @@ void Track::resized() {
 			automationLane->toFront(false);
 	}
 
+	if (busAutomationLane != nullptr) {
+		busAutomationLane->setBounds(0, 0, getWidth(), juce::jmax(0, getHeight() - 5));
+		if (busAutomationVisible)
+			busAutomationLane->toFront(false);
+	}
+
 	sendChangeMessage();
 }
 
@@ -2097,6 +2122,121 @@ void Track::setAutomationVisible(bool visible)
 			automationLane->toFront(false);
 	}
 	repaint();
+}
+
+// ----- Bus-Automation --------------------------------------------------------
+
+const char* Track::busParamSuffix(BusParam p)
+{
+	switch (p) {
+		case BusParam::Send:   return "send";
+		case BusParam::Volume: return "volume";
+		case BusParam::Pan:    return "pan";
+		case BusParam::Mute:   return "mute";
+	}
+	return "send";
+}
+
+juce::String Track::busLaneParamId(long busModuleIndex, BusParam p)
+{
+	return "bus:" + juce::String(busModuleIndex) + ":" + busParamSuffix(p);
+}
+
+void Track::setBusAutomationVisible(bool visible)
+{
+	this->busAutomationVisible = visible;
+	if (busAutomationLane != nullptr) {
+		busAutomationLane->setVisible(visible);
+		busAutomationLane->setOverlayActive(visible);
+		if (visible)
+			busAutomationLane->toFront(false);
+	}
+	repaint();
+}
+
+void Track::setBusAutomationTarget(long busModuleIndex, BusParam kind)
+{
+	if (busModuleIndex < 0) {
+		busAutomationCurrentBusIndex = -1;
+		if (busAutomationLane != nullptr) busAutomationLane->setBoundLane(nullptr);
+		return;
+	}
+	busAutomationCurrentBusIndex = busModuleIndex;
+	busAutomationCurrentParam    = kind;
+	auto& lane = automationModel.findOrCreate(busLaneParamId(busModuleIndex, kind));
+	if (busAutomationLane != nullptr) busAutomationLane->setBoundLane(&lane);
+}
+
+std::vector<std::pair<long, juce::String>> Track::getBusList() const
+{
+	std::vector<std::pair<long, juce::String>> out;
+	if (navigator == nullptr) return out;
+	auto* ed = navigator->getEditor();
+	if (ed == nullptr) return out;
+	auto mixer = ed->getMixer();
+	if (mixer == nullptr) return out;
+	for (auto* b : mixer->getBusChannels())
+		if (b != nullptr)
+			out.emplace_back((long) b->getIndex(), b->getName());
+	return out;
+}
+
+void Track::applyBusAutomationAt(int position)
+{
+	// Schnell raus, wenn keine Bus-Lane existiert — der String-Compare-Loop soll
+	// im Normalfall (keine Bus-Automation) nicht jeden Block laufen.
+	const int n = automationModel.numLanes();
+	if (n == 0) return;
+
+	// Mixer-Channel-Lookup fuer Volume/Pan/Mute braucht die Position des Bus in
+	// der getBusChannels()-Liste (== Mixer::Channel(BUS)-Index). Den shared_ptr
+	// auf Funktions-Scope halten, damit der vector-Ref nicht dangling wird.
+	std::shared_ptr<MixerPanel> mixer;
+	std::vector<BusOut*>* buses = nullptr;
+	if (navigator != nullptr) {
+		if (auto* ed = navigator->getEditor()) {
+			mixer = ed->getMixer();
+			if (mixer != nullptr)
+				buses = &mixer->getBusChannels();
+		}
+	}
+
+	for (int li = 0; li < n; ++li)
+	{
+		auto* lane = automationModel.laneAt(li);
+		if (lane == nullptr || lane->isEmpty()) continue;
+		const juce::String& id = lane->getParameterId();
+		if (! id.startsWith("bus:")) continue;
+
+		// id == "bus:<busModuleIndex>:<kind>"
+		const int firstColon  = 3;                       // Position des ':' nach "bus"
+		const int secondColon = id.lastIndexOfChar(':');
+		if (secondColon <= firstColon) continue;
+		const long busIdx = id.substring(firstColon + 1, secondColon).getLargeIntValue();
+		const juce::String kind = id.substring(secondColon + 1);
+
+		const float v = juce::jlimit(0.0f, 1.0f, lane->valueAt(position));
+
+		if (kind == "send")
+		{
+			for (auto& s : sends)
+				if (s.busModuleIndex == busIdx) { s.amount = v; break; }
+			continue;
+		}
+
+		// Volume/Pan/Mute → Mixer::Channel(BUS) am Listenindex des passenden Bus.
+		if (buses == nullptr) continue;
+		int pos = -1;
+		for (int b = 0; b < (int) buses->size(); ++b)
+			if ((*buses)[b] != nullptr && (long) (*buses)[b]->getIndex() == busIdx) { pos = b; break; }
+		if (pos < 0) continue;
+		auto* ch = Mixer::getInstance()->getChannel(Mixer::Channel::Type::BUS, pos);
+		if (ch == nullptr) continue;
+
+		if      (kind == "volume") ch->volume = v;            // 0..1 → Fader-Range 0..1
+		else if (kind == "pan")    ch->pan    = (double) v * 2.0 - 1.0; // 0..1 → -1..+1
+		else if (kind == "mute")   ch->mute   = (v > 0.5f);
+	}
 }
 
 // Slot-Konstanten.

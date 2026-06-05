@@ -878,8 +878,17 @@ ValueTree TrackNavigator::getConfiguration()
 		track.addChild(regions, -1, nullptr);
 
 		// Automation-Daten persistieren — alle Lanes des Tracks (eine pro
-		// Plugin-Parameter, mit stabiler Uuid).
+		// Plugin-Parameter, mit stabiler Uuid). Enthaelt auch die Bus-Lanes
+		// (paramId "bus:<idx>:<kind>"), die brauchen keine Sonderbehandlung.
 		track.addChild(tracks.at(i)->getAutomationModel().toValueTree(), -1, nullptr);
+
+		// UI-Zustand der dedizierten Bus-Automation-Lane: Toggle + gewaehltes
+		// Ziel (Bus-Modulindex + BusParam). Die Lane-Punkte stecken bereits im
+		// Automation-Child oben; hier nur, welche Lane beim Reload angezeigt /
+		// gebunden wird und ob das "B"-Overlay sichtbar ist.
+		track.setProperty("busAutoVisible", tracks.at(i)->isBusAutomationVisible(), nullptr);
+		track.setProperty("busAutoBus",     (juce::int64) tracks.at(i)->getBusAutomationCurrentBusIndex(), nullptr);
+		track.setProperty("busAutoParam",   (int) tracks.at(i)->getBusAutomationCurrentParam(), nullptr);
 
 		// Bus-Sends pro Track. busModuleIndex referenziert Module::getIndex()
 		// des BusOut — der ist stabil ueber Save/Load, weil SynthEditor beim
