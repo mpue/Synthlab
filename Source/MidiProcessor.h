@@ -68,8 +68,18 @@ private:
     void timerCallback() override;
     // ---------------------------------------------------------------------
 
+    /* Hotplug: when a MIDI device is connected while the app runs, enable it
+       automatically so a freshly plugged-in keyboard works without a trip to
+       the audio settings. */
+    void handleMidiDeviceListChange();
+
     SynthEditor* editor{ nullptr };
     juce::AudioDeviceManager* deviceManager{ nullptr };
+
+    // Identifiers of MIDI inputs we have already seen. Anything appearing that
+    // is not in here is treated as newly connected and auto-enabled.
+    juce::StringArray                  knownInputIdentifiers;
+    juce::MidiDeviceListConnection     midiDeviceListConnection;
 
     std::mutex                           queueMutex;
     std::vector<QueuedMidiMessage>       midiQueue;   // guarded by queueMutex

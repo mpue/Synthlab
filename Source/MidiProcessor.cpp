@@ -40,6 +40,40 @@ MidiProcessor::MidiProcessor(SynthEditor* root,
 			startTimer(2);
 		}
 	});
+
+	// Aktuelle Geraete als "bekannt" markieren — beim Start respektieren wir
+	// die im config.xml gespeicherte Enabled-Auswahl (enableAllMidiInputs),
+	// nur spaeter neu eingesteckte Geraete sollen automatisch aktiv werden.
+	for (const auto& input : MidiInput::getAvailableDevices())
+		knownInputIdentifiers.add(input.identifier);
+
+	// Auf Hotplug der MIDI-Geraeteliste lauschen. Der Callback feuert auf dem
+	// Message-Thread, daher duerfen wir den deviceManager direkt anfassen.
+	midiDeviceListConnection = MidiDeviceListConnection::make(
+		[this] { handleMidiDeviceListChange(); });
+}
+
+void MidiProcessor::handleMidiDeviceListChange()
+{
+	auto inputs = MidiInput::getAvailableDevices();
+
+	for (const auto& input : inputs)
+	{
+		if (knownInputIdentifiers.contains(input.identifier))
+			continue;
+
+		// Neu eingestecktes Geraet -> automatisch scharf schalten und den
+		// Callback registrieren, damit sofort Noten durchkommen.
+		deviceManager->setMidiInputDeviceEnabled(input.identifier, true);
+		deviceManager->removeMidiInputDeviceCallback(input.identifier, this);
+		deviceManager->addMidiInputDeviceCallback(input.identifier, this);
+	}
+
+	// Bekannte Liste neu aufbauen: abgezogene Geraete fliegen raus, damit ein
+	// spaeteres Wiedereinstecken erneut als "neu" erkannt und aktiviert wird.
+	knownInputIdentifiers.clearQuick();
+	for (const auto& input : inputs)
+		knownInputIdentifiers.add(input.identifier);
 }
 
 /* 1) High-priority MIDI callback – enqueue only, never heavy work! */
