@@ -13,6 +13,8 @@
 #include "Knob.h"                // for MIDI controller knobs
 #include "PluginModule.h"         // for plugin modules
 #include "TrackIn.h"
+#include "Connection.h"           // for gate->TrackIn graph walk
+#include "Tracks/Track.h"
 #include "MessageBus/FastBus.h"
 
 using namespace juce;
@@ -122,6 +124,7 @@ void MidiProcessor::timerCallback()
 void MidiProcessor::processMidiMessage(const juce::MidiMessage& msg)
 {
 	const int targetChannel = activeChannel.load();
+	Track* const armedTrack = activeTrack.load();
 	auto* modules = editor->getModule()->getModules();
 
 	// Recorder first (unverändert)
@@ -138,7 +141,7 @@ void MidiProcessor::processMidiMessage(const juce::MidiMessage& msg)
 		{
 			sendNoteMessage(mod, targetChannel, msg.getNoteNumber());
 			sendGateMessage(mod, targetChannel, msg.getVelocity(),
-				msg.getNoteNumber(), /*on=*/true);
+				msg.getNoteNumber(), /*on=*/true, armedTrack);
 		}
 		return; // fertig
 	}
@@ -151,7 +154,7 @@ void MidiProcessor::processMidiMessage(const juce::MidiMessage& msg)
 	{
 		for (auto* mod : *modules)
 			sendGateMessage(mod, targetChannel, msg.getVelocity(),
-				msg.getNoteNumber(), /*on=*/false);
+				msg.getNoteNumber(), /*on=*/false, armedTrack);
 		return; // fertig
 	}
 
@@ -163,12 +166,15 @@ void MidiProcessor::processMidiMessage(const juce::MidiMessage& msg)
 			sendControllerMessage(mod, targetChannel,
 				msg.getControllerNumber(),
 				msg.getControllerValue(),
-				msg.getChannel());
+				msg.getChannel(),
+				armedTrack);
 
 	else if (msg.isPitchWheel())
 		for (auto* mod : *modules)
 			sendPitchBendMessage(mod, targetChannel,
-				msg.getPitchWheelValue());
+				msg.getPitchWheelValue(),
+				msg.getChannel(),
+				armedTrack);
 
 	else if (msg.isMidiStart())
 		for (auto* mod : *modules)
@@ -179,9 +185,68 @@ void MidiProcessor::processMidiMessage(const juce::MidiMessage& msg)
 			sendMidiStopMessage(mod, targetChannel);
 }
 
-void MidiProcessor::sendGateMessage(Module* module, int channel, int velocity, int note, bool on) {
+Track* MidiProcessor::findTrackForModule(Module* m) {
+	if (m == nullptr || editor == nullptr || editor->getModule() == nullptr)
+		return nullptr;
+
+	// A gate / plugin that belongs to a track is wired to that track's TrackIn
+	// (see TrackUtil::createVirtualInstrumentTrack / createMIDITrack). NOTE:
+	// those connections are stored with the endpoints reversed relative to the
+	// data flow (e.g. source = TrackIn, target = gate), so the module can appear
+	// as EITHER endpoint — check both. The TrackIn knows its Track.
+	for (auto* c : *editor->getModule()->getConnections()) {
+		if (c == nullptr) continue;
+
+		Module* other = nullptr;
+		if (c->source == m)      other = c->target;
+		else if (c->target == m) other = c->source;
+		else continue;
+
+		if (auto* ti = dynamic_cast<TrackIn*>(other)) {
+			if (Track* t = ti->getTrack())
+				return t;
+		}
+	}
+	return nullptr;
+}
+
+Track* MidiProcessor::resolveGateTrack(MidiGate* gate) {
+	// Cached (positive) result, or set explicitly at track-creation time.
+	if (gate->isTrackResolved())
+		return gate->getTrack();
+
+	Track* t = findTrackForModule(gate);
+	if (t != nullptr)
+		gate->setTrack(t);   // cache positive result; leave unresolved otherwise
+	return t;
+}
+
+Track* MidiProcessor::resolvePluginTrack(PluginModule* plugin) {
+	if (plugin->isTrackResolved())
+		return plugin->getTrack();
+
+	Track* t = findTrackForModule(plugin);
+	if (t != nullptr)
+		plugin->setTrack(t);
+	return t;
+}
+
+void MidiProcessor::sendGateMessage(Module* module, int channel, int velocity, int note, bool on, Track* armedTrack) {
 	if (auto* gate = dynamic_cast<MidiGate*>(module)) {
-		if (gate->getChannel() == channel) {
+		Track* gateTrack = resolveGateTrack(gate);
+
+		// Identity routing: a gate that belongs to a track fires only when that
+		// track is the armed one — so two tracks can share a MIDI channel
+		// without their plugins overlapping. Modular gates (no track), and
+		// callers without an armed track (e.g. global all-notes-off), fall back
+		// to classic channel matching.
+		bool fire;
+		if (armedTrack != nullptr && gateTrack != nullptr)
+			fire = (gateTrack == armedTrack);
+		else
+			fire = (gate->getChannel() == channel);
+
+		if (fire) {
 			if (on && velocity > 0)
 				gate->gateOn(velocity, note);
 			else
@@ -189,7 +254,7 @@ void MidiProcessor::sendGateMessage(Module* module, int channel, int velocity, i
 		}
 	}
 	for (auto* sub : *module->getModules()) {
-		sendGateMessage(sub, channel, velocity, note, on);
+		sendGateMessage(sub, channel, velocity, note, on, armedTrack);
 	}
 }
 
@@ -203,19 +268,41 @@ void MidiProcessor::sendNoteMessage(Module* module, int channel, int note) {
 	}
 }
 
-void MidiProcessor::sendPitchBendMessage(Module* module, int channel, int pitch) {
+void MidiProcessor::sendPitchBendMessage(Module* module, int channel, int pitch, int midiInChannel, Track* armedTrack) {
 	if (auto* pbm = dynamic_cast<PitchBendModule*>(module)) {
-		// if (pbm->getChannel() == channel)
-			pbm->setPitch(pitch);
+		// Modular pitch-bend module — broadcast as before (not track-bound).
+		pbm->setPitch(pitch);
+	}
+	else if (auto* plugin = dynamic_cast<PluginModule*>(module)) {
+		// Identity routing: pitch bend reaches a track instrument only when its
+		// track is armed; modular plugins (no track) keep the broadcast.
+		Track* pt = resolvePluginTrack(plugin);
+		const bool deliver = (pt == nullptr) ? true : (pt == armedTrack);
+		if (deliver)
+			plugin->addMidiMessage(MidiMessage::pitchWheel(midiInChannel, pitch));
+	}
+	else if (auto* trackin = dynamic_cast<TrackIn*>(module)) {
+		// Forward through the track chain (external MidiOut on MIDI tracks),
+		// identity-gated so it doesn't bleed to same-channel tracks.
+		Track* tt = trackin->getTrack();
+		const bool deliver = (armedTrack == nullptr) || (tt == armedTrack);
+		if (deliver) {
+			Event* event = new Event("pitch", Event::Type::PITCH);
+			event->setMessage(MidiMessage::pitchWheel(midiInChannel, pitch));
+			event->setValue(static_cast<float>(pitch)); // MidiOut::handlePitchEvent reads getValue()
+			trackin->eventReceived(event);
+		}
 	}
 	for (auto* sub : *module->getModules()) {
-		sendPitchBendMessage(sub, channel, pitch);
+		sendPitchBendMessage(sub, channel, pitch, midiInChannel, armedTrack);
 	}
 }
 
-void MidiProcessor::sendControllerMessage(Module* module, int targetChannel, int controller, float value, int midiInChannel) {
+void MidiProcessor::sendControllerMessage(Module* module, int targetChannel, int controller, float value, int midiInChannel, Track* armedTrack) {
 
 	if (auto* knob = dynamic_cast<Knob*>(module)) {
+		// Knobs are modular MIDI-learn targets, matched by controller number and
+		// not bound to a track — they keep seeing every CC.
 		if (knob->isLearning()) {
 			// Nur lernen, wenn Kanal passt oder explizit erlaubt
 			if (true /* oder z.B. knob->learnsFromChannel(midiInChannel) */) {
@@ -229,18 +316,31 @@ void MidiProcessor::sendControllerMessage(Module* module, int targetChannel, int
 		}
 	}
 	else if(auto* plugin = dynamic_cast<PluginModule*>(module)) {
-		plugin->addMidiMessage(MidiMessage::controllerEvent(
-			midiInChannel, controller, static_cast<int>(value)));
+		// Identity routing: a track instrument receives CC only when its track is
+		// armed, so controllers don't bleed across same-channel instruments.
+		// Modular plugins (no track) keep the classic broadcast.
+		Track* pt = resolvePluginTrack(plugin);
+		const bool deliver = (pt == nullptr) ? true : (pt == armedTrack);
+		if (deliver)
+			plugin->addMidiMessage(MidiMessage::controllerEvent(
+				midiInChannel, controller, static_cast<int>(value)));
 	}
 	else if (auto* trackin = dynamic_cast<TrackIn*>(module)) {
-		MidiMessage msg = MidiMessage::controllerEvent(
-			midiInChannel, controller, static_cast<int>(value));
-		Event* event = new Event("controller", Event::Type::CONTROLLER);
-		event->setMessage(msg);
-		trackin->eventReceived(event);
+		// Forward CC through the track chain (instrument plugin / external
+		// MidiOut). Identity-gated so it doesn't bleed to same-channel tracks;
+		// modular use (no armed track) keeps the previous broadcast behaviour.
+		Track* tt = trackin->getTrack();
+		const bool deliver = (armedTrack == nullptr) || (tt == armedTrack);
+		if (deliver) {
+			MidiMessage msg = MidiMessage::controllerEvent(
+				midiInChannel, controller, static_cast<int>(value));
+			Event* event = new Event("controller", Event::Type::CONTROLLER);
+			event->setMessage(msg);
+			trackin->eventReceived(event);
+		}
 	}
 	for (auto* sub : *module->getModules()) {
-		sendControllerMessage(sub, targetChannel, controller, value, midiInChannel);
+		sendControllerMessage(sub, targetChannel, controller, value, midiInChannel, armedTrack);
 	}
 }
 

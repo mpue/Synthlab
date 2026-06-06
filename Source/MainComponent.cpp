@@ -3612,8 +3612,15 @@ void MainComponent::changeListenerCallback(juce::ChangeBroadcaster* source) {
 		currentSample = navigator->getSamplePosition();
 	}
 	if (midiProcessor != nullptr) {
-		if (navigator != nullptr && navigator->getCurrentTrack() != nullptr)
+		if (navigator != nullptr && navigator->getCurrentTrack() != nullptr) {
 			midiProcessor->setActiveChannel(navigator->getCurrentTrack()->getMidiChannel());
+			// Identity-based live routing: the armed/selected track receives
+			// live input regardless of its MIDI channel (allows >16 instruments).
+			midiProcessor->setActiveTrack(navigator->getCurrentTrack());
+		}
+		else if (navigator != nullptr) {
+			midiProcessor->setActiveTrack(nullptr);
+		}
 	}
 
 }

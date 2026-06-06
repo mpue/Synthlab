@@ -13,6 +13,9 @@
 class SynthEditor;
 class Module;
 class MidiRecorderModule;
+class Track;
+class MidiGate;
+class PluginModule;
 
 /* Lightweight wrapper that keeps the raw message and the original timestamp.
  * You can extend this later (e.g. add source device name). */
@@ -46,10 +49,14 @@ public:
     /* Exposed so GUI / navigator can change active target. */
     void setActiveChannel(int channel) { activeChannel.store(channel); }
 
-    void sendGateMessage(Module*, int channel, int velocity,int note, bool on);
+    /* The currently selected/armed track. Live input is routed to this track's
+       instrument by identity, so tracks no longer need a unique MIDI channel. */
+    void setActiveTrack(Track* t) { activeTrack.store(t); }
+
+    void sendGateMessage(Module*, int channel, int velocity,int note, bool on, Track* armedTrack = nullptr);
     void sendNoteMessage(Module*, int channel, int note);
-    void sendPitchBendMessage(Module*, int channel, int pitch);
-    void sendControllerMessage(Module*, int targetChannel, int controller,float value, int midiInChannel);
+    void sendPitchBendMessage(Module*, int channel, int pitch, int midiInChannel = 1, Track* armedTrack = nullptr);
+    void sendControllerMessage(Module*, int targetChannel, int controller,float value, int midiInChannel, Track* armedTrack = nullptr);
     void sendMidiStartMessage(Module*, int channel);
     void sendMidiStopMessage(Module*, int channel);
     void sendMidiClockMessage(Module*, int channel);
@@ -73,6 +80,13 @@ private:
        the audio settings. */
     void handleMidiDeviceListChange();
 
+    /* Resolve which Track (if any) a module is wired to, by walking the
+       connection graph for an adjacent TrackIn. Results are cached on the
+       MidiGate / PluginModule so the walk happens at most once per module. */
+    Track* findTrackForModule(Module* m);
+    Track* resolveGateTrack(MidiGate* gate);
+    Track* resolvePluginTrack(PluginModule* plugin);
+
     SynthEditor* editor{ nullptr };
     juce::AudioDeviceManager* deviceManager{ nullptr };
 
@@ -84,6 +98,7 @@ private:
     std::mutex                           queueMutex;
     std::vector<QueuedMidiMessage>       midiQueue;   // guarded by queueMutex
     std::atomic<int>                     activeChannel{ 0 };
+    std::atomic<Track*>                  activeTrack{ nullptr };
 
     std::atomic<bool> clockRunning{ false };
     double clockBPM = 120.0;

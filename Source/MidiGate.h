@@ -4,9 +4,11 @@
 #include "Module.h"
 #include <set>
 
+class Track;  // forward decl â€” gate only stores a pointer for identity routing
+
 //==============================================================================
-// Ein polyphones Gate-Modul: sendet VALUE- & EVENT-Ausgänge, behält aber
-// intern den Überblick über alle gerade gehaltenen Noten.
+// Ein polyphones Gate-Modul: sendet VALUE- & EVENT-Ausgï¿½nge, behï¿½lt aber
+// intern den ï¿½berblick ï¿½ber alle gerade gehaltenen Noten.
 class MidiGate : public Module
 {
 public:
@@ -27,6 +29,17 @@ public:
     void   createProperties() override;
     void   setChannel(int newChannel);
     int    getChannel() { return channel; }
+
+    // Identity-based live routing: when this gate belongs to an instrument/MIDI
+    // track, the MidiProcessor fires it by Track identity instead of MIDI
+    // channel, so two tracks can share a channel without overlapping. A null
+    // track means "modular gate" -> classic channel matching. trackResolved
+    // distinguishes "known to have no track" from "not yet looked up" so the
+    // processor only needs to walk the connection graph once per gate.
+    void   setTrack(Track* t) { track = t; trackResolved = true; }
+    Track* getTrack() const { return track; }
+    bool   isTrackResolved() const { return trackResolved; }
+    void   invalidateTrack() { track = nullptr; trackResolved = false; }
 
     juce::String getCategory() override { return "MIDI"; }
 
@@ -58,6 +71,9 @@ private:
     juce::Value* channelValue{ nullptr };
     ChannelListener* channelListener{ nullptr };
     juce::PropertyComponent* channelProp{ nullptr };
+
+    Track*        track{ nullptr };       // owning track for identity routing
+    bool          trackResolved{ false }; // false until the graph has been walked
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(MidiGate)
 };

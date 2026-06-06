@@ -64,6 +64,7 @@ public:
 		// den NameValue-Seed in Track::createProperties.
 		t->setName(name);
 		ti->setTrack(t);
+		gate->setTrack(t);   // identity routing: live input follows this track
 		t->setVolume(1.0f);
 		t->setMidiChannel(channel, false);
 
@@ -82,6 +83,7 @@ public:
         
 		pm->selectPlugin(name);
 		pm->setChannel(channel);
+		pm->setTrack(t);   // identity routing: live CC follows this track
 
 		Connection* c2 = new Connection(pm, pm->pins.at(4), ti, ti->pins.at(5));
 		editor->getModule()->addConnection(c2);		
@@ -375,6 +377,7 @@ public:
 		Track* t = navigator->addTrack(Track::Type::MIDI, Project::getInstance()->getSampleRate());
 		t->setName("MIDI " + String(navigator->getTracks().size() + 1));
 		ti->setTrack(t);
+		gate->setTrack(t);   // identity routing: live input follows this track
 
 		Connection* c1 = new Connection(ti, ti->pins.at(4), gate, gate->pins.at(1));
 		module->getConnections()->push_back(c1);
