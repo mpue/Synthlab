@@ -459,10 +459,14 @@ void TrackPropertyPanel::setName(juce::String name ) {
 void TrackPropertyPanel::setTrack(Track *track) {
     this->track = track;
 
+    // The MIDI channel only matters for MIDI tracks, which drive external gear
+    // on a real 1-16 channel. Instrument tracks are routed internally by track
+    // identity (see MidiProcessor), so their channel is irrelevant and the
+    // selector stays hidden.
     if (this->track->getType() == Track::Type::MIDI) {
         this->channelCombo->setSelectedId(track->getMidiChannel());
         this->channelCombo->setVisible(true);
-        this->channelLabel->setVisible(false);
+        this->channelLabel->setVisible(true);
     }
     else {
         this->channelLabel->setVisible(false);

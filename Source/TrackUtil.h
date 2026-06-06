@@ -416,10 +416,13 @@ public:
 		std::set<int> usedChannels;
 		std::vector<Track*> tracks = navigator->getTracks();
 
+		int channelTrackCount = 0;
+
 		// Sammle alle verwendeten MIDI-Kanäle
 		for (const auto& track : tracks) {
 			if (track->getType() == Track::Type::MIDI || track->getType() == Track::Type::INSTRUMENT) {
 				usedChannels.insert(track->getMidiChannel());
+				++channelTrackCount;
 			}
 		}
 
@@ -430,8 +433,11 @@ public:
 			}
 		}
 
-		// Falls alle Kanäle belegt sind, gib den ersten zurück (oder handle den Fehlerfall)
-		return 1;
+		// Alle 16 Kanäle belegt: Unter identitätsbasiertem Routing (siehe
+		// MidiProcessor) brauchen Instrument-Tracks keinen eindeutigen Kanal
+		// mehr, also verteilen wir weitere Tracks per Round-Robin, statt alles
+		// auf Kanal 1 zu stapeln.
+		return (channelTrackCount % 16) + 1;
 	}
 
 

@@ -1677,8 +1677,14 @@ juce::Array<juce::PropertyComponent*>& Track::getProperties()
 	typeProp = new juce::ChoicePropertyComponent(*typeValue, "Type", getTypeNames(), getTypeValues());
 	properties.add(typeProp);
 
-	channelProp = new SliderPropertyComponent(*channelValue, "channel", 1.0f, 16.0f, 1, 1, true);
-	properties.add(channelProp);
+	// The MIDI channel only matters for MIDI tracks, which drive external gear
+	// on a real 1-16 channel. Instrument tracks are routed internally by track
+	// identity (see MidiProcessor), so their channel is irrelevant and we don't
+	// expose it here.
+	if (type == Track::Type::MIDI) {
+		channelProp = new SliderPropertyComponent(*channelValue, "channel", 1.0f, 16.0f, 1, 1, true);
+		properties.add(channelProp);
+	}
 
 	typeValue->setValue(getTypeValues().indexOf(type));
 
