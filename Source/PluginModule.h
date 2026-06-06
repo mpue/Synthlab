@@ -5,6 +5,8 @@
 #include "Plugins/PluginManager.h"
 #include "AudioEngine/OfflinePlayHead.h"
 
+class Track;  // forward decl — plugin only stores a pointer for identity routing
+
 class PluginModule : public Module
 {
 public:
@@ -36,6 +38,16 @@ public:
     void eventReceived(Event* e) override;
     void addMidiMessage(const juce::MidiMessage& msg);
     void resetPlugin();
+
+    // Identity-based live routing (mirrors MidiGate): a plugin that belongs to
+    // an instrument track receives live CC by Track identity rather than MIDI
+    // channel, so several instruments can share a channel. A null track means
+    // "modular plugin" -> classic broadcast. trackResolved distinguishes
+    // "known to have no track" from "not yet looked up".
+    void   setTrack(Track* t) { track = t; trackResolved = true; }
+    Track* getTrack() const { return track; }
+    bool   isTrackResolved() const { return trackResolved; }
+    void   invalidateTrack() { track = nullptr; trackResolved = false; }
 
     juce::Array<juce::PropertyComponent*>& getProperties() override;
     void createProperties() override;
@@ -137,6 +149,9 @@ private:
     OfflinePlayHead* playHead;
 
 	bool bounceMode = false;
+
+    Track* track{ nullptr };       // owning track for identity routing
+    bool   trackResolved{ false }; // false until the graph has been walked
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(PluginModule)
 };
