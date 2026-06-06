@@ -141,17 +141,31 @@ void TransportDisplayComponent::drawHorizontalLayout(Graphics& g)
     String timeSigStr = String(timeSigNumerator) + "/" + String(timeSigDenominator);
     g.drawFittedText(timeSigStr, bounds.removeFromLeft(40), Justification::left, 1);
 
-    // BPM Puls-Anzeige
-    if (bpmPulse * 2 % 60 < 10) // Kurzes Aufleuchten
+    // BPM Puls-Anzeige (runde LED)
     {
-        g.setColour(lookAndFeel.tempoPulse.withAlpha(0.7f));
         auto pulseArea = bounds.removeFromLeft(20);
-        g.fillEllipse(pulseArea.toFloat().reduced(6));
-    }
-    else {
-        g.setColour(lookAndFeel.background);
-        auto pulseArea = bounds.removeFromLeft(20);
-        g.fillEllipse(pulseArea.toFloat().reduced(6));
+        const float diameter = 8.0f;
+        auto led = Rectangle<float>(diameter, diameter)
+                       .withCentre(pulseArea.toFloat().getCentre());
+
+        const bool lit = (bpmPulse * 2 % 60 < 10); // Kurzes Aufleuchten
+
+        // Gehäuse / dunkler Ring
+        g.setColour(lookAndFeel.background.darker(0.4f));
+        g.fillEllipse(led.expanded(1.5f));
+
+        if (lit)
+        {
+            // Glow
+            g.setColour(lookAndFeel.tempoPulse.withAlpha(0.25f));
+            g.fillEllipse(led.expanded(3.0f));
+            g.setColour(lookAndFeel.tempoPulse);
+        }
+        else
+        {
+            g.setColour(lookAndFeel.tempoPulse.withAlpha(0.18f)); // dunkel, aber erkennbar
+        }
+        g.fillEllipse(led);
     }
 
     // Buttons
