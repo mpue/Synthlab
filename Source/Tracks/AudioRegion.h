@@ -254,6 +254,21 @@ private:
     long snapToQuarterNote(long samplePosition);
     void updateSnapSettings();
 
+    // Alt-Drag vom Region-Body: exportiert den sichtbaren/getrimmten Buffer-
+    // Ausschnitt als WAV nach Documents/Synthlab/samples und startet einen
+    // EXTERNEN OS-Datei-Drag (performExternalDragDropOfFiles). So landet die
+    // WAV sowohl in fremden Apps (Ableton, Finder, Plugin-Fenster) als auch im
+    // SA-1 (der dafuer ein FileDragAndDropTarget ist). Persistenter Pfad (nicht
+    // Temp), damit Ziel-Apps die Datei nach dem Drop noch finden.
+    void startSamplerDrag();
+
+    // Gesture-State fuer den Sampler-Export-Drag (siehe mouseDown/Drag/Up).
+    // armed wird im mouseDown bei Alt gesetzt (umgeht den Move-Dragger),
+    // started verhindert dass der erste mouseDrag-Tick mehrfach startDragging
+    // ruft.
+    bool samplerDragArmed   = false;
+    bool samplerDragStarted = false;
+
     Rectangle<int>* thumbnailBounds = NULL;
     virtual void changeListenerCallback(ChangeBroadcaster * source) override;
     

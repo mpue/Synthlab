@@ -1821,6 +1821,11 @@ void MainComponent::openTrackView()
 		PrefabFactory::getInstance()->init(navigator.get());
 		editor->setNavigator(navigator.get());
 		navigator->setEditor(editor);
+		// Rechtsklick-Kontextmenues im Arrange-Bereich routen ihre Auswahl
+		// hierueber zurueck in die bestehende Menue-Aktions-Logik. topLevelMenuIndex
+		// ist fuer die Region-/Track-Command-IDs irrelevant (menuItemSelected
+		// verzweigt nur ueber die ID).
+		navigator->onMenuCommand = [this](int id) { menuItemSelected(id, 0); };
 		trackViewport->setSize(500, 200);
 		// Zweites Argument false: viewport NICHT als Owner — navigator ist
 		// shared_ptr, also wuerde der Viewport-Dtor per default `delete

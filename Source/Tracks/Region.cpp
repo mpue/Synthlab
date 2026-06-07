@@ -164,8 +164,11 @@ void Region::setZoom(float zoom) {
 void Region::mouseDown(const MouseEvent & e)
 {
     // Mittlere Maustaste ist fuer's Pannen des Track-Navigators reserviert —
-    // weder Auswahl noch Drag-Vorbereitung anstossen.
-    if (e.mods.isMiddleButtonDown())
+    // weder Auswahl noch Drag-Vorbereitung anstossen. Rechtsklick ebenso:
+    // den uebernimmt TrackNavigator (Kontextmenue + selektions-erhaltende
+    // Auswahl) — wuerde der Dragger hier handleMouseDown bekommen, kollabierte
+    // er eine bestehende Mehrfach-Selektion auf diese eine Region.
+    if (e.mods.isMiddleButtonDown() || e.mods.isRightButtonDown())
         return;
 
     dragStartSampleOffset = getSampleOffset();
@@ -194,7 +197,7 @@ void Region::mouseDown(const MouseEvent & e)
 
 void Region::mouseUp(const MouseEvent & e)
 {
-    if (e.mods.isMiddleButtonDown())
+    if (e.mods.isMiddleButtonDown() || e.mods.isRightButtonDown())
         return;
 
     // Selektion vor handleMouseUp einsammeln — der Dragger deselektiert dort
@@ -237,7 +240,7 @@ void Region::mouseUp(const MouseEvent & e)
 
 void Region::mouseDrag(const MouseEvent & e)
 {
-    if (e.mods.isMiddleButtonDown())
+    if (e.mods.isMiddleButtonDown() || e.mods.isRightButtonDown())
         return;
 
     if (dragger != nullptr)
