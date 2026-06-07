@@ -143,9 +143,13 @@ public:
 
         if (! isSelected(component))
         {
-            if (! (e.mods.isShiftDown() || e.mods.isCommandDown()))
+            // Nur Cmd erweitert die Selektion (Multi-Select). Shift ist dem
+            // Positionsmarker vorbehalten (siehe TrackNavigator::mouseDown) und
+            // darf hier NICHT mehr additiv wirken — sonst waere Shift doppelt
+            // belegt. Plain-Klick deselektiert daher andere und waehlt diese.
+            if (! e.mods.isCommandDown())
                 deselectAll();
-            
+
             setSelected(component, true);
             didJustSelect = true;
         }

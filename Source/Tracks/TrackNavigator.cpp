@@ -2495,13 +2495,11 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 		&& !event.mods.isMiddleButtonDown()
 		&& !onRegionOrChild;
 	marqueeActive = false;
-	marqueeAdditive = event.mods.isShiftDown() || event.mods.isCommandDown();
+	// Additiv = nur Cmd. Shift ist jetzt dem Positionsmarker vorbehalten und
+	// erweitert die Selektion nicht mehr (sonst doppelt belegt).
+	marqueeAdditive = event.mods.isCommandDown();
 	marqueeDownPos = { x, y };
 	marqueeRect = {};
-
-	if (isPlaying()) {
-		allNotesOff();
-	}
 
 	// Rechtsklick (ohne Ctrl) -> Kontextmenue fuer das getroffene Objekt.
 	// Frueh raus, damit weder Marquee, Playhead noch die Selektions-Pfade
@@ -2526,12 +2524,17 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 		return;
 	}
 
-	// Linksklick (ohne Alt) setzt den Positionsmarker. Weil dieser Handler
-	// auch fuer Klicks auf Regions/Tracks feuert, gilt das fuer JEDEN
-	// Linksklick im Arrange-Bereich (so vom User gewuenscht). Alt bleibt fuer
-	// Spezial-Drags reserviert (Loop-Range, Sampler-Export) und bewegt den
-	// Marker nicht.
-	if (event.mods.isLeftButtonDown() && !event.mods.isAltDown()) {
+	// Positionsmarker NUR mit gehaltenem Shift setzen — das entkoppelt das
+	// Positionieren vom Editieren: ein einfacher Linksklick selektiert/
+	// verschiebt nur, ohne dass der Playhead springt. Weil dieser Handler
+	// auch fuer Klicks auf Regions/Tracks feuert, gilt Shift+Klick ueberall
+	// im Arrange-Bereich. Alt bleibt fuer Spezial-Drags reserviert.
+	if (event.mods.isLeftButtonDown() && event.mods.isShiftDown() && !event.mods.isAltDown()) {
+		// Nur beim tatsaechlichen Umsetzen des Playheads die hängenden Noten
+		// killen — NICHT mehr bei jedem Klick, sonst setzt die Wiedergabe bei
+		// reiner Selektion/Editing aus.
+		if (isPlaying())
+			allNotesOff();
 		setPlayheadAtX(x);
 	}
 
