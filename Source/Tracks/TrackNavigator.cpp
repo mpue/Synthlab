@@ -1100,6 +1100,151 @@ int TrackNavigator::getSamplePosition() {
 	return samplePosition;
 }
 
+void TrackNavigator::setPlayheadAtX(int x) {
+	// x ist relativ zum Navigator (inkl. gescrolltem Bereich). Sample 0 liegt
+	// bei x = kControlsWidth, weil davor der TrackControl-Strip sitzt — daher
+	// den Offset abziehen, sonst springt der Playhead beim Klick auf den
+	// Track-Anfang um den Strip-Breite-Betrag rein.
+	double positionInSeconds = (double)(x - kControlsWidth) / zoom;
+	if (positionInSeconds < 0.0) positionInSeconds = 0.0;
+	setPosition(positionInSeconds);
+	marker->setSamplePosition(getSamplePosition());
+	// While stopped, manually moving the playhead must not fire notes at the
+	// new position. Pass dispatchEvents=false so the track updates its position
+	// silently (samplePosition + lastActiveRegion still move so
+	// getCurrentRegion/PianoRoll work).
+	const bool transportActive = isPlaying() || isRecording();
+	for (int i = 0; i < tracks.size(); i++) {
+		tracks.at(i)->setSamplePosition(samplePosition, transportActive);
+		tracks.at(i)->setCurrentMarkerPosition(position);
+	}
+	sendChangeMessage();
+	marker->repaint();
+	// Project::root ist erst gesetzt, sobald SynthEditor seinen Root-Module-
+	// Baum gebaut hat. Vor dem ersten setRoot() (oder wenn das Projekt nur
+	// Tracks ohne Modular-Baum enthaelt) liefert getRoot() nullptr und der
+	// naechste ->getModules() crasht — daher der Guard.
+	if (auto* root = Project::getInstance()->getRoot())
+	{
+		if (auto* mods = root->getModules())
+		{
+			for (int i = 0; i < (int) mods->size(); i++)
+			{
+				if (auto* module = dynamic_cast<PluginModule*>(mods->at(i)))
+				{
+					module->requestPositionReset(samplePosition);
+				}
+			}
+		}
+	}
+}
+
+void TrackNavigator::invokeMenuCommand(int id) {
+	// Routet die Kontextmenue-Auswahl zurueck nach MainComponent::menuItemSelected
+	// (von MainComponent als Lambda gesetzt). Ohne Callback (z.B. in Tests) no-op.
+	if (onMenuCommand)
+		onMenuCommand(id);
+}
+
+void TrackNavigator::showRegionContextMenu(Region* region, juce::Point<int> /*screenPos*/) {
+	if (region == nullptr)
+		return;
+
+	// Rechtsklick selektiert die Region, falls sie noch nicht Teil der
+	// Selektion ist — die (selektions-basierten) Menue-Aktionen greifen sonst
+	// auf nichts. Eine bestehende Mehrfach-Selektion, die diese Region
+	// enthaelt, bleibt erhalten, damit "auf alle Selektierten anwenden" geht.
+	if (!region->isSelected()) {
+		for (auto* t : tracks) {
+			if (t == nullptr) continue;
+			t->setSelected(false);
+			t->clearSelection();
+		}
+		region->setSelected(true);
+		if (auto* pt = dynamic_cast<Track*>(region->getParentComponent()))
+			currentTrack = pt;
+		propertyView->selectionChanged(region);
+		sendChangeMessage();
+		repaint();
+	}
+
+	// Item-IDs == die MainComponent-Menue-Command-IDs (siehe
+	// MainComponent::menuItemSelected). Keine eigene Logik hier — invokeMenuCommand
+	// leitet die Auswahl an den bestehenden Handler weiter.
+	juce::PopupMenu menu;
+	menu.addItem(43, "Duplicate");
+	menu.addItem(44, "Split at Marker");
+	menu.addItem(49, "Consolidate");
+	menu.addSeparator();
+	menu.addItem(71, "Cut");
+	menu.addItem(72, "Copy");
+	menu.addItem(73, "Paste at Marker");
+	menu.addSeparator();
+
+	if (dynamic_cast<AudioRegion*>(region) != nullptr) {
+		juce::PopupMenu audio;
+		audio.addItem(42, "Detect BPM");
+		audio.addItem(46, "Reverse");
+		audio.addItem(47, "Normalize");
+		audio.addItem(48, "Fade In/Out");
+		menu.addSubMenu("Audio", audio);
+	}
+	else if (dynamic_cast<MidiRegion*>(region) != nullptr) {
+		juce::PopupMenu midi;
+		midi.addItem(41, "Quantize");
+		midi.addItem(74, "Open Piano Roll");
+		midi.addItem(75, "Open Message Editor");
+		menu.addSubMenu("MIDI", midi);
+	}
+
+	menu.addItem(70, "Bounce in Place");
+	menu.addSeparator();
+	menu.addItem(45, "Delete");
+
+	juce::Component::SafePointer<TrackNavigator> safe(this);
+	menu.showMenuAsync(juce::PopupMenu::Options(),
+		[safe](int result) {
+			if (safe == nullptr || result == 0) return;
+			safe->invokeMenuCommand(result);
+		});
+}
+
+void TrackNavigator::showTrackContextMenu(Track* track, juce::Point<int> /*screenPos*/) {
+	// Track unter dem Cursor zum currentTrack machen, damit track-skopierte
+	// Aktionen (Delete Track, Add MIDI Clip, Paste at Marker) ihn treffen.
+	// track == nullptr bei Rechtsklick auf den leeren Bereich unter den Tracks:
+	// dann nur die Add-Track-Items anbieten.
+	if (track != nullptr) {
+		for (auto* t : tracks)
+			if (t != nullptr) t->setSelected(false);
+		track->setSelected(true);
+		currentTrack = track;
+		applyAutoArm(track);
+		propertyView->selectionChanged(track);
+		sendChangeMessage();
+		repaint();
+	}
+
+	const bool haveTrack = (track != nullptr);
+
+	juce::PopupMenu menu;
+	menu.addItem(8,  "Add Audio Track");
+	menu.addItem(9,  "Add MIDI Track");
+	menu.addItem(10, "Add Instrument Track");
+	menu.addSeparator();
+	menu.addItem(11, "Add MIDI Clip", haveTrack);
+	menu.addItem(73, "Paste at Marker", haveTrack);
+	menu.addSeparator();
+	menu.addItem(60, "Delete Track", haveTrack);
+
+	juce::Component::SafePointer<TrackNavigator> safe(this);
+	menu.showMenuAsync(juce::PopupMenu::Options(),
+		[safe](int result) {
+			if (safe == nullptr || result == 0) return;
+			safe->invokeMenuCommand(result);
+		});
+}
+
 void TrackNavigator::ResetMarkerPosition()
 {
     setPosition(0);
@@ -2358,46 +2503,38 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 		allNotesOff();
 	}
 
+	// Rechtsklick (ohne Ctrl) -> Kontextmenue fuer das getroffene Objekt.
+	// Frueh raus, damit weder Marquee, Playhead noch die Selektions-Pfade
+	// weiter unten fuer den Rechtsklick mitlaufen. Der Handler feuert auch
+	// fuer Klicks auf Regions/Tracks (Navigator ist Mouse-Listener auf allen
+	// verschachtelten Kindern), eventComponent sagt uns also, was getroffen
+	// wurde.
 	if (!event.mods.isCtrlDown() && event.mods.isRightButtonDown()) {
-		// x ist relativ zum Navigator (inkl. gescrolltem Bereich). Sample 0
-		// liegt aber bei x = kControlsWidth, weil davor der TrackControl-Strip
-		// sitzt — daher den Offset abziehen, sonst springt der Playhead beim
-		// Rechtsklick auf den Track-Anfang in 3.5 s rein.
-		double positionInSeconds = (double)(x - kControlsWidth) / zoom;
-		if (positionInSeconds < 0.0) positionInSeconds = 0.0;
-		setPosition(positionInSeconds);
-		marker->setSamplePosition(getSamplePosition());
-		// While stopped, manually moving the playhead must not fire notes
-		// at the new position. Pass dispatchEvents=false so the track
-		// updates its position silently (samplePosition + lastActiveRegion
-		// still move so getCurrentRegion/PianoRoll work).
-		const bool transportActive = isPlaying() || isRecording();
-		for (int i = 0; i < tracks.size(); i++) {
-			tracks.at(i)->setSamplePosition(samplePosition, transportActive);
-			tracks.at(i)->setCurrentMarkerPosition(position);
+		Region* clickedRegion = dynamic_cast<Region*>(event.eventComponent);
+		if (clickedRegion == nullptr && event.eventComponent != nullptr)
+			clickedRegion = event.eventComponent->findParentComponentOfClass<Region>();
+
+		if (clickedRegion != nullptr) {
+			showRegionContextMenu(clickedRegion, event.getScreenPosition());
 		}
-		sendChangeMessage();
-		marker->repaint();
-        // Project::root ist erst gesetzt, sobald SynthEditor seinen Root-Module-
-        // Baum gebaut hat. Vor dem ersten setRoot() (oder wenn das Projekt nur
-        // Tracks ohne Modular-Baum enthaelt) liefert getRoot() nullptr und der
-        // naechste ->getModules() crasht — das passiert nur im Right-Click-Pfad,
-        // weil Left-Click das Modul-Iterieren ueberspringt.
-        if (auto* root = Project::getInstance()->getRoot())
-        {
-            if (auto* mods = root->getModules())
-            {
-                for (int i = 0; i < (int) mods->size(); i++)
-                {
-                    if (auto* module = dynamic_cast<PluginModule*>(mods->at(i)))
-                    {
-                        // module->requestReset();
-                        module->requestPositionReset(samplePosition);
-                    }
-                }
-            }
-        }
+		else {
+			Track* clickedTrack = dynamic_cast<Track*>(event.eventComponent);
+			if (clickedTrack == nullptr && event.eventComponent != nullptr)
+				clickedTrack = event.eventComponent->findParentComponentOfClass<Track>();
+			showTrackContextMenu(clickedTrack, event.getScreenPosition());
+		}
+		return;
 	}
+
+	// Linksklick (ohne Alt) setzt den Positionsmarker. Weil dieser Handler
+	// auch fuer Klicks auf Regions/Tracks feuert, gilt das fuer JEDEN
+	// Linksklick im Arrange-Bereich (so vom User gewuenscht). Alt bleibt fuer
+	// Spezial-Drags reserviert (Loop-Range, Sampler-Export) und bewegt den
+	// Marker nicht.
+	if (event.mods.isLeftButtonDown() && !event.mods.isAltDown()) {
+		setPlayheadAtX(x);
+	}
+
 	//else
 	if (Track* r = dynamic_cast<Track*>(event.eventComponent)) {
 		for (int i = 0; i < tracks.size(); i++) {

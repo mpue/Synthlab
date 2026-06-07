@@ -194,6 +194,24 @@ public:
 	// Option aus ist oder selected nullptr ist.
 	void applyAutoArm(Track* selected);
 
+	// Setzt den Playhead an die Navigator-X-Position (Sample 0 liegt bei
+	// x = kControlsWidth). Extrahiert aus dem frueheren Rechtsklick-Pfad —
+	// jetzt vom Linksklick gerufen (Marker folgt der linken Maustaste).
+	void setPlayheadAtX(int x);
+
+	// Rechtsklick-Kontextmenues. Bauen die PopupMenus aus den vorhandenen
+	// MainComponent-Menue-Command-IDs und routen die Auswahl ueber
+	// onMenuCommand zurueck an MainComponent::menuItemSelected — so wird die
+	// gesamte bestehende Aktions-Logik ohne Duplikat wiederverwendet.
+	void showRegionContextMenu(Region* region, juce::Point<int> screenPos);
+	void showTrackContextMenu(Track* track, juce::Point<int> screenPos);
+	void invokeMenuCommand(int id);
+
+	// Von MainComponent nach der Navigator-Konstruktion gesetzt: leitet eine
+	// Kontextmenue-Auswahl an menuItemSelected weiter. TrackNavigator hat
+	// keinen direkten Back-Pointer auf MainComponent, daher dieser Callback.
+	std::function<void(int)> onMenuCommand;
+
 	void openPianoRoll(MidiRegion* r);
 	void openEventEditor(MidiRegion* r);
 
