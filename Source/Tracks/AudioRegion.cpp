@@ -647,6 +647,17 @@ void AudioRegion::mouseDrag(const juce::MouseEvent& e) {
     if (e.originalComponent != this)
         return;
 
+    // Alt-Drag = Export-Drag in den Sampler statt Region-Move. Den eigentlichen
+    // JUCE-Drag erst hier (im Drag, nicht im mouseDown) starten, damit ein
+    // reiner Alt-Klick ohne Bewegung nichts ausloest.
+    if (samplerDragArmed) {
+        if (! samplerDragStarted && e.mods.isAltDown()) {
+            samplerDragStarted = true;
+            startSamplerDrag();
+        }
+        return;
+    }
+
     Region::mouseDrag(e);
 }
 
@@ -657,6 +668,15 @@ void AudioRegion::mouseDown(const juce::MouseEvent& e) {
     if (e.originalComponent != this) {
         resizeGestureStart = captureResizeState();
         resizeGestureStateValid = true;
+        return;
+    }
+
+    // Alt-Drag vom Body = Sampler-Export-Drag. Den MultiComponentDragger
+    // komplett umgehen (kein Move, keine Selektions-Toggle); der Drag startet
+    // im ersten mouseDrag-Tick.
+    if (e.mods.isAltDown()) {
+        samplerDragArmed   = true;
+        samplerDragStarted = false;
         return;
     }
 
@@ -690,8 +710,92 @@ void AudioRegion::mouseUp(const juce::MouseEvent& e) {
         return;
     }
 
+    // Sampler-Export-Drag beendet (oder Alt-Klick ohne Bewegung) -> State
+    // zuruecksetzen, Move-/Selektions-Pfad bewusst auslassen.
+    if (samplerDragArmed) {
+        samplerDragArmed   = false;
+        samplerDragStarted = false;
+        return;
+    }
+
     // Event auf dem Body selbst -> Drag-Pfad (selektion/move-undo).
     Region::mouseUp(e);
+}
+
+void AudioRegion::startSamplerDrag() {
+    if (audioBuffer == nullptr) return;
+
+    const int numChannels = audioBuffer->getNumChannels();
+    if (numChannels <= 0) return;
+
+    // Sichtbarer/spielender Ausschnitt = [sourceStartSample, +len). len bevorzugt
+    // die sample-akkurate Trim-Laenge; Fallback auf die Pixel-Math wie im Save-/
+    // Consolidate-Pfad. Gegen das Buffer-Ende klemmen.
+    const long len = trimmedNumSamples > 0
+                        ? trimmedNumSamples
+                        : (long) std::round((double) getWidth() / zoom * sampleRate);
+    const long sss = juce::jmax(0L, sourceStartSample);
+    const long maxAvailable = (long) audioBuffer->getNumSamples() - sss;
+    const long copyLen = juce::jlimit(0L, maxAvailable, len);
+    if (copyLen <= 0) return;
+
+    // Persistenter Ablageort (nicht Temp): der Sampler speichert den Pfad als
+    // sample path; nach Projekt-Reload muss die Datei noch existieren.
+    juce::File dir = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
+                        .getChildFile("Synthlab").getChildFile("samples");
+    if (! dir.exists())
+        dir.createDirectory();
+
+    auto sanitize = [](juce::String s) {
+        return s.replaceCharacters(" /\\:*?\"<>|\t\n\r", "_____________");
+    };
+    juce::String base = name.isNotEmpty() ? sanitize(name) : juce::String("region");
+    juce::File outFile = dir.getChildFile(base + ".wav").getNonexistentSibling();
+
+    // Slice referenziert die Buffer-Daten ohne Kopie (Offset sss, copyLen).
+    juce::AudioSampleBuffer slice(audioBuffer->getArrayOfWritePointers(),
+                                  numChannels, (int) sss, (int) copyLen);
+
+    bool wrote = false;
+    {
+        juce::WavAudioFormat wavFormat;
+        std::unique_ptr<juce::FileOutputStream> stream(outFile.createOutputStream());
+        if (stream != nullptr) {
+            std::unique_ptr<juce::AudioFormatWriter> writer(
+                wavFormat.createWriterFor(stream.get(), sampleRate,
+                    (unsigned int) numChannels, 16, {}, 0));
+            if (writer != nullptr) {
+                stream.release(); // ownership -> writer
+                wrote = writer->writeFromAudioSampleBuffer(slice, 0, (int) copyLen);
+            }
+        }
+    }
+
+    if (! wrote) {
+        Logger::writeToLog("RegionExportDrag: konnte WAV nicht schreiben: " + outFile.getFullPathName());
+        return;
+    }
+
+    // EXTERNER OS-Datei-Drag (nicht internes JUCE-DnD): so landet die WAV
+    // sowohl in fremden Apps (Ableton, Finder, Plugin-Fenster) als auch im
+    // SA-1 — der dafuer jetzt ein FileDragAndDropTarget ist. Ein internes
+    // startDragging wuerde NUR JUCE-DragAndDropTargets im selben Prozess
+    // erreichen und nie nach extern gehen.
+    //
+    // Der Callback resettet den Gesture-State: bei einem OS-Drag bekommt die
+    // Region kein normales mouseUp mehr (das OS uebernimmt die Maus), sonst
+    // bliebe samplerDragArmed haengen.
+    juce::Component::SafePointer<AudioRegion> safe(this);
+    juce::StringArray paths;
+    paths.add(outFile.getFullPathName());
+    juce::DragAndDropContainer::performExternalDragDropOfFiles(
+        paths, /*canMoveFiles*/ false, this,
+        [safe]() {
+            if (safe != nullptr) {
+                safe->samplerDragArmed   = false;
+                safe->samplerDragStarted = false;
+            }
+        });
 }
 
 Region::ResizeState AudioRegion::captureResizeState() const {
