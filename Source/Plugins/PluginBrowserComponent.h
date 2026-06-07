@@ -24,7 +24,7 @@ public:
 
     bool mightContainSubItems() override { return false; }
     juce::String getUniqueName() const override { return desc.fileOrIdentifier; }
-    int  getItemHeight() const override { return 18; }
+    int  getItemHeight() const override { return 24; }
 
     void paintItem(juce::Graphics& g, int w, int h) override
     {
@@ -33,9 +33,11 @@ public:
             g.setColour(juce::Colour(0xff1155cc));
             g.fillRect(0, 0, w, h);
         }
-        g.setFont(juce::Font(11.5f));
-        g.setColour(isSelected() ? juce::Colours::white : juce::Colour(0xffcccccc));
-        g.drawText(desc.name, 4, 0, w - 4, h, juce::Justification::centredLeft, true);
+        // Groesserer Font + near-white statt mittelgrau: das fruehere
+        // 0xffcccccc/11.5pt war auf dem dunklen Tree-Hintergrund kaum lesbar.
+        g.setFont(juce::Font(14.0f));
+        g.setColour(isSelected() ? juce::Colours::white : juce::Colour(0xfff0f0f0));
+        g.drawText(desc.name, 8, 0, w - 8, h, juce::Justification::centredLeft, true);
     }
 
     void itemDoubleClicked(const juce::MouseEvent&) override;
@@ -52,15 +54,18 @@ public:
 
     bool mightContainSubItems() override { return true; }
     juce::String getUniqueName() const override { return mfrName; }
-    int  getItemHeight() const override { return 20; }
+    int  getItemHeight() const override { return 26; }
 
     void paintItem(juce::Graphics& g, int w, int h) override
     {
-        g.setColour(juce::Colour(0xff3a3a3a));
+        // Hellerer Header-Hintergrund + weisser Fett-Text: das fruehere
+        // 0xff999999 auf 0xff3a3a3a war praktisch unlesbar. Jetzt klar als
+        // Gruppen-Trenner erkennbar.
+        g.setColour(juce::Colour(0xff4a4a52));
         g.fillRect(0, 0, w, h);
-        g.setFont(juce::Font(11.0f, juce::Font::bold));
-        g.setColour(juce::Colour(0xff999999));
-        g.drawText(mfrName, 4, 0, w - 4, h, juce::Justification::centredLeft, true);
+        g.setFont(juce::Font(13.0f, juce::Font::bold));
+        g.setColour(juce::Colours::white);
+        g.drawText(mfrName, 8, 0, w - 8, h, juce::Justification::centredLeft, true);
     }
 
     juce::String mfrName;
@@ -125,7 +130,7 @@ public:
         cancelButton.onClick = [this] { closeDialog(); };
 
         rebuildTree(juce::String());
-        setSize(340, 420);
+        setSize(380, 480);
     }
 
     ~PluginBrowserComponent() override
