@@ -94,6 +94,20 @@ public:
         save();
     }
 
+    // Basis-URL des Lizenzservers (ohne abschliessendes /activate). Default ist
+    // der Produktivserver; zur Laufzeit umstellbar (z.B. http://localhost:4000/
+    // api/activation fuer lokale Tests). Leerer Wert -> LicenseManager nutzt
+    // seinen eingebauten Default.
+    juce::String getLicenseServerUrl() const { return licenseServerUrl; }
+
+    void setLicenseServerUrl(const juce::String& u)
+    {
+        const juce::String v = u.trim();
+        if (licenseServerUrl == v) return;
+        licenseServerUrl = v;
+        save();
+    }
+
 private:
     Settings() { load(); }
 
@@ -133,6 +147,9 @@ private:
 
         autoTrackArming =
             xml->getBoolAttribute("autoTrackArming", false);
+
+        licenseServerUrl =
+            xml->getStringAttribute("licenseServerUrl", licenseServerUrl);
     }
 
     void save() const
@@ -146,6 +163,7 @@ private:
         xml.setAttribute("stretchFormantPreservation", stretchFormantPreservation);
         xml.setAttribute("showSplashOnStartup",        showSplashOnStartup);
         xml.setAttribute("autoTrackArming",            autoTrackArming);
+        xml.setAttribute("licenseServerUrl",           licenseServerUrl);
         xml.writeTo(getSettingsFile());
     }
 
@@ -156,4 +174,5 @@ private:
     bool               stretchFormantPreservation { true };
     bool               showSplashOnStartup        { true };
     bool               autoTrackArming            { false };
+    juce::String       licenseServerUrl           { "https://license.aquist.de/api/activation" };
 };

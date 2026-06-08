@@ -906,6 +906,12 @@
         <FILE id="DkTpHd" name="duktape.h" compile="0" resource="0" file="Source/duktape/duktape.h"/>
         <FILE id="DkTpCp" name="duktape.c" compile="1" resource="0" file="Source/duktape/duktape.c"/>
       </GROUP>
+      <GROUP id="{C0DEM0NK-EY02-4E11-A1F1-LICENSINGC0DE}" name="Licensing">
+        <FILE id="LicMgH" name="LicenseManager.h" compile="0" resource="0" file="Source/Licensing/LicenseManager.h"/>
+        <FILE id="LicMgC" name="LicenseManager.cpp" compile="1" resource="0" file="Source/Licensing/LicenseManager.cpp"/>
+        <FILE id="ActDgH" name="ActivationDialog.h" compile="0" resource="0" file="Source/Licensing/ActivationDialog.h"/>
+        <FILE id="ActDgC" name="ActivationDialog.cpp" compile="1" resource="0" file="Source/Licensing/ActivationDialog.cpp"/>
+      </GROUP>
       <FILE id="JsCtkH" name="JavaScriptCodeTokeniser.h" compile="0" resource="0"
             file="Source/JavaScriptCodeTokeniser.h"/>
       <FILE id="JsCtkC" name="JavaScriptCodeTokeniser.cpp" compile="1" resource="0"
@@ -919,10 +925,10 @@
   </MAINGROUP>
   <EXPORTFORMATS>
     <XCODE_MAC targetFolder="Builds/MacOSX" smallIcon="udjGbx" bigIcon="udjGbx"
-               microphonePermissionNeeded="1">
+               microphonePermissionNeeded="1" extraLinkerFlags="/opt/homebrew/lib/libsodium.a">
       <CONFIGURATIONS>
-        <CONFIGURATION isDebug="1" name="Debug" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest&#10;"/>
-        <CONFIGURATION isDebug="0" name="Release" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest"/>
+        <CONFIGURATION isDebug="1" name="Debug" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest&#10;/opt/homebrew/include&#10;"/>
+        <CONFIGURATION isDebug="0" name="Release" headerPath="../../Source&#10;../../Source/libusb&#10;../../modules/libusb/libusb&#10;../../lib&#10;../../lib/gtest&#10;/opt/homebrew/include"/>
       </CONFIGURATIONS>
       <MODULEPATHS>
         <MODULEPATH id="juce_core" path="../JUCE/modules"/>
