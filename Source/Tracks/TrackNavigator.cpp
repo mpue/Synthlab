@@ -2524,12 +2524,12 @@ void TrackNavigator::mouseDown(const MouseEvent& event) {
 		return;
 	}
 
-	// Positionsmarker NUR mit gehaltenem Shift setzen — das entkoppelt das
-	// Positionieren vom Editieren: ein einfacher Linksklick selektiert/
-	// verschiebt nur, ohne dass der Playhead springt. Weil dieser Handler
-	// auch fuer Klicks auf Regions/Tracks feuert, gilt Shift+Klick ueberall
-	// im Arrange-Bereich. Alt bleibt fuer Spezial-Drags reserviert.
-	if (event.mods.isLeftButtonDown() && event.mods.isShiftDown() && !event.mods.isAltDown()) {
+	// Linksklick (ohne Alt) setzt den Positionsmarker. Weil dieser Handler
+	// auch fuer Klicks auf Regions/Tracks feuert, gilt das fuer JEDEN
+	// Linksklick im Arrange-Bereich (so vom User gewuenscht). Alt bleibt fuer
+	// Spezial-Drags reserviert (Loop-Range, Sampler-Export) und bewegt den
+	// Marker nicht.
+	if (event.mods.isLeftButtonDown() && !event.mods.isAltDown()) {
 		// Nur beim tatsaechlichen Umsetzen des Playheads die hängenden Noten
 		// killen — NICHT mehr bei jedem Klick, sonst setzt die Wiedergabe bei
 		// reiner Selektion/Editing aus.

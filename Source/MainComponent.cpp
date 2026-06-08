@@ -33,6 +33,8 @@
 #include "Actions/AddModuleAction.h"
 #include "ModuleBrowser.h"
 #include "PitchBendModule.h"
+#include "Licensing/LicenseManager.h"
+#include "Settings.h"
 #include "ModuleUtils.h"
 #include "MidiClock.h"
 #include "MidiRecorderModule.h"
@@ -2432,6 +2434,9 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 
 		menu.addSubMenu("Samples", samplesMenu);
 
+		menu.addSeparator();
+		menu.addItem(17, "License Server...", true, false, nullptr);
+		menu.addItem(16, "Deactivate License", true, false, nullptr);
 		menu.addItem(999, "Exit", true, false, nullptr);
 	}
 	else if (index == 1) {
@@ -2646,6 +2651,12 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	}
 	else if (menuItemID == 14) {
 		showClaudeApiKeyDialog();
+	}
+	else if (menuItemID == 16) {
+		showDeactivateLicenseDialog();
+	}
+	else if (menuItemID == 17) {
+		showLicenseServerDialog();
 	}
 	else if (menuItemID == 15) {
 		FileChooser chooser("Select a folder containing stems...");
@@ -3267,6 +3278,61 @@ void MainComponent::showClaudeApiKeyDialog()
 				const juce::String newKey = w->getTextEditorContents("apiKey");
 				saveClaudeApiKey(newKey);
 			}
+		}),
+		true /* deleteWhenDismissed */);
+}
+
+void MainComponent::showDeactivateLicenseDialog()
+{
+	const bool ok = juce::AlertWindow::showOkCancelBox(
+		juce::AlertWindow::QuestionIcon,
+		"Deactivate License",
+		"This device will be unregistered from the license server, freeing up the "
+		"seat for another installation. Synthlab will need to be activated again "
+		"afterwards. Continue?",
+		"Deactivate", "Cancel", this, nullptr);
+
+	if (! ok)
+		return;
+
+	// deactivate() makes a short network call. Runs synchronously here since the
+	// user deliberately triggered the action and waits for the result.
+	const bool success = LicenseManager::getInstance()->deactivate();
+
+	if (success)
+	{
+		juce::AlertWindow::showMessageBox(
+			juce::AlertWindow::InfoIcon, "Deactivate License",
+			"This device has been deactivated. Please restart Synthlab to activate "
+			"it again.");
+	}
+	else
+	{
+		juce::AlertWindow::showMessageBox(
+			juce::AlertWindow::WarningIcon, "Deactivate License",
+			"Deactivation failed (could not reach the license server?). "
+			"Nothing was changed.");
+	}
+}
+
+void MainComponent::showLicenseServerDialog()
+{
+	auto* w = new juce::AlertWindow(
+		"License Server",
+		"Base URL of the license server (without the trailing /activate). "
+		"Leave empty to use the built-in default.",
+		juce::AlertWindow::NoIcon);
+
+	w->setLookAndFeel(Project::getInstance()->getLookAndFeel());
+	w->addTextEditor("url", Settings::getInstance()->getLicenseServerUrl(), "URL:");
+	w->addButton("OK", 1, juce::KeyPress(juce::KeyPress::returnKey));
+	w->addButton("Cancel", 0, juce::KeyPress(juce::KeyPress::escapeKey));
+
+	w->enterModalState(true,
+		juce::ModalCallbackFunction::create([w](int result)
+		{
+			if (result == 1)
+				Settings::getInstance()->setLicenseServerUrl(w->getTextEditorContents("url"));
 		}),
 		true /* deleteWhenDismissed */);
 }

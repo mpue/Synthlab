@@ -105,6 +105,8 @@ public:
     juce::String loadClaudeApiKey() const;
     void saveClaudeApiKey(const juce::String& key);
     void showClaudeApiKeyDialog();
+    void showDeactivateLicenseDialog();
+    void showLicenseServerDialog();
     void showAutoArrangeDialog();
 
     // command handling

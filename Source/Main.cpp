@@ -26,6 +26,8 @@
 #include "CrashHandler.h"
 #include "Settings.h"
 #include "SplashScreenComponent.h"
+#include "Licensing/LicenseManager.h"
+#include "Licensing/ActivationDialog.h"
 
 namespace
 {
@@ -215,20 +217,58 @@ public:
 			*/
 		}
 		else {
-			mainWindow = new MainWindow(getApplicationName());
-
-			// Splash erst NACH MainWindow zeigen — er soll als modaler
-			// Overlay erscheinen, waehrend das Hauptfenster im Hintergrund
-			// schon voll gerendert ist. setVisible(true) wird in MainWindow
-			// per callAsync gepostet, der erste paint() kommt aber erst im
-			// naechsten Message-Loop-Cycle. Mit callAfterDelay geben wir dem
-			// Fenster ein paar 100ms, sich aufzubauen — sonst sitzt der
-			// Splash auf einem leeren/grauen Window. Toggle persistiert
-			// ueber Settings.
-			if (Settings::getInstance()->getShowSplashOnStartup())
+			// Hauptfenster + Splash. Als Lambda gekapselt, weil das Lizenz-Gate
+			// darunter sie entweder direkt (bereits aktiviert) oder erst nach
+			// erfolgreicher Aktivierung (ActivationDialog-Callback) aufruft.
+			//
+			// Splash erst NACH MainWindow zeigen — er soll als modaler Overlay
+			// erscheinen, waehrend das Hauptfenster im Hintergrund schon voll
+			// gerendert ist. setVisible(true) wird in MainWindow per callAsync
+			// gepostet, der erste paint() kommt aber erst im naechsten Message-
+			// Loop-Cycle. Mit callAfterDelay geben wir dem Fenster ein paar
+			// 100ms, sich aufzubauen — sonst sitzt der Splash auf einem leeren/
+			// grauen Window. Toggle persistiert ueber Settings.
+			auto launchMainWindow = [this]()
 			{
-				juce::Timer::callAfterDelay (350, [] { SplashScreenComponent::launch(); });
+				mainWindow = new MainWindow(getApplicationName());
+
+				if (Settings::getInstance()->getShowSplashOnStartup())
+				{
+					juce::Timer::callAfterDelay (350, [] { SplashScreenComponent::launch(); });
+				}
+			};
+
+#if defined(SYNTHLAB_SKIP_ACTIVATION) && JUCE_DEBUG
+			// Dev-Bypass (nur Debug-Build): Lizenz-Gate vollstaendig ueberspringen.
+			launchMainWindow();
+#else
+			// libsodium initialisieren — bei Fehler sauber abbrechen, nicht crashen.
+			if (! LicenseManager::initCrypto())
+			{
+				juce::AlertWindow::showMessageBox (
+					juce::AlertWindow::WarningIcon, "Synthlab",
+					"The cryptography library could not be initialized. "
+					"The application will now quit.");
+				quit();
+				return;
 			}
+
+			// Rein lokale Verifikation — kein Netzwerk. Nur bei fehlender/ungueltiger
+			// oder fremder Aktivierung wird der (Netzwerk-)Dialog gezeigt.
+			const ActivationState state = LicenseManager::getInstance()->verifyLocal();
+
+			if (state == ActivationState::Activated)
+			{
+				launchMainWindow();
+			}
+			else
+			{
+				// NotActivated / Tampered -> Erstaktivierung.
+				// MachineMismatch         -> Reaktivierung (Server zaehlt den Seat).
+				const bool reactivation = (state == ActivationState::MachineMismatch);
+				ActivationDialog::launch (launchMainWindow, reactivation);
+			}
+#endif
 		}
 
 	}
@@ -263,6 +303,7 @@ public:
 		Session::destroy();
 		MessageBus::destroy();
 		AudioManager::getInstance()->destroy();
+		LicenseManager::destroy();
 
 		server->stop();
 		server->stopThread(2000);
