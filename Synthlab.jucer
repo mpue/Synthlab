@@ -789,6 +789,10 @@
                 file="Source/BinaryCounterModule.cpp"/>
           <FILE id="bCn002" name="BinaryCounterModule.h" compile="0" resource="0"
                 file="Source/BinaryCounterModule.h"/>
+          <FILE id="sSg001" name="SevenSegmentModule.cpp" compile="1" resource="0"
+                file="Source/SevenSegmentModule.cpp"/>
+          <FILE id="sSg002" name="SevenSegmentModule.h" compile="0" resource="0"
+                file="Source/SevenSegmentModule.h"/>
           <FILE id="tFf001" name="TFlipFlopModule.cpp" compile="1" resource="0"
                 file="Source/TFlipFlopModule.cpp"/>
           <FILE id="tFf002" name="TFlipFlopModule.h" compile="0" resource="0"

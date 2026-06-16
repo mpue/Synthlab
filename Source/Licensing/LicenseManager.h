@@ -85,7 +85,32 @@ public:
     /** Pfad des lokalen Aktivierungs-Files (~/.Synthlab/activation.dat). */
     juce::File getActivationFile();
 
+    //==============================================================================
+    // 30-Tage-Demo (rein lokal, kein Netzwerk). Solange die Demo laeuft, darf der
+    // User den Aktivierungs-Dialog ueberspringen und Synthlab voll nutzen; danach
+    // bleibt nur Aktivieren oder Beenden.
+
+    static constexpr int trialDurationDays = 30;
+
+    /** Startet die Demo-Phase, falls noch nicht geschehen (legt den Startzeit-
+        punkt in ~/.Synthlab/trial.dat ab, an die Maschine gebunden). No-Op, wenn
+        bereits eine gueltige Demo gestartet wurde. */
+    void ensureTrialStarted();
+
+    /** True, solange die Demo laeuft (Start vorhanden, Maschine passt, weniger
+        als trialDurationDays vergangen). */
+    bool isTrialActive();
+
+    /** Verbleibende Demo-Tage, geklemmt auf 0..trialDurationDays
+        (0 = abgelaufen oder keine Demo gestartet). */
+    int trialDaysRemaining();
+
 private:
+    // Demo-Datei (~/.Synthlab/trial.dat) und gespeicherter Startzeitpunkt in ms
+    // seit Epoch; 0, wenn keine gueltige (zur Maschine passende) Demo vorhanden ist.
+    static juce::File getTrialFile();
+    juce::int64       readTrialStartMs();
+
     LicenseManager();
     ~LicenseManager();
 

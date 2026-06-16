@@ -25,10 +25,14 @@ public:
                               Aktivierung erfolgreich war (dort z.B. das
                               Hauptfenster erzeugen).
         @param reactivation   true, wenn der Grund ein Machine-Mismatch ist
-                              (anderer einleitender Text). */
-    static void launch (std::function<void()> onActivated, bool reactivation);
+                              (anderer einleitender Text).
+        @param trialDaysRemaining  verbleibende Demo-Tage; > 0 blendet den
+                              "Continue in demo"-Button ein, sonst bleibt nur
+                              Aktivieren/Beenden. */
+    static void launch (std::function<void()> onActivated, bool reactivation,
+                        int trialDaysRemaining);
 
-    ActivationDialog (ActivationWindow& owner, bool reactivation);
+    ActivationDialog (ActivationWindow& owner, bool reactivation, int trialDaysRemaining);
     ~ActivationDialog() override;
 
     void resized() override;
@@ -43,14 +47,17 @@ private:
     static juce::String messageForResult (ActivationResult result);
 
     ActivationWindow& owner;
+    int               trialDays = 0;
 
     juce::Label        headline;
+    juce::Label        demoLabel;
     juce::Label        emailLabel  { {}, "Email:" };
     juce::Label        keyLabel    { {}, "License key:" };
     juce::TextEditor   emailEditor;
     juce::TextEditor   keyEditor;
     juce::TextButton   activateButton { "Activate" };
     juce::TextButton   serverButton   { "Server..." };
+    juce::TextButton   skipButton     { "Continue in demo" };
     juce::TextButton   quitButton     { "Quit" };
     juce::Label        statusLabel;
 
@@ -64,7 +71,8 @@ private:
 class ActivationWindow : public juce::DocumentWindow
 {
 public:
-    ActivationWindow (std::function<void()> onActivated, bool reactivation);
+    ActivationWindow (std::function<void()> onActivated, bool reactivation,
+                      int trialDaysRemaining);
 
     void closeButtonPressed() override;
     void activationSucceeded();

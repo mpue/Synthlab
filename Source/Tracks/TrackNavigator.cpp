@@ -45,6 +45,10 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 	this->timeLine->setSize(getWidth() - kControlsWidth, timelineOffset);
 	this->timeLine->setTempoAndTimeSignature(Project::getInstance()->getTempo(),4,4);
 	addAndMakeVisible(timeLine.get());
+	// Vertikal fixierte Timeline: sie muss über den Tracks/Regionen liegen,
+	// die beim vertikalen Scrollen unter ihr durchlaufen. Der Marker und die
+	// TrackControls werden danach angelegt und bleiben dadurch über ihr.
+	timeLine->setAlwaysOnTop(true);
 	this->deviceManager = deviceManager;
 	this->dragFormatManager.registerBasicFormats();
 	this->zoom = 40.0f;
@@ -63,9 +67,13 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 
 	Project::getInstance()->addChangeListener(this);
 	addChangeListener(Mixer::getInstance());
-	addAndMakeVisible(marker);
-	marker->setAlwaysOnTop(true);
-	marker->setBounds(kControlsWidth, 0, 2, getHeight());
+	// Der Marker dient nur noch als Positions-Speicher (getSamplePosition); gezeichnet
+	// wird er ausschliesslich in TrackNavigator::paint() ueber navigatorXForSample(),
+	// damit er EXAKT die gleiche Sample->X-Abbildung wie Tracks/Timeline nutzt.
+	// Frueher zeichnete sich das Child zusaetzlich selbst (alwaysOnTop) ueber sein
+	// eigenes, im Konstruktor eingefrorenes sampleRate — wich die Geraete-Sample-Rate
+	// davon ab, sass die Linie daneben. Als unsichtbares Child vermeiden wir das.
+	addChildComponent(marker);
 	this->view = view;
 	view->getHorizontalScrollBar().addListener(this);
 
@@ -134,7 +142,9 @@ TrackNavigator::~TrackNavigator()
 
 void TrackNavigator::paint(Graphics& g)
 {
-	marker->paint(g);
+	// Der Positions-Marker wird in paintOverChildren() gezeichnet, damit er UEBER
+	// den Tracks/Regionen liegt (paint() laeuft vor den Child-Components, dort
+	// wuerde die Linie hinter den Regions verschwinden).
 }
 
 void TrackNavigator::clearTracks() {
@@ -236,7 +246,16 @@ void TrackNavigator::moved() {
 		if (tc != nullptr)
 			tc->setTopLeftPosition(viewX, tc->getY());
 	}
-	// Marker und Timeline bleiben Sample-bezogen — die scrollen mit.
+	// Marker bleibt Sample-bezogen — er scrollt horizontal mit.
+	// Die Timeline scrollt horizontal ebenfalls mit (Sample-bezogen), muss
+	// aber vertikal am oberen Rand des sichtbaren Bereichs fixiert bleiben,
+	// sonst läuft sie beim vertikalen Scrollen mit nach oben weg. Beim
+	// vertikalen Scrollen wird der Navigator in negative Y-Koordinaten
+	// verschoben (getY() < 0) — um den gleichen Betrag ziehen wir die
+	// Timeline wieder nach unten.
+	const int viewY = juce::jmax(0, -getY());
+	if (timeLine != nullptr)
+		timeLine->setTopLeftPosition(timeLine->getX(), viewY);
 }
 
 void TrackNavigator::applyAutoArm(Track* selected) {
@@ -276,6 +295,9 @@ void TrackNavigator::syncTrackControls() {
 		if (!found) {
 			auto control = std::make_unique<TrackControl>(t);
 			addAndMakeVisible(control.get());
+			// Über die alwaysOnTop-Timeline heben, damit der linke Steuer-Strip
+			// an der oberen linken Ecke nicht von der Timeline überdeckt wird.
+			control->setAlwaysOnTop(true);
 			trackControls.push_back(std::move(control));
 		}
 	}
@@ -445,7 +467,7 @@ void TrackNavigator::adjustHeight()
 	int width = juce::jmax(contentWidth, minWidth);
 
 	setSize(width, height);
-	this->marker->setBounds(kControlsWidth, 0, 2, getHeight());
+	this->marker->setSize(2, getHeight());
 	repaint();
 }
 
@@ -1912,6 +1934,8 @@ void TrackNavigator::resized()
 	this->marker->setSize(2, getHeight());
 	this->marker->setDrawingBounds(kControlsWidth, 25, getWidth() - kControlsWidth, getHeight());
 	this->timeLine->setBounds(kControlsWidth, 0, getWidth() - kControlsWidth, timelineOffset);
+	// Timeline vertikal am sichtbaren oberen Rand halten (siehe moved()).
+	this->timeLine->setTopLeftPosition(kControlsWidth, juce::jmax(0, -getY()));
 
 	syncTrackControls();
 }
@@ -2391,6 +2415,16 @@ void TrackNavigator::mouseDrag(const MouseEvent& event) {
 }
 
 void TrackNavigator::paintOverChildren(juce::Graphics& g) {
+	// Positions-Marker UEBER den Regions zeichnen. Exakt die gleiche Sample->X-
+	// Abbildung wie Tracks/Timeline (navigatorXForSample = kControlsWidth +
+	// sample*zoom/sr), damit er zur echten Wiedergabeposition passt und nicht
+	// hinter den Regions verschwindet.
+	{
+		const int markerX = navigatorXForSample((long) marker->getSamplePosition());
+		g.setColour(juce::Colours::green);
+		g.fillRect(markerX, 0, 2, getHeight());
+	}
+
 	// Drag&Drop-Vorschau: halbtransparentes Rechteck an der grid-gesnappten
 	// Position, an der die Region beim Loslassen landen wuerde.
 	if (dragPreviewActive) {

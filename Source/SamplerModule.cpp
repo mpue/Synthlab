@@ -79,6 +79,16 @@ SamplerModule::~SamplerModule()
 
 void SamplerModule::loadSample(juce::InputStream* is, int samplerIndex) {
 
+	if (samplerIndex < 0 || samplerIndex >= 128)
+		return;
+
+	// Slot kann noch nicht angelegt sein (z.B. Drop auf einen nie selektierten
+	// Index) — dann hier nachziehen, statt einen Nullzeiger zu dereferenzieren.
+	if (sampler[samplerIndex] == nullptr) {
+		sampler[samplerIndex] = new Sampler(sampleRate, buffersize);
+		sampler[samplerIndex]->setVolume(0.5f);
+	}
+
 	sampler[samplerIndex]->loadSample(is);
 	this->thumbnail->reset(2, sampleRate);
 	thumbnail->addBlock(0, *sampler[samplerIndex]->getSampleBuffer(), 0, static_cast<int>(sampler[samplerIndex]->getSampleLength()));
@@ -87,6 +97,14 @@ void SamplerModule::loadSample(juce::InputStream* is, int samplerIndex) {
 }
 
 void SamplerModule::loadSample(juce::File file, int samplerIndex) {
+
+	if (samplerIndex < 0 || samplerIndex >= 128)
+		return;
+
+	if (sampler[samplerIndex] == nullptr) {
+		sampler[samplerIndex] = new Sampler(sampleRate, buffersize);
+		sampler[samplerIndex]->setVolume(0.5f);
+	}
 
 	sampler[samplerIndex]->loadSample(file);
 	this->thumbnail->reset(2, sampleRate);

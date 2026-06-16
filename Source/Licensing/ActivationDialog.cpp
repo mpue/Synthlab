@@ -11,8 +11,8 @@
 #include <thread>
 
 //==============================================================================
-ActivationDialog::ActivationDialog (ActivationWindow& ownerWindow, bool reactivation)
-    : owner (ownerWindow)
+ActivationDialog::ActivationDialog (ActivationWindow& ownerWindow, bool reactivation, int trialDaysRemaining)
+    : owner (ownerWindow), trialDays (trialDaysRemaining)
 {
     headline.setText (reactivation
                           ? "This device has not been activated for Synthlab yet."
@@ -21,6 +21,26 @@ ActivationDialog::ActivationDialog (ActivationWindow& ownerWindow, bool reactiva
     headline.setJustificationType (juce::Justification::centredLeft);
     headline.setFont (juce::Font (16.0f, juce::Font::bold));
     addAndMakeVisible (headline);
+
+    // Demo-Status: solange Tage uebrig sind, darf der User ueberspringen.
+    demoLabel.setJustificationType (juce::Justification::centredLeft);
+    demoLabel.setMinimumHorizontalScale (1.0f);
+    if (trialDays > 0)
+    {
+        demoLabel.setColour (juce::Label::textColourId, juce::Colours::lightgreen);
+        demoLabel.setText ("Demo mode: " + juce::String (trialDays)
+                               + (trialDays == 1 ? " day left." : " days left."),
+                           juce::dontSendNotification);
+        skipButton.onClick = [this] { owner.activationSucceeded(); };
+        addAndMakeVisible (skipButton);
+    }
+    else
+    {
+        demoLabel.setColour (juce::Label::textColourId, juce::Colours::orange);
+        demoLabel.setText ("Your 30-day demo has expired. Please activate to keep using Synthlab.",
+                           juce::dontSendNotification);
+    }
+    addAndMakeVisible (demoLabel);
 
     addAndMakeVisible (emailLabel);
     addAndMakeVisible (keyLabel);
@@ -41,7 +61,9 @@ ActivationDialog::ActivationDialog (ActivationWindow& ownerWindow, bool reactiva
     statusLabel.setMinimumHorizontalScale (1.0f);
     addAndMakeVisible (statusLabel);
 
-    setSize (460, 240);
+    // Etwas breiter/hoeher als das Original, um Demo-Zeile + "Continue in demo"
+    // unterzubringen.
+    setSize (560, 288);
 }
 
 ActivationDialog::~ActivationDialog() {}
@@ -56,6 +78,8 @@ void ActivationDialog::resized()
     auto area = getLocalBounds().reduced (16);
 
     headline.setBounds (area.removeFromTop (28));
+    area.removeFromTop (8);
+    demoLabel.setBounds (area.removeFromTop (22));
     area.removeFromTop (12);
 
     auto row = [&area] (int h) { auto r = area.removeFromTop (h); area.removeFromTop (8); return r; };
@@ -78,6 +102,11 @@ void ActivationDialog::resized()
     buttons.removeFromRight (8);
     quitButton.setBounds (buttons.removeFromRight (110));
     serverButton.setBounds (buttons.removeFromLeft (110));
+    if (skipButton.isVisible())
+    {
+        buttons.removeFromLeft (8);
+        skipButton.setBounds (buttons.removeFromLeft (140));
+    }
 }
 
 //==============================================================================
@@ -85,6 +114,7 @@ void ActivationDialog::setBusy (bool busy)
 {
     activateButton.setEnabled (! busy);
     quitButton.setEnabled (! busy);
+    skipButton.setEnabled (! busy);
     emailEditor.setEnabled (! busy);
     keyEditor.setEnabled (! busy);
 }
@@ -184,15 +214,17 @@ juce::String ActivationDialog::messageForResult (ActivationResult result)
 }
 
 //==============================================================================
-void ActivationDialog::launch (std::function<void()> onActivated, bool reactivation)
+void ActivationDialog::launch (std::function<void()> onActivated, bool reactivation,
+                               int trialDaysRemaining)
 {
     // Das Fenster besitzt sich selbst (setUsingNativeTitleBar etc. analog zum
     // MainWindow). Es wird in activationSucceeded()/quitApp() abgeraeumt.
-    new ActivationWindow (std::move (onActivated), reactivation);
+    new ActivationWindow (std::move (onActivated), reactivation, trialDaysRemaining);
 }
 
 //==============================================================================
-ActivationWindow::ActivationWindow (std::function<void()> onActivated, bool reactivation)
+ActivationWindow::ActivationWindow (std::function<void()> onActivated, bool reactivation,
+                                    int trialDaysRemaining)
     : juce::DocumentWindow ("Synthlab - Activation",
                             juce::Colours::darkgrey,
                             juce::DocumentWindow::closeButton),
@@ -200,7 +232,7 @@ ActivationWindow::ActivationWindow (std::function<void()> onActivated, bool reac
 {
     setLookAndFeel (Project::getInstance()->getLookAndFeel());
     setUsingNativeTitleBar (false);
-    setContentOwned (new ActivationDialog (*this, reactivation), true);
+    setContentOwned (new ActivationDialog (*this, reactivation, trialDaysRemaining), true);
     setResizable (false, false);
     centreWithSize (getWidth(), getHeight());
 

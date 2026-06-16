@@ -64,7 +64,7 @@ private:
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SamplePropertiesPanel)
 };
 
-class SampleEditor  : public juce::Component, public juce::MidiKeyboardStateListener, public juce::MidiInputCallback, public juce::DragAndDropTarget
+class SampleEditor  : public juce::Component, public juce::MidiKeyboardStateListener, public juce::MidiInputCallback, public juce::DragAndDropTarget, public juce::FileDragAndDropTarget
 {
 public:
 
@@ -76,10 +76,19 @@ public:
 
     virtual void handleNoteOff (juce::MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override;
     virtual void handleNoteOn (juce::MidiKeyboardState* source, int midiChannel, int midiNoteNumber, float velocity) override;
-    
+
+    // Internal drag (e.g. the in-app file browser, which passes the full path
+    // as the drag description).
     bool isInterestedInDragSource (const SourceDetails& dragSourceDetails) override;
     virtual void itemDropped (const SourceDetails& dragSourceDetails) override;
-    
+
+    // External OS file drop (Finder/Explorer, other apps).
+    bool isInterestedInFileDrag (const juce::StringArray& files) override;
+    void filesDropped (const juce::StringArray& files, int x, int y) override;
+
+    // True for the audio file types the sampler can read.
+    static bool isSupportedAudioFile (const juce::File& file);
+
     void handleIncomingMidiMessage (juce::MidiInput* source, const juce::MidiMessage& message) override;
     
     SamplePropertiesPanel* getPanel() {
@@ -91,6 +100,10 @@ public:
     }
     
 private:
+    // Shared load path for both internal and external drops — mirrors the
+    // FileChooser flow in SamplePropertiesPanel::openSample().
+    void loadSampleFile (const juce::File& file);
+
     juce::MidiKeyboardState state;
     juce::MidiKeyboardComponent::Orientation orientation = juce::MidiKeyboardComponent::Orientation::horizontalKeyboard;
 

@@ -34,13 +34,18 @@ void MagnitudeModule::process()
     if (pins.at(0)->getConnections().size() == 1) {
         juce::AudioSampleBuffer* buffer = pins.at(0)->getConnections().at(0)->getAudioBuffer();
 
-        // Nur einen Teil des Buffers verarbeiten (z.B. letzte 512 Samples)
-        const int chunkSize = 512;
-        const int numSamples = buffer->getNumSamples();
-        const int startSample = juce::jmax(0, numSamples - chunkSize);
-        const int samplesToProcess = numSamples - startSample;
+        if (buffer == nullptr || buffer->getNumSamples() == 0)
+            return;
 
-        magnitude = buffer->getMagnitude(0, startSample, samplesToProcess);
+        // Pin-Audiobuffer sind fix auf 1024 Samples alloziert und werden NICHT auf
+        // die Blockgroesse verkleinert — pro Block befuellt die Engine nur
+        // [0..buffersize). Daher ab Sample 0 ueber die echte Blockgroesse messen
+        // (wie AdderModule), nicht ueber buffer->getNumSamples() (= Kapazitaet):
+        // sonst landet das Messfenster in der nie geschriebenen Region am Ende und
+        // die Magnitude bleibt ~0.
+        const int numSamples = juce::jmin (buffersize, buffer->getNumSamples());
+
+        magnitude = buffer->getMagnitude(0, 0, numSamples);
         pins.at(1)->setValue(magnitude);
     }
 }

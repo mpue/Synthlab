@@ -89,6 +89,7 @@
 #include "StereoSVFilterModule.h"
 #include "BinaryCounterModule.h"
 #include "TFlipFlopModule.h"
+#include "SevenSegmentModule.h"
 
 using juce::Image;
 
@@ -367,6 +368,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "T-Flip-Flop") {
         m = new TFlipFlopModule();
+    }
+    else if (prefabs[id].getName() == "7-Segment") {
+        m = new SevenSegmentModule();
     }
 
 

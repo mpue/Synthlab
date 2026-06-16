@@ -14,15 +14,18 @@ namespace
     constexpr int kStepsColumnWidth  = 520; // smaler Linke-Spalte, damit rechts die Recent-Liste passt
     constexpr int kRecentsWidth      = 280;
     constexpr int kColumnGap         = 24;
-    constexpr int kHeaderHeight      = 160;
-    constexpr int kCardHeight        = 128;
+    constexpr int kHeaderHeight      = 168;
+    constexpr int kCardHeight        = 132;
     constexpr int kCardSpacing       = 18;
     constexpr int kCardCornerRadius  = 14;
     constexpr int kFooterHeight      = 56;
     constexpr int kHorizontalPadding = 32;
+    constexpr int kTopPadding        = 28;
+    constexpr int kBottomPadding     = 28;
     constexpr int kRecentEntryHeight = 52;
     constexpr int kRecentEntrySpacing = 6;
     constexpr int kRecentHeaderHeight = 32;
+    constexpr int kRecentRowsStacked  = 6;  // Anzahl Recent-Slots in der Ein-Spalten-Ansicht
 
     const juce::Colour kBgColour          { 0xff1b1b25 };
     const juce::Colour kCardColour        { 0xff2a2a3a };
@@ -45,6 +48,85 @@ namespace
     }
 }
 
+//==============================================================================
+// Inner content — all painting/layout. Sized to its full required height by
+// the outer component so the Viewport can scroll it.
+//==============================================================================
+class QuickstartComponent::Content : public juce::Component,
+                                      private juce::Timer,
+                                      private juce::Button::Listener
+{
+public:
+    Content();
+    ~Content() override;
+
+    // Height needed to lay everything out at the given width (single- vs
+    // two-column depends on width). Used by the outer component to size us
+    // before handing us to the Viewport.
+    int idealHeightForWidth(int width) const;
+
+    void paint(juce::Graphics&) override;
+    void resized() override;
+    void mouseMove(const juce::MouseEvent&) override;
+    void mouseExit(const juce::MouseEvent&) override;
+    void mouseDown(const juce::MouseEvent&) override;
+
+    ActionCallback onConfigureAudio;
+    ActionCallback onScanPlugins;
+    ActionCallback onCreateInstrumentTrack;
+    ActionCallback onOpenExistingTrack;
+    PathCallback   onOpenRecentFile;
+    RecentProvider recentFilesProvider;
+
+    StatusProvider isAudioConfigured;
+    StatusProvider isPluginsScanned;
+    StatusProvider hasInstrumentTrack;
+    StatusProvider hasOpenedExistingTrack;
+
+private:
+    void timerCallback() override;
+    void buttonClicked(juce::Button*) override;
+
+    struct StepCard
+    {
+        int number = 0;
+        juce::String title;
+        juce::String description;
+        juce::String actionLabel;
+        juce::Rectangle<int> bounds;
+        std::unique_ptr<juce::TextButton> button;
+        bool done = false;
+    };
+
+    void layoutSteps();
+    void paintHeader(juce::Graphics&, juce::Rectangle<int> area);
+    void paintStep(juce::Graphics&, const StepCard& step);
+    void paintRecents(juce::Graphics&);
+    void refreshRecentEntries();
+    int  hitTestRecentEntry(juce::Point<int> pos) const;
+    static bool isSideBySide(int width);
+
+    struct RecentEntry
+    {
+        juce::String fullPath;
+        juce::String displayName;
+        juce::String parentDir;
+        juce::Rectangle<int> bounds;
+    };
+
+    std::array<StepCard, 4> steps;
+    std::unique_ptr<juce::ToggleButton> showOnStartupToggle;
+
+    std::vector<RecentEntry> recentEntries;
+    juce::Rectangle<int>     recentBounds;
+    int                      recentHoverIndex = -1;
+
+    juce::Rectangle<int> headerBounds;
+    juce::Rectangle<int> contentBounds;
+    juce::Rectangle<int> footerBounds;
+};
+
+//==============================================================================
 bool QuickstartComponent::getShowOnStartup()
 {
     juce::PropertiesFile::Options options;
@@ -61,7 +143,8 @@ void QuickstartComponent::setShowOnStartup(bool show)
     props.saveIfNeeded();
 }
 
-QuickstartComponent::QuickstartComponent()
+//==============================================================================
+QuickstartComponent::Content::Content()
 {
     steps[0].number      = 1;
     steps[0].title       = "Configure your audio interface";
@@ -106,7 +189,7 @@ QuickstartComponent::QuickstartComponent()
     startTimer(750); // refresh status indicators
 }
 
-QuickstartComponent::~QuickstartComponent()
+QuickstartComponent::Content::~Content()
 {
     stopTimer();
     for (auto& step : steps)
@@ -118,20 +201,42 @@ QuickstartComponent::~QuickstartComponent()
         showOnStartupToggle->removeListener(this);
 }
 
-void QuickstartComponent::resized()
+bool QuickstartComponent::Content::isSideBySide(int width)
+{
+    const int columnsTotal = kStepsColumnWidth + kColumnGap + kRecentsWidth;
+    return width >= columnsTotal + 2 * kHorizontalPadding;
+}
+
+int QuickstartComponent::Content::idealHeightForWidth(int width) const
+{
+    int y = kTopPadding + kHeaderHeight + 24;
+    y += (int) steps.size() * (kCardHeight + kCardSpacing);
+    y += 8 + kFooterHeight;
+
+    if (! isSideBySide(width))
+    {
+        // Recent-Files-Box wird unter den Footer gestapelt.
+        const int recentsH = kRecentRowsStacked * (kRecentEntryHeight + kRecentEntrySpacing)
+                             + kRecentHeaderHeight + 24;
+        y += 16 + recentsH;
+    }
+
+    return y + kBottomPadding;
+}
+
+void QuickstartComponent::Content::resized()
 {
     layoutSteps();
 }
 
-void QuickstartComponent::layoutSteps()
+void QuickstartComponent::Content::layoutSteps()
 {
     auto bounds = getLocalBounds();
 
     // Zwei Spalten: links die Steps, rechts (wenn genug Platz) die Recent-
-    // Files-Liste. Bei sehr schmalem Fenster fuenfter Card-Stil unter den
-    // Steps, sonst neben ihnen.
+    // Files-Liste. Bei schmalem Fenster wandert die Recent-Box unter die Steps.
     const int columnsTotal = kStepsColumnWidth + kColumnGap + kRecentsWidth;
-    const bool sideBySide = bounds.getWidth() >= columnsTotal + 2 * kHorizontalPadding;
+    const bool sideBySide = isSideBySide(bounds.getWidth());
 
     int stepsWidth, contentX;
     if (sideBySide) {
@@ -144,7 +249,7 @@ void QuickstartComponent::layoutSteps()
 
     // Header zieht sich ueber beide Spalten — sieht im "schick" besser aus.
     const int headerWidth = sideBySide ? columnsTotal : stepsWidth;
-    headerBounds = juce::Rectangle<int>(contentX, bounds.getY() + 28, headerWidth, kHeaderHeight);
+    headerBounds = juce::Rectangle<int>(contentX, bounds.getY() + kTopPadding, headerWidth, kHeaderHeight);
 
     int y = headerBounds.getBottom() + 24;
     contentBounds = juce::Rectangle<int>(contentX, y, stepsWidth, (int)steps.size() * (kCardHeight + kCardSpacing));
@@ -171,7 +276,7 @@ void QuickstartComponent::layoutSteps()
 
     // Rechte Spalte: Recent-Files-Box. Hoehe = volle Steps-Spalten-Hoehe damit
     // die Karten optisch zueinander stehen. Wenn nicht side-by-side, unter
-    // dem Footer eine kompakte Variante.
+    // dem Footer eine kompakte Variante mit fester Slot-Zahl.
     if (sideBySide) {
         recentBounds = juce::Rectangle<int>(contentBounds.getRight() + kColumnGap,
                                             contentBounds.getY(),
@@ -181,13 +286,14 @@ void QuickstartComponent::layoutSteps()
         recentBounds = juce::Rectangle<int>(contentX,
                                             footerBounds.getBottom() + 16,
                                             stepsWidth,
-                                            6 * (kRecentEntryHeight + kRecentEntrySpacing) + kRecentHeaderHeight + 24);
+                                            kRecentRowsStacked * (kRecentEntryHeight + kRecentEntrySpacing)
+                                                + kRecentHeaderHeight + 24);
     }
 
     refreshRecentEntries();
 }
 
-void QuickstartComponent::paint(juce::Graphics& g)
+void QuickstartComponent::Content::paint(juce::Graphics& g)
 {
     g.fillAll(kBgColour);
 
@@ -211,7 +317,7 @@ void QuickstartComponent::paint(juce::Graphics& g)
     paintRecents(g);
 }
 
-void QuickstartComponent::refreshRecentEntries()
+void QuickstartComponent::Content::refreshRecentEntries()
 {
     recentEntries.clear();
 
@@ -244,7 +350,7 @@ void QuickstartComponent::refreshRecentEntries()
     }
 }
 
-void QuickstartComponent::paintRecents(juce::Graphics& g)
+void QuickstartComponent::Content::paintRecents(juce::Graphics& g)
 {
     if (recentBounds.isEmpty()) return;
 
@@ -283,14 +389,13 @@ void QuickstartComponent::paintRecents(juce::Graphics& g)
     if (recentEntries.empty())
     {
         g.setColour(kTextMuted);
-        g.setFont(juce::Font(13.0f));
+        g.setFont(juce::Font(13.5f));
         g.drawText("No recent files yet.",
                    recentBounds.reduced(14, kRecentHeaderHeight + 12),
                    juce::Justification::topLeft, false);
         return;
     }
 
-    g.setFont(juce::Font(13.5f, juce::Font::bold));
     for (size_t i = 0; i < recentEntries.size(); ++i)
     {
         const auto& e = recentEntries[i];
@@ -306,7 +411,7 @@ void QuickstartComponent::paintRecents(juce::Graphics& g)
 
         // Filename.
         g.setColour(kTextPrimary);
-        g.setFont(juce::Font(13.5f, juce::Font::bold));
+        g.setFont(juce::Font(14.0f, juce::Font::bold));
         g.drawText(e.displayName,
                    e.bounds.getX() + 12,
                    e.bounds.getY() + 6,
@@ -316,7 +421,7 @@ void QuickstartComponent::paintRecents(juce::Graphics& g)
 
         // Parent dir als Sub-Label.
         g.setColour(kTextSecondary);
-        g.setFont(juce::Font(11.5f));
+        g.setFont(juce::Font(12.0f));
         g.drawText(e.parentDir,
                    e.bounds.getX() + 12,
                    e.bounds.getY() + 26,
@@ -337,7 +442,7 @@ void QuickstartComponent::paintRecents(juce::Graphics& g)
     }
 }
 
-int QuickstartComponent::hitTestRecentEntry(juce::Point<int> pos) const
+int QuickstartComponent::Content::hitTestRecentEntry(juce::Point<int> pos) const
 {
     for (size_t i = 0; i < recentEntries.size(); ++i)
         if (recentEntries[i].bounds.contains(pos))
@@ -345,7 +450,7 @@ int QuickstartComponent::hitTestRecentEntry(juce::Point<int> pos) const
     return -1;
 }
 
-void QuickstartComponent::mouseMove(const juce::MouseEvent& e)
+void QuickstartComponent::Content::mouseMove(const juce::MouseEvent& e)
 {
     const int idx = hitTestRecentEntry(e.getPosition());
     setMouseCursor(idx >= 0 ? juce::MouseCursor::PointingHandCursor : juce::MouseCursor::NormalCursor);
@@ -356,7 +461,7 @@ void QuickstartComponent::mouseMove(const juce::MouseEvent& e)
     }
 }
 
-void QuickstartComponent::mouseExit(const juce::MouseEvent&)
+void QuickstartComponent::Content::mouseExit(const juce::MouseEvent&)
 {
     if (recentHoverIndex != -1)
     {
@@ -365,7 +470,7 @@ void QuickstartComponent::mouseExit(const juce::MouseEvent&)
     }
 }
 
-void QuickstartComponent::mouseDown(const juce::MouseEvent& e)
+void QuickstartComponent::Content::mouseDown(const juce::MouseEvent& e)
 {
     const int idx = hitTestRecentEntry(e.getPosition());
     if (idx < 0 || idx >= (int) recentEntries.size()) return;
@@ -373,7 +478,7 @@ void QuickstartComponent::mouseDown(const juce::MouseEvent& e)
         onOpenRecentFile(recentEntries[(size_t) idx].fullPath);
 }
 
-void QuickstartComponent::paintHeader(juce::Graphics& g, juce::Rectangle<int> area)
+void QuickstartComponent::Content::paintHeader(juce::Graphics& g, juce::Rectangle<int> area)
 {
     if (area.isEmpty())
         return;
@@ -395,27 +500,29 @@ void QuickstartComponent::paintHeader(juce::Graphics& g, juce::Rectangle<int> ar
     g.drawLine((float)area.getX() + 16, (float)area.getY() + 1,
                (float)area.getRight() - 16, (float)area.getY() + 1, 1.0f);
 
-    auto inner = area.reduced(28, 22);
+    auto inner = area.reduced(28, 24);
 
     g.setColour(juce::Colours::white.withAlpha(0.85f));
     g.setFont(juce::Font(13.0f, juce::Font::bold));
     g.drawText("QUICKSTART", inner.removeFromTop(18), juce::Justification::topLeft, false);
 
-    inner.removeFromTop(4);
+    inner.removeFromTop(6);
 
     g.setColour(juce::Colours::white);
     g.setFont(juce::Font(30.0f, juce::Font::bold));
     g.drawText("Welcome to Synthlab", inner.removeFromTop(40), juce::Justification::topLeft, false);
+
+    inner.removeFromTop(6);
 
     g.setColour(juce::Colours::white.withAlpha(0.85f));
     g.setFont(juce::Font(15.0f));
     g.drawFittedText(
         "Three quick steps and you're ready to make sound. "
         "You can come back to this page from the menu at any time.",
-        inner.removeFromTop(46), juce::Justification::topLeft, 2);
+        inner, juce::Justification::topLeft, 3);
 }
 
-void QuickstartComponent::paintStep(juce::Graphics& g, const StepCard& step)
+void QuickstartComponent::Content::paintStep(juce::Graphics& g, const StepCard& step)
 {
     if (step.bounds.isEmpty())
         return;
@@ -498,13 +605,13 @@ void QuickstartComponent::paintStep(juce::Graphics& g, const StepCard& step)
     auto textArea = juce::Rectangle<int>(textLeft, (int)bounds.getY() + 22, textWidth, (int)bounds.getHeight() - 44);
 
     g.setColour(kTextPrimary);
-    g.setFont(juce::Font(17.0f, juce::Font::bold));
-    g.drawText(step.title, textArea.removeFromTop(22), juce::Justification::centredLeft, true);
+    g.setFont(juce::Font(18.0f, juce::Font::bold));
+    g.drawText(step.title, textArea.removeFromTop(24), juce::Justification::centredLeft, true);
 
     textArea.removeFromTop(4);
 
     g.setColour(kTextSecondary);
-    g.setFont(juce::Font(13.5f));
+    g.setFont(juce::Font(14.0f));
     g.drawFittedText(step.description, textArea, juce::Justification::topLeft, 3);
 
     // Der visuelle Status wird ausschliesslich ueber den gruenen Akzent-
@@ -512,7 +619,7 @@ void QuickstartComponent::paintStep(juce::Graphics& g, const StepCard& step)
     // — keine zusaetzliche "DONE"-Beschriftung neben dem Button.
 }
 
-void QuickstartComponent::buttonClicked(juce::Button* b)
+void QuickstartComponent::Content::buttonClicked(juce::Button* b)
 {
     if (b == showOnStartupToggle.get())
     {
@@ -537,7 +644,7 @@ void QuickstartComponent::buttonClicked(juce::Button* b)
     }
 }
 
-void QuickstartComponent::timerCallback()
+void QuickstartComponent::Content::timerCallback()
 {
     bool changed = false;
 
@@ -568,3 +675,60 @@ void QuickstartComponent::timerCallback()
     if (changed)
         repaint();
 }
+
+//==============================================================================
+// Outer wrapper — owns the Viewport and sizes the content to its full height.
+//==============================================================================
+QuickstartComponent::QuickstartComponent()
+{
+    content = std::make_unique<Content>();
+
+    viewport.setViewedComponent(content.get(), false);
+    viewport.setScrollBarsShown(true, false); // vertical only
+    viewport.setScrollOnDragMode(juce::Viewport::ScrollOnDragMode::nonHover);
+    addAndMakeVisible(viewport);
+
+    setOpaque(true);
+}
+
+QuickstartComponent::~QuickstartComponent() = default;
+
+void QuickstartComponent::paint(juce::Graphics& g)
+{
+    g.fillAll(kBgColour);
+}
+
+void QuickstartComponent::resized()
+{
+    viewport.setBounds(getLocalBounds());
+
+    int width = getWidth();
+    int height = content->idealHeightForWidth(width);
+
+    // Wenn der Inhalt hoeher ist als sichtbar, erscheint die vertikale
+    // Scrollbar — also Breite um deren Dicke reduzieren und neu rechnen.
+    if (height > getHeight())
+    {
+        width = juce::jmax(0, width - viewport.getScrollBarThickness());
+        height = content->idealHeightForWidth(width);
+    }
+
+    // Mindestens die Viewport-Hoehe ausfuellen, damit kein Streifen
+    // Hintergrund unter dem Inhalt aufblitzt.
+    height = juce::jmax(height, getHeight());
+
+    content->setSize(width, height);
+}
+
+// ---- Forwarders to the inner content ---------------------------------------
+void QuickstartComponent::setOnConfigureAudio(ActionCallback cb)        { content->onConfigureAudio = std::move(cb); }
+void QuickstartComponent::setOnScanPlugins(ActionCallback cb)           { content->onScanPlugins = std::move(cb); }
+void QuickstartComponent::setOnCreateInstrumentTrack(ActionCallback cb) { content->onCreateInstrumentTrack = std::move(cb); }
+void QuickstartComponent::setOnOpenExistingTrack(ActionCallback cb)     { content->onOpenExistingTrack = std::move(cb); }
+void QuickstartComponent::setOnOpenRecentFile(PathCallback cb)          { content->onOpenRecentFile = std::move(cb); }
+void QuickstartComponent::setRecentFilesProvider(RecentProvider p)      { content->recentFilesProvider = std::move(p); }
+
+void QuickstartComponent::setAudioConfiguredProvider(StatusProvider p)     { content->isAudioConfigured = std::move(p); }
+void QuickstartComponent::setPluginsScannedProvider(StatusProvider p)      { content->isPluginsScanned = std::move(p); }
+void QuickstartComponent::setInstrumentTrackProvider(StatusProvider p)     { content->hasInstrumentTrack = std::move(p); }
+void QuickstartComponent::setExistingTrackOpenedProvider(StatusProvider p) { content->hasOpenedExistingTrack = std::move(p); }

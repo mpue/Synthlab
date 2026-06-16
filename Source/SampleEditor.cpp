@@ -95,20 +95,55 @@ void SampleEditor::handleNoteOn(juce::MidiKeyboardState *source, int midiChannel
 void SampleEditor::handleNoteOff(juce::MidiKeyboardState *source, int midiChannel, int midiNoteNumber, float velocity) {
 }
 
+bool SampleEditor::isSupportedAudioFile (const File& file) {
+    const juce::String ext = file.getFileExtension().toLowerCase();
+    return ext == ".wav"  || ext == ".mp3" || ext == ".flac" || ext == ".ogg"
+        || ext == ".aiff" || ext == ".aif" || ext == ".m4a"  || ext == ".wma";
+}
+
+void SampleEditor::loadSampleFile (const File& file) {
+    if (! file.existsAsFile() || ! isSupportedAudioFile(file))
+        return;
+
+    // Gleicher Pfad wie der Datei-Dialog (openSample): setzt den Pfad, laedt
+    // ueber das Modul (das auch dessen Grid-Thumbnail aktualisiert) und
+    // frischt die Editor-Anzeige auf.
+    const int index = sampleModule->getCurrentSamplerIndex();
+    sampleModule->setSamplePath(file.getFullPathName(), index);
+    sampleModule->loadSample(file, index);
+
+    if (sampleModule->getBuffer() != nullptr)
+        component->setSampleBuffer(sampleModule->getBuffer());
+
+    propertiesPanel->updateValues();
+    propertiesPanel->updateThumb();
+}
+
 bool SampleEditor::isInterestedInDragSource (const SourceDetails& dragSourceDetails) {
-    return true;
+    // Der interne Browser-Drag liefert den vollen Pfad als Beschreibung.
+    // Nur akzeptieren, wenn das nach einer unterstuetzten Audiodatei aussieht
+    // (verhindert, dass z.B. Modul-Drags hier landen).
+    return isSupportedAudioFile(File(dragSourceDetails.description.toString()));
 }
 
 void SampleEditor::itemDropped (const SourceDetails& dragSourceDetails) {
-    Logger::writeToLog(dragSourceDetails.description);
-    File* sample = new File(dragSourceDetails.description);
-    if (sample != nullptr && sample->exists()) {
-        sampleModule->getCurrentSampler()->loadSample(*sample);
-        sampleModule->setSamplePath(sample->getFullPathName(), sampleModule->getCurrentSamplerIndex());
-        delete sample;
-    }
-    sampleModule->selectSample(sampleModule->getCurrentSamplerIndex());
-    propertiesPanel->updateValues();
-    propertiesPanel->updateThumb(); 
+    loadSampleFile(File(dragSourceDetails.description.toString()));
+}
 
+bool SampleEditor::isInterestedInFileDrag (const juce::StringArray& files) {
+    for (const auto& filename : files)
+        if (isSupportedAudioFile(File(filename)))
+            return true;
+    return false;
+}
+
+void SampleEditor::filesDropped (const juce::StringArray& files, int /*x*/, int /*y*/) {
+    // Der Sampler-Slot haelt genau eine Datei — die erste unterstuetzte laden.
+    for (const auto& filename : files) {
+        File file(filename);
+        if (isSupportedAudioFile(file)) {
+            loadSampleFile(file);
+            break;
+        }
+    }
 }

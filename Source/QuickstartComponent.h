@@ -5,6 +5,9 @@
     Welcome / onboarding screen — opens as a tab in the editor area and walks
     the user through the three first steps required to get going.
 
+    The visible content lives inside a Viewport so the page stays fully
+    readable (and scrollable) on small screens instead of getting clipped.
+
   ==============================================================================
 */
 
@@ -12,10 +15,9 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include <functional>
+#include <memory>
 
-class QuickstartComponent : public juce::Component,
-                            private juce::Timer,
-                            private juce::Button::Listener
+class QuickstartComponent : public juce::Component
 {
 public:
     using ActionCallback = std::function<void()>;
@@ -26,20 +28,20 @@ public:
     QuickstartComponent();
     ~QuickstartComponent() override;
 
-    void setOnConfigureAudio(ActionCallback cb)         { onConfigureAudio = std::move(cb); }
-    void setOnScanPlugins(ActionCallback cb)            { onScanPlugins = std::move(cb); }
-    void setOnCreateInstrumentTrack(ActionCallback cb)  { onCreateInstrumentTrack = std::move(cb); }
-    void setOnOpenExistingTrack(ActionCallback cb)      { onOpenExistingTrack = std::move(cb); }
-    void setOnOpenRecentFile(PathCallback cb)           { onOpenRecentFile = std::move(cb); }
-    void setRecentFilesProvider(RecentProvider p)       { recentFilesProvider = std::move(p); }
+    void setOnConfigureAudio(ActionCallback cb);
+    void setOnScanPlugins(ActionCallback cb);
+    void setOnCreateInstrumentTrack(ActionCallback cb);
+    void setOnOpenExistingTrack(ActionCallback cb);
+    void setOnOpenRecentFile(PathCallback cb);
+    void setRecentFilesProvider(RecentProvider p);
 
     // Status providers — called periodically to render a check mark next to
     // the relevant step. Each should return true once the user has completed
     // that step.
-    void setAudioConfiguredProvider(StatusProvider p)   { isAudioConfigured = std::move(p); }
-    void setPluginsScannedProvider(StatusProvider p)    { isPluginsScanned = std::move(p); }
-    void setInstrumentTrackProvider(StatusProvider p)   { hasInstrumentTrack = std::move(p); }
-    void setExistingTrackOpenedProvider(StatusProvider p) { hasOpenedExistingTrack = std::move(p); }
+    void setAudioConfiguredProvider(StatusProvider p);
+    void setPluginsScannedProvider(StatusProvider p);
+    void setInstrumentTrackProvider(StatusProvider p);
+    void setExistingTrackOpenedProvider(StatusProvider p);
 
     // Persisted setting — true if the user wants the Quickstart tab to open
     // automatically on app start.
@@ -48,63 +50,14 @@ public:
 
     void paint(juce::Graphics&) override;
     void resized() override;
-    void mouseMove(const juce::MouseEvent&) override;
-    void mouseExit(const juce::MouseEvent&) override;
-    void mouseDown(const juce::MouseEvent&) override;
 
 private:
-    void timerCallback() override;
-    void buttonClicked(juce::Button*) override;
+    // Holds all the actual layout/painting; lives inside the viewport so it
+    // can grow taller than the visible area and be scrolled.
+    class Content;
 
-    // ---- Step card ----------------------------------------------------------
-    struct StepCard
-    {
-        int number = 0;
-        juce::String title;
-        juce::String description;
-        juce::String actionLabel;
-        juce::Rectangle<int> bounds;
-        std::unique_ptr<juce::TextButton> button;
-        bool done = false;
-    };
-
-    void layoutSteps();
-    void paintHeader(juce::Graphics&, juce::Rectangle<int> area);
-    void paintStep(juce::Graphics&, const StepCard& step);
-    void paintRecents(juce::Graphics&);
-    void refreshRecentEntries();
-    int  hitTestRecentEntry(juce::Point<int> pos) const;
-
-    struct RecentEntry
-    {
-        juce::String fullPath;
-        juce::String displayName;
-        juce::String parentDir;
-        juce::Rectangle<int> bounds;
-    };
-
-    std::array<StepCard, 4> steps;
-    std::unique_ptr<juce::ToggleButton> showOnStartupToggle;
-
-    ActionCallback onConfigureAudio;
-    ActionCallback onScanPlugins;
-    ActionCallback onCreateInstrumentTrack;
-    ActionCallback onOpenExistingTrack;
-    PathCallback   onOpenRecentFile;
-    RecentProvider recentFilesProvider;
-
-    StatusProvider isAudioConfigured;
-    StatusProvider isPluginsScanned;
-    StatusProvider hasInstrumentTrack;
-    StatusProvider hasOpenedExistingTrack;
-
-    std::vector<RecentEntry> recentEntries;
-    juce::Rectangle<int>     recentBounds;
-    int                      recentHoverIndex = -1;
-
-    juce::Rectangle<int> headerBounds;
-    juce::Rectangle<int> contentBounds;
-    juce::Rectangle<int> footerBounds;
+    juce::Viewport             viewport;
+    std::unique_ptr<Content>   content;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(QuickstartComponent)
 };

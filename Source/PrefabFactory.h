@@ -189,6 +189,7 @@ private:
         prefabs[115] = Prefab("Trigger Script","MIDI");
         prefabs[116] = Prefab("Binary Counter","Logic");
         prefabs[117] = Prefab("T-Flip-Flop","Logic");
+        prefabs[118] = Prefab("7-Segment","Controls");
         prefabImages[38] = juce::ImageCache::getFromMemory(BinaryData::infinity_png, BinaryData::infinity_pngSize);
         prefabImages[38] = juce::ImageCache::getFromMemory(BinaryData::transform_png, BinaryData::transform_pngSize);
         prefabImages[39] = juce::ImageCache::getFromMemory(BinaryData::merge_png, BinaryData::merge_pngSize);
@@ -267,6 +268,7 @@ private:
         prefabImages[112] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[116] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[117] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[118] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
 
         categories = new juce::StringArray();
 

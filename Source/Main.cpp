@@ -253,6 +253,12 @@ public:
 				return;
 			}
 
+			// 30-Tage-Demo: ab dem ersten Start verankern (unabhaengig vom Lizenz-
+			// status). So kann der Zeitraum nicht durch Aktivieren+Deaktivieren
+			// zurueckgesetzt werden, und nach einer Deaktivierung faellt die App auf
+			// die verbleibende Demozeit zurueck statt "abgelaufen" zu melden.
+			LicenseManager::getInstance()->ensureTrialStarted();
+
 			// Rein lokale Verifikation — kein Netzwerk. Nur bei fehlender/ungueltiger
 			// oder fremder Aktivierung wird der (Netzwerk-)Dialog gezeigt.
 			const ActivationState state = LicenseManager::getInstance()->verifyLocal();
@@ -265,8 +271,13 @@ public:
 			{
 				// NotActivated / Tampered -> Erstaktivierung.
 				// MachineMismatch         -> Reaktivierung (Server zaehlt den Seat).
+				// Solange die Demo laeuft, bietet der Dialog "Continue in demo" und
+				// startet das Hauptfenster auch ohne Aktivierung; danach nur noch
+				// Aktivieren oder Beenden.
 				const bool reactivation = (state == ActivationState::MachineMismatch);
-				ActivationDialog::launch (launchMainWindow, reactivation);
+				auto* lm = LicenseManager::getInstance();
+				const int trialDaysLeft = lm->isTrialActive() ? lm->trialDaysRemaining() : 0;
+				ActivationDialog::launch (launchMainWindow, reactivation, trialDaysLeft);
 			}
 #endif
 		}

@@ -89,6 +89,67 @@ juce::File LicenseManager::getActivationFile()
     return dir.getChildFile ("activation.dat");
 }
 
+//==============================================================================
+// 30-Tage-Demo.
+
+juce::File LicenseManager::getTrialFile()
+{
+    // Wie activation.dat: ~/.Synthlab/, an die Maschine gebunden (mid), aber
+    // bewusst kein kryptographischer Schutz — eine Demo soll niedrigschwellig sein.
+    auto dir = juce::File::getSpecialLocation (juce::File::userHomeDirectory)
+                   .getChildFile (".Synthlab");
+    dir.createDirectory();
+    return dir.getChildFile ("trial.dat");
+}
+
+juce::int64 LicenseManager::readTrialStartMs()
+{
+    const juce::File f = getTrialFile();
+    if (! f.existsAsFile())
+        return 0;
+
+    const juce::var parsed = juce::JSON::parse (f.loadFileAsString());
+    if (! parsed.isObject())
+        return 0;
+
+    // An die Maschine gebunden: ein kopiertes trial.dat zaehlt nicht.
+    if (parsed.getProperty ("mid", juce::var()).toString() != getMachineId())
+        return 0;
+
+    return parsed.getProperty ("start", juce::var()).toString().getLargeIntValue();
+}
+
+void LicenseManager::ensureTrialStarted()
+{
+    if (readTrialStartMs() > 0)   // bereits gueltig gestartet -> nicht zuruecksetzen
+        return;
+
+    auto* obj = new juce::DynamicObject();
+    obj->setProperty ("start", juce::String (juce::Time::getCurrentTime().toMilliseconds()));
+    obj->setProperty ("mid",   getMachineId());
+    getTrialFile().replaceWithText (juce::JSON::toString (juce::var (obj)));
+}
+
+int LicenseManager::trialDaysRemaining()
+{
+    const juce::int64 start = readTrialStartMs();
+    if (start <= 0)
+        return 0;
+
+    const juce::int64 dayMs       = (juce::int64) 24 * 60 * 60 * 1000;
+    const juce::int64 now         = juce::Time::getCurrentTime().toMilliseconds();
+    const juce::int64 elapsedDays = (now - start) / dayMs;   // floor fuer now >= start
+    const juce::int64 remaining   = (juce::int64) trialDurationDays - elapsedDays;
+
+    return (int) juce::jlimit ((juce::int64) 0, (juce::int64) trialDurationDays, remaining);
+}
+
+bool LicenseManager::isTrialActive()
+{
+    return readTrialStartMs() > 0 && trialDaysRemaining() > 0;
+}
+
+//==============================================================================
 juce::String LicenseManager::getMachineId()
 {
     if (cachedMachineId.isNotEmpty())
