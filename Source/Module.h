@@ -230,6 +230,14 @@ public:
     void setSurfaceSize(juce::Point<int> s) { surfaceSize = s; }
     bool hasSurfaceSize() const { return surfaceSize.x > 0 && surfaceSize.y > 0; }
 
+    // Background colour of this module's RootLevelGroup (the panel surfaced at
+    // the editor root for its displayAtRoot controls). Unset means "use the
+    // editor default". Persisted per patch via ModuleUtils save/load.
+    juce::Colour getSurfaceBackgroundColour() const { return surfaceBgColour; }
+    void setSurfaceBackgroundColour(juce::Colour c) { surfaceBgColour = c; hasSurfaceBg = true; }
+    void clearSurfaceBackgroundColour() { hasSurfaceBg = false; }
+    bool hasSurfaceBackgroundColour() const { return hasSurfaceBg; }
+
     virtual juce::Array<juce::PropertyComponent*>& getProperties();
     virtual void createProperties();
     
@@ -274,6 +282,8 @@ protected:
     int zIndex = 0;
     juce::Point<int> surfacePos { -1, -1 };
     juce::Point<int> surfaceSize { 0, 0 };
+    juce::Colour surfaceBgColour;
+    bool hasSurfaceBg = false;
 
     juce::PropertyComponent* nameProp;
     juce::Array <juce::PropertyComponent*> properties;

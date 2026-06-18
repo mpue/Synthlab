@@ -90,6 +90,7 @@
 #include "BinaryCounterModule.h"
 #include "TFlipFlopModule.h"
 #include "SevenSegmentModule.h"
+#include "BinaryToDecimalModule.h"
 
 using juce::Image;
 
@@ -371,6 +372,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "7-Segment") {
         m = new SevenSegmentModule();
+    }
+    else if (prefabs[id].getName() == "Binary to Decimal") {
+        m = new BinaryToDecimalModule();
     }
 
 

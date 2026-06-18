@@ -1415,11 +1415,33 @@ void TrackNavigator::setPlaying(bool playing) {
 		allNotesOff();
 	}
 	Session::getInstance()->setRecordingStartTime();
+	// Echte Playhead-Position in Samples (getSamplePosition() ist das, was auch
+	// der Audio-Thread liest). Der `position`-Member ist in Sekunden.
+	const int startSample = getSamplePosition();
+
 	for (int i = 0; i < tracks.size(); i++) {
 		for (int j = 0; j < tracks.at(i)->getRegions().size(); j++) {
 			tracks.at(i)->getRegions().at(j)->reset();
-			tracks.at(i)->setSamplePosition(position);
 			tracks.at(i)->setCurrentMarkerPosition(position);
+		}
+
+		if (playing) {
+			// Das Startfenster [startSample, startSample+bufferSize) muss HIER
+			// gefeuert werden: dispatchMidiMessages → notifyListeners triggert
+			// Noten sofort, und der Audio-Callback ruft setSamplePosition immer
+			// erst am Block-ENDE mit (getSamplePosition()+numSamples) auf — die
+			// erste Position, die der Audio-Thread je dispatcht, ist also
+			// startSample+bufferSize. Das Fenster an startSample (mit der Note
+			// bei relativer Zeit 0) wuerde sonst NIE dispatcht.
+			//
+			// forcePositionReset() zuerst, damit der `position != samplePosition`
+			// -Guard in Track::setSamplePosition den Dispatch nicht unterdrueckt
+			// (track.samplePosition steht sonst evtl. schon auf startSample).
+			tracks.at(i)->forcePositionReset();
+			tracks.at(i)->setSamplePosition(startSample, true);
+		}
+		else {
+			tracks.at(i)->setSamplePosition(position);
 		}
 	}
 	// getRoot() ist nullptr, solange kein Modular-Baum gesetzt ist — der

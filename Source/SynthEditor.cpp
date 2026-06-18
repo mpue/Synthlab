@@ -1466,7 +1466,8 @@ namespace {
 	// straight to the child controls. In edit mode (unlocked) the click is used
 	// for layout: clicking on a child drags that child within the group, clicking
 	// on the title or empty border drags the whole group across the editor.
-	class RootLevelGroup : public juce::GroupComponent {
+	class RootLevelGroup : public juce::GroupComponent,
+	                       public juce::ChangeListener {
 	public:
 		RootLevelGroup(const juce::String& title, Module* sourceModule, SynthEditor* editor)
 			: juce::GroupComponent(title, title), sourceModule(sourceModule), editor(editor) {
@@ -1479,6 +1480,11 @@ namespace {
 			applyEditMode();
 		}
 
+		~RootLevelGroup() override {
+			if (activeSelector != nullptr)
+				activeSelector->removeChangeListener(this);
+		}
+
 		Module* getSourceModule() const { return sourceModule; }
 		Module* getInstrumentAncestor() const { return instrumentAncestor; }
 		void setInstrumentAncestor(Module* instr) { instrumentAncestor = instr; }
@@ -1488,6 +1494,15 @@ namespace {
 		// otherwise unlocked controls (which don't intercept) leak through to the
 		// editor and we lose the drag entirely.
 		bool hitTest(int, int) override { return true; }
+
+		// Fill the body with the user-chosen background colour (if any) before
+		// GroupComponent draws its outline + title on top. Without a colour set
+		// the body stays transparent and the editor background shows through.
+		void paint(juce::Graphics& g) override {
+			if (sourceModule != nullptr && sourceModule->hasSurfaceBackgroundColour())
+				g.fillAll(sourceModule->getSurfaceBackgroundColour());
+			juce::GroupComponent::paint(g);
+		}
 
 		void resized() override {
 			juce::GroupComponent::resized();
@@ -1574,6 +1589,8 @@ namespace {
 				}
 				if (hitChild != nullptr)
 					showChildContextMenu(hitChild);
+				else
+					showGroupContextMenu();
 				return;
 			}
 
@@ -1632,6 +1649,71 @@ namespace {
 				if (result > 0 && safeSelf != nullptr && safeChild != nullptr)
 					safeSelf->applyZOrderAction(safeChild.getComponent(), result);
 			});
+		}
+
+		// Kontextmenue fuer den leeren Bereich der Group: Hintergrundfarbe des
+		// Panels setzen oder zuruecksetzen. Deferred via MessageManager analog
+		// showChildContextMenu, da der Rechtsklick aus einem Listener-Pfad kommt.
+		void showGroupContextMenu() {
+			auto safeSelf = juce::Component::SafePointer<RootLevelGroup>(this);
+			juce::MessageManager::callAsync([safeSelf]() {
+				if (safeSelf == nullptr) return;
+
+				const bool hasColour = safeSelf->sourceModule != nullptr
+					&& safeSelf->sourceModule->hasSurfaceBackgroundColour();
+
+				juce::PopupMenu m;
+				m.addItem(1, "Set background color...");
+				m.addItem(2, "Clear background color", hasColour);
+
+				const int result = m.show();
+				if (safeSelf == nullptr) return;
+				if (result == 1) {
+					safeSelf->pickBackgroundColour();
+				}
+				else if (result == 2 && safeSelf->sourceModule != nullptr) {
+					safeSelf->sourceModule->clearSurfaceBackgroundColour();
+					safeSelf->repaint();
+					Project::getInstance()->setDirty(true);
+				}
+			});
+		}
+
+		// Open a ColourSelector in a CallOutBox anchored at the group. Live
+		// preview via changeListenerCallback writes each change straight onto
+		// the source module and repaints.
+		void pickBackgroundColour() {
+			auto selector = std::make_unique<juce::ColourSelector>(
+				juce::ColourSelector::showColourAtTop
+				| juce::ColourSelector::showSliders
+				| juce::ColourSelector::showColourspace);
+			selector->setName("Background");
+			selector->setSize(300, 380);
+
+			const juce::Colour initial =
+				(sourceModule != nullptr && sourceModule->hasSurfaceBackgroundColour())
+					? sourceModule->getSurfaceBackgroundColour()
+					: juce::Colour(0xff222222);
+			selector->setCurrentColour(initial, juce::dontSendNotification);
+			selector->addChangeListener(this);
+			// SafePointer auf den Selector behalten: wird die Group zerstoert
+			// (z.B. Layer-Toggle leert rootLevelGroups), waehrend der CallOutBox
+			// noch offen ist, deregistriert der Destruktor uns als Listener und
+			// verhindert ein Feuern auf das tote Objekt.
+			activeSelector = selector.get();
+
+			juce::CallOutBox::launchAsynchronously(
+				std::move(selector), getScreenBounds(), nullptr);
+		}
+
+		void changeListenerCallback(juce::ChangeBroadcaster* source) override {
+			if (auto* cs = dynamic_cast<juce::ColourSelector*>(source)) {
+				if (sourceModule != nullptr) {
+					sourceModule->setSurfaceBackgroundColour(cs->getCurrentColour());
+					repaint();
+					Project::getInstance()->setDirty(true);
+				}
+			}
 		}
 
 		void applyZOrderAction(Module* child, int action) {
@@ -1756,6 +1838,9 @@ namespace {
 		juce::ComponentDragger dragger;
 		std::unique_ptr<juce::ResizableCornerComponent> resizer;
 		juce::ComponentBoundsConstrainer constrainer;
+		// Offener ColourSelector (in einer CallOutBox), bei dem wir als
+		// ChangeListener registriert sind. Auto-null sobald er zerstoert wird.
+		juce::Component::SafePointer<juce::ColourSelector> activeSelector;
 	};
 }
 

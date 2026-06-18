@@ -378,6 +378,10 @@ Module* ModuleUtils::loadModule(ValueTree& mod, ChangeBroadcaster* broadcaster) 
 		m->setSurfaceSize({ mod.getProperty("surface_w").toString().getIntValue(),
 		                    mod.getProperty("surface_h").toString().getIntValue() });
 	}
+	if (mod.hasProperty("surface_bg")) {
+		m->setSurfaceBackgroundColour(juce::Colour(
+			(juce::uint32) mod.getProperty("surface_bg").toString().getLargeIntValue()));
+	}
 	return m;
 }
 
@@ -798,6 +802,10 @@ void ModuleUtils::saveStructure(std::vector<Module*>* modules, std::vector<Conne
 		if ((*it)->hasSurfaceSize()) {
 			file.setProperty("surface_w", (*it)->getSurfaceSize().getX(), nullptr);
 			file.setProperty("surface_h", (*it)->getSurfaceSize().getY(), nullptr);
+		}
+		if ((*it)->hasSurfaceBackgroundColour()) {
+			file.setProperty("surface_bg",
+				(juce::int64) (*it)->getSurfaceBackgroundColour().getARGB(), nullptr);
 		}
 
 		Knob* k;

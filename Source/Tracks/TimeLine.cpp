@@ -577,11 +577,19 @@ double TimeLine::snapToBufferBoundary(double time) const
     if (bufferDuration <= 0.0)
         return time;
 
-    // Round to nearest buffer boundary
+    // Floor to buffer boundary — NICHT std::round. Region-Offsets
+    // (MidiRegion::sampleOffset) und der Playhead (TrackNavigator::alignDown /
+    // alignToBufferSize) runden Sample-Positionen immer AB. std::round hat den
+    // Loop-Start bei Takten, deren Sample-Position ein ungerades Vielfaches von
+    // bufferSize/2 ist (z.B. Takt 1 = 96000 = 187,5 * 512), AUFgerundet
+    // (-> 96256), waehrend der Region-Offset abrundete (-> 95744). Dadurch lag
+    // der Loop-Start 512 Samples HINTER dem Region-Anfang und die Note bei
+    // relativer Zeit 0 fiel aus dem Loop — hoerbar nur bei ungeraden Takten,
+    // bei geraden lag alles exakt auf einem 512-Vielfachen.
     const double buffers = time / bufferDuration;
-    const double roundedBuffers = std::round(buffers);
+    const double snappedBuffers = std::floor(buffers);
 
-    return roundedBuffers * bufferDuration;
+    return snappedBuffers * bufferDuration;
 }
 
 double TimeLine::getBufferDurationInSeconds() const
