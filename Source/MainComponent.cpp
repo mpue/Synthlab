@@ -685,6 +685,8 @@ MainComponent::~MainComponent()
 		propertiesDockPanel = nullptr;
 		editorDockPanel     = nullptr;
 		jsDockPanel         = nullptr;
+		navigatorDockPanel  = nullptr;
+		quickstartDockPanel = nullptr;
 		mixerDockPanel = nullptr;
 		toolsDockPanel = nullptr;
 		logDockPanel = nullptr;
@@ -1356,6 +1358,12 @@ void MainComponent::createStudioLayout() {
 		}
 	}
 
+	// Navigator als eigenstaendiges Panel neben den Editor tabifizieren.
+	// navigator/trackViewport wurden oben via openTrackView() (vor dem
+	// dockManager) bereits angelegt; jetzt, wo editorTabNode existiert, bekommt
+	// der Navigator sein Panel.
+	showOrCreateNavigatorPanel();
+
 	// Aus User-Verzeichnis (.synthlabdock) wiederherstellen, falls vorhanden.
 	loadDockLayout();
 
@@ -1940,22 +1948,14 @@ void MainComponent::openTrackView()
 		navigator->toFront(false);
 	}
 
-	if (editorAreaTab == nullptr) return;
+	// Navigator ist jetzt ein eigenstaendiges DockablePanel (frueher ein
+	// Sub-Tab im editorAreaTab). Beim Erst-Aufruf aus dem Ctor existiert der
+	// dockManager noch nicht — dann nur navigator/trackViewport anlegen; das
+	// Panel wird in der Dock-Aufbau-Sektion (nach createPanel("editor", ...))
+	// einmalig erzeugt.
+	if (dockManager == nullptr) return;
 
-	// Doppel-Tab vermeiden, sonst landet jedes openTrackView() in einem
-	// neuen "Navigator" Tab.
-	for (int i = 0; i < editorAreaTab->getNumTabs(); ++i)
-	{
-		if (editorAreaTab->getTabNames()[i] == "Navigator")
-		{
-			editorAreaTab->setCurrentTabIndex(i);
-			navigator->setInterceptsMouseClicks(true, true);
-			navigator->toFront(true);
-			return;
-		}
-	}
-	editorAreaTab->addTab("Navigator", juce::Colours::grey, trackViewport.get(), false);
-	editorAreaTab->setCurrentTabIndex(editorAreaTab->getNumTabs() - 1);
+	showOrCreateNavigatorPanel();
 	navigator->setInterceptsMouseClicks(true, true);
 	navigator->toFront(true);
 }
@@ -2204,6 +2204,32 @@ void MainComponent::showOrCreateDescriptionPanel()
 		panel->onClosed = [this]() { descriptionDockPanel = nullptr; };
 	}
 	descriptionDockPanel = panel;
+}
+
+// Navigator: trackViewport (haelt den TrackNavigator) lebt weiter in
+// MainComponent; das Panel haengt ihn nur per WeakChildHolder ein, sodass ein
+// Close die Dtor-Teardown-Reihenfolge (navigator VOR trackViewport) nicht
+// stoert. Default-Platzierung: als Tab neben den Editor — Center allein wuerde
+// im Properties-Tab-Node landen (firstTabNodeOrCreate), also explizit auf den
+// Editor-Tab-Node docken.
+void MainComponent::showOrCreateNavigatorPanel()
+{
+	if (dockManager == nullptr || trackViewport == nullptr) return;
+	if (auto* p = dockManager->findPanel("navigator")) { dockManager->activatePanel(p); return; }
+	auto* panel = dockManager->createPanel(
+		"navigator", "Navigator",
+		std::make_unique<WeakChildHolder>(trackViewport.get()),
+		docking::DockSide::Center);
+	if (panel != nullptr)
+	{
+		panel->setClosable(true);
+		panel->onClosed = [this]() { navigatorDockPanel = nullptr; };
+		if (auto* editorTabNode = dynamic_cast<docking::DockTabNode*>(
+				editorDockPanel != nullptr ? editorDockPanel->getParentComponent() : nullptr))
+			dockManager->dockPanel(panel, editorTabNode, docking::DockSide::Center);
+		dockManager->activatePanel(panel);
+	}
+	navigatorDockPanel = panel;
 }
 
 void MainComponent::showOrCreatePianoRollPanel(std::unique_ptr<PianoRollEditor> editor)
@@ -2584,7 +2610,8 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addSeparator();
 		menu.addItem(201, "Tracks", true, false, nullptr);
 		menu.addItem(202, "Console", true, false, nullptr);
-		menu.addItem(205, "Quickstart", true, false, nullptr);
+		menu.addItem(205, "Quickstart", true,
+			dockManager != nullptr && dockManager->findPanel("quickstart") != nullptr);
 		menu.addSeparator();
 		// DockablePanel-Show-Items. isTicked = panel-ist-aktuell-offen.
 		// "Show Properties / Editor / JavaScript" sind nicht aufgefuehrt —
@@ -2600,6 +2627,7 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addItem(213, "Show Browser",      true, isPanelOpen("browser"));
 		menu.addItem(214, "Show Instruments",  true, isPanelOpen("instruments"));
 		menu.addItem(215, "Show Description",  true, isPanelOpen("description"));
+		menu.addItem(216, "Show Navigator",    true, isPanelOpen("navigator"));
 		menu.addItem(207, "JavaScript Editor", true, false, nullptr);
 		menu.addSeparator();
 		menu.addItem(212, "Reset Dock Layout", true, false, nullptr);
@@ -2873,6 +2901,11 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	}
 	else if (menuItemID == 215) {
 		showOrCreateDescriptionPanel();
+	}
+	else if (menuItemID == 216) {
+		openTrackView();
+		if (navigator.get() != nullptr)
+			navigator.get()->addChangeListener(this);
 	}
 	else if (menuItemID == 205) {
 		openQuickstart();
@@ -3200,17 +3233,14 @@ void MainComponent::restoreNavigatorAfterOpen() {
 void MainComponent::openQuickstart() {
 	if (editorViewport == nullptr)
 		return;
-
-	auto* tabs = editorAreaTab;
-	if (tabs == nullptr)
+	if (dockManager == nullptr)
 		return;
 
-	// Already open? Just bring it to front.
-	for (int i = 0; i < tabs->getNumTabs(); ++i) {
-		if (tabs->getTabNames()[i] == "Quickstart") {
-			tabs->setCurrentTabIndex(i);
-			return;
-		}
+	// Schon offen? Nur nach vorne holen. Quickstart ist jetzt ein
+	// eigenstaendiges DockablePanel (frueher Sub-Tab im editorAreaTab).
+	if (auto* p = dockManager->findPanel("quickstart")) {
+		dockManager->activatePanel(p);
+		return;
 	}
 
 	if (quickstart == nullptr) {
@@ -3292,8 +3322,24 @@ void MainComponent::openQuickstart() {
 		});
 	}
 
-	tabs->addTab("Quickstart", Colour(0xff1b1b25), quickstart.get(), false);
-	tabs->setCurrentTabIndex(tabs->getNumTabs() - 1);
+	// quickstart lebt weiter in MainComponent (unique_ptr) — Panel haengt es
+	// nur per WeakChildHolder ein, sodass ein Close die Teardown-Reihenfolge
+	// nicht beruehrt. Wie der Navigator neben den Editor tabifizieren statt im
+	// Properties-Tab-Node zu landen.
+	auto* panel = dockManager->createPanel(
+		"quickstart", "Quickstart",
+		std::make_unique<WeakChildHolder>(quickstart.get()),
+		docking::DockSide::Center);
+	if (panel != nullptr)
+	{
+		panel->setClosable(true);
+		panel->onClosed = [this]() { quickstartDockPanel = nullptr; };
+		if (auto* editorTabNode = dynamic_cast<docking::DockTabNode*>(
+				editorDockPanel != nullptr ? editorDockPanel->getParentComponent() : nullptr))
+			dockManager->dockPanel(panel, editorTabNode, docking::DockSide::Center);
+		dockManager->activatePanel(panel);
+	}
+	quickstartDockPanel = panel;
 }
 
 JavaScriptEditorComponent* MainComponent::createJavaScriptEditorComponent() {

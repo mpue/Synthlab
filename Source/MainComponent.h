@@ -254,6 +254,7 @@ private:
     void showOrCreateBrowserPanel();
     void showOrCreateInstrumentsPanel();
     void showOrCreateDescriptionPanel();
+    void showOrCreateNavigatorPanel();
 
     virtual juce::StringArray getMenuBarNames() override;
     virtual juce::PopupMenu getMenuForIndex(int index, const juce::String & menuName) override;
@@ -287,6 +288,13 @@ private:
     docking::DockablePanel* browserDockPanel      = nullptr;
     docking::DockablePanel* instrumentsDockPanel  = nullptr;
     docking::DockablePanel* descriptionDockPanel  = nullptr;
+    // Navigator + Quickstart: aus dem editorAreaTab herausgeloest, jetzt
+    // eigenstaendige (schliessbare) DockablePanels. Content ist ein
+    // WeakChildHolder; die echten Komponenten besitzt MainComponent weiter
+    // (trackViewport bzw. quickstart), sodass ein Close die Teardown-
+    // Reihenfolge im Dtor nicht beruehrt.
+    docking::DockablePanel* navigatorDockPanel  = nullptr;
+    docking::DockablePanel* quickstartDockPanel = nullptr;
     // Bottom-Row Panels: einzeln dock-/floatbar. Mixer + Tools sind nicht
     // schliessbar (komplexe Lifetimes), Log/Level/Spektrum sind closable —
     // ihre Audio-Hooks lesen ueber Atomic-Refs (siehe levelMeterAudio /
