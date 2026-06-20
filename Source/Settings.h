@@ -174,5 +174,5 @@ private:
     bool               stretchFormantPreservation { true };
     bool               showSplashOnStartup        { true };
     bool               autoTrackArming            { false };
-    juce::String       licenseServerUrl           { "https://license.aquist.de/api/activation" };
+    juce::String       licenseServerUrl           { "https://shop.pueski.de/api/activation"};
 };

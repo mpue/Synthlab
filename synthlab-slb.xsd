@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ============================================================================
+  synthlab-slb.xsd
+  XML Schema for the Synthlab patch file format (*.slb).
+
+  An .slb file is the XML serialisation of the modular synth graph, written
+  by ModuleUtils::saveStructure() from a juce::ValueTree named "Synth".
+  Because JUCE serialises booleans as the strings "0"/"1", xs:boolean is used
+  for those attributes (xs:boolean accepts 0, 1, true and false).
+
+  The <Module> element is polymorphic: a single element type carries the union
+  of all module-specific attributes, each emitted only for the matching module
+  class. All of these are therefore optional. The handful of attributes that
+  ModuleUtils always writes for every module (name, index, x, y, isPrefab,
+  prefabId) are marked required; attributes added in later versions
+  (ui_x, ui_y, zIndex, isInstrument, displayAtRootLevel, Pin/@name, ...) are
+  optional so that both old and new patches validate.
+
+  A processContents="lax" anyAttribute is placed on <Module> so that future
+  module types adding new attributes still validate.
+  ============================================================================
+-->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="unqualified"
+           attributeFormDefault="unqualified">
+
+  <!-- ===================== Root ===================== -->
+  <!--
+    An .slb file has one of two equivalent root elements:
+      * <Synth>  - a complete patch (saved from SynthEditor).
+      * <Module> - a saved subpatch / macro library entry.
+    The loader (ModuleUtils::loadStructure) ignores the root tag name and only
+    reads the Modules/Connections children, so both forms share one content
+    model. The root <Module> carries no name/index/Pins - those belong to the
+    *nested* Module instances inside <Modules> (see ModuleType).
+  -->
+  <xs:element name="Synth"  type="GraphRootType"/>
+  <xs:element name="Module" type="GraphRootType"/>
+
+  <xs:complexType name="GraphRootType">
+    <xs:annotation>
+      <xs:documentation>
+        Top-level module graph: the modules and their connections, plus
+        optional master/bus FX chains that live outside the graph. The
+        lock/layer attributes are editor state added in later versions and are
+        optional (some early files omit them entirely).
+      </xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="Modules"       type="ModulesType"/>
+      <xs:element name="Connections"   type="ConnectionsType"/>
+      <xs:element name="MasterFXChain" type="FXChainType"     minOccurs="0"/>
+      <xs:element name="BusFXChains"   type="BusFXChainsType" minOccurs="0"/>
+    </xs:sequence>
+    <xs:attribute name="lock"  type="xs:boolean" use="optional"/>
+    <xs:attribute name="layer" type="xs:int"     use="optional"/>
+  </xs:complexType>
+
+  <!-- ===================== Modules container ===================== -->
+  <xs:complexType name="ModulesType">
+    <xs:sequence>
+      <xs:element name="Module" type="ModuleType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- ===================== Module ===================== -->
+  <xs:complexType name="ModuleType">
+    <xs:annotation>
+      <xs:documentation>
+        One module node. Child order as written by saveStructure():
+        zero or more &lt;sample&gt; entries (SamplerModule only), then the
+        mandatory &lt;Pins&gt;, then the nested &lt;Modules&gt; and
+        &lt;Connections&gt; of a container/macro module (empty for leaf
+        prefabs). The flat attribute list is the union over all module types.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="sample"      type="SampleType" minOccurs="0" maxOccurs="unbounded"/>
+      <xs:element name="Pins"        type="PinsType"/>
+      <xs:element name="Modules"     type="ModulesType"/>
+      <xs:element name="Connections" type="ConnectionsType"/>
+    </xs:sequence>
+
+    <!-- Always written -->
+    <xs:attribute name="name"     type="xs:string" use="required"/>
+    <xs:attribute name="index"    type="xs:long"   use="required"/>
+    <xs:attribute name="x"        type="xs:int"    use="required"/>
+    <xs:attribute name="y"        type="xs:int"    use="required"/>
+    <xs:attribute name="isPrefab" type="xs:boolean" use="required"/>
+    <xs:attribute name="prefabId" type="xs:int"    use="required"/>
+
+    <!-- Generic, version-added editor/layout state -->
+    <xs:attribute name="ui_x"               type="xs:int"     use="optional"/>
+    <xs:attribute name="ui_y"               type="xs:int"     use="optional"/>
+    <xs:attribute name="displayAtRootLevel" type="xs:boolean" use="optional"/>
+    <xs:attribute name="isInstrument"       type="xs:boolean" use="optional"/>
+    <xs:attribute name="zIndex"             type="xs:int"     use="optional"/>
+    <xs:attribute name="surface_x"          type="xs:int"     use="optional"/>
+    <xs:attribute name="surface_y"          type="xs:int"     use="optional"/>
+    <xs:attribute name="surface_w"          type="xs:int"     use="optional"/>
+    <xs:attribute name="surface_h"          type="xs:int"     use="optional"/>
+    <xs:attribute name="surface_bg"         type="xs:long"    use="optional"/>
+
+    <!-- Container/macro size (non-prefab modules with children) -->
+    <xs:attribute name="width"  type="xs:int" use="optional"/>
+    <xs:attribute name="height" type="xs:int" use="optional"/>
+
+    <!-- Knob -->
+    <xs:attribute name="minvalue"      type="xs:double"  use="optional"/>
+    <xs:attribute name="maxvalue"      type="xs:double"  use="optional"/>
+    <xs:attribute name="stepsize"      type="xs:double"  use="optional"/>
+    <xs:attribute name="value"         type="xs:double"  use="optional"/>
+    <xs:attribute name="isController"  type="xs:boolean" use="optional"/>
+    <xs:attribute name="controllerNum" type="xs:int"     use="optional"/>
+
+    <!-- ADSR (also uses the shared "mono" attribute below) -->
+    <xs:attribute name="attack"  type="xs:double" use="optional"/>
+    <xs:attribute name="decay"   type="xs:double" use="optional"/>
+    <xs:attribute name="sustain" type="xs:double" use="optional"/>
+    <xs:attribute name="release" type="xs:double" use="optional"/>
+
+    <!-- Monophonic / ADSR -->
+    <xs:attribute name="mono" type="xs:boolean" use="optional"/>
+
+    <!-- CompareModule -->
+    <xs:attribute name="mode" type="xs:int" use="optional"/>
+
+    <!-- MidiGate / PadModule / KeyboardModule / MidiOut share "channel" -->
+    <xs:attribute name="channel" type="xs:int" use="optional"/>
+
+    <!-- TriggerScriptModule -->
+    <xs:attribute name="macroPath" type="xs:string" use="optional"/>
+
+    <!-- TerminalModule -->
+    <xs:attribute name="type" type="xs:int" use="optional"/>
+
+    <!-- VolumeAdjustable -->
+    <xs:attribute name="volume"      type="xs:double" use="optional"/>
+    <xs:attribute name="channelName" type="xs:string" use="optional"/>
+
+    <!-- PadModule -->
+    <xs:attribute name="note" type="xs:int"     use="optional"/>
+    <xs:attribute name="hold" type="xs:boolean" use="optional"/>
+
+    <!-- PluginModule (currentProgram/state also reused by other hosts) -->
+    <xs:attribute name="plugin"         type="xs:string" use="optional"/>
+    <xs:attribute name="currentProgram" type="xs:int"    use="optional"/>
+    <xs:attribute name="state"          type="xs:string" use="optional"/>
+
+    <!-- StepSequencerModule -->
+    <xs:attribute name="config"   type="xs:string" use="optional"/>
+    <xs:attribute name="gateTime" type="xs:double" use="optional"/>
+
+    <!-- ImageModule -->
+    <xs:attribute name="imagePath" type="xs:string" use="optional"/>
+
+    <!-- MidiOut -->
+    <xs:attribute name="midiOutputDevice" type="xs:string" use="optional"/>
+
+    <!-- Subscriber / Publisher -->
+    <xs:attribute name="topic" type="xs:string" use="optional"/>
+
+    <!-- RadioGroupModule -->
+    <xs:attribute name="numButtons" type="xs:int"    use="optional"/>
+    <xs:attribute name="selection"  type="xs:int"    use="optional"/>
+    <xs:attribute name="labels"     type="xs:string" use="optional"/>
+    <xs:attribute name="values"     type="xs:string" use="optional"/>
+
+    <!-- Future module types may add their own attributes -->
+    <xs:anyAttribute processContents="lax"/>
+  </xs:complexType>
+
+  <!-- ===================== Pins ===================== -->
+  <xs:complexType name="PinsType">
+    <xs:sequence>
+      <xs:element name="Pin" type="PinType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="PinType">
+    <xs:annotation>
+      <xs:documentation>
+        A module terminal. "type" is the signal/data type, "direction" is
+        0 = input, 1 = output. "index" is the globally unique pin id referenced
+        by Connection/@a and @b. "name" was added in a later version.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:attribute name="type"      type="xs:int"    use="required"/>
+    <xs:attribute name="direction" type="xs:int"    use="required"/>
+    <xs:attribute name="index"     type="xs:long"   use="required"/>
+    <xs:attribute name="x"         type="xs:int"    use="required"/>
+    <xs:attribute name="y"         type="xs:int"    use="required"/>
+    <xs:attribute name="name"      type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <!-- ===================== Connections ===================== -->
+  <xs:complexType name="ConnectionsType">
+    <xs:sequence>
+      <xs:element name="Connection" type="ConnectionType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ConnectionType">
+    <xs:annotation>
+      <xs:documentation>
+        A wire from module @source's output pin @a to module @target's input
+        pin @b. source/target are Module/@index values; a/b are Pin/@index
+        values.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:attribute name="source" type="xs:long" use="required"/>
+    <xs:attribute name="target" type="xs:long" use="required"/>
+    <xs:attribute name="a"      type="xs:long" use="required"/>
+    <xs:attribute name="b"      type="xs:long" use="required"/>
+  </xs:complexType>
+
+  <!-- ===================== Sampler sample slot ===================== -->
+  <xs:complexType name="SampleType">
+    <xs:annotation>
+      <xs:documentation>
+        One mapped sample of a SamplerModule. "note" is the 1-based MIDI key
+        (1..128). start/end/length are in sample frames.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:attribute name="sampleStart"  type="xs:long"    use="required"/>
+    <xs:attribute name="sampleEnd"    type="xs:long"    use="required"/>
+    <xs:attribute name="sampleLength" type="xs:long"    use="required"/>
+    <xs:attribute name="loop"         type="xs:boolean" use="required"/>
+    <xs:attribute name="samplePath"   type="xs:string"  use="required"/>
+    <xs:attribute name="note"         type="xs:int"     use="required"/>
+  </xs:complexType>
+
+  <!-- ===================== FX chains ===================== -->
+  <xs:complexType name="FXChainType">
+    <xs:annotation>
+      <xs:documentation>Master FX chain: an ordered set of plugin slots.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="Slot" type="FXSlotType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="FXSlotType">
+    <xs:attribute name="index"   type="xs:int"    use="required"/>
+    <xs:attribute name="plugin"  type="xs:string" use="required"/>
+    <xs:attribute name="program" type="xs:int"    use="optional"/>
+    <xs:attribute name="state"   type="xs:string" use="optional"/>
+  </xs:complexType>
+
+  <xs:complexType name="BusFXChainsType">
+    <xs:sequence>
+      <xs:element name="BusFXChain" type="BusFXChainType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="BusFXChainType">
+    <xs:annotation>
+      <xs:documentation>
+        FX chain bound to a bus output module. busModuleIndex references the
+        BusOut Module/@index. Contains the same Slot children as a master chain.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:sequence>
+      <xs:element name="Slot" type="FXSlotType" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+    <xs:attribute name="busModuleIndex" type="xs:long" use="required"/>
+  </xs:complexType>
+
+</xs:schema>

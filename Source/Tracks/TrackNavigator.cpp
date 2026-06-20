@@ -17,6 +17,7 @@
 #include "../Project/Project.h"
 #include "../Session.h"
 #include "../Mixer.h"
+#include "../MessageBus/FastBus.h"
 #include <iterator>
 #include <iostream>
 #include "../ExtendedFileBrowser.h"
@@ -1402,6 +1403,10 @@ void TrackNavigator::setPlaying(bool playing) {
         Logger::getCurrentLogger()->writeToLog("Playing stop");
 
 	this->playing = playing;
+	// Transport-Clock (MidiProcessor) soll nur laufen, wenn Play oder Record
+	// aktiv ist. Alle Transport-Wege (Toolbar, Tastatur, togglePlayStop)
+	// laufen durch diese Setter, daher ist das hier der eine Chokepoint.
+	FastBus::getInstance().publish("transport_active", this->playing || this->recording);
     if (playing) {
         startTimer(50);
         // Loop-Marker-Counters fuer den frischen Lauf zuruecksetzen — sonst
@@ -1567,6 +1572,7 @@ void TrackNavigator::setRecording(bool recording) {
 	}
 
 	this->recording = recording;
+	FastBus::getInstance().publish("transport_active", this->playing || this->recording);
 }
 
 bool TrackNavigator::isRecording() {

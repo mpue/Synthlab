@@ -67,6 +67,11 @@ public:
     void stopMidiClock();
     void setMidiClockBPM(double bpm);
     bool isMidiClockRunning() const;
+
+    // Vom Audio-Thread pro Block aufgerufen (in getNextAudioBlock, innerhalb
+    // des graphLocks): erzeugt die faelligen 24-PPQN-Clock-Ticks fuer die
+    // aktuelle Transport-Playhead-Position. Sample-genau und driftfrei.
+    void generateClockTicks(juce::int64 transportSamplePos);
     void processMidiMessage(const juce::MidiMessage& message);
 
 private:
@@ -101,9 +106,21 @@ private:
     std::atomic<Track*>                  activeTrack{ nullptr };
 
     std::atomic<bool> clockRunning{ false };
+    // Transport-Gate: true nur waehrend Play/Record. Wird ueber FastBus
+    // ("transport_active", publiziert von TrackNavigator::setPlaying/
+    // setRecording) gesetzt. Die Clock tickt nur, wenn dies true ist.
+    std::atomic<bool> transportActive{ false };
+
+    // Clock-Timing ist an die TRANSPORT-Sample-Position gekoppelt, NICHT an
+    // Wall-Clock-Zeit — nur so laeuft der Sequencer exakt zum Transport. Die
+    // Anzahl gefeuerter 24-PPQN-Ticks ist eine reine Funktion der Playhead-
+    // Position (kein Drift, Tempo automatisch korrekt, phasen-aligned zu
+    // Sample 0). Die Ticks werden sample-genau im Audio-Callback erzeugt
+    // (generateClockTicks); clockTicksFired wird nur dort (Audio-Thread)
+    // angefasst, clockResyncPending wird vom Message-Thread gesetzt.
+    juce::int64 clockTicksFired = 0;
+    std::atomic<bool> clockResyncPending{ false };
     double clockBPM = 120.0;
-    int clockIntervalMs = 0;
-    juce::int64 lastClockTimeMs = 0;
 
 	bool running{ true };
 

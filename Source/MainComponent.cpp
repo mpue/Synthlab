@@ -1479,6 +1479,15 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 		// child including freshly-created TerminalModules.
 		rootModule->setSampleRate((float)sampleRate);
 		rootModule->setBuffersize(numSamples);
+
+		// MIDI-Clock sample-genau aus der Transport-Position erzeugen — hier,
+		// auf dem Audio-Thread unter dem graphLock, VOR processModule, damit die
+		// vom Clock-Tick ausgeloesten Sequencer-Schritte schon in diesem Block
+		// verarbeitet werden. Driftfrei und immun gegen Message-Thread-/GUI-Last.
+		if (midiProcessor != nullptr && navigator != nullptr
+			&& (navigator->isPlaying() || navigator->isRecording()))
+			midiProcessor->generateClockTicks(navigator->getSamplePosition());
+
 		processModule(rootModule);
 	}
 

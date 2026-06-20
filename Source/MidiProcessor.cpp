@@ -16,6 +16,7 @@
 #include "Connection.h"           // for gate->TrackIn graph walk
 #include "Tracks/Track.h"
 #include "MessageBus/FastBus.h"
+#include "Project/Project.h"       // Transport-Tempo / Sample-Rate fuer die Clock
 
 using namespace juce;
 
@@ -40,6 +41,29 @@ MidiProcessor::MidiProcessor(SynthEditor* root,
 		}
 		if (!isTimerRunning() && running) {
 			startTimer(2);
+		}
+	});
+
+	// Transport-Gate: Clock nur waehrend Play/Record ticken lassen.
+	bus.subscribe<bool>("transport_active", [this](const FastTopic<bool>& topic) {
+		const bool active = topic.getValue();
+		const bool wasActive = transportActive.exchange(active);
+		if (active && !wasActive) {
+			// Tick-Zaehler an die aktuelle Playhead-Position koppeln (kein
+			// Backfill), damit Step 1 zur Transport-Position passt.
+			clockResyncPending = true;
+			// CLOCK_START zentral ueber ALLE Play/Record-Wege (nicht nur ueber
+			// die Toolbar) an die Clock-Kette schicken -> Sequencer setzen
+			// taktbuendig auf Step 1. sendMidiStartMessage ist idempotent, das
+			// zusaetzliche Toolbar-CLOCK_START schadet also nicht.
+			if (editor != nullptr && editor->getModule())
+				for (auto* mod : *editor->getModule()->getModules())
+					sendMidiStartMessage(mod, activeChannel.load());
+		}
+		else if (!active && wasActive) {
+			if (editor != nullptr && editor->getModule())
+				for (auto* mod : *editor->getModule()->getModules())
+					sendMidiStopMessage(mod, activeChannel.load());
 		}
 	});
 
@@ -102,23 +126,48 @@ void MidiProcessor::timerCallback()
 	for (const auto& qm : local)
 		processMidiMessage(qm.msg);
 
-	// MIDI-Clock-Tick senden, wenn aktiv
-	if (clockRunning)
-	{
-		const auto now = Time::getMillisecondCounter();
-		if (now - lastClockTimeMs >= clockIntervalMs)
-		{
-			if (editor->getModule()) {
-				for (auto* mod : *editor->getModule()->getModules())
-				{
-					sendMidiClockMessage(mod, activeChannel.load());
+	// Die MIDI-Clock-Ticks werden NICHT mehr hier (Message-Thread) erzeugt,
+	// sondern sample-genau im Audio-Callback (generateClockTicks), aufgerufen
+	// aus MainComponent::getNextAudioBlock. Der Message-Thread wird von GUI-Last
+	// (Tooltips/Repaints) verstopft -> verspaetete/gebuendelte Ticks -> Drift.
+	// Der Audio-Thread ist echtzeitfaehig und haelt ohnehin den Graph-Lock.
+}
 
-				}
-			}
-			lastClockTimeMs = now;
-		}
+void MidiProcessor::generateClockTicks(juce::int64 transportSamplePos)
+{
+	// Laeuft auf dem AUDIO-Thread, innerhalb des graphLocks von
+	// getNextAudioBlock — daher sicher gegen gleichzeitige Graph-Edits und
+	// sample-genau zur Transport-Position. Die Soll-Anzahl 24-PPQN-Ticks ist
+	// floor(playhead / samplesPerTick); Tempo aus Project::getTempo(), Phase an
+	// Sample 0. So bleibt der Sequencer driftfrei am Transport.
+	if (!clockRunning || !transportActive)
+		return;
+
+	const double bpm = Project::getInstance()->getTempo();
+	const double sr  = Project::getInstance()->getSampleRate();
+	if (bpm <= 0.0 || sr <= 0.0)
+		return;
+
+	const double samplesPerTick = (sr * 60.0) / (bpm * 24.0);
+	const juce::int64 target = (juce::int64)(transportSamplePos / samplesPerTick);
+
+	// Resync ohne Ticks zu feuern: beim Play-Start, bei Rueckwaertsspruengen
+	// (Loop/Seek) oder grossem Vorwaertssprung (Seek) den Zaehler einfach auf
+	// die aktuelle Position setzen.
+	const juce::int64 ahead = target - clockTicksFired;
+	if (clockResyncPending.exchange(false) || ahead < 0 || ahead > 96)   // 96 = 1 Takt
+	{
+		clockTicksFired = target;
 	}
 
+	while (clockTicksFired < target)
+	{
+		if (editor->getModule()) {
+			for (auto* mod : *editor->getModule()->getModules())
+				sendMidiClockMessage(mod, activeChannel.load());
+		}
+		++clockTicksFired;
+	}
 }
 
 void MidiProcessor::processMidiMessage(const juce::MidiMessage& msg)
@@ -405,7 +454,9 @@ void MidiProcessor::disableAllMidiInputs() {
 void MidiProcessor::startMidiClock()
 {
 	clockRunning = true;
-	lastClockTimeMs = Time::getMillisecondCounter();
+	// Tick-Zaehler beim naechsten timerCallback an die aktuelle Playhead-
+	// Position koppeln (kein Backfill).
+	clockResyncPending = true;
 }
 
 void MidiProcessor::stopMidiClock()
@@ -415,8 +466,10 @@ void MidiProcessor::stopMidiClock()
 
 void MidiProcessor::setMidiClockBPM(double bpm)
 {
+	// Tempo kommt zur Laufzeit aus Project::getTempo() (die Clock leitet ihre
+	// Ticks aus der Sample-Position ab). clockBPM bleibt nur als zuletzt
+	// gesetzter Wert erhalten — die eigentliche Tick-Berechnung nutzt ihn nicht.
 	clockBPM = bpm;
-	clockIntervalMs = static_cast<int>(60000.0 / (24.0 * clockBPM));
 }
 
 bool MidiProcessor::isMidiClockRunning() const

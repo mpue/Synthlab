@@ -797,6 +797,10 @@
                 file="Source/SevenSegmentModule.cpp"/>
           <FILE id="sSg002" name="SevenSegmentModule.h" compile="0" resource="0"
                 file="Source/SevenSegmentModule.h"/>
+          <FILE id="s8q001" name="StepSequencer8Module.cpp" compile="1" resource="0"
+                file="Source/StepSequencer8Module.cpp"/>
+          <FILE id="s8q002" name="StepSequencer8Module.h" compile="0" resource="0"
+                file="Source/StepSequencer8Module.h"/>
           <FILE id="tFf001" name="TFlipFlopModule.cpp" compile="1" resource="0"
                 file="Source/TFlipFlopModule.cpp"/>
           <FILE id="tFf002" name="TFlipFlopModule.h" compile="0" resource="0"

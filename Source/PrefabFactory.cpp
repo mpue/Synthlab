@@ -91,6 +91,7 @@
 #include "TFlipFlopModule.h"
 #include "SevenSegmentModule.h"
 #include "BinaryToDecimalModule.h"
+#include "StepSequencer8Module.h"
 
 using juce::Image;
 
@@ -375,6 +376,9 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "Binary to Decimal") {
         m = new BinaryToDecimalModule();
+    }
+    else if (prefabs[id].getName() == "8-Step Seq") {
+        m = new StepSequencer8Module(sampleRate, bufferSize);
     }
 
 

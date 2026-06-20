@@ -42,6 +42,12 @@ void Pin::sendEvent(Event *e) {
     // Pins unterscheiden koennen, wer gefeuert hat. Jeder Pin in der Kette
     // ueberschreibt das Feld auf sich selbst — der Listener sieht immer den
     // unmittelbar liefernden Pin (= einen seiner eigenen IN-Pins).
+    //
+    // WICHTIG: Jeder Empfaenger bekommt eine EIGENE Kopie (new Event(e)). Das
+    // ist kein Versehen — Forwarder-Module (TerminalModule, MidiGate, MidiNote,
+    // PitchBend, TrackIn, ...) leiten das empfangene Event via sendEvent(e)
+    // weiter, was es loescht. Wuerde man EIN Objekt teilen, wuerde der Forward
+    // es freigeben und das aeussere delete unten waere ein Double-Free.
     e->setSource(this);
 
     for (int i = 0; i < connections.size();i++) {

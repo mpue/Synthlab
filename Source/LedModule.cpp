@@ -52,15 +52,13 @@ void LedModule::paint(juce::Graphics &g) {
 }
 
 void LedModule::process() {
-    
+    // Laeuft auf dem Audio-Thread. Nur den Wert uebernehmen — KEIN repaint()
+    // und KEIN MessageManager::callAsync von hier: beides alloziert/locked und
+    // wuerde bei schnell wechselndem Eingang die Message-Queue fluten und unter
+    // GUI-Last (Tooltip/Repaint) Audio-Dropouts ausloesen. paint() liest value
+    // und der 33ms-Editor-Timer frischt die Anzeige ohnehin auf.
     if (getPins().at(0)->getConnections().size() > 0) {
-        if (value != getPins().at(0)->getConnections().at(0)->getValue()) {
-           value = getPins().at(0)->getConnections().at(0)->getValue();
-            std::function<void(void)> changeLambda =
-            [=]() {  repaint(); };
-            juce::MessageManager::callAsync(changeLambda);
-        }
+        value = getPins().at(0)->getConnections().at(0)->getValue();
     }
-    
 }
 

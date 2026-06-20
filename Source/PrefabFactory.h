@@ -191,7 +191,9 @@ private:
         prefabs[117] = Prefab("T-Flip-Flop","Logic");
         prefabs[118] = Prefab("7-Segment","Controls");
         prefabs[119] = Prefab("Binary to Decimal","Logic");
+        prefabs[120] = Prefab("8-Step Seq","MIDI");
         prefabImages[38] = juce::ImageCache::getFromMemory(BinaryData::infinity_png, BinaryData::infinity_pngSize);
+        prefabImages[120] = juce::ImageCache::getFromMemory(BinaryData::sequence_png, BinaryData::sequence_pngSize);
         prefabImages[38] = juce::ImageCache::getFromMemory(BinaryData::transform_png, BinaryData::transform_pngSize);
         prefabImages[39] = juce::ImageCache::getFromMemory(BinaryData::merge_png, BinaryData::merge_pngSize);
         prefabImages[40] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);

@@ -37,7 +37,7 @@ void ClockDividerModule::configurePins() {
     clockIn->direction = Pin::Direction::IN;
     clockIn->listeners.push_back(this);
     clockIn->setName("Clk");
-    clockIn->setDescription("Clock-Eingang. Jedes Gate-On-Event wird gezaehlt.");
+    clockIn->setDescription("Clock-Eingang. Jedes CLOCK-Event bzw. Gate-On wird gezaehlt; Start/Stop werden durchgereicht.");
 
     divPin = new Pin(Pin::Type::VALUE);
     divPin->direction = Pin::Direction::IN;
@@ -65,10 +65,29 @@ void ClockDividerModule::process() {
 }
 
 void ClockDividerModule::eventReceived(Event* e) {
-    if (e == nullptr || e->getType() != Event::Type::GATE) return;
-    // Nur Gate-On zaehlen; Gate-Off ignorieren (sonst wuerde man bei jeder
-    // Note-On/Off-Paarung doppelt tickern).
-    if (e->getValue() <= 0) return;
+    if (e == nullptr) return;
+
+    const auto type = e->getType();
+
+    // Transport-Events transparent durchreichen, damit nachgeschaltete
+    // Sequencer weiterhin starten/stoppen. Bei Start den Zaehler resetten,
+    // damit die Teilung sauber auf dem ersten Tick beginnt.
+    if (type == Event::Type::CLOCK_START || type == Event::Type::CLOCK_STOP) {
+        if (type == Event::Type::CLOCK_START) counter = 0;
+        if (clockOut != nullptr) {
+            for (auto* c : clockOut->getConnections())
+                c->sendEvent(new Event(e));
+        }
+        return;
+    }
+
+    // Ein Tick ist ein echtes Clock-Event (MidiClock sendet Event::Type::CLOCK)
+    // ODER ein Gate-On (Trigger-Quellen senden GATE mit Value>0). Gate-Off und
+    // alles andere ignorieren, sonst wuerde man doppelt zaehlen.
+    const bool isTick =
+        type == Event::Type::CLOCK
+        || (type == Event::Type::GATE && e->getValue() > 0);
+    if (!isTick) return;
 
     int divisor = 4;
     if (divPin != nullptr && divPin->getConnections().size() == 1)
@@ -79,7 +98,10 @@ void ClockDividerModule::eventReceived(Event* e) {
     if (counter >= divisor) {
         counter = 0;
         if (clockOut != nullptr) {
-            Event* out = new Event("clock div out", Event::Type::GATE);
+            // Geteilten Tick im selben Typ ausgeben wie der Eingang: CLOCK->CLOCK
+            // fuer Clock-Ketten (StepSequencer etc.), GATE->GATE fuer Trigger-/
+            // Envelope-Ketten.
+            Event* out = new Event("clock div out", type);
             out->setValue(e->getValue());
             out->setNote(e->getNote());
             for (auto* c : clockOut->getConnections())
