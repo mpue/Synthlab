@@ -75,13 +75,6 @@ PropertyView::PropertyView () : TimeSliceThread("PropertyWatcher")
     propertyTab->setCurrentTabIndex (-1);
     styleTabs(*propertyTab);
 
-    tabbedComponent = std::make_unique<MainTabbedComponent>(TabbedButtonBar::TabsAtTop);
-
-    addAndMakeVisible (tabbedComponent.get());
-    tabbedComponent->setTabBarDepth (30);
-    tabbedComponent->setCurrentTabIndex (-1);
-    styleTabs(*tabbedComponent);
-
     //[UserPreSize]
     //[/UserPreSize]
 
@@ -153,9 +146,8 @@ PropertyView::PropertyView () : TimeSliceThread("PropertyWatcher")
     model = new FileBrowserModel(directoryContents, initialDir);
     browser = std::make_unique<ExtendedFileBrowser>(File::getSpecialLocation(File::userHomeDirectory), filter, model);
     directoryContents->addChangeListener(browser.get());
-    tabbedComponent->addTab("Browser", stripBg, browser.get(), false);
 
-    // Instruments tab — lists every scanned virtual instrument and creates an
+    // Instruments — lists every scanned virtual instrument and creates an
     // Instrument track on double-click. The editor pointer is wired later via
     // setEditor() (MainComponent does this once both objects exist), so the
     // callback checks for nullptr defensively.
@@ -164,9 +156,11 @@ PropertyView::PropertyView () : TimeSliceThread("PropertyWatcher")
         if (editor != nullptr)
             editor->addVirtualInstrumentTrack(name);
     };
-    tabbedComponent->addTab("Instruments", stripBg, instrumentBrowser.get(), false);
 
-    tabbedComponent->addTab("Description", stripBg, descriptionEditor.get(), false);
+    // Browser / Instruments / Description sind keine Tabs mehr in PropertyView,
+    // sondern eigenstaendige DockablePanels. PropertyView besitzt die
+    // Komponenten weiterhin; MainComponent haengt sie via WeakChildHolder in
+    // die Panels ein und befuellt den descriptionEditor in selectionChanged.
 
     showButton = std::make_unique<PulsingTextButton>("Show Plugin");
     addAndMakeVisible(*showButton);
@@ -212,7 +206,6 @@ PropertyView::~PropertyView()
     //[/Destructor_pre]
 
     propertyTab = nullptr;
-    tabbedComponent = nullptr;
     descriptionEditor = nullptr;
     browser = nullptr;
     instrumentBrowser = nullptr;
@@ -244,8 +237,9 @@ void PropertyView::resized()
     //[UserPreResize] Add your own custom resize code here..
     //[/UserPreResize]
 
-    propertyTab->setBounds (0, 0, proportionOfWidth (1.0000f), proportionOfHeight (0.5000f));
-    tabbedComponent->setBounds (0, proportionOfHeight (0.5000f), proportionOfWidth (1.0000f), proportionOfHeight (0.5000f));
+    // Browser/Instruments/Description sind ausgelagert — propertyTab fuellt
+    // jetzt die ganze Hoehe des Properties-Panels.
+    propertyTab->setBounds (0, 0, proportionOfWidth (1.0000f), proportionOfHeight (1.0000f));
     //[UserResized] Add your own custom resize handling here..
     if (showButton)
         showButton->setBounds(getWidth() - 110, propertyTab->getBottom() - 35, 100, 25);

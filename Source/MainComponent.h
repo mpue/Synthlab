@@ -249,6 +249,12 @@ private:
     void showOrCreateLevelMeterPanel();
     void showOrCreateSpectrumPanel();
 
+    // Browser/Instruments/Description: schliessbar, ueber das View-Menue
+    // wiederherstellbar. Content lebt in PropertyView, ueberlebt das Close.
+    void showOrCreateBrowserPanel();
+    void showOrCreateInstrumentsPanel();
+    void showOrCreateDescriptionPanel();
+
     virtual juce::StringArray getMenuBarNames() override;
     virtual juce::PopupMenu getMenuForIndex(int index, const juce::String & menuName) override;
     virtual void menuItemSelected(int menuItemID, int topLevelMenuIndex) override;
@@ -275,6 +281,12 @@ private:
     docking::DockablePanel* propertiesDockPanel = nullptr;
     docking::DockablePanel* editorDockPanel     = nullptr;
     docking::DockablePanel* jsDockPanel         = nullptr;
+    // Browser/Instruments/Description: eigenstaendige Panels neben Properties.
+    // Content ist ein WeakChildHolder; die echten Komponenten besitzt
+    // PropertyView (getBrowser/getInstrumentBrowser/getDescriptionEditor).
+    docking::DockablePanel* browserDockPanel      = nullptr;
+    docking::DockablePanel* instrumentsDockPanel  = nullptr;
+    docking::DockablePanel* descriptionDockPanel  = nullptr;
     // Bottom-Row Panels: einzeln dock-/floatbar. Mixer + Tools sind nicht
     // schliessbar (komplexe Lifetimes), Log/Level/Spektrum sind closable —
     // ihre Audio-Hooks lesen ueber Atomic-Refs (siehe levelMeterAudio /

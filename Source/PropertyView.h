@@ -63,6 +63,12 @@ public:
     void setEditor(SynthEditor* e) { editor = e; }
     InstrumentBrowser* getInstrumentBrowser() { return instrumentBrowser.get(); }
 
+    // Browser / Instruments / Description leben seit dem Docking-Refactor in
+    // eigenen DockablePanels (MainComponent haengt sie via WeakChildHolder ein).
+    // PropertyView besitzt sie weiterhin (unique_ptr) und befuellt den
+    // descriptionEditor in selectionChanged — deshalb hier nur Raw-Accessoren.
+    juce::TextEditor* getDescriptionEditor() { return descriptionEditor.get(); }
+
     // Highlight the "Show Plugin" button for a freshly created instrument
     // track. If a track is passed it also becomes the selected track so a
     // user clicking the pulsing button immediately opens the right editor.
@@ -95,7 +101,6 @@ private:
 
     //==============================================================================
     std::unique_ptr<MainTabbedComponent> propertyTab = nullptr;
-    std::unique_ptr<MainTabbedComponent> tabbedComponent = nullptr;
 
     std::unique_ptr<PulsingTextButton> showButton;
     

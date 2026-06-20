@@ -422,6 +422,27 @@ namespace {
         std::shared_ptr<MixerPanel> mixerPanel;
     };
 
+    // Non-owning Holder: haengt eine Komponente, die woanders besitzt wird
+    // (hier: PropertyView besitzt Browser/InstrumentBrowser/descriptionEditor)
+    // als Content in ein DockablePanel. Die SafePointer-Referenz macht die
+    // Teardown-Reihenfolge zwischen PropertyView und diesem Holder irrelevant:
+    // stirbt die echte Komponente zuerst, no-op't resized() statt auf freed
+    // memory zuzugreifen. KEIN delete der Komponente — das macht PropertyView.
+    class WeakChildHolder : public juce::Component
+    {
+    public:
+        explicit WeakChildHolder (juce::Component* child) : weak (child)
+        {
+            if (child != nullptr) addAndMakeVisible (*child);
+        }
+        void resized() override
+        {
+            if (auto* c = weak.getComponent()) c->setBounds (getLocalBounds());
+        }
+    private:
+        juce::Component::SafePointer<juce::Component> weak;
+    };
+
     // Holder mit Audio-Thread-Atomic-Ref-Lifecycle: bei Construction wird der
     // frische Pointer in den Atomic geschrieben, bei Destruction wieder
     // genullt. Damit kann das DockablePanel mid-session geschlossen / neu
@@ -1228,6 +1249,53 @@ void MainComponent::createStudioLayout() {
 	// Editor-Spalte), also via dockPanel(panel, editorTabNode, Bottom) erst
 	// Mixer einhaengen — danach Tools/Log/Level/Spektrum als Tabs in einem
 	// weiteren Bottom-Slot neben Mixer.
+	// Browser / Instruments / Description als eigenstaendige Panels neben
+	// Properties. Die Komponenten leben weiter in PropertyView (Ownership +
+	// Wiring bleiben unangetastet), der WeakChildHolder haengt sie nur als
+	// Content ein. Wir docken explizit auf propsTabNode, damit die Platzierung
+	// deterministisch ist. Schliessbar: beim Close wird nur das Panel + der
+	// WeakChildHolder zerstoert, die echte Komponente ueberlebt in PropertyView
+	// und wird beim Wiederoeffnen (View-Menue -> showOrCreate...) neu eingehaengt.
+	browserDockPanel = dockManager->createPanel(
+		"browser", "Browser",
+		std::make_unique<WeakChildHolder>(propertyView->getBrowser()),
+		docking::DockSide::Center);
+	instrumentsDockPanel = dockManager->createPanel(
+		"instruments", "Instruments",
+		std::make_unique<WeakChildHolder>(propertyView->getInstrumentBrowser()),
+		docking::DockSide::Center);
+	descriptionDockPanel = dockManager->createPanel(
+		"description", "Description",
+		std::make_unique<WeakChildHolder>(propertyView->getDescriptionEditor()),
+		docking::DockSide::Center);
+
+	// onClosed nullt den Raw-Member (closePanel feuert es vor dem Delete) —
+	// sowohl bei User-Close als auch beim loadLayout-Aufraeumen geschlossener
+	// Panels. So bleibt kein dangling DockablePanel*-Member zurueck.
+	if (browserDockPanel != nullptr)
+	{
+		browserDockPanel->setClosable(true);
+		browserDockPanel->onClosed = [this]() { browserDockPanel = nullptr; };
+	}
+	if (instrumentsDockPanel != nullptr)
+	{
+		instrumentsDockPanel->setClosable(true);
+		instrumentsDockPanel->onClosed = [this]() { instrumentsDockPanel = nullptr; };
+	}
+	if (descriptionDockPanel != nullptr)
+	{
+		descriptionDockPanel->setClosable(true);
+		descriptionDockPanel->onClosed = [this]() { descriptionDockPanel = nullptr; };
+	}
+
+	if (auto* propsTabNode = dynamic_cast<docking::DockTabNode*>(
+			propertiesDockPanel != nullptr ? propertiesDockPanel->getParentComponent() : nullptr))
+	{
+		dockManager->dockPanel(browserDockPanel,     propsTabNode, docking::DockSide::Center);
+		dockManager->dockPanel(instrumentsDockPanel, propsTabNode, docking::DockSide::Center);
+		dockManager->dockPanel(descriptionDockPanel, propsTabNode, docking::DockSide::Center);
+	}
+
 	auto* mixerOwned = new MixerDockContent(mixerPanel);
 	mixerDockPanel = dockManager->createPanel(
 		"mixer", "Mixer",
@@ -1294,6 +1362,15 @@ void MainComponent::createStudioLayout() {
 #if defined(JUCE_PLUGINHOST_AU) || defined(JUCE_PLUGINHOST_VST)
 	pluginMenu = PluginManager::getInstance()->buildPluginMenu();
 #endif
+
+	// availableInstruments wird erst in buildPluginMenu() gefuellt — der
+	// refresh() im InstrumentBrowser-Ctor lief also noch gegen eine leere
+	// Liste. Jetzt, wo die Liste steht, einmal nachladen, sonst bleibt das
+	// Instruments-Panel leer.
+	if (propertyView != nullptr)
+		if (auto* ib = propertyView->getInstrumentBrowser())
+			ib->refresh();
+
 	editor->updateProject(File());
 }
 
@@ -2077,6 +2154,58 @@ void MainComponent::showOrCreateSpectrumPanel()
 	spectrumDockPanel = panel;
 }
 
+// Browser / Instruments / Description: die echte Komponente lebt in
+// PropertyView und ueberlebt ein Close. Wir haengen sie hier nur per
+// WeakChildHolder in ein frisches Panel. Center -> firstTabNodeOrCreate
+// landet wieder im linken (Properties-)Tab-Node.
+void MainComponent::showOrCreateBrowserPanel()
+{
+	if (dockManager == nullptr || propertyView == nullptr) return;
+	if (auto* p = dockManager->findPanel("browser")) { dockManager->activatePanel(p); return; }
+	auto* panel = dockManager->createPanel(
+		"browser", "Browser",
+		std::make_unique<WeakChildHolder>(propertyView->getBrowser()),
+		docking::DockSide::Center);
+	if (panel != nullptr)
+	{
+		panel->setClosable(true);
+		panel->onClosed = [this]() { browserDockPanel = nullptr; };
+	}
+	browserDockPanel = panel;
+}
+
+void MainComponent::showOrCreateInstrumentsPanel()
+{
+	if (dockManager == nullptr || propertyView == nullptr) return;
+	if (auto* p = dockManager->findPanel("instruments")) { dockManager->activatePanel(p); return; }
+	auto* panel = dockManager->createPanel(
+		"instruments", "Instruments",
+		std::make_unique<WeakChildHolder>(propertyView->getInstrumentBrowser()),
+		docking::DockSide::Center);
+	if (panel != nullptr)
+	{
+		panel->setClosable(true);
+		panel->onClosed = [this]() { instrumentsDockPanel = nullptr; };
+	}
+	instrumentsDockPanel = panel;
+}
+
+void MainComponent::showOrCreateDescriptionPanel()
+{
+	if (dockManager == nullptr || propertyView == nullptr) return;
+	if (auto* p = dockManager->findPanel("description")) { dockManager->activatePanel(p); return; }
+	auto* panel = dockManager->createPanel(
+		"description", "Description",
+		std::make_unique<WeakChildHolder>(propertyView->getDescriptionEditor()),
+		docking::DockSide::Center);
+	if (panel != nullptr)
+	{
+		panel->setClosable(true);
+		panel->onClosed = [this]() { descriptionDockPanel = nullptr; };
+	}
+	descriptionDockPanel = panel;
+}
+
 void MainComponent::showOrCreatePianoRollPanel(std::unique_ptr<PianoRollEditor> editor)
 {
 	if (dockManager == nullptr || editor == nullptr) return;
@@ -2468,6 +2597,9 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addItem(206, "Show Log",        true, isPanelOpen("log"));
 		menu.addItem(203, "Show Level Meter",true, isPanelOpen("level"));
 		menu.addItem(204, "Show Spektrum",   true, isPanelOpen("spectrum"));
+		menu.addItem(213, "Show Browser",      true, isPanelOpen("browser"));
+		menu.addItem(214, "Show Instruments",  true, isPanelOpen("instruments"));
+		menu.addItem(215, "Show Description",  true, isPanelOpen("description"));
 		menu.addItem(207, "JavaScript Editor", true, false, nullptr);
 		menu.addSeparator();
 		menu.addItem(212, "Reset Dock Layout", true, false, nullptr);
@@ -2732,6 +2864,15 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	}
 	else if (menuItemID == 204) {
 		showOrCreateSpectrumPanel();
+	}
+	else if (menuItemID == 213) {
+		showOrCreateBrowserPanel();
+	}
+	else if (menuItemID == 214) {
+		showOrCreateInstrumentsPanel();
+	}
+	else if (menuItemID == 215) {
+		showOrCreateDescriptionPanel();
 	}
 	else if (menuItemID == 205) {
 		openQuickstart();
