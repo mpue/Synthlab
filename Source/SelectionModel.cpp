@@ -127,6 +127,11 @@ SelectionModel::State SelectionModel::checkForHitAndSelect(juce::Point<int> pos,
                 root->getModules()->at(i)->saveUiPosition();
             }
         }
+        // Wegpunkt-Baseline aller Verbindungen sichern, damit moveSelection sie
+        // relativ zum Drag-Start mitschieben kann.
+        if (root->getConnections() != nullptr)
+            for (auto* c : *root->getConnections())
+                if (c != nullptr) c->saveWaypoints();
         return MOVING_SELECTION;
     }
     else {

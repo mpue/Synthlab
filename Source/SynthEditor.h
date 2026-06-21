@@ -236,6 +236,8 @@ public:
     void cutConnectionAtPosition(Point<int> position);
     void cutConnectionsAlongLine(Point<int> start, Point<int> end);
     void removeConnection(Connection* c);
+    // Liefert die Verbindung, deren Polylinie pos innerhalb tolerance schneidet.
+    Connection* findConnectionAt(Point<int> pos, float tolerance);
 
 
 private:
@@ -259,6 +261,13 @@ private:
     bool isLeftMouseDown = false;
 	bool isMovingModule = true;
 	bool isDraggingConnection = false;
+
+    // Aktiver Wegpunkt-Drag (Doppelklick legt an/loescht, Drag verschiebt).
+    Connection* draggedWaypointConn = nullptr;
+    int draggedWaypointIndex = -1;
+
+    // Gecachte Kachel fuer das dezente Punktraster im Hintergrund.
+    juce::Image gridTile;
 
     std::shared_ptr <Module> root = nullptr;
     

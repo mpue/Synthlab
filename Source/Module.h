@@ -132,6 +132,11 @@ public:
     
     virtual juce::String getCategory();
     virtual juce::String getDescription();
+
+    // Kategorie-Akzentfarbe fuers Rendering. Wird lazy ueber den Modulnamen
+    // aus der PrefabFactory aufgeloest (Module-Instanzen kennen ihre Kategorie
+    // sonst nicht) und gecacht.
+    juce::Colour getAccentColour();
     
     virtual void setSampleRate(float rate);
     virtual void setBuffersize(int buffersize);
@@ -318,6 +323,9 @@ protected:
     juce::DropShadower* shadower = nullptr;
 
     Layer currentLayer = Layer::ALL;
+
+    bool accentResolved = false;
+    juce::Colour accentColour = juce::Colour(0xff6a6e78);
 
     juce::ResizableCornerComponent* resizer = nullptr;
 
