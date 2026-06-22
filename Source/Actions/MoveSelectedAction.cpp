@@ -47,14 +47,37 @@ bool MoveSelectedAction::perform() {
         
 
     }
-    
+
+    // Verbindungen, deren Wegpunkte beim Drag verschoben wurden (waypoints
+    // weichen von der beim Drag-Start gesicherten Baseline ab), fuers Undo
+    // festhalten und die Baseline auf den neuen Stand setzen.
+    if (editor->getModule() != nullptr && editor->getModule()->getConnections() != nullptr) {
+        for (auto* c : *editor->getModule()->getConnections()) {
+            if (c == nullptr || c->waypoints.empty()) continue;
+            if (c->savedWaypoints.size() != c->waypoints.size()) continue;
+            if (c->waypoints == c->savedWaypoints) continue;
+
+            movedConnections.push_back(c);
+            oldWaypoints.push_back(c->savedWaypoints);
+            c->saveWaypoints();
+        }
+    }
+
     editor->setDirty(true);
 
     return true;
 }
 
 bool MoveSelectedAction::undo() {
-    
+
+    for (int i = 0; i < movedConnections.size(); i++) {
+        movedConnections.at(i)->waypoints = oldWaypoints.at(i);
+        movedConnections.at(i)->saveWaypoints();
+        movedConnections.at(i)->resized();
+    }
+    movedConnections.clear();
+    oldWaypoints.clear();
+
     for (int i = 0; i < movedModules.size();i++) {
         if (editor->getCurrentLayer() == Module::Layer::GUI) {
             

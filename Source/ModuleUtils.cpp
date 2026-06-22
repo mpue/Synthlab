@@ -183,6 +183,28 @@ void ModuleUtils::loadConnections(juce::ValueTree& cons, std::vector<Module*>* m
 
 		if (source != nullptr && target != nullptr && a != nullptr && b != nullptr) {
 			addConnection(source, a, target, b, connections);
+
+			// Wegpunkte auf die soeben erzeugte Verbindung uebertragen. Das
+			// Pin-Paar (a,b) identifiziert sie eindeutig (connectionExists
+			// verhindert Duplikate).
+			String wp = con.getProperty("waypoints").toString();
+			if (wp.isNotEmpty()) {
+				for (auto* c : *connections) {
+					if (c != nullptr && c->a == a && c->b == b) {
+						c->waypoints.clear();
+						StringArray pairs;
+						pairs.addTokens(wp, ";", "");
+						for (auto& pr : pairs) {
+							StringArray xy;
+							xy.addTokens(pr, ",", "");
+							if (xy.size() == 2)
+								c->waypoints.push_back(juce::Point<int>(xy[0].getIntValue(),
+								                                        xy[1].getIntValue()));
+						}
+						break;
+					}
+				}
+			}
 		}
         /*
 		else {
@@ -1002,6 +1024,15 @@ void ModuleUtils::saveStructure(std::vector<Module*>* modules, std::vector<Conne
 		con.setProperty("target", String((*it)->target->getIndex()), nullptr);
 		con.setProperty("a", String((*it)->a->index), nullptr);
 		con.setProperty("b", String((*it)->b->index), nullptr);
+		// Wegpunkte als "x,y;x,y;..." serialisieren (nur wenn vorhanden).
+		if (!(*it)->waypoints.empty()) {
+			String wp;
+			for (auto& p : (*it)->waypoints) {
+				if (wp.isNotEmpty()) wp << ";";
+				wp << String(p.x) << "," << String(p.y);
+			}
+			con.setProperty("waypoints", wp, nullptr);
+		}
 		cons.addChild(con, -1, nullptr);
 	}
 

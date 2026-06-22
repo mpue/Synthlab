@@ -35,6 +35,19 @@ public:
     juce::String getPluginName();
 	AudioPluginInstance* getPlugin() { return plugin.get(); }
     void openPluginWindow();
+
+    // ---- Dockable plugin editors (opt-in via Settings::dockPluginWindows) ----
+    // PluginModule lives in the module/audio layer and knows nothing about the
+    // UI's DockManager. MainComponent installs these hooks so a plugin editor
+    // can be shown as a dock panel instead of a floating DocumentWindow. They
+    // are keyed by the PluginModule pointer so each module maps to one panel.
+    //   activateDockedEditorHook: focus this module's panel if it exists -> true.
+    //   dockEditorHook:           create a panel that owns `editor` -> true on success.
+    //   closeDockedEditorHook:    close this module's panel (called from the dtor
+    //                             so the editor is destroyed before `plugin`).
+    static std::function<bool(PluginModule*)> activateDockedEditorHook;
+    static std::function<bool(PluginModule*, juce::AudioProcessorEditor*, const juce::String&)> dockEditorHook;
+    static std::function<void(PluginModule*)> closeDockedEditorHook;
     void eventReceived(Event* e) override;
     void addMidiMessage(const juce::MidiMessage& msg);
     void resetPlugin();

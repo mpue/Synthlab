@@ -11,6 +11,13 @@
 #include "Plugins/PluginManager.h"
 #include "PluginModule.h"
 
+#if JUCE_MAC
+ // Objective-C runtime C-API — lets us toggle clipsToBounds on hosted plugin
+ // NSViews from plain C++ (no .mm file / pbxproj change needed).
+ #include <objc/runtime.h>
+ #include <objc/message.h>
+#endif
+
 #include "AudioManager.h"
 #include "MainComponent.h"
 #include "SynthEditor.h"
@@ -628,6 +635,15 @@ MainComponent::~MainComponent()
 
 	editor->removeAllChangeListeners();
 
+	// PluginModule-Dock-Hooks loesen, BEVOR dockManager faellt. Sonst koennte
+	// ein spaeter (waehrend Project-Teardown) zerstoerter PluginModule in den
+	// toten DockManager / dieses `this` greifen. dockManager.reset() weiter
+	// unten raumt verbleibende Plugin-Panels sicher ab (Editor stirbt, solange
+	// der jeweilige Plugin-Processor noch lebt).
+	PluginModule::activateDockedEditorHook = nullptr;
+	PluginModule::dockEditorHook           = nullptr;
+	PluginModule::closeDockedEditorHook    = nullptr;
+
 	midiProcessor->disableAllMidiInputs();
 
 	if (moduleBrowser != nullptr) {
@@ -685,6 +701,8 @@ MainComponent::~MainComponent()
 		propertiesDockPanel = nullptr;
 		editorDockPanel     = nullptr;
 		jsDockPanel         = nullptr;
+		navigatorDockPanel  = nullptr;
+		quickstartDockPanel = nullptr;
 		mixerDockPanel = nullptr;
 		toolsDockPanel = nullptr;
 		logDockPanel = nullptr;
@@ -1192,6 +1210,8 @@ void MainComponent::createStudioLayout() {
 	dockManager = std::make_unique<docking::DockManager>();
 	addAndMakeVisible(dockManager.get());
 
+	installPluginDockHooks();
+
 	// DockSide::Center wuerde das Panel in den bereits existierenden Tab
 	// mergen — wir wollen drei separate Splits. Reihenfolge: Properties links
 	// (erstes Panel landet als Solo unter root), Editor rechts (anhaengen),
@@ -1355,6 +1375,12 @@ void MainComponent::createStudioLayout() {
 			}
 		}
 	}
+
+	// Navigator als eigenstaendiges Panel neben den Editor tabifizieren.
+	// navigator/trackViewport wurden oben via openTrackView() (vor dem
+	// dockManager) bereits angelegt; jetzt, wo editorTabNode existiert, bekommt
+	// der Navigator sein Panel.
+	showOrCreateNavigatorPanel();
 
 	// Aus User-Verzeichnis (.synthlabdock) wiederherstellen, falls vorhanden.
 	loadDockLayout();
@@ -1940,22 +1966,14 @@ void MainComponent::openTrackView()
 		navigator->toFront(false);
 	}
 
-	if (editorAreaTab == nullptr) return;
+	// Navigator ist jetzt ein eigenstaendiges DockablePanel (frueher ein
+	// Sub-Tab im editorAreaTab). Beim Erst-Aufruf aus dem Ctor existiert der
+	// dockManager noch nicht — dann nur navigator/trackViewport anlegen; das
+	// Panel wird in der Dock-Aufbau-Sektion (nach createPanel("editor", ...))
+	// einmalig erzeugt.
+	if (dockManager == nullptr) return;
 
-	// Doppel-Tab vermeiden, sonst landet jedes openTrackView() in einem
-	// neuen "Navigator" Tab.
-	for (int i = 0; i < editorAreaTab->getNumTabs(); ++i)
-	{
-		if (editorAreaTab->getTabNames()[i] == "Navigator")
-		{
-			editorAreaTab->setCurrentTabIndex(i);
-			navigator->setInterceptsMouseClicks(true, true);
-			navigator->toFront(true);
-			return;
-		}
-	}
-	editorAreaTab->addTab("Navigator", juce::Colours::grey, trackViewport.get(), false);
-	editorAreaTab->setCurrentTabIndex(editorAreaTab->getNumTabs() - 1);
+	showOrCreateNavigatorPanel();
 	navigator->setInterceptsMouseClicks(true, true);
 	navigator->toFront(true);
 }
@@ -2154,6 +2172,193 @@ void MainComponent::showOrCreateSpectrumPanel()
 	spectrumDockPanel = panel;
 }
 
+// Owns a plugin's AudioProcessorEditor inside a dock panel and guarantees it
+// never draws outside the panel. A plain Viewport is not enough: macOS hosts
+// plugin GUIs in a native NSView, which ignores JUCE's Viewport clipping and
+// would paint over neighbouring panels. We instead keep the editor at its
+// preferred size and scale it down (aspect-preserving, centred) whenever it is
+// larger than the panel, so its parent-bounds always fit. We also re-fit when
+// the plugin resizes itself.
+namespace
+{
+#if JUCE_MAC
+// AU plugins are hosted on macOS in a plain NSViewComponent whose NSView does
+// NOT clip its content (unlike VST3, which JUCE wraps in a clipping view). So a
+// large AU GUI paints past the dock panel over neighbouring areas. Recursively
+// forcing clipsToBounds=YES on the hosting window's native subviews clips every
+// hosted plugin view to its (scaled) frame. JUCE itself renders into one peer
+// view via CoreGraphics — its components aren't separate NSViews — so this only
+// affects native-hosted views (plugin GUIs), which is exactly what we want.
+void enableNativeClippingRecursively (void* viewPtr)
+{
+	if (viewPtr == nullptr) return;
+	id view = (id) viewPtr;
+
+	reinterpret_cast<void (*)(id, SEL, BOOL)>(objc_msgSend)
+		(view, sel_registerName ("setClipsToBounds:"), YES);
+
+	id subs = reinterpret_cast<id (*)(id, SEL)>(objc_msgSend)
+		(view, sel_registerName ("subviews"));
+	if (subs == nullptr) return;
+
+	const auto n = reinterpret_cast<unsigned long (*)(id, SEL)>(objc_msgSend)
+		(subs, sel_registerName ("count"));
+	for (unsigned long i = 0; i < n; ++i)
+		enableNativeClippingRecursively (
+			(void*) reinterpret_cast<id (*)(id, SEL, unsigned long)>(objc_msgSend)
+				(subs, sel_registerName ("objectAtIndex:"), i));
+}
+#endif
+
+class PluginEditorDockHolder : public juce::Component,
+                              private juce::ComponentListener
+{
+public:
+	explicit PluginEditorDockHolder (juce::AudioProcessorEditor* ed)
+		: editor (ed)
+	{
+		jassert (editor != nullptr);
+		addAndMakeVisible (editor.get());
+		editor->addComponentListener (this);
+	}
+
+	~PluginEditorDockHolder() override
+	{
+		if (editor != nullptr)
+			editor->removeComponentListener (this);
+		// ~AudioProcessorEditor calls processor->editorBeingDeleted(); the
+		// PluginModule keeps `plugin` alive until its panel is closed.
+	}
+
+	void resized() override { fit(); }
+
+	void componentMovedOrResized (juce::Component&, bool, bool wasResized) override
+	{
+		// The plugin changed its own logical size (e.g. a resizable UI) — re-fit
+		// so a grown editor can't spill past the panel. Guard against the
+		// callbacks our own setTransform()/setBounds() may trigger.
+		if (wasResized && ! fitting)
+			fit();
+	}
+
+private:
+	void fit()
+	{
+		if (editor == nullptr)
+			return;
+
+		auto area = getLocalBounds();
+		if (area.isEmpty())
+			return;
+
+		const juce::ScopedValueSetter<bool> guard (fitting, true);
+
+		// getWidth()/getHeight() are the editor's logical (unscaled) size — the
+		// host scale transform doesn't affect them — so we can read them directly.
+		const int w = juce::jmax (1, editor->getWidth());
+		const int h = juce::jmax (1, editor->getHeight());
+
+		// Scale down only — never blow a small editor up past its native size.
+		const float scale = juce::jmin (1.0f,
+		                                (float) area.getWidth()  / (float) w,
+		                                (float) area.getHeight() / (float) h);
+
+		// setScaleFactor() is JUCE's sanctioned host-rescale path: it sets
+		// hostScaleTransform and passes AudioProcessorEditor's internal
+		// assertion. Setting our own AffineTransform here would trip that
+		// assertion (jassert getTransform()==hostScaleTransform) and crash.
+		// The transform scales about the parent origin, so when we scale we must
+		// anchor the editor at (0,0); only when unscaled can we safely centre it.
+		if (scale < 1.0f)
+		{
+			editor->setScaleFactor (scale);
+			editor->setTopLeftPosition (0, 0);
+		}
+		else
+		{
+			editor->setScaleFactor (1.0f);
+			editor->setTopLeftPosition (juce::jmax (0, (area.getWidth()  - w) / 2),
+			                            juce::jmax (0, (area.getHeight() - h) / 2));
+		}
+
+	   #if JUCE_MAC
+		// AU plugin views don't self-clip — force it on the hosting view tree so
+		// the (now scaled) editor frame actually bounds the plugin's drawing.
+		if (auto* peer = getPeer())
+			enableNativeClippingRecursively (peer->getNativeHandle());
+	   #endif
+	}
+
+	std::unique_ptr<juce::AudioProcessorEditor> editor;
+	bool fitting = false;
+};
+} // namespace
+
+// Plugin-Editoren als Dock-Panels. PluginModule kennt den DockManager nicht,
+// daher verdrahten wir hier die statischen Hooks. Jeder PluginModule-Pointer
+// wird auf genau ein Panel mit deterministischer ID gemappt.
+void MainComponent::installPluginDockHooks()
+{
+	auto panelIdFor = [](PluginModule* pm) -> juce::String
+	{
+		return "plugin_" + juce::String::toHexString(
+			(juce::int64) (juce::pointer_sized_int) pm);
+	};
+
+	PluginModule::activateDockedEditorHook =
+		[this, panelIdFor](PluginModule* pm) -> bool
+	{
+		if (dockManager == nullptr || pm == nullptr) return false;
+		if (auto* p = dockManager->findPanel(panelIdFor(pm)))
+		{
+			dockManager->activatePanel(p);
+			return true;
+		}
+		return false;
+	};
+
+	PluginModule::dockEditorHook =
+		[this, panelIdFor](PluginModule* pm, juce::AudioProcessorEditor* editor,
+		                   const juce::String& name) -> bool
+	{
+		if (dockManager == nullptr || pm == nullptr || editor == nullptr)
+			return false;
+
+		// Editor in einen Holder packen, der ihn auf den Panel-Bereich
+		// einpasst (runter-skaliert, falls groesser). Verhindert, dass grosse
+		// Plugin-Oberflaechen ueber andere Bildschirmbereiche ragen — ein
+		// blosses Viewport-Clipping greift bei nativen Plugin-Views (NSView)
+		// nicht. Der Holder besitzt den Editor und loescht ihn beim Schliessen.
+		auto holder = std::make_unique<PluginEditorDockHolder>(editor);
+
+		auto* panel = dockManager->createPanel(
+			panelIdFor(pm),
+			name.isNotEmpty() ? name : juce::String("Plugin"),
+			std::move(holder),
+			docking::DockSide::Center);
+		if (panel == nullptr) return false;
+		panel->setClosable(true);
+
+		// Center allein landet im Properties-Tab-Node (firstTabNodeOrCreate).
+		// Plugin-Editoren sollen ins Haupt-Dock (Editor-Tab-Node) — daher
+		// explizit dorthin tabifizieren, analog zu Navigator/Quickstart.
+		if (auto* editorTabNode = dynamic_cast<docking::DockTabNode*>(
+				editorDockPanel != nullptr ? editorDockPanel->getParentComponent() : nullptr))
+			dockManager->dockPanel(panel, editorTabNode, docking::DockSide::Center);
+
+		dockManager->activatePanel(panel);
+		return true;
+	};
+
+	PluginModule::closeDockedEditorHook =
+		[this, panelIdFor](PluginModule* pm)
+	{
+		if (dockManager == nullptr || pm == nullptr) return;
+		if (auto* p = dockManager->findPanel(panelIdFor(pm)))
+			dockManager->closePanel(p);
+	};
+}
+
 // Browser / Instruments / Description: die echte Komponente lebt in
 // PropertyView und ueberlebt ein Close. Wir haengen sie hier nur per
 // WeakChildHolder in ein frisches Panel. Center -> firstTabNodeOrCreate
@@ -2204,6 +2409,32 @@ void MainComponent::showOrCreateDescriptionPanel()
 		panel->onClosed = [this]() { descriptionDockPanel = nullptr; };
 	}
 	descriptionDockPanel = panel;
+}
+
+// Navigator: trackViewport (haelt den TrackNavigator) lebt weiter in
+// MainComponent; das Panel haengt ihn nur per WeakChildHolder ein, sodass ein
+// Close die Dtor-Teardown-Reihenfolge (navigator VOR trackViewport) nicht
+// stoert. Default-Platzierung: als Tab neben den Editor — Center allein wuerde
+// im Properties-Tab-Node landen (firstTabNodeOrCreate), also explizit auf den
+// Editor-Tab-Node docken.
+void MainComponent::showOrCreateNavigatorPanel()
+{
+	if (dockManager == nullptr || trackViewport == nullptr) return;
+	if (auto* p = dockManager->findPanel("navigator")) { dockManager->activatePanel(p); return; }
+	auto* panel = dockManager->createPanel(
+		"navigator", "Navigator",
+		std::make_unique<WeakChildHolder>(trackViewport.get()),
+		docking::DockSide::Center);
+	if (panel != nullptr)
+	{
+		panel->setClosable(true);
+		panel->onClosed = [this]() { navigatorDockPanel = nullptr; };
+		if (auto* editorTabNode = dynamic_cast<docking::DockTabNode*>(
+				editorDockPanel != nullptr ? editorDockPanel->getParentComponent() : nullptr))
+			dockManager->dockPanel(panel, editorTabNode, docking::DockSide::Center);
+		dockManager->activatePanel(panel);
+	}
+	navigatorDockPanel = panel;
 }
 
 void MainComponent::showOrCreatePianoRollPanel(std::unique_ptr<PianoRollEditor> editor)
@@ -2584,7 +2815,8 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addSeparator();
 		menu.addItem(201, "Tracks", true, false, nullptr);
 		menu.addItem(202, "Console", true, false, nullptr);
-		menu.addItem(205, "Quickstart", true, false, nullptr);
+		menu.addItem(205, "Quickstart", true,
+			dockManager != nullptr && dockManager->findPanel("quickstart") != nullptr);
 		menu.addSeparator();
 		// DockablePanel-Show-Items. isTicked = panel-ist-aktuell-offen.
 		// "Show Properties / Editor / JavaScript" sind nicht aufgefuehrt —
@@ -2600,6 +2832,7 @@ PopupMenu MainComponent::getMenuForIndex(int index, const String& menuName) {
 		menu.addItem(213, "Show Browser",      true, isPanelOpen("browser"));
 		menu.addItem(214, "Show Instruments",  true, isPanelOpen("instruments"));
 		menu.addItem(215, "Show Description",  true, isPanelOpen("description"));
+		menu.addItem(216, "Show Navigator",    true, isPanelOpen("navigator"));
 		menu.addItem(207, "JavaScript Editor", true, false, nullptr);
 		menu.addSeparator();
 		menu.addItem(212, "Reset Dock Layout", true, false, nullptr);
@@ -2873,6 +3106,11 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 	}
 	else if (menuItemID == 215) {
 		showOrCreateDescriptionPanel();
+	}
+	else if (menuItemID == 216) {
+		openTrackView();
+		if (navigator.get() != nullptr)
+			navigator.get()->addChangeListener(this);
 	}
 	else if (menuItemID == 205) {
 		openQuickstart();
@@ -3200,17 +3438,14 @@ void MainComponent::restoreNavigatorAfterOpen() {
 void MainComponent::openQuickstart() {
 	if (editorViewport == nullptr)
 		return;
-
-	auto* tabs = editorAreaTab;
-	if (tabs == nullptr)
+	if (dockManager == nullptr)
 		return;
 
-	// Already open? Just bring it to front.
-	for (int i = 0; i < tabs->getNumTabs(); ++i) {
-		if (tabs->getTabNames()[i] == "Quickstart") {
-			tabs->setCurrentTabIndex(i);
-			return;
-		}
+	// Schon offen? Nur nach vorne holen. Quickstart ist jetzt ein
+	// eigenstaendiges DockablePanel (frueher Sub-Tab im editorAreaTab).
+	if (auto* p = dockManager->findPanel("quickstart")) {
+		dockManager->activatePanel(p);
+		return;
 	}
 
 	if (quickstart == nullptr) {
@@ -3292,8 +3527,24 @@ void MainComponent::openQuickstart() {
 		});
 	}
 
-	tabs->addTab("Quickstart", Colour(0xff1b1b25), quickstart.get(), false);
-	tabs->setCurrentTabIndex(tabs->getNumTabs() - 1);
+	// quickstart lebt weiter in MainComponent (unique_ptr) — Panel haengt es
+	// nur per WeakChildHolder ein, sodass ein Close die Teardown-Reihenfolge
+	// nicht beruehrt. Wie der Navigator neben den Editor tabifizieren statt im
+	// Properties-Tab-Node zu landen.
+	auto* panel = dockManager->createPanel(
+		"quickstart", "Quickstart",
+		std::make_unique<WeakChildHolder>(quickstart.get()),
+		docking::DockSide::Center);
+	if (panel != nullptr)
+	{
+		panel->setClosable(true);
+		panel->onClosed = [this]() { quickstartDockPanel = nullptr; };
+		if (auto* editorTabNode = dynamic_cast<docking::DockTabNode*>(
+				editorDockPanel != nullptr ? editorDockPanel->getParentComponent() : nullptr))
+			dockManager->dockPanel(panel, editorTabNode, docking::DockSide::Center);
+		dockManager->activatePanel(panel);
+	}
+	quickstartDockPanel = panel;
 }
 
 JavaScriptEditorComponent* MainComponent::createJavaScriptEditorComponent() {

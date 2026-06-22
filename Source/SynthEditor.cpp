@@ -156,7 +156,19 @@ void SynthEditor::setModuleLocked(Module* m, bool locked) {
 
 void SynthEditor::paint(Graphics& g)
 {
-	g.fillAll(Colour(0xff222222));
+	// Tiefer, leicht kuehler Grundton + dezentes Punktraster (gecachte Kachel,
+	// nur im Clip-Bereich getiled -> guenstig auch auf grosser Canvas).
+	g.fillAll(Colour(0xff1b1d22));
+
+	if (gridTile.isNull()) {
+		gridTile = Image(Image::ARGB, 24, 24, true);
+		Graphics tg(gridTile);
+		tg.setColour(Colours::white.withAlpha(0.05f));
+		tg.fillEllipse(1.0f, 1.0f, 2.0f, 2.0f);
+	}
+	g.setTiledImageFill(gridTile, 0, 0, 1.0f);
+	g.fillRect(g.getClipBounds());
+
 	g.setColour(juce::Colours::white);
 
 	if (isLeftMouseDown) {
@@ -195,6 +207,17 @@ void SynthEditor::drawConnections(Graphics& g) {
 			// g.drawLine(x1,y1,x2,y2);
 			c->toFront(false);
 			c->paint(g);
+
+			// Wegpunkt-Griffe nur an der gerade aktiven (gehoverten/selektierten)
+			// Verbindung zeigen, damit der User sie greifen/loeschen kann.
+			if (c->selected) {
+				for (const auto& w : c->waypoints) {
+					g.setColour(juce::Colours::orange);
+					g.fillEllipse((float)w.x - 5.0f, (float)w.y - 5.0f, 10.0f, 10.0f);
+					g.setColour(juce::Colours::white);
+					g.drawEllipse((float)w.x - 5.0f, (float)w.y - 5.0f, 10.0f, 10.0f, 1.5f);
+				}
+			}
 		}
 	}
 }
@@ -246,16 +269,10 @@ void SynthEditor::drawCurrentConnection() {
 	p2.x = lineStopX;
 	p2.y = lineStopY;
 
+	// Gerade Linie statt Bezier — konsistent mit der finalen Verbindung.
 	linePath.clear();
-	linePath.startNewSubPath(p1.x, p1.y);
-
-	linePath.cubicTo(p1.x, p1.y,
-		p1.x + (p2.x - p1.x) * 0.3f, p1.y,
-		p1.x + (p2.x - p1.x) * 0.5f, p1.y + (p2.y - p1.y) * 0.5f);
-
-	linePath.cubicTo(p1.x + (p2.x - p1.x) * 0.5f, p1.y + (p2.y - p1.y) * 0.5f,
-		p2.x - (p2.x - p1.x) * 0.3, p2.y,
-		p2.x, p2.y);
+	linePath.startNewSubPath((float)p1.x, (float)p1.y);
+	linePath.lineTo((float)p2.x, (float)p2.y);
 
 	PathStrokeType wideStroke(2.0f);
 	wideStroke.createStrokedPath(linePath, linePath);
@@ -282,6 +299,20 @@ void SynthEditor::mouseDown(const MouseEvent& e)
 
 	if (e.mods.isLeftButtonDown()) {
 		isLeftMouseDown = true;
+
+		// Liegt der Klick auf einem vorhandenen Wegpunkt? Dann nur diesen
+		// verschieben — keine Selektion / kein Modul-Move starten.
+		draggedWaypointConn = nullptr;
+		draggedWaypointIndex = -1;
+		if (Connection* c = findConnectionAt(e.getPosition(), 8.0f)) {
+			int wp = c->findWaypoint(e.getPosition(), 8.0f);
+			if (wp >= 0) {
+				draggedWaypointConn = c;
+				draggedWaypointIndex = wp;
+				repaint();
+				return;
+			}
+		}
 
 		selectionFrame.setBounds(mouseDownX, mouseDownY, 0, 0);
 
@@ -330,6 +361,16 @@ void SynthEditor::mouseDrag(const MouseEvent& e)
 
 	mouseX = e.getPosition().getX();
 	mouseY = e.getPosition().getY();
+
+	// Aktiver Wegpunkt-Drag: nur den Punkt der Maus folgen lassen.
+	if (draggedWaypointConn != nullptr && draggedWaypointIndex >= 0) {
+		if (draggedWaypointIndex < (int)draggedWaypointConn->waypoints.size()) {
+			draggedWaypointConn->waypoints[draggedWaypointIndex] = e.getPosition();
+			draggedWaypointConn->resized();
+		}
+		repaint();
+		return;
+	}
 
 	dragDistanceX = e.getDistanceFromDragStartX();
 	dragDistanceY = e.getDistanceFromDragStartY();
@@ -429,6 +470,26 @@ void SynthEditor::moveSelection(const MouseEvent& e) {
 			}
 		}
 	}
+
+	// Wegpunkte mitschieben: fuer Verbindungen, die selektiert sind oder deren
+	// beide Endpunkt-Module in der Auswahl liegen. So behaelt die Polylinie beim
+	// Verschieben ihre Form. Nur im Modul-Graph-Layer (GUI-Layer zeigt keine
+	// Verbindungen). Bezug ist die beim Drag-Start gesicherte Baseline.
+	if (currentLayer != Module::Layer::GUI && root != nullptr && root->getConnections() != nullptr) {
+		auto offset = e.getOffsetFromDragStart();
+		for (auto* c : *root->getConnections()) {
+			if (c == nullptr || c->waypoints.empty()) continue;
+			if (c->savedWaypoints.size() != c->waypoints.size()) continue;
+
+			const bool bothEndsSelected = c->source != nullptr && c->target != nullptr
+				&& c->source->isSelected() && c->target->isSelected();
+			if (!c->selected && !bothEndsSelected) continue;
+
+			for (size_t i = 0; i < c->waypoints.size(); ++i)
+				c->waypoints[i] = c->savedWaypoints[i] + offset;
+			c->resized();
+		}
+	}
 }
 
 void SynthEditor::dragSelection() {
@@ -472,6 +533,16 @@ void SynthEditor::mouseUp(const MouseEvent& e)
 		isMiddleMouseDown = false;
 	}
 
+	// Wegpunkt-Drag abschliessen.
+	if (draggedWaypointConn != nullptr) {
+		draggedWaypointConn = nullptr;
+		draggedWaypointIndex = -1;
+		state = SelectionModel::State::NONE;
+		dragHasStarted = false;
+		repaint();
+		return;
+	}
+
 	if (state == SelectionModel::MOVING_SELECTION) {
 		MoveSelectedAction* msa = new MoveSelectedAction(this);
 		Project::getInstance()->getUndoManager()->beginNewTransaction();
@@ -512,6 +583,28 @@ void SynthEditor::mouseUp(const MouseEvent& e)
 
 void SynthEditor::mouseDoubleClick(const MouseEvent& e)
 {
+	// Doppelklick auf eine Verbindung (und nicht auf ein Modul): liegt er auf
+	// einem vorhandenen Wegpunkt -> loeschen, sonst -> neuen Wegpunkt einfuegen.
+	// Modul-Doppelklicks (Editor/Plugin-Fenster oeffnen) bleiben unberuehrt.
+	if (!isAltDown && root != nullptr) {
+		bool overModule = false;
+		for (auto* m : *root->getModules())
+			if (m != nullptr && m->getBounds().contains(e.getPosition())) { overModule = true; break; }
+
+		if (!overModule) {
+			if (Connection* c = findConnectionAt(e.getPosition(), 8.0f)) {
+				int wp = c->findWaypoint(e.getPosition(), 8.0f);
+				if (wp >= 0)
+					c->removeWaypoint(wp);
+				else
+					c->insertWaypoint(e.getPosition());
+				c->resized();
+				repaint();
+				return;
+			}
+		}
+	}
+
 	if (isAltDown) {
 		for (int i = 0; i < root->getModules()->size(); i++) {
 
@@ -4251,6 +4344,32 @@ void SynthEditor::updateProject(File file) {
 	for (int i = 0; i < listener.size(); i++) {
 		listener.at(i)->fileChanged(file.getFullPathName());
 	}
+}
+
+Connection* SynthEditor::findConnectionAt(Point<int> pos, float tolerance)
+{
+	if (root == nullptr || root->getConnections() == nullptr)
+		return nullptr;
+
+	for (int i = root->getConnections()->size() - 1; i >= 0; --i) {
+		Connection* c = root->getConnections()->at(i);
+		if (c->source == nullptr || c->target == nullptr)
+			continue;
+
+		// Polylinie p1 -> waypoints... -> p2 segmentweise auf Abstand pruefen.
+		std::vector<Point<int>> pts;
+		pts.push_back(c->getStartPoint());
+		for (const auto& w : c->waypoints) pts.push_back(w);
+		pts.push_back(c->getEndPoint());
+
+		for (int s = 0; s < (int)pts.size() - 1; ++s) {
+			Line<float> seg(pts[s].toFloat(), pts[s + 1].toFloat());
+			Point<float> nearest;
+			if (seg.getDistanceFromPoint(pos.toFloat(), nearest) <= tolerance)
+				return c;
+		}
+	}
+	return nullptr;
 }
 
 void SynthEditor::cutConnectionAtPosition(Point<int> position)

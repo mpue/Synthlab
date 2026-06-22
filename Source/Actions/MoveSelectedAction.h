@@ -11,6 +11,7 @@
 #include "../Module.h"
 #include "../SynthEditor.h"
 #include "../ModuleUtils.h"
+#include "../Connection.h"
 
 class MoveSelectedAction : public juce::UndoableAction {
     
@@ -36,6 +37,11 @@ private:
     Module* module = nullptr;
     std::vector<Module*> movedModules;
     std::vector<Point<int>> oldPositions;
+
+    // Verbindungen, deren Wegpunkte im selben Move mitverschoben wurden, plus
+    // ihre Vor-Move-Wegpunkte fuer das Undo.
+    std::vector<Connection*> movedConnections;
+    std::vector<std::vector<Point<int>>> oldWaypoints;
 };
 
 

@@ -86,6 +86,20 @@ public:
         };
         addAndMakeVisible(autoOpenPluginToggle);
 
+        dockPluginToggle.setButtonText("Show plugin windows as dock panels");
+        dockPluginToggle.setColour(juce::ToggleButton::textColourId, kTextPrimary);
+        dockPluginToggle.setColour(juce::ToggleButton::tickColourId, kAccentColour);
+        dockPluginToggle.setColour(juce::ToggleButton::tickDisabledColourId, kBorderColour);
+        dockPluginToggle.setToggleState(
+            Settings::getInstance()->getDockPluginWindows(),
+            juce::dontSendNotification);
+        dockPluginToggle.onClick = [this]
+        {
+            Settings::getInstance()->setDockPluginWindows(
+                dockPluginToggle.getToggleState());
+        };
+        addAndMakeVisible(dockPluginToggle);
+
         splashToggle.setButtonText("Show splash on startup");
         splashToggle.setColour(juce::ToggleButton::textColourId, kTextPrimary);
         splashToggle.setColour(juce::ToggleButton::tickColourId, kAccentColour);
@@ -185,6 +199,10 @@ public:
         autoOpenPluginToggle.setBounds(row2.removeFromLeft(440));
 
         area.removeFromTop(6);
+        auto row2dock = area.removeFromTop(28);
+        dockPluginToggle.setBounds(row2dock.removeFromLeft(440));
+
+        area.removeFromTop(6);
         auto row2b = area.removeFromTop(28);
         splashToggle.setBounds(row2b.removeFromLeft(440));
 
@@ -230,6 +248,7 @@ private:
     juce::Label        outputTypeLabel;
     juce::ComboBox     outputTypeBox;
     juce::ToggleButton autoOpenPluginToggle;
+    juce::ToggleButton dockPluginToggle;
     juce::ToggleButton splashToggle;
     juce::ToggleButton autoArmToggle;
 

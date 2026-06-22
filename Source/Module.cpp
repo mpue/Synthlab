@@ -22,6 +22,7 @@
 #include "AudioModule.h"
 #include "Connection.h"
 #include "TerminalModule.h"
+#include "PrefabFactory.h"
 
 //[/Headers]
 
@@ -67,9 +68,10 @@ Module::Module ()
 
     addAndMakeVisible (nameLabel = new Label ("nameLabel",
                                               getName()));
-    nameLabel->setFont (Font (15.00f, Font::plain).withTypefaceStyle ("Regular"));
-    nameLabel->setJustificationType (Justification::centredBottom);
+    nameLabel->setFont (Font (13.50f, Font::plain).withTypefaceStyle ("Regular"));
+    nameLabel->setJustificationType (Justification::centred);
     nameLabel->setEditable (false, false, false);
+    nameLabel->setColour (Label::textColourId, Colour (0xffd9dde3));
     nameLabel->setColour (TextEditor::textColourId, Colours::black);
     nameLabel->setColour (TextEditor::backgroundColourId, Colour (0x00000000));
 
@@ -200,37 +202,93 @@ Module::~Module()
     //[/Destructor]
 }
 
+// Kategorie -> dezente Akzentfarbe. Wird nur als zarter Footer-/Rahmen-Tint
+// verwendet, daher ruhige, entsaettigte Toene.
+static juce::Colour colourForCategory(const juce::String& cat)
+{
+    if (cat == "Audio")           return juce::Colour(0xff1d9e75); // teal
+    if (cat == "FX")              return juce::Colour(0xff2bb38a);
+    if (cat == "Filter")         return juce::Colour(0xff378add); // blau
+    if (cat == "Sound sources")  return juce::Colour(0xff7f77dd); // violett
+    if (cat == "MIDI")           return juce::Colour(0xff5da9e0); // hellblau
+    if (cat == "Controls")       return juce::Colour(0xffba7517); // amber
+    if (cat == "Math")           return juce::Colour(0xffd85a30); // coral
+    if (cat == "Logic")          return juce::Colour(0xffd4537e); // pink
+    if (cat == "Graphics")       return juce::Colour(0xff639922); // gruen
+    if (cat == "Input / Output") return juce::Colour(0xff5b8aa6); // graublau
+    return juce::Colour(0xff6a6e78);                              // neutral
+}
+
+juce::Colour Module::getAccentColour()
+{
+    if (accentResolved)
+        return accentColour;
+    accentResolved = true;
+
+    juce::String cat = "none";
+    auto names = PrefabFactory::getInstance()->getPrefabNames();
+    for (auto& kv : names)
+        if (kv.second.getName().equalsIgnoreCase(getName())) { cat = kv.second.getCategory(); break; }
+
+    accentColour = colourForCategory(cat);
+    return accentColour;
+}
+
 void Module::paint(Graphics& g)
 {
-    // 1. Drop shadow ZUERST zeichnen
     const int shadowOffset = 4;
-    juce::DropShadow shadow(juce::Colours::black.withAlpha(0.3f), 6, { shadowOffset, shadowOffset });
+    const float corner = 9.0f;
     juce::Rectangle<int> moduleArea = getLocalBounds().reduced(shadowOffset);
+
+    const juce::Colour accent = getAccentColour();
+
+    // 1. Weicher Schatten unter dem Modul.
+    juce::DropShadow shadow(juce::Colours::black.withAlpha(0.4f), 8, { 0, 3 });
     shadow.drawForRectangle(g, moduleArea);
 
-    // 2. Modul-Hintergrund zeichnen (in reduzierten Bounds)
-    g.setColour(Colour(0xff434242));
-    g.fillRect(moduleArea.toFloat());
+    // 2. Body mit sehr dezentem vertikalem Verlauf (oben leicht heller).
+    juce::ColourGradient grad(juce::Colour(0xff31343b), (float)moduleArea.getX(), (float)moduleArea.getY(),
+                              juce::Colour(0xff24262b), (float)moduleArea.getX(), (float)moduleArea.getBottom(),
+                              false);
+    g.setGradientFill(grad);
+    g.fillRoundedRectangle(moduleArea.toFloat(), corner);
 
-    // 3. Modul-Rahmen zeichnen
+    // 3. Footer-Leiste mit Kategorie-Akzent (Name liegt als nameLabel darueber).
+    const int footerH = 26;
+    juce::Rectangle<float> footer((float)moduleArea.getX(),
+                                  (float)(moduleArea.getBottom() - footerH),
+                                  (float)moduleArea.getWidth(), (float)footerH);
+    juce::Path footerPath;
+    footerPath.addRoundedRectangle(footer.getX(), footer.getY(), footer.getWidth(), footer.getHeight(),
+                                   corner, corner, false, false, true, true);
+    g.setColour(accent.withAlpha(0.22f));
+    g.fillPath(footerPath);
+    g.setColour(accent.withAlpha(0.7f));
+    g.fillRect(footer.getX(), footer.getY(), footer.getWidth(), 1.5f);
+
+    // 4. Rahmen: ausgewaehlt = orange, sonst neutral mit Akzent-Hauch.
     if (selected) {
         g.setColour(juce::Colours::orange);
+        g.drawRoundedRectangle(moduleArea.toFloat().reduced(0.5f), corner, 2.0f);
     }
     else {
-        g.setColour(juce::Colours::grey);
+        g.setColour(accent.withSaturation(0.35f).withAlpha(0.55f));
+        g.drawRoundedRectangle(moduleArea.toFloat().reduced(0.5f), corner, 1.0f);
     }
-    g.drawRect(moduleArea.toFloat());
 
-    // 4. Instrument-Icon: zeigt das Standard-Modul-Icon zentriert im Body,
+    // 4b. Instrument-Icon: zeigt das Standard-Modul-Icon zentriert im Body,
     // wenn das Modul als Instrument markiert ist. Macht beim Stoebern durch
     // den Track-Graph auf einen Blick klar, welches Modul der Sound-Source
     // einer Instrument-Spur ist (statt es ueber den Namen ableiten zu muessen).
     if (instrumentFlag) {
+        // Body ohne Footer als Bezugsflaeche, damit das Icon nicht in die
+        // Namensleiste rutscht.
+        juce::Rectangle<int> body = moduleArea.withTrimmedBottom(footerH);
         const int iconSize = juce::jmin(64,
-                                        juce::jmax(16, juce::jmin(moduleArea.getWidth(),
-                                                                  moduleArea.getHeight()) - 16));
-        const int iconX = moduleArea.getX() + (moduleArea.getWidth()  - iconSize) / 2;
-        const int iconY = moduleArea.getY() + (moduleArea.getHeight() - iconSize) / 2;
+                                        juce::jmax(16, juce::jmin(body.getWidth(),
+                                                                  body.getHeight()) - 16));
+        const int iconX = body.getX() + (body.getWidth()  - iconSize) / 2;
+        const int iconY = body.getY() + (body.getHeight() - iconSize) / 2;
         g.drawImageWithin(cachedImage_materialicons_301_viewmodule_64_0_ffffff_none_png_1,
                           iconX, iconY, iconSize, iconSize,
                           juce::RectanglePlacement::centred,
@@ -286,9 +344,11 @@ void Module::paint(Graphics& g)
 
 void Module::resized()
 {
-    const int labelHeight = 24;
-    const int bottomMargin = 8;
-    nameLabel->setBounds(0, getHeight() - labelHeight - bottomMargin, getWidth(), labelHeight);
+    // Name in die Footer-Leiste (siehe paint(): shadowOffset 4, footerH 26).
+    const int shadowOffset = 4;
+    const int footerH = 26;
+    nameLabel->setBounds(shadowOffset, getHeight() - shadowOffset - footerH,
+                         getWidth() - 2 * shadowOffset, footerH);
 
     // External output pins live on the right edge — keep them tied to the
     // current width so they stay visible (and correctly placed) after a

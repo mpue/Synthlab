@@ -4,11 +4,18 @@
 #include "Plugins/PluginManager.h"
 #include "Plugins/SubprocessPluginScanner.h"
 #include "Project/Project.h"
+#include "Settings.h"
 
 
 using namespace juce;
 
 constexpr float defaultGainDb = 12.0f;
+
+// Installed by MainComponent once the DockManager exists; null otherwise, in
+// which case openPluginWindow() falls back to a floating DocumentWindow.
+std::function<bool(PluginModule*)> PluginModule::activateDockedEditorHook;
+std::function<bool(PluginModule*, juce::AudioProcessorEditor*, const juce::String&)> PluginModule::dockEditorHook;
+std::function<void(PluginModule*)> PluginModule::closeDockedEditorHook;
 
 PluginModule::PluginModule(double sampleRate, int buffersize)
 	: sampleRate(sampleRate), buffersize(buffersize)
@@ -35,6 +42,13 @@ PluginModule::PluginModule(double sampleRate, int buffersize)
 
 PluginModule::~PluginModule()
 {
+    // If this module's editor is shown in a dock panel, close it now — the
+    // panel (and thus the editor) is owned by the DockManager, not by us, so
+    // it would otherwise outlive `plugin` and dereference a dead processor.
+    // Closing here destroys the editor while `plugin` is still alive.
+    if (closeDockedEditorHook)
+        closeDockedEditorHook(this);
+
     if (pluginValue)
         pluginValue->removeListener(pluginListener);
     delete pluginListener;
@@ -98,7 +112,12 @@ void PluginModule::openPluginWindow()
 {
     if (!plugin) return;
 
-    // Window already exists — just bring it to the front.
+    // Already shown somewhere — just bring it to the front. We check both the
+    // floating window and the dock panel regardless of the current setting:
+    // createEditorIfNeeded() hands back the *existing* editor, so re-wrapping an
+    // editor that another owner already holds would double-free it. Focusing the
+    // existing view sidesteps that and means toggling the setting mid-session is
+    // always safe.
     if (win != nullptr)
     {
         win->setVisible(true);
@@ -106,11 +125,23 @@ void PluginModule::openPluginWindow()
         return;
     }
 
-    // Create a fresh editor. Guard against plugins that return nullptr.
+    if (activateDockedEditorHook && activateDockedEditorHook(this))
+        return;
+
+    // Not shown yet — create a fresh editor. Guard against plugins that return
+    // nullptr.
     auto* editor = plugin->createEditorIfNeeded();
     if (editor == nullptr) return;
 
-    // Pass a close callback so the window destroys itself cleanly via win.reset().
+    // Docked mode (opt-in). The hook takes ownership of the editor; on success
+    // we're done. If no host hook is wired (e.g. PLAYER mode) we fall through.
+    if (Settings::getInstance()->getDockPluginWindows()
+        && dockEditorHook
+        && dockEditorHook(this, editor, pluginName))
+        return;
+
+    // Floating window (default / fallback). Pass a close callback so the window
+    // destroys itself cleanly via win.reset().
     win = std::make_unique<PluginManager::PluginWindow>(
         pluginName, editor,
         [this]() { win.reset(); });
