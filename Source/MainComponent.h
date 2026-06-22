@@ -249,6 +249,10 @@ private:
     void showOrCreateLevelMeterPanel();
     void showOrCreateSpectrumPanel();
 
+    // Verdrahtet die statischen PluginModule-Hooks mit dem DockManager, damit
+    // Plugin-Editoren optional als Dock-Panels statt Floating-Fenster erscheinen.
+    void installPluginDockHooks();
+
     // Browser/Instruments/Description: schliessbar, ueber das View-Menue
     // wiederherstellbar. Content lebt in PropertyView, ueberlebt das Close.
     void showOrCreateBrowserPanel();

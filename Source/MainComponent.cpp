@@ -11,6 +11,13 @@
 #include "Plugins/PluginManager.h"
 #include "PluginModule.h"
 
+#if JUCE_MAC
+ // Objective-C runtime C-API — lets us toggle clipsToBounds on hosted plugin
+ // NSViews from plain C++ (no .mm file / pbxproj change needed).
+ #include <objc/runtime.h>
+ #include <objc/message.h>
+#endif
+
 #include "AudioManager.h"
 #include "MainComponent.h"
 #include "SynthEditor.h"
@@ -628,6 +635,15 @@ MainComponent::~MainComponent()
 
 	editor->removeAllChangeListeners();
 
+	// PluginModule-Dock-Hooks loesen, BEVOR dockManager faellt. Sonst koennte
+	// ein spaeter (waehrend Project-Teardown) zerstoerter PluginModule in den
+	// toten DockManager / dieses `this` greifen. dockManager.reset() weiter
+	// unten raumt verbleibende Plugin-Panels sicher ab (Editor stirbt, solange
+	// der jeweilige Plugin-Processor noch lebt).
+	PluginModule::activateDockedEditorHook = nullptr;
+	PluginModule::dockEditorHook           = nullptr;
+	PluginModule::closeDockedEditorHook    = nullptr;
+
 	midiProcessor->disableAllMidiInputs();
 
 	if (moduleBrowser != nullptr) {
@@ -1193,6 +1209,8 @@ void MainComponent::createStudioLayout() {
 	// existiert.
 	dockManager = std::make_unique<docking::DockManager>();
 	addAndMakeVisible(dockManager.get());
+
+	installPluginDockHooks();
 
 	// DockSide::Center wuerde das Panel in den bereits existierenden Tab
 	// mergen — wir wollen drei separate Splits. Reihenfolge: Properties links
@@ -2152,6 +2170,193 @@ void MainComponent::showOrCreateSpectrumPanel()
 		docking::DockSide::Center);
 	if (panel != nullptr) panel->setClosable(true);
 	spectrumDockPanel = panel;
+}
+
+// Owns a plugin's AudioProcessorEditor inside a dock panel and guarantees it
+// never draws outside the panel. A plain Viewport is not enough: macOS hosts
+// plugin GUIs in a native NSView, which ignores JUCE's Viewport clipping and
+// would paint over neighbouring panels. We instead keep the editor at its
+// preferred size and scale it down (aspect-preserving, centred) whenever it is
+// larger than the panel, so its parent-bounds always fit. We also re-fit when
+// the plugin resizes itself.
+namespace
+{
+#if JUCE_MAC
+// AU plugins are hosted on macOS in a plain NSViewComponent whose NSView does
+// NOT clip its content (unlike VST3, which JUCE wraps in a clipping view). So a
+// large AU GUI paints past the dock panel over neighbouring areas. Recursively
+// forcing clipsToBounds=YES on the hosting window's native subviews clips every
+// hosted plugin view to its (scaled) frame. JUCE itself renders into one peer
+// view via CoreGraphics — its components aren't separate NSViews — so this only
+// affects native-hosted views (plugin GUIs), which is exactly what we want.
+void enableNativeClippingRecursively (void* viewPtr)
+{
+	if (viewPtr == nullptr) return;
+	id view = (id) viewPtr;
+
+	reinterpret_cast<void (*)(id, SEL, BOOL)>(objc_msgSend)
+		(view, sel_registerName ("setClipsToBounds:"), YES);
+
+	id subs = reinterpret_cast<id (*)(id, SEL)>(objc_msgSend)
+		(view, sel_registerName ("subviews"));
+	if (subs == nullptr) return;
+
+	const auto n = reinterpret_cast<unsigned long (*)(id, SEL)>(objc_msgSend)
+		(subs, sel_registerName ("count"));
+	for (unsigned long i = 0; i < n; ++i)
+		enableNativeClippingRecursively (
+			(void*) reinterpret_cast<id (*)(id, SEL, unsigned long)>(objc_msgSend)
+				(subs, sel_registerName ("objectAtIndex:"), i));
+}
+#endif
+
+class PluginEditorDockHolder : public juce::Component,
+                              private juce::ComponentListener
+{
+public:
+	explicit PluginEditorDockHolder (juce::AudioProcessorEditor* ed)
+		: editor (ed)
+	{
+		jassert (editor != nullptr);
+		addAndMakeVisible (editor.get());
+		editor->addComponentListener (this);
+	}
+
+	~PluginEditorDockHolder() override
+	{
+		if (editor != nullptr)
+			editor->removeComponentListener (this);
+		// ~AudioProcessorEditor calls processor->editorBeingDeleted(); the
+		// PluginModule keeps `plugin` alive until its panel is closed.
+	}
+
+	void resized() override { fit(); }
+
+	void componentMovedOrResized (juce::Component&, bool, bool wasResized) override
+	{
+		// The plugin changed its own logical size (e.g. a resizable UI) — re-fit
+		// so a grown editor can't spill past the panel. Guard against the
+		// callbacks our own setTransform()/setBounds() may trigger.
+		if (wasResized && ! fitting)
+			fit();
+	}
+
+private:
+	void fit()
+	{
+		if (editor == nullptr)
+			return;
+
+		auto area = getLocalBounds();
+		if (area.isEmpty())
+			return;
+
+		const juce::ScopedValueSetter<bool> guard (fitting, true);
+
+		// getWidth()/getHeight() are the editor's logical (unscaled) size — the
+		// host scale transform doesn't affect them — so we can read them directly.
+		const int w = juce::jmax (1, editor->getWidth());
+		const int h = juce::jmax (1, editor->getHeight());
+
+		// Scale down only — never blow a small editor up past its native size.
+		const float scale = juce::jmin (1.0f,
+		                                (float) area.getWidth()  / (float) w,
+		                                (float) area.getHeight() / (float) h);
+
+		// setScaleFactor() is JUCE's sanctioned host-rescale path: it sets
+		// hostScaleTransform and passes AudioProcessorEditor's internal
+		// assertion. Setting our own AffineTransform here would trip that
+		// assertion (jassert getTransform()==hostScaleTransform) and crash.
+		// The transform scales about the parent origin, so when we scale we must
+		// anchor the editor at (0,0); only when unscaled can we safely centre it.
+		if (scale < 1.0f)
+		{
+			editor->setScaleFactor (scale);
+			editor->setTopLeftPosition (0, 0);
+		}
+		else
+		{
+			editor->setScaleFactor (1.0f);
+			editor->setTopLeftPosition (juce::jmax (0, (area.getWidth()  - w) / 2),
+			                            juce::jmax (0, (area.getHeight() - h) / 2));
+		}
+
+	   #if JUCE_MAC
+		// AU plugin views don't self-clip — force it on the hosting view tree so
+		// the (now scaled) editor frame actually bounds the plugin's drawing.
+		if (auto* peer = getPeer())
+			enableNativeClippingRecursively (peer->getNativeHandle());
+	   #endif
+	}
+
+	std::unique_ptr<juce::AudioProcessorEditor> editor;
+	bool fitting = false;
+};
+} // namespace
+
+// Plugin-Editoren als Dock-Panels. PluginModule kennt den DockManager nicht,
+// daher verdrahten wir hier die statischen Hooks. Jeder PluginModule-Pointer
+// wird auf genau ein Panel mit deterministischer ID gemappt.
+void MainComponent::installPluginDockHooks()
+{
+	auto panelIdFor = [](PluginModule* pm) -> juce::String
+	{
+		return "plugin_" + juce::String::toHexString(
+			(juce::int64) (juce::pointer_sized_int) pm);
+	};
+
+	PluginModule::activateDockedEditorHook =
+		[this, panelIdFor](PluginModule* pm) -> bool
+	{
+		if (dockManager == nullptr || pm == nullptr) return false;
+		if (auto* p = dockManager->findPanel(panelIdFor(pm)))
+		{
+			dockManager->activatePanel(p);
+			return true;
+		}
+		return false;
+	};
+
+	PluginModule::dockEditorHook =
+		[this, panelIdFor](PluginModule* pm, juce::AudioProcessorEditor* editor,
+		                   const juce::String& name) -> bool
+	{
+		if (dockManager == nullptr || pm == nullptr || editor == nullptr)
+			return false;
+
+		// Editor in einen Holder packen, der ihn auf den Panel-Bereich
+		// einpasst (runter-skaliert, falls groesser). Verhindert, dass grosse
+		// Plugin-Oberflaechen ueber andere Bildschirmbereiche ragen — ein
+		// blosses Viewport-Clipping greift bei nativen Plugin-Views (NSView)
+		// nicht. Der Holder besitzt den Editor und loescht ihn beim Schliessen.
+		auto holder = std::make_unique<PluginEditorDockHolder>(editor);
+
+		auto* panel = dockManager->createPanel(
+			panelIdFor(pm),
+			name.isNotEmpty() ? name : juce::String("Plugin"),
+			std::move(holder),
+			docking::DockSide::Center);
+		if (panel == nullptr) return false;
+		panel->setClosable(true);
+
+		// Center allein landet im Properties-Tab-Node (firstTabNodeOrCreate).
+		// Plugin-Editoren sollen ins Haupt-Dock (Editor-Tab-Node) — daher
+		// explizit dorthin tabifizieren, analog zu Navigator/Quickstart.
+		if (auto* editorTabNode = dynamic_cast<docking::DockTabNode*>(
+				editorDockPanel != nullptr ? editorDockPanel->getParentComponent() : nullptr))
+			dockManager->dockPanel(panel, editorTabNode, docking::DockSide::Center);
+
+		dockManager->activatePanel(panel);
+		return true;
+	};
+
+	PluginModule::closeDockedEditorHook =
+		[this, panelIdFor](PluginModule* pm)
+	{
+		if (dockManager == nullptr || pm == nullptr) return;
+		if (auto* p = dockManager->findPanel(panelIdFor(pm)))
+			dockManager->closePanel(p);
+	};
 }
 
 // Browser / Instruments / Description: die echte Komponente lebt in

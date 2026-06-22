@@ -42,6 +42,18 @@ public:
         save();
     }
 
+    // Plugin-Editoren als dockbare Panels statt freischwebender Fenster zeigen.
+    // Default aus -> klassisches DocumentWindow. Greift beim naechsten Oeffnen
+    // eines Plugin-Fensters; bereits offene Fenster bleiben wie sie sind.
+    bool getDockPluginWindows() const { return dockPluginWindows; }
+
+    void setDockPluginWindows(bool b)
+    {
+        if (dockPluginWindows == b) return;
+        dockPluginWindows = b;
+        save();
+    }
+
     // signalsmith-stretch Tuning. Beide Werte sind Anteile der Sample-Rate
     // (Block bzw. Intervall). Default-Preset der Lib waere 0.12 / 0.03;
     // wir starten etwas weicher (0.18 / 0.02) — der User kann nachregeln.
@@ -135,6 +147,9 @@ private:
         openPluginWindowAutomatically =
             xml->getBoolAttribute("openPluginWindowAutomatically", false);
 
+        dockPluginWindows =
+            xml->getBoolAttribute("dockPluginWindows", false);
+
         stretchBlockPercent =
             juce::jlimit(0.05, 0.30, xml->getDoubleAttribute("stretchBlockPercent", 0.18));
         stretchIntervalPercent =
@@ -158,6 +173,7 @@ private:
         xml.setAttribute("newTrackOutputType",
                          newTrackOutputType == NewTrackOutputType::AuxOut ? "AuxOut" : "AudioOut");
         xml.setAttribute("openPluginWindowAutomatically", openPluginWindowAutomatically);
+        xml.setAttribute("dockPluginWindows",             dockPluginWindows);
         xml.setAttribute("stretchBlockPercent",        stretchBlockPercent);
         xml.setAttribute("stretchIntervalPercent",     stretchIntervalPercent);
         xml.setAttribute("stretchFormantPreservation", stretchFormantPreservation);
@@ -169,6 +185,7 @@ private:
 
     NewTrackOutputType newTrackOutputType { NewTrackOutputType::AudioOut };
     bool               openPluginWindowAutomatically { false };
+    bool               dockPluginWindows             { false };
     double             stretchBlockPercent        { 0.18 };
     double             stretchIntervalPercent     { 0.02 };
     bool               stretchFormantPreservation { true };
