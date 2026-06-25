@@ -557,8 +557,8 @@ void MidiRegion::addMessage(MidiMessage* m, double time, int sampleNum) {
     updateThumb();
 }
 
-vector<MidiMessage*> MidiRegion::getActiveMessages(int localSamplePos) {
-    vector<MidiMessage*> result;
+std::vector<MidiMessage*> MidiRegion::getActiveMessages(int localSamplePos) {
+    std::vector<MidiMessage*> result;
 
     // Wenn Position zurückspringt (nach Verschieben), resette aktive Notes
     if (localSamplePos < lastPlaybackPosition) {
@@ -605,13 +605,13 @@ vector<MidiMessage*> MidiRegion::getActiveMessages(int localSamplePos) {
     return result;
 }
 
-vector<MidiMessage*> MidiRegion::getMessages(int sampleNum, int numSamples)
+std::vector<MidiMessage*> MidiRegion::getMessages(int sampleNum, int numSamples)
 {
     // Der Aufrufer uebergibt sampleNum relativ zur Region (0 = linke Kante).
     // Im Buffer beginnt die linke Kante bei sourceStartSample — also den
     // Offset hier dazurechnen, sonst wuerden Noten nach Links-Trim falsche
     // Buffer-Positionen referenzieren.
-    vector<MidiMessage*> foundMessages;
+    std::vector<MidiMessage*> foundMessages;
     const int startInBuffer = sampleNum  + (int) sourceStartSample;
     const int endInBuffer   = startInBuffer + numSamples;
 

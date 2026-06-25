@@ -162,7 +162,7 @@ void TrackConfig::setHeight(int height) {
     this->height = height;
 }
 
-vector<RegionConfig*> TrackConfig::getRegions() {
+std::vector<RegionConfig*> TrackConfig::getRegions() {
     return regions;
 }
 

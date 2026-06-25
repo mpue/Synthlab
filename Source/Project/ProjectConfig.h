@@ -19,7 +19,7 @@
 
 #include <vector>
 
-using namespace std;
+
 
 class ProjectConfig {
     
@@ -27,10 +27,10 @@ public:
     ProjectConfig();
     ~ProjectConfig();
     
-    vector<AudioClip*> getAudioClips();
+    std::vector<AudioClip*> getAudioClips();
     void addClip(AudioClip* clip);
     
-    vector<TrackConfig*> getTracks();
+    std::vector<TrackConfig*> getTracks();
     void addTrack(TrackConfig* track);
 
     MixerConfig* getMixerConfig();
@@ -63,8 +63,8 @@ private:
     long trackLength;
     float tempo;
 
-    vector<AudioClip*> audioClips;
-    vector<TrackConfig*> tracks;
+    std::vector<AudioClip*> audioClips;
+    std::vector<TrackConfig*> tracks;
     MixerConfig* mixerConfig;
 };
 

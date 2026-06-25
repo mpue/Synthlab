@@ -20,7 +20,7 @@
 
 #include <vector>
 
-using namespace std;
+
 
 class TrackConfig {
 public:
@@ -36,7 +36,7 @@ public:
     // the associated instrument if this is an instrumen track
     void setInstrument(InstrumentConfig* instrument);
     
-    vector<RegionConfig*> getRegions();
+    std::vector<RegionConfig*> getRegions();
     
     
     String getName();
@@ -103,9 +103,9 @@ private:
     String midiOutputDevice;
     
     String type;
-    vector<RegionConfig*> regions;
-    vector<EffectConfig*> effects;
-    vector<AuxSendConfig*> auxSendConfigs;
+    std::vector<RegionConfig*> regions;
+    std::vector<EffectConfig*> effects;
+    std::vector<AuxSendConfig*> auxSendConfigs;
     InstrumentConfig* instrument = NULL;
     
     int height = 0;

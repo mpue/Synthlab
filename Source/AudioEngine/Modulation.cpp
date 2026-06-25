@@ -54,7 +54,7 @@ void Modulation::addTarget(ModTarget* target) {
     this->targets.push_back(target);
 }
 
-vector<ModTarget*> Modulation::getTargets() {
+std::vector<ModTarget*> Modulation::getTargets() {
     return targets;
 }
 

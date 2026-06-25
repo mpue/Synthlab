@@ -26,6 +26,7 @@
 #include "Actions/RemoveSelectedAction.h"
 #include "Actions/MoveSelectedAction.h"
 #include "Project/Project.h"
+#include "AutoSave.h"
 #include "ProjectLoadProgressDialog.h"
 #include "LabelModule.h"
 #include "SamplerModule.h"
@@ -2707,6 +2708,11 @@ void SynthEditor::saveFile() {
 		Project::getInstance()->save(file.getParentDirectory().getChildFile(file.getFileNameWithoutExtension() + "_audio.xml"));
 		Project::getInstance()->setNewFile(false);
 		updateProject(file);
+
+		// The user's document is now fully on disk — drop any crash-recovery
+		// snapshot so we don't offer a stale restore on the next start. If they
+		// keep editing, auto-save recreates it once the project is dirty again.
+		AutoSave::clearRecovery();
 	}
 #endif
 
@@ -3136,6 +3142,88 @@ bool SynthEditor::openFileNoPrompt(const juce::File& source)
 	openFile(source);
 	return true;
 }
+
+void SynthEditor::autoSave()
+{
+	// Only the root editor owns the complete project graph; a sub-editor would
+	// serialize a partial graph over the recovery snapshot. Guard on root.
+	if (root == nullptr)
+		return;
+
+	const juce::File target = AutoSave::getRecoveryFile();
+
+	// --- Module graph (mirrors saveFile()'s desktop branch) ---
+	ValueTree v("Module");
+	v.setProperty("lock", isLocked(), nullptr);
+	v.setProperty("layer", static_cast<int>(currentLayer), nullptr);
+
+	ModuleUtils::saveStructure(root->getModules(), root->getConnections(), &v);
+
+	// Master-channel FX live outside the module graph; persist them too.
+	if (mixer != nullptr && mixer->getMasterPanel() != nullptr) {
+		ValueTree masterFX = mixer->getMasterPanel()->getFXChainState();
+		if (masterFX.isValid() && masterFX.getNumChildren() > 0)
+			v.appendChild(masterFX, nullptr);
+	}
+
+	// Bus-FX-Chains per BusOut, resolved on load via busModuleIndex.
+	if (mixer != nullptr) {
+		ValueTree busFX = mixer->collectBusFXChains();
+		if (busFX.isValid() && busFX.getNumChildren() > 0)
+			v.appendChild(busFX, nullptr);
+	}
+
+	{
+		std::unique_ptr<XmlElement> xml = v.createXml();
+		if (xml != nullptr)
+			xml->writeToFile(target, "");
+	}
+
+	// --- Tracks config incl. per-track FX slot maps (mirrors saveFile()) ---
+	// NOTE: unlike saveFile() we do NOT call navigator->persistDirtyAudioRegions
+	// here. Writing edited WAV buffers is potentially slow and would rewrite the
+	// live regions' clip references to point into the recovery folder — both are
+	// unacceptable for a background, non-disturbing auto-save. The trade-off is
+	// that audio edits that were never manually saved (normalize/fade/reverse on
+	// an in-memory buffer) are not part of the recovery snapshot; the project
+	// structure, tracks, MIDI and FX are.
+	if (navigator != nullptr) {
+		ValueTree tracks = navigator->getConfiguration();
+
+		if (mixer != nullptr) {
+			const auto& navTracks = navigator->getTracks();
+			const int numTracks = juce::jmin((int) navTracks.size(), tracks.getNumChildren());
+			for (int ti = 0; ti < numTracks; ++ti) {
+				Track* t = navTracks.at((size_t) ti);
+				if (t == nullptr) continue;
+				for (auto* panel : mixer->getChannels()) {
+					if (panel == nullptr) continue;
+					if (panel->getTrack() == t) {
+						auto trackChild = tracks.getChild(ti);
+						if (trackChild.isValid())
+							trackChild.appendChild(panel->getFXSlotMap(), nullptr);
+						break;
+					}
+				}
+			}
+		}
+
+		std::unique_ptr<XmlElement> xml = tracks.createXml();
+		if (xml != nullptr)
+			xml->writeToFile(target.getParentDirectory().getChildFile(
+				target.getFileNameWithoutExtension() + "_tracks.xml"), "");
+	}
+
+	// --- Audio config via the thread-safe snapshot path (Regel B). Uses
+	// saveCurrent() (not save()) on purpose: save() would rename the project to
+	// "recovery" as a side effect. ---
+	Project::getInstance()->saveCurrent(target.getParentDirectory().getChildFile(
+		target.getFileNameWithoutExtension() + "_audio.xml"));
+
+	// Remember where a restore should write back to (empty path = never saved).
+	AutoSave::writeMeta(Project::getInstance()->getCurrentFilePath(),
+	                    Project::getInstance()->getCurrentFileName());
+}
 #else
 void SynthEditor::openFile(juce::File /*file*/) {
 	// On iOS files are accessed through URLs/InputStreams; the no-arg openFile()
@@ -3144,6 +3232,7 @@ void SynthEditor::openFile(juce::File /*file*/) {
 
 bool SynthEditor::saveFileTo(const juce::File& /*target*/) { return false; }
 bool SynthEditor::openFileNoPrompt(const juce::File& /*source*/) { return false; }
+void SynthEditor::autoSave() {}
 #endif
 
 namespace {
@@ -3250,7 +3339,7 @@ void SynthEditor::openTracks(File file)
 	ValueTree v = ValueTree::fromXml(*xml.get());
 	setRunning(false);
 
-	vector<TrackIn*> tracks = vector<TrackIn*>();
+	std::vector<TrackIn*> tracks = std::vector<TrackIn*>();
 
 	for (int i = 0; i < getModule()->getModules()->size(); i++) {
 

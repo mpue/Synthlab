@@ -28,7 +28,7 @@
 /*
 */
 
-using namespace std;
+
 
 class TrackNavigator;
 class PluginModule;
@@ -205,7 +205,7 @@ public:
     int getMidiChannel();
     void setMidiChannel(int channel, bool notify);
     
-    vector<Region*> getRegions();
+    std::vector<Region*> getRegions();
     
     void setTrackLength(long trackLength);
     void setMagnitude(int channel, double magnitude);
@@ -510,7 +510,7 @@ private:
 	bool selected = false;
 	Region* currentRegion = NULL;
 	AudioFormatManager* manager;
-	vector<Region*> regions;
+	std::vector<Region*> regions;
 	long numSamples = 0;
 	double maxLength = 600 * this->sampleRate;
 	int offset = 0;

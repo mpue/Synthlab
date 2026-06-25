@@ -16,7 +16,7 @@
 #include <vector>
 
 
-using namespace std;
+
 
 class Modulation {
     
@@ -26,7 +26,7 @@ public:
      Modulation();
      ~Modulation();
     
-    vector<ModTarget*> getTargets();
+    std::vector<ModTarget*> getTargets();
     
     Modulator* getModulator();
     void addTarget(ModTarget* target);
@@ -38,7 +38,7 @@ public:
     
 private:
     
-    vector<ModTarget*> targets;
+    std::vector<ModTarget*> targets;
     Modulator* modulator = NULL;
     bool enabled = false;
     

@@ -69,7 +69,7 @@ void Voice::addOszillator(Oszillator* o) {
     this->oscillators.push_back(o);
 }
 
-vector<Oszillator*> Voice::getOszillators() const {
+std::vector<Oszillator*> Voice::getOszillators() const {
     return this->oscillators;
 }
 

@@ -106,6 +106,32 @@ public:
         save();
     }
 
+    // Intelligentes Auto-Save. Wenn aktiv (Default an), schreibt Synthlab in
+    // festem Intervall einen Crash-Recovery-Snapshot nach ~/.Synthlab/recovery,
+    // solange das Projekt ungespeicherte Aenderungen hat. Stoert den User nicht
+    // (kein Dialog, keine Aenderung am Dokumentstatus) und wird beim naechsten
+    // Start als Wiederherstellung angeboten, falls die App nicht sauber beendet
+    // wurde. Siehe AutoSave.h.
+    bool getAutoSaveEnabled() const { return autoSaveEnabled; }
+
+    void setAutoSaveEnabled(bool b)
+    {
+        if (autoSaveEnabled == b) return;
+        autoSaveEnabled = b;
+        save();
+    }
+
+    // Auto-Save-Intervall in Sekunden. Geclamped auf 5..600 s; Default 30 s.
+    int getAutoSaveIntervalSeconds() const { return autoSaveIntervalSeconds; }
+
+    void setAutoSaveIntervalSeconds(int s)
+    {
+        s = juce::jlimit(5, 600, s);
+        if (autoSaveIntervalSeconds == s) return;
+        autoSaveIntervalSeconds = s;
+        save();
+    }
+
     // Basis-URL des Lizenzservers (ohne abschliessendes /activate). Default ist
     // der Produktivserver; zur Laufzeit umstellbar (z.B. http://localhost:4000/
     // api/activation fuer lokale Tests). Leerer Wert -> LicenseManager nutzt
@@ -163,6 +189,11 @@ private:
         autoTrackArming =
             xml->getBoolAttribute("autoTrackArming", false);
 
+        autoSaveEnabled =
+            xml->getBoolAttribute("autoSaveEnabled", true);
+        autoSaveIntervalSeconds =
+            juce::jlimit(5, 600, xml->getIntAttribute("autoSaveIntervalSeconds", 30));
+
         licenseServerUrl =
             xml->getStringAttribute("licenseServerUrl", licenseServerUrl);
     }
@@ -179,6 +210,8 @@ private:
         xml.setAttribute("stretchFormantPreservation", stretchFormantPreservation);
         xml.setAttribute("showSplashOnStartup",        showSplashOnStartup);
         xml.setAttribute("autoTrackArming",            autoTrackArming);
+        xml.setAttribute("autoSaveEnabled",            autoSaveEnabled);
+        xml.setAttribute("autoSaveIntervalSeconds",    autoSaveIntervalSeconds);
         xml.setAttribute("licenseServerUrl",           licenseServerUrl);
         xml.writeTo(getSettingsFile());
     }
@@ -191,5 +224,7 @@ private:
     bool               stretchFormantPreservation { true };
     bool               showSplashOnStartup        { true };
     bool               autoTrackArming            { false };
+    bool               autoSaveEnabled            { true };
+    int                autoSaveIntervalSeconds    { 30 };
     juce::String       licenseServerUrl           { "https://shop.pueski.de/api/activation"};
 };

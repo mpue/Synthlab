@@ -75,6 +75,16 @@ public:
     // the scripted-test use case that's acceptable, the test cleans up.
     bool saveFileTo(const juce::File& target);
 
+    // Write a crash-recovery snapshot of the current project into the dedicated
+    // recovery directory (~/.Synthlab/recovery), WITHOUT mutating any of the
+    // user's document state (current file path, dirty/new-file flags, tab
+    // title). Mirrors saveFile()'s serialization — module graph, master/bus FX,
+    // tracks config incl. per-track FX slot maps, and the audio config — but
+    // deliberately skips persistDirtyAudioRegions: auto-save must stay fast and
+    // must never rewrite the live regions' clip references. Safe to call
+    // repeatedly from a timer. No-op on iOS / when there is no project graph.
+    void autoSave();
+
     // Load a project from `source` without showing the "discard dirty?"
     // prompt. The dirty flag is cleared first so confirmDiscardIfDirty()
     // returns true silently. Returns false if the file doesn't exist.

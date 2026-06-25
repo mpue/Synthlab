@@ -9,7 +9,7 @@
 namespace BinaryData
 {
     extern const char*   README_md;
-    const int            README_mdSize = 2859;
+    const int            README_mdSize = 2935;
 
     extern const char*   _2osc_gate_slb;
     const int            _2osc_gate_slbSize = 8449;
@@ -60,10 +60,10 @@ namespace BinaryData
     const int            highpass_txtSize = 644;
 
     extern const char*   lowpass_txt;
-    const int            lowpass_txtSize = 1363;
+    const int            lowpass_txtSize = 1367;
 
     extern const char*   oscillator_txt;
-    const int            oscillator_txtSize = 526;
+    const int            oscillator_txtSize = 528;
 
     extern const char*   adder_png;
     const int            adder_pngSize = 3242;

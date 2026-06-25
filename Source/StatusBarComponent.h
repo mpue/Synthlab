@@ -21,6 +21,12 @@
  #include <windows.h>
  #include <psapi.h>
  #pragma comment(lib, "psapi.lib")
+ // windows.h definiert IN/OUT (leere SAL-Makros) und DUPLICATE (DDE) — das
+ // kollidiert mit Mixer::Channel::Type::IN/OUT bzw.
+ // SynthEditor::CommandIds::DUPLICATE in allen TUs, die diesen Header ziehen.
+ #undef IN
+ #undef OUT
+ #undef DUPLICATE
 #endif
 
 class StatusBarComponent : public juce::Component

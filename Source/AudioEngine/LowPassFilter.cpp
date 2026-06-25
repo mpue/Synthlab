@@ -70,7 +70,7 @@ void LowPassFilter::process(float *in, float *out, int numSamples) {
             // f =  this->frequency * modulator->getOutput() * this->modAmount;
             f =  this->frequency + (modulator->getOutput() * this->modAmount * 1000);
             // f = this->frequency * modulator->getOutput();
-            cout << f << endl;
+            std::cout << f << std::endl;
         }
 
         if (f <= 0) {

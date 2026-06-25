@@ -76,7 +76,7 @@ public:
 		sendChangeMessage();
 	}
 
-	vector<Track*> getTracks() {
+	std::vector<Track*> getTracks() {
 		return this->tracks;
 	}
 
@@ -145,11 +145,11 @@ public:
 		return this->availableOutputChannels;
 	}
 
-	vector<String> getMidiInputs() {
+	std::vector<String> getMidiInputs() {
 		return midiInputs;
 	}
 
-	vector<String> getMidiOutputs() {
+	std::vector<String> getMidiOutputs() {
 		return midiOutputs;
 	}
 
@@ -178,7 +178,7 @@ private:
 
 	Channel* masterChannel = nullptr;
 
-	vector<Track*> tracks;
+	std::vector<Track*> tracks;
 	Track* lastModified = NULL;
 
 	std::vector<Channel*> channels;
@@ -191,8 +191,8 @@ private:
 	StringArray availableInputChannels;
 	StringArray availableOutputChannels;
 
-	vector<String> midiInputs;
-	vector<String> midiOutputs;
+	std::vector<String> midiInputs;
+	std::vector<String> midiOutputs;
 };
 
 #endif /* Mixer_hpp */

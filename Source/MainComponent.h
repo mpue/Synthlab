@@ -265,6 +265,19 @@ private:
     virtual void menuItemSelected(int menuItemID, int topLevelMenuIndex) override;
     
     std::unique_ptr<juce::XmlElement> loadAudioConfig();
+
+    // Auto-Save: vom 40-ms-Timer hochgezaehlt; bei Erreichen des in den
+    // Settings konfigurierten Intervalls wird ein Recovery-Snapshot
+    // geschrieben, sofern das Projekt ungespeicherte Aenderungen hat.
+    int  autoSaveTickCounter = 0;
+    bool autoSaveInProgress  = false;
+    void serviceAutoSave();
+
+    // Beim Start: liegt ein Recovery-Snapshot einer nicht sauber beendeten
+    // Vorsession vor, einen Wiederherstellungs-Dialog anbieten. Wird nach dem
+    // Aufbau des Hauptfensters per callAfterDelay angestossen.
+    void maybeOfferCrashRecovery();
+
     void createConfig();
     void createToolbar();
     void createMenu();
@@ -332,12 +345,15 @@ private:
     float magnitudeLeftIn = 0;
     float magnitudeRightIn = 0;
     
-    long currentTime = 0;
-    long lastTime = 0;
-    
+    // Zeitmessung der Audio-Last in Millisekunden mit Nachkommastellen.
+    // Ein Audio-Block dauert i.d.R. << 1 ms, daher MUSS hier double stehen —
+    // mit long wurde die Dauer auf 0/1 ms gerundet und die CPU-Anzeige sprang.
+    double currentTime = 0.0;
+    double lastTime = 0.0;
+
     int layer = 0;
-    int cpuLoad = 0;
-    int loads[10] = {0};
+    double cpuLoad = 0.0;
+    double loads[10] = {0.0};
     int currentMeasure = 0;
     int currentSample = 0;
     

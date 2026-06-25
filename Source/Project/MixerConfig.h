@@ -15,7 +15,7 @@
 #include "AuxBusConfig.h"
 #include <vector>
 
-using namespace std;
+
 
 class MixerConfig {
 public:
@@ -24,7 +24,7 @@ public:
     void addBusConfig(AuxBusConfig* config);
     
 private:
-    vector<AuxBusConfig*> auxBusConfigs;
+    std::vector<AuxBusConfig*> auxBusConfigs;
 };
 
 #endif  // MIXERCONFIG_H_INCLUDED

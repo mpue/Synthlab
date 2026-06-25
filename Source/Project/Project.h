@@ -26,7 +26,7 @@
 #include <vector>
 #include <map>
 
-using namespace std;
+
 
 class MidiProcessor;
 
@@ -250,7 +250,7 @@ public:
     }
     
     void addAudioFile(String id, String path) {
-        projectAudio.insert(make_pair(id, path));
+        projectAudio.insert(std::make_pair(id, path));
     }
     
     String getAudioPath(String id) {
@@ -330,7 +330,7 @@ protected:
     float tempo = DEFAULT_TEMPO;
     bool snapToGridEnabled = true;
     
-    map<String, String> projectAudio;
+    std::map<String, String> projectAudio;
 
     ProjectConfig* config = NULL;
 

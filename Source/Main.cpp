@@ -25,6 +25,7 @@
 #include "SynthlabLogger.h"
 #include "CrashHandler.h"
 #include "Settings.h"
+#include "AutoSave.h"
 #include "SplashScreenComponent.h"
 #include "Licensing/LicenseManager.h"
 #include "Licensing/ActivationDialog.h"
@@ -150,6 +151,12 @@ namespace
 #define NOMINMAX
 #if JUCE_WINDOWS
 #include <windows.h>
+// windows.h definiert IN/OUT (leere SAL-Makros) und DUPLICATE (DDE) —
+// kollidiert mit Mixer::Channel::Type::IN/OUT bzw.
+// SynthEditor::CommandIds::DUPLICATE.
+#undef IN
+#undef OUT
+#undef DUPLICATE
 #endif
 using juce::JUCEApplication;
 using juce::String;
@@ -290,6 +297,12 @@ public:
 		// nichts abzuraeumen, und server ist nullptr (sonst Null-Deref).
 		if (scannerWorkerMode)
 			return;
+
+		// Sauberes Beenden -> ein etwaiger Auto-Save-Snapshot wird nicht mehr
+		// gebraucht. Loeschen, damit beim naechsten Start KEIN
+		// Wiederherstellungs-Dialog erscheint. Ein Crash ueberspringt shutdown()
+		// und laesst den Snapshot stehen -> genau dann wird er angeboten.
+		AutoSave::clearRecovery();
 
 		if (mainWindow != nullptr)
 			mainWindow->setLookAndFeel(nullptr);

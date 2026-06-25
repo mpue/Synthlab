@@ -22,7 +22,7 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 
-using namespace std;
+
 
 class Voice : public ModTarget {
     
@@ -32,7 +32,7 @@ public:
     ~Voice();
     
     void addOszillator(Oszillator* o);
-    vector<Oszillator*> getOszillators() const;
+    std::vector<Oszillator*> getOszillators() const;
     Oszillator* getOscillator(int num);
     
     float process();
@@ -70,7 +70,7 @@ public:
 	void setNoteAndVelocity(int note, int velocity);
 
 private:
-    vector<Oszillator*> oscillators;
+    std::vector<Oszillator*> oscillators;
     float sampleRate;
     int noteNumber;
     int pitch;

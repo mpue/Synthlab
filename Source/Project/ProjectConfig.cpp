@@ -25,7 +25,7 @@ ProjectConfig::~ProjectConfig() {
     // delete mixerConfig;
 }
 
-vector<AudioClip*> ProjectConfig::getAudioClips() {
+std::vector<AudioClip*> ProjectConfig::getAudioClips() {
     return audioClips;
 }
 
@@ -33,7 +33,7 @@ void ProjectConfig::addClip(AudioClip* clip) {
     audioClips.push_back(clip);
 }
 
-vector<TrackConfig*> ProjectConfig::getTracks() {
+std::vector<TrackConfig*> ProjectConfig::getTracks() {
     return tracks;
 }
 
@@ -155,7 +155,7 @@ void ProjectConfig::setConfig(ValueTree & v) {
                         if (_child.hasProperty("refId")) {
                             RegionConfig* r = new RegionConfig();
                             
-                            cout << "Found new Clip " << _child.getProperty("name").toString() << endl;
+                            std::cout << "Found new Clip " << _child.getProperty("name").toString() << std::endl;
                             
                             AudioClip* ac = new AudioClip(_child.getProperty("refId").toString(), _child.getProperty("name").toString(), _child.getProperty("length").toString().getIntValue(),_child.getProperty("offset").toString().getIntValue());
                         

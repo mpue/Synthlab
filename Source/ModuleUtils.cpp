@@ -1230,7 +1230,7 @@ void ModuleUtils::removeModule(Module* root, Module* module, MixerPanel* mixer, 
 	}
 
 
-	vector<long> pinsToBeRemoved;
+	std::vector<long> pinsToBeRemoved;
 
 	broadcaster->removeChangeListener(module);
 

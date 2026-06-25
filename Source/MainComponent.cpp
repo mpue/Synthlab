@@ -8,6 +8,7 @@
 
 
 #include <vector>
+#include <cmath>
 #include "Plugins/PluginManager.h"
 #include "PluginModule.h"
 
@@ -42,6 +43,7 @@
 #include "PitchBendModule.h"
 #include "Licensing/LicenseManager.h"
 #include "Settings.h"
+#include "AutoSave.h"
 #include "ModuleUtils.h"
 #include "MidiClock.h"
 #include "MidiRecorderModule.h"
@@ -607,6 +609,18 @@ MainComponent::MainComponent()
 	{
 		juce::MessageManager::callAsync([this]() {
 			openQuickstart();
+		});
+	}
+
+	// Crash recovery: if the previous session left an auto-save snapshot, offer
+	// to restore it. Deferred so the main window (and the startup splash) are up
+	// first; SafePointer guards against the window being torn down in between.
+	if (Project::getInstance()->getAppMode() == Project::AppMode::STUDIO)
+	{
+		juce::Component::SafePointer<MainComponent> safeThis(this);
+		juce::Timer::callAfterDelay(1200, [safeThis]() {
+			if (safeThis != nullptr)
+				safeThis->maybeOfferCrashRecovery();
 		});
 	}
 };
@@ -1443,27 +1457,30 @@ void MainComponent::timerCallback() {
 		loads[currentMeasure] = cpuLoad;
 
 		if (currentMeasure == 0) {
+			// Gleitender Mittelwert ueber die letzten 10 Messungen. Akkumulator
+			// MUSS bei 0 starten — vorher wurde auf cpuLoad aufaddiert, was den
+			// aktuellen Wert doppelt zaehlte und die Anzeige aufblaehte.
+			double avg = 0.0;
 			for (int i = 0; i < 10; i++) {
-				cpuLoad += loads[i];
+				avg += loads[i];
 			}
-			cpuLoad /= 10;
+			avg /= 10.0;
 
-			if (cpuLoad < 0) {
-				cpuLoad = 0;
+			if (std::isnan(avg) || avg < 0.0) {
+				avg = 0.0;
 			}
-			if (cpuLoad == NAN) {
-				cpuLoad = 0;
-			}
+			avg = juce::jmin(avg, 100.0);   // bei Aussetzern kann duration > Periode sein
 
+			cpuLoad = avg;
 			loadSlider->setValue(cpuLoad);
-			cpuLoadLabel->setText(String(cpuLoad) + "%", juce::NotificationType::dontSendNotification);
+			cpuLoadLabel->setText(String(cpuLoad, 1) + "%", juce::NotificationType::dontSendNotification);
 		}
 
 		// Status-Leiste aktualisieren. CPU/Tempo/Audio sind billig — jeden
 		// Tick. Process-Memory zieht einen Syscall, daher nur alle ~10 Ticks
 		// (=~ 2.5 Sekunden bei 40 ms Timer).
 		if (statusBar != nullptr) {
-			statusBar->setCpuLoad(cpuLoad);
+			statusBar->setCpuLoad((int)juce::roundToInt(cpuLoad));
 			statusBar->setAudioInfo(sampleRate, buffersize);
 			statusBar->setTempo(Project::getInstance()->getTempo());
 
@@ -1471,8 +1488,115 @@ void MainComponent::timerCallback() {
 			if ((memTickCounter++ % 10) == 0)
 				statusBar->setMemoryUsageMB(StatusBarComponent::getProcessMemoryUsageMB());
 		}
+
+		serviceAutoSave();
 	}
 
+}
+
+// Driven by the 40 ms UI timer. Counts elapsed ticks and, once the configured
+// interval has passed, writes a crash-recovery snapshot — but only while the
+// project actually has unsaved changes, so an idle session never touches the
+// disk. Intentionally silent: no dialog, no status flicker, no change to the
+// document's dirty state.
+void MainComponent::serviceAutoSave()
+{
+	Settings* settings = Settings::getInstance();
+	if (! settings->getAutoSaveEnabled())
+		return;
+
+	// 40 ms timer -> 25 ticks per second.
+	const int ticksPerInterval = juce::jmax(1, settings->getAutoSaveIntervalSeconds() * 25);
+	if (++autoSaveTickCounter < ticksPerInterval)
+		return;
+
+	autoSaveTickCounter = 0;
+
+	// Nothing to recover if there are no unsaved changes.
+	if (! Project::getInstance()->isDirty())
+		return;
+
+	if (editor == nullptr || autoSaveInProgress)
+		return;
+
+	// Don't snapshot a project graph that's mid-load/mid-teardown.
+	if (! isRunning())
+		return;
+
+	const juce::ScopedValueSetter<bool> guard(autoSaveInProgress, true);
+	try {
+		editor->autoSave();
+	} catch (...) {
+		// Auto-save must never take the app down; a failed snapshot just means
+		// the previous (or no) recovery point stands.
+		juce::Logger::writeToLog("Auto-save: snapshot failed — skipping this cycle.");
+	}
+}
+
+// A recovery snapshot is only present at startup when the previous session
+// ended without a clean shutdown or manual save (both clear it). Offer to
+// restore it. Runs after the main window is built (posted via callAfterDelay
+// from the constructor).
+void MainComponent::maybeOfferCrashRecovery()
+{
+	if (! AutoSave::hasRecovery() || editor == nullptr)
+		return;
+
+	const AutoSave::Meta meta = AutoSave::readMeta();
+	const juce::File recovery = AutoSave::getRecoveryFile();
+
+	const juce::String name =
+		meta.projectName.isNotEmpty() ? meta.projectName
+		: (meta.originalPath.isNotEmpty()
+			? juce::File(meta.originalPath).getFileNameWithoutExtension()
+			: juce::String("untitled project"));
+
+	juce::String msg;
+	msg << "Synthlab did not shut down cleanly the last time it ran.\n\n"
+	    << "An auto-saved recovery of \"" << name << "\" is available";
+	if (meta.savedAt.isNotEmpty())
+		msg << " (saved " << meta.savedAt << ")";
+	msg << ".\n\nRestore it now?\n\n"
+	    << "Choosing \"Discard\" deletes the recovery snapshot.";
+
+	const bool restore = juce::AlertWindow::showOkCancelBox(
+		juce::AlertWindow::QuestionIcon,
+		"Recover unsaved project",
+		msg,
+		"Restore", "Discard",
+		nullptr, nullptr);
+
+	if (! restore) {
+		AutoSave::clearRecovery();
+		return;
+	}
+
+	if (! editor->openFileNoPrompt(recovery)) {
+		juce::AlertWindow::showMessageBoxAsync(
+			juce::AlertWindow::WarningIcon,
+			"Recovery failed",
+			"The recovery snapshot could not be loaded.\nStarting with an empty project.");
+		AutoSave::clearRecovery();
+		return;
+	}
+
+	// openFile() added the transient recovery path to the recent-files list;
+	// drop it so "Open Recent" never shows ~/.Synthlab/recovery/recovery.slb.
+	Project::getInstance()->getRecentFiles().removeString(recovery.getFullPathName());
+
+	// openFileNoPrompt pointed the project at the recovery copy. Re-point it at
+	// the user's original file so Ctrl+S writes back there, and flag it dirty —
+	// the recovered state is newer than whatever is on disk.
+	if (meta.originalPath.isNotEmpty()) {
+		editor->updateProject(juce::File(meta.originalPath)); // tab title + path/name
+		Project::getInstance()->setNewFile(false);
+		// Persist the cleaned recent list and surface the real project instead.
+		Project::getInstance()->addRecentFile(meta.originalPath);
+	} else {
+		editor->updateProject(juce::File());                  // tab -> "untitled"
+		Project::getInstance()->setNewFile(true);             // first Save asks for a path
+	}
+	editor->setDirty(true);
 }
 
 //==============================================================================
@@ -1528,12 +1652,13 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 
 	bufferToFill.clearActiveBufferRegion();
 
-	long startTime = 0;
+	double startTime = 0.0;
 
 	if (!isBouncing()) {
-		lastTime = (long)juce::Time::getMillisecondCounterHiRes() - currentTime;
-		currentTime = (long)juce::Time::getMillisecondCounterHiRes();
-		startTime = currentTime;
+		const double now = juce::Time::getMillisecondCounterHiRes();
+		lastTime = now - currentTime;   // Periode zwischen zwei Callbacks (ms)
+		currentTime = now;
+		startTime = now;                // Beginn der Verarbeitung dieses Blocks
 	}
 
 	const int numSamples = bufferToFill.numSamples;
@@ -1897,9 +2022,9 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 		}
 	}
 
-	if (!isBouncing()) {
-		long duration = (long)juce::Time::getMillisecondCounterHiRes() - startTime;
-		cpuLoad = ((float)duration / (float)lastTime) * 100.0f;
+	if (!isBouncing() && lastTime > 0.0) {
+		const double duration = juce::Time::getMillisecondCounterHiRes() - startTime;
+		cpuLoad = (duration / lastTime) * 100.0;   // Anteil Verarbeitung an der Periode
 	}
 
 	currentSample = (currentSample + 1) % numSamples;

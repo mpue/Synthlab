@@ -496,7 +496,7 @@ void MidiProcessor::processBlock(int numSamples, TrackNavigator* navigator)
 			if (midiRegion == nullptr)
 				continue;
 
-			vector <MidiMessage*> messages = midiRegion->getMessages(currentSamplePos, numSamples);
+			std::vector<MidiMessage*> messages = midiRegion->getMessages(currentSamplePos, numSamples);
 
 			for (auto* message : messages)
 			{ 

@@ -404,7 +404,7 @@ struct SignalsmithStretch {
 private:
 	bool _splitComputation = false;
 	struct {
-		size_t samplesSinceLast = -1;
+		size_t samplesSinceLast = static_cast<size_t>(-1);
 		size_t steps = 0;
 		size_t step = 0;
 		

@@ -403,7 +403,7 @@ void Track::copySelectedRegions() {
 
 void Track::duplicateSelectedRegions() {
 
-	vector<Region*> selected;
+	std::vector<Region*> selected;
 
 	for (std::vector<Region*>::iterator it = regions.begin(); it != regions.end(); ++it) {
 		if (dragger->isSelected((*it)))
@@ -2076,7 +2076,7 @@ void Track::changeListenerCallback(ChangeBroadcaster* source) {
 
 }
 
-vector<Region*>Track::getRegions() {
+std::vector<Region*>Track::getRegions() {
 	return this->regions;
 }
 

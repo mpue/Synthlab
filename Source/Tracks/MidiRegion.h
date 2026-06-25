@@ -62,7 +62,7 @@ public:
     virtual void startRecording() override;
   
     void clear();
-    vector<MidiMessage*> getMessages(int sampleNum, int tolerance);
+    std::vector<MidiMessage*> getMessages(int sampleNum, int tolerance);
     void addMessage(MidiMessage* m, double time, int sampleNum);
     long getNumMessages() {
         return midiMessageList.size();
@@ -82,7 +82,7 @@ public:
 		return midiMessageList;
 	}
 
-    vector<MidiMessage*> getActiveMessages(int localSamplePos); 
+    std::vector<MidiMessage*> getActiveMessages(int localSamplePos); 
 
     virtual void updateThumb() override;
     virtual void componentMovedOrResized (Component& component,bool wasMoved, bool wasResized) override;
