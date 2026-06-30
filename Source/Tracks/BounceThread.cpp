@@ -358,33 +358,44 @@ void BounceThread::run()
 				const auto& sends = t->getSends();
 				if (sends.empty()) continue;
 
-				// Output-Modul des Strips besorgen — Tracks koennen je nach
-				// Settings::getNewTrackOutputType entweder mit AudioOut ODER
-				// AuxOut als Strip-Output angelegt sein. Beide haben dieselben
-				// L/R IN-Pins; nur AudioOut zu akzeptieren wie vorher liess
-				// AuxOut-Mode Tracks ihre Bus-Sends im Bounce verlieren
-				// (Symptom: Bus-FX wie Reverb fehlten im Render obwohl der
-				// Send im Mixer eingetragen war). Spiegelt den gleichen Fix
-				// in MainComponent::getNextAudioBlock.
-				Module* outMod = nullptr;
-				if (auto* ao  = dynamic_cast<AudioOut*>(panel->getModule()))
-					outMod = ao;
-				else if (auto* axo = dynamic_cast<AuxOut*>(panel->getModule()))
-					outMod = axo;
-				if (outMod == nullptr) continue;
-				auto& aoPins = outMod->getPins();
-				if (aoPins.size() < 2) continue;
-
 				const float* srcL = nullptr;
 				const float* srcR = nullptr;
-				if (! aoPins[0]->getConnections().empty()
-					&& aoPins[0]->getConnections()[0] != nullptr
-					&& aoPins[0]->getConnections()[0]->getAudioBuffer() != nullptr)
-					srcL = aoPins[0]->getConnections()[0]->getAudioBuffer()->getReadPointer(0);
-				if (! aoPins[1]->getConnections().empty()
-					&& aoPins[1]->getConnections()[0] != nullptr
-					&& aoPins[1]->getConnections()[0]->getAudioBuffer() != nullptr)
-					srcR = aoPins[1]->getConnections()[0]->getAudioBuffer()->getReadPointer(0);
+
+				if (t->getType() == Track::Type::AUDIO) {
+					// Pre-Fader-Send: Quelle ist der von TrackIn::bounce pro Block
+					// befuellte Pre-Fader-Buffer (Pan, ohne Volume/Mute). Spiegelt
+					// MainComponent::getNextAudioBlock, damit der Offline-Render
+					// dieselben Pre-Fader-Sends erzeugt wie die Live-Wiedergabe.
+					auto& pf = t->getPreFaderSendBuffer();
+					if (pf.getNumChannels() >= 2 && pf.getNumSamples() >= numSamples) {
+						srcL = pf.getReadPointer(0);
+						srcR = pf.getReadPointer(1);
+					}
+				}
+				else {
+					// Nicht-Audio-Strips (z.B. Instrument): unveraendert post-fader
+					// am Eingang des Output-Moduls abgreifen. Tracks koennen je nach
+					// Settings::getNewTrackOutputType mit AudioOut ODER AuxOut als
+					// Strip-Output angelegt sein; beide haben dieselben L/R IN-Pins.
+					Module* outMod = nullptr;
+					if (auto* ao  = dynamic_cast<AudioOut*>(panel->getModule()))
+						outMod = ao;
+					else if (auto* axo = dynamic_cast<AuxOut*>(panel->getModule()))
+						outMod = axo;
+					if (outMod != nullptr) {
+						auto& aoPins = outMod->getPins();
+						if (aoPins.size() >= 2) {
+							if (! aoPins[0]->getConnections().empty()
+								&& aoPins[0]->getConnections()[0] != nullptr
+								&& aoPins[0]->getConnections()[0]->getAudioBuffer() != nullptr)
+								srcL = aoPins[0]->getConnections()[0]->getAudioBuffer()->getReadPointer(0);
+							if (! aoPins[1]->getConnections().empty()
+								&& aoPins[1]->getConnections()[0] != nullptr
+								&& aoPins[1]->getConnections()[0]->getAudioBuffer() != nullptr)
+								srcR = aoPins[1]->getConnections()[0]->getAudioBuffer()->getReadPointer(0);
+						}
+					}
+				}
 
 				if (srcL == nullptr && srcR == nullptr) continue;
 

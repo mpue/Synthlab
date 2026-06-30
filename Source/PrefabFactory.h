@@ -192,6 +192,8 @@ private:
         prefabs[118] = Prefab("7-Segment","Controls");
         prefabs[119] = Prefab("Binary to Decimal","Logic");
         prefabs[120] = Prefab("8-Step Seq","MIDI");
+        prefabs[121] = Prefab("Compressor","FX");
+        prefabs[122] = Prefab("Limiter","FX");
         prefabImages[38] = juce::ImageCache::getFromMemory(BinaryData::infinity_png, BinaryData::infinity_pngSize);
         prefabImages[120] = juce::ImageCache::getFromMemory(BinaryData::sequence_png, BinaryData::sequence_pngSize);
         prefabImages[38] = juce::ImageCache::getFromMemory(BinaryData::transform_png, BinaryData::transform_pngSize);
@@ -273,6 +275,8 @@ private:
         prefabImages[117] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[118] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
         prefabImages[119] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[121] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
+        prefabImages[122] = juce::ImageCache::getFromMemory(BinaryData::module_png, BinaryData::module_pngSize);
 
         categories = new juce::StringArray();
 

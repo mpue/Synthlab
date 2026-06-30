@@ -1531,6 +1531,23 @@ void MasterChannelPanel::reconstructFXChainFromGraph() {
     }
 
     if (reverseChain.empty()) {
+        // Kein Insert-FX in der Kette (typisch: FX-loser Audio-Track,
+        // TrackIn -> AudioOut direkt). Trotzdem die direkte Quelle als
+        // chainSource merken — sonst bleibt chainSourceModL/R nullptr und
+        // isFedBy() liefert false. Folge beim Project-Load: openTracks kann
+        // Track <-> Panel nicht relinken (setTrack wird nie gerufen), und die
+        // Bus-Sends des geladenen Kanals erscheinen nicht. Manuell angelegte
+        // Tracks linken ueber TrackUtil::LinkTrackToMixerPanel und waren daher
+        // nie betroffen.
+        chainSourceModL = srcModL;
+        chainSourcePinL = srcPinL;
+        if (audioOut->pins.size() > 1) {
+            auto& connsR = audioOut->pins[1]->getConnections();
+            if (! connsR.empty()) {
+                chainSourcePinR = connsR[0];
+                chainSourceModR = findModuleForPin(chainSourcePinR);
+            }
+        }
         updateFXButtons();
         return;
     }

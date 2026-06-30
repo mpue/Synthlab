@@ -113,6 +113,50 @@ private:
 	bool fadingOut = false;
 };
 
+// Schmaler vertikaler Drag-Griff an der rechten Kante der TrackControl-Spalte.
+// Liegt ueber Controls und Tracks (alwaysOnTop) und meldet den horizontalen
+// Drag-Offset an den Navigator, der daraufhin die Spaltenbreite (kControlsWidth)
+// anpasst und alles neu layoutet.
+class ControlsColumnResizer : public juce::Component
+{
+public:
+	std::function<void()>    onDragStart;   // Drag beginnt — Startbreite merken
+	std::function<void(int)> onDrag;        // Gesamt-dx seit Drag-Start
+
+	ControlsColumnResizer()
+	{
+		setMouseCursor(juce::MouseCursor::LeftRightResizeCursor);
+		setAlwaysOnTop(true);
+	}
+
+	void mouseDown(const juce::MouseEvent& e) override
+	{
+		// Bildschirm-X merken: waehrend des Drags wird der Griff selbst an die
+		// neue Spaltengrenze verschoben — komponenten-relative Distanzen
+		// (getDistanceFromDragStartX) wuerden dadurch zurueckkoppeln und
+		// oszillieren. Absolute Screen-Koordinaten sind davon unabhaengig.
+		dragStartScreenX = e.getScreenX();
+		if (onDragStart) onDragStart();
+	}
+
+	void mouseDrag(const juce::MouseEvent& e) override
+	{
+		if (onDrag) onDrag(e.getScreenX() - dragStartScreenX);
+	}
+
+	void paint(juce::Graphics& g) override
+	{
+		// Dezenter Griff: eine duenne, leicht aufgehellte Linie in der Mitte,
+		// damit die Grenze als ziehbar erkennbar ist. Rest transparent.
+		const int cx = getWidth() / 2;
+		g.setColour(juce::Colours::white.withAlpha(0.18f));
+		g.fillRect(cx, 0, 1, getHeight());
+	}
+
+private:
+	int dragStartScreenX = 0;
+};
+
 /*
 */
 class TrackNavigator : public Component,
@@ -365,11 +409,24 @@ private:
 	// links bei x=0..kControlsWidth, gleiche Y wie ihr Track.
 	std::vector<std::unique_ptr<TrackControl>> trackControls;
 
+	// Ziehbarer Griff an der rechten Kante der Controls-Spalte (Breite per Drag).
+	std::unique_ptr<ControlsColumnResizer> controlsResizer;
+	int dragStartControlsWidth = 140;   // kControlsWidth bei Drag-Beginn
+
 public:
 	// Breite des linken Steuer-Strips, ab dem die eigentlichen Tracks/Marker/
 	// Timeline beginnen. Region-Coords im Track-internen System sind davon
-	// nicht betroffen — nur das Layout im Navigator.
-	static constexpr int kControlsWidth = 140;
+	// nicht betroffen — nur das Layout im Navigator. Zur Laufzeit ueber den
+	// ControlsColumnResizer (rechte Kante der Spalte) per Drag verstellbar.
+	// Min so gewaehlt, dass die Button-Reihe (5x16 + Gaps = 84 px) plus
+	// reduced(6,4)-Innenrand und Marker-Streifen nicht abgeschnitten wird.
+	static constexpr int kControlsWidthMin = 110;
+	static constexpr int kControlsWidthMax = 360;
+	int kControlsWidth = 140;
+
+	// Setzt die Breite der Controls-Spalte (geclamped) und layoutet Tracks,
+	// Timeline, Marker und Controls neu. No-op, wenn die Breite gleich bleibt.
+	void setControlsWidth(int newWidth);
 
 	MultiComponentDragger* getDragger() { return dragger; }
 

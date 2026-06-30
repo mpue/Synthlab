@@ -229,6 +229,17 @@ void SynthEditor::resized()
 		return;
 	}
 
+	// Parent (Viewport) noch ohne echte Groesse — typisch waehrend des Dock-
+	// Aufbaus, bevor das Layout dem Editor-Panel seine Breite/Hoehe gibt. Dann
+	// NICHT auf 0x0 kollabieren: logicalW/H unten wuerden 0, der Editor waere
+	// unsichtbar und bliebe es, weil ein Viewport resized() der viewedComponent
+	// bei eigener Groessenaenderung nicht automatisch ruft. parentSizeChanged()
+	// zieht das nach, sobald der Viewport seine echte Groesse bekommt.
+	// (Bug: Editor war erst nach Hinzufuegen eines Tracks sichtbar.)
+	if (getParentWidth() <= 0 || getParentHeight() <= 0) {
+		return;
+	}
+
 	// Logical canvas size: 1.5× Breite, 3× Hoehe.
 	// Mehr vertikales Headroom, damit beim Bouncen/Debuggen mehr Module
 	// gleichzeitig sichtbar sind. Hoehe darf groesser sein als die Breite —
@@ -261,6 +272,17 @@ void SynthEditor::resized()
 			}
 		}
 	}
+}
+
+void SynthEditor::parentSizeChanged()
+{
+	// Der Editor ist viewedComponent eines Viewports; dessen echte Groesse
+	// kommt erst vom Dock-Layout, nachdem der Editor gesetzt wurde. Ein Viewport
+	// ruft resized() der viewedComponent bei eigener Groessenaenderung NICHT
+	// automatisch — hier also nachziehen, damit die logische Canvas-Groesse
+	// (parentWidth*1.5 x parentHeight*3) berechnet wird und der Editor sofort
+	// sichtbar ist, statt erst nach dem ersten Track/Modul.
+	resized();
 }
 
 void SynthEditor::drawCurrentConnection() {

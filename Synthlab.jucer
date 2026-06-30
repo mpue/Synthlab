@@ -658,6 +658,10 @@
                 file="Source/CompressorModule.cpp"/>
           <FILE id="ecKvvn" name="CompressorModule.h" compile="0" resource="0"
                 file="Source/CompressorModule.h"/>
+          <FILE id="LiMt01" name="LimiterModule.cpp" compile="1" resource="0"
+                file="Source/LimiterModule.cpp"/>
+          <FILE id="LiMt02" name="LimiterModule.h" compile="0" resource="0"
+                file="Source/LimiterModule.h"/>
           <FILE id="xCndwf" name="ThreeBandEQModule.cpp" compile="1" resource="0"
                 file="Source/ThreeBandEQModule.cpp"/>
           <FILE id="zJUnij" name="ThreeBandEQModule.h" compile="0" resource="0"
@@ -1041,7 +1045,8 @@
       </MODULEPATHS>
     </LINUX_MAKE>
     <VS2022 targetFolder="Builds/VisualStudio2022" extraDefs="JUCE_MODAL_LOOPS_PERMITTED=1&#10;SODIUM_STATIC=1&#10;NOMINMAX=1"
-            smallIcon="Abg7RO" bigIcon="Abg7RO" externalLibraries="libsodium.lib">
+            smallIcon="Abg7RO" bigIcon="Abg7RO" externalLibraries="libsodium.lib"
+            extraCompilerFlags="/wd4305 /wd4244">
       <CONFIGURATIONS>
         <CONFIGURATION isDebug="1" name="Debug" headerPath="../../lib/libsodium/include"
                        libraryPath="../../lib/debug&#10;../../lib/libsodium/$(Platform)/Debug/v143/static"

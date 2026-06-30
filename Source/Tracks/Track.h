@@ -105,6 +105,10 @@ public:
     MidiBuffer* getMidiBuffer();
 	AudioSampleBuffer* getBuffer();
   	AudioSampleBuffer* getRecordingBuffer();
+
+    // Pre-Fader-Send-Quellbuffer (siehe Member-Kommentar). TrackIn schreibt,
+    // der Audio-Callback liest. Beide laufen auf dem Audio-Thread.
+    AudioSampleBuffer& getPreFaderSendBuffer() { return preFaderSendBuffer; }
     
     void setNavigator(TrackNavigator* navigator) {
         this->navigator = navigator;
@@ -397,14 +401,20 @@ public:
 
     // ----- Bus-Sends ---------------------------------------------------------
     // Pro Track 0..N Sends auf BusOut-Module. Die Routing-Logik lebt nicht im
-    // Patch-Graph — der Audio-Callback liest diese Liste und mischt das post-
-    // fader Tracksignal pro Send mit `amount` in den jeweiligen BusOut::mixBuffer.
+    // Patch-Graph — der Audio-Callback liest diese Liste und mischt das Track-
+    // signal pro Send mit `amount` in den jeweiligen BusOut::mixBuffer.
+    //
+    // Tap-Punkt: PRE-FADER. Fuer AUDIO-Tracks ist die Quelle der von TrackIn
+    // gefuellte preFaderSendBuffer (Pan ja, aber ohne Volume-Fader und ohne
+    // Mute/Solo) — der Send bleibt damit unabhaengig vom Kanal-Fader und vom
+    // Mute (Cue-/Kopfhoerer-Mix-Verhalten). Nicht-Audio-Strips (Instrument)
+    // greifen weiterhin post-fader am Output-Modul-Eingang ab.
     //
     // busModuleIndex referenziert BusOut::getIndex() (= Module::getIndex(),
     // stabil ueber Save/Load), nicht den volatilen Mixer-Channel-Index.
     struct Send {
         long  busModuleIndex = -1;
-        float amount         = 1.0f; // 0..1 linear (post-fader)
+        float amount         = 1.0f; // 0..1 linear (pre-fader tap)
     };
 
     const std::vector<Send>& getSends() const { return sends; }
@@ -515,6 +525,12 @@ private:
 	double maxLength = 600 * this->sampleRate;
 	int offset = 0;
 	AudioSampleBuffer* audioBuffer;
+    // Pre-Fader-Quellsignal fuer Bus-Sends: pro Block von TrackIn::process
+    // befuellt (nur AUDIO-Tracks) mit dem Tracksignal NACH Pan, aber VOR
+    // Volume-Fader und VOR Mute/Solo — so bleibt der Send unabhaengig vom
+    // Kanal-Fader und vom Mute (Cue-/Kopfhoerer-Mix-Verhalten). Wird vom
+    // Audio-Callback (MainComponent::getNextAudioBlock, BounceThread) gelesen.
+    AudioSampleBuffer preFaderSendBuffer;
     MidiBuffer* midiBuffer;
     int markerPosition = 0;
     int samplePosition = 0;

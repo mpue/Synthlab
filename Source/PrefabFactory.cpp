@@ -92,6 +92,8 @@
 #include "SevenSegmentModule.h"
 #include "BinaryToDecimalModule.h"
 #include "StepSequencer8Module.h"
+#include "CompressorModule.h"
+#include "LimiterModule.h"
 
 using juce::Image;
 
@@ -379,6 +381,12 @@ Module* PrefabFactory::getPrefab(int id, float sampleRate, int bufferSize) {
     }
     else if (prefabs[id].getName() == "8-Step Seq") {
         m = new StepSequencer8Module(sampleRate, bufferSize);
+    }
+    else if (prefabs[id].getName() == "Compressor") {
+        m = new CompressorModule(sampleRate, bufferSize);
+    }
+    else if (prefabs[id].getName() == "Limiter") {
+        m = new LimiterModule(sampleRate, bufferSize);
     }
 
 

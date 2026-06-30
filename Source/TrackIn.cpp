@@ -173,6 +173,19 @@
 			outL = getPins().at(2)->getAudioBuffer()->getWritePointer(0);
 			outR = getPins().at(3)->getAudioBuffer()->getWritePointer(0);
 
+			// Pre-Fader-Send-Quellbuffer dieses Tracks vorbereiten: shape-stabil
+			// reallozieren (im Steady-State ein No-Op) und jeden Block leeren,
+			// damit er ausserhalb der Wiedergabe garantiert stumm ist und kein
+			// Phantom-Send in den Bus laeuft. Die Branches unten fuellen ihn mit
+			// dem Pre-Fader-Signal (Pan ja, Volume/Mute nein).
+			juce::AudioSampleBuffer* preFader = nullptr;
+			if (track != nullptr) {
+				preFader = &track->getPreFaderSendBuffer();
+				if (preFader->getNumChannels() != 2 || preFader->getNumSamples() != buffersize)
+					preFader->setSize(2, buffersize, false, true, true);
+				preFader->clear();
+			}
+
 			if (track != nullptr && (navigator->isPlaying() || isBouncing()
                 || (navigator->isRecording() && !track->isRecording()))) {
 
@@ -198,6 +211,14 @@
 
 					pins.at(2)->getAudioBuffer()->setSample(0, bufferIndex, sampleL);
 					pins.at(3)->getAudioBuffer()->setSample(0, bufferIndex, sampleR);
+
+					// Pre-Fader-Send-Tap: Pan ja, aber ohne Volume-Fader und ohne
+					// Mute/Solo — der Bus-Send bleibt damit unabhaengig vom Kanal-
+					// Fader und vom Mute.
+					if (preFader != nullptr) {
+						preFader->setSample(0, bufferIndex, track->getSample(0, j) * gainLeft);
+						preFader->setSample(1, bufferIndex, track->getSample(1, j) * gainRight);
+					}
 				}
 				// track->setSamplePosition(track->getSamplePosition() + buffersize);
 				// numSamples += buffersize;
@@ -237,6 +258,13 @@
 					else {
 						// track->getRecordingBuffer()->setSample(1, currentRecordingSample, 0);
 						outR[i] = 0;
+					}
+
+					// Pre-Fader-Cue beim Live-Monitoring: rohes Eingangssignal
+					// ohne Volume-Fader in den Send-Buffer.
+					if (preFader != nullptr) {
+						preFader->setSample(0, i, (inL != nullptr) ? inL[i] : 0.0f);
+						preFader->setSample(1, i, (inR != nullptr) ? inR[i] : 0.0f);
 					}
 
 					currentRecordingSample = (currentRecordingSample + 1);
@@ -326,6 +354,14 @@
 		const float muteSoloGain =
 			(track->isMute() || (anySolo && !track->isSolo())) ? 0.0f : 1.0f;
 
+		// Pre-Fader-Send-Quellbuffer fuer den Bounce identisch zu process()
+		// pflegen, damit Pre-Fader-Bus-Sends im Offline-Render genauso landen
+		// wie bei der Live-Wiedergabe (Pan ja, Volume/Mute nein).
+		juce::AudioSampleBuffer* preFader = &track->getPreFaderSendBuffer();
+		if (preFader->getNumChannels() != 2 || preFader->getNumSamples() != buffersize)
+			preFader->setSize(2, buffersize, false, true, true);
+		preFader->clear();
+
 		for (int j = track->getSamplePosition(); j < buffersize + track->getSamplePosition(); j++) {
 			int bufferIndex = j - track->getSamplePosition(); // 0, 1, 2, ...
 
@@ -334,6 +370,10 @@
 
 			pins.at(2)->getAudioBuffer()->setSample(0, bufferIndex, sampleL);
 			pins.at(3)->getAudioBuffer()->setSample(0, bufferIndex, sampleR);
+
+			// Pre-Fader-Tap: Pan ja, ohne Volume-Fader und ohne Mute/Solo.
+			preFader->setSample(0, bufferIndex, track->getSample(0, j) * gainLeft);
+			preFader->setSample(1, bufferIndex, track->getSample(1, j) * gainRight);
 		}
 
 		track->updateMagnitude(track->getSamplePosition(), buffersize, gainLeft, gainRight);

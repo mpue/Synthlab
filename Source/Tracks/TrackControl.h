@@ -218,23 +218,10 @@ public:
             addAndMakeVisible(s);
         };
 
-        panSlider.setRange(-1.0, 1.0, 0.01);
-        panSlider.setDoubleClickReturnValue(true, 0.0);
-        panSlider.setValue(track->getPan(), juce::dontSendNotification);
-        // Pan ist symmetrisch um 0 — die Fill-Bar von links wuerde irrefuehren,
-        // also Fill und Hintergrund gleich faerben (nur der Thumb zeigt Wert).
-        styleSlider(panSlider, trackBg);
-
         volSlider.setRange(0.0, 1.5, 0.01);
         volSlider.setDoubleClickReturnValue(true, 1.0);
         volSlider.setValue(track->getVolume(), juce::dontSendNotification);
         styleSlider(volSlider, accent);
-
-        panLabel.setText("Pan", juce::dontSendNotification);
-        panLabel.setFont(juce::Font(10.5f, juce::Font::bold));
-        panLabel.setColour(juce::Label::textColourId, textLo);
-        panLabel.setInterceptsMouseClicks(false, false);
-        addAndMakeVisible(panLabel);
 
         volLabel.setText("Vol", juce::dontSendNotification);
         volLabel.setFont(juce::Font(10.5f, juce::Font::bold));
@@ -278,7 +265,6 @@ public:
         autoButton.setLookAndFeel(nullptr);
         busButton.setLookAndFeel(nullptr);
         recButton.setLookAndFeel(nullptr);
-        panSlider.removeListener(this);
         volSlider.removeListener(this);
         pluginBox.removeListener(this);
         pluginBox.setLookAndFeel(nullptr);
@@ -317,10 +303,8 @@ public:
         nameLabel.setBounds(r.removeFromTop(16));
         r.removeFromTop(2);
 
-        // M / S / A / B / R Buttons in einer Reihe, danach Pan-Label + Pan-Slider.
-        // Fuenf Toggles zu je 16 px + 4*1 Gaps = 84 px, danach 4 px Luft, Pan-
-        // Label (18) und der Rest fuer den Pan-Slider — passt in kControlsWidth=140
-        // inkl. der reduced(6,4)-Innenabstaende.
+        // M / S / A / B / R Buttons in einer Reihe. Fuenf Toggles zu je 16 px +
+        // 4*1 Gaps = 84 px; der Rest der Reihe bleibt frei (Pan-Regler entfernt).
         auto row1 = r.removeFromTop(18);
         muteButton.setBounds(row1.removeFromLeft(16));
         row1.removeFromLeft(1);
@@ -331,9 +315,6 @@ public:
         busButton.setBounds(row1.removeFromLeft(16));
         row1.removeFromLeft(1);
         recButton.setBounds(row1.removeFromLeft(16));
-        row1.removeFromLeft(4);
-        panLabel.setBounds(row1.removeFromLeft(18));
-        panSlider.setBounds(row1);
 
         r.removeFromTop(3);
 
@@ -377,7 +358,6 @@ public:
         autoButton.setToggleState(track->isAutomationVisible(), juce::dontSendNotification);
         busButton.setToggleState(track->isBusAutomationVisible(), juce::dontSendNotification);
         recButton.setToggleState(track->isRecording(), juce::dontSendNotification);
-        panSlider.setValue(track->getPan(), juce::dontSendNotification);
         volSlider.setValue(track->getVolume(), juce::dontSendNotification);
 
         refreshParamBoxVisibility();
@@ -575,8 +555,7 @@ private:
     void sliderValueChanged(juce::Slider* s) override
     {
         if (track == nullptr) return;
-        if (s == &panSlider) track->setPan((float)panSlider.getValue());
-        else if (s == &volSlider) track->setVolume((float)volSlider.getValue());
+        if (s == &volSlider) track->setVolume((float)volSlider.getValue());
     }
 
     // Bindet das Bus-Overlay an die aktuell in busBox/busParamBox gewaehlte Lane.
@@ -639,8 +618,8 @@ private:
     juce::TextButton  autoButton;
     juce::TextButton  busButton;
     juce::TextButton  recButton;
-    juce::Slider      panSlider, volSlider;
-    juce::Label       panLabel, volLabel;
+    juce::Slider      volSlider;
+    juce::Label       volLabel;
     juce::ComboBox    pluginBox;  // Instrument + FX-Slots
     juce::ComboBox    paramBox;   // Parameter im gewaehlten Plugin
     juce::ComboBox    busBox;      // verfuegbare Buses (Bus-Automation)

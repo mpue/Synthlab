@@ -216,7 +216,13 @@ public:
 		}
 	}
 
-	static Track* createAudioTrack(SynthEditor* editor, TrackNavigator* navigator, Module* module)
+	// `name`: optional track name. When non-empty it is set BEFORE the track is
+	// linked to its mixer channel strip (LinkTrackToMixerPanel below), so the
+	// strip shows it immediately. Renaming the track *after* this function
+	// returns would only update the navigator — the mixer strip took its label
+	// from the track name at link time and a late rename does not reliably
+	// propagate. Default: the generic "Audio N" name.
+	static Track* createAudioTrack(SynthEditor* editor, TrackNavigator* navigator, Module* module, const juce::String& name = juce::String())
 	{
 		// Count existing audio tracks to determine the next available hardware input pair.
 		// Track N gets inputs (N*2, N*2+1).
@@ -276,7 +282,8 @@ public:
         if (ti == nullptr) return nullptr;
         
 		Track* t = navigator->addTrack(Track::Type::AUDIO, Project::getInstance()->getSampleRate());
-		t->setName("Audio " + String(navigator->getTracks().size() + 1));
+		t->setName(name.isNotEmpty() ? name
+		                             : ("Audio " + String(navigator->getTracks().size() + 1)));
 		ti->setTrack(t);
 
 		// Wire AudioIn L OUT (pin 0) → TrackIn IN L (pin 0)

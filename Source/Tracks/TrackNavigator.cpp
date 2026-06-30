@@ -80,6 +80,16 @@ TrackNavigator::TrackNavigator(AudioDeviceManager* deviceManager, Viewport* view
 
 	this->zoomDisplay = std::make_unique<ZoomDisplay>();
 	addChildComponent(zoomDisplay.get());
+
+	// Ziehbarer Griff an der rechten Kante der Controls-Spalte. Beim Drag die
+	// Startbreite merken und waehrend des Ziehens setControlsWidth() mit der
+	// neuen Zielbreite (Start + dx) aufrufen. Positioniert wird er in
+	// syncTrackControls().
+	controlsResizer = std::make_unique<ControlsColumnResizer>();
+	controlsResizer->onDragStart = [this]() { dragStartControlsWidth = kControlsWidth; };
+	controlsResizer->onDrag      = [this](int dx) { setControlsWidth(dragStartControlsWidth + dx); };
+	addAndMakeVisible(controlsResizer.get());
+
 	setWantsKeyboardFocus(true);
 	setMouseClickGrabsKeyboardFocus(true);
 	setInterceptsMouseClicks(true, true);
@@ -315,6 +325,16 @@ void TrackNavigator::syncTrackControls() {
 		tc->setBounds(viewX, t->getY(), kControlsWidth, t->getHeight());
 		tc->syncFromTrack();
 	}
+
+	// Resizer-Griff an die rechte Kante der Controls-Spalte legen, ueber die
+	// gesamte Inhaltshoehe und mittig auf der Grenze (von beiden Seiten
+	// greifbar). Folgt dem horizontalen Scroll-Offset (viewX) wie die Controls.
+	if (controlsResizer != nullptr) {
+		const int handleW = 8;
+		controlsResizer->setBounds(viewX + kControlsWidth - handleW / 2, 0,
+		                           handleW, juce::jmax(getHeight(), 1));
+		controlsResizer->toFront(false);
+	}
 }
 
 void TrackNavigator::eventReceived(Event* e)
@@ -430,6 +450,28 @@ void TrackNavigator::relayoutTracks()
 	}
 	syncTrackControls();
 	adjustHeight();
+	repaint();
+}
+
+void TrackNavigator::setControlsWidth(int newWidth)
+{
+	newWidth = juce::jlimit(kControlsWidthMin, kControlsWidthMax, newWidth);
+	if (newWidth == kControlsWidth) return;
+	kControlsWidth = newWidth;
+
+	// Tracks an die neue Grenze schieben + Controls/Resizer/Content-Hoehe neu
+	// rechnen. relayoutTracks deckt Tracks, Controls und adjustHeight ab.
+	relayoutTracks();
+
+	// Timeline und Marker decken relayoutTracks nicht ab — explizit an die neue
+	// Grenze ziehen (gleiche Bounds-Logik wie in resized()).
+	if (timeLine != nullptr) {
+		timeLine->setBounds(kControlsWidth, 0, getWidth() - kControlsWidth, timelineOffset);
+		timeLine->setTopLeftPosition(kControlsWidth, juce::jmax(0, -getY()));
+	}
+	if (marker != nullptr)
+		marker->setDrawingBounds(kControlsWidth, 25, getWidth() - kControlsWidth, getHeight());
+
 	repaint();
 }
 
@@ -718,7 +760,9 @@ void TrackNavigator::clearDragPreview()
 long TrackNavigator::sampleForNavigatorX(int x) const
 {
 	if (zoom <= 0.0f) return 0;
-	const double sr = Project::getInstance()->getSampleRate();
+	auto* project = Project::getInstance();
+	if (project == nullptr) return 0;
+	const double sr = project->getSampleRate();
 	double localPx = (double)x - (double)kControlsWidth;
 	if (localPx < 0.0) localPx = 0.0;
 	return (long)(localPx * sr / (double)zoom);
@@ -726,7 +770,13 @@ long TrackNavigator::sampleForNavigatorX(int x) const
 
 int TrackNavigator::navigatorXForSample(long sample) const
 {
-	const double sr = Project::getInstance()->getSampleRate();
+	// Project::getInstance() liefert nach Project::destroy() (Tear-Down)
+	// nullptr. Ein VBlank-Paint kann nach destroy() noch feuern (Backtrace:
+	// VBlankThread -> handlePaint -> paintOverChildren -> hier), darum NICHT
+	// ungeprueft dereferenzieren.
+	auto* project = Project::getInstance();
+	if (project == nullptr) return kControlsWidth;
+	const double sr = project->getSampleRate();
 	if (sr <= 0.0) return kControlsWidth;
 	return kControlsWidth + juce::roundToInt((double)sample * (double)zoom / sr);
 }
@@ -2364,9 +2414,11 @@ void TrackNavigator::bounceSelectedRegionsInPlace()
 
 		// Neuen Audio-Track anlegen — TrackUtil haengt ihn ans Ende
 		// der tracks-Liste.
-		Track* newAudio = TrackUtil::createAudioTrack(editor, this, editor->getModule());
+		// Namen direkt mitgeben, damit der Mixer-Channel-Strip ihn beim
+		// Verlinken uebernimmt (ein spaeteres setName erreicht den Strip nicht).
+		Track* newAudio = TrackUtil::createAudioTrack(editor, this, editor->getModule(),
+		                                              sourceTrack->getName() + " (bounce)");
 		if (newAudio == nullptr) continue;
-		newAudio->setName(sourceTrack->getName() + " (bounce)");
 
 		// In die Position direkt unterhalb des Source-Tracks verschieben.
 		const auto srcIt = std::find(tracks.begin(), tracks.end(), sourceTrack);

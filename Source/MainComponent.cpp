@@ -1806,8 +1806,10 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 	// Sends in die BusOut-internen Mix-Buffer und mischen den Bus dann mit
 	// eigenem Volume/Pan/Mute auf den Master. Layout:
 	//   1) jeden Bus-Buffer leeren (Steady-State: kein Realloc)
-	//   2) pro Track-Strip: AudioOut->pin[0/1] Buffer = post-FX, post-fader
-	//      Signal; pro Send das in den Ziel-Bus mischen
+	//   2) pro Track-Strip: Pre-Fader-Quellsignal pro Send in den Ziel-Bus
+	//      mischen. AUDIO-Tracks liefern den von TrackIn gefuellten Pre-Fader-
+	//      Buffer (Pan, ohne Volume/Mute); Nicht-Audio-Strips greifen weiterhin
+	//      post-fader am AudioOut/AuxOut-Eingang ab.
 	//   3) Bus-Buffer auf Master summieren wie ein AuxOut
 	const std::vector<BusOut*>& busChannels = mixer.getBusChannels();
 	if (! busChannels.empty()) {
@@ -1834,32 +1836,45 @@ void MainComponent::getNextAudioBlock(const juce::AudioSourceChannelInfo& buffer
 			const auto& sends = t->getSends();
 			if (sends.empty()) continue;
 
-			// Output-Modul des Strips besorgen — Tracks koennen je nach
-			// Settings::getNewTrackOutputType entweder mit AudioOut ODER
-			// AuxOut als Strip-Output angelegt sein (TrackUtil::createAudioTrack,
-			// preferAuxOut-Pfad). Beide haben identische L/R IN-Pin-Layouts;
-			// vor dem Fix akzeptierte die Schleife nur AudioOut und sprang
-			// fuer AuxOut-Tracks mit continue — Folge: Bus-VU blieb bei
-			// Tracks im AuxOut-Modus stumm, obwohl der Send eingetragen war.
-			Module* outMod = nullptr;
-			if (auto* ao  = dynamic_cast<AudioOut*>(panel->getModule()))
-				outMod = ao;
-			else if (auto* axo = dynamic_cast<AuxOut*>(panel->getModule()))
-				outMod = axo;
-			if (outMod == nullptr) continue;
-			auto& outPins = outMod->getPins();
-			if (outPins.size() < 2) continue;
-
 			const float* srcL = nullptr;
 			const float* srcR = nullptr;
-			if (! outPins[0]->getConnections().empty()
-				&& outPins[0]->getConnections()[0] != nullptr
-				&& outPins[0]->getConnections()[0]->getAudioBuffer() != nullptr)
-				srcL = outPins[0]->getConnections()[0]->getAudioBuffer()->getReadPointer(0);
-			if (! outPins[1]->getConnections().empty()
-				&& outPins[1]->getConnections()[0] != nullptr
-				&& outPins[1]->getConnections()[0]->getAudioBuffer() != nullptr)
-				srcR = outPins[1]->getConnections()[0]->getAudioBuffer()->getReadPointer(0);
+
+			if (t->getType() == Track::Type::AUDIO) {
+				// Pre-Fader-Send: Quelle ist der von TrackIn pro Block befuellte
+				// Pre-Fader-Buffer (Tracksignal mit Pan, aber OHNE Volume-Fader
+				// und OHNE Mute/Solo). Damit folgt der Bus-Send NICHT dem Kanal-
+				// Fader und bleibt bei gemutetem Kanal hoerbar (Cue-Verhalten).
+				auto& pf = t->getPreFaderSendBuffer();
+				if (pf.getNumChannels() >= 2 && pf.getNumSamples() >= numSamples) {
+					srcL = pf.getReadPointer(0);
+					srcR = pf.getReadPointer(1);
+				}
+			}
+			else {
+				// Nicht-Audio-Strips (z.B. Instrument-Tracks): unveraendert das
+				// post-fader Signal am Eingang des Output-Moduls abgreifen.
+				// Tracks koennen je nach Settings::getNewTrackOutputType mit
+				// AudioOut ODER AuxOut als Strip-Output angelegt sein; beide haben
+				// identische L/R IN-Pin-Layouts.
+				Module* outMod = nullptr;
+				if (auto* ao  = dynamic_cast<AudioOut*>(panel->getModule()))
+					outMod = ao;
+				else if (auto* axo = dynamic_cast<AuxOut*>(panel->getModule()))
+					outMod = axo;
+				if (outMod != nullptr) {
+					auto& outPins = outMod->getPins();
+					if (outPins.size() >= 2) {
+						if (! outPins[0]->getConnections().empty()
+							&& outPins[0]->getConnections()[0] != nullptr
+							&& outPins[0]->getConnections()[0]->getAudioBuffer() != nullptr)
+							srcL = outPins[0]->getConnections()[0]->getAudioBuffer()->getReadPointer(0);
+						if (! outPins[1]->getConnections().empty()
+							&& outPins[1]->getConnections()[0] != nullptr
+							&& outPins[1]->getConnections()[0]->getAudioBuffer() != nullptr)
+							srcR = outPins[1]->getConnections()[0]->getAudioBuffer()->getReadPointer(0);
+					}
+				}
+			}
 
 			if (srcL == nullptr && srcR == nullptr) continue;
 
@@ -3174,9 +3189,13 @@ void MainComponent::menuItemSelected(int menuItemID, int topLevelMenuIndex) {
 			const double sr = Project::getInstance()->getSampleRate();
 
 			for (const File& file : wavFiles) {
-				Track* t = TrackUtil::createAudioTrack(editor, navigator.get(), editor->getModule());
+				// Name an createAudioTrack uebergeben, damit der Mixer-Channel-Strip
+				// denselben Namen wie der Track im Navigator bekommt. Ein spaeteres
+				// t->setName() wuerde nur den Navigator umbenennen — der Strip
+				// uebernimmt den Namen beim Verlinken (LinkTrackToMixerPanel).
+				Track* t = TrackUtil::createAudioTrack(editor, navigator.get(), editor->getModule(),
+				                                       file.getFileNameWithoutExtension());
 				if (t != nullptr) {
-					t->setName(file.getFileNameWithoutExtension());
 					t->addRegion(file.getFileNameWithoutExtension(), file, sr);
 					Project::getInstance()->addAudioFile(file.getFileNameWithoutExtension(), file.getFullPathName());
 				}
